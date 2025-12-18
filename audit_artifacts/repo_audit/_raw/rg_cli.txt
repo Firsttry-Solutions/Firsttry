@@ -1,0 +1,1131 @@
+./.venv-build/lib/python3.12/site-packages/rich/json.py:106:    import argparse
+./.venv-build/lib/python3.12/site-packages/rich/json.py:109:    parser = argparse.ArgumentParser(description="Pretty print json")
+./.venv-build/lib/python3.12/site-packages/rich/syntax.py:845:    import argparse
+./.venv-build/lib/python3.12/site-packages/rich/syntax.py:848:    parser = argparse.ArgumentParser(description="Render syntax to the console with Rich")
+./.venv-build/lib/python3.12/site-packages/rich/style.py:252:            style = Style.on(click=self.on_click)
+./.venv-build/lib/python3.12/site-packages/rich/markdown.py:654:    import argparse
+./.venv-build/lib/python3.12/site-packages/rich/markdown.py:657:    parser = argparse.ArgumentParser(description="Render Markdown to the console with Rich")
+./.venv-build/lib/python3.12/site-packages/rich/default_styles.py:173:    import argparse
+./.venv-build/lib/python3.12/site-packages/rich/default_styles.py:180:    parser = argparse.ArgumentParser()
+./.venv-build/lib/python3.12/site-packages/rich/text.py:525:            >>> text.on(click="view.toggle('world')")
+./.venv-build/lib/python3.12/site-packages/keyring/completion.py:1:import argparse
+./.venv-build/lib/python3.12/site-packages/keyring/completion.py:12:class _MissingCompletionAction(argparse.Action):
+./.venv-build/lib/python3.12/site-packages/keyring/cli.py:5:import argparse
+./.venv-build/lib/python3.12/site-packages/keyring/cli.py:35:        self.parser = argparse.ArgumentParser()
+./.venv-build/lib/python3.12/site-packages/readme_renderer/__main__.py:1:import argparse
+./.venv-build/lib/python3.12/site-packages/readme_renderer/__main__.py:12:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/cachecontrol/_cmd.py:7:from argparse import ArgumentParser
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/cachecontrol/_cmd.py:17:    from argparse import Namespace
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/json.py:106:    import argparse
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/json.py:109:    parser = argparse.ArgumentParser(description="Pretty print json")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/syntax.py:845:    import argparse
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/syntax.py:848:    parser = argparse.ArgumentParser(description="Render syntax to the console with Rich")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/style.py:252:            style = Style.on(click=self.on_click)
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/default_styles.py:173:    import argparse
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/default_styles.py:180:    parser = argparse.ArgumentParser()
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/text.py:525:            >>> text.on(click="view.toggle('world')")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/certifi/__main__.py:1:import argparse
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/certifi/__main__.py:5:parser = argparse.ArgumentParser()
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:31:import argparse
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:1349:    parser = argparse.ArgumentParser(description="OS distro info tool")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_pip_wrapper.py:3:import argparse
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_pip_wrapper.py:23:    parser = argparse.ArgumentParser(description="Install Dependency Groups.")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/dependency_groups/__main__.py:1:import argparse
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/dependency_groups/__main__.py:16:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_lint_dependency_groups.py:3:import argparse
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_lint_dependency_groups.py:18:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.12/site-packages/pip/_internal/utils/compat.py:81:stdlib_pkgs = {"python", "wsgiref", "argparse"}
+./.venv-build/lib/python3.12/site-packages/wheel/cli/__init__.py:7:import argparse
+./.venv-build/lib/python3.12/site-packages/wheel/cli/__init__.py:10:from argparse import ArgumentTypeError
+./.venv-build/lib/python3.12/site-packages/wheel/cli/__init__.py:17:def unpack_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/wheel/cli/__init__.py:23:def pack_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/wheel/cli/__init__.py:29:def convert_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/wheel/cli/__init__.py:35:def tags_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/wheel/cli/__init__.py:54:def version_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/wheel/cli/__init__.py:79:    p = argparse.ArgumentParser()
+./.venv-build/lib/python3.12/site-packages/jeepney/bindgen.py:3:import argparse
+./.venv-build/lib/python3.12/site-packages/jeepney/bindgen.py:141:    ap = argparse.ArgumentParser(
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:7:import argparse
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:10:from argparse import ArgumentTypeError
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:17:def unpack_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:23:def pack_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:29:def convert_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:35:def tags_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:54:def version_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:79:    p = argparse.ArgumentParser()
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/__init__.py:2962:    import argparse
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/__init__.py:2965:    parser = argparse.ArgumentParser(description=description)
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/autocommand/autoparse.py:21:from argparse import ArgumentParser
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/autocommand/autoparse.py:235:    argparse.ArgumentParser, and calls the underlying function with the parsed
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/autocommand/autoparse.py:247:    argparse parameters. If no description is given, it defaults to the
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_build_meta.py:550:            ".venv/python3.10/site-packages/click-8.1.3.dist-info",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_pyprojecttoml.py:38:    "sphinx-argparse>=0.2.5",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_apply_pyprojecttoml.py:641:        src = "[project]\nname='pkg'\nversion='0.1'\ndependencies=['click']\n"
+./.venv-build/lib/python3.12/site-packages/certifi/__main__.py:1:import argparse
+./.venv-build/lib/python3.12/site-packages/certifi/__main__.py:5:parser = argparse.ArgumentParser()
+./.venv-build/lib/python3.12/site-packages/charset_normalizer/cli/__main__.py:3:import argparse
+./.venv-build/lib/python3.12/site-packages/charset_normalizer/cli/__main__.py:97:            raise argparse.ArgumentTypeError(message)
+./.venv-build/lib/python3.12/site-packages/charset_normalizer/cli/__main__.py:115:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.12/site-packages/id/__main__.py:19:import argparse
+./.venv-build/lib/python3.12/site-packages/id/__main__.py:34:def _parser() -> argparse.ArgumentParser:
+./.venv-build/lib/python3.12/site-packages/id/__main__.py:35:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.12/site-packages/id/__main__.py:38:        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+./.venv-build/lib/python3.12/site-packages/pygments/formatters/html.py:139:          <td class="linenos" title="click to toggle"
+./.venv-build/lib/python3.12/site-packages/pygments/formatters/html.py:140:            onclick="with (this.firstChild.style)
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/scripting.py:1078:        "clicked",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/scripting.py:1079:        "clicked toolbar item",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/scripting.py:1081:        "column clicked",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/scripting.py:1089:        "double clicked",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/scripting.py:1275:        "click count",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/scripting.py:1276:        "clicked( data)? column",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/scripting.py:1277:        "clicked data item",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/scripting.py:1278:        "clicked( data)? row",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/scripting.py:1367:        "ignores multiple clicks",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/automation.py:239:    consolewrite consolewriteerror controlclick controlcommand controldisable
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/automation.py:278:    isnumber isobj isptr isstring log memgetstats mod mouseclick mouseclickdrag
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/automation.py:299:    trayitemsetstate trayitemsettext traysetclick trayseticon traysetonevent
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:2555:            # (click)="deleteOrder()"; [value]="test"; [(twoWayTest)]="foo.bar"
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py:2062:        "click_text",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py:4275:        "onclick",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py:4280:        "ondblclick",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py:1015:    "xclick",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/c_like.py:1227:        "click",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_stata_builtins.py:355:    "est_clickable",
+./.venv-build/lib/python3.12/site-packages/pygments/cmdline.py:14:import argparse
+./.venv-build/lib/python3.12/site-packages/pygments/cmdline.py:546:class HelpFormatter(argparse.HelpFormatter):
+./.venv-build/lib/python3.12/site-packages/pygments/cmdline.py:553:        argparse.HelpFormatter.__init__(self, prog, indent_increment, max_help_position, width)
+./.venv-build/lib/python3.12/site-packages/pygments/cmdline.py:561:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.12/site-packages/markdown_it/cli/parse.py:10:import argparse
+./.venv-build/lib/python3.12/site-packages/markdown_it/cli/parse.py:68:def parse_args(args: Sequence[str] | None) -> argparse.Namespace:
+./.venv-build/lib/python3.12/site-packages/markdown_it/cli/parse.py:70:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.12/site-packages/markdown_it/cli/parse.py:94:        formatter_class=argparse.RawDescriptionHelpFormatter,
+./.venv-build/lib/python3.12/site-packages/docutils/core.py:500:#   argparser.add_argument('source', nargs='+')
+./.venv-build/lib/python3.12/site-packages/docutils/__main__.py:25:import argparse
+./.venv-build/lib/python3.12/site-packages/docutils/__main__.py:85:    argparser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+./.venv-build/lib/python3.12/site-packages/docutils/__main__.py:86:    argparser.add_argument("--reader", default=components.reader)
+./.venv-build/lib/python3.12/site-packages/docutils/__main__.py:87:    argparser.add_argument("--parser", default=components.parser)
+./.venv-build/lib/python3.12/site-packages/docutils/__main__.py:88:    argparser.add_argument("--writer", default=components.writer)
+./.venv-build/lib/python3.12/site-packages/docutils/__main__.py:90:    (args, remainder) = argparser.parse_known_args()
+./.venv-build/lib/python3.12/site-packages/docutils/frontend.py:105:    Deprecated. Will be removed with the switch to from optparse to argparse.
+./.venv-build/lib/python3.12/site-packages/docutils/frontend.py:122:    Deprecated. Will be removed with the switch to from optparse to argparse.
+./.venv-build/lib/python3.12/site-packages/docutils/frontend.py:581:    Deprecated. Will be removed when switching to the "argparse" module.
+./.venv-build/lib/python3.12/site-packages/docutils/frontend.py:688:    Will be replaced by a subclass of `argparse.ArgumentParser`.
+./.venv-build/lib/python3.12/site-packages/docutils/frontend.py:1125:            "of argparse.ArgumentParser in Docutils 2.0 or later.\n  "
+./.venv-build/lib/python3.12/site-packages/docutils/utils/smartquotes.py:961:    import argparse
+./.venv-build/lib/python3.12/site-packages/docutils/utils/smartquotes.py:963:    parser = argparse.ArgumentParser(description='Filter <input> making ASCII punctuation "smart".')
+./.venv-build/lib/python3.12/site-packages/twine/__main__.py:29:    # Ensure that all errors are logged, even before argparse
+./.venv-build/lib/python3.12/site-packages/twine/utils.py:14:import argparse
+./.venv-build/lib/python3.12/site-packages/twine/utils.py:330:class EnvironmentDefault(argparse.Action):
+./.venv-build/lib/python3.12/site-packages/twine/utils.py:348:        parser: argparse.ArgumentParser,
+./.venv-build/lib/python3.12/site-packages/twine/utils.py:349:        namespace: argparse.Namespace,
+./.venv-build/lib/python3.12/site-packages/twine/utils.py:356:class EnvironmentFlag(argparse.Action):
+./.venv-build/lib/python3.12/site-packages/twine/utils.py:366:        parser: argparse.ArgumentParser,
+./.venv-build/lib/python3.12/site-packages/twine/utils.py:367:        namespace: argparse.Namespace,
+./.venv-build/lib/python3.12/site-packages/twine/commands/upload.py:16:import argparse
+./.venv-build/lib/python3.12/site-packages/twine/commands/upload.py:233:    parser = argparse.ArgumentParser(prog="twine upload")
+./.venv-build/lib/python3.12/site-packages/twine/commands/upload.py:234:    settings.Settings.register_argparse_arguments(parser)
+./.venv-build/lib/python3.12/site-packages/twine/commands/upload.py:246:    upload_settings = settings.Settings.from_argparse(parsed_args)
+./.venv-build/lib/python3.12/site-packages/twine/commands/register.py:16:import argparse
+./.venv-build/lib/python3.12/site-packages/twine/commands/register.py:70:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.12/site-packages/twine/commands/register.py:74:    settings.Settings.register_argparse_arguments(parser)
+./.venv-build/lib/python3.12/site-packages/twine/commands/register.py:82:    register_settings = settings.Settings.from_argparse(parsed_args)
+./.venv-build/lib/python3.12/site-packages/twine/commands/check.py:16:import argparse
+./.venv-build/lib/python3.12/site-packages/twine/commands/check.py:171:    parser = argparse.ArgumentParser(prog="twine check")
+./.venv-build/lib/python3.12/site-packages/twine/cli.py:14:import argparse
+./.venv-build/lib/python3.12/site-packages/twine/cli.py:31:args = argparse.Namespace()
+./.venv-build/lib/python3.12/site-packages/twine/cli.py:109:    parser = argparse.ArgumentParser(prog="twine")
+./.venv-build/lib/python3.12/site-packages/twine/cli.py:128:        help=argparse.SUPPRESS,
+./.venv-build/lib/python3.12/site-packages/twine/cli.py:129:        nargs=argparse.REMAINDER,
+./.venv-build/lib/python3.12/site-packages/twine/settings.py:16:import argparse
+./.venv-build/lib/python3.12/site-packages/twine/settings.py:159:    def register_argparse_arguments(parser: argparse.ArgumentParser) -> None:
+./.venv-build/lib/python3.12/site-packages/twine/settings.py:160:        """Register the arguments for argparse."""
+./.venv-build/lib/python3.12/site-packages/twine/settings.py:283:    def from_argparse(cls, args: argparse.Namespace) -> "Settings":
+./.venv-build/lib/python3.11/site-packages/black/output.py:11:from click import echo, style
+./.venv-build/lib/python3.11/site-packages/black/report.py:9:from click import style
+./.venv-build/lib/python3.11/site-packages/black/report.py:83:        Use `click.unstyle` to remove colors.
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:25:import click
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:26:from click.core import ParameterSource
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:116:    ctx: click.Context, param: click.Parameter, value: Optional[str]
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:133:        raise click.FileError(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:143:        # https://github.com/pallets/click/issues/1567
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:148:        raise click.BadOptionUsage("target-version", "Config key target-version must be a list")
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:152:        raise click.BadOptionUsage("exclude", "Config key exclude must be a string")
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:156:        raise click.BadOptionUsage("extend-exclude", "Config key extend-exclude must be a string")
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:160:        raise click.BadOptionUsage(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:174:    ctx: click.Context, config_keys: list[str], config_file_path: str
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:188:    c: click.Context, p: Union[click.Option, click.Parameter], v: tuple[str, ...]
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:199:    c: click.Context, p: Union[click.Option, click.Parameter], v: tuple[str, ...]
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:217:    ctx: click.Context,
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:218:    param: click.Parameter,
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:224:        raise click.BadParameter(f"Not a valid regular expression: {e}") from None
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:227:@click.command(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:233:@click.option("-c", "--code", type=str, help="Format the code passed in as a string.")
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:234:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:242:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:245:    type=click.Choice([v.name.lower() for v in TargetVersion]),
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:255:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:263:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:271:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:281:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:287:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:293:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:299:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:307:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:316:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:318:    type=click.Choice([v.name for v in Preview]),
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:327:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:336:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:344:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:349:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:362:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:371:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:382:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:395:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:404:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:415:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:425:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:439:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:442:    type=click.IntRange(min=1),
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:451:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:460:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:470:@click.version_option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:477:@click.argument(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:480:    type=click.Path(exists=True, file_okay=True, dir_okay=True, readable=True, allow_dash=True),
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:484:@click.option(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:486:    type=click.Path(
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:498:@click.pass_context
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:500:    ctx: click.Context,
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:701:            click.echo(str(report), err=True)
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:801:def path_empty(src: Sized, msg: str, quiet: bool, verbose: bool, ctx: click.Context) -> None:
+./.venv-build/lib/python3.11/site-packages/mypyc/annotate.py:126:    collapsible.addEventListener('click', function() {
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/cachecontrol/_cmd.py:7:from argparse import ArgumentParser
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/cachecontrol/_cmd.py:17:    from argparse import Namespace
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/json.py:106:    import argparse
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/json.py:109:    parser = argparse.ArgumentParser(description="Pretty print json")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/syntax.py:845:    import argparse
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/syntax.py:848:    parser = argparse.ArgumentParser(description="Render syntax to the console with Rich")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/style.py:252:            style = Style.on(click=self.on_click)
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/default_styles.py:173:    import argparse
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/default_styles.py:180:    parser = argparse.ArgumentParser()
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/text.py:525:            >>> text.on(click="view.toggle('world')")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/certifi/__main__.py:1:import argparse
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/certifi/__main__.py:5:parser = argparse.ArgumentParser()
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distro/distro.py:31:import argparse
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distro/distro.py:1349:    parser = argparse.ArgumentParser(description="OS distro info tool")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/dependency_groups/_pip_wrapper.py:3:import argparse
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/dependency_groups/_pip_wrapper.py:23:    parser = argparse.ArgumentParser(description="Install Dependency Groups.")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/dependency_groups/__main__.py:1:import argparse
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/dependency_groups/__main__.py:16:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/dependency_groups/_lint_dependency_groups.py:3:import argparse
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/dependency_groups/_lint_dependency_groups.py:18:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.11/site-packages/pip/_internal/utils/compat.py:81:stdlib_pkgs = {"python", "wsgiref", "argparse"}
+./.venv-build/lib/python3.11/site-packages/wheel/cli/__init__.py:7:import argparse
+./.venv-build/lib/python3.11/site-packages/wheel/cli/__init__.py:10:from argparse import ArgumentTypeError
+./.venv-build/lib/python3.11/site-packages/wheel/cli/__init__.py:17:def unpack_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/wheel/cli/__init__.py:23:def pack_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/wheel/cli/__init__.py:29:def convert_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/wheel/cli/__init__.py:35:def tags_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/wheel/cli/__init__.py:54:def version_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/wheel/cli/__init__.py:79:    p = argparse.ArgumentParser()
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/cli/__init__.py:7:import argparse
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/cli/__init__.py:10:from argparse import ArgumentTypeError
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/cli/__init__.py:17:def unpack_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/cli/__init__.py:23:def pack_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/cli/__init__.py:29:def convert_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/cli/__init__.py:35:def tags_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/cli/__init__.py:54:def version_f(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/cli/__init__.py:79:    p = argparse.ArgumentParser()
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/backports/tarfile/__init__.py:2947:    import argparse
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/backports/tarfile/__init__.py:2950:    parser = argparse.ArgumentParser(description=description)
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/autocommand/autoparse.py:21:from argparse import ArgumentParser
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/autocommand/autoparse.py:235:    argparse.ArgumentParser, and calls the underlying function with the parsed
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/autocommand/autoparse.py:247:    argparse parameters. If no description is given, it defaults to the
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_build_meta.py:550:            ".venv/python3.10/site-packages/click-8.1.3.dist-info",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_pyprojecttoml.py:38:    "sphinx-argparse>=0.2.5",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_apply_pyprojecttoml.py:641:        src = "[project]\nname='pkg'\nversion='0.1'\ndependencies=['click']\n"
+./.venv-build/lib/python3.11/site-packages/_pytest/main.py:5:import argparse
+./.venv-build/lib/python3.11/site-packages/_pytest/main.py:257:        raise argparse.ArgumentTypeError(msg)
+./.venv-build/lib/python3.11/site-packages/_pytest/main.py:267:        raise argparse.ArgumentTypeError(msg)
+./.venv-build/lib/python3.11/site-packages/_pytest/main.py:271:        raise argparse.ArgumentTypeError(msg)
+./.venv-build/lib/python3.11/site-packages/_pytest/hookspec.py:101:    """Register argparse-style options and ini-style config values,
+./.venv-build/lib/python3.11/site-packages/_pytest/_argcomplete.py:1:"""Allow bash-completion for argparse with argcomplete if installed.
+./.venv-build/lib/python3.11/site-packages/_pytest/_argcomplete.py:67:import argparse
+./.venv-build/lib/python3.11/site-packages/_pytest/_argcomplete.py:109:    def try_argcomplete(parser: argparse.ArgumentParser) -> None:
+./.venv-build/lib/python3.11/site-packages/_pytest/_argcomplete.py:114:    def try_argcomplete(parser: argparse.ArgumentParser) -> None:
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:4:import argparse
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:92:            Same attributes as the argparse library's :meth:`add_argument()
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:93:            <argparse.ArgumentParser.add_argument>` function accepts.
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:105:        namespace: argparse.Namespace | None = None,
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:106:    ) -> argparse.Namespace:
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:136:        option: argparse.Namespace,
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:137:        namespace: argparse.Namespace | None = None,
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:147:        namespace: argparse.Namespace | None = None,
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:148:    ) -> argparse.Namespace:
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:151:        :returns: An argparse namespace object.
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:158:        namespace: argparse.Namespace | None = None,
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:159:    ) -> tuple[argparse.Namespace, list[str]]:
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:164:            A tuple containing an argparse namespace object for the known
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:325:        Might not be necessary as this is passed to argparse later on.
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:392:            Same attributes as the argparse library's :meth:`add_argument()
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:393:            <argparse.ArgumentParser.add_argument>` function accepts.
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:415:class MyOptionParser(argparse.ArgumentParser):
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:436:        """Transform argparse error message into UsageError."""
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:448:        namespace: argparse.Namespace | None = None,
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:449:    ) -> argparse.Namespace:
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:463:class DropShorterLongHelpFormatter(argparse.HelpFormatter):
+./.venv-build/lib/python3.11/site-packages/_pytest/config/argparsing.py:477:    def _format_action_invocation(self, action: argparse.Action) -> str:
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:6:import argparse
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:1021:        self.option = argparse.Namespace()
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:1024:        :type: argparse.Namespace
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:1140:        option: argparse.Namespace | None = None,
+./.venv-build/lib/python3.11/site-packages/_pytest/terminal.py:9:import argparse
+./.venv-build/lib/python3.11/site-packages/_pytest/terminal.py:77:class MoreQuietAction(argparse.Action):
+./.venv-build/lib/python3.11/site-packages/_pytest/terminal.py:78:    """A modified copy of the argparse count action which counts down and updates
+./.venv-build/lib/python3.11/site-packages/_pytest/terminal.py:103:        parser: argparse.ArgumentParser,
+./.venv-build/lib/python3.11/site-packages/_pytest/terminal.py:104:        namespace: argparse.Namespace,
+./.venv-build/lib/python3.11/site-packages/_pytest/debugging.py:7:import argparse
+./.venv-build/lib/python3.11/site-packages/_pytest/debugging.py:35:        raise argparse.ArgumentTypeError(
+./.venv-build/lib/python3.11/site-packages/_pytest/helpconfig.py:6:from argparse import Action
+./.venv-build/lib/python3.11/site-packages/_pytest/helpconfig.py:20:    """An argparse Action that will raise an exception in order to skip the
+./.venv-build/lib/python3.11/site-packages/_pytest/helpconfig.py:23:    This prevents argparse from quitting due to missing required arguments
+./.venv-build/lib/python3.11/site-packages/_pytest/helpconfig.py:25:    This is similar to the way that the builtin argparse --help option is
+./.venv-build/lib/python3.11/site-packages/_pytest/helpconfig.py:183:    indent_len = 24  # based on argparse's max_help_position=24
+./.venv-build/lib/python3.11/site-packages/mypy/stubgen.py:44:import argparse
+./.venv-build/lib/python3.11/site-packages/mypy/stubgen.py:1894:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1086:        import argparse
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1088:        class TestClass(argparse.Action):
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1095:        assert_equal(output, ["class C(argparse.Action): ..."])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1096:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1223:            test(arg0: argparse.Action)
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1230:        assert_equal(output, ["def test(arg0: argparse.Action) -> Any: ..."])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1231:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1242:            test(arg0: argparse.Action) -> argparse.Action
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1246:        mod = ModuleType("argparse", "")
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1257:            test(arg0: argparse.Action) -> argparse.Action
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1264:        assert_equal(output, ["def test(arg0: argparse.Action) -> argparse.Action: ..."])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1265:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1276:            test(arg0: list[argparse.Action]) -> list[argparse.Action]
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1280:        mod = ModuleType("argparse", "")
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1295:            test(arg0: Union[argparse.Action, NoneType]) -> Tuple[argparse.Action, NoneType]
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1299:        mod = ModuleType("argparse", "")
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1450:                test(self: TestClass, arg0: Dict[argparse.Action, int])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1462:        assert_equal(output, ["def test(self, arg0: Dict[argparse.Action, int]) -> Any: ..."])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1463:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1469:                test(self: TestClass, arg0: Dict[str, argparse.Action])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1481:        assert_equal(output, ["def test(self, arg0: Dict[str, argparse.Action]) -> Any: ..."])
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:1482:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv-build/lib/python3.11/site-packages/mypy/test/testargs.py:1:"""Ensure the argparse parser and Options class are in sync.
+./.venv-build/lib/python3.11/site-packages/mypy/test/testargs.py:3:In particular, verify that the argparse defaults are the same as the Options
+./.venv-build/lib/python3.11/site-packages/mypy/test/testargs.py:4:defaults, and that argparse doesn't assign any new members to the Options
+./.venv-build/lib/python3.11/site-packages/mypy/test/testargs.py:10:import argparse
+./.venv-build/lib/python3.11/site-packages/mypy/test/testargs.py:59:        special_opts = argparse.Namespace()
+./.venv-build/lib/python3.11/site-packages/mypy/stubinfo.py:38:    "click_spinner": "types-click-spinner",
+./.venv-build/lib/python3.11/site-packages/mypy/stubinfo.py:92:    "click_default_group": "types-click-default-group",
+./.venv-build/lib/python3.11/site-packages/mypy/stubinfo.py:93:    "click_log": "types-click-log",
+./.venv-build/lib/python3.11/site-packages/mypy/stubinfo.py:94:    "click_shell": "types-click-shell",
+./.venv-build/lib/python3.11/site-packages/mypy/stubinfo.py:95:    "click_web": "types-click-web",
+./.venv-build/lib/python3.11/site-packages/mypy/split_namespace.py:1:"""Split namespace for argparse to allow separating options by prefix.
+./.venv-build/lib/python3.11/site-packages/mypy/split_namespace.py:12:import argparse
+./.venv-build/lib/python3.11/site-packages/mypy/split_namespace.py:16:class SplitNamespace(argparse.Namespace):
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:9:import argparse
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:31:class AugmentedHelpFormatter(argparse.RawDescriptionHelpFormatter):
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:36:parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:84:p.add_argument("-q", "--quiet", action="store_true", help=argparse.SUPPRESS)  # Deprecated
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:125:p.add_argument("-q", "--quiet", action="store_true", help=argparse.SUPPRESS)  # Deprecated
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:253:p.add_argument("--options-data", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:296:ActionFunction = Callable[[argparse.Namespace], None]
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:299:def action(subparser: argparse.ArgumentParser) -> Callable[[ActionFunction], ActionFunction]:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:313:def do_start(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:335:def do_restart(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:344:def restart_server(args: argparse.Namespace, allow_sources: bool = False) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:354:def start_server(args: argparse.Namespace, allow_sources: bool = False) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:386:def do_run(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:428:def do_status(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:450:def do_stop(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:462:def do_kill(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:474:def do_check(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:484:def do_recheck(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:515:def do_suggest(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:537:def do_inspect(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:613:def do_hang(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:619:def do_daemon(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/client.py:643:def do_help(args: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:5:import argparse
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:249:class AugmentedHelpFormatter(argparse.RawDescriptionHelpFormatter):
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:258:            # Assume we want argparse to manage wrapping, indenting, and
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:260:            return argparse.HelpFormatter._fill_text(self, text, width, indent)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:319:def infer_python_executable(options: Options, special_opts: argparse.Namespace) -> None:
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:371:class CapturableArgumentParser(argparse.ArgumentParser):
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:424:class CapturableVersionAction(argparse.Action):
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:427:    This is nearly identical to argparse._VersionAction except,
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:439:        dest: str = argparse.SUPPRESS,
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:440:        default: str = argparse.SUPPRESS,
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:452:        parser: argparse.ArgumentParser,
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:453:        namespace: argparse.Namespace,
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:498:        group: argparse._ActionsContainer | None = None,
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:505:        if help is not argparse.SUPPRESS:
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:516:            help=argparse.SUPPRESS,
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:786:    none_group.add_argument("--strict-optional", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:796:        "--force-uppercase-builtins", default=False, help=argparse.SUPPRESS, group=none_group
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:800:        "--force-union-syntax", default=False, help=argparse.SUPPRESS, group=none_group
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1026:        help=argparse.SUPPRESS,
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1038:        "-i", "--incremental", action="store_true", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1070:            else argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1101:        "--old-type-inference", action="store_true", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1104:        "--disable-expression-cache", action="store_true", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1131:    internals_group.add_argument("--fast-exit", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1133:        "--no-fast-exit", action="store_false", dest="fast_exit", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1138:        "--allow-empty-bodies", default=False, help=argparse.SUPPRESS, group=internals_group
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1141:    internals_group.add_argument("--export-ref-info", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1156:        "-a", dest="mypyc_annotation_file", type=str, default=None, help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1161:        "--skip-c-gen", dest="mypyc_skip_c_generation", action="store_true", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1165:    other_group.add_argument("--quickstart-file", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1220:        "--stats", action="store_true", dest="dump_type_stats", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1223:        "--inferstats", action="store_true", dest="dump_inference_stats", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1225:    parser.add_argument("--dump-build-stats", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1227:    parser.add_argument("--timing-stats", dest="timing_stats", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1231:    parser.add_argument("--line-checking-stats", dest="line_checking_stats", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1235:    parser.add_argument("--debug-cache", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1237:    parser.add_argument("--dump-deps", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1239:    parser.add_argument("--dump-graph", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1241:    parser.add_argument("--semantic-analysis-only", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1243:    parser.add_argument("--test-env", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1246:    add_invertible_flag("--local-partial-types", default=False, help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1252:    parser.add_argument("--logical-deps", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1254:    parser.add_argument("--bazel", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1258:        "--package-root", metavar="ROOT", action="append", default=[], help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1265:        "--cache-map", nargs="+", dest="special-opts:cache_map", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1269:    parser.add_argument("--debug-serialize", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1272:        "--disable-bytearray-promotion", action="store_true", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1275:        "--disable-memoryview-promotion", action="store_true", help=argparse.SUPPRESS
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1278:    parser.add_argument("--strict-concatenate", action="store_true", help=argparse.SUPPRESS)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1293:        "--fast-module-lookup", default=False, help=argparse.SUPPRESS, group=code_group
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1376:    dummy = argparse.Namespace()
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1408:    special_opts = argparse.Namespace()
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1566:    fscache: FileSystemCache | None, parser: argparse.ArgumentParser, options: Options
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1601:    parser: argparse.ArgumentParser, special_opts: argparse.Namespace, options: Options
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:3:import argparse
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:31:class VersionTypeError(argparse.ArgumentTypeError):
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:42:        raise argparse.ArgumentTypeError(f"Invalid python version '{v}' (expected format: 'x.y')")
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:57:        raise argparse.ArgumentTypeError(f"Python major version '{major}' out of range (must be 3)")
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:66:        raise argparse.ArgumentTypeError(
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:91:        raise argparse.ArgumentTypeError(
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:101:            raise argparse.ArgumentTypeError(
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:105:            raise argparse.ArgumentTypeError(
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:160:        raise argparse.ArgumentTypeError(
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:171:        raise argparse.ArgumentTypeError(
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:575:                except argparse.ArgumentTypeError as err:
+./.venv-build/lib/python3.11/site-packages/mypy/stubtest.py:9:import argparse
+./.venv-build/lib/python3.11/site-packages/mypy/stubtest.py:2375:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy_server.py:9:import argparse
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy_server.py:335:                        header=argparse.SUPPRESS,
+./.venv-build/lib/python3.11/site-packages/mypy/inspections.py:116:    # package, since this is what users want when clicking go to definition on a module.
+./.venv-build/lib/python3.11/site-packages/pygments/formatters/html.py:139:          <td class="linenos" title="click to toggle"
+./.venv-build/lib/python3.11/site-packages/pygments/formatters/html.py:140:            onclick="with (this.firstChild.style)
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/scripting.py:1066:        "clicked",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/scripting.py:1067:        "clicked toolbar item",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/scripting.py:1069:        "column clicked",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/scripting.py:1077:        "double clicked",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/scripting.py:1263:        "click count",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/scripting.py:1264:        "clicked( data)? column",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/scripting.py:1265:        "clicked data item",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/scripting.py:1266:        "clicked( data)? row",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/scripting.py:1355:        "ignores multiple clicks",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/automation.py:230:    consolewrite consolewriteerror controlclick controlcommand controldisable
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/automation.py:269:    isnumber isobj isptr isstring log memgetstats mod mouseclick mouseclickdrag
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/automation.py:290:    trayitemsetstate trayitemsettext traysetclick trayseticon traysetonevent
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:2425:            # (click)="deleteOrder()"; [value]="test"; [(twoWayTest)]="foo.bar"
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_lasso_builtins.py:2062:        "click_text",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_lasso_builtins.py:4275:        "onclick",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_lasso_builtins.py:4280:        "ondblclick",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_scilab_builtins.py:1015:    "xclick",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/c_like.py:1211:        "click",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_stata_builtins.py:355:    "est_clickable",
+./.venv-build/lib/python3.11/site-packages/pygments/cmdline.py:14:import argparse
+./.venv-build/lib/python3.11/site-packages/pygments/cmdline.py:532:class HelpFormatter(argparse.HelpFormatter):
+./.venv-build/lib/python3.11/site-packages/pygments/cmdline.py:539:        argparse.HelpFormatter.__init__(self, prog, indent_increment, max_help_position, width)
+./.venv-build/lib/python3.11/site-packages/pygments/cmdline.py:547:    parser = argparse.ArgumentParser(
+./.venv-build/lib/python3.11/site-packages/click/core.py:125:    https://click.palletsprojects.com/en/stable/advanced/#callback-evaluation-order
+./.venv-build/lib/python3.11/site-packages/click/core.py:143:    Use :meth:`click.Context.get_parameter_source` to get the
+./.venv-build/lib/python3.11/site-packages/click/core.py:216:    :param ignore_unknown_options: instructs click to ignore options it does
+./.venv-build/lib/python3.11/site-packages/click/core.py:371:        #: Instructs click to ignore options that a command does not
+./.venv-build/lib/python3.11/site-packages/click/core.py:530:        that are nested.  It exists so that click utilities can store some
+./.venv-build/lib/python3.11/site-packages/click/core.py:536:        irrelevant for the operation of click.  However what is important is
+./.venv-build/lib/python3.11/site-packages/click/core.py:556:        """Creates the :class:`~click.HelpFormatter` for the help and
+./.venv-build/lib/python3.11/site-packages/click/core.py:583:            @click.group()
+./.venv-build/lib/python3.11/site-packages/click/core.py:584:            @click.option("--name")
+./.venv-build/lib/python3.11/site-packages/click/core.py:585:            @click.pass_context
+./.venv-build/lib/python3.11/site-packages/click/core.py:764:        2.  the first argument is a click command object.  In that case all
+./.venv-build/lib/python3.11/site-packages/click/core.py:765:            arguments are forwarded as well but proper click parameters
+./.venv-build/lib/python3.11/site-packages/click/core.py:766:            (options and click arguments) must be keyword arguments and Click
+./.venv-build/lib/python3.11/site-packages/click/core.py:826:        :param source: A member of :class:`~click.core.ParameterSource`.
+./.venv-build/lib/python3.11/site-packages/click/core.py:836:        will be :attr:`~click.core.ParameterSource.DEFAULT` only if the
+./.venv-build/lib/python3.11/site-packages/click/core.py:1244:        from click.shell_completion import CompletionItem
+./.venv-build/lib/python3.11/site-packages/click/core.py:1701:            @click.group()
+./.venv-build/lib/python3.11/site-packages/click/core.py:1702:            @click.option('-i', '--input', default=23)
+./.venv-build/lib/python3.11/site-packages/click/core.py:1901:        from click.shell_completion import CompletionItem
+./.venv-build/lib/python3.11/site-packages/click/core.py:2024:        of :class:`~click.shell_completion.CompletionItem` or a list of
+./.venv-build/lib/python3.11/site-packages/click/core.py:2036:        Adding duplicate parameter names to a :class:`~click.core.Command` will
+./.venv-build/lib/python3.11/site-packages/click/core.py:2040:        Adding duplicate parameter names to a :class:`~click.core.Command` will
+./.venv-build/lib/python3.11/site-packages/click/core.py:2088:        # https://github.com/pallets/click/pull/3030
+./.venv-build/lib/python3.11/site-packages/click/core.py:2151:        Use :meth:`click.Context.to_info_dict` to traverse the entire
+./.venv-build/lib/python3.11/site-packages/click/core.py:2528:        :meth:`~click.types.ParamType.shell_complete` function is used.
+./.venv-build/lib/python3.11/site-packages/click/core.py:2539:                from click.shell_completion import CompletionItem
+./.venv-build/lib/python3.11/site-packages/click/core.py:2719:        # https://github.com/pallets/click/issues/3024#issuecomment-3146199461
+./.venv-build/lib/python3.11/site-packages/click/core.py:2720:        # https://github.com/pallets/click/pull/3030/commits/06847da
+./.venv-build/lib/python3.11/site-packages/click/core.py:3032:            # Refs: https://github.com/pallets/click/pull/3030#discussion_r2289180249
+./.venv-build/lib/python3.11/site-packages/click/exceptions.py:135:    """Raised if click required an option or argument but it was not
+./.venv-build/lib/python3.11/site-packages/click/exceptions.py:204:    """Raised if click attempted to handle an option that does not
+./.venv-build/lib/python3.11/site-packages/click/termui.py:388:        with click.progressbar(
+./.venv-build/lib/python3.11/site-packages/click/termui.py:531:        click.echo(click.style('Hello World!', fg='green'))
+./.venv-build/lib/python3.11/site-packages/click/termui.py:532:        click.echo(click.style('ATTENTION!', blink=True))
+./.venv-build/lib/python3.11/site-packages/click/termui.py:533:        click.echo(click.style('Some things', reverse=True, fg='cyan'))
+./.venv-build/lib/python3.11/site-packages/click/termui.py:534:        click.echo(click.style('More colors', fg=(255, 12, 128), bg=117))
+./.venv-build/lib/python3.11/site-packages/click/termui.py:662:        click.secho('Hello World!', fg='green')
+./.venv-build/lib/python3.11/site-packages/click/termui.py:663:        click.echo(click.style('Hello World!', fg='green'))
+./.venv-build/lib/python3.11/site-packages/click/termui.py:751:                     passed as well. Invoke `click.file` once per file instead
+./.venv-build/lib/python3.11/site-packages/click/termui.py:783:        click.launch('https://click.palletsprojects.com/')
+./.venv-build/lib/python3.11/site-packages/click/termui.py:784:        click.launch('/my/downloaded/file', locate=True)
+./.venv-build/lib/python3.11/site-packages/click/utils.py:368:    the behavior of the :class:`~click.File` param type.
+./.venv-build/lib/python3.11/site-packages/click/parser.py:226:    It's not nearly as extensible as optparse or argparse as it does not
+./.venv-build/lib/python3.11/site-packages/click/parser.py:230:    :param ctx: optionally the :class:`~click.Context` where this parser
+./.venv-build/lib/python3.11/site-packages/click/parser.py:238:        #: The :class:`~click.Context` for this parser.  This might be
+./.venv-build/lib/python3.11/site-packages/click/decorators.py:104:    :attr:`click.Context.meta` as the first argument to the decorated
+./.venv-build/lib/python3.11/site-packages/click/decorators.py:124:        doc_description = f"the {key!r} key from :attr:`click.Context.meta`"
+./.venv-build/lib/python3.11/site-packages/click/decorators.py:225:            decorator_params = f.__click_params__  # type: ignore
+./.venv-build/lib/python3.11/site-packages/click/decorators.py:229:            del f.__click_params__  # type: ignore
+./.venv-build/lib/python3.11/site-packages/click/decorators.py:318:        if not hasattr(f, "__click_params__"):
+./.venv-build/lib/python3.11/site-packages/click/decorators.py:319:            f.__click_params__ = []  # type: ignore
+./.venv-build/lib/python3.11/site-packages/click/decorators.py:321:        f.__click_params__.append(param)  # type: ignore
+./.venv-build/lib/python3.11/site-packages/click/types.py:66:        Use :meth:`click.Context.to_info_dict` to traverse the entire
+./.venv-build/lib/python3.11/site-packages/click/types.py:147:        :class:`~click.shell_completion.CompletionItem` objects for the
+./.venv-build/lib/python3.11/site-packages/click/types.py:370:        from click.shell_completion import CompletionItem
+./.venv-build/lib/python3.11/site-packages/click/types.py:561:    """Restrict an :data:`click.INT` value to a range of accepted
+./.venv-build/lib/python3.11/site-packages/click/types.py:593:    """Restrict a :data:`click.FLOAT` value to a range of accepted
+./.venv-build/lib/python3.11/site-packages/click/types.py:834:        from click.shell_completion import CompletionItem
+./.venv-build/lib/python3.11/site-packages/click/types.py:861:        :func:`~click.open_file` to handle opening this value.
+./.venv-build/lib/python3.11/site-packages/click/types.py:1016:        from click.shell_completion import CompletionItem
+./.venv-build/lib/python3.11/site-packages/click/_termui_impl.py:481:        # That means when the user hits ^C, the parent process (click) terminates,
+./.venv-build/lib/python3.11/site-packages/click/globals.py:21:    """Returns the current click context.  This can be used as a way to
+./.venv-build/lib/python3.11/site-packages/click/globals.py:39:            raise RuntimeError("There is no active click context.") from e
+./.venv-build/lib/python3.11/site-packages/click/testing.py:432:        arguments are passed to the :meth:`~clickpkg.Command.main` function of
+./.venv-build/lib/python3.11/site-packages/click/__init__.py:117:            " 'importlib.metadata.version(\"click\")' instead.",
+./.venv-build/lib/python3.11/site-packages/click/__init__.py:121:        return importlib.metadata.version("click")
+./.venv-build/lib/python3.11/site-packages/blackd/__init__.py:20:import click
+./.venv-build/lib/python3.11/site-packages/blackd/__init__.py:69:@click.command(context_settings={"help_option_names": ["-h", "--help"]})
+./.venv-build/lib/python3.11/site-packages/blackd/__init__.py:70:@click.option(
+./.venv-build/lib/python3.11/site-packages/blackd/__init__.py:77:@click.option("--bind-port", type=int, help="Port to listen on", default=45484, show_default=True)
+./.venv-build/lib/python3.11/site-packages/blackd/__init__.py:78:@click.version_option(version=black.__version__)
+./.venv-build/lib/python3.11/site-packages/pytokens/cli.py:5:import argparse
+./.venv-build/lib/python3.11/site-packages/pytokens/cli.py:23:    parser = argparse.ArgumentParser()
+./.venv-build/bin/jp.py:5:import argparse
+./.venv-build/bin/jp.py:13:    parser = argparse.ArgumentParser()
+./tests/test_argparse_entrypoint.py:9:def test_argparse_main_version(monkeypatch):
+./tests/test_module_main.py:18:        # click exits with 0 on --version
+./tests/test_cli_comprehensive.py:12:def test_argparse_gates_json(monkeypatch, capsys, tmp_path):
+./tests/test_cli_comprehensive.py:18:def test_argparse_gates_human(monkeypatch, capsys, tmp_path):
+./tests/firsttry/test_cli_dag_only.py:5:from click.testing import CliRunner
+./tests/test_cli_wrappers_smoke.py:19:        def add_typer(self, other, name: str = ""):
+./tests/test_ft_cli.py:1:from click.testing import CliRunner
+./tests/test_ft_gates_and_ruff.py:6:from click.testing import CliRunner
+./tests/test_cli_args_parity_min.py:6:import argparse
+./tests/test_cli_args_parity_min.py:53:    with pytest.raises(SystemExit):  # argparse calls sys.exit(0) on --help
+./tests/test_cli_args_parity_min.py:58:    parser = argparse.ArgumentParser()
+./tests/test_cli_args_parity_min.py:97:    import argparse
+./tests/test_cli_args_parity_min.py:105:    p = argparse.ArgumentParser()
+./tests/test_cli_parsing_smoke.py:2:Try to reach argparse parsing paths without running real work.
+./tests/test_cli_parsing_smoke.py:29:        # argparse usually raises SystemExit after printing help; success if code==0
+./tests/test_cli_doctor_and_license.py:26:    # Test argparse CLI
+./tests/test_cli_args_parity.py:45:    # Check for argparse errors (like "ambiguous option" or "unrecognized arguments")
+./tests/test_cli_integration.py:70:    # argparse will call sys.exit(2), which raises SystemExit
+./tests/cli/test_ft_entrypoints_tiers.py:10:from argparse import Namespace
+./tests/cli/test_ft_entrypoints_tiers.py:15:from click.testing import CliRunner
+./tests/cli_utils.py:1:"""Test utilities for argparse-based CLI testing."""
+./.venv_tmp/lib/python3.12/site-packages/black/output.py:11:from click import echo, style
+./.venv_tmp/lib/python3.12/site-packages/black/report.py:10:from click import style
+./.venv_tmp/lib/python3.12/site-packages/black/report.py:82:        Use `click.unstyle` to remove colors.
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:25:import click
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:85:from click.core import ParameterSource
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:121:    ctx: click.Context, param: click.Parameter, value: Optional[str]
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:138:        raise click.FileError(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:148:        # https://github.com/pallets/click/issues/1567
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:153:        raise click.BadOptionUsage("target-version", "Config key target-version must be a list")
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:157:        raise click.BadOptionUsage("exclude", "Config key exclude must be a string")
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:161:        raise click.BadOptionUsage("extend-exclude", "Config key extend-exclude must be a string")
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:165:        raise click.BadOptionUsage(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:179:    ctx: click.Context, config_keys: list[str], config_file_path: str
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:193:    c: click.Context, p: Union[click.Option, click.Parameter], v: tuple[str, ...]
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:204:    c: click.Context, p: Union[click.Option, click.Parameter], v: tuple[str, ...]
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:222:    ctx: click.Context,
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:223:    param: click.Parameter,
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:229:        raise click.BadParameter(f"Not a valid regular expression: {e}") from None
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:232:@click.command(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:238:@click.option("-c", "--code", type=str, help="Format the code passed in as a string.")
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:239:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:247:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:250:    type=click.Choice([v.name.lower() for v in TargetVersion]),
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:260:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:268:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:276:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:286:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:292:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:298:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:304:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:312:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:321:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:323:    type=click.Choice([v.name for v in Preview]),
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:332:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:341:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:349:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:354:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:367:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:376:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:387:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:400:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:409:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:420:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:430:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:444:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:447:    type=click.IntRange(min=1),
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:456:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:465:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:475:@click.version_option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:482:@click.argument(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:485:    type=click.Path(exists=True, file_okay=True, dir_okay=True, readable=True, allow_dash=True),
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:489:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:491:    type=click.Path(
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:503:@click.pass_context
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:505:    ctx: click.Context,
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:706:            click.echo(str(report), err=True)
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:806:def path_empty(src: Sized, msg: str, quiet: bool, verbose: bool, ctx: click.Context) -> None:
+./.venv_tmp/lib/python3.12/site-packages/cachecontrol/_cmd.py:7:from argparse import ArgumentParser
+./.venv_tmp/lib/python3.12/site-packages/cachecontrol/_cmd.py:16:    from argparse import Namespace
+./.venv_tmp/lib/python3.12/site-packages/rich/json.py:106:    import argparse
+./.venv_tmp/lib/python3.12/site-packages/rich/json.py:109:    parser = argparse.ArgumentParser(description="Pretty print json")
+./.venv_tmp/lib/python3.12/site-packages/rich/syntax.py:844:    import argparse
+./.venv_tmp/lib/python3.12/site-packages/rich/syntax.py:847:    parser = argparse.ArgumentParser(description="Render syntax to the console with Rich")
+./.venv_tmp/lib/python3.12/site-packages/rich/style.py:252:            style = Style.on(click=self.on_click)
+./.venv_tmp/lib/python3.12/site-packages/rich/markdown.py:653:    import argparse
+./.venv_tmp/lib/python3.12/site-packages/rich/markdown.py:656:    parser = argparse.ArgumentParser(description="Render Markdown to the console with Rich")
+./.venv_tmp/lib/python3.12/site-packages/rich/default_styles.py:173:    import argparse
+./.venv_tmp/lib/python3.12/site-packages/rich/default_styles.py:180:    parser = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/rich/text.py:525:            >>> text.on(click="view.toggle('world')")
+./.venv_tmp/lib/python3.12/site-packages/mypyc/annotate.py:126:    collapsible.addEventListener('click', function() {
+./.venv_tmp/lib/python3.12/site-packages/stevedore/example/load_as_driver.py:15:import argparse
+./.venv_tmp/lib/python3.12/site-packages/stevedore/example/load_as_driver.py:20:    parser = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/stevedore/example/load_as_extension.py:15:import argparse
+./.venv_tmp/lib/python3.12/site-packages/stevedore/example/load_as_extension.py:20:    parser = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:53:    import argparse
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:57:    argparser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:64:    argparser.add_argument(
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:67:    argparser.add_argument(
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:73:    argparser.add_argument(
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:76:    argparser.add_argument(
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:79:    argparser.add_argument(
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:85:    argparser.add_argument(
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:90:    args = argparser.parse_args()
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/cachecontrol/_cmd.py:7:from argparse import ArgumentParser
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/cachecontrol/_cmd.py:16:    from argparse import Namespace
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/json.py:106:    import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/json.py:109:    parser = argparse.ArgumentParser(description="Pretty print json")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/syntax.py:844:    import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/syntax.py:847:    parser = argparse.ArgumentParser(description="Render syntax to the console with Rich")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/style.py:252:            style = Style.on(click=self.on_click)
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/default_styles.py:173:    import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/default_styles.py:180:    parser = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/text.py:525:            >>> text.on(click="view.toggle('world')")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/certifi/__main__.py:1:import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/certifi/__main__.py:5:parser = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:31:import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:1349:    parser = argparse.ArgumentParser(description="OS distro info tool")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_pip_wrapper.py:3:import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_pip_wrapper.py:23:    parser = argparse.ArgumentParser(description="Install Dependency Groups.")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/dependency_groups/__main__.py:1:import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/dependency_groups/__main__.py:16:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_lint_dependency_groups.py:3:import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_lint_dependency_groups.py:18:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/utils/compat.py:81:stdlib_pkgs = {"python", "wsgiref", "argparse"}
+./.venv_tmp/lib/python3.12/site-packages/wheel/cli/__init__.py:7:import argparse
+./.venv_tmp/lib/python3.12/site-packages/wheel/cli/__init__.py:10:from argparse import ArgumentTypeError
+./.venv_tmp/lib/python3.12/site-packages/wheel/cli/__init__.py:17:def unpack_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/wheel/cli/__init__.py:23:def pack_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/wheel/cli/__init__.py:29:def convert_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/wheel/cli/__init__.py:35:def tags_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/wheel/cli/__init__.py:54:def version_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/wheel/cli/__init__.py:79:    p = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/pip_api/_parse_requirements.py:1:import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip_api/_parse_requirements.py:18:parser = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:7:import argparse
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:10:from argparse import ArgumentTypeError
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:17:def unpack_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:23:def pack_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:29:def convert_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:35:def tags_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:54:def version_f(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/cli/__init__.py:79:    p = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/__init__.py:2948:    import argparse
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/__init__.py:2951:    parser = argparse.ArgumentParser(description=description)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/autocommand/autoparse.py:19:from argparse import ArgumentParser
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/autocommand/autoparse.py:235:    argparse.ArgumentParser, and calls the underlying function with the parsed
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/autocommand/autoparse.py:247:    argparse parameters. If no description is given, it defaults to the
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_build_meta.py:549:            ".venv/python3.10/site-packages/click-8.1.3.dist-info",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_pyprojecttoml.py:36:    "sphinx-argparse>=0.2.5",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_apply_pyprojecttoml.py:640:        src = "[project]\nname='pkg'\nversion='0.1'\ndependencies=['click']\n"
+./.venv_tmp/lib/python3.12/site-packages/certifi/__main__.py:1:import argparse
+./.venv_tmp/lib/python3.12/site-packages/certifi/__main__.py:5:parser = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/charset_normalizer/cli/__main__.py:3:import argparse
+./.venv_tmp/lib/python3.12/site-packages/charset_normalizer/cli/__main__.py:97:            raise argparse.ArgumentTypeError(message)
+./.venv_tmp/lib/python3.12/site-packages/charset_normalizer/cli/__main__.py:115:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:7:import argparse
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:57:    to avoid `argparse.FileType`'s "eager" file creation, which is generally
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:199:def _parser() -> argparse.ArgumentParser:  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:200:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:203:        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:393:def _parse_args(parser: argparse.ArgumentParser) -> argparse.Namespace:  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/_pytest/main.py:5:import argparse
+./.venv_tmp/lib/python3.12/site-packages/_pytest/main.py:243:        raise argparse.ArgumentTypeError(msg)
+./.venv_tmp/lib/python3.12/site-packages/_pytest/main.py:253:        raise argparse.ArgumentTypeError(msg)
+./.venv_tmp/lib/python3.12/site-packages/_pytest/main.py:257:        raise argparse.ArgumentTypeError(msg)
+./.venv_tmp/lib/python3.12/site-packages/_pytest/hookspec.py:87:    """Register argparse-style options and ini-style config values,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_argcomplete.py:1:"""Allow bash-completion for argparse with argcomplete if installed.
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_argcomplete.py:67:import argparse
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_argcomplete.py:109:    def try_argcomplete(parser: argparse.ArgumentParser) -> None:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_argcomplete.py:114:    def try_argcomplete(parser: argparse.ArgumentParser) -> None:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:4:import argparse
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:85:            Same attributes as the argparse library's :meth:`add_argument()
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:86:            <argparse.ArgumentParser.add_argument>` function accepts.
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:98:        namespace: argparse.Namespace | None = None,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:99:    ) -> argparse.Namespace:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:129:        option: argparse.Namespace,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:130:        namespace: argparse.Namespace | None = None,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:140:        namespace: argparse.Namespace | None = None,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:141:    ) -> argparse.Namespace:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:144:        :returns: An argparse namespace object.
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:151:        namespace: argparse.Namespace | None = None,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:152:    ) -> tuple[argparse.Namespace, list[str]]:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:157:            A tuple containing an argparse namespace object for the known
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:318:        Might not be necessary as this is passed to argparse later on.
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:385:            Same attributes as the argparse library's :meth:`add_argument()
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:386:            <argparse.ArgumentParser.add_argument>` function accepts.
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:408:class MyOptionParser(argparse.ArgumentParser):
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:429:        """Transform argparse error message into UsageError."""
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:441:        namespace: argparse.Namespace | None = None,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:442:    ) -> argparse.Namespace:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:456:class DropShorterLongHelpFormatter(argparse.HelpFormatter):
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/argparsing.py:470:    def _format_action_invocation(self, action: argparse.Action) -> str:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:6:import argparse
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:1007:        self.option = argparse.Namespace()
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:1010:        :type: argparse.Namespace
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:1126:        option: argparse.Namespace | None = None,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/terminal.py:9:import argparse
+./.venv_tmp/lib/python3.12/site-packages/_pytest/terminal.py:57:class MoreQuietAction(argparse.Action):
+./.venv_tmp/lib/python3.12/site-packages/_pytest/terminal.py:58:    """A modified copy of the argparse count action which counts down and updates
+./.venv_tmp/lib/python3.12/site-packages/_pytest/terminal.py:83:        parser: argparse.ArgumentParser,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/terminal.py:84:        namespace: argparse.Namespace,
+./.venv_tmp/lib/python3.12/site-packages/_pytest/debugging.py:7:import argparse
+./.venv_tmp/lib/python3.12/site-packages/_pytest/debugging.py:31:        raise argparse.ArgumentTypeError(
+./.venv_tmp/lib/python3.12/site-packages/_pytest/helpconfig.py:8:from argparse import Action
+./.venv_tmp/lib/python3.12/site-packages/_pytest/helpconfig.py:18:    """An argparse Action that will raise an exception in order to skip the
+./.venv_tmp/lib/python3.12/site-packages/_pytest/helpconfig.py:21:    This prevents argparse from quitting due to missing required arguments
+./.venv_tmp/lib/python3.12/site-packages/_pytest/helpconfig.py:23:    This is similar to the way that the builtin argparse --help option is
+./.venv_tmp/lib/python3.12/site-packages/_pytest/helpconfig.py:181:    indent_len = 24  # based on argparse's max_help_position=24
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubgen.py:44:import argparse
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubgen.py:1894:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1089:        import argparse
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1091:        class TestClass(argparse.Action):
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1098:        assert_equal(output, ["class C(argparse.Action): ..."])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1099:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1226:            test(arg0: argparse.Action)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1233:        assert_equal(output, ["def test(arg0: argparse.Action) -> Any: ..."])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1234:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1245:            test(arg0: argparse.Action) -> argparse.Action
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1249:        mod = ModuleType("argparse", "")
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1260:            test(arg0: argparse.Action) -> argparse.Action
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1267:        assert_equal(output, ["def test(arg0: argparse.Action) -> argparse.Action: ..."])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1268:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1279:            test(arg0: list[argparse.Action]) -> list[argparse.Action]
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1283:        mod = ModuleType("argparse", "")
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1298:            test(arg0: Union[argparse.Action, NoneType]) -> Tuple[argparse.Action, NoneType]
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1302:        mod = ModuleType("argparse", "")
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1453:                test(self: TestClass, arg0: Dict[argparse.Action, int])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1465:        assert_equal(output, ["def test(self, arg0: Dict[argparse.Action, int]) -> Any: ..."])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1466:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1472:                test(self: TestClass, arg0: Dict[str, argparse.Action])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1484:        assert_equal(output, ["def test(self, arg0: Dict[str, argparse.Action]) -> Any: ..."])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:1485:        assert_equal(gen.get_imports().splitlines(), ["import argparse"])
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testargs.py:1:"""Ensure the argparse parser and Options class are in sync.
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testargs.py:3:In particular, verify that the argparse defaults are the same as the Options
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testargs.py:4:defaults, and that argparse doesn't assign any new members to the Options
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testargs.py:10:import argparse
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testargs.py:59:        special_opts = argparse.Namespace()
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubinfo.py:38:    "click_spinner": "types-click-spinner",
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubinfo.py:92:    "click_default_group": "types-click-default-group",
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubinfo.py:93:    "click_log": "types-click-log",
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubinfo.py:94:    "click_shell": "types-click-shell",
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubinfo.py:95:    "click_web": "types-click-web",
+./.venv_tmp/lib/python3.12/site-packages/mypy/split_namespace.py:1:"""Split namespace for argparse to allow separating options by prefix.
+./.venv_tmp/lib/python3.12/site-packages/mypy/split_namespace.py:12:import argparse
+./.venv_tmp/lib/python3.12/site-packages/mypy/split_namespace.py:16:class SplitNamespace(argparse.Namespace):
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:9:import argparse
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:31:class AugmentedHelpFormatter(argparse.RawDescriptionHelpFormatter):
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:36:parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:84:p.add_argument("-q", "--quiet", action="store_true", help=argparse.SUPPRESS)  # Deprecated
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:125:p.add_argument("-q", "--quiet", action="store_true", help=argparse.SUPPRESS)  # Deprecated
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:253:p.add_argument("--options-data", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:296:ActionFunction = Callable[[argparse.Namespace], None]
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:299:def action(subparser: argparse.ArgumentParser) -> Callable[[ActionFunction], ActionFunction]:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:313:def do_start(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:335:def do_restart(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:344:def restart_server(args: argparse.Namespace, allow_sources: bool = False) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:354:def start_server(args: argparse.Namespace, allow_sources: bool = False) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:386:def do_run(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:428:def do_status(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:450:def do_stop(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:462:def do_kill(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:474:def do_check(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:484:def do_recheck(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:515:def do_suggest(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:537:def do_inspect(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:613:def do_hang(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:619:def do_daemon(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/client.py:643:def do_help(args: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:5:import argparse
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:249:class AugmentedHelpFormatter(argparse.RawDescriptionHelpFormatter):
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:258:            # Assume we want argparse to manage wrapping, indenting, and
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:260:            return argparse.HelpFormatter._fill_text(self, text, width, indent)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:319:def infer_python_executable(options: Options, special_opts: argparse.Namespace) -> None:
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:371:class CapturableArgumentParser(argparse.ArgumentParser):
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:424:class CapturableVersionAction(argparse.Action):
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:427:    This is nearly identical to argparse._VersionAction except,
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:439:        dest: str = argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:440:        default: str = argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:452:        parser: argparse.ArgumentParser,
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:453:        namespace: argparse.Namespace,
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:498:        group: argparse._ActionsContainer | None = None,
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:505:        if help is not argparse.SUPPRESS:
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:516:            help=argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:786:    none_group.add_argument("--strict-optional", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:796:        "--force-uppercase-builtins", default=False, help=argparse.SUPPRESS, group=none_group
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:800:        "--force-union-syntax", default=False, help=argparse.SUPPRESS, group=none_group
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1026:        help=argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1038:        "-i", "--incremental", action="store_true", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1070:            else argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1101:        "--old-type-inference", action="store_true", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1104:        "--disable-expression-cache", action="store_true", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1131:    internals_group.add_argument("--fast-exit", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1133:        "--no-fast-exit", action="store_false", dest="fast_exit", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1138:        "--allow-empty-bodies", default=False, help=argparse.SUPPRESS, group=internals_group
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1141:    internals_group.add_argument("--export-ref-info", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1156:        "-a", dest="mypyc_annotation_file", type=str, default=None, help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1161:        "--skip-c-gen", dest="mypyc_skip_c_generation", action="store_true", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1165:    other_group.add_argument("--quickstart-file", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1220:        "--stats", action="store_true", dest="dump_type_stats", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1223:        "--inferstats", action="store_true", dest="dump_inference_stats", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1225:    parser.add_argument("--dump-build-stats", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1227:    parser.add_argument("--timing-stats", dest="timing_stats", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1231:    parser.add_argument("--line-checking-stats", dest="line_checking_stats", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1235:    parser.add_argument("--debug-cache", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1237:    parser.add_argument("--dump-deps", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1239:    parser.add_argument("--dump-graph", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1241:    parser.add_argument("--semantic-analysis-only", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1243:    parser.add_argument("--test-env", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1246:    add_invertible_flag("--local-partial-types", default=False, help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1252:    parser.add_argument("--logical-deps", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1254:    parser.add_argument("--bazel", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1258:        "--package-root", metavar="ROOT", action="append", default=[], help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1265:        "--cache-map", nargs="+", dest="special-opts:cache_map", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1269:    parser.add_argument("--debug-serialize", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1272:        "--disable-bytearray-promotion", action="store_true", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1275:        "--disable-memoryview-promotion", action="store_true", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1278:    parser.add_argument("--strict-concatenate", action="store_true", help=argparse.SUPPRESS)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1293:        "--fast-module-lookup", default=False, help=argparse.SUPPRESS, group=code_group
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1376:    dummy = argparse.Namespace()
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1408:    special_opts = argparse.Namespace()
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1566:    fscache: FileSystemCache | None, parser: argparse.ArgumentParser, options: Options
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1601:    parser: argparse.ArgumentParser, special_opts: argparse.Namespace, options: Options
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:3:import argparse
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:31:class VersionTypeError(argparse.ArgumentTypeError):
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:42:        raise argparse.ArgumentTypeError(f"Invalid python version '{v}' (expected format: 'x.y')")
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:57:        raise argparse.ArgumentTypeError(f"Python major version '{major}' out of range (must be 3)")
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:66:        raise argparse.ArgumentTypeError(
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:91:        raise argparse.ArgumentTypeError(
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:101:            raise argparse.ArgumentTypeError(
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:105:            raise argparse.ArgumentTypeError(
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:160:        raise argparse.ArgumentTypeError(
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:171:        raise argparse.ArgumentTypeError(
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:575:                except argparse.ArgumentTypeError as err:
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubtest.py:9:import argparse
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubtest.py:2375:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy_server.py:9:import argparse
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy_server.py:340:                        header=argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/mypy/inspections.py:116:    # package, since this is what users want when clicking go to definition on a module.
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:3:import argparse
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:135:def _build_arg_parser() -> argparse.ArgumentParser:
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:136:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:159:        default=argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:894:        help=argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:897:        "-rc", dest="deprecated_flags", action="append_const", const="-rc", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:904:        help=argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:907:        "-ns", dest="deprecated_flags", action="append_const", const="-ns", help=argparse.SUPPRESS
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:914:        help=argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:922:        help=argparse.SUPPRESS,
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:978:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py36.py:14:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py37.py:14:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py313.py:12:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py38.py:13:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py39.py:13:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py312.py:13:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py314.py:13:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py27.py:53:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py311.py:13:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/isort/stdlibs/py310.py:13:    "argparse",
+./.venv_tmp/lib/python3.12/site-packages/pygments/formatters/html.py:139:          <td class="linenos" title="click to toggle"
+./.venv_tmp/lib/python3.12/site-packages/pygments/formatters/html.py:140:            onclick="with (this.firstChild.style)
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/scripting.py:1066:        "clicked",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/scripting.py:1067:        "clicked toolbar item",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/scripting.py:1069:        "column clicked",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/scripting.py:1077:        "double clicked",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/scripting.py:1263:        "click count",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/scripting.py:1264:        "clicked( data)? column",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/scripting.py:1265:        "clicked data item",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/scripting.py:1266:        "clicked( data)? row",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/scripting.py:1355:        "ignores multiple clicks",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/automation.py:239:    consolewrite consolewriteerror controlclick controlcommand controldisable
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/automation.py:278:    isnumber isobj isptr isstring log memgetstats mod mouseclick mouseclickdrag
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/automation.py:299:    trayitemsetstate trayitemsettext traysetclick trayseticon traysetonevent
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:2425:            # (click)="deleteOrder()"; [value]="test"; [(twoWayTest)]="foo.bar"
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py:2062:        "click_text",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py:4275:        "onclick",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py:4280:        "ondblclick",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py:1015:    "xclick",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/c_like.py:1210:        "click",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_stata_builtins.py:355:    "est_clickable",
+./.venv_tmp/lib/python3.12/site-packages/pygments/cmdline.py:11:import argparse
+./.venv_tmp/lib/python3.12/site-packages/pygments/cmdline.py:535:class HelpFormatter(argparse.HelpFormatter):
+./.venv_tmp/lib/python3.12/site-packages/pygments/cmdline.py:542:        argparse.HelpFormatter.__init__(self, prog, indent_increment, max_help_position, width)
+./.venv_tmp/lib/python3.12/site-packages/pygments/cmdline.py:550:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/markdown_it/cli/parse.py:10:import argparse
+./.venv_tmp/lib/python3.12/site-packages/markdown_it/cli/parse.py:68:def parse_args(args: Sequence[str] | None) -> argparse.Namespace:
+./.venv_tmp/lib/python3.12/site-packages/markdown_it/cli/parse.py:70:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/markdown_it/cli/parse.py:94:        formatter_class=argparse.RawDescriptionHelpFormatter,
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:119:    https://click.palletsprojects.com/en/stable/advanced/#callback-evaluation-order
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:137:    Use :meth:`click.Context.get_parameter_source` to get the
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:210:    :param ignore_unknown_options: instructs click to ignore options it does
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:365:        #: Instructs click to ignore options that a command does not
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:524:        that are nested.  It exists so that click utilities can store some
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:530:        irrelevant for the operation of click.  However what is important is
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:550:        """Creates the :class:`~click.HelpFormatter` for the help and
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:577:            @click.group()
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:578:            @click.option("--name")
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:579:            @click.pass_context
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:758:        2.  the first argument is a click command object.  In that case all
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:759:            arguments are forwarded as well but proper click parameters
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:760:            (options and click arguments) must be keyword arguments and Click
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:820:        :param source: A member of :class:`~click.core.ParameterSource`.
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:830:        will be :attr:`~click.core.ParameterSource.DEFAULT` only if the
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:1238:        from click.shell_completion import CompletionItem
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:1695:            @click.group()
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:1696:            @click.option('-i', '--input', default=23)
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:1895:        from click.shell_completion import CompletionItem
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2018:        of :class:`~click.shell_completion.CompletionItem` or a list of
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2030:        Adding duplicate parameter names to a :class:`~click.core.Command` will
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2034:        Adding duplicate parameter names to a :class:`~click.core.Command` will
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2082:        # https://github.com/pallets/click/pull/3030
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2145:        Use :meth:`click.Context.to_info_dict` to traverse the entire
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2522:        :meth:`~click.types.ParamType.shell_complete` function is used.
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2533:                from click.shell_completion import CompletionItem
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2713:        # https://github.com/pallets/click/issues/3024#issuecomment-3146199461
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2714:        # https://github.com/pallets/click/pull/3030/commits/06847da
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:3026:            # Refs: https://github.com/pallets/click/pull/3030#discussion_r2289180249
+./.venv_tmp/lib/python3.12/site-packages/click/exceptions.py:131:    """Raised if click required an option or argument but it was not
+./.venv_tmp/lib/python3.12/site-packages/click/exceptions.py:200:    """Raised if click attempted to handle an option that does not
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:383:        with click.progressbar(
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:526:        click.echo(click.style('Hello World!', fg='green'))
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:527:        click.echo(click.style('ATTENTION!', blink=True))
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:528:        click.echo(click.style('Some things', reverse=True, fg='cyan'))
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:529:        click.echo(click.style('More colors', fg=(255, 12, 128), bg=117))
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:657:        click.secho('Hello World!', fg='green')
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:658:        click.echo(click.style('Hello World!', fg='green'))
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:746:                     passed as well. Invoke `click.file` once per file instead
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:778:        click.launch('https://click.palletsprojects.com/')
+./.venv_tmp/lib/python3.12/site-packages/click/termui.py:779:        click.launch('/my/downloaded/file', locate=True)
+./.venv_tmp/lib/python3.12/site-packages/click/utils.py:369:    the behavior of the :class:`~click.File` param type.
+./.venv_tmp/lib/python3.12/site-packages/click/parser.py:222:    It's not nearly as extensible as optparse or argparse as it does not
+./.venv_tmp/lib/python3.12/site-packages/click/parser.py:226:    :param ctx: optionally the :class:`~click.Context` where this parser
+./.venv_tmp/lib/python3.12/site-packages/click/parser.py:234:        #: The :class:`~click.Context` for this parser.  This might be
+./.venv_tmp/lib/python3.12/site-packages/click/decorators.py:99:    :attr:`click.Context.meta` as the first argument to the decorated
+./.venv_tmp/lib/python3.12/site-packages/click/decorators.py:119:        doc_description = f"the {key!r} key from :attr:`click.Context.meta`"
+./.venv_tmp/lib/python3.12/site-packages/click/decorators.py:220:            decorator_params = f.__click_params__  # type: ignore
+./.venv_tmp/lib/python3.12/site-packages/click/decorators.py:224:            del f.__click_params__  # type: ignore
+./.venv_tmp/lib/python3.12/site-packages/click/decorators.py:313:        if not hasattr(f, "__click_params__"):
+./.venv_tmp/lib/python3.12/site-packages/click/decorators.py:314:            f.__click_params__ = []  # type: ignore
+./.venv_tmp/lib/python3.12/site-packages/click/decorators.py:316:        f.__click_params__.append(param)  # type: ignore
+./.venv_tmp/lib/python3.12/site-packages/click/types.py:61:        Use :meth:`click.Context.to_info_dict` to traverse the entire
+./.venv_tmp/lib/python3.12/site-packages/click/types.py:142:        :class:`~click.shell_completion.CompletionItem` objects for the
+./.venv_tmp/lib/python3.12/site-packages/click/types.py:365:        from click.shell_completion import CompletionItem
+./.venv_tmp/lib/python3.12/site-packages/click/types.py:556:    """Restrict an :data:`click.INT` value to a range of accepted
+./.venv_tmp/lib/python3.12/site-packages/click/types.py:588:    """Restrict a :data:`click.FLOAT` value to a range of accepted
+./.venv_tmp/lib/python3.12/site-packages/click/types.py:829:        from click.shell_completion import CompletionItem
+./.venv_tmp/lib/python3.12/site-packages/click/types.py:856:        :func:`~click.open_file` to handle opening this value.
+./.venv_tmp/lib/python3.12/site-packages/click/types.py:1011:        from click.shell_completion import CompletionItem
+./.venv_tmp/lib/python3.12/site-packages/click/_termui_impl.py:483:        # That means when the user hits ^C, the parent process (click) terminates,
+./.venv_tmp/lib/python3.12/site-packages/click/globals.py:21:    """Returns the current click context.  This can be used as a way to
+./.venv_tmp/lib/python3.12/site-packages/click/globals.py:39:            raise RuntimeError("There is no active click context.") from e
+./.venv_tmp/lib/python3.12/site-packages/click/testing.py:429:        arguments are passed to the :meth:`~clickpkg.Command.main` function of
+./.venv_tmp/lib/python3.12/site-packages/click/__init__.py:128:            " 'importlib.metadata.version(\"click\")' instead.",
+./.venv_tmp/lib/python3.12/site-packages/click/__init__.py:132:        return importlib.metadata.version("click")
+./.venv_tmp/lib/python3.12/site-packages/blackd/__init__.py:21:import click
+./.venv_tmp/lib/python3.12/site-packages/blackd/__init__.py:68:@click.command(context_settings={"help_option_names": ["-h", "--help"]})
+./.venv_tmp/lib/python3.12/site-packages/blackd/__init__.py:69:@click.option(
+./.venv_tmp/lib/python3.12/site-packages/blackd/__init__.py:76:@click.option("--bind-port", type=int, help="Port to listen on", default=45484, show_default=True)
+./.venv_tmp/lib/python3.12/site-packages/blackd/__init__.py:77:@click.version_option(version=black.__version__)
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/main.py:6:import argparse
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/main.py:146:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/main.py:148:        formatter_class=argparse.RawDescriptionHelpFormatter,
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/main.py:288:        type=argparse.FileType("w", encoding="utf-8"),
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/main.py:422:        # Other strings will be blocked by argparse
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/main.py:433:        # Other strings will be blocked by argparse
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/config_generator.py:5:import argparse
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/config_generator.py:74:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/config_generator.py:76:        formatter_class=argparse.RawTextHelpFormatter,
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/baseline.py:13:import argparse
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/baseline.py:160:    parser = argparse.ArgumentParser(
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/baseline.py:162:        formatter_class=argparse.RawDescriptionHelpFormatter,
+./.venv_tmp/lib/python3.12/site-packages/pytokens/cli.py:5:import argparse
+./.venv_tmp/lib/python3.12/site-packages/pytokens/cli.py:23:    parser = argparse.ArgumentParser()
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_cli.py:3:import argparse
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_cli.py:49:def _get_cli_opts(args: list[str] | None) -> argparse.Namespace:
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_cli.py:52:    parser = argparse.ArgumentParser(prog, description=desc)
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_cli.py:133:def command(opts: argparse.Namespace, version: str, config: Configuration) -> int:
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_cli.py:213:def _create_archival_file(opts: argparse.Namespace, config: Configuration) -> int:
+./demo_step9_npm_optimization.py:83:      <Button onClick={() => console.log('clicked')}>
+./demo_step9_npm_optimization.py:129:  it('calls onClick when clicked', () => {
+./demo_step9_npm_optimization.py:133:    fireEvent.click(screen.getByText('Click me'));
+./tools/ft_readiness_audit.py:14:import argparse
+./tools/ft_readiness_audit.py:658:    parser = argparse.ArgumentParser(description="FirstTry Benchmark Readiness Auditor")
+./tools/firsttry/tests/test_cli_license_ok.py:3:from click.testing import CliRunner
+./tools/firsttry/tests/test_cli_license.py:3:from click.testing import CliRunner
+./tools/firsttry/tests/test_cli.py:3:from click.testing import CliRunner
+./tools/firsttry/firsttry/cli.py:3:import argparse
+./tools/firsttry/firsttry/cli.py:13:import click
+./tools/firsttry/firsttry/cli.py:263:@click.group()
+./tools/firsttry/firsttry/cli.py:265:    """FirstTry CLI (click-based entrypoint for tests and for runtime)."""
+./tools/firsttry/firsttry/cli.py:269:@click.option("--gate", type=click.Choice(["pre-commit", "pre-push"]), required=True)
+./tools/firsttry/firsttry/cli.py:270:@click.option("--require-license", is_flag=True, default=False)
+./tools/firsttry/firsttry/cli.py:275:        click.echo("License invalid")
+./tools/firsttry/firsttry/cli.py:279:        click.echo("License ok")
+./tools/firsttry/firsttry/cli.py:282:    click.echo(text, nl=False)
+./tools/firsttry/firsttry/cli.py:291:    click.echo(
+./tools/firsttry/firsttry/cli.py:301:# argparse surface
+./tools/firsttry/firsttry/cli.py:305:def build_parser() -> argparse.ArgumentParser:
+./tools/firsttry/firsttry/cli.py:306:    parser = argparse.ArgumentParser(
+./tools/firsttry/firsttry/cli.py:328:    # mirror-ci (tests expect this argparse command)
+./tools/firsttry/firsttry/cli.py:339:    # attach argparse-compatible callables used by tests
+./tools/firsttry/firsttry/cli.py:340:    def _cmd_mirror_ci_argparse(ns: argparse.Namespace) -> int:
+./tools/firsttry/firsttry/cli.py:366:    def _cmd_run_argparse(ns: argparse.Namespace) -> int:
+./tools/firsttry/firsttry/cli.py:379:    mirror.set_defaults(func=_cmd_mirror_ci_argparse)
+./tools/firsttry/firsttry/cli.py:380:    run_parser.set_defaults(func=_cmd_run_argparse)
+./tools/ft_bench_harness.py:21:import argparse
+./tools/ft_bench_harness.py:702:        parser = argparse.ArgumentParser(
+./src/firsttry/cli_ci_parity.py:3:from argparse import ArgumentParser
+./src/firsttry/runners/strict.py:8:    import argparse
+./src/firsttry/runners/strict.py:11:def run(args: argparse.Namespace) -> int:
+./src/firsttry/runners/fast.py:8:    import argparse
+./src/firsttry/runners/fast.py:11:def run(args: argparse.Namespace) -> int:
+./src/firsttry/cli_pipelines.py:2:import argparse
+./src/firsttry/cli_pipelines.py:14:    p = argparse.ArgumentParser(
+./src/firsttry/cli_v2.py:3:import argparse
+./src/firsttry/cli_v2.py:272:    parser = argparse.ArgumentParser("firsttry")
+./src/firsttry/reporting/html.py:3:import argparse
+./src/firsttry/reporting/html.py:412:    ap = argparse.ArgumentParser(description="FirstTry ROI Dashboard (aggregate reports → HTML)")
+./src/firsttry/cli_dag.py:3:import argparse
+./src/firsttry/cli_dag.py:21:    p = argparse.ArgumentParser("firsttry-dag")
+./src/firsttry/self_repair.py:14:    "click",
+./src/firsttry/self_repair.py:114:                        "click",
+./src/firsttry/cli.py:4:import argparse
+./src/firsttry/cli.py:16:import click
+./src/firsttry/cli.py:259:def _add_run_flags(p: argparse.ArgumentParser) -> None:
+./src/firsttry/cli.py:320:def build_parser() -> argparse.ArgumentParser:
+./src/firsttry/cli.py:321:    p = argparse.ArgumentParser(
+./src/firsttry/cli.py:389:        help=argparse.SUPPRESS,  # don't show in --help
+./src/firsttry/cli.py:401:        help=argparse.SUPPRESS,
+./src/firsttry/cli.py:407:        help=argparse.SUPPRESS,
+./src/firsttry/cli.py:727:    - Do NOT call click.Abort() or raise ClickException in the success path.
+./src/firsttry/cli.py:747:            click.echo("")
+./src/firsttry/cli.py:748:            click.echo("Gate Summary")
+./src/firsttry/cli.py:749:            click.echo("=" * 40)
+./src/firsttry/cli.py:751:                click.echo(f"- {step.name}: OK ({step.duration_s:.2f}s)")
+./src/firsttry/cli.py:774:                click.echo("\nSecret scan: potential secrets found in changed files:", err=True)
+./src/firsttry/cli.py:776:                    click.echo(f" - {s}", err=True)
+./src/firsttry/cli.py:818:        # Emit the human-readable summary using click.echo (tests don't require click, but it's fine)
+./src/firsttry/cli.py:819:        click.echo("")
+./src/firsttry/cli.py:820:        click.echo("Gate Summary")
+./src/firsttry/cli.py:821:        click.echo("=" * 40)
+./src/firsttry/cli.py:826:            click.echo(f"- {name}: {status} ({duration:.2f}s)")
+./src/firsttry/cli.py:830:        # Unexpected errors produce a non-zero exit but do not raise click.Abort
+./src/firsttry/cli.py:1002:    parser = argparse.ArgumentParser(prog="firsttry run", add_help=True)
+./src/firsttry/cli.py:1076:def handle_setup(args: argparse.Namespace) -> int:
+./src/firsttry/cli.py:1140:def handle_status(args: argparse.Namespace) -> int:
+./src/firsttry/cli.py:1198:def handle_doctor(args: argparse.Namespace) -> int:
+./src/firsttry/cli.py:1301:def cmd_mirror_ci(args: argparse.Namespace) -> int:
+./src/firsttry/cli.py:1322:def cmd_ci_discover(args: argparse.Namespace) -> int:
+./src/firsttry/cli.py:1348:def cmd_ci_intent_autofill(args: argparse.Namespace) -> int:
+./src/firsttry/cli.py:1360:def cmd_ci_intent_lint(args: argparse.Namespace) -> int:
+./src/firsttry/cli.py:1372:def cmd_ci_mirror(args: argparse.Namespace) -> int:
+./src/firsttry/cli.py:2616:@click.group(
+./src/firsttry/cli.py:2620:@click.option("--dag-only", is_flag=True, default=False, help="Emit DAG plan JSON and exit")
+./src/firsttry/cli.py:2621:@click.pass_context
+./src/firsttry/cli.py:2622:def cli_app(ctx: click.Context, dag_only: bool = False) -> int:
+./src/firsttry/cli.py:2630:    # If a subcommand was invoked, let click dispatch to it.
+./src/firsttry/cli.py:2654:@click.option(
+./src/firsttry/cli.py:2656:    type=click.Choice(["pre-commit", "ci", "ci-parity"], case_sensitive=False),
+./src/firsttry/cli.py:2661:@click.option(
+./src/firsttry/cli.py:2667:@click.option(
+./src/firsttry/cli.py:2669:    type=click.Choice(["lite", "strict", "pro", "promax", "enterprise"], case_sensitive=False),
+./src/firsttry/cli.py:2711:            click.echo("License ok")
+./src/firsttry/cli.py:2725:    raise click.ClickException(f"Unknown gate: {gate}")
+./src/firsttry/cli.py:2756:# This is non-invasive and will not change the existing argparse-based
+./src/firsttry/cli.py:2760:    import typer
+./src/firsttry/cli.py:2764:    _firsttry_wrappers_app = typer.Typer(help="FirstTry helper wrappers")
+./src/firsttry/cli_wrappers.py:11:    import typer
+./src/firsttry/cli_wrappers.py:13:    typer = None
+./src/firsttry/cli_wrappers.py:47:lint_app = typer.Typer(help="Lint wrapper commands") if typer else None
+./src/firsttry/cli_wrappers.py:53:        fast: bool = typer.Option(False, "--fast", help="Run fast lint (ruff only)."),
+./src/firsttry/cli_wrappers.py:54:        full: bool = typer.Option(False, "--full", help="Run full lint (ruff + black --check + isort --check-only)."),
+./src/firsttry/cli_wrappers.py:75:        raise typer.Exit(code=exit_code)
+./src/firsttry/cli_wrappers.py:79:pytest_app = typer.Typer(help="Pytest wrapper commands") if typer else None
+./src/firsttry/cli_wrappers.py:85:        fast: bool = typer.Option(False, "--fast", help="Run a fast subset of tests (no slow/e2e, stops on first failure)."),
+./src/firsttry/cli_wrappers.py:86:        full: bool = typer.Option(False, "--full", help="Run the full test suite."),
+./src/firsttry/cli_wrappers.py:87:        extra_args: Optional[str] = typer.Option(None, "--extra-args", help="Additional arguments to pass to pytest."),
+./src/firsttry/cli_wrappers.py:90:            typer.echo("Cannot use --fast and --full together.", err=True)
+./src/firsttry/cli_wrappers.py:91:            raise typer.Exit(code=2)
+./src/firsttry/cli_wrappers.py:106:        raise typer.Exit(code=result.returncode)
+./src/firsttry/cli_wrappers.py:110:typecheck_app = typer.Typer(help="Type-check wrapper commands") if typer else None
+./src/firsttry/cli_wrappers.py:116:        path: str = typer.Option("src/firsttry", "--path", help="Path to type-check (default: src/firsttry)."),
+./src/firsttry/cli_wrappers.py:117:        include_tests: bool = typer.Option(False, "--include-tests", help="Also type-check tests/ directory."),
+./src/firsttry/cli_wrappers.py:125:        raise typer.Exit(code=result.returncode)
+./src/firsttry/cli_wrappers.py:129:sbom_app = typer.Typer(help="SBOM generation wrapper commands") if typer else None
+./src/firsttry/cli_wrappers.py:135:        python: bool = typer.Option(True, "--python/--no-python", help="Generate Python SBOM."),
+./src/firsttry/cli_wrappers.py:136:        node: bool = typer.Option(False, "--node/--no-node", help="Generate Node.js SBOM."),
+./src/firsttry/cli_wrappers.py:137:        output_dir: str = typer.Option("artifacts/sbom", "--output-dir", help="Directory to write SBOM files into."),
+./src/firsttry/cli_wrappers.py:176:        raise typer.Exit(code=exit_code)
+./src/firsttry/cli_wrappers.py:180:security_app = typer.Typer(help="Security audit wrapper commands") if typer else None
+./src/firsttry/cli_wrappers.py:186:        bandit_target: str = typer.Option("src/firsttry", "--bandit-target", help="Path for Bandit to scan."),
+./src/firsttry/cli_wrappers.py:187:        safety_requirements: str = typer.Option("requirements.txt", "--safety-requirements", help="Requirements file to scan with safety."),
+./src/firsttry/cli_wrappers.py:223:        raise typer.Exit(code=exit_code)
+./src/firsttry/cli_wrappers.py:226:def register_cli_wrappers(app: "typer.Typer") -> None:  # type: ignore[name-defined]
+./src/firsttry/cli_wrappers.py:234:        app.add_typer(lint_app, name="lint")
+./src/firsttry/cli_wrappers.py:236:        app.add_typer(pytest_app, name="pytest")
+./src/firsttry/cli_wrappers.py:238:        app.add_typer(typecheck_app, name="typecheck")
+./src/firsttry/cli_wrappers.py:240:        app.add_typer(sbom_app, name="sbom")
+./src/firsttry/cli_wrappers.py:242:        app.add_typer(security_app, name="security-audit")
+./src/firsttry/ft.py:16:import click
+./src/firsttry/ft.py:21:@click.group()
+./src/firsttry/ft.py:54:    import argparse
+./src/firsttry/ft.py:57:        # cmd_mirror_ci expects an argparse.Namespace. Provide an empty
+./src/firsttry/ft.py:59:        rc = _cli.cmd_mirror_ci(argparse.Namespace())
+./src/firsttry/cli_run_profile.py:3:import argparse
+./src/firsttry/cli_run_profile.py:15:    parser = argparse.ArgumentParser("firsttry run")
+./src/firsttry/cli_main.py:3:import argparse
+./src/firsttry/cli_main.py:13:    p = argparse.ArgumentParser("firsttry")

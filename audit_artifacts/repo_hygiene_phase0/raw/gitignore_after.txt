@@ -145,6 +145,6 @@ artifacts/parity_report.json
 # Tracked virtual environments (use local .venv/ instead)
 .venv-build/
 .venv_tmp/
-# Coverage artifacts from CI/CD runs (not .coveragerc - that's tracked project config)
+# Coverage artifacts from CI/CD runs
 .coverage.*
 .testmondata

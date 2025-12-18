@@ -1,0 +1,1386 @@
+./demo_license_examples.py:26:os.environ["FIRSTTRY_LICENSE_KEY"] = "demo-lic-key-2025"
+./demo_license_examples.py:27:os.environ["FIRSTTRY_TIER"] = "pro"
+./demo_license_examples.py:28:os.environ["FIRSTTRY_LICENSE_BACKEND"] = "env"
+./demo_license_examples.py:29:os.environ["FIRSTTRY_LICENSE_ALLOW"] = "pro,promax"
+./demo_license_examples.py:116:        print(f"  ✓ License key: {os.getenv('FIRSTTRY_LICENSE_KEY')}")
+./demo_license_examples.py:117:        print(f"  ✓ Backend: {os.getenv('FIRSTTRY_LICENSE_BACKEND')}")
+./demo_license_examples.py:157:    print(f"  CLI context license key: {os.getenv('FIRSTTRY_LICENSE_KEY')}")
+./.venv-build/lib/python3.12/site-packages/rich/diagnose.py:32:    env = {name: os.getenv(name) for name in env_names}
+./.venv-build/lib/python3.12/site-packages/rich/console.py:505:        or os.getenv("DATABRICKS_RUNTIME_VERSION")
+./.venv-build/lib/python3.12/site-packages/rich/console.py:605:    _environ: Mapping[str, str] = os.environ
+./.venv-build/lib/python3.12/site-packages/rich/console.py:639:        # Copy of os.environ allows us to replace it for testing
+./.venv-build/lib/python3.12/site-packages/urllib3/util/ssl_.py:367:    sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
+./.venv-build/lib/python3.12/site-packages/keyring/core.py:151:        return load_keyring(os.environ["PYTHON_KEYRING_BACKEND"])
+./.venv-build/lib/python3.12/site-packages/keyring/credentials.py:74:        value = os.environ.get(env_var)
+./.venv-build/lib/python3.12/site-packages/keyring/backend.py:191:        props: filter[tuple[str, str]] = filter(None, map(parse, os.environ.items()))
+./.venv-build/lib/python3.12/site-packages/keyring/util/platform_.py:8:    root = pathlib.Path(os.environ.get("LOCALAPPDATA", os.environ.get("ProgramData", ".")))
+./.venv-build/lib/python3.12/site-packages/keyring/util/platform_.py:18:    root = os.environ.get("XDG_DATA_HOME", None) or fallback
+./.venv-build/lib/python3.12/site-packages/keyring/util/platform_.py:32:    root = os.environ.get(key, None) or fallback
+./.venv-build/lib/python3.12/site-packages/keyring/backends/macOS/__init__.py:29:    keychain = os.environ.get("KEYCHAIN_PATH")
+./.venv-build/lib/python3.12/site-packages/keyring/backends/kwallet.py:51:        if "KDE" in os.getenv("XDG_CURRENT_DESKTOP", "").split(":"):
+./.venv-build/lib/python3.12/site-packages/keyring/testing/util.py:59:    """A context manager to temporarily change the os.environ"""
+./.venv-build/lib/python3.12/site-packages/keyring/testing/util.py:60:    return NoNoneDictMutator(os.environ, **changes)
+./.venv-build/lib/python3.12/site-packages/pyproject_hooks/_impl.py:78:    env = os.environ.copy()
+./.venv-build/lib/python3.12/site-packages/pyproject_hooks/_impl.py:94:    env = os.environ.copy()
+./.venv-build/lib/python3.12/site-packages/pyproject_hooks/_in_process/_in_process.py:61:    backend_path = os.environ.get("_PYPROJECT_HOOKS_BACKEND_PATH")
+./.venv-build/lib/python3.12/site-packages/pyproject_hooks/_in_process/_in_process.py:62:    ep = os.environ["_PYPROJECT_HOOKS_BUILD_BACKEND"]
+./.venv-build/lib/python3.12/site-packages/cffi/verifier.py:270:    result = os.environ.get("CFFI_TMPDIR")
+./.venv-build/lib/python3.12/site-packages/cffi/ffiplatform.py:26:    saved_environ = os.environ.copy()
+./.venv-build/lib/python3.12/site-packages/cffi/ffiplatform.py:34:            if os.environ.get(key) != value:
+./.venv-build/lib/python3.12/site-packages/cffi/ffiplatform.py:35:                os.environ[key] = value
+./.venv-build/lib/python3.12/site-packages/requests/utils.py:210:    netrc_file = os.environ.get("NETRC")
+./.venv-build/lib/python3.12/site-packages/requests/utils.py:739:        old_value = os.environ.get(env_name)
+./.venv-build/lib/python3.12/site-packages/requests/utils.py:740:        os.environ[env_name] = value
+./.venv-build/lib/python3.12/site-packages/requests/utils.py:746:                del os.environ[env_name]
+./.venv-build/lib/python3.12/site-packages/requests/utils.py:748:                os.environ[env_name] = old_value
+./.venv-build/lib/python3.12/site-packages/requests/utils.py:761:        return os.environ.get(key) or os.environ.get(key.upper())
+./.venv-build/lib/python3.12/site-packages/requests/sessions.py:755:                    os.environ.get("REQUESTS_CA_BUNDLE")
+./.venv-build/lib/python3.12/site-packages/requests/sessions.py:756:                    or os.environ.get("CURL_CA_BUNDLE")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/diagnose.py:32:    env = {name: os.getenv(name) for name in env_names}
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/console.py:505:        or os.getenv("DATABRICKS_RUNTIME_VERSION")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/console.py:605:    _environ: Mapping[str, str] = os.environ
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/console.py:639:        # Copy of os.environ allows us to replace it for testing
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/urllib3/util/ssl_.py:353:        sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py:19:    return is_appengine() and os.environ["APPENGINE_RUNTIME"] == "python27"
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py:23:    return "APPENGINE_RUNTIME" in os.environ and os.environ.get("SERVER_SOFTWARE", "").startswith(
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py:29:    return "APPENGINE_RUNTIME" in os.environ and os.environ.get("SERVER_SOFTWARE", "").startswith(
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_impl.py:78:    env = os.environ.copy()
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_impl.py:94:    env = os.environ.copy()
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py:61:    backend_path = os.environ.get("_PYPROJECT_HOOKS_BACKEND_PATH")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py:62:    ep = os.environ["_PYPROJECT_HOOKS_BUILD_BACKEND"]
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:210:    netrc_file = os.environ.get("NETRC")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:739:        old_value = os.environ.get(env_name)
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:740:        os.environ[env_name] = value
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:746:                del os.environ[env_name]
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:748:                os.environ[env_name] = old_value
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:761:        return os.environ.get(key) or os.environ.get(key.upper())
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/sessions.py:755:                    os.environ.get("REQUESTS_CA_BUNDLE")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/sessions.py:756:                    or os.environ.get("CURL_CA_BUNDLE")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:75:_UNIXCONFDIR = os.environ.get("UNIXCONFDIR", "/etc")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:76:_UNIXUSRLIBDIR = os.environ.get("UNIXUSRLIBDIR", "/usr/lib")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:336:    #                                     in os.environ):
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:337:    #        result =  os.environ['__PYVENV_LAUNCHER__']
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:801:    if os.name == "nt" and "LOCALAPPDATA" in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:1959:    if "_PYTHON_HOST_PLATFORM" in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:1960:        return os.environ["_PYTHON_HOST_PLATFORM"]
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:2026:    cross_compilation_target = os.environ.get("VSCMD_ARG_TGT_ARCH")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:250:        of os.environ.get("PATH"), or can be overridden with a custom search
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:270:            path = os.environ.get("PATH", os.defpath)
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:281:            pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/scripts.py:294:                source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pkg_resources/__init__.py:1443:        if os.name == "nt" and not path.startswith(os.environ["windir"]):
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pkg_resources/__init__.py:1525:    return os.environ.get("PYTHON_EGG_CACHE") or _user_cache_dir(appname="Python-Eggs")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/msgpack/__init__.py:11:if os.environ.get("MSGPACK_PUREPYTHON"):
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:159:    result = os.environ.get(env_var_name)
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:170:            os.path.normpath(os.environ["USERPROFILE"]), "Documents"
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:175:            os.path.normpath(os.environ["USERPROFILE"]), "Downloads"
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:179:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Pictures")  # noqa: PTH118
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:182:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Videos")  # noqa: PTH118
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:185:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Music")  # noqa: PTH118
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:45:        path = os.environ.get("XDG_DATA_HOME", "")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:52:        path = os.environ.get("XDG_DATA_DIRS", "")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:76:        path = os.environ.get("XDG_CONFIG_HOME", "")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:83:        path = os.environ.get("XDG_CONFIG_DIRS", "")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:107:        path = os.environ.get("XDG_CACHE_HOME", "")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:123:        path = os.environ.get("XDG_STATE_HOME", "")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:177:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:201:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:238:        media_dir = os.environ.get(env_var, "").strip()
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/__init__.py:31:    if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/__init__.py:32:        if os.getenv("SHELL") or os.getenv("PREFIX"):
+./.venv-build/lib/python3.12/site-packages/pip/_internal/vcs/git.py:84:        if os.environ.get("PIP_NO_INPUT"):
+./.venv-build/lib/python3.12/site-packages/pip/_internal/req/req_file.py:540:            value = os.getenv(var_name)
+./.venv-build/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/resolver.py:87:        if "PIP_RESOLVER_DEBUG" in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_internal/build_env.py:129:        pip_constraint = os.environ.get("PIP_CONSTRAINT")
+./.venv-build/lib/python3.12/site-packages/pip/_internal/build_env.py:300:            name: os.environ.get(name, None) for name in ("PATH", "PYTHONNOUSERSITE", "PYTHONPATH")
+./.venv-build/lib/python3.12/site-packages/pip/_internal/build_env.py:310:        os.environ.update(
+./.venv-build/lib/python3.12/site-packages/pip/_internal/build_env.py:326:                os.environ.pop(varname, None)
+./.venv-build/lib/python3.12/site-packages/pip/_internal/build_env.py:328:                os.environ[varname] = old_value
+./.venv-build/lib/python3.12/site-packages/pip/_internal/commands/debug.py:188:        show_value("REQUESTS_CA_BUNDLE", os.environ.get("REQUESTS_CA_BUNDLE"))
+./.venv-build/lib/python3.12/site-packages/pip/_internal/commands/debug.py:189:        show_value("CURL_CA_BUNDLE", os.environ.get("CURL_CA_BUNDLE"))
+./.venv-build/lib/python3.12/site-packages/pip/_internal/commands/configuration.py:276:        elif "VISUAL" in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_internal/commands/configuration.py:277:            return os.environ["VISUAL"]
+./.venv-build/lib/python3.12/site-packages/pip/_internal/commands/configuration.py:278:        elif "EDITOR" in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_internal/commands/configuration.py:279:            return os.environ["EDITOR"]
+./.venv-build/lib/python3.12/site-packages/pip/_internal/utils/subprocess.py:122:    env = os.environ.copy()
+./.venv-build/lib/python3.12/site-packages/pip/_internal/utils/misc.py:203:    for action in os.environ.get("PIP_EXISTS_ACTION", "").split():
+./.venv-build/lib/python3.12/site-packages/pip/_internal/utils/misc.py:211:    if os.environ.get("PIP_NO_INPUT"):
+./.venv-build/lib/python3.12/site-packages/pip/_internal/utils/entrypoints.py:53:    path_parts = os.path.normcase(os.environ.get("PATH", "")).split(os.pathsep)
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/req_command.py:55:    return os.environ.get("_PIP_IN_BUILD_IGNORE_CONSTRAINTS") == "1"
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/base_command.py:203:        if options.python and "_PIP_RUNNING_IN_SUBPROCESS" not in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/base_command.py:208:        #       without resorting to os.environ to hold these.
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/base_command.py:212:            os.environ["PIP_NO_INPUT"] = "1"
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/base_command.py:215:            os.environ["PIP_EXISTS_ACTION"] = " ".join(options.exists_action)
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/autocompletion.py:20:    if "PIP_AUTO_COMPLETE" not in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/autocompletion.py:24:    if not os.environ.get("COMP_WORDS") or not os.environ.get("COMP_CWORD"):
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/autocompletion.py:26:    cwords = os.environ["COMP_WORDS"].split()[1:]
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/autocompletion.py:27:    cword = int(os.environ["COMP_CWORD"])
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/main_parser.py:81:    if general_options.python and "_PIP_RUNNING_IN_SUBPROCESS" not in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/main_parser.py:95:        os.environ["_PIP_RUNNING_IN_SUBPROCESS"] = "1"
+./.venv-build/lib/python3.12/site-packages/pip/_internal/metadata/__init__.py:52:        return bool(strtobool(os.environ["_PIP_USE_IMPORTLIB_METADATA"]))
+./.venv-build/lib/python3.12/site-packages/pip/_internal/configuration.py:327:        for key, val in os.environ.items():
+./.venv-build/lib/python3.12/site-packages/pip/_internal/configuration.py:345:        env_config_file = os.environ.get("PIP_CONFIG_FILE", None)
+./.venv-build/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:139:        for i in os.environ.get("PATH", "").split(os.pathsep)
+./.venv-build/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:175:    warn_for_tilde = any(i[0] == "~" for i in os.environ.get("PATH", "").split(os.pathsep) if i)
+./.venv-build/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:300:        if "ENSUREPIP_OPTIONS" not in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:303:        if os.environ.get("ENSUREPIP_OPTIONS", "") != "altinstall":
+./.venv-build/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:313:        if "ENSUREPIP_OPTIONS" not in os.environ:
+./.venv-build/lib/python3.12/site-packages/pip/_internal/network/session.py:105:    return any(name in os.environ for name in CI_ENVIRONMENT_VARIABLES)
+./.venv-build/lib/python3.12/site-packages/pip/_internal/network/session.py:198:    user_data = os.environ.get("PIP_USER_AGENT_USER_DATA")
+./.venv-build/lib/python3.12/site-packages/pip/_internal/network/auth.py:135:        env = os.environ.copy()
+./.venv-build/lib/python3.12/site-packages/pip/_internal/network/auth.py:151:        env = os.environ.copy()
+./.venv-build/lib/python3.12/site-packages/pip/_internal/network/auth.py:189:                path = os.environ.get("PATH", None)
+./.venv-build/lib/python3.12/site-packages/_distutils_hack/__init__.py:43:    which = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "local")
+./.venv-build/lib/python3.12/site-packages/wheel/wheelfile.py:39:    timestamp = int(os.environ.get("SOURCE_DATE_EPOCH", timestamp or time.time()))
+./.venv-build/lib/python3.12/site-packages/wheel/macosx_libfile.py:413:    if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv-build/lib/python3.12/site-packages/wheel/macosx_libfile.py:414:        deploy_target = tuple(int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split("."))
+./.venv-build/lib/python3.12/site-packages/wheel/macosx_libfile.py:466:        if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv-build/lib/python3.12/site-packages/jeepney/io/tests/utils.py:3:have_session_bus = bool(os.environ.get("DBUS_SESSION_BUS_ADDRESS"))
+./.venv-build/lib/python3.12/site-packages/jeepney/bus.py:52:    addr = os.environ["DBUS_SESSION_BUS_ADDRESS"]
+./.venv-build/lib/python3.12/site-packages/jeepney/bus.py:59:        os.environ.get("DBUS_SYSTEM_BUS_ADDRESS", "") or "unix:path=/var/run/dbus/system_bus_socket"
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/wheelfile.py:39:    timestamp = int(os.environ.get("SOURCE_DATE_EPOCH", timestamp or time.time()))
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/macosx_libfile.py:413:    if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/macosx_libfile.py:414:        deploy_target = tuple(int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split("."))
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/macosx_libfile.py:466:        if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/typeguard/__init__.py:47:if "TYPEGUARD_DISABLE_PLUGIN_AUTOLOAD" not in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:159:    result = os.environ.get(env_var_name)
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:170:            os.path.normpath(os.environ["USERPROFILE"]), "Documents"
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:175:            os.path.normpath(os.environ["USERPROFILE"]), "Downloads"
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:179:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Pictures")  # noqa: PTH118
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:182:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Videos")  # noqa: PTH118
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:185:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Music")  # noqa: PTH118
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:42:        path = os.environ.get("XDG_DATA_HOME", "")
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:49:        path = os.environ.get("XDG_DATA_DIRS", "")
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:73:        path = os.environ.get("XDG_CONFIG_HOME", "")
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:80:        path = os.environ.get("XDG_CONFIG_DIRS", "")
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:104:        path = os.environ.get("XDG_CACHE_HOME", "")
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:120:        path = os.environ.get("XDG_STATE_HOME", "")
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:174:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:198:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:241:        media_dir = os.environ.get(env_var, "").strip()
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/__init__.py:31:    if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/__init__.py:32:        if os.getenv("SHELL") or os.getenv("PREFIX"):
+./.venv-build/lib/python3.12/site-packages/setuptools/warnings.py:109:    enforce = os.getenv("SETUPTOOLS_ENFORCE_DEPRECATION", "false").lower()
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:527:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:544:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:1114:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:1167:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:1218:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:1257:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_bdist_egg.py:52:        os.environ.get("PYTHONDONTWRITEBYTECODE", False),
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/fixtures.py:115:    prebuilt = os.getenv("PRE_BUILT_SETUPTOOLS_SDIST")
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/fixtures.py:125:    prebuilt = os.getenv("PRE_BUILT_SETUPTOOLS_WHEEL")
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_manifest.py:347:    @pytest.fixture(autouse=os.getenv("SETUPTOOLS_USE_DISTUTILS") == "stdlib")
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/integration/helpers.py:21:        env={**os.environ, **(env or {})},
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/integration/test_pip_install_sdist.py:108:    download_path = os.getenv("DOWNLOAD_PATH", str(tmp_path))
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/integration/test_pip_install_sdist.py:157:    download_path = os.getenv("DOWNLOAD_PATH", str(tmp_path))
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_virtualenv.py:31:    if not os.environ.get("NETWORK_REQUIRED", False):  # pragma: nocover
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_build_py.py:171:        if os.getenv("SETUPTOOLS_USE_DISTUTILS") == "stdlib":
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/contexts.py:30:    saved = dict((key, os.environ[key]) for key in replacements if key in os.environ)
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/contexts.py:35:        os.environ.pop(key, None)
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/contexts.py:38:    os.environ.update(replacements)
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/contexts.py:44:            os.environ.pop(key, None)
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/contexts.py:45:        os.environ.update(saved)
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_develop.py:66:        bool(os.environ.get("APPVEYOR")),
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_distutils_adoption.py:21:        env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/environment.py:30:            env = dict(os.environ)
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/environment.py:39:    for path in os.environ.get("PATH", "").split(os.pathsep):
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/environment.py:53:        for envname in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/environment.py:54:            env[envname] = os.environ[envname]
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_editable_install.py:418:    env = dict(os.environ, PYTHONPATH=os.pathsep.join(map(str, site_packages_all)))
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_build_ext.py:83:            os.environ["SETUPTOOLS_EXT_SUFFIX"] = ".test-suffix"
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_build_ext.py:89:            del os.environ["SETUPTOOLS_EXT_SUFFIX"]
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_build_meta.py:26:TIMEOUT = int(os.getenv("TIMEOUT_BACKEND_TEST", "180"))  # in seconds
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_build_meta.py:88:        os.environ.update(self.env)
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_sdist.py:106:    "os.environ.get('PYTEST_XDIST_WORKER')",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_sdist.py:819:    @pytest.mark.skipif("os.environ.get('SETUPTOOLS_USE_DISTUTILS') == 'stdlib'")
+./.venv-build/lib/python3.12/site-packages/setuptools/installer.py:79:    quiet = "PIP_QUIET" not in os.environ and "PIP_VERBOSE" not in os.environ
+./.venv-build/lib/python3.12/site-packages/setuptools/installer.py:80:    if "PIP_INDEX_URL" in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_scripts.py:49:        return os.environ.get("__PYVENV_LAUNCHER__", _default)
+./.venv-build/lib/python3.12/site-packages/setuptools/_scripts.py:236:        launcher = os.environ.get("SETUPTOOLS_LAUNCHER", "executable")
+./.venv-build/lib/python3.12/site-packages/setuptools/_scripts.py:243:        if ext not in os.environ["PATHEXT"].lower().split(";"):
+./.venv-build/lib/python3.12/site-packages/setuptools/command/build_ext.py:159:        so_ext = os.getenv("SETUPTOOLS_EXT_SUFFIX")
+./.venv-build/lib/python3.12/site-packages/setuptools/command/easy_install.py:18:            sys_executable=os.environ.get("__PYVENV_LAUNCHER__", os.path.normpath(sys.executable)),
+./.venv-build/lib/python3.12/site-packages/setuptools/config/_validate_pyproject/error_reporting.py:79:        debug_code = os.getenv("JSONSCHEMA_DEBUG_CODE_GENERATION", "false").lower()
+./.venv-build/lib/python3.12/site-packages/setuptools/config/_validate_pyproject/formats.py:186:        if os.getenv("NO_NETWORK") or os.getenv("VALIDATE_PYPROJECT_NO_NETWORK"):
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:69:    ...     assert 'foo' in os.environ['PYTHONPATH']
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:70:    ...     assert 'anything' in os.environ['PYTHONPATH']
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:71:    >>> os.environ['PYTHONPATH']
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:76:    ...     assert 'foo' in os.environ['PYTHONPATH']
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:77:    >>> os.environ.get('PYTHONPATH')
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:80:    orig_pythonpath = os.environ.get("PYTHONPATH", nothing)
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:81:    current_pythonpath = os.environ.get("PYTHONPATH", "")
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:87:            os.environ["PYTHONPATH"] = new_path
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:91:            os.environ.pop("PYTHONPATH", None)
+./.venv-build/lib/python3.12/site-packages/setuptools/_path.py:93:            os.environ["PYTHONPATH"] = orig_pythonpath
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:57:        target = os.environ.get("VSCMD_ARG_TGT_ARCH")
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:94:    env_ver = os.environ.get(MACOSX_VERSION_VAR)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:163:    """Ensure that 'os.environ' has all the environment variables we
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:170:    if os.name == "posix" and "HOME" not in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:174:            os.environ["HOME"] = pwd.getpwuid(os.getuid())[5]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:180:    if "PLAT" not in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:181:        os.environ["PLAT"] = get_platform()
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:189:    dictionary or in 'os.environ' if it's not in 'local_vars'.
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:190:    'os.environ' is first checked/augmented to guarantee that it contains
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:192:    variables not found in either 'local_vars' or 'os.environ'.
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/util.py:195:    lookup = dict(os.environ)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:48:if "_PYTHON_PROJECT_BASE" in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:49:    project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:323:        if "CC" in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:324:            newcc = os.environ["CC"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:325:            if "LDSHARED" not in os.environ and ldshared.startswith(cc):
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:330:        cxx = os.environ.get("CXX", cxx)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:331:        ldshared = os.environ.get("LDSHARED", ldshared)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:332:        ldcxxshared = os.environ.get("LDCXXSHARED", ldcxxshared)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:333:        cpp = os.environ.get(
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:340:        cflags = os.environ.get("CFLAGS", cflags)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:342:        cxxflags = os.environ.get("CXXFLAGS", cxxflags)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:350:        ar = os.environ.get("AR", ar)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:352:        archiver = ar + " " + os.environ.get("ARFLAGS", ar_flags)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:369:        if "RANLIB" in os.environ and compiler.executables.get("ranlib", None):
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:370:            compiler.set_executables(ranlib=os.environ["RANLIB"])
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:465:                elif n in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:467:                    item = os.environ[n]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:598:    flags = os.environ.get(f"{type}FLAGS")
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_bdist_rpm.py:50:        os.environ["HOME"] = tmp_dir  # to confine dir '.rpmdb' creation
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_bdist_rpm.py:95:        os.environ["HOME"] = tmp_dir  # to confine dir '.rpmdb' creation
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:119:        os.environ["AR"] = "env_ar"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:120:        os.environ["CC"] = "env_cc"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:121:        os.environ["CPP"] = "env_cpp"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:122:        os.environ["CXX"] = "env_cxx --env-cxx-flags"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:123:        os.environ["LDSHARED"] = "env_ldshared"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:124:        os.environ["LDFLAGS"] = "--env-ldflags"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:125:        os.environ["ARFLAGS"] = "--env-arflags"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:126:        os.environ["CFLAGS"] = "--env-cflags"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:127:        os.environ["CPPFLAGS"] = "--env-cppflags"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:128:        os.environ["RANLIB"] = "env_ranlib"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:145:        del os.environ["AR"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:146:        del os.environ["CC"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:147:        del os.environ["CPP"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:148:        del os.environ["CXX"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:149:        del os.environ["LDSHARED"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:150:        del os.environ["LDFLAGS"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:151:        del os.environ["ARFLAGS"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:152:        del os.environ["CFLAGS"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:153:        del os.environ["CPPFLAGS"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:154:        del os.environ["RANLIB"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:286:        out = subprocess.check_output(cmd, env={**os.environ, "PYTHONPATH": distutils_path})
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_build_ext.py:557:            if os.environ.get("MACOSX_DEPLOYMENT_TARGET"):
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_build_ext.py:558:                del os.environ["MACOSX_DEPLOYMENT_TARGET"]
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_build_ext.py:560:            os.environ["MACOSX_DEPLOYMENT_TARGET"] = target
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:57:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "x86"}):
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:59:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "x64"}):
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:61:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "arm"}):
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:63:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "arm64"}):
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:122:        os.environ.pop("HOME", None)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:126:        assert os.environ["PLAT"] == get_platform()
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:131:        os.environ.pop("HOME", None)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:149:            assert os.environ["HOME"] == "/home/distutils"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:152:        os.environ.pop("HOME", None)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:157:            assert "HOME" not in os.environ
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/dist.py:388:            yield pathlib.Path(os.getenv("DIST_EXTRA_CONFIG"))
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/debug.py:5:DEBUG = os.environ.get("DISTUTILS_DEBUG")
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/command/_framework_compat.py:22:    ensurepip = os.environ.get("ENSUREPIP_OPTIONS")
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/command/build_ext.py:790:                elif "_PYTHON_HOST_PLATFORM" in os.environ:
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/zos.py:114:            if (binary := os.environ.get(envvar, None))
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/cygwin.py:71:        self.cc = os.environ.get("CC", self.cc or "gcc")
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/cygwin.py:72:        self.cxx = os.environ.get("CXX", self.cxx or "g++")
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:62:        old_distutils_use_sdk = os.environ.pop("DISTUTILS_USE_SDK", None)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:63:        os.environ[test_var] = test_value
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:69:            os.environ.pop(test_var)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:71:                os.environ["DISTUTILS_USE_SDK"] = old_distutils_use_sdk
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:107:        inner_cmd = 'import os; assert os.environ["PATH"] == "expected"'
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:129:            assert os.environ["PATH"] == "expected"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:134:        assert os.environ.get("PATH") != "expected"
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_unix.py:75:            env = os.environ
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:82:    root = os.environ.get("ProgramFiles(x86)") or os.environ.get("ProgramFiles")
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:148:    if os.getenv("DISTUTILS_USE_SDK"):
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:149:        return {key.lower(): value for key, value in os.environ.items()}
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:187:        paths = os.getenv("path").split(os.pathsep)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:547:        env = dict(os.environ, PATH=self._paths)
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:568:        with mock.patch.dict("os.environ", env):
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/spawn.py:56:    return os.environ if env is None else env
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/spawn.py:104:    os.environ['PATH'].  Returns the complete filename or None if not found.
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/spawn.py:115:        path = os.environ.get("PATH", None)
+./.venv-build/lib/python3.12/site-packages/secretstorage/__init__.py:87:        # os.environ['DBUS_SESSION_BUS_ADDRESS'] may raise it
+./.venv-build/lib/python3.12/site-packages/id/__main__.py:31:package_logger.setLevel(os.environ.get("ID_LOGLEVEL", "INFO").upper())
+./.venv-build/lib/python3.12/site-packages/id/__main__.py:57:        default=os.getenv("ID_OIDC_AUDIENCE"),
+./.venv-build/lib/python3.12/site-packages/id/_internal/oidc/ambient.py:57:    if not os.getenv("GITHUB_ACTIONS"):
+./.venv-build/lib/python3.12/site-packages/id/_internal/oidc/ambient.py:64:    req_token = os.getenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
+./.venv-build/lib/python3.12/site-packages/id/_internal/oidc/ambient.py:70:    req_url = os.getenv("ACTIONS_ID_TOKEN_REQUEST_URL")
+./.venv-build/lib/python3.12/site-packages/id/_internal/oidc/ambient.py:118:    service_account_name = os.getenv("GOOGLE_SERVICE_ACCOUNT_NAME")
+./.venv-build/lib/python3.12/site-packages/id/_internal/oidc/ambient.py:219:    if not os.getenv("BUILDKITE"):
+./.venv-build/lib/python3.12/site-packages/id/_internal/oidc/ambient.py:279:    if not os.getenv("GITLAB_CI"):
+./.venv-build/lib/python3.12/site-packages/id/_internal/oidc/ambient.py:286:    token = os.getenv(var_name)
+./.venv-build/lib/python3.12/site-packages/id/_internal/oidc/ambient.py:305:    if not os.getenv("CIRCLECI"):
+./.venv-build/lib/python3.12/site-packages/pygments/formatters/img.py:140:            os.path.join(os.getenv("HOME"), "Library/Fonts/"),
+./.venv-build/lib/python3.12/site-packages/pygments/cmdline.py:473:            if os.environ.get("COLORTERM", "") in ("truecolor", "24bit"):
+./.venv-build/lib/python3.12/site-packages/pygments/cmdline.py:475:            elif "256" in os.environ.get("TERM", ""):
+./.venv-build/lib/python3.12/site-packages/cryptography/hazmat/bindings/openssl/binding.py:109:if sys.platform == "win32" and os.environ.get("PROCESSOR_ARCHITEW6432") is not None:
+./.venv-build/lib/python3.12/site-packages/pkg_resources/__init__.py:1461:        if os.name == "nt" and not path.startswith(os.environ["windir"]):
+./.venv-build/lib/python3.12/site-packages/pkg_resources/__init__.py:1543:    return os.environ.get("PYTHON_EGG_CACHE") or _user_cache_dir(appname="Python-Eggs")
+./.venv-build/lib/python3.12/site-packages/docutils/writers/odf_odt/__init__.py:812:        s1 = os.environ.get("USER", "")
+./.venv-build/lib/python3.12/site-packages/docutils/writers/odf_odt/__init__.py:2084:        s1 = os.environ.get("USER", "")
+./.venv-build/lib/python3.12/site-packages/docutils/parsers/rst/directives/misc.py:697:        # source_date_epoch = os.environ.get('SOURCE_DATE_EPOCH')
+./.venv-build/lib/python3.12/site-packages/docutils/frontend.py:1185:        if "DOCUTILSCONFIG" in os.environ:
+./.venv-build/lib/python3.12/site-packages/docutils/frontend.py:1186:            config_files = os.environ["DOCUTILSCONFIG"].split(os.pathsep)
+./.venv-build/lib/python3.12/site-packages/twine/utils.py:340:        default = os.environ.get(env, default)
+./.venv-build/lib/python3.12/site-packages/twine/utils.py:360:        default = self.bool_from_env(os.environ.get(env))
+./.venv-build/lib/python3.12/site-packages/twine/cli.py:40:        # could be based on FORCE_COLORS or PY_COLORS in os.environ, since Rich
+./.venv-build/lib/python3.11/site-packages/black/concurrency.py:86:        workers = int(os.environ.get("BLACK_NUM_WORKERS", 0))
+./.venv-build/lib/python3.11/site-packages/black/files.py:229:        config_root = os.environ.get("XDG_CONFIG_HOME", "~/.config")
+./.venv-build/lib/python3.11/site-packages/black/cache.py:43:    cache_dir = Path(os.environ.get("BLACK_CACHE_DIR", default_cache_dir))
+./.venv-build/lib/python3.11/site-packages/urllib3/util/ssl_.py:367:    sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
+./.venv-build/lib/python3.11/site-packages/mypyc/__main__.py:46:    opt_level = os.getenv("MYPYC_OPT_LEVEL", "3")
+./.venv-build/lib/python3.11/site-packages/mypyc/__main__.py:47:    debug_level = os.getenv("MYPYC_DEBUG_LEVEL", "1")
+./.venv-build/lib/python3.11/site-packages/mypyc/__main__.py:48:    strict_dunder_typing = bool(int(os.getenv("MYPYC_STRICT_DUNDER_TYPING", "0")))
+./.venv-build/lib/python3.11/site-packages/mypyc/__main__.py:51:    log_trace = bool(int(os.getenv("MYPYC_LOG_TRACE", "0")))
+./.venv-build/lib/python3.11/site-packages/mypyc/__main__.py:64:    env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/mypyc/test/config.py:5:provided_prefix = os.getenv("MYPY_TEST_PREFIX", None)
+./.venv-build/lib/python3.11/site-packages/mypyc/test/test_commandline.py:46:        env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/mypyc/test/test_run.py:274:        opt_level = int(os.environ.get("MYPYC_OPT_LEVEL", 0))
+./.venv-build/lib/python3.11/site-packages/mypyc/test/test_run.py:302:        env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/mypyc/test/test_external.py:21:        env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/mypyc/test/test_external.py:43:            env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/mypyc/test/test_external.py:44:            if "GTEST_COLOR" not in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/diagnose.py:32:    env = {name: os.getenv(name) for name in env_names}
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/console.py:505:        or os.getenv("DATABRICKS_RUNTIME_VERSION")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/console.py:605:    _environ: Mapping[str, str] = os.environ
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/console.py:639:        # Copy of os.environ allows us to replace it for testing
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/urllib3/util/ssl_.py:353:        sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py:19:    return is_appengine() and os.environ["APPENGINE_RUNTIME"] == "python27"
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py:23:    return "APPENGINE_RUNTIME" in os.environ and os.environ.get("SERVER_SOFTWARE", "").startswith(
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py:29:    return "APPENGINE_RUNTIME" in os.environ and os.environ.get("SERVER_SOFTWARE", "").startswith(
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pyproject_hooks/_impl.py:78:    env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pyproject_hooks/_impl.py:94:    env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py:61:    backend_path = os.environ.get("_PYPROJECT_HOOKS_BACKEND_PATH")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py:62:    ep = os.environ["_PYPROJECT_HOOKS_BUILD_BACKEND"]
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/utils.py:210:    netrc_file = os.environ.get("NETRC")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/utils.py:739:        old_value = os.environ.get(env_name)
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/utils.py:740:        os.environ[env_name] = value
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/utils.py:746:                del os.environ[env_name]
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/utils.py:748:                os.environ[env_name] = old_value
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/utils.py:761:        return os.environ.get(key) or os.environ.get(key.upper())
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/sessions.py:755:                    os.environ.get("REQUESTS_CA_BUNDLE")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/sessions.py:756:                    or os.environ.get("CURL_CA_BUNDLE")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distro/distro.py:75:_UNIXCONFDIR = os.environ.get("UNIXCONFDIR", "/etc")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distro/distro.py:76:_UNIXUSRLIBDIR = os.environ.get("UNIXUSRLIBDIR", "/usr/lib")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/util.py:336:    #                                     in os.environ):
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/util.py:337:    #        result =  os.environ['__PYVENV_LAUNCHER__']
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/util.py:799:    if os.name == "nt" and "LOCALAPPDATA" in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/util.py:1956:    if "_PYTHON_HOST_PLATFORM" in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/util.py:1957:        return os.environ["_PYTHON_HOST_PLATFORM"]
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/util.py:2023:    cross_compilation_target = os.environ.get("VSCMD_ARG_TGT_ARCH")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/compat.py:250:        of os.environ.get("PATH"), or can be overridden with a custom search
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/compat.py:270:            path = os.environ.get("PATH", os.defpath)
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/compat.py:281:            pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/scripts.py:288:                source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pkg_resources/__init__.py:1420:        if os.name == "nt" and not path.startswith(os.environ["windir"]):
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pkg_resources/__init__.py:1502:    return os.environ.get("PYTHON_EGG_CACHE") or _user_cache_dir(appname="Python-Eggs")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/msgpack/__init__.py:11:if os.environ.get("MSGPACK_PUREPYTHON"):
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/windows.py:159:    result = os.environ.get(env_var_name)
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/windows.py:170:            os.path.normpath(os.environ["USERPROFILE"]), "Documents"
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/windows.py:175:            os.path.normpath(os.environ["USERPROFILE"]), "Downloads"
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/windows.py:179:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Pictures")  # noqa: PTH118
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/windows.py:182:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Videos")  # noqa: PTH118
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/windows.py:185:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Music")  # noqa: PTH118
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/unix.py:45:        path = os.environ.get("XDG_DATA_HOME", "")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/unix.py:52:        path = os.environ.get("XDG_DATA_DIRS", "")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/unix.py:76:        path = os.environ.get("XDG_CONFIG_HOME", "")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/unix.py:83:        path = os.environ.get("XDG_CONFIG_DIRS", "")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/unix.py:107:        path = os.environ.get("XDG_CACHE_HOME", "")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/unix.py:123:        path = os.environ.get("XDG_STATE_HOME", "")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/unix.py:177:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/unix.py:201:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/unix.py:238:        media_dir = os.environ.get(env_var, "").strip()
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/__init__.py:31:    if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/__init__.py:32:        if os.getenv("SHELL") or os.getenv("PREFIX"):
+./.venv-build/lib/python3.11/site-packages/pip/_internal/vcs/git.py:84:        if os.environ.get("PIP_NO_INPUT"):
+./.venv-build/lib/python3.11/site-packages/pip/_internal/req/req_file.py:540:            value = os.getenv(var_name)
+./.venv-build/lib/python3.11/site-packages/pip/_internal/resolution/resolvelib/resolver.py:87:        if "PIP_RESOLVER_DEBUG" in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_internal/build_env.py:129:        pip_constraint = os.environ.get("PIP_CONSTRAINT")
+./.venv-build/lib/python3.11/site-packages/pip/_internal/build_env.py:300:            name: os.environ.get(name, None) for name in ("PATH", "PYTHONNOUSERSITE", "PYTHONPATH")
+./.venv-build/lib/python3.11/site-packages/pip/_internal/build_env.py:310:        os.environ.update(
+./.venv-build/lib/python3.11/site-packages/pip/_internal/build_env.py:326:                os.environ.pop(varname, None)
+./.venv-build/lib/python3.11/site-packages/pip/_internal/build_env.py:328:                os.environ[varname] = old_value
+./.venv-build/lib/python3.11/site-packages/pip/_internal/commands/debug.py:188:        show_value("REQUESTS_CA_BUNDLE", os.environ.get("REQUESTS_CA_BUNDLE"))
+./.venv-build/lib/python3.11/site-packages/pip/_internal/commands/debug.py:189:        show_value("CURL_CA_BUNDLE", os.environ.get("CURL_CA_BUNDLE"))
+./.venv-build/lib/python3.11/site-packages/pip/_internal/commands/configuration.py:276:        elif "VISUAL" in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_internal/commands/configuration.py:277:            return os.environ["VISUAL"]
+./.venv-build/lib/python3.11/site-packages/pip/_internal/commands/configuration.py:278:        elif "EDITOR" in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_internal/commands/configuration.py:279:            return os.environ["EDITOR"]
+./.venv-build/lib/python3.11/site-packages/pip/_internal/utils/subprocess.py:122:    env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/pip/_internal/utils/misc.py:203:    for action in os.environ.get("PIP_EXISTS_ACTION", "").split():
+./.venv-build/lib/python3.11/site-packages/pip/_internal/utils/misc.py:211:    if os.environ.get("PIP_NO_INPUT"):
+./.venv-build/lib/python3.11/site-packages/pip/_internal/utils/entrypoints.py:53:    path_parts = os.path.normcase(os.environ.get("PATH", "")).split(os.pathsep)
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/req_command.py:55:    return os.environ.get("_PIP_IN_BUILD_IGNORE_CONSTRAINTS") == "1"
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/base_command.py:203:        if options.python and "_PIP_RUNNING_IN_SUBPROCESS" not in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/base_command.py:208:        #       without resorting to os.environ to hold these.
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/base_command.py:212:            os.environ["PIP_NO_INPUT"] = "1"
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/base_command.py:215:            os.environ["PIP_EXISTS_ACTION"] = " ".join(options.exists_action)
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/autocompletion.py:20:    if "PIP_AUTO_COMPLETE" not in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/autocompletion.py:24:    if not os.environ.get("COMP_WORDS") or not os.environ.get("COMP_CWORD"):
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/autocompletion.py:26:    cwords = os.environ["COMP_WORDS"].split()[1:]
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/autocompletion.py:27:    cword = int(os.environ["COMP_CWORD"])
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/main_parser.py:81:    if general_options.python and "_PIP_RUNNING_IN_SUBPROCESS" not in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/main_parser.py:95:        os.environ["_PIP_RUNNING_IN_SUBPROCESS"] = "1"
+./.venv-build/lib/python3.11/site-packages/pip/_internal/metadata/__init__.py:52:        return bool(strtobool(os.environ["_PIP_USE_IMPORTLIB_METADATA"]))
+./.venv-build/lib/python3.11/site-packages/pip/_internal/configuration.py:327:        for key, val in os.environ.items():
+./.venv-build/lib/python3.11/site-packages/pip/_internal/configuration.py:345:        env_config_file = os.environ.get("PIP_CONFIG_FILE", None)
+./.venv-build/lib/python3.11/site-packages/pip/_internal/operations/install/wheel.py:139:        for i in os.environ.get("PATH", "").split(os.pathsep)
+./.venv-build/lib/python3.11/site-packages/pip/_internal/operations/install/wheel.py:175:    warn_for_tilde = any(i[0] == "~" for i in os.environ.get("PATH", "").split(os.pathsep) if i)
+./.venv-build/lib/python3.11/site-packages/pip/_internal/operations/install/wheel.py:300:        if "ENSUREPIP_OPTIONS" not in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_internal/operations/install/wheel.py:303:        if os.environ.get("ENSUREPIP_OPTIONS", "") != "altinstall":
+./.venv-build/lib/python3.11/site-packages/pip/_internal/operations/install/wheel.py:313:        if "ENSUREPIP_OPTIONS" not in os.environ:
+./.venv-build/lib/python3.11/site-packages/pip/_internal/network/session.py:105:    return any(name in os.environ for name in CI_ENVIRONMENT_VARIABLES)
+./.venv-build/lib/python3.11/site-packages/pip/_internal/network/session.py:198:    user_data = os.environ.get("PIP_USER_AGENT_USER_DATA")
+./.venv-build/lib/python3.11/site-packages/pip/_internal/network/auth.py:135:        env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/pip/_internal/network/auth.py:151:        env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/pip/_internal/network/auth.py:189:                path = os.environ.get("PATH", None)
+./.venv-build/lib/python3.11/site-packages/_distutils_hack/__init__.py:43:    which = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "local")
+./.venv-build/lib/python3.11/site-packages/wheel/wheelfile.py:39:    timestamp = int(os.environ.get("SOURCE_DATE_EPOCH", timestamp or time.time()))
+./.venv-build/lib/python3.11/site-packages/wheel/macosx_libfile.py:413:    if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv-build/lib/python3.11/site-packages/wheel/macosx_libfile.py:414:        deploy_target = tuple(int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split("."))
+./.venv-build/lib/python3.11/site-packages/wheel/macosx_libfile.py:466:        if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/wheelfile.py:39:    timestamp = int(os.environ.get("SOURCE_DATE_EPOCH", timestamp or time.time()))
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/macosx_libfile.py:413:    if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/macosx_libfile.py:414:        deploy_target = tuple(int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split("."))
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/macosx_libfile.py:466:        if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/typeguard/__init__.py:47:if "TYPEGUARD_DISABLE_PLUGIN_AUTOLOAD" not in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/windows.py:159:    result = os.environ.get(env_var_name)
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/windows.py:170:            os.path.normpath(os.environ["USERPROFILE"]), "Documents"
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/windows.py:175:            os.path.normpath(os.environ["USERPROFILE"]), "Downloads"
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/windows.py:179:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Pictures")  # noqa: PTH118
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/windows.py:182:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Videos")  # noqa: PTH118
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/windows.py:185:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Music")  # noqa: PTH118
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/unix.py:42:        path = os.environ.get("XDG_DATA_HOME", "")
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/unix.py:49:        path = os.environ.get("XDG_DATA_DIRS", "")
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/unix.py:73:        path = os.environ.get("XDG_CONFIG_HOME", "")
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/unix.py:80:        path = os.environ.get("XDG_CONFIG_DIRS", "")
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/unix.py:104:        path = os.environ.get("XDG_CACHE_HOME", "")
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/unix.py:120:        path = os.environ.get("XDG_STATE_HOME", "")
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/unix.py:174:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/unix.py:198:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/unix.py:241:        media_dir = os.environ.get(env_var, "").strip()
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/__init__.py:31:    if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/__init__.py:32:        if os.getenv("SHELL") or os.getenv("PREFIX"):
+./.venv-build/lib/python3.11/site-packages/setuptools/warnings.py:109:    enforce = os.getenv("SETUPTOOLS_ENFORCE_DEPRECATION", "false").lower()
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_egg_info.py:527:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_egg_info.py:544:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_egg_info.py:1114:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_egg_info.py:1167:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_egg_info.py:1218:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_egg_info.py:1257:        environ = os.environ.copy().update(
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_bdist_egg.py:52:        os.environ.get("PYTHONDONTWRITEBYTECODE", False),
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/fixtures.py:115:    prebuilt = os.getenv("PRE_BUILT_SETUPTOOLS_SDIST")
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/fixtures.py:125:    prebuilt = os.getenv("PRE_BUILT_SETUPTOOLS_WHEEL")
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_manifest.py:347:    @pytest.fixture(autouse=os.getenv("SETUPTOOLS_USE_DISTUTILS") == "stdlib")
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/integration/helpers.py:21:        env={**os.environ, **(env or {})},
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/integration/test_pip_install_sdist.py:108:    download_path = os.getenv("DOWNLOAD_PATH", str(tmp_path))
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/integration/test_pip_install_sdist.py:157:    download_path = os.getenv("DOWNLOAD_PATH", str(tmp_path))
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_virtualenv.py:31:    if not os.environ.get("NETWORK_REQUIRED", False):  # pragma: nocover
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_build_py.py:171:        if os.getenv("SETUPTOOLS_USE_DISTUTILS") == "stdlib":
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/contexts.py:30:    saved = dict((key, os.environ[key]) for key in replacements if key in os.environ)
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/contexts.py:35:        os.environ.pop(key, None)
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/contexts.py:38:    os.environ.update(replacements)
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/contexts.py:44:            os.environ.pop(key, None)
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/contexts.py:45:        os.environ.update(saved)
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_develop.py:66:        bool(os.environ.get("APPVEYOR")),
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_distutils_adoption.py:21:        env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/environment.py:30:            env = dict(os.environ)
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/environment.py:39:    for path in os.environ.get("PATH", "").split(os.pathsep):
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/environment.py:53:        for envname in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/environment.py:54:            env[envname] = os.environ[envname]
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_editable_install.py:418:    env = dict(os.environ, PYTHONPATH=os.pathsep.join(map(str, site_packages_all)))
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_build_ext.py:83:            os.environ["SETUPTOOLS_EXT_SUFFIX"] = ".test-suffix"
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_build_ext.py:89:            del os.environ["SETUPTOOLS_EXT_SUFFIX"]
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_build_meta.py:26:TIMEOUT = int(os.getenv("TIMEOUT_BACKEND_TEST", "180"))  # in seconds
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_build_meta.py:88:        os.environ.update(self.env)
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_sdist.py:106:    "os.environ.get('PYTEST_XDIST_WORKER')",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_sdist.py:819:    @pytest.mark.skipif("os.environ.get('SETUPTOOLS_USE_DISTUTILS') == 'stdlib'")
+./.venv-build/lib/python3.11/site-packages/setuptools/installer.py:79:    quiet = "PIP_QUIET" not in os.environ and "PIP_VERBOSE" not in os.environ
+./.venv-build/lib/python3.11/site-packages/setuptools/installer.py:80:    if "PIP_INDEX_URL" in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_scripts.py:49:        return os.environ.get("__PYVENV_LAUNCHER__", _default)
+./.venv-build/lib/python3.11/site-packages/setuptools/_scripts.py:236:        launcher = os.environ.get("SETUPTOOLS_LAUNCHER", "executable")
+./.venv-build/lib/python3.11/site-packages/setuptools/_scripts.py:243:        if ext not in os.environ["PATHEXT"].lower().split(";"):
+./.venv-build/lib/python3.11/site-packages/setuptools/command/build_ext.py:159:        so_ext = os.getenv("SETUPTOOLS_EXT_SUFFIX")
+./.venv-build/lib/python3.11/site-packages/setuptools/command/easy_install.py:18:            sys_executable=os.environ.get("__PYVENV_LAUNCHER__", os.path.normpath(sys.executable)),
+./.venv-build/lib/python3.11/site-packages/setuptools/config/_validate_pyproject/error_reporting.py:79:        debug_code = os.getenv("JSONSCHEMA_DEBUG_CODE_GENERATION", "false").lower()
+./.venv-build/lib/python3.11/site-packages/setuptools/config/_validate_pyproject/formats.py:186:        if os.getenv("NO_NETWORK") or os.getenv("VALIDATE_PYPROJECT_NO_NETWORK"):
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:69:    ...     assert 'foo' in os.environ['PYTHONPATH']
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:70:    ...     assert 'anything' in os.environ['PYTHONPATH']
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:71:    >>> os.environ['PYTHONPATH']
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:76:    ...     assert 'foo' in os.environ['PYTHONPATH']
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:77:    >>> os.environ.get('PYTHONPATH')
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:80:    orig_pythonpath = os.environ.get("PYTHONPATH", nothing)
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:81:    current_pythonpath = os.environ.get("PYTHONPATH", "")
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:87:            os.environ["PYTHONPATH"] = new_path
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:91:            os.environ.pop("PYTHONPATH", None)
+./.venv-build/lib/python3.11/site-packages/setuptools/_path.py:93:            os.environ["PYTHONPATH"] = orig_pythonpath
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:57:        target = os.environ.get("VSCMD_ARG_TGT_ARCH")
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:94:    env_ver = os.environ.get(MACOSX_VERSION_VAR)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:163:    """Ensure that 'os.environ' has all the environment variables we
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:170:    if os.name == "posix" and "HOME" not in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:174:            os.environ["HOME"] = pwd.getpwuid(os.getuid())[5]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:180:    if "PLAT" not in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:181:        os.environ["PLAT"] = get_platform()
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:189:    dictionary or in 'os.environ' if it's not in 'local_vars'.
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:190:    'os.environ' is first checked/augmented to guarantee that it contains
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:192:    variables not found in either 'local_vars' or 'os.environ'.
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/util.py:195:    lookup = dict(os.environ)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:48:if "_PYTHON_PROJECT_BASE" in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:49:    project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:323:        if "CC" in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:324:            newcc = os.environ["CC"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:325:            if "LDSHARED" not in os.environ and ldshared.startswith(cc):
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:330:        cxx = os.environ.get("CXX", cxx)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:331:        ldshared = os.environ.get("LDSHARED", ldshared)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:332:        ldcxxshared = os.environ.get("LDCXXSHARED", ldcxxshared)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:333:        cpp = os.environ.get(
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:340:        cflags = os.environ.get("CFLAGS", cflags)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:342:        cxxflags = os.environ.get("CXXFLAGS", cxxflags)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:350:        ar = os.environ.get("AR", ar)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:352:        archiver = ar + " " + os.environ.get("ARFLAGS", ar_flags)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:369:        if "RANLIB" in os.environ and compiler.executables.get("ranlib", None):
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:370:            compiler.set_executables(ranlib=os.environ["RANLIB"])
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:465:                elif n in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:467:                    item = os.environ[n]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/sysconfig.py:590:    flags = os.environ.get(f"{type}FLAGS")
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_bdist_rpm.py:50:        os.environ["HOME"] = tmp_dir  # to confine dir '.rpmdb' creation
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_bdist_rpm.py:95:        os.environ["HOME"] = tmp_dir  # to confine dir '.rpmdb' creation
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:119:        os.environ["AR"] = "env_ar"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:120:        os.environ["CC"] = "env_cc"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:121:        os.environ["CPP"] = "env_cpp"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:122:        os.environ["CXX"] = "env_cxx --env-cxx-flags"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:123:        os.environ["LDSHARED"] = "env_ldshared"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:124:        os.environ["LDFLAGS"] = "--env-ldflags"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:125:        os.environ["ARFLAGS"] = "--env-arflags"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:126:        os.environ["CFLAGS"] = "--env-cflags"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:127:        os.environ["CPPFLAGS"] = "--env-cppflags"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:128:        os.environ["RANLIB"] = "env_ranlib"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:145:        del os.environ["AR"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:146:        del os.environ["CC"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:147:        del os.environ["CPP"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:148:        del os.environ["CXX"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:149:        del os.environ["LDSHARED"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:150:        del os.environ["LDFLAGS"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:151:        del os.environ["ARFLAGS"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:152:        del os.environ["CFLAGS"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:153:        del os.environ["CPPFLAGS"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:154:        del os.environ["RANLIB"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_sysconfig.py:286:        out = subprocess.check_output(cmd, env={**os.environ, "PYTHONPATH": distutils_path})
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_build_ext.py:557:            if os.environ.get("MACOSX_DEPLOYMENT_TARGET"):
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_build_ext.py:558:                del os.environ["MACOSX_DEPLOYMENT_TARGET"]
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_build_ext.py:560:            os.environ["MACOSX_DEPLOYMENT_TARGET"] = target
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:57:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "x86"}):
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:59:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "x64"}):
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:61:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "arm"}):
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:63:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "arm64"}):
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:122:        os.environ.pop("HOME", None)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:126:        assert os.environ["PLAT"] == get_platform()
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:131:        os.environ.pop("HOME", None)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:149:            assert os.environ["HOME"] == "/home/distutils"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:152:        os.environ.pop("HOME", None)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_util.py:157:            assert "HOME" not in os.environ
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/dist.py:388:            yield pathlib.Path(os.getenv("DIST_EXTRA_CONFIG"))
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/debug.py:5:DEBUG = os.environ.get("DISTUTILS_DEBUG")
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/command/_framework_compat.py:22:    ensurepip = os.environ.get("ENSUREPIP_OPTIONS")
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/command/build_ext.py:790:                elif "_PYTHON_HOST_PLATFORM" in os.environ:
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/zos.py:114:            if (binary := os.environ.get(envvar, None))
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/cygwin.py:71:        self.cc = os.environ.get("CC", self.cc or "gcc")
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/cygwin.py:72:        self.cxx = os.environ.get("CXX", self.cxx or "g++")
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:62:        old_distutils_use_sdk = os.environ.pop("DISTUTILS_USE_SDK", None)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:63:        os.environ[test_var] = test_value
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:69:            os.environ.pop(test_var)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:71:                os.environ["DISTUTILS_USE_SDK"] = old_distutils_use_sdk
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:107:        inner_cmd = 'import os; assert os.environ["PATH"] == "expected"'
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:129:            assert os.environ["PATH"] == "expected"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:134:        assert os.environ.get("PATH") != "expected"
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/tests/test_unix.py:75:            env = os.environ
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/msvc.py:82:    root = os.environ.get("ProgramFiles(x86)") or os.environ.get("ProgramFiles")
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/msvc.py:148:    if os.getenv("DISTUTILS_USE_SDK"):
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/msvc.py:149:        return {key.lower(): value for key, value in os.environ.items()}
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/msvc.py:187:        paths = os.getenv("path").split(os.pathsep)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/msvc.py:547:        env = dict(os.environ, PATH=self._paths)
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/compilers/C/msvc.py:568:        with mock.patch.dict("os.environ", env):
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/spawn.py:52:    return os.environ if env is None else env
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/spawn.py:100:    os.environ['PATH'].  Returns the complete filename or None if not found.
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/spawn.py:111:        path = os.environ.get("PATH", None)
+./.venv-build/lib/python3.11/site-packages/botocore/credentials.py:1132:            ``os.environ`` if no value is provided).
+./.venv-build/lib/python3.11/site-packages/botocore/credentials.py:1144:            environ = os.environ
+./.venv-build/lib/python3.11/site-packages/botocore/credentials.py:1256:            environ = os.environ
+./.venv-build/lib/python3.11/site-packages/botocore/credentials.py:1416:            environ = os.environ
+./.venv-build/lib/python3.11/site-packages/botocore/credentials.py:1815:        if env_key and env_key in os.environ:
+./.venv-build/lib/python3.11/site-packages/botocore/credentials.py:1816:            return os.environ[env_key]
+./.venv-build/lib/python3.11/site-packages/botocore/credentials.py:1971:            environ = os.environ
+./.venv-build/lib/python3.11/site-packages/botocore/session.py:348:            >>> os.environ['FOO'] = 'myvalue'
+./.venv-build/lib/python3.11/site-packages/botocore/session.py:551:        if os.environ.get("AWS_EXECUTION_ENV") is not None:
+./.venv-build/lib/python3.11/site-packages/botocore/session.py:552:            base += " exec-env/{}".format(os.environ.get("AWS_EXECUTION_ENV"))
+./.venv-build/lib/python3.11/site-packages/botocore/utils.py:411:            env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/botocore/utils.py:700:            ``None`` is the argument then ``os.environ`` will be used by
+./.venv-build/lib/python3.11/site-packages/botocore/utils.py:708:            environ = os.environ
+./.venv-build/lib/python3.11/site-packages/botocore/utils.py:3455:        environ = os.environ
+./.venv-build/lib/python3.11/site-packages/botocore/handlers.py:112:    has_lambda_name = "AWS_LAMBDA_FUNCTION_NAME" in os.environ
+./.venv-build/lib/python3.11/site-packages/botocore/handlers.py:113:    trace_id = os.environ.get("_X_AMZN_TRACE_ID")
+./.venv-build/lib/python3.11/site-packages/botocore/handlers.py:375:                os.environ.get(
+./.venv-build/lib/python3.11/site-packages/botocore/useragent.py:348:            execution_env=os.environ.get("AWS_EXECUTION_ENV"),
+./.venv-build/lib/python3.11/site-packages/botocore/compat.py:295:    disabled = os.environ.get("BOTO_DISABLE_CRT", "false")
+./.venv-build/lib/python3.11/site-packages/botocore/plugin.py:61:            context.plugins = os.environ.get("BOTOCORE_EXPERIMENTAL__PLUGINS")
+./.venv-build/lib/python3.11/site-packages/botocore/plugin.py:64:    return os.environ.get("BOTOCORE_EXPERIMENTAL__PLUGINS")
+./.venv-build/lib/python3.11/site-packages/botocore/endpoint.py:420:        return os.environ.get("REQUESTS_CA_BUNDLE", True)
+./.venv-build/lib/python3.11/site-packages/botocore/tokens.py:339:            environ = os.environ
+./.venv-build/lib/python3.11/site-packages/botocore/httpsession.py:172:        sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
+./.venv-build/lib/python3.11/site-packages/botocore/httpsession.py:441:            if ensure_boolean(os.environ.get("BOTO_EXPERIMENTAL__ADD_PROXY_HOST_HEADER", "")):
+./.venv-build/lib/python3.11/site-packages/botocore/configprovider.py:48:#: the ``env var`` is the OS environment variable (``os.environ``) to
+./.venv-build/lib/python3.11/site-packages/botocore/configprovider.py:350:            is not provided it will default to use os.environ.
+./.venv-build/lib/python3.11/site-packages/botocore/configprovider.py:354:            environ = os.environ
+./.venv-build/lib/python3.11/site-packages/botocore/configprovider.py:521:            >>> os.environ['FOO'] = 'myvalue'
+./.venv-build/lib/python3.11/site-packages/botocore/configprovider.py:583:        if os.environ.get("AWS_EXECUTION_ENV"):
+./.venv-build/lib/python3.11/site-packages/botocore/configprovider.py:584:            default_region = os.environ.get("AWS_DEFAULT_REGION")
+./.venv-build/lib/python3.11/site-packages/botocore/configprovider.py:585:            current_region = os.environ.get("AWS_REGION", default_region)
+./.venv-build/lib/python3.11/site-packages/botocore/configprovider.py:909:            is not provided it will default to use os.environ.
+./.venv-build/lib/python3.11/site-packages/botocore/configprovider.py:916:            environ = os.environ
+./.venv-build/lib/python3.11/site-packages/_pytest/runner.py:205:        os.environ[var_name] = value
+./.venv-build/lib/python3.11/site-packages/_pytest/runner.py:207:        os.environ.pop(var_name)
+./.venv-build/lib/python3.11/site-packages/_pytest/monkeypatch.py:35:    :data:`os.environ`:
+./.venv-build/lib/python3.11/site-packages/_pytest/monkeypatch.py:327:        if prepend and name in os.environ:
+./.venv-build/lib/python3.11/site-packages/_pytest/monkeypatch.py:328:            value = value + prepend + os.environ[name]
+./.venv-build/lib/python3.11/site-packages/_pytest/monkeypatch.py:329:        self.setitem(os.environ, name, value)
+./.venv-build/lib/python3.11/site-packages/_pytest/monkeypatch.py:337:        environ: MutableMapping[str, str] = os.environ
+./.venv-build/lib/python3.11/site-packages/_pytest/pathlib.py:583:    ignore = os.environ.get("PY_IGNORE_IMPORTMISMATCH", "")
+./.venv-build/lib/python3.11/site-packages/_pytest/pytester.py:1328:        env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/_pytest/_py/path.py:1132:                ignore = os.getenv("PY_IGNORE_IMPORTMISMATCH")
+./.venv-build/lib/python3.11/site-packages/_pytest/_py/path.py:1203:                    paths = os.environ["Path"].split(";")
+./.venv-build/lib/python3.11/site-packages/_pytest/_py/path.py:1207:                        systemroot = os.environ["SYSTEMROOT"]
+./.venv-build/lib/python3.11/site-packages/_pytest/_py/path.py:1213:                    paths = os.environ["PATH"].split(":")
+./.venv-build/lib/python3.11/site-packages/_pytest/_py/path.py:1216:                tryadd += os.environ["PATHEXT"].split(os.pathsep)
+./.venv-build/lib/python3.11/site-packages/_pytest/_py/path.py:1235:            x = os.environ["HOME"]
+./.venv-build/lib/python3.11/site-packages/_pytest/_py/path.py:1238:                x = os.environ["HOMEDRIVE"] + os.environ["HOMEPATH"]
+./.venv-build/lib/python3.11/site-packages/_pytest/_py/path.py:1409:            username = os.environ["USER"]  # linux, et al
+./.venv-build/lib/python3.11/site-packages/_pytest/_py/path.py:1412:                username = os.environ["USERNAME"]  # windows
+./.venv-build/lib/python3.11/site-packages/_pytest/cacheprovider.py:510:    if "TOX_ENV_DIR" in os.environ:
+./.venv-build/lib/python3.11/site-packages/_pytest/cacheprovider.py:511:        cache_dir_default = os.path.join(os.environ["TOX_ENV_DIR"], cache_dir_default)
+./.venv-build/lib/python3.11/site-packages/_pytest/assertion/util.py:601:    return any(var in os.environ for var in env_vars)
+./.venv-build/lib/python3.11/site-packages/_pytest/_argcomplete.py:102:if os.environ.get("_ARGCOMPLETE"):
+./.venv-build/lib/python3.11/site-packages/_pytest/tmpdir.py:153:            from_env = os.environ.get("PYTEST_DEBUG_TEMPROOT")
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:152:    old_pytest_version = os.environ.get("PYTEST_VERSION")
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:154:        os.environ["PYTEST_VERSION"] = __version__
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:189:            os.environ.pop("PYTEST_VERSION", None)
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:191:            os.environ["PYTEST_VERSION"] = old_pytest_version
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:431:        if os.environ.get("PYTEST_DEBUG"):
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:804:        self._import_plugin_specs(os.environ.get("PYTEST_PLUGINS"))
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:1246:            os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD")
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:1351:            env_addopts = os.environ.get("PYTEST_ADDOPTS", "")
+./.venv-build/lib/python3.11/site-packages/_pytest/config/__init__.py:1366:            not os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD")
+./.venv-build/lib/python3.11/site-packages/_pytest/_io/terminalwriter.py:37:    if os.environ.get("PY_COLORS") == "1":
+./.venv-build/lib/python3.11/site-packages/_pytest/_io/terminalwriter.py:39:    if os.environ.get("PY_COLORS") == "0":
+./.venv-build/lib/python3.11/site-packages/_pytest/_io/terminalwriter.py:41:    if os.environ.get("NO_COLOR"):
+./.venv-build/lib/python3.11/site-packages/_pytest/_io/terminalwriter.py:43:    if os.environ.get("FORCE_COLOR"):
+./.venv-build/lib/python3.11/site-packages/_pytest/_io/terminalwriter.py:45:    return hasattr(file, "isatty") and file.isatty() and os.environ.get("TERM") != "dumb"
+./.venv-build/lib/python3.11/site-packages/_pytest/_io/terminalwriter.py:213:        theme = os.getenv("PYTEST_THEME")
+./.venv-build/lib/python3.11/site-packages/_pytest/_io/terminalwriter.py:214:        theme_mode = os.getenv("PYTEST_THEME_MODE", "dark")
+./.venv-build/lib/python3.11/site-packages/ruff/__main__.py:42:    paths = os.environ.get("PATH", "").split(os.pathsep)
+./.venv-build/lib/python3.11/site-packages/mypy/stubgen.py:1719:    environ_cache_dir = os.getenv("MYPY_CACHE_DIR", "")
+./.venv-build/lib/python3.11/site-packages/mypy/test/testutil.py:14:        mock_environ = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/mypy/test/testutil.py:17:            with mock.patch.dict(os.environ, values=mock_environ, clear=True):
+./.venv-build/lib/python3.11/site-packages/mypy/test/testpep561.py:63:            proc = subprocess.run(install_cmd, capture_output=True, env=os.environ)
+./.venv-build/lib/python3.11/site-packages/mypy/test/testpep561.py:85:        env.update(os.environ)
+./.venv-build/lib/python3.11/site-packages/mypy/test/config.py:5:provided_prefix = os.getenv("MYPY_TEST_PREFIX", None)
+./.venv-build/lib/python3.11/site-packages/mypy/test/testcmdline.py:68:    env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/mypy/test/testcmdline.py:85:    if "PYCHARM_HOSTED" in os.environ:
+./.venv-build/lib/python3.11/site-packages/mypy/test/testdaemon.py:86:    env = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/mypy/test/testmypyc.py:13:        if os.getenv("TEST_MYPYC", None) == "1":
+./.venv-build/lib/python3.11/site-packages/mypy/util.py:520:        int(os.getenv("MYPY_FORCE_TERMINAL_WIDTH", "0"))
+./.venv-build/lib/python3.11/site-packages/mypy/util.py:581:    env_var = os.getenv("MYPY_FORCE_COLOR", os.getenv("FORCE_COLOR", "0"))
+./.venv-build/lib/python3.11/site-packages/mypy/modulefinder.py:777:    path_env = os.getenv("MYPYPATH")
+./.venv-build/lib/python3.11/site-packages/mypy/modulefinder.py:851:        env = {**dict(os.environ), "PYTHONSAFEPATH": "1"}
+./.venv-build/lib/python3.11/site-packages/mypy/modulefinder.py:896:        root_dir = os.getenv("MYPY_TEST_PREFIX", None)
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1402:    environ_cache_dir = os.getenv("MYPY_CACHE_DIR", "")
+./.venv-build/lib/python3.11/site-packages/mypy/defaults.py:21:if os.environ.get("XDG_CONFIG_HOME"):
+./.venv-build/lib/python3.11/site-packages/mypy/defaults.py:22:    USER_CONFIG_FILES.insert(0, os.path.join(os.environ["XDG_CONFIG_HOME"], "mypy/config"))
+./.venv-build/lib/python3.11/site-packages/mypy/config_parser.py:335:    os.environ["MYPY_CONFIG_FILE_DIR"] = os.path.dirname(os.path.abspath(file_read))
+./.venv-build/lib/python3.11/site-packages/pygments/formatters/img.py:133:            os.path.join(os.getenv("HOME"), "Library/Fonts/"),
+./.venv-build/lib/python3.11/site-packages/pygments/cmdline.py:459:            if os.environ.get("COLORTERM", "") in ("truecolor", "24bit"):
+./.venv-build/lib/python3.11/site-packages/pygments/cmdline.py:461:            elif "256" in os.environ.get("TERM", ""):
+./.venv-build/lib/python3.11/site-packages/pkg_resources/__init__.py:1438:        if os.name == "nt" and not path.startswith(os.environ["windir"]):
+./.venv-build/lib/python3.11/site-packages/pkg_resources/__init__.py:1520:    return os.environ.get("PYTHON_EGG_CACHE") or _user_cache_dir(appname="Python-Eggs")
+./.venv-build/lib/python3.11/site-packages/click/core.py:1434:        instruction = os.environ.get(complete_var)
+./.venv-build/lib/python3.11/site-packages/click/core.py:2389:        <https://docs.python.org/3/library/os.html#os.environ>`_.
+./.venv-build/lib/python3.11/site-packages/click/core.py:2413:            rv = os.environ.get(self.envvar)
+./.venv-build/lib/python3.11/site-packages/click/core.py:2419:                rv = os.environ.get(envvar)
+./.venv-build/lib/python3.11/site-packages/click/core.py:3073:            rv = os.environ.get(envvar)
+./.venv-build/lib/python3.11/site-packages/click/utils.py:478:        folder = os.environ.get(key)
+./.venv-build/lib/python3.11/site-packages/click/utils.py:487:        os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
+./.venv-build/lib/python3.11/site-packages/click/shell_completion.py:345:        cwords = split_arg_string(os.environ["COMP_WORDS"])
+./.venv-build/lib/python3.11/site-packages/click/shell_completion.py:346:        cword = int(os.environ["COMP_CWORD"])
+./.venv-build/lib/python3.11/site-packages/click/shell_completion.py:367:        cwords = split_arg_string(os.environ["COMP_WORDS"])
+./.venv-build/lib/python3.11/site-packages/click/shell_completion.py:368:        cword = int(os.environ["COMP_CWORD"])
+./.venv-build/lib/python3.11/site-packages/click/shell_completion.py:403:        cwords = split_arg_string(os.environ["COMP_WORDS"])
+./.venv-build/lib/python3.11/site-packages/click/shell_completion.py:404:        incomplete = os.environ["COMP_CWORD"]
+./.venv-build/lib/python3.11/site-packages/click/_termui_impl.py:379:    pager_cmd_parts = shlex.split(os.environ.get("PAGER", ""), posix=False)
+./.venv-build/lib/python3.11/site-packages/click/_termui_impl.py:387:    if os.environ.get("TERM") in ("dumb", "emacs"):
+./.venv-build/lib/python3.11/site-packages/click/_termui_impl.py:432:    env = dict(os.environ)
+./.venv-build/lib/python3.11/site-packages/click/_termui_impl.py:437:        less_flags = f"{os.environ.get('LESS', '')}{' '.join(cmd_params)}"
+./.venv-build/lib/python3.11/site-packages/click/_termui_impl.py:565:            rv = os.environ.get(key)
+./.venv-build/lib/python3.11/site-packages/click/_termui_impl.py:585:            environ = os.environ.copy()
+./.venv-build/lib/python3.11/site-packages/click/testing.py:277:        and `os.environ` with the overrides from the given dictionary.
+./.venv-build/lib/python3.11/site-packages/click/testing.py:392:                old_env[key] = os.environ.get(key)
+./.venv-build/lib/python3.11/site-packages/click/testing.py:395:                        del os.environ[key]
+./.venv-build/lib/python3.11/site-packages/click/testing.py:399:                    os.environ[key] = value
+./.venv-build/lib/python3.11/site-packages/click/testing.py:405:                        del os.environ[key]
+./.venv-build/lib/python3.11/site-packages/click/testing.py:409:                    os.environ[key] = value
+./.venv-build/lib/python3.11/site-packages/platformdirs/windows.py:159:    result = os.environ.get(env_var_name)
+./.venv-build/lib/python3.11/site-packages/platformdirs/windows.py:170:            os.path.normpath(os.environ["USERPROFILE"]), "Documents"
+./.venv-build/lib/python3.11/site-packages/platformdirs/windows.py:175:            os.path.normpath(os.environ["USERPROFILE"]), "Downloads"
+./.venv-build/lib/python3.11/site-packages/platformdirs/windows.py:179:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Pictures")  # noqa: PTH118
+./.venv-build/lib/python3.11/site-packages/platformdirs/windows.py:182:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Videos")  # noqa: PTH118
+./.venv-build/lib/python3.11/site-packages/platformdirs/windows.py:185:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Music")  # noqa: PTH118
+./.venv-build/lib/python3.11/site-packages/platformdirs/unix.py:45:        path = os.environ.get("XDG_DATA_HOME", "")
+./.venv-build/lib/python3.11/site-packages/platformdirs/unix.py:52:        path = os.environ.get("XDG_DATA_DIRS", "")
+./.venv-build/lib/python3.11/site-packages/platformdirs/unix.py:76:        path = os.environ.get("XDG_CONFIG_HOME", "")
+./.venv-build/lib/python3.11/site-packages/platformdirs/unix.py:83:        path = os.environ.get("XDG_CONFIG_DIRS", "")
+./.venv-build/lib/python3.11/site-packages/platformdirs/unix.py:107:        path = os.environ.get("XDG_CACHE_HOME", "")
+./.venv-build/lib/python3.11/site-packages/platformdirs/unix.py:123:        path = os.environ.get("XDG_STATE_HOME", "")
+./.venv-build/lib/python3.11/site-packages/platformdirs/unix.py:177:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.11/site-packages/platformdirs/unix.py:201:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv-build/lib/python3.11/site-packages/platformdirs/unix.py:238:        media_dir = os.environ.get(env_var, "").strip()
+./.venv-build/lib/python3.11/site-packages/platformdirs/__init__.py:31:    if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
+./.venv-build/lib/python3.11/site-packages/platformdirs/__init__.py:32:        if os.getenv("SHELL") or os.getenv("PREFIX"):
+./.venv-build/lib/python3.11/site-packages/dateutil/tz/tz.py:1598:                    name = os.environ["TZ"]
+./conftest.py:16:os.environ.setdefault("FIRSTTRY_LICENSE_KEY", "demo-lic-key-2025")
+./conftest.py:17:os.environ.setdefault("FIRSTTRY_LICENSE_BACKEND", "env")
+./conftest.py:18:os.environ.setdefault("FIRSTTRY_LICENSE_ALLOW", "pro,promax")
+./conftest.py:19:os.environ.setdefault("FIRSTTRY_TIER", "pro")
+./conftest.py:33:if os.environ.get("FT_DEBUG_IMPORTS"):
+./tests/conftest.py:62:os.environ.setdefault("FT_ENV", "test")
+./tests/conftest.py:106:    if not os.environ.get("FIRSTTRY_SHARED_SECRET"):
+./tests/test_doctor_green.py:19:    env = dict(os.environ)
+./tests/test_ci_mapper_impl_comprehensive.py:86:    old = os.environ.pop("FIRSTTRY_PYTHON", None)
+./tests/test_ci_mapper_impl_comprehensive.py:94:            os.environ["FIRSTTRY_PYTHON"] = old
+./tests/security/test_secret_env_required.py:17:os.environ['CI'] = 'true'
+./tests/security/test_secret_env_required.py:18:os.environ.pop('FIRSTTRY_SHARED_SECRET', None)
+./tests/security/test_secret_env_required.py:19:os.environ.pop('FIRSTTRY_ENV', None)
+./tests/tools/test_check_critical_coverage.py:16:    env = os.environ.copy()
+./tests/tools/test_check_critical_coverage_json.py:26:    env = os.environ.copy()
+./tests/tools/test_check_critical_coverage_json.py:66:    env = os.environ.copy()
+./tests/test_cli_args_parity.py:39:    env = dict(os.environ, PYTEST_DISABLE_PLUGIN_AUTOLOAD="1")
+./tests/test_cli_args_parity.py:68:    env = dict(os.environ, PYTEST_DISABLE_PLUGIN_AUTOLOAD="1")
+./tests/test_reporting.py:58:    env = os.environ.copy()
+./tests/cli/test_cli_pro_fastfail.py:7:    env = os.environ.copy()
+./tests/test_security_no_network.py:7:    env = os.environ.copy()
+./tests/enterprise/test_remote_cache_e2e.py:36:        "endpoint_url": os.getenv("FT_S3_ENDPOINT", "http://localhost:4566"),
+./tests/enterprise/test_remote_cache_e2e.py:37:        "bucket": os.getenv("FT_S3_BUCKET", "ft-cache-e2e"),
+./tests/enterprise/test_remote_cache_e2e.py:38:        "region": os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
+./tests/enterprise/test_remote_cache_e2e.py:39:        "access_key": os.getenv("AWS_ACCESS_KEY_ID", "test"),
+./tests/enterprise/test_remote_cache_e2e.py:40:        "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY", "test"),
+./tests/enterprise/test_remote_cache_e2e.py:121:    env = os.environ.copy()
+./tests/enterprise/test_remote_cache_e2e.py:176:    env = os.environ.copy()
+./tests/enterprise/test_remote_cache_e2e.py:231:    env = os.environ.copy()
+./tests/enterprise/test_remote_cache_e2e.py:321:    env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/black/concurrency.py:85:        workers = int(os.environ.get("BLACK_NUM_WORKERS", 0))
+./.venv_tmp/lib/python3.12/site-packages/black/files.py:229:        config_root = os.environ.get("XDG_CONFIG_HOME", "~/.config")
+./.venv_tmp/lib/python3.12/site-packages/black/cache.py:42:    cache_dir = Path(os.environ.get("BLACK_CACHE_DIR", default_cache_dir))
+./.venv_tmp/lib/python3.12/site-packages/rich/diagnose.py:32:    env = {name: os.getenv(name) for name in env_names}
+./.venv_tmp/lib/python3.12/site-packages/rich/console.py:505:        or os.getenv("DATABRICKS_RUNTIME_VERSION")
+./.venv_tmp/lib/python3.12/site-packages/rich/console.py:605:    _environ: Mapping[str, str] = os.environ
+./.venv_tmp/lib/python3.12/site-packages/rich/console.py:639:        # Copy of os.environ allows us to replace it for testing
+./.venv_tmp/lib/python3.12/site-packages/urllib3/util/ssl_.py:367:    sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
+./.venv_tmp/lib/python3.12/site-packages/mypyc/__main__.py:46:    opt_level = os.getenv("MYPYC_OPT_LEVEL", "3")
+./.venv_tmp/lib/python3.12/site-packages/mypyc/__main__.py:47:    debug_level = os.getenv("MYPYC_DEBUG_LEVEL", "1")
+./.venv_tmp/lib/python3.12/site-packages/mypyc/__main__.py:48:    strict_dunder_typing = bool(int(os.getenv("MYPYC_STRICT_DUNDER_TYPING", "0")))
+./.venv_tmp/lib/python3.12/site-packages/mypyc/__main__.py:51:    log_trace = bool(int(os.getenv("MYPYC_LOG_TRACE", "0")))
+./.venv_tmp/lib/python3.12/site-packages/mypyc/__main__.py:64:    env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/config.py:5:provided_prefix = os.getenv("MYPY_TEST_PREFIX", None)
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/test_commandline.py:46:        env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/test_run.py:274:        opt_level = int(os.environ.get("MYPYC_OPT_LEVEL", 0))
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/test_run.py:302:        env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/test_external.py:21:        env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/test_external.py:43:            env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/test_external.py:44:            if "GTEST_COLOR" not in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/requests/utils.py:208:    netrc_file = os.environ.get("NETRC")
+./.venv_tmp/lib/python3.12/site-packages/requests/utils.py:737:        old_value = os.environ.get(env_name)
+./.venv_tmp/lib/python3.12/site-packages/requests/utils.py:738:        os.environ[env_name] = value
+./.venv_tmp/lib/python3.12/site-packages/requests/utils.py:744:                del os.environ[env_name]
+./.venv_tmp/lib/python3.12/site-packages/requests/utils.py:746:                os.environ[env_name] = old_value
+./.venv_tmp/lib/python3.12/site-packages/requests/utils.py:759:        return os.environ.get(key) or os.environ.get(key.upper())
+./.venv_tmp/lib/python3.12/site-packages/requests/sessions.py:755:                    os.environ.get("REQUESTS_CA_BUNDLE")
+./.venv_tmp/lib/python3.12/site-packages/requests/sessions.py:756:                    or os.environ.get("CURL_CA_BUNDLE")
+./.venv_tmp/lib/python3.12/site-packages/stevedore/_cache.py:38:        base_path = os.environ.get("XDG_CACHE_HOME", None) or os.path.expanduser("~/.cache")
+./.venv_tmp/lib/python3.12/site-packages/stevedore/_cache.py:47:        base_path = os.environ.get("LOCALAPPDATA", None) or os.path.expanduser("~\\AppData\\Local")
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/core.py:190:if _should_enable_warnings(sys.warnoptions, os.environ.get("PYPARSINGENABLEALLWARNINGS")):
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/diagnose.py:32:    env = {name: os.getenv(name) for name in env_names}
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/console.py:505:        or os.getenv("DATABRICKS_RUNTIME_VERSION")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/console.py:605:    _environ: Mapping[str, str] = os.environ
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/console.py:639:        # Copy of os.environ allows us to replace it for testing
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/urllib3/util/ssl_.py:353:        sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py:19:    return is_appengine() and os.environ["APPENGINE_RUNTIME"] == "python27"
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py:23:    return "APPENGINE_RUNTIME" in os.environ and os.environ.get("SERVER_SOFTWARE", "").startswith(
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py:29:    return "APPENGINE_RUNTIME" in os.environ and os.environ.get("SERVER_SOFTWARE", "").startswith(
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_impl.py:77:    env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_impl.py:93:    env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py:61:    backend_path = os.environ.get("_PYPROJECT_HOOKS_BACKEND_PATH")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py:62:    ep = os.environ["_PYPROJECT_HOOKS_BUILD_BACKEND"]
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:208:    netrc_file = os.environ.get("NETRC")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:737:        old_value = os.environ.get(env_name)
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:738:        os.environ[env_name] = value
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:744:                del os.environ[env_name]
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:746:                os.environ[env_name] = old_value
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/utils.py:759:        return os.environ.get(key) or os.environ.get(key.upper())
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/sessions.py:755:                    os.environ.get("REQUESTS_CA_BUNDLE")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/sessions.py:756:                    or os.environ.get("CURL_CA_BUNDLE")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:75:_UNIXCONFDIR = os.environ.get("UNIXCONFDIR", "/etc")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:76:_UNIXUSRLIBDIR = os.environ.get("UNIXUSRLIBDIR", "/usr/lib")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:337:    #                                     in os.environ):
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:338:    #        result =  os.environ['__PYVENV_LAUNCHER__']
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:800:    if os.name == "nt" and "LOCALAPPDATA" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:1961:    if "_PYTHON_HOST_PLATFORM" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:1962:        return os.environ["_PYTHON_HOST_PLATFORM"]
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/util.py:2028:    cross_compilation_target = os.environ.get("VSCMD_ARG_TGT_ARCH")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:249:        of os.environ.get("PATH"), or can be overridden with a custom search
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:269:            path = os.environ.get("PATH", os.defpath)
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:280:            pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/scripts.py:288:                source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pkg_resources/__init__.py:1421:        if os.name == "nt" and not path.startswith(os.environ["windir"]):
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pkg_resources/__init__.py:1503:    return os.environ.get("PYTHON_EGG_CACHE") or _user_cache_dir(appname="Python-Eggs")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/msgpack/__init__.py:11:if os.environ.get("MSGPACK_PUREPYTHON"):
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:159:    result = os.environ.get(env_var_name)
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:170:            os.path.normpath(os.environ["USERPROFILE"]), "Documents"
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:175:            os.path.normpath(os.environ["USERPROFILE"]), "Downloads"
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:179:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Pictures")  # noqa: PTH118
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:182:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Videos")  # noqa: PTH118
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/windows.py:185:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Music")  # noqa: PTH118
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:45:        path = os.environ.get("XDG_DATA_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:52:        path = os.environ.get("XDG_DATA_DIRS", "")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:76:        path = os.environ.get("XDG_CONFIG_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:83:        path = os.environ.get("XDG_CONFIG_DIRS", "")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:107:        path = os.environ.get("XDG_CACHE_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:123:        path = os.environ.get("XDG_STATE_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:177:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:201:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/unix.py:238:        media_dir = os.environ.get(env_var, "").strip()
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/__init__.py:30:    if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/__init__.py:31:        if os.getenv("SHELL") or os.getenv("PREFIX"):
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/vcs/git.py:84:        if os.environ.get("PIP_NO_INPUT"):
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/req/req_file.py:535:            value = os.getenv(var_name)
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/resolver.py:90:        if "PIP_RESOLVER_DEBUG" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/build_env.py:128:        pip_constraint = os.environ.get("PIP_CONSTRAINT")
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/build_env.py:299:            name: os.environ.get(name, None) for name in ("PATH", "PYTHONNOUSERSITE", "PYTHONPATH")
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/build_env.py:309:        os.environ.update(
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/build_env.py:325:                os.environ.pop(varname, None)
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/build_env.py:327:                os.environ[varname] = old_value
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/commands/debug.py:187:        show_value("REQUESTS_CA_BUNDLE", os.environ.get("REQUESTS_CA_BUNDLE"))
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/commands/debug.py:188:        show_value("CURL_CA_BUNDLE", os.environ.get("CURL_CA_BUNDLE"))
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/commands/configuration.py:276:        elif "VISUAL" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/commands/configuration.py:277:            return os.environ["VISUAL"]
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/commands/configuration.py:278:        elif "EDITOR" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/commands/configuration.py:279:            return os.environ["EDITOR"]
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/utils/subprocess.py:121:    env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/utils/misc.py:194:    for action in os.environ.get("PIP_EXISTS_ACTION", "").split():
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/utils/misc.py:202:    if os.environ.get("PIP_NO_INPUT"):
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/utils/entrypoints.py:53:    path_parts = os.path.normcase(os.environ.get("PATH", "")).split(os.pathsep)
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/req_command.py:57:    return os.environ.get("_PIP_IN_BUILD_IGNORE_CONSTRAINTS") == "1"
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/base_command.py:204:        if options.python and "_PIP_RUNNING_IN_SUBPROCESS" not in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/base_command.py:209:        #       without resorting to os.environ to hold these.
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/base_command.py:213:            os.environ["PIP_NO_INPUT"] = "1"
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/base_command.py:216:            os.environ["PIP_EXISTS_ACTION"] = " ".join(options.exists_action)
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/autocompletion.py:20:    if "PIP_AUTO_COMPLETE" not in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/autocompletion.py:24:    if not os.environ.get("COMP_WORDS") or not os.environ.get("COMP_CWORD"):
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/autocompletion.py:26:    cwords = os.environ["COMP_WORDS"].split()[1:]
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/autocompletion.py:27:    cword = int(os.environ["COMP_CWORD"])
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/main_parser.py:81:    if general_options.python and "_PIP_RUNNING_IN_SUBPROCESS" not in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/main_parser.py:95:        os.environ["_PIP_RUNNING_IN_SUBPROCESS"] = "1"
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/metadata/__init__.py:52:        return bool(strtobool(os.environ["_PIP_USE_IMPORTLIB_METADATA"]))
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/configuration.py:327:        for key, val in os.environ.items():
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/configuration.py:345:        env_config_file = os.environ.get("PIP_CONFIG_FILE", None)
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:129:        for i in os.environ.get("PATH", "").split(os.pathsep)
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:165:    warn_for_tilde = any(i[0] == "~" for i in os.environ.get("PATH", "").split(os.pathsep) if i)
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:290:        if "ENSUREPIP_OPTIONS" not in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:293:        if os.environ.get("ENSUREPIP_OPTIONS", "") != "altinstall":
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:303:        if "ENSUREPIP_OPTIONS" not in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/network/session.py:102:    return any(name in os.environ for name in CI_ENVIRONMENT_VARIABLES)
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/network/session.py:195:    user_data = os.environ.get("PIP_USER_AGENT_USER_DATA")
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/network/auth.py:134:        env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/network/auth.py:150:        env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/network/auth.py:188:                path = os.environ.get("PATH", None)
+./.venv_tmp/lib/python3.12/site-packages/_distutils_hack/__init__.py:43:    which = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "local")
+./.venv_tmp/lib/python3.12/site-packages/wheel/wheelfile.py:39:    timestamp = int(os.environ.get("SOURCE_DATE_EPOCH", timestamp or time.time()))
+./.venv_tmp/lib/python3.12/site-packages/wheel/macosx_libfile.py:413:    if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/wheel/macosx_libfile.py:414:        deploy_target = tuple(int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split("."))
+./.venv_tmp/lib/python3.12/site-packages/wheel/macosx_libfile.py:466:        if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/pip_api/_call.py:7:    python_location = os.environ.get("PIPAPI_PYTHON_LOCATION", sys.executable)
+./.venv_tmp/lib/python3.12/site-packages/pip_api/_call.py:8:    env = {**os.environ, **{"PIP_YES": "true", "PIP_DISABLE_PIP_VERSION_CHECK": "true"}}
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/wheelfile.py:39:    timestamp = int(os.environ.get("SOURCE_DATE_EPOCH", timestamp or time.time()))
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/macosx_libfile.py:413:    if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/macosx_libfile.py:414:        deploy_target = tuple(int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split("."))
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/macosx_libfile.py:466:        if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/typeguard/__init__.py:59:if "TYPEGUARD_DISABLE_PLUGIN_AUTOLOAD" not in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:159:    result = os.environ.get(env_var_name)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:170:            os.path.normpath(os.environ["USERPROFILE"]), "Documents"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:175:            os.path.normpath(os.environ["USERPROFILE"]), "Downloads"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:179:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Pictures")  # noqa: PTH118
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:182:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Videos")  # noqa: PTH118
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/windows.py:185:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Music")  # noqa: PTH118
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:42:        path = os.environ.get("XDG_DATA_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:49:        path = os.environ.get("XDG_DATA_DIRS", "")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:73:        path = os.environ.get("XDG_CONFIG_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:80:        path = os.environ.get("XDG_CONFIG_DIRS", "")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:104:        path = os.environ.get("XDG_CACHE_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:120:        path = os.environ.get("XDG_STATE_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:174:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:198:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/unix.py:241:        media_dir = os.environ.get(env_var, "").strip()
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/__init__.py:30:    if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/__init__.py:31:        if os.getenv("SHELL") or os.getenv("PREFIX"):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/warnings.py:109:    enforce = os.getenv("SETUPTOOLS_ENFORCE_DEPRECATION", "false").lower()
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:526:        environ = os.environ.copy().update(
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:543:        environ = os.environ.copy().update(
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:1113:        environ = os.environ.copy().update(
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:1166:        environ = os.environ.copy().update(
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:1217:        environ = os.environ.copy().update(
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_egg_info.py:1256:        environ = os.environ.copy().update(
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_bdist_egg.py:51:        os.environ.get("PYTHONDONTWRITEBYTECODE", False),
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/fixtures.py:114:    prebuilt = os.getenv("PRE_BUILT_SETUPTOOLS_SDIST")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/fixtures.py:124:    prebuilt = os.getenv("PRE_BUILT_SETUPTOOLS_WHEEL")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_manifest.py:345:    @pytest.fixture(autouse=os.getenv("SETUPTOOLS_USE_DISTUTILS") == "stdlib")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/integration/helpers.py:21:        env={**os.environ, **(env or {})},
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/integration/test_pip_install_sdist.py:108:    download_path = os.getenv("DOWNLOAD_PATH", str(tmp_path))
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/integration/test_pip_install_sdist.py:157:    download_path = os.getenv("DOWNLOAD_PATH", str(tmp_path))
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_virtualenv.py:31:    if not os.environ.get("NETWORK_REQUIRED", False):  # pragma: nocover
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_build_py.py:170:        if os.getenv("SETUPTOOLS_USE_DISTUTILS") == "stdlib":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/contexts.py:30:    saved = dict((key, os.environ[key]) for key in replacements if key in os.environ)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/contexts.py:35:        os.environ.pop(key, None)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/contexts.py:38:    os.environ.update(replacements)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/contexts.py:44:            os.environ.pop(key, None)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/contexts.py:45:        os.environ.update(saved)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_develop.py:65:        bool(os.environ.get("APPVEYOR")),
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_distutils_adoption.py:21:        env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/environment.py:30:            env = dict(os.environ)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/environment.py:39:    for path in os.environ.get("PATH", "").split(os.pathsep):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/environment.py:53:        for envname in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/environment.py:54:            env[envname] = os.environ[envname]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_editable_install.py:416:    env = dict(os.environ, PYTHONPATH=os.pathsep.join(map(str, site_packages_all)))
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_build_ext.py:81:            os.environ["SETUPTOOLS_EXT_SUFFIX"] = ".test-suffix"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_build_ext.py:87:            del os.environ["SETUPTOOLS_EXT_SUFFIX"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_build_meta.py:25:TIMEOUT = int(os.getenv("TIMEOUT_BACKEND_TEST", "180"))  # in seconds
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_build_meta.py:87:        os.environ.update(self.env)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_sdist.py:104:    "os.environ.get('PYTEST_XDIST_WORKER')",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_sdist.py:817:    @pytest.mark.skipif("os.environ.get('SETUPTOOLS_USE_DISTUTILS') == 'stdlib'")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/installer.py:78:    quiet = "PIP_QUIET" not in os.environ and "PIP_VERBOSE" not in os.environ
+./.venv_tmp/lib/python3.12/site-packages/setuptools/installer.py:79:    if "PIP_INDEX_URL" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_scripts.py:49:        return os.environ.get("__PYVENV_LAUNCHER__", _default)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_scripts.py:236:        launcher = os.environ.get("SETUPTOOLS_LAUNCHER", "executable")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_scripts.py:243:        if ext not in os.environ["PATHEXT"].lower().split(";"):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/command/build_ext.py:158:        so_ext = os.getenv("SETUPTOOLS_EXT_SUFFIX")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/command/easy_install.py:18:            sys_executable=os.environ.get("__PYVENV_LAUNCHER__", os.path.normpath(sys.executable)),
+./.venv_tmp/lib/python3.12/site-packages/setuptools/config/_validate_pyproject/error_reporting.py:79:        debug_code = os.getenv("JSONSCHEMA_DEBUG_CODE_GENERATION", "false").lower()
+./.venv_tmp/lib/python3.12/site-packages/setuptools/config/_validate_pyproject/formats.py:186:        if os.getenv("NO_NETWORK") or os.getenv("VALIDATE_PYPROJECT_NO_NETWORK"):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:69:    ...     assert 'foo' in os.environ['PYTHONPATH']
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:70:    ...     assert 'anything' in os.environ['PYTHONPATH']
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:71:    >>> os.environ['PYTHONPATH']
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:76:    ...     assert 'foo' in os.environ['PYTHONPATH']
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:77:    >>> os.environ.get('PYTHONPATH')
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:80:    orig_pythonpath = os.environ.get("PYTHONPATH", nothing)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:81:    current_pythonpath = os.environ.get("PYTHONPATH", "")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:87:            os.environ["PYTHONPATH"] = new_path
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:91:            os.environ.pop("PYTHONPATH", None)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_path.py:93:            os.environ["PYTHONPATH"] = orig_pythonpath
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:57:        target = os.environ.get("VSCMD_ARG_TGT_ARCH")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:94:    env_ver = os.environ.get(MACOSX_VERSION_VAR)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:163:    """Ensure that 'os.environ' has all the environment variables we
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:170:    if os.name == "posix" and "HOME" not in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:174:            os.environ["HOME"] = pwd.getpwuid(os.getuid())[5]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:180:    if "PLAT" not in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:181:        os.environ["PLAT"] = get_platform()
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:189:    dictionary or in 'os.environ' if it's not in 'local_vars'.
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:190:    'os.environ' is first checked/augmented to guarantee that it contains
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:192:    variables not found in either 'local_vars' or 'os.environ'.
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/util.py:195:    lookup = dict(os.environ)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:48:if "_PYTHON_PROJECT_BASE" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:49:    project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:323:        if "CC" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:324:            newcc = os.environ["CC"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:325:            if "LDSHARED" not in os.environ and ldshared.startswith(cc):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:330:        cxx = os.environ.get("CXX", cxx)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:331:        ldshared = os.environ.get("LDSHARED", ldshared)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:332:        ldcxxshared = os.environ.get("LDCXXSHARED", ldcxxshared)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:333:        cpp = os.environ.get(
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:340:        cflags = os.environ.get("CFLAGS", cflags)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:342:        cxxflags = os.environ.get("CXXFLAGS", cxxflags)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:350:        ar = os.environ.get("AR", ar)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:352:        archiver = ar + " " + os.environ.get("ARFLAGS", ar_flags)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:369:        if "RANLIB" in os.environ and compiler.executables.get("ranlib", None):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:370:            compiler.set_executables(ranlib=os.environ["RANLIB"])
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:465:                elif n in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:467:                    item = os.environ[n]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/sysconfig.py:590:    flags = os.environ.get(f"{type}FLAGS")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_bdist_rpm.py:50:        os.environ["HOME"] = tmp_dir  # to confine dir '.rpmdb' creation
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_bdist_rpm.py:95:        os.environ["HOME"] = tmp_dir  # to confine dir '.rpmdb' creation
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:119:        os.environ["AR"] = "env_ar"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:120:        os.environ["CC"] = "env_cc"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:121:        os.environ["CPP"] = "env_cpp"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:122:        os.environ["CXX"] = "env_cxx --env-cxx-flags"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:123:        os.environ["LDSHARED"] = "env_ldshared"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:124:        os.environ["LDFLAGS"] = "--env-ldflags"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:125:        os.environ["ARFLAGS"] = "--env-arflags"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:126:        os.environ["CFLAGS"] = "--env-cflags"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:127:        os.environ["CPPFLAGS"] = "--env-cppflags"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:128:        os.environ["RANLIB"] = "env_ranlib"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:145:        del os.environ["AR"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:146:        del os.environ["CC"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:147:        del os.environ["CPP"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:148:        del os.environ["CXX"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:149:        del os.environ["LDSHARED"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:150:        del os.environ["LDFLAGS"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:151:        del os.environ["ARFLAGS"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:152:        del os.environ["CFLAGS"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:153:        del os.environ["CPPFLAGS"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:154:        del os.environ["RANLIB"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_sysconfig.py:286:        out = subprocess.check_output(cmd, env={**os.environ, "PYTHONPATH": distutils_path})
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_build_ext.py:557:            if os.environ.get("MACOSX_DEPLOYMENT_TARGET"):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_build_ext.py:558:                del os.environ["MACOSX_DEPLOYMENT_TARGET"]
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_build_ext.py:560:            os.environ["MACOSX_DEPLOYMENT_TARGET"] = target
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:57:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "x86"}):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:59:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "x64"}):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:61:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "arm"}):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:63:            with mock.patch.dict("os.environ", {"VSCMD_ARG_TGT_ARCH": "arm64"}):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:122:        os.environ.pop("HOME", None)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:126:        assert os.environ["PLAT"] == get_platform()
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:131:        os.environ.pop("HOME", None)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:149:            assert os.environ["HOME"] == "/home/distutils"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:152:        os.environ.pop("HOME", None)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_util.py:157:            assert "HOME" not in os.environ
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/dist.py:379:            yield pathlib.Path(os.getenv("DIST_EXTRA_CONFIG"))
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/debug.py:5:DEBUG = os.environ.get("DISTUTILS_DEBUG")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/command/_framework_compat.py:22:    ensurepip = os.environ.get("ENSUREPIP_OPTIONS")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/command/build_ext.py:790:                elif "_PYTHON_HOST_PLATFORM" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/zos.py:114:            if (binary := os.environ.get(envvar, None))
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/cygwin.py:65:        self.cc = os.environ.get("CC", self.cc or "gcc")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/cygwin.py:66:        self.cxx = os.environ.get("CXX", self.cxx or "g++")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:62:        old_distutils_use_sdk = os.environ.pop("DISTUTILS_USE_SDK", None)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:63:        os.environ[test_var] = test_value
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:69:            os.environ.pop(test_var)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:71:                os.environ["DISTUTILS_USE_SDK"] = old_distutils_use_sdk
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:107:        inner_cmd = 'import os; assert os.environ["PATH"] == "expected"'
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:129:            assert os.environ["PATH"] == "expected"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py:134:        assert os.environ.get("PATH") != "expected"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/test_unix.py:75:            env = os.environ
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:75:    root = os.environ.get("ProgramFiles(x86)") or os.environ.get("ProgramFiles")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:141:    if os.getenv("DISTUTILS_USE_SDK"):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:142:        return {key.lower(): value for key, value in os.environ.items()}
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:180:        paths = os.getenv("path").split(os.pathsep)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:540:        env = dict(os.environ, PATH=self._paths)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/msvc.py:561:        with mock.patch.dict("os.environ", env):
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/spawn.py:52:    return os.environ if env is None else env
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/spawn.py:100:    os.environ['PATH'].  Returns the complete filename or None if not found.
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/spawn.py:111:        path = os.environ.get("PATH", None)
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_dependency_source/pip.py:86:        effective_python = os.environ.get("PIPAPI_PYTHON_LOCATION", sys.executable)
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_dependency_source/pip.py:87:        venv_prefix = os.getenv("VIRTUAL_ENV")
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cache.py:75:    if use_pip and not os.getenv("PIP_NO_CACHE_DIR"):
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:50:package_logger.setLevel(os.environ.get("PIP_AUDIT_LOGLEVEL", "INFO").upper())
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:239:        default=os.environ.get("PIP_AUDIT_FORMAT", OutputFormatChoice.Columns),
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:248:        default=os.environ.get("PIP_AUDIT_VULNERABILITY_SERVICE", VulnerabilityServiceChoice.Pypi),
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:274:        default=os.environ.get("PIP_AUDIT_DESC", VulnerabilityDescriptionChoice.Auto),
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:299:        default=os.environ.get("PIP_AUDIT_PROGRESS_SPINNER", ProgressSpinnerChoice.On),
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/_cli.py:369:        default=os.environ.get("PIP_AUDIT_OUTPUT", "stdout"),
+./.venv_tmp/lib/python3.12/site-packages/_pytest/runner.py:189:        os.environ[var_name] = value
+./.venv_tmp/lib/python3.12/site-packages/_pytest/runner.py:191:        os.environ.pop(var_name)
+./.venv_tmp/lib/python3.12/site-packages/_pytest/monkeypatch.py:29:    :data:`os.environ`:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/monkeypatch.py:321:        if prepend and name in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/monkeypatch.py:322:            value = value + prepend + os.environ[name]
+./.venv_tmp/lib/python3.12/site-packages/_pytest/monkeypatch.py:323:        self.setitem(os.environ, name, value)
+./.venv_tmp/lib/python3.12/site-packages/_pytest/monkeypatch.py:331:        environ: MutableMapping[str, str] = os.environ
+./.venv_tmp/lib/python3.12/site-packages/_pytest/pathlib.py:571:    ignore = os.environ.get("PY_IGNORE_IMPORTMISMATCH", "")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/pytester.py:1310:        env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_py/path.py:1118:                ignore = os.getenv("PY_IGNORE_IMPORTMISMATCH")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_py/path.py:1188:                    paths = os.environ["Path"].split(";")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_py/path.py:1192:                        systemroot = os.environ["SYSTEMROOT"]
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_py/path.py:1198:                    paths = os.environ["PATH"].split(":")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_py/path.py:1201:                tryadd += os.environ["PATHEXT"].split(os.pathsep)
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_py/path.py:1220:            x = os.environ["HOME"]
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_py/path.py:1223:                x = os.environ["HOMEDRIVE"] + os.environ["HOMEPATH"]
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_py/path.py:1394:            username = os.environ["USER"]  # linux, et al
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_py/path.py:1397:                username = os.environ["USERNAME"]  # windows
+./.venv_tmp/lib/python3.12/site-packages/_pytest/cacheprovider.py:504:    if "TOX_ENV_DIR" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/_pytest/cacheprovider.py:505:        cache_dir_default = os.path.join(os.environ["TOX_ENV_DIR"], cache_dir_default)
+./.venv_tmp/lib/python3.12/site-packages/_pytest/assertion/util.py:593:    return any(var in os.environ for var in env_vars)
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_argcomplete.py:102:if os.environ.get("_ARGCOMPLETE"):
+./.venv_tmp/lib/python3.12/site-packages/_pytest/tmpdir.py:150:            from_env = os.environ.get("PYTEST_DEBUG_TEMPROOT")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:140:    old_pytest_version = os.environ.get("PYTEST_VERSION")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:142:        os.environ["PYTEST_VERSION"] = __version__
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:177:            os.environ.pop("PYTEST_VERSION", None)
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:179:            os.environ["PYTEST_VERSION"] = old_pytest_version
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:418:        if os.environ.get("PYTEST_DEBUG"):
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:791:        self._import_plugin_specs(os.environ.get("PYTEST_PLUGINS"))
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:1232:            os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:1337:            env_addopts = os.environ.get("PYTEST_ADDOPTS", "")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/config/__init__.py:1352:            not os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_io/terminalwriter.py:34:    if os.environ.get("PY_COLORS") == "1":
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_io/terminalwriter.py:36:    if os.environ.get("PY_COLORS") == "0":
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_io/terminalwriter.py:38:    if os.environ.get("NO_COLOR"):
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_io/terminalwriter.py:40:    if os.environ.get("FORCE_COLOR"):
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_io/terminalwriter.py:42:    return hasattr(file, "isatty") and file.isatty() and os.environ.get("TERM") != "dumb"
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_io/terminalwriter.py:210:        theme = os.getenv("PYTEST_THEME")
+./.venv_tmp/lib/python3.12/site-packages/_pytest/_io/terminalwriter.py:211:        theme_mode = os.getenv("PYTEST_THEME_MODE", "dark")
+./.venv_tmp/lib/python3.12/site-packages/ruff/__main__.py:42:    paths = os.environ.get("PATH", "").split(os.pathsep)
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubgen.py:1719:    environ_cache_dir = os.getenv("MYPY_CACHE_DIR", "")
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testutil.py:14:        mock_environ = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testutil.py:17:            with mock.patch.dict(os.environ, values=mock_environ, clear=True):
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testpep561.py:62:            proc = subprocess.run(install_cmd, capture_output=True, env=os.environ)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testpep561.py:84:        env.update(os.environ)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/config.py:5:provided_prefix = os.getenv("MYPY_TEST_PREFIX", None)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testcmdline.py:68:    env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testcmdline.py:85:    if "PYCHARM_HOSTED" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testdaemon.py:86:    env = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testmypyc.py:13:        if os.getenv("TEST_MYPYC", None) == "1":
+./.venv_tmp/lib/python3.12/site-packages/mypy/util.py:521:        int(os.getenv("MYPY_FORCE_TERMINAL_WIDTH", "0"))
+./.venv_tmp/lib/python3.12/site-packages/mypy/util.py:582:    env_var = os.getenv("MYPY_FORCE_COLOR", os.getenv("FORCE_COLOR", "0"))
+./.venv_tmp/lib/python3.12/site-packages/mypy/modulefinder.py:776:    path_env = os.getenv("MYPYPATH")
+./.venv_tmp/lib/python3.12/site-packages/mypy/modulefinder.py:850:        env = {**dict(os.environ), "PYTHONSAFEPATH": "1"}
+./.venv_tmp/lib/python3.12/site-packages/mypy/modulefinder.py:895:        root_dir = os.getenv("MYPY_TEST_PREFIX", None)
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1402:    environ_cache_dir = os.getenv("MYPY_CACHE_DIR", "")
+./.venv_tmp/lib/python3.12/site-packages/mypy/defaults.py:21:if os.environ.get("XDG_CONFIG_HOME"):
+./.venv_tmp/lib/python3.12/site-packages/mypy/defaults.py:22:    USER_CONFIG_FILES.insert(0, os.path.join(os.environ["XDG_CONFIG_HOME"], "mypy/config"))
+./.venv_tmp/lib/python3.12/site-packages/mypy/config_parser.py:335:    os.environ["MYPY_CONFIG_FILE_DIR"] = os.path.dirname(os.path.abspath(file_read))
+./.venv_tmp/lib/python3.12/site-packages/isort/deprecated/finders.py:130:        self.virtual_env = self.config.virtual_env or os.environ.get("VIRTUAL_ENV")
+./.venv_tmp/lib/python3.12/site-packages/isort/deprecated/finders.py:147:        self.conda_env = self.config.conda_env or os.environ.get("CONDA_PREFIX") or ""
+./.venv_tmp/lib/python3.12/site-packages/isort/settings.py:549:        env = {**os.environ, "LANG": "C.UTF-8"}
+./.venv_tmp/lib/python3.12/site-packages/pygments/formatters/img.py:132:            os.path.join(os.getenv("HOME"), "Library/Fonts/"),
+./.venv_tmp/lib/python3.12/site-packages/pygments/cmdline.py:462:            if os.environ.get("COLORTERM", "") in ("truecolor", "24bit"):
+./.venv_tmp/lib/python3.12/site-packages/pygments/cmdline.py:464:            elif "256" in os.environ.get("TERM", ""):
+./.venv_tmp/lib/python3.12/site-packages/pkg_resources/__init__.py:1439:        if os.name == "nt" and not path.startswith(os.environ["windir"]):
+./.venv_tmp/lib/python3.12/site-packages/pkg_resources/__init__.py:1521:    return os.environ.get("PYTHON_EGG_CACHE") or _user_cache_dir(appname="Python-Eggs")
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:1428:        instruction = os.environ.get(complete_var)
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2383:        <https://docs.python.org/3/library/os.html#os.environ>`_.
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2407:            rv = os.environ.get(self.envvar)
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:2413:                rv = os.environ.get(envvar)
+./.venv_tmp/lib/python3.12/site-packages/click/core.py:3067:            rv = os.environ.get(envvar)
+./.venv_tmp/lib/python3.12/site-packages/click/utils.py:479:        folder = os.environ.get(key)
+./.venv_tmp/lib/python3.12/site-packages/click/utils.py:488:        os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
+./.venv_tmp/lib/python3.12/site-packages/click/shell_completion.py:339:        cwords = split_arg_string(os.environ["COMP_WORDS"])
+./.venv_tmp/lib/python3.12/site-packages/click/shell_completion.py:340:        cword = int(os.environ["COMP_CWORD"])
+./.venv_tmp/lib/python3.12/site-packages/click/shell_completion.py:361:        cwords = split_arg_string(os.environ["COMP_WORDS"])
+./.venv_tmp/lib/python3.12/site-packages/click/shell_completion.py:362:        cword = int(os.environ["COMP_CWORD"])
+./.venv_tmp/lib/python3.12/site-packages/click/shell_completion.py:397:        cwords = split_arg_string(os.environ["COMP_WORDS"])
+./.venv_tmp/lib/python3.12/site-packages/click/shell_completion.py:398:        incomplete = os.environ["COMP_CWORD"]
+./.venv_tmp/lib/python3.12/site-packages/click/_termui_impl.py:381:    pager_cmd_parts = shlex.split(os.environ.get("PAGER", ""), posix=False)
+./.venv_tmp/lib/python3.12/site-packages/click/_termui_impl.py:389:    if os.environ.get("TERM") in ("dumb", "emacs"):
+./.venv_tmp/lib/python3.12/site-packages/click/_termui_impl.py:434:    env = dict(os.environ)
+./.venv_tmp/lib/python3.12/site-packages/click/_termui_impl.py:439:        less_flags = f"{os.environ.get('LESS', '')}{' '.join(cmd_params)}"
+./.venv_tmp/lib/python3.12/site-packages/click/_termui_impl.py:567:            rv = os.environ.get(key)
+./.venv_tmp/lib/python3.12/site-packages/click/_termui_impl.py:587:            environ = os.environ.copy()
+./.venv_tmp/lib/python3.12/site-packages/click/testing.py:274:        and `os.environ` with the overrides from the given dictionary.
+./.venv_tmp/lib/python3.12/site-packages/click/testing.py:389:                old_env[key] = os.environ.get(key)
+./.venv_tmp/lib/python3.12/site-packages/click/testing.py:392:                        del os.environ[key]
+./.venv_tmp/lib/python3.12/site-packages/click/testing.py:396:                    os.environ[key] = value
+./.venv_tmp/lib/python3.12/site-packages/click/testing.py:402:                        del os.environ[key]
+./.venv_tmp/lib/python3.12/site-packages/click/testing.py:406:                    os.environ[key] = value
+./.venv_tmp/lib/python3.12/site-packages/bandit/core/manager.py:164:                        and os.getenv("NO_COLOR") is None
+./.venv_tmp/lib/python3.12/site-packages/bandit/core/manager.py:165:                        and os.getenv("TERM") != "dumb"
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/main.py:261:        if (sys.stdout.isatty() and os.getenv("NO_COLOR") is None and os.getenv("TERM") != "dumb")
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/version.py:125:    if "SOURCE_DATE_EPOCH" in os.environ:
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/version.py:126:        date_epoch = int(os.environ["SOURCE_DATE_EPOCH"])
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_log.py:49:def _default_log_level(_env: Mapping[str, str] = os.environ) -> int:
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_run_cmd.py:26:BROKEN_TIMEOUT: Final[int] = _get_timeout(os.environ)
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_run_cmd.py:146:            avoid_pip_isolation(no_git_env(os.environ)),
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_run_cmd.py:147:            # os.environ,
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_overrides.py:84:    env: Mapping[str, str] = os.environ,
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_overrides.py:96:        env: Environment dictionary to search in (defaults to os.environ)
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/_file_finders/__init__.py:88:    ignored: list[str] = os.environ.get("SETUPTOOLS_SCM_IGNORE_VCS_ROOTS", "").split(os.pathsep)
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/hg.py:25:    return os.environ.get("SETUPTOOLS_SCM_HG_COMMAND", "hg")
+./.venv_tmp/lib/python3.12/site-packages/msgpack/__init__.py:11:if os.environ.get("MSGPACK_PUREPYTHON"):
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/windows.py:159:    result = os.environ.get(env_var_name)
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/windows.py:170:            os.path.normpath(os.environ["USERPROFILE"]), "Documents"
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/windows.py:175:            os.path.normpath(os.environ["USERPROFILE"]), "Downloads"
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/windows.py:179:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Pictures")  # noqa: PTH118
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/windows.py:182:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Videos")  # noqa: PTH118
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/windows.py:185:        return os.path.join(os.path.normpath(os.environ["USERPROFILE"]), "Music")  # noqa: PTH118
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/unix.py:45:        path = os.environ.get("XDG_DATA_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/unix.py:52:        path = os.environ.get("XDG_DATA_DIRS", "")
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/unix.py:76:        path = os.environ.get("XDG_CONFIG_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/unix.py:83:        path = os.environ.get("XDG_CONFIG_DIRS", "")
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/unix.py:107:        path = os.environ.get("XDG_CACHE_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/unix.py:123:        path = os.environ.get("XDG_STATE_HOME", "")
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/unix.py:177:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/unix.py:201:        path = os.environ.get("XDG_RUNTIME_DIR", "")
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/unix.py:238:        media_dir = os.environ.get(env_var, "").strip()
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/__init__.py:30:    if os.getenv("ANDROID_DATA") == "/data" and os.getenv("ANDROID_ROOT") == "/system":
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/__init__.py:31:        if os.getenv("SHELL") or os.getenv("PREFIX"):
+./demo_license_for_tests.py:62:            "FIRSTTRY_LICENSE_KEY": os.getenv("FIRSTTRY_LICENSE_KEY"),
+./demo_license_for_tests.py:63:            "FIRSTTRY_TIER": os.getenv("FIRSTTRY_TIER"),
+./demo_license_for_tests.py:64:            "FIRSTTRY_LICENSE_BACKEND": os.getenv("FIRSTTRY_LICENSE_BACKEND"),
+./demo_license_for_tests.py:65:            "FIRSTTRY_LICENSE_ALLOW": os.getenv("FIRSTTRY_LICENSE_ALLOW"),
+./demo_license_for_tests.py:69:        os.environ["FIRSTTRY_LICENSE_KEY"] = DEMO_LICENSE_KEY
+./demo_license_for_tests.py:70:        os.environ["FIRSTTRY_TIER"] = self.tier
+./demo_license_for_tests.py:71:        os.environ["FIRSTTRY_LICENSE_BACKEND"] = DEMO_LICENSE_BACKEND
+./demo_license_for_tests.py:72:        os.environ["FIRSTTRY_LICENSE_ALLOW"] = f"{self.tier},pro,promax"
+./demo_license_for_tests.py:78:                os.environ.pop(key, None)
+./demo_license_for_tests.py:80:                os.environ[key] = value
+./sanity_check_fastpath.py:27:    os.environ.pop("FT_FASTPATH", None)  # allow auto-detection
+./sanity_check_fastpath.py:34:    os.environ["FT_FASTPATH"] = "off"
+./sanity_check_fastpath.py:77:    os.environ.pop("FT_FASTPATH", None)
+./sanity_check_fastpath.py:84:    os.environ["FT_FASTPATH"] = "off"
+./sanity_check_fastpath.py:92:        os.environ["FT_FASTPATH"] = val
+./sanity_check_fastpath.py:99:    os.environ["FT_FASTPATH"] = "auto"
+./sanity_check_fastpath.py:116:    os.environ.pop("FT_FASTPATH", None)
+./tools/ft_bench_s3.py:53:        enabled = os.getenv("S3_ENABLED", "true").lower() in {"true", "1", "yes"}
+./tools/ft_bench_s3.py:58:        access_key_id = os.getenv("S3_ACCESS_KEY_ID") or os.getenv("AWS_ACCESS_KEY_ID")
+./tools/ft_bench_s3.py:59:        secret_access_key = os.getenv("S3_SECRET_ACCESS_KEY") or os.getenv("AWS_SECRET_ACCESS_KEY")
+./tools/ft_bench_s3.py:60:        endpoint_url = os.getenv("S3_ENDPOINT_URL")
+./tools/ft_bench_s3.py:61:        bucket_name = os.getenv("S3_BUCKET_NAME")
+./tools/ft_bench_s3.py:72:            region=os.getenv("S3_REGION", "auto"),
+./tools/ft_bench_s3.py:73:            prefix=os.getenv("S3_PREFIX", "benchmarks"),
+./tools/ci_self_check.py:384:    workspace = os.getenv("WORKSPACE_ROOT", "/workspaces/Firstry")
+./tools/ci_self_check.py:424:    if os.getenv("GITHUB_ACTIONS"):
+./tools/firstry/firsttry/db_sqlite.py:21:    os.environ["DATABASE_URL"] = url
+./tools/firstry/firsttry/db_sqlite.py:123:db_url = os.environ.get("DATABASE_URL")
+./tools/firstry/firsttry/db_pg.py:133:        db_url = os.environ.get("DATABASE_URL")
+./tools/check_critical_coverage.py:50:MIN_RATE = float(os.environ.get("FT_CRITICAL_MIN_RATE", DEFAULT_MIN))
+./tools/check_critical_coverage.py:143:    out_path = os.environ.get("FT_COVERAGE_JSON_OUT", ".firsttry/critical_coverage_summary.json")
+./tools/ft_readiness_audit.py:423:    has_key = "FT_LICENSE_KEY" in os.environ
+./tools/ft_readiness_audit.py:455:    cache_dir = Path(os.environ.get("FT_CACHE_DIR", ".firsttry/cache"))
+./tools/ft_readiness_audit.py:620:    has_timeout_override = "FT_TIMEOUT_S" in os.environ
+./tools/ft_readiness_audit.py:621:    has_procs_override = "FT_MAX_PROCS" in os.environ
+./tools/ft_readiness_audit.py:638:    telemetry_enabled = os.environ.get("FT_SEND_TELEMETRY", "").lower() not in (
+./tools/ft_readiness_audit.py:807:        if "FT_LICENSE_KEY" in os.environ:
+./tools/firsttry/firsttry/cli.py:92:    use_real = os.getenv("FIRSTTRY_USE_REAL_RUNNERS") == "1"
+./tools/firsttry/firsttry/cli.py:156:    key = os.getenv("FIRSTTRY_LICENSE_KEY", "").strip()
+./tools/firsttry/firsttry/cli.py:157:    url = os.getenv("FIRSTTRY_LICENSE_URL", "").strip()
+./tools/firsttry/firsttry/db_pg.py:54:    db_url = os.getenv("DATABASE_URL", "").strip()
+./tools/emit_audit_with_policy.py:23:    repo_root = os.getenv("FT_REPO_ROOT", ".")
+./tools/emit_audit_with_policy.py:24:    out_json = os.getenv("FT_AUDIT_JSON", ".firsttry/audit.json")
+./tools/emit_audit_with_policy.py:25:    out_txt = os.getenv("FT_AUDIT_SUMMARY", ".firsttry/audit_summary.txt")
+./tools/emit_audit_with_policy.py:26:    notes = os.getenv("FT_AUDIT_NOTES", "audit workflow")
+./tools/emit_audit_with_policy.py:29:    policy_url = os.getenv("FT_POLICY_URL") or os.getenv("POLICY_URL")
+./tools/emit_audit_with_policy.py:30:    policy_hash = os.getenv("FT_POLICY_HASH") or os.getenv("POLICY_HASH")
+./tools/emit_audit_with_policy.py:41:    overall_score = int(os.getenv("FT_OVERALL_SCORE", "92"))
+./tools/emit_audit_with_policy.py:42:    category_scores = json.loads(os.getenv("FT_CATEGORY_SCORES", '{"security":98}'))
+./tools/emit_audit_with_policy.py:43:    gates_executed = json.loads(os.getenv("FT_GATES_EXECUTED", "[]"))
+./tools/emit_audit_with_policy.py:45:        os.getenv("FT_REPOSITORY", '{"owner":"local","name":"Firstry","url":""}')
+./tools/emit_audit_with_policy.py:47:    branch = os.getenv("FT_BRANCH", "local")
+./tools/emit_audit_with_policy.py:49:        os.getenv("FT_COMMIT_INFO", '{"sha":"local","author":"actor","message":""}')
+./tools/emit_audit_with_policy.py:51:    tier = os.getenv("FT_TIER", "pro")
+./tools/ft_bench_harness.py:251:        env = os.environ.copy()
+./demo_caching_verification.py:23:        env={**os.environ, "PYTHONPATH": "src"},
+./src/firsttry/ci_mapper.py:222:    py = python_exe or os.environ.get("FIRSTTRY_PYTHON")
+./src/firsttry/ci_mapper_impl.py:129:        python_exe = os.environ.get("FIRSTTRY_PYTHON", sys.executable)
+./src/firsttry/cache/s3.py:25:    return os.getenv("FIRSTTRY_REMOTE_CACHE", "0").lower() in ("1", "true", "yes")
+./src/firsttry/cache/s3.py:56:        b = os.getenv("FT_S3_BUCKET")
+./src/firsttry/cache/s3.py:57:        p = os.getenv("FT_S3_PREFIX", "").rstrip("/")
+./src/firsttry/runner/state.py:62:        "ruff": os.environ.get("FT_RUFF_VER", ""),
+./src/firsttry/runner/state.py:63:        "mypy": os.environ.get("FT_MYPY_VER", ""),
+./src/firsttry/runner/state.py:64:        "pytest": os.environ.get("FT_PYTEST_VER", ""),
+./src/firsttry/runner/executor.py:283:            "firsttry_version": os.environ.get("FIRSTTRY_VERSION", "1"),
+./src/firsttry/runner/planner.py:27:FIRSTTRY_VERSION = os.environ.get("FIRSTTRY_VERSION", "1")
+./src/firsttry/runners/__init__.py:251:if os.getenv("FIRSTTRY_USE_REAL_RUNNERS") in ("1", "true", "True"):
+./src/firsttry/remote/s3_client.py:26:    return boto3.client("s3", region_name=region or os.getenv("AWS_REGION"))
+./src/firsttry/gates/python_pytest.py:19:        if os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1":
+./src/firsttry/gates/python_pytest.py:29:            env = os.environ.copy()
+./src/firsttry/gates/runner.py:75:    env_full = os.environ.copy()
+./src/firsttry/gates/runner.py:122:        plan_name=plan.name, steps=plan.steps, cwd=root, env=os.environ.copy()
+./src/firsttry/license_fast.py:30:        key = os.getenv("FIRSTTRY_LICENSE_KEY", "").strip()
+./src/firsttry/license_fast.py:31:        url = os.getenv("FIRSTTRY_LICENSE_URL", "").strip()
+./src/firsttry/license_fast.py:94:    if os.getenv("FIRSTTRY_ALLOW_UNLICENSED") == "1":
+./src/firsttry/planner/dag.py:21:        path = os.getenv("FT_FLAKY_FILE", ".firsttry/flaky_tests.json")
+./src/firsttry/planner/dag.py:267:            path = os.getenv("FT_FLAKY_FILE", ".firsttry/flaky_tests.json")
+./src/firsttry/twin/fastpath.py:64:    want = os.getenv("FT_FASTPATH", "auto").lower()
+./src/firsttry/twin/fastpath.py:89:    want = os.getenv("FT_FASTPATH", "auto").lower()
+./src/firsttry/twin/fastpath_scan.py:72:    if _RUST_OK and os.getenv("FT_FASTPATH", "auto").lower() != "off":
+./src/firsttry/telemetry.py:41:TELEMETRY_URL = os.environ.get(
+./src/firsttry/telemetry.py:67:    if os.getenv("FIRSTTRY_TELEMETRY_OPTOUT", "").lower() in {"1", "true", "yes"}:
+./src/firsttry/telemetry.py:69:    if os.getenv("DO_NOT_TRACK", "").lower() in {"1", "true", "yes"}:
+./src/firsttry/telemetry.py:78:    return os.getenv("FIRSTTRY_SEND_TELEMETRY", "").lower() in {"1", "true", "yes"}
+./src/firsttry/license_guard.py:63:    return normalize_tier(os.getenv("FIRSTTRY_TIER"))
+./src/firsttry/license_guard.py:78:        os.getenv("FIRSTTRY_LICENSE_KEY")
+./src/firsttry/license_guard.py:79:        or os.getenv("FIRSTTRY_LICENSE")
+./src/firsttry/license_guard.py:80:        or os.getenv("FIRSTTRY_PRO_KEY")
+./src/firsttry/license_guard.py:189:    mode = os.getenv("FIRSTTRY_LICENSE_CHECK_MODE", "offline").lower()
+./src/firsttry/license_guard.py:235:    forced = os.getenv("FIRSTTRY_FORCE_TIER") or os.getenv("FIRSTTRY_TIER")
+./src/firsttry/license_guard.py:335:    key = os.getenv("FIRSTTRY_LICENSE_KEY", "")
+./src/firsttry/license_guard.py:365:        if os.getenv("FIRSTTRY_DEMO_MODE") == "1":
+./src/firsttry/license_guard.py:413:        return "pro" if os.getenv("FIRSTTRY_DEMO_MODE") == "1" else "free-lite"
+./src/firsttry/license_guard.py:423:        if os.getenv("FIRSTTRY_DEMO_MODE") == "1":
+./src/firsttry/licensing.py:11:    xdg = os.environ.get("XDG_CONFIG_HOME")
+./src/firsttry/licensing.py:16:    appdata = os.environ.get("APPDATA")
+./src/firsttry/summary.py:167:        tier = os.getenv("FIRSTTRY_TIER", "free")
+./src/firsttry/cli_dag.py:44:        fp = repo_fingerprint({"firsttry_version": os.environ.get("FIRSTTRY_VERSION", "1")})
+./src/firsttry/cli_dag.py:106:        fp = repo_fingerprint({"firsttry_version": os.environ.get("FIRSTTRY_VERSION", "1")})
+./src/firsttry/ci_parity/cache_utils.py:28:    env = os.environ.copy()
+./src/firsttry/ci_parity/util.py:18:    return Path(os.environ.get("FT_REPO_ROOT", Path.cwd())).resolve()
+./src/firsttry/ci_parity/util.py:35:    env = os.environ.copy()
+./src/firsttry/ci_parity/util.py:41:    if dryrun or os.environ.get("FT_CI_PARITY_DRYRUN") == "1":
+./src/firsttry/ci_parity/parity_runner.py:151:    env = os.environ.copy()
+./src/firsttry/ci_parity/parity_runner.py:359:        actual = os.getenv(key)
+./src/firsttry/ci_parity/parity_runner.py:382:    if "--changed-only" in sys.argv or os.getenv("FT_CHANGED_ONLY") == "1":
+./src/firsttry/ci_parity/parity_runner.py:1166:    explain = "--explain" in argv or os.getenv("FT_PARITY_EXPLAIN") == "1"
+./src/firsttry/ci_parity/parity_runner.py:1168:    quiet = "--quiet" in argv or os.getenv("FT_PARITY_QUIET") == "1"
+./src/firsttry/ci_parity/planner.py:24:    force_strict = os.environ.get("FT_MYPY_STRICT", "") == "1"
+./src/firsttry/tier.py:36:        raw = os.getenv("FIRSTTRY_TIER")
+./src/firsttry/config_loader.py:47:    ft_env = {k: v for k, v in os.environ.items() if k.startswith("FIRSTTRY_")}
+./src/firsttry/gates.py:311:    db_url = os.environ.get("DATABASE_URL", "")
+./src/firsttry/doctor.py:46:        env = os.environ.copy()
+./src/firsttry/doctor.py:72:    if name.lower() == "pytest" and "PYTEST_CURRENT_TEST" in os.environ:
+./src/firsttry/doctor.py:143:    skip_env = os.getenv("FIRSTTRY_DOCTOR_SKIP", "").strip().lower()
+./src/firsttry/doctor.py:275:    skip_mode = os.getenv("FIRSTTRY_DOCTOR_SKIP", "").lower().strip() == "all"
+./src/firsttry/tools/ruff_tool.py:58:        if os.getenv("FT_SKIP_TOOL_EXEC") == "1":
+./src/firsttry/tools/ruff_tool.py:69:        if os.getenv("PYTEST_CURRENT_TEST") or os.getenv(
+./src/firsttry/tools/ruff_tool.py:89:            base = os.environ.get("FT_CHANGED_BASE", "HEAD")
+./src/firsttry/tools/pytest_tool.py:24:        if os.getenv("FT_SKIP_TOOL_EXEC") == "1":
+./src/firsttry/tools/pytest_tool.py:35:        if os.getenv("FT_PYTEST_FAST") == "1" or os.getenv("FIRSTTRY_LAZY") == "1":
+./src/firsttry/tools/mypy_tool.py:24:        if os.getenv("FT_SKIP_TOOL_EXEC") == "1":
+./src/firsttry/cli.py:74:    return os.getenv("FIRSTTRY_DISABLE_AUTO_PARITY") not in ("1", "true", "yes")
+./src/firsttry/cli.py:90:    if os.getenv("CI") == "true":
+./src/firsttry/cli.py:689:        os.getenv("CI") == "true"  # CI always runs full parity
+./src/firsttry/cli.py:690:        or os.getenv("GIT_HOOK") == "pre-push"  # pre-push hook → full parity
+./src/firsttry/cli.py:691:        or os.getenv("FT_FORCE_PARITY") == "1"  # manual override
+./src/firsttry/cli.py:739:            or os.environ.get("PYTEST_CURRENT_TEST")
+./src/firsttry/cli.py:740:            or os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1"
+./src/firsttry/cli.py:801:            if os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1":
+./src/firsttry/cli.py:854:    os.environ["GIT_HOOK"] = "pre-push"
+./src/firsttry/cli.py:868:    os.environ["CI"] = "true"
+./src/firsttry/cli.py:1474:        if "FIRSTTRY_TIER" not in os.environ:
+./src/firsttry/cli.py:1475:            os.environ["FIRSTTRY_TIER"] = desired_tier
+./src/firsttry/cli.py:1904:        bucket = os.getenv("FT_S3_BUCKET")
+./src/firsttry/cli.py:1905:        prefix = os.getenv("FT_S3_PREFIX")
+./src/firsttry/cli.py:1909:            os.getenv(k)
+./src/firsttry/cli.py:2595:            os.getenv("FIRSTTRY_LICENSE_KEY")
+./src/firsttry/cli.py:2596:            or os.getenv("FIRSTTRY_LICENSE")
+./src/firsttry/cli.py:2597:            or os.getenv("FIRSTTRY_PRO_KEY")
+./src/firsttry/cli.py:2689:            if os.environ.get("PYTEST_CURRENT_TEST"):
+./src/firsttry/cli.py:2690:                os.environ.setdefault("FT_DISABLE_NESTED_PYTEST", "1")
+./src/firsttry/cli_wrappers.py:16:REPO_ROOT = Path(os.getenv("FIRSTTRY_REPO_ROOT", Path.cwd()))
+./src/firsttry/license.py:96:        license_key = os.getenv("FIRSTTRY_LICENSE_KEY")
+./src/firsttry/license.py:208:_raw_secret = os.getenv("FIRSTTRY_SHARED_SECRET")
+./src/firsttry/license.py:210:    if os.getenv("FIRSTTRY_ENV") == "development" or os.getenv("CI") != "true":
+./src/firsttry/license.py:301:    k = os.environ.get("FIRSTTRY_LICENSE_KEY")
+./src/firsttry/run_swarm.py:47:            bucket = os.getenv("FT_S3_BUCKET") or os.getenv("FIRSTTRY_S3_BUCKET")
+./src/firsttry/run_swarm.py:50:            prefix = os.getenv("FT_S3_PREFIX") or os.getenv("FIRSTTRY_S3_PREFIX") or ""
+./src/firsttry/run_swarm.py:51:            region = os.getenv("AWS_REGION") or os.getenv("FIRSTTRY_AWS_REGION") or ""
+./src/firsttry/run_swarm.py:159:            bucket = os.getenv("FT_S3_BUCKET") or os.getenv("FIRSTTRY_S3_BUCKET")
+./src/firsttry/run_swarm.py:162:            prefix = os.getenv("FT_S3_PREFIX") or os.getenv("FIRSTTRY_S3_PREFIX") or ""
+./src/firsttry/run_swarm.py:163:            region = os.getenv("AWS_REGION") or os.getenv("FIRSTTRY_AWS_REGION") or ""
+./src/firsttry/utils/proc.py:10:DEFAULT_TIMEOUT = int(os.getenv("FT_TOOL_TIMEOUT_SEC", "30"))
+./src/firsttry/config/schema.py:71:            "no_network": os.getenv("FIRSTTRY_NO_NETWORK") == "1",
+./src/firsttry/config/schema.py:72:            "fips_strict": os.getenv("FIRSTTRY_FIPS_STRICT") == "1",
+./src/firsttry/config/schema.py:73:            "privacy_min": os.getenv("FIRSTTRY_PRIVACY_MIN") == "1",
+./src/firsttry/config/schema.py:76:            "mode": os.getenv("FIRSTTRY_LICENSE_MODE") or None,
+./src/firsttry/config/schema.py:77:            "file": os.getenv("FIRSTTRY_LICENSE_FILE") or None,
+./src/firsttry/config/schema.py:78:            "grace_days": int(os.getenv("FIRSTTRY_LICENSE_GRACE_DAYS") or 0),
+./src/firsttry/config/schema.py:81:            "s3_bucket": os.getenv("FIRSTTRY_S3_BUCKET") or None,
+./src/firsttry/config/schema.py:82:            "s3_prefix": os.getenv("FIRSTTRY_S3_PREFIX") or None,
+./src/firsttry/config/schema.py:83:            "region": os.getenv("FIRSTTRY_AWS_REGION") or None,
+./src/firsttry/config/schema.py:84:            "require_kms": os.getenv("FIRSTTRY_REQUIRE_KMS") == "1",
+./src/firsttry/config/_core.py:63:    home = Path(os.environ.get("HOME", str(Path.home()))).expanduser()
+./src/firsttry/config/_core.py:73:    env_bucket = os.getenv("FT_S3_BUCKET")
+./src/firsttry/config/_core.py:74:    env_region = os.getenv("FT_S3_REGION")
+./src/firsttry/config/_core.py:75:    env_prefix = os.getenv("FT_S3_PREFIX")
+./src/firsttry/cli_main.py:54:    os.environ["FT_RUN_ID"] = run_id
+./src/firsttry/gate_guard.py:11:    if os.getenv("FIRSTTRY_ALLOW_UNLICENSED") == "1":
+./src/firsttry/db_pg.py:55:    db_url = os.getenv("DATABASE_URL", "").strip()
+./src/firsttry/license_cache.py:87:    key = os.getenv("FIRSTTRY_LICENSE_KEY", "").strip()
+./src/firsttry/license_cache.py:88:    url = os.getenv("FIRSTTRY_LICENSE_URL", "").strip()
+./src/firsttry/license_cache.py:112:    backend = os.getenv("FIRSTTRY_LICENSE_BACKEND", "").strip().lower()
+./src/firsttry/license_cache.py:117:        allowed = os.getenv("FIRSTTRY_LICENSE_ALLOW", "").strip().lower()
+./src/firsttry/license_cache.py:139:    backend = os.getenv("FIRSTTRY_LICENSE_BACKEND", "").strip().lower()
+./src/firsttry/license_cache.py:142:        allowed = os.getenv("FIRSTTRY_LICENSE_ALLOW", "").strip().lower()
+./src/firsttry/gates_compat.py:244:    db_url = os.environ.get("DATABASE_URL", "")
+./src/firsttry/reports/ui.py:57:    return os.environ.get("TERM") not in (None, "dumb")

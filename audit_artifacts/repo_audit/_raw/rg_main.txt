@@ -1,0 +1,743 @@
+./demo_step12_enhanced_orchestrator.py:74:if __name__ == "__main__":
+./demo_step7_smart_pytest.py:84:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/rich/live.py:286:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/json.py:105:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/rich/repr.py:117:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/rich/logging.py:236:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/padding.py:130:if __name__ == "__main__":  #  pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/__main__.py:203:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/control.py:207:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/rule.py:109:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/tree.py:195:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/_windows.py:64:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/rich/scope.py:70:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/diagnose.py:38:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/box.py:422:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/columns.py:166:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/_log_render.py:87:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/markup.py:220:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/_win32_console.py:553:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/rich/console.py:1108:            >>> from rich.__main__ import make_test_card
+./.venv-build/lib/python3.12/site-packages/rich/console.py:2575:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/syntax.py:844:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/progress_bar.py:196:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/emoji.py:74:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/styled.py:33:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/spinner.py:111:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/progress.py:1633:if __name__ == "__main__":  # pragma: no coverage
+./.venv-build/lib/python3.12/site-packages/rich/align.py:271:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/table.py:887:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/prompt.py:352:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/cells.py:168:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/markdown.py:653:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/pager.py:28:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/pager.py:29:    from .__main__ import make_test_card
+./.venv-build/lib/python3.12/site-packages/rich/status.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/_ratio.py:139:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/rich/theme.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/palette.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/panel.py:280:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/abc.py:21:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/default_styles.py:172:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/highlighter.py:201:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/text.py:1308:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/segment.py:705:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/color.py:584:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/__init__.py:176:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/ansi.py:210:if sys.platform != "win32" and __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/pretty.py:106:        # OSError handles case where object is defined in __main__ scope, e.g. REPL - no filename available.
+./.venv-build/lib/python3.12/site-packages/rich/pretty.py:923:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/_wrap.py:81:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/rich/layout.py:393:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/rich/traceback.py:863:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/keyring/__main__.py:1:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/keyring/cli.py:213:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/packaging/_musllinux.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pyproject_hooks/_in_process/_in_process.py:376:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/readme_renderer/__main__.py:71:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/requests/certs.py:16:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/requests/help.py:133:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/cachecontrol/_cmd.py:65:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/live.py:286:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/json.py:105:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/repr.py:117:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/logging.py:236:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/padding.py:130:if __name__ == "__main__":  #  pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/__main__.py:209:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/control.py:207:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/rule.py:109:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/tree.py:195:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/_windows.py:64:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/scope.py:70:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/diagnose.py:38:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/box.py:422:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/columns.py:166:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/_log_render.py:87:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/markup.py:220:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/_win32_console.py:553:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/console.py:1108:            >>> from rich.__main__ import make_test_card
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/console.py:2579:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/syntax.py:844:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/progress_bar.py:196:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/emoji.py:74:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/styled.py:33:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/spinner.py:111:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/progress.py:1633:if __name__ == "__main__":  # pragma: no coverage
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/align.py:271:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/table.py:887:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/prompt.py:352:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/cells.py:168:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/pager.py:28:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/pager.py:29:    from .__main__ import make_test_card
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/status.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/_ratio.py:139:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/theme.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/palette.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/panel.py:280:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/abc.py:21:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/default_styles.py:172:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/highlighter.py:201:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/text.py:1308:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/segment.py:705:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/color.py:584:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/__init__.py:176:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/ansi.py:210:if sys.platform != "win32" and __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/pretty.py:106:        # OSError handles case where object is defined in __main__ scope, e.g. REPL - no filename available.
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/pretty.py:923:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/_wrap.py:81:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/layout.py:393:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/traceback.py:863:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/packaging/_musllinux.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py:376:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/certs.py:16:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/requests/help.py:126:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distro/__main__.py:3:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:1384:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/scripts.py:52:if __name__ == '__main__':
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/scripts.py:297:                    zinfo = ZipInfo(filename="__main__.py", date_time=date_time)
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/scripts.py:300:                    zf.writestr("__main__.py", script_bytes)
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/__main__.py:2:pygments.__main__
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/unistring.py:142:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pkg_resources/__init__.py:648:            from __main__ import __requires__
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_pip_wrapper.py:59:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/dependency_groups/__main__.py:60:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_lint_dependency_groups.py:58:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/platformdirs/__main__.py:54:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/__main__.py:14:    # __file__ is pip-*.whl/pip/__main__.py
+./.venv-build/lib/python3.12/site-packages/pip/__main__.py:15:    # first dirname call strips of '/__main__.py', second strips off '/pip'
+./.venv-build/lib/python3.12/site-packages/pip/__main__.py:21:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pip/__pip-runner__.py:49:assert __name__ == "__main__", "Cannot run __pip-runner__.py as a non-main module"
+./.venv-build/lib/python3.12/site-packages/pip/__pip-runner__.py:50:runpy.run_module("pip", run_name="__main__", alter_sys=True)
+./.venv-build/lib/python3.12/site-packages/pip/_internal/utils/misc.py:109:        if prog in ("__main__.py", "-c"):
+./.venv-build/lib/python3.12/site-packages/pip/_internal/cli/main.py:40:#     runpy.run_module("pip", run_name="__main__")
+./.venv-build/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:401:        if __name__ == '__main__':
+./.venv-build/lib/python3.12/site-packages/wheel/__main__.py:22:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/wheel/vendored/packaging/_musllinux.py:73:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pycparser/ply/cpp.py:943:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pycparser/ply/ygen.py:72:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/jeepney/io/blocking.py:337:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/jeepney/bus.py:73:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/jeepney/bindgen.py:182:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/jaraco/text/to-qwerty.py:6:__name__ == "__main__" and layouts._translate_stream(sys.stdin, layouts.to_qwerty)
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/jaraco/text/to-dvorak.py:6:__name__ == "__main__" and layouts._translate_stream(sys.stdin, layouts.to_dvorak)
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/typing_extensions.py:536:        return sys._getframe(depth).f_globals.get("__name__", "__main__")
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/packaging/_musllinux.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/__main__.py:22:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/wheel/vendored/packaging/_musllinux.py:73:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/__main__.py:4:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/__init__.py:3066:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:29:    as the "__main__" module. Optionally, provide args or kwargs with which to
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:30:    call the function. If `module` is "__main__", the function is called, and
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:37:    @automain(__name__)  # Pass __name__ to check __name__=="__main__"
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:41:    If __name__ is "__main__" here, the main function is called, and then
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:49:    if module == "__main__" or module is True:
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/autocommand/autocommand.py:64:        # Step 3: call the function automatically if __name__ == '__main__' (or
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/importlib_metadata/diagnose.py:20:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/__main__.py:54:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_editable_install.py:103:            "__main__.py": dedent(
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_build_meta.py:121:            assert __name__ == '__main__'
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_pyprojecttoml.py:47:exec = "pkg.__main__:exec"
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_pyprojecttoml.py:98:            "__main__.py": "def exec(): print('hello')",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/downloads/preload.py:16:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_namespaces.py:26:            "pip.__main__",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_namespaces.py:37:            "pip.__main__",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_namespaces.py:91:            "pip.__main__",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/test_namespaces.py:122:            "pip.__main__",
+./.venv-build/lib/python3.12/site-packages/setuptools/_scripts.py:154:        if __name__ == '__main__':
+./.venv-build/lib/python3.12/site-packages/setuptools/build_meta.py:307:        __name__ = "__main__"
+./.venv-build/lib/python3.12/site-packages/setuptools/launch.py:22:        __name__="__main__",
+./.venv-build/lib/python3.12/site-packages/setuptools/launch.py:35:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/core.py:259:    g = {"__file__": script_name, "__name__": "__main__"}
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_text_file.py:19:        # old tests moved from text_file.__main__
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/tests/test_core.py:51:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/setuptools/_distutils/fancy_getopt.py:458:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/charset_normalizer/__main__.py:5:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/charset_normalizer/cli/__main__.py:364:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/charset_normalizer/cli/__init__.py:3:from .__main__ import cli_detect, query_yes_no
+./.venv-build/lib/python3.12/site-packages/id/__main__.py:87:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pygments/__main__.py:2:pygments.__main__
+./.venv-build/lib/python3.12/site-packages/pygments/unistring.py:142:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_cocoa_builtins.py:4144:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_sourcemod_builtins.py:1094:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_sourcemod_builtins.py:1129:        footer = content[content.find("if __name__ == '__main__':") - 1 :]
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_php_builtins.py:3455:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_php_builtins.py:3521:        footer = content[content.find("if __name__ == '__main__':") :]
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mysql_builtins.py:1229:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py:3054:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py:3091:    footer = content[content.find("if __name__ == '__main__':") :]
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_postgres_builtins.py:645:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_lua_builtins.py:201:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_lua_builtins.py:280:        footer = content[content.find("if __name__ == '__main__':") :]
+./.venv-build/lib/python3.12/site-packages/markdown_it/cli/parse.py:106:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/pkg_resources/__init__.py:647:            from __main__ import __requires__
+./.venv-build/lib/python3.12/site-packages/docutils/__main__.py:18:https://docs.python.org/3/library/__main__.html#main-py-in-python-packages
+./.venv-build/lib/python3.12/site-packages/docutils/__main__.py:111:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/docutils/__main__.py:112:    if sys.argv[0].endswith("__main__.py"):
+./.venv-build/lib/python3.12/site-packages/docutils/examples.py:137:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/docutils/writers/odf_odt/prepstyles.py:76:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/docutils/utils/math/math2html.py:3359:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/docutils/utils/math/tex2mathml_extern.py:231:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/docutils/utils/smartquotes.py:932:if __name__ == "__main__":
+./.venv-build/lib/python3.12/site-packages/twine/__main__.py:53:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/black/__init__.py:1602:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/typing_extensions.py:620:def _caller(depth=1, default="__main__"):
+./.venv-build/lib/python3.11/site-packages/packaging/_musllinux.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/mypyc/__main__.py:71:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypyc/test/testutil.py:118:    options.per_module_options["__main__"] = {"mypyc": True}
+./.venv-build/lib/python3.11/site-packages/mypyc/test/testutil.py:120:    source = build.BuildSource("main", "__main__", program_text)
+./.venv-build/lib/python3.11/site-packages/mypyc/test/testutil.py:128:    mapper = Mapper({"__main__": None})
+./.venv-build/lib/python3.11/site-packages/mypyc/test/testutil.py:130:        [result.files["__main__"]], result.graph, result.types, mapper, compiler_options, errors
+./.venv-build/lib/python3.11/site-packages/mypyc/test/test_tuplename.py:19:        self.inst_a = RInstance(ClassIR("A", "__main__"))
+./.venv-build/lib/python3.11/site-packages/mypyc/test/test_tuplename.py:20:        self.inst_b = RInstance(ClassIR("B", "__main__"))
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/cachecontrol/_cmd.py:65:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/live.py:286:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/json.py:105:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/repr.py:117:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/logging.py:236:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/padding.py:130:if __name__ == "__main__":  #  pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/__main__.py:203:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/control.py:207:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/rule.py:109:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/tree.py:195:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/_windows.py:64:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/scope.py:70:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/diagnose.py:38:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/box.py:422:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/columns.py:166:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/_log_render.py:87:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/markup.py:220:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/_win32_console.py:553:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/console.py:1108:            >>> from rich.__main__ import make_test_card
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/console.py:2575:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/syntax.py:844:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/progress_bar.py:196:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/emoji.py:74:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/styled.py:33:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/spinner.py:111:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/progress.py:1633:if __name__ == "__main__":  # pragma: no coverage
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/align.py:271:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/table.py:887:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/prompt.py:352:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/cells.py:168:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/pager.py:28:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/pager.py:29:    from .__main__ import make_test_card
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/status.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/_ratio.py:139:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/theme.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/palette.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/panel.py:280:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/abc.py:21:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/default_styles.py:172:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/highlighter.py:201:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/text.py:1308:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/segment.py:705:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/color.py:584:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/__init__.py:176:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/ansi.py:210:if sys.platform != "win32" and __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/pretty.py:106:        # OSError handles case where object is defined in __main__ scope, e.g. REPL - no filename available.
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/pretty.py:923:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/_wrap.py:81:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/layout.py:393:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/traceback.py:863:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/packaging/_musllinux.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py:376:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/certs.py:16:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/requests/help.py:126:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distro/__main__.py:3:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distro/distro.py:1384:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/scripts.py:52:if __name__ == '__main__':
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/scripts.py:291:                    zinfo = ZipInfo(filename="__main__.py", date_time=date_time)
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/scripts.py:294:                    zf.writestr("__main__.py", script_bytes)
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/__main__.py:2:pygments.__main__
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/unistring.py:142:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pkg_resources/__init__.py:636:            from __main__ import __requires__
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/dependency_groups/_pip_wrapper.py:59:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/dependency_groups/__main__.py:60:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/dependency_groups/_lint_dependency_groups.py:58:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/platformdirs/__main__.py:54:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/__main__.py:14:    # __file__ is pip-*.whl/pip/__main__.py
+./.venv-build/lib/python3.11/site-packages/pip/__main__.py:15:    # first dirname call strips of '/__main__.py', second strips off '/pip'
+./.venv-build/lib/python3.11/site-packages/pip/__main__.py:21:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pip/__pip-runner__.py:49:assert __name__ == "__main__", "Cannot run __pip-runner__.py as a non-main module"
+./.venv-build/lib/python3.11/site-packages/pip/__pip-runner__.py:50:runpy.run_module("pip", run_name="__main__", alter_sys=True)
+./.venv-build/lib/python3.11/site-packages/pip/_internal/utils/misc.py:109:        if prog in ("__main__.py", "-c"):
+./.venv-build/lib/python3.11/site-packages/pip/_internal/cli/main.py:40:#     runpy.run_module("pip", run_name="__main__")
+./.venv-build/lib/python3.11/site-packages/pip/_internal/operations/install/wheel.py:401:        if __name__ == '__main__':
+./.venv-build/lib/python3.11/site-packages/blib2to3/pgen2/literals.py:64:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/blib2to3/pgen2/driver.py:304:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/blib2to3/pgen2/tokenize.py:212:if __name__ == "__main__":  # testing
+./.venv-build/lib/python3.11/site-packages/wheel/__main__.py:22:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/wheel/vendored/packaging/_musllinux.py:73:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/jaraco/text/to-qwerty.py:6:__name__ == "__main__" and layouts._translate_stream(sys.stdin, layouts.to_qwerty)
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/jaraco/text/to-dvorak.py:6:__name__ == "__main__" and layouts._translate_stream(sys.stdin, layouts.to_dvorak)
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/typing_extensions.py:536:        return sys._getframe(depth).f_globals.get("__name__", "__main__")
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/packaging/_musllinux.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/__main__.py:22:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/wheel/vendored/packaging/_musllinux.py:73:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/backports/tarfile/__main__.py:4:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/backports/tarfile/__init__.py:3048:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/autocommand/automain.py:29:    as the "__main__" module. Optionally, provide args or kwargs with which to
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/autocommand/automain.py:30:    call the function. If `module` is "__main__", the function is called, and
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/autocommand/automain.py:37:    @automain(__name__)  # Pass __name__ to check __name__=="__main__"
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/autocommand/automain.py:41:    If __name__ is "__main__" here, the main function is called, and then
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/autocommand/automain.py:49:    if module == "__main__" or module is True:
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/autocommand/autocommand.py:62:        # Step 3: call the function automatically if __name__ == '__main__' (or
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/importlib_metadata/diagnose.py:20:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/setuptools/_vendor/platformdirs/__main__.py:54:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_editable_install.py:103:            "__main__.py": dedent(
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_build_meta.py:121:            assert __name__ == '__main__'
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_pyprojecttoml.py:47:exec = "pkg.__main__:exec"
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_pyprojecttoml.py:98:            "__main__.py": "def exec(): print('hello')",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/downloads/preload.py:16:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_namespaces.py:26:            "pip.__main__",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_namespaces.py:37:            "pip.__main__",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_namespaces.py:91:            "pip.__main__",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/test_namespaces.py:122:            "pip.__main__",
+./.venv-build/lib/python3.11/site-packages/setuptools/_scripts.py:154:        if __name__ == '__main__':
+./.venv-build/lib/python3.11/site-packages/setuptools/build_meta.py:307:        __name__ = "__main__"
+./.venv-build/lib/python3.11/site-packages/setuptools/launch.py:22:        __name__="__main__",
+./.venv-build/lib/python3.11/site-packages/setuptools/launch.py:35:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/core.py:259:    g = {"__file__": script_name, "__name__": "__main__"}
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_text_file.py:19:        # old tests moved from text_file.__main__
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/tests/test_core.py:51:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/setuptools/_distutils/fancy_getopt.py:458:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pytest/__main__.py:8:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/_pytest/doctest.py:154:    return path.name == "__main__.py"
+./.venv-build/lib/python3.11/site-packages/_pytest/doctest.py:418:        globs = {"__name__": "__main__"}
+./.venv-build/lib/python3.11/site-packages/mypy_extensions.py:41:        ns["__module__"] = sys._getframe(1).f_globals.get("__name__", "__main__")
+./.venv-build/lib/python3.11/site-packages/ruff/__main__.py:78:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/stubgen.py:1224:        # Ignore if __name__ == '__main__'.
+./.venv-build/lib/python3.11/site-packages/mypy/stubgen.py:1231:            and "__main__" in expr.operands[1].value
+./.venv-build/lib/python3.11/site-packages/mypy/stubgen.py:1648:            ".__main__",
+./.venv-build/lib/python3.11/site-packages/mypy/stubgen.py:2043:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/__main__.py:36:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/test/testfinegrained.py:289:            base = BuildSource(os.path.join(test_temp_dir, "main"), "__main__", None)
+./.venv-build/lib/python3.11/site-packages/mypy/test/testcheck.py:124:                if module_name == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/test/testcheck.py:287:        Normally, the unit tests will parse the default ('__main__')
+./.venv-build/lib/python3.11/site-packages/mypy/test/testcheck.py:325:            return [("__main__", "main", program_text)]
+./.venv-build/lib/python3.11/site-packages/mypy/test/testdiff.py:45:        prefix = "__main__"
+./.venv-build/lib/python3.11/site-packages/mypy/test/testdiff.py:46:        snapshot1 = snapshot_symbol_table(prefix, files1["__main__"].names)
+./.venv-build/lib/python3.11/site-packages/mypy/test/testdiff.py:47:        snapshot2 = snapshot_symbol_table(prefix, files2["__main__"].names)
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubgen.py:819:        assert is_non_library_module("foo.__main__")
+./.venv-build/lib/python3.11/site-packages/mypy/test/testtypegen.py:74:                ts = ts.replace("__main__.", "")
+./.venv-build/lib/python3.11/site-packages/mypy/test/test_ref_info.py:34:        ref_path = os.path.join(options.cache_dir, f"{major}.{minor}", "__main__.refs.json")
+./.venv-build/lib/python3.11/site-packages/mypy/test/testparse.py:67:            module="__main__",
+./.venv-build/lib/python3.11/site-packages/mypy/test/testparse.py:103:            "__main__",
+./.venv-build/lib/python3.11/site-packages/mypy/test/testparse.py:111:            assert e.module_with_blocker == "__main__"
+./.venv-build/lib/python3.11/site-packages/mypy/test/teststubtest.py:2849:        stub = result.files["__main__"].names["myfunction"].node
+./.venv-build/lib/python3.11/site-packages/mypy/test/testtypes.py:230:        assert modules == {"__main__", "builtins"}
+./.venv-build/lib/python3.11/site-packages/mypy/test/testtypes.py:236:        assert modules == {"__main__", "builtins"}
+./.venv-build/lib/python3.11/site-packages/mypy/test/testipc.py:118:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/test/typefixture.py:322:                module_name = "__main__"
+./.venv-build/lib/python3.11/site-packages/mypy/test/typefixture.py:375:        AN = TypeAlias(target, "__main__.A", -1, -1)
+./.venv-build/lib/python3.11/site-packages/mypy/test/typefixture.py:382:        AN = TypeAlias(target, "__main__.A", -1, -1)
+./.venv-build/lib/python3.11/site-packages/mypy/test/typefixture.py:392:        AN = TypeAlias(target, "__main__.A", -1, -1, alias_tvars=alias_tvars)
+./.venv-build/lib/python3.11/site-packages/mypy/test/testerrorstream.py:38:    sources = [BuildSource("main", "__main__", "\n".join(testcase.input))]
+./.venv-build/lib/python3.11/site-packages/mypy/test/testdeps.py:24:dumped_modules = ["__main__", "pkg", "pkg.mod"]
+./.venv-build/lib/python3.11/site-packages/mypy/test/testdeps.py:63:                line = line.replace("__main__", "m")
+./.venv-build/lib/python3.11/site-packages/mypy/test/data.py:88:    test_modules.append("__main__")
+./.venv-build/lib/python3.11/site-packages/mypy/test/helpers.py:148:    actual_normalized = sorted(set(actual).difference({"__main__"}))
+./.venv-build/lib/python3.11/site-packages/mypy/test/testformatter.py:84:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/dmypy/__main__.py:5:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/modulefinder.py:134:        self.module = module or "__main__"  # Module name (e.g. 'foo.bar')
+./.venv-build/lib/python3.11/site-packages/mypy/main.py:1182:        help="Script x becomes module x instead of __main__",
+./.venv-build/lib/python3.11/site-packages/mypy/plugin.py:665:        this method is called with '__main__.Base.method', and then with
+./.venv-build/lib/python3.11/site-packages/mypy/plugin.py:703:        get_attribute_hook is called with '__main__.Base.x' and '__main__.Base.y'.
+./.venv-build/lib/python3.11/site-packages/mypy/plugin.py:723:        get_class_attribute_hook is called with '__main__.Cls.x' as fullname.
+./.venv-build/lib/python3.11/site-packages/mypy/stubtest.py:263:            if bottom_module == "__main__" or bottom_module.split(".")[0] == "mypy":
+./.venv-build/lib/python3.11/site-packages/mypy/stubtest.py:2158:            # There are many annoying *.__main__ stdlib modules,
+./.venv-build/lib/python3.11/site-packages/mypy/stubtest.py:2160:            # tkinter.__main__ opens a tkinter windows; unittest.__main__ raises SystemExit; etc.
+./.venv-build/lib/python3.11/site-packages/mypy/stubtest.py:2169:            if submodule_name.endswith(".__main__") or submodule_name.startswith(
+./.venv-build/lib/python3.11/site-packages/mypy/stubtest.py:2220:# typeshed added a stub for __main__, but that causes stubtest to check itself
+./.venv-build/lib/python3.11/site-packages/mypy/stubtest.py:2221:ANNOYING_STDLIB_MODULES: Final = frozenset({"antigravity", "this", "__main__", "_ios_support"})
+./.venv-build/lib/python3.11/site-packages/mypy/stubtest.py:2451:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/pyinfo.py:12:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/pyinfo.py:73:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/options.py:264:        # Use script name instead of __main__
+./.venv-build/lib/python3.11/site-packages/mypy/build.py:1939:        self.id = id or "__main__"
+./.venv-build/lib/python3.11/site-packages/mypy/semanal.py:728:                if file_node.name == "__main__":
+./.venv-build/lib/python3.11/site-packages/mypy/semanal.py:3881:            analyze_alias(Dict[A, B])[2] == {'__main__.A', '__main__.B'}
+./.venv-build/lib/python3.11/site-packages/pygments/__main__.py:2:pygments.__main__
+./.venv-build/lib/python3.11/site-packages/pygments/unistring.py:142:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_cocoa_builtins.py:4144:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_sourcemod_builtins.py:1094:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_sourcemod_builtins.py:1129:        footer = content[content.find("if __name__ == '__main__':") - 1 :]
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_php_builtins.py:3425:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_php_builtins.py:3491:        footer = content[content.find("if __name__ == '__main__':") :]
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mysql_builtins.py:1229:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_scilab_builtins.py:3054:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_scilab_builtins.py:3091:    footer = content[content.find("if __name__ == '__main__':") :]
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_postgres_builtins.py:645:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_lua_builtins.py:201:if __name__ == "__main__":  # pragma: no cover
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_lua_builtins.py:280:        footer = content[content.find("if __name__ == '__main__':") :]
+./.venv-build/lib/python3.11/site-packages/pkg_resources/__init__.py:635:            from __main__ import __requires__
+./.venv-build/lib/python3.11/site-packages/click/utils.py:530:    :param _main: The ``__main__`` module. This should only be passed
+./.venv-build/lib/python3.11/site-packages/click/utils.py:539:        _main = sys.modules["__main__"]
+./.venv-build/lib/python3.11/site-packages/click/utils.py:564:    if name != "__main__":
+./.venv-build/lib/python3.11/site-packages/click/decorators.py:478:            if package_name == "__main__":
+./.venv-build/lib/python3.11/site-packages/blackd/__init__.py:255:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/pytokens/__main__.py:7:if __name__ == "__main__":
+./.venv-build/lib/python3.11/site-packages/platformdirs/__main__.py:54:if __name__ == "__main__":
+./.venv-build/bin/jp.py:60:if __name__ == "__main__":
+./demo_pipeline.py:54:if __name__ == "__main__":
+./performance_benchmark.py:492:if __name__ == "__main__":
+./tests/cache/test_cache_s3_fail_open.py:139:if __name__ == "__main__":
+./tests/test_module_main.py:16:        runpy.run_module("firsttry.__main__", run_name="__main__")
+./tests/test_main_module_help_safe.py:2:Some projects execute CLI on import via __main__. We execute `firsttry.__main__`
+./tests/test_main_module_help_safe.py:21:            runpy.run_module("firsttry.__main__", run_name="__main__")
+./tests/phase4/test_ci_workflow_validation.py:507:if __name__ == "__main__":
+./tests/phase3/test_mypy_strict_mode.py:223:if __name__ == "__main__":
+./tests/phase3/test_audit_schema.py:499:if __name__ == "__main__":
+./tests/enterprise/test_performance_slo.py:369:if __name__ == "__main__":
+./tests/enterprise/test_policy_lock.py:311:if __name__ == "__main__":
+./tests/enterprise/test_release_sbom.py:572:if __name__ == "__main__":
+./tests/enterprise/test_ci_parity.py:364:if __name__ == "__main__":
+./tests/enterprise/test_commit_validation.py:509:if __name__ == "__main__":
+./tests/enterprise/test_secrets_scanning.py:311:if __name__ == "__main__":
+./tests/enterprise/test_remote_cache_e2e.py:357:if __name__ == "__main__":
+./tests/enterprise/test_dependency_audit.py:345:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/black/__init__.py:1607:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/cachecontrol/_cmd.py:64:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/rich/live.py:286:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/json.py:105:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/rich/repr.py:117:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/rich/logging.py:236:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/padding.py:130:if __name__ == "__main__":  #  pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/__main__.py:203:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/control.py:207:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/rule.py:109:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/tree.py:195:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/_windows.py:64:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/rich/scope.py:70:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/diagnose.py:38:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/box.py:421:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/columns.py:166:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/_log_render.py:86:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/markup.py:220:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/_win32_console.py:553:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/rich/console.py:1108:            >>> from rich.__main__ import make_test_card
+./.venv_tmp/lib/python3.12/site-packages/rich/console.py:2575:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/syntax.py:843:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/progress_bar.py:196:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/emoji.py:73:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/styled.py:33:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/spinner.py:111:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/progress.py:1633:if __name__ == "__main__":  # pragma: no coverage
+./.venv_tmp/lib/python3.12/site-packages/rich/align.py:271:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/table.py:887:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/prompt.py:352:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/cells.py:168:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/markdown.py:652:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/pager.py:28:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/pager.py:29:    from .__main__ import make_test_card
+./.venv_tmp/lib/python3.12/site-packages/rich/status.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/_ratio.py:139:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/rich/theme.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/palette.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/panel.py:280:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/abc.py:21:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/default_styles.py:172:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/highlighter.py:201:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/text.py:1308:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/segment.py:705:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/color.py:584:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/__init__.py:176:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/ansi.py:210:if sys.platform != "win32" and __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/pretty.py:106:        # OSError handles case where object is defined in __main__ scope, e.g. REPL - no filename available.
+./.venv_tmp/lib/python3.12/site-packages/rich/pretty.py:923:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/_wrap.py:81:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/rich/layout.py:393:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/rich/traceback.py:870:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/typing_extensions.py:620:def _caller(depth=1, default="__main__"):
+./.venv_tmp/lib/python3.12/site-packages/packaging/_musllinux.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/mypyc/__main__.py:71:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/testutil.py:118:    options.per_module_options["__main__"] = {"mypyc": True}
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/testutil.py:120:    source = build.BuildSource("main", "__main__", program_text)
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/testutil.py:128:    mapper = Mapper({"__main__": None})
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/testutil.py:130:        [result.files["__main__"]], result.graph, result.types, mapper, compiler_options, errors
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/test_tuplename.py:19:        self.inst_a = RInstance(ClassIR("A", "__main__"))
+./.venv_tmp/lib/python3.12/site-packages/mypyc/test/test_tuplename.py:20:        self.inst_b = RInstance(ClassIR("B", "__main__"))
+./.venv_tmp/lib/python3.12/site-packages/requests/certs.py:16:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/requests/help.py:133:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/stevedore/example/load_as_driver.py:19:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/stevedore/example/load_as_extension.py:19:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pyparsing/tools/cvt_pyparsing_pep8_names.py:52:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/cachecontrol/_cmd.py:64:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/live.py:286:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/json.py:105:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/repr.py:117:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/logging.py:236:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/padding.py:130:if __name__ == "__main__":  #  pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/__main__.py:209:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/control.py:207:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/rule.py:109:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/tree.py:195:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/_windows.py:64:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/scope.py:70:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/diagnose.py:38:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/box.py:421:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/columns.py:166:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/_log_render.py:86:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/markup.py:220:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/_win32_console.py:553:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/console.py:1108:            >>> from rich.__main__ import make_test_card
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/console.py:2579:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/syntax.py:843:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/progress_bar.py:196:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/emoji.py:73:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/styled.py:33:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/spinner.py:111:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/progress.py:1633:if __name__ == "__main__":  # pragma: no coverage
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/align.py:271:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/table.py:887:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/prompt.py:352:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/cells.py:168:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/pager.py:28:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/pager.py:29:    from .__main__ import make_test_card
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/status.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/_ratio.py:139:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/theme.py:107:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/palette.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/panel.py:280:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/abc.py:21:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/default_styles.py:172:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/highlighter.py:201:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/text.py:1308:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/segment.py:705:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/color.py:584:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/__init__.py:176:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/ansi.py:210:if sys.platform != "win32" and __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/pretty.py:106:        # OSError handles case where object is defined in __main__ scope, e.g. REPL - no filename available.
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/pretty.py:923:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/_wrap.py:81:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/layout.py:393:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/traceback.py:870:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/packaging/_musllinux.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py:376:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/certs.py:16:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/requests/help.py:125:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distro/__main__.py:3:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distro/distro.py:1384:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/scripts.py:52:if __name__ == '__main__':
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/scripts.py:291:                    zinfo = ZipInfo(filename="__main__.py", date_time=date_time)
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/scripts.py:294:                    zf.writestr("__main__.py", script_bytes)
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/__main__.py:2:pygments.__main__
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/unistring.py:142:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pkg_resources/__init__.py:637:            from __main__ import __requires__
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_pip_wrapper.py:59:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/dependency_groups/__main__.py:60:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/dependency_groups/_lint_dependency_groups.py:58:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/platformdirs/__main__.py:54:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/__main__.py:14:    # __file__ is pip-*.whl/pip/__main__.py
+./.venv_tmp/lib/python3.12/site-packages/pip/__main__.py:15:    # first dirname call strips of '/__main__.py', second strips off '/pip'
+./.venv_tmp/lib/python3.12/site-packages/pip/__main__.py:21:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pip/__pip-runner__.py:49:assert __name__ == "__main__", "Cannot run __pip-runner__.py as a non-main module"
+./.venv_tmp/lib/python3.12/site-packages/pip/__pip-runner__.py:50:runpy.run_module("pip", run_name="__main__", alter_sys=True)
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/utils/misc.py:100:        if prog in ("__main__.py", "-c"):
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/cli/main.py:40:#     runpy.run_module("pip", run_name="__main__")
+./.venv_tmp/lib/python3.12/site-packages/pip/_internal/operations/install/wheel.py:391:        if __name__ == '__main__':
+./.venv_tmp/lib/python3.12/site-packages/blib2to3/pgen2/literals.py:64:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/blib2to3/pgen2/driver.py:304:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/blib2to3/pgen2/tokenize.py:212:if __name__ == "__main__":  # testing
+./.venv_tmp/lib/python3.12/site-packages/wheel/__main__.py:22:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/wheel/vendored/packaging/_musllinux.py:73:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip_api/_vendor/packaging/_musllinux.py:126:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pip_api/_vendor/pyparsing.py:7693:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/jaraco/text/to-qwerty.py:5:__name__ == "__main__" and layouts._translate_stream(sys.stdin, layouts.to_qwerty)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/jaraco/text/to-dvorak.py:5:__name__ == "__main__" and layouts._translate_stream(sys.stdin, layouts.to_dvorak)
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/typing_extensions.py:536:        return sys._getframe(depth).f_globals.get("__name__", "__main__")
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/packaging/_musllinux.py:75:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/__main__.py:22:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/wheel/vendored/packaging/_musllinux.py:73:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/__main__.py:3:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/__init__.py:3049:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:30:    as the "__main__" module. Optionally, provide args or kwargs with which to
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:31:    call the function. If `module` is "__main__", the function is called, and
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:38:    @automain(__name__)  # Pass __name__ to check __name__=="__main__"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:42:    If __name__ is "__main__" here, the main function is called, and then
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/autocommand/automain.py:50:    if module == "__main__" or module is True:
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/autocommand/autocommand.py:62:        # Step 3: call the function automatically if __name__ == '__main__' (or
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/importlib_metadata/diagnose.py:20:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/__main__.py:54:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_editable_install.py:101:            "__main__.py": dedent(
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_build_meta.py:120:            assert __name__ == '__main__'
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_pyprojecttoml.py:45:exec = "pkg.__main__:exec"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_pyprojecttoml.py:96:            "__main__.py": "def exec(): print('hello')",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/downloads/preload.py:16:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_namespaces.py:26:            "pip.__main__",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_namespaces.py:37:            "pip.__main__",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_namespaces.py:91:            "pip.__main__",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/test_namespaces.py:122:            "pip.__main__",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_scripts.py:154:        if __name__ == '__main__':
+./.venv_tmp/lib/python3.12/site-packages/setuptools/build_meta.py:306:        __name__ = "__main__"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/launch.py:22:        __name__="__main__",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/launch.py:35:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/core.py:259:    g = {"__file__": script_name, "__name__": "__main__"}
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_text_file.py:19:        # old tests moved from text_file.__main__
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/tests/test_core.py:51:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools/_distutils/fancy_getopt.py:458:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pytest/__main__.py:7:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/charset_normalizer/__main__.py:5:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/charset_normalizer/cli/__main__.py:364:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/charset_normalizer/cli/__init__.py:3:from .__main__ import cli_detect, query_yes_no
+./.venv_tmp/lib/python3.12/site-packages/pip_audit/__main__.py:5:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/_pytest/doctest.py:144:    return path.name == "__main__.py"
+./.venv_tmp/lib/python3.12/site-packages/_pytest/doctest.py:408:        globs = {"__name__": "__main__"}
+./.venv_tmp/lib/python3.12/site-packages/mypy_extensions.py:40:        ns["__module__"] = sys._getframe(1).f_globals.get("__name__", "__main__")
+./.venv_tmp/lib/python3.12/site-packages/ruff/__main__.py:78:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubgen.py:1224:        # Ignore if __name__ == '__main__'.
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubgen.py:1231:            and "__main__" in expr.operands[1].value
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubgen.py:1648:            ".__main__",
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubgen.py:2043:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/__main__.py:36:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testfinegrained.py:288:            base = BuildSource(os.path.join(test_temp_dir, "main"), "__main__", None)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testcheck.py:129:                if module_name == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testcheck.py:292:        Normally, the unit tests will parse the default ('__main__')
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testcheck.py:330:            return [("__main__", "main", program_text)]
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testdiff.py:44:        prefix = "__main__"
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testdiff.py:45:        snapshot1 = snapshot_symbol_table(prefix, files1["__main__"].names)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testdiff.py:46:        snapshot2 = snapshot_symbol_table(prefix, files2["__main__"].names)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubgen.py:822:        assert is_non_library_module("foo.__main__")
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testtypegen.py:74:                ts = ts.replace("__main__.", "")
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/test_ref_info.py:34:        ref_path = os.path.join(options.cache_dir, f"{major}.{minor}", "__main__.refs.json")
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testparse.py:66:            module="__main__",
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testparse.py:102:            "__main__",
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testparse.py:110:            assert e.module_with_blocker == "__main__"
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/teststubtest.py:2849:        stub = result.files["__main__"].names["myfunction"].node
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testtypes.py:230:        assert modules == {"__main__", "builtins"}
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testtypes.py:236:        assert modules == {"__main__", "builtins"}
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testipc.py:117:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/typefixture.py:322:                module_name = "__main__"
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/typefixture.py:375:        AN = TypeAlias(target, "__main__.A", -1, -1)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/typefixture.py:382:        AN = TypeAlias(target, "__main__.A", -1, -1)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/typefixture.py:392:        AN = TypeAlias(target, "__main__.A", -1, -1, alias_tvars=alias_tvars)
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testerrorstream.py:38:    sources = [BuildSource("main", "__main__", "\n".join(testcase.input))]
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testdeps.py:23:dumped_modules = ["__main__", "pkg", "pkg.mod"]
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testdeps.py:62:                line = line.replace("__main__", "m")
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/data.py:87:    test_modules.append("__main__")
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/helpers.py:152:    actual_normalized = sorted(set(actual).difference({"__main__"}))
+./.venv_tmp/lib/python3.12/site-packages/mypy/test/testformatter.py:84:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/dmypy/__main__.py:5:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/modulefinder.py:133:        self.module = module or "__main__"  # Module name (e.g. 'foo.bar')
+./.venv_tmp/lib/python3.12/site-packages/mypy/main.py:1182:        help="Script x becomes module x instead of __main__",
+./.venv_tmp/lib/python3.12/site-packages/mypy/plugin.py:664:        this method is called with '__main__.Base.method', and then with
+./.venv_tmp/lib/python3.12/site-packages/mypy/plugin.py:702:        get_attribute_hook is called with '__main__.Base.x' and '__main__.Base.y'.
+./.venv_tmp/lib/python3.12/site-packages/mypy/plugin.py:722:        get_class_attribute_hook is called with '__main__.Cls.x' as fullname.
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubtest.py:263:            if bottom_module == "__main__" or bottom_module.split(".")[0] == "mypy":
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubtest.py:2158:            # There are many annoying *.__main__ stdlib modules,
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubtest.py:2160:            # tkinter.__main__ opens a tkinter windows; unittest.__main__ raises SystemExit; etc.
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubtest.py:2169:            if submodule_name.endswith(".__main__") or submodule_name.startswith(
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubtest.py:2220:# typeshed added a stub for __main__, but that causes stubtest to check itself
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubtest.py:2221:ANNOYING_STDLIB_MODULES: Final = frozenset({"antigravity", "this", "__main__", "_ios_support"})
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubtest.py:2451:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/pyinfo.py:12:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/pyinfo.py:73:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/options.py:264:        # Use script name instead of __main__
+./.venv_tmp/lib/python3.12/site-packages/mypy/build.py:1947:        self.id = id or "__main__"
+./.venv_tmp/lib/python3.12/site-packages/mypy/semanal.py:738:                if file_node.name == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/mypy/semanal.py:3891:            analyze_alias(Dict[A, B])[2] == {'__main__.A', '__main__.B'}
+./.venv_tmp/lib/python3.12/site-packages/isort/main.py:1307:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pygments/__main__.py:2:pygments.__main__
+./.venv_tmp/lib/python3.12/site-packages/pygments/unistring.py:142:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_cocoa_builtins.py:4144:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_sourcemod_builtins.py:1094:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_sourcemod_builtins.py:1129:        footer = content[content.find("if __name__ == '__main__':") - 1 :]
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_php_builtins.py:3425:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_php_builtins.py:3491:        footer = content[content.find("if __name__ == '__main__':") :]
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mysql_builtins.py:1229:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py:3054:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py:3092:    footer = content[content.find("if __name__ == '__main__':") :]
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_postgres_builtins.py:645:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_lua_builtins.py:201:if __name__ == "__main__":  # pragma: no cover
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_lua_builtins.py:280:        footer = content[content.find("if __name__ == '__main__':") :]
+./.venv_tmp/lib/python3.12/site-packages/markdown_it/cli/parse.py:106:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pkg_resources/__init__.py:636:            from __main__ import __requires__
+./.venv_tmp/lib/python3.12/site-packages/click/utils.py:531:    :param _main: The ``__main__`` module. This should only be passed
+./.venv_tmp/lib/python3.12/site-packages/click/utils.py:540:        _main = sys.modules["__main__"]
+./.venv_tmp/lib/python3.12/site-packages/click/utils.py:565:    if name != "__main__":
+./.venv_tmp/lib/python3.12/site-packages/click/decorators.py:473:            if package_name == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/blackd/__init__.py:254:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/main.py:675:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/config_generator.py:198:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/bandit/cli/baseline.py:239:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/pytokens/__main__.py:7:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/setuptools_scm/__main__.py:5:if __name__ == "__main__":
+./.venv_tmp/lib/python3.12/site-packages/platformdirs/__main__.py:54:if __name__ == "__main__":
+./demo_smart_pytest.py:91:if __name__ == "__main__":
+./demo_unified_cli.py:51:if __name__ == "__main__":
+./demo_step9_npm_optimization.py:220:if __name__ == "__main__":
+./demo_step9_npm_optimization.py:477:if __name__ == "__main__":
+./validation_final_improvements.py:259:if __name__ == "__main__":
+./demo_step12_final_validation.py:401:if __name__ == "__main__":
+./sanity_check_fastpath.py:178:if __name__ == "__main__":
+./step12_complete_validation.py:253:if __name__ == "__main__":
+./tools/bench_summarize.py:43:if __name__ == "__main__":
+./tools/ft_bench_s3.py:369:if __name__ == "__main__":
+./tools/ci_self_check.py:383:if __name__ == "__main__":
+./tools/check_critical_coverage.py:192:if __name__ == "__main__":
+./tools/ft_collate_reports.py:120:if __name__ == "__main__":
+./tools/ft_readiness_audit.py:823:if __name__ == "__main__":
+./tools/audit_emit.py:219:if __name__ == "__main__":
+./tools/firsttry/firsttry/__main__.py:3:if __name__ == "__main__":
+./tools/firsttry/firsttry/mapper.py:19:        if stem and stem not in {"__init__", "__main__"}:
+./tools/find_hang.py:69:if __name__ == "__main__":
+./tools/ft_vs_manual_collate.py:178:if __name__ == "__main__":
+./tools/coverage_enforcer.py:177:if __name__ == "__main__":
+./tools/find_orphans.py:15:    SRC / "__main__.py",
+./tools/coverage_embed.py:43:if __name__ == "__main__":
+./tools/ft_parity_summarize.py:47:if __name__ == "__main__":
+./tools/emit_audit_with_policy.py:72:if __name__ == "__main__":
+./tools/ft_bench_harness.py:795:if __name__ == "__main__":
+./scripts/generate_gates_doc.py:236:if __name__ == "__main__":
+./scripts/check_typing_metrics.py:87:if __name__ == "__main__":
+./scripts/resolve_conflicts_quick.py:86:if __name__ == "__main__":
+./scripts/_ft_probe.py:50:if __name__ == "__main__":
+./scripts/count_typing_crutches.py:35:if __name__ == "__main__":
+./scripts/check_notimpl.py:61:if __name__ == "__main__":
+./scripts/ft_collect_snippets.py:65:if __name__ == "__main__":
+./demo_caching_verification.py:128:if __name__ == "__main__":
+./step12_final_complete.py:210:if __name__ == "__main__":
+./demo_step4_dependencies.py:327:if __name__ == "__main__":
+./src/firsttry/cli_ci_parity.py:18:if __name__ == "__main__":
+./src/firsttry/__main__.py:1:# src/firsttry/__main__.py
+./src/firsttry/__main__.py:6:if __name__ == "__main__":
+./src/firsttry/cli_pipelines.py:71:if __name__ == "__main__":
+./src/firsttry/gates/deps.py:34:    if missing in {"__main__", "tests"}:
+./src/firsttry/cli_v2.py:326:if __name__ == "__main__":
+./src/firsttry/cli_runner_light.py:7:if __name__ == "__main__":
+./src/firsttry/cli_aliases.py:303:if __name__ == "__main__":
+./src/firsttry/reporting/html.py:430:if __name__ == "__main__":
+./src/firsttry/cli_dag.py:112:if __name__ == "__main__":
+./src/firsttry/ci_parity/monitor.py:62:if __name__ == "__main__":
+./src/firsttry/ci_parity/runner.py:33:if __name__ == "__main__":
+./src/firsttry/ci_parity/install_hooks.py:66:if __name__ == "__main__":
+./src/firsttry/ci_parity/parity_runner.py:1207:if __name__ == "__main__":
+./src/firsttry/cli.py:2749:if __name__ == "__main__":
+./src/firsttry/ft.py:176:if __name__ == "__main__":
+./src/firsttry/cli_run_profile.py:113:if __name__ == "__main__":
+./src/firsttry/cli_main.py:101:if __name__ == "__main__":
+./demo_simplified_cli.py:91:if __name__ == "__main__":
+./demo_legacy_compat.py:61:if __name__ == "__main__":
+./speed_test.py:276:if __name__ == "__main__":
+./demo_step8_parallel_pytest.py:114:if __name__ == "__main__":
+./demo_caching.py:52:if __name__ == "__main__":

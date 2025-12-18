@@ -1,0 +1,5 @@
+./licensing/pyproject.toml
+./pyproject.toml
+./mypy.ini
+./.ruff.pre-commit.toml
+./.ruff.toml

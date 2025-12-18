@@ -1,0 +1,11 @@
+=== Repo Root ===
+/workspaces/Firstry
+
+=== Current Branch ===
+main
+
+=== HEAD Commit ===
+2d20cd215e834a022cfcfa09ca8209cf1fc571aa
+
+=== Status ===
+?? audit_artifacts/
