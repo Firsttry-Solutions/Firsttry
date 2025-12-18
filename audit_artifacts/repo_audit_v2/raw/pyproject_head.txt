@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=78.1.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firsttry-run"
+version = "1.0.0"
+description = "Ship code that passes CI on the first try."
+license = { text = "FirstTry Source-Available License (FSAL 1.0)" }
+authors = [{ name = "FirstTry", email = "founder@example.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: Other/Proprietary License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Testing",
+]
+dependencies = [
+  "PyYAML",
+  "ruff>=0.1.0",
+  "black>=22.0.0",
+  "mypy>=1.0.0",
+  "pytest>=7.0.0",
+  "tomli; python_version < \"3.11\"",

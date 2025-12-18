@@ -1,0 +1,1 @@
+Linux codespaces-d4e240 6.8.0-1030-azure #35~22.04.1-Ubuntu SMP Mon May 26 18:08:30 UTC 2025 x86_64 GNU/Linux

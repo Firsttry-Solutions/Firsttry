@@ -1,0 +1,10 @@
+os.environ["CI
+os.environ["DATABASE_URL
+os.environ["FIRSTTRY_LICENSE_ALLOW
+os.environ["FIRSTTRY_LICENSE_BACKEND
+os.environ["FIRSTTRY_LICENSE_KEY
+os.environ["FIRSTTRY_PYTHON
+os.environ["FIRSTTRY_TIER
+os.environ["FT_FASTPATH
+os.environ["FT_RUN_ID
+os.environ["GIT_HOOK

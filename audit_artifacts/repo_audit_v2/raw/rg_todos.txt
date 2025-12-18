@@ -1,0 +1,14 @@
+=== ./docs/FIRSTTRY_COVERAGE_DOCTRINE.md ===
+31:- Temporary exceptions require a JIRA/Ticket reference and a dated TODO to restore the threshold within 2 releases.
+=== ./REPO_QUALITY_BASELINE.md ===
+30:### 2. TODO/FIXME/HACK Markers
+34:find src tests -name "*.py" | xargs grep -n "TODO\|FIXME\|HACK\|XXX"
+37:**Result:** ✅ **CLEAN** - No active TODO/FIXME markers in main code
+=== ./ENTERPRISE_AUDIT_REPORT.md ===
+198:TODO/FIXME/XXX/HACK comments: 3
+=== ./src/firsttry/checks_orchestrator_optimized.py ===
+35:    TODO: for very large repos, consider:
+=== ./src/firsttry/tests/prune.py ===
+78:    # TODO: Implement more sophisticated dependency analysis
+=== ./src/firsttry/config_loader.py ===
+119:    cmd = "grep -R 'TODO(admin)' src/"
