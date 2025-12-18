@@ -1,0 +1,33 @@
+            # cmd_run should accept args and return 0 (success)
+            assert result == 0, f"cmd_run failed with args {args}: exit code {result}"
+            cli_module.cmd_run(argv=["--help"])
+            result = cli_module.cmd_run(argv=args[1:])
+            result = cli_module.cmd_run(argv=args[1:])  # skip 'run' subcommand
+        ["run", "--report-json", "/tmp/firsttry_report.json"],
+    """Test --dag-only with custom firsttry.toml config."""
+    # Import from the ROOT firsttry package (not tools/firsttry)
+    Requires src/firsttry CLI to be importable (not shadowed by installed tools/firsttry).
+    Test cmd_run with mocked orchestrator, ensuring flags flow through correctly.
+    Test that cmd_run accepts all expected flags without error.
+    cmd = [sys.executable, "-m", "firsttry.cli", "run", "--help"]
+    cmd = [sys.executable, "-m", "firsttry.cli", "run"] + args
+    cmd_gates with --json flag should produce parseable JSON on stdout
+    exit_code = cmd_gates(ns)
+    from firsttry import cli_dag
+    import firsttry.cli as cli_module
+    import firsttry.doctor as doctor_mod
+    import firsttry.gates as gates_mod
+    monkeypatch.setattr("firsttry.ci_mapper.build_ci_plan", fake_build)
+    rc = cli.cmd_mirror_ci(ns)
+    rc = cli_dag.cmd_run(["run", "--dag-only", "--repo-root", "."])
+    reason="cmd_gates functionality has been removed in favor of new CLI structure",
+If tools/firsttry is installed as editable, this will test the wrong CLI.
+NOTE: These tests require src/firsttry CLI, not tools/firsttry.
+Skip for now as these are testing the old cmd_run interface which was
+def test_cmd_gates_json_output(monkeypatch, tmp_path):
+def test_cmd_run_accepts_flags(monkeypatch, args):
+def test_cmd_run_help_shows_all_flags():
+def test_cmd_run_with_mocked_orchestrator(monkeypatch, args, should_succeed):
+from firsttry import cli
+from firsttry.cli import build_parser
+pytestmark = pytest.mark.skip(reason="Legacy CLI API tests - cmd_run refactored to main()")

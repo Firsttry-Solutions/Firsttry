@@ -1,0 +1,20 @@
+670:def cmd_pre_commit(args=None) -> int:
+845:def cmd_pre_push(args=None) -> int:
+859:def cmd_ci(args=None) -> int:
+988:def cmd_run(argv: list[str] | None = None) -> int:
+1279:def cmd_update_cache() -> int:
+1290:def cmd_clear_cache() -> int:
+1301:def cmd_mirror_ci(args: argparse.Namespace) -> int:
+1322:def cmd_ci_discover(args: argparse.Namespace) -> int:
+1348:def cmd_ci_intent_autofill(args: argparse.Namespace) -> int:
+1360:def cmd_ci_intent_lint(args: argparse.Namespace) -> int:
+1372:def cmd_ci_mirror(args: argparse.Namespace) -> int:
+1717:def cmd_lint(*, args=None) -> int:
+1770:def cmd_init(repo_root_path: str | None = None) -> int:
+1783:def cmd_list_checks() -> int:
+1794:def cmd_sync() -> int:
+1807:def cmd_status_telemetry() -> int:
+1853:def cmd_doctor(repo_root: str | None = None) -> int:
+1946:def cmd_inspect(*, args=None) -> int:
+2523:def cmd_gates(args=None):
+2616:@click.group(

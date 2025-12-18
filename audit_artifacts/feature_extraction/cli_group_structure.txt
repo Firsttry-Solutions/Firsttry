@@ -1,0 +1,4 @@
+def main_impl(argv: list[str] | None = None) -> int:
+def cli_app(ctx: click.Context, dag_only: bool = False) -> int:
+@cli_app.command("run")
+def main(argv: list[str] | None = None) -> int:
