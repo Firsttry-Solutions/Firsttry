@@ -1,0 +1,38 @@
+=== ./tests/cache/test_cache_s3_fail_open.py ===
+128:        pass
+=== ./tests/test_db_sqlite.py ===
+42:    pass
+=== ./tests/test_cli_real_runners_integration.py ===
+61:            pass
+=== ./tests/test_gates_comprehensive.py ===
+=== ./tests/test_cli_parser_and_json.py ===
+22:    pass
+=== ./tests/license/test_license_guard_tiers.py ===
+31:                pass
+69:                pass
+=== ./tests/conftest.py ===
+252:        pass
+=== ./tests/phase4/test_ci_workflow_validation.py ===
+14:    pass
+=== ./tests/firsttry/test_dag_executor_runners.py ===
+23:        pass
+=== ./tests/firsttry/test_task_timeout.py ===
+23:        pass
+=== ./tests/test_db_pg.py ===
+16:    pass
+=== ./tests/test_scanner_paths.py ===
+52:                    pass
+55:                pass
+=== ./tests/test_critical_smoke.py ===
+22:            pass
+=== ./tests/test_planner_surface.py ===
+27:            pass
+76:                pass
+=== ./tests/test_docker_smoke_extra.py ===
+=== ./tests/test_doctor_parallel.py ===
+=== ./tests/test_gate_coverage_contract.py ===
+18:    pass
+=== ./tests/test_registry_html.py ===
+48:        pass
+=== ./tests/enterprise/test_performance_slo.py ===
+=== ./tests/enterprise/test_secrets_scanning.py ===
