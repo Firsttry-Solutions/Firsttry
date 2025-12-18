@@ -1,0 +1,4 @@
+2616:@click.group(
+2622:def cli_app(ctx: click.Context, dag_only: bool = False) -> int:
+2635:    # `cli.cli_app --dag-only` get the same behavior as the earlier
+2653:@cli_app.command("run")
