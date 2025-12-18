@@ -141,3 +141,10 @@ dist/
 build/
 artifacts/parity_report.json
 !.firsttry/ci-extra-requirements.txt
+# --- Phase 0: Repo hygiene (venv & coverage artifacts) ---
+# Tracked virtual environments (use local .venv/ instead)
+.venv-build/
+.venv_tmp/
+# Coverage artifacts from CI/CD runs
+.coverage.*
+.testmondata
