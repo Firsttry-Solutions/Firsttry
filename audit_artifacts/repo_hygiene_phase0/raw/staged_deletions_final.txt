@@ -1,0 +1,43 @@
+=== Staged Changes Count ===
+11211
+=== Sample Staged Deletions ===
+D	.coverage.codespaces-f988a3.466262.XCPZXdJx
+D	.coverage.codespaces-f988a3.466989.XwrEEurx
+D	.coverage.codespaces-f988a3.469394.XsbKNEbx
+D	.coverage.codespaces-f988a3.470838.XAtMCjGx
+D	.coverage.codespaces-f988a3.472609.XeRKIppx
+D	.coverage.codespaces-f988a3.474583.XIBOlZox
+D	.coveragerc
+D	.testmondata
+D	.venv-build/bin/Activate.ps1
+D	.venv-build/bin/activate
+D	.venv-build/bin/activate.csh
+D	.venv-build/bin/activate.fish
+D	.venv-build/bin/black
+D	.venv-build/bin/blackd
+D	.venv-build/bin/dmypy
+D	.venv-build/bin/docutils
+D	.venv-build/bin/firsttry
+D	.venv-build/bin/ft
+D	.venv-build/bin/jp.py
+D	.venv-build/bin/keyring
+D	.venv-build/bin/markdown-it
+D	.venv-build/bin/mypy
+D	.venv-build/bin/mypyc
+D	.venv-build/bin/normalizer
+D	.venv-build/bin/pip
+D	.venv-build/bin/pip3
+D	.venv-build/bin/pip3.11
+D	.venv-build/bin/pip3.12
+D	.venv-build/bin/py.test
+D	.venv-build/bin/pygmentize
+D	.venv-build/bin/pyproject-build
+D	.venv-build/bin/pytest
+D	.venv-build/bin/python
+D	.venv-build/bin/python3
+D	.venv-build/bin/python3.12
+D	.venv-build/bin/rst2html
+D	.venv-build/bin/rst2html4
+D	.venv-build/bin/rst2html5
+D	.venv-build/bin/rst2latex
+D	.venv-build/bin/rst2man

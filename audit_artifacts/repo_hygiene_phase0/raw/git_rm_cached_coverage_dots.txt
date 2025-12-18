@@ -1,0 +1,6 @@
+rm '.coverage.codespaces-f988a3.466262.XCPZXdJx'
+rm '.coverage.codespaces-f988a3.466989.XwrEEurx'
+rm '.coverage.codespaces-f988a3.469394.XsbKNEbx'
+rm '.coverage.codespaces-f988a3.470838.XAtMCjGx'
+rm '.coverage.codespaces-f988a3.472609.XeRKIppx'
+rm '.coverage.codespaces-f988a3.474583.XIBOlZox'

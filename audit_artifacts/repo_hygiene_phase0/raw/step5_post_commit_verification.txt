@@ -1,0 +1,29 @@
+=== Verify Final State ===
+
+Commit hash (after):
+17d1dcf5e7fa170d75a082036dcf0ebfc2beecd4
+
+New tracked file count:
+897
+
+Commit contents (stat):
+17d1dcf chore(repo): remove venv/coverage artifacts from tracking
+ .coverage.codespaces-f988a3.466262.XCPZXdJx        |   Bin 77824 -> 0 bytes
+ .coverage.codespaces-f988a3.466989.XwrEEurx        |   Bin 77824 -> 0 bytes
+ .coverage.codespaces-f988a3.469394.XsbKNEbx        |   Bin 77824 -> 0 bytes
+ .coverage.codespaces-f988a3.470838.XAtMCjGx        |   Bin 77824 -> 0 bytes
+ .coverage.codespaces-f988a3.472609.XeRKIppx        |   Bin 53248 -> 0 bytes
+ .coverage.codespaces-f988a3.474583.XIBOlZox        |   Bin 53248 -> 0 bytes
+ .coveragerc                                        |    22 -
+ .gitignore                                         |     7 +
+ .testmondata                                       |   Bin 65536 -> 0 bytes
+ .venv-build/bin/Activate.ps1                       |   247 -
+ .venv-build/bin/activate                           |    70 -
+ .venv-build/bin/activate.csh                       |    27 -
+ .venv-build/bin/activate.fish                      |    69 -
+ .venv-build/bin/black                              |     8 -
+ .venv-build/bin/blackd                             |     8 -
+ .venv-build/bin/dmypy                              |     8 -
+ .venv-build/bin/docutils                           |     9 -
+ .venv-build/bin/firsttry                           |     8 -
+ .venv-build/bin/ft                                 |     8 -

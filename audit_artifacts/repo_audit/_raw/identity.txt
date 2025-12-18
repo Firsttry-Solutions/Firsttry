@@ -1,0 +1,27 @@
+=== PWD ===
+/workspaces/Firstry
+
+=== GIT ROOT ===
+/workspaces/Firstry
+
+=== GIT STATUS PORCELAIN ===
+?? audit_artifacts/
+
+=== CURRENT BRANCH ===
+main
+
+=== HEAD COMMIT ===
+2d20cd215e834a022cfcfa09ca8209cf1fc571aa
+
+=== LAST COMMIT ===
+2d20cd2 (grafted, HEAD -> main, origin/main) ci(workflows): fix pip extras quoting in ci-dev.yml
+
+=== PYTHON VERSION ===
+Python 3.12.12
+
+=== NODE VERSION ===
+bash: node: command not found
+Node not found
+
+=== TIMESTAMP ===
+2025-12-18T19:08:20+00:00
