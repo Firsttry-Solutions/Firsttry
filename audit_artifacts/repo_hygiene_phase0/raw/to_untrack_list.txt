@@ -1,0 +1,21 @@
+=== To Untrack (Preview) ===
+.coverage.codespaces-f988a3.466262.XCPZXdJx
+.coverage.codespaces-f988a3.466989.XwrEEurx
+.coverage.codespaces-f988a3.469394.XsbKNEbx
+.coverage.codespaces-f988a3.470838.XAtMCjGx
+.coverage.codespaces-f988a3.472609.XeRKIppx
+.coverage.codespaces-f988a3.474583.XIBOlZox
+.coveragerc
+.testmondata
+.venv-build/bin/Activate.ps1
+.venv-build/bin/activate
+.venv-build/bin/activate.csh
+.venv-build/bin/activate.fish
+.venv-build/bin/black
+.venv-build/bin/blackd
+.venv-build/bin/dmypy
+.venv-build/bin/docutils
+.venv-build/bin/firsttry
+.venv-build/bin/ft
+.venv-build/bin/jp.py
+.venv-build/bin/keyring

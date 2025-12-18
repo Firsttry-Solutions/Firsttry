@@ -1,0 +1,209 @@
+./.venv-build/lib/python3.12/site-packages/rich/syntax.py:381:        best lexer to use. For example, if the file is ``index.html`` and the file contains Django
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/rich/syntax.py:381:        best lexer to use. For example, if the file is ``index.html`` and the file contains Django
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:618:        def new_child(self):  # like Django's Context.push()
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:623:        def parents(self):  # like Django's Context.pop()
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:804:    "CssDjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:806:        "CSS+Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:952:    "DjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:954:        "Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1512:    "HtmlDjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1514:        "HTML+Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1709:    "JavascriptDjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1711:        "JavaScript+Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:4147:    "XmlDjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:4149:        "XML+Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/setuptools/discovery.py:276:        "manage",  # Django
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:205:            "  Framework :: Django\n"
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:216:                "Framework :: Django",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:229:            "  Framework :: Django\n"
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:236:                "Framework :: Django",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:353:                "Framework :: Django",
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:363:            "Framework :: Django\n"
+./.venv-build/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:375:            "    Framework :: Django\n"
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:708:    "CssDjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:710:        "CSS+Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:838:    "DjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:840:        "Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:1362:    "HtmlDjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:1364:        "HTML+Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:1541:    "JavascriptDjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:1543:        "JavaScript+Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:3721:    "XmlDjangoLexer": (
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/_mapping.py:3723:        "XML+Django/Jinja",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:64:    "DjangoLexer",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:65:    "HtmlDjangoLexer",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:66:    "CssDjangoLexer",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:67:    "XmlDjangoLexer",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:68:    "JavascriptDjangoLexer",
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:415:class DjangoLexer(RegexLexer):
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:417:    Generic `Django <https://www.djangoproject.com/documentation/templates/>`_
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:424:    name = "Django/Jinja"
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1465:class HtmlDjangoLexer(DelegatingLexer):
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1467:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1473:    name = "HTML+Django/Jinja"
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1489:        super().__init__(HtmlLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1492:        rv = DjangoLexer.analyse_text(text) - 0.01
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1498:class XmlDjangoLexer(DelegatingLexer):
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1500:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1504:    name = "XML+Django/Jinja"
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1513:        super().__init__(XmlLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1516:        rv = DjangoLexer.analyse_text(text) - 0.01
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1522:class CssDjangoLexer(DelegatingLexer):
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1524:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1528:    name = "CSS+Django/Jinja"
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1537:        super().__init__(CssLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1540:        return DjangoLexer.analyse_text(text) - 0.05
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1543:class JavascriptDjangoLexer(DelegatingLexer):
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1545:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1549:    name = "JavaScript+Django/Jinja"
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1565:        super().__init__(JavascriptLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:1568:        return DjangoLexer.analyse_text(text) - 0.05
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:2137:            # borrowed from DjangoLexer
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:2167:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:2181:        super().__init__(YamlLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.12/site-packages/pygments/lexers/templates.py:2629:        super().__init__(SqlLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/rich/syntax.py:381:        best lexer to use. For example, if the file is ``index.html`` and the file contains Django
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/compat.py:620:        def new_child(self):  # like Django's Context.push()
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/distlib/compat.py:625:        def parents(self):  # like Django's Context.pop()
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:708:    "CssDjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:710:        "CSS+Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:838:    "DjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:840:        "Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1362:    "HtmlDjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1364:        "HTML+Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1534:    "JavascriptDjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1536:        "JavaScript+Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:3667:    "XmlDjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pip/_vendor/pygments/lexers/_mapping.py:3669:        "XML+Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/setuptools/discovery.py:276:        "manage",  # Django
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_setupcfg.py:205:            "  Framework :: Django\n"
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_setupcfg.py:216:                "Framework :: Django",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_setupcfg.py:229:            "  Framework :: Django\n"
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_setupcfg.py:236:                "Framework :: Django",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_setupcfg.py:353:                "Framework :: Django",
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_setupcfg.py:363:            "Framework :: Django\n"
+./.venv-build/lib/python3.11/site-packages/setuptools/tests/config/test_setupcfg.py:375:            "    Framework :: Django\n"
+./.venv-build/lib/python3.11/site-packages/mypy/stubinfo.py:121:    "flask_cors": "types-Flask-Cors",
+./.venv-build/lib/python3.11/site-packages/mypy/stubinfo.py:122:    "flask_migrate": "types-Flask-Migrate",
+./.venv-build/lib/python3.11/site-packages/mypy/stubinfo.py:123:    "flask_socketio": "types-Flask-SocketIO",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:570:    "CssDjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:572:        "CSS+Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:682:    "DjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:684:        "Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:1080:    "HtmlDjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:1082:        "HTML+Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:1198:    "JavascriptDjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:1200:        "JavaScript+Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:2899:    "XmlDjangoLexer": (
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/_mapping.py:2901:        "XML+Django/Jinja",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:64:    "DjangoLexer",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:65:    "HtmlDjangoLexer",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:66:    "CssDjangoLexer",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:67:    "XmlDjangoLexer",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:68:    "JavascriptDjangoLexer",
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:395:class DjangoLexer(RegexLexer):
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:397:    Generic `Django <https://www.djangoproject.com/documentation/templates/>`_
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:404:    name = "Django/Jinja"
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1403:class HtmlDjangoLexer(DelegatingLexer):
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1405:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1411:    name = "HTML+Django/Jinja"
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1427:        super().__init__(HtmlLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1430:        rv = DjangoLexer.analyse_text(text) - 0.01
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1436:class XmlDjangoLexer(DelegatingLexer):
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1438:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1442:    name = "XML+Django/Jinja"
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1451:        super().__init__(XmlLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1454:        rv = DjangoLexer.analyse_text(text) - 0.01
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1460:class CssDjangoLexer(DelegatingLexer):
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1462:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1466:    name = "CSS+Django/Jinja"
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1475:        super().__init__(CssLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1478:        return DjangoLexer.analyse_text(text) - 0.05
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1481:class JavascriptDjangoLexer(DelegatingLexer):
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1483:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1487:    name = "JavaScript+Django/Jinja"
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1503:        super().__init__(JavascriptLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:1506:        return DjangoLexer.analyse_text(text) - 0.05
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:2048:            # borrowed from DjangoLexer
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:2075:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:2089:        super().__init__(YamlLexer, DjangoLexer, **options)
+./.venv-build/lib/python3.11/site-packages/pygments/lexers/templates.py:2496:        super().__init__(SqlLexer, DjangoLexer, **options)
+./.venv_tmp/lib/python3.12/site-packages/rich/syntax.py:380:        best lexer to use. For example, if the file is ``index.html`` and the file contains Django
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/rich/syntax.py:380:        best lexer to use. For example, if the file is ``index.html`` and the file contains Django
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:619:        def new_child(self):  # like Django's Context.push()
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/distlib/compat.py:624:        def parents(self):  # like Django's Context.pop()
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:708:    "CssDjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:710:        "CSS+Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:838:    "DjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:840:        "Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1362:    "HtmlDjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1364:        "HTML+Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1534:    "JavascriptDjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:1536:        "JavaScript+Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:3667:    "XmlDjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/_mapping.py:3669:        "XML+Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/discovery.py:275:        "manage",  # Django
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:203:            "  Framework :: Django\n"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:214:                "Framework :: Django",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:227:            "  Framework :: Django\n"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:234:                "Framework :: Django",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:351:                "Framework :: Django",
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:361:            "Framework :: Django\n"
+./.venv_tmp/lib/python3.12/site-packages/setuptools/tests/config/test_setupcfg.py:373:            "    Framework :: Django\n"
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubinfo.py:121:    "flask_cors": "types-Flask-Cors",
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubinfo.py:122:    "flask_migrate": "types-Flask-Migrate",
+./.venv_tmp/lib/python3.12/site-packages/mypy/stubinfo.py:123:    "flask_socketio": "types-Flask-SocketIO",
+./.venv_tmp/lib/python3.12/site-packages/isort/deprecated/finders.py:266:            Django -> django
+./.venv_tmp/lib/python3.12/site-packages/isort/deprecated/finders.py:268:            Flask-RESTFul -> flask_restful
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:570:    "CssDjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:572:        "CSS+Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:682:    "DjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:684:        "Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:1080:    "HtmlDjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:1082:        "HTML+Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:1198:    "JavascriptDjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:1200:        "JavaScript+Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:2899:    "XmlDjangoLexer": (
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/_mapping.py:2901:        "XML+Django/Jinja",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:64:    "DjangoLexer",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:65:    "HtmlDjangoLexer",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:66:    "CssDjangoLexer",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:67:    "XmlDjangoLexer",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:68:    "JavascriptDjangoLexer",
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:395:class DjangoLexer(RegexLexer):
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:397:    Generic `Django <https://www.djangoproject.com/documentation/templates/>`_
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:404:    name = "Django/Jinja"
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1403:class HtmlDjangoLexer(DelegatingLexer):
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1405:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1411:    name = "HTML+Django/Jinja"
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1427:        super().__init__(HtmlLexer, DjangoLexer, **options)
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1430:        rv = DjangoLexer.analyse_text(text) - 0.01
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1436:class XmlDjangoLexer(DelegatingLexer):
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1438:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1442:    name = "XML+Django/Jinja"
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1451:        super().__init__(XmlLexer, DjangoLexer, **options)
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1454:        rv = DjangoLexer.analyse_text(text) - 0.01
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1460:class CssDjangoLexer(DelegatingLexer):
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1462:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1466:    name = "CSS+Django/Jinja"
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1475:        super().__init__(CssLexer, DjangoLexer, **options)
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1478:        return DjangoLexer.analyse_text(text) - 0.05
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1481:class JavascriptDjangoLexer(DelegatingLexer):
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1483:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1487:    name = "JavaScript+Django/Jinja"
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1503:        super().__init__(JavascriptLexer, DjangoLexer, **options)
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:1506:        return DjangoLexer.analyse_text(text) - 0.05
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:2048:            # borrowed from DjangoLexer
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:2075:    Subclass of the `DjangoLexer` that highlights unlexed data with the
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:2089:        super().__init__(YamlLexer, DjangoLexer, **options)
+./.venv_tmp/lib/python3.12/site-packages/pygments/lexers/templates.py:2496:        super().__init__(SqlLexer, DjangoLexer, **options)
+./.venv_tmp/lib/python3.12/site-packages/packageurl/contrib/route.py:35:There are several routing implementations available in Rails, Django, Flask,
+./.venv_tmp/lib/python3.12/site-packages/packageurl/contrib/route.py:47:and Django, Flask, Werkzeug and other url dispatch and routing design from web
+./.venv_tmp/lib/python3.12/site-packages/bandit/plugins/app_debug.py:7:B201: Test for use of flask app with debug set to true
+./.venv_tmp/lib/python3.12/site-packages/bandit/plugins/app_debug.py:26:       Location: examples/flask_debug.py:10
+./.venv_tmp/lib/python3.12/site-packages/bandit/plugins/app_debug.py:33: .. [1] https://flask.palletsprojects.com/en/1.1.x/quickstart/#debug-mode
+./.venv_tmp/lib/python3.12/site-packages/bandit/plugins/app_debug.py:50:def flask_debug_true(context):
+./.venv_tmp/lib/python3.12/site-packages/bandit/plugins/app_debug.py:51:    if context.is_module_imported_like("flask"):
+./.venv_tmp/lib/python3.12/site-packages/bandit/plugins/markupsafe_markup_xss.py:20:like ``markupsafe.Markup``. By default we recognize ``flask.Markup`` as
+./.venv_tmp/lib/python3.12/site-packages/bandit/plugins/markupsafe_markup_xss.py:60:    6       flask.Markup("unsafe {}".format(content))
+./.venv_tmp/lib/python3.12/site-packages/bandit/plugins/markupsafe_markup_xss.py:92:    if qualname not in ("markupsafe.Markup", "flask.Markup"):

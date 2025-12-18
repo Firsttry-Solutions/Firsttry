@@ -1,0 +1,32 @@
+Phase 0 Hygiene Artifacts - Complete Inventory
+
+audit_artifacts/repo_hygiene_phase0/HISTORY_REWRITE_DECISION.md
+audit_artifacts/repo_hygiene_phase0/INDEX.md
+audit_artifacts/repo_hygiene_phase0/PHASE0_COMPLETION_SUMMARY.md
+audit_artifacts/repo_hygiene_phase0/raw/branch.txt
+audit_artifacts/repo_hygiene_phase0/raw/git_rm_cached_coverage.txt
+audit_artifacts/repo_hygiene_phase0/raw/git_rm_cached_coverage_dots.txt
+audit_artifacts/repo_hygiene_phase0/raw/git_rm_cached_venv_build.txt
+audit_artifacts/repo_hygiene_phase0/raw/git_rm_cached_venv_retry.txt
+audit_artifacts/repo_hygiene_phase0/raw/git_rm_cached_venv_tmp.txt
+audit_artifacts/repo_hygiene_phase0/raw/gitignore_after.txt
+audit_artifacts/repo_hygiene_phase0/raw/head_before.txt
+audit_artifacts/repo_hygiene_phase0/raw/repo_root.txt
+audit_artifacts/repo_hygiene_phase0/raw/repo_snapshot.txt
+audit_artifacts/repo_hygiene_phase0/raw/staged_changes_after.txt
+audit_artifacts/repo_hygiene_phase0/raw/staged_deletions_final.txt
+audit_artifacts/repo_hygiene_phase0/raw/status_before.txt
+audit_artifacts/repo_hygiene_phase0/raw/step4_verification.txt
+audit_artifacts/repo_hygiene_phase0/raw/step5_commit_created.txt
+audit_artifacts/repo_hygiene_phase0/raw/step5_post_commit_verification.txt
+audit_artifacts/repo_hygiene_phase0/raw/step5_prepare_commit.txt
+audit_artifacts/repo_hygiene_phase0/raw/to_untrack_list.txt
+audit_artifacts/repo_hygiene_phase0/raw/tracked_junk_after.txt
+audit_artifacts/repo_hygiene_phase0/raw/tracked_junk_before.txt
+audit_artifacts/repo_hygiene_phase0/raw/tracked_junk_count_before.txt
+audit_artifacts/repo_hygiene_phase0/raw/tracked_total_count_before.txt
+
+Total files created: 26
+
+Total size:
+2.9M	audit_artifacts/repo_hygiene_phase0/

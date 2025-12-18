@@ -1,0 +1,10 @@
+./docs/requirements.txt
+./licensing/pyproject.toml
+./requirements.txt
+./pyproject.toml
+./tools/firsttry/pyproject.toml
+./dashboard/package.json
+./dashboard/package-lock.json
+./vscode-extension/package.json
+./vscode-extension/package-lock.json
+./requirements-dev.txt

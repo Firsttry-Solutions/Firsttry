@@ -1,0 +1,68 @@
+=== requirements.txt ===
+# requirements.txt
+pyyaml>=6.0
+pip-audit>=2.7.3 ; python_version >= "3.10"
+tomli>=2.0.1 ; python_version < "3.11"
+=== requirements-dev.txt ===
+# Development tools with pinned versions for reproducibility
+# Install: pip install -r requirements-dev.txt
+
+# Linters & Formatters
+ruff==0.6.9
+black==24.10.0
+isort==5.13.2
+
+# Type Checking
+mypy==1.11.2
+
+# Testing
+pytest==8.3.3
+pytest-cov==5.0.0
+pytest-xdist==3.8.0
+pytest-timeout==2.3.1
+pytest-rerunfailures==15.0
+pytest-testmon==2.1.1
+pytest-json-report==1.5.0
+
+
+=== pyproject.toml ===
+[build-system]
+requires = ["setuptools>=78.1.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firsttry-run"
+version = "1.0.0"
+description = "Ship code that passes CI on the first try."
+license = { text = "FirstTry Source-Available License (FSAL 1.0)" }
+authors = [{ name = "FirstTry", email = "founder@example.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: Other/Proprietary License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Testing",
+]
+dependencies = [
+  "PyYAML",
+  "ruff>=0.1.0",
+  "black>=22.0.0",
+  "mypy>=1.0.0",
+  "pytest>=7.0.0",
+  "tomli; python_version < \"3.11\"",
+  "blake3>=0.4",
+]
+
+[project.optional-dependencies]
+enterprise = ["boto3>=1.34"]
+test = ["moto[boto3]>=5.0.0", "boto3>=1.34.0", "botocore>=1.34.0"]
+dev = [
+  "ruff==0.6.9",
+  "mypy==1.11.2",
+  "pytest==8.3.3",

@@ -1,0 +1,54 @@
+
+==================================== ERRORS ====================================
+______________ ERROR collecting src/firsttry/runners/npm_test.py _______________
+ImportError while importing test module '/workspaces/Firstry/src/firsttry/runners/npm_test.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/firsttry/runners/npm_test.py:6: in <module>
+    from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+src/firsttry/twin/hashers.py:7: in <module>
+    import blake3
+E   ModuleNotFoundError: No module named 'blake3'
+___________ ERROR collecting tests/cache/test_cache_s3_fail_open.py ____________
+ImportError while importing test module '/workspaces/Firstry/tests/cache/test_cache_s3_fail_open.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/cache/test_cache_s3_fail_open.py:12: in <module>
+    from botocore.exceptions import ClientError
+E   ModuleNotFoundError: No module named 'botocore'
+___________ ERROR collecting tests/cli/test_ft_entrypoints_tiers.py ____________
+ImportError while importing test module '/workspaces/Firstry/tests/cli/test_ft_entrypoints_tiers.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/cli/test_ft_entrypoints_tiers.py:17: in <module>
+    from firsttry import ft as ft_mod, license_guard, tier as tier_mod
+src/firsttry/ft.py:18: in <module>
+    from . import cli as _cli, tier as _tier
+src/firsttry/cli.py:20: in <module>
+    from firsttry.run_swarm import run_plan
+src/firsttry/run_swarm.py:12: in <module>
+    from .executor.dag import DagExecutor, default_caches
+src/firsttry/executor/dag.py:14: in <module>
+    from firsttry.runner.executor import get_effective_timeout
+src/firsttry/runner/executor.py:17: in <module>
+    from firsttry.runner import taskcache
+src/firsttry/runner/taskcache.py:14: in <module>
+    from firsttry.twin.hashers import hash_bytes
+src/firsttry/twin/hashers.py:7: in <module>
+    import blake3
+E   ModuleNotFoundError: No module named 'blake3'
+=========================== short test summary info ============================
+ERROR src/firsttry/runners/npm_test.py
+ERROR tests/cache/test_cache_s3_fail_open.py
+ERROR tests/cli/test_ft_entrypoints_tiers.py
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 3 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+3 errors in 0.38s
