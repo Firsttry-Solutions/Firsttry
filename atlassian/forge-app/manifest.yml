@@ -1,6 +1,7 @@
 ---
 # Atlassian Forge App Manifest - FirstTry Governance Dual Layer
 # PHASE 1: Event ingestion endpoint with token auth, validation, idempotency, storage
+# PHASE 1.1: Storage proof debug endpoint (admin-only)
 # Schema: Forge CLI v12+ for Jira Cloud
 
 app:
