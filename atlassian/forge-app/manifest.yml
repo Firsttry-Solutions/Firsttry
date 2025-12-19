@@ -2,6 +2,7 @@
 # Atlassian Forge App Manifest - FirstTry Governance Dual Layer
 # PHASE 1: Event ingestion endpoint with token auth, validation, idempotency, storage
 # PHASE 1.1: Storage proof debug endpoint (admin-only)
+# PHASE 3: Scheduled daily/weekly pipelines, run ledgers, readiness gating
 # Schema: Forge CLI v12+ for Jira Cloud
 
 app:
@@ -19,6 +20,23 @@ modules:
       description: FirstTry Governance - real-time status overview
       resource: governance-gadget-page
       thumbnail: https://www.atlassian.com/favicon.ico
+
+  # Function modules (PHASE 3: Scheduled pipeline handlers)
+  function:
+    - key: daily-pipeline-fn
+      handler: pipelines/daily_pipeline.run
+    - key: weekly-pipeline-fn
+      handler: pipelines/weekly_pipeline.run
+
+  # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
+  scheduledTrigger:
+    - key: firstry-daily-pipeline
+      function: daily-pipeline-fn
+      interval: day
+
+    - key: firstry-weekly-pipeline
+      function: weekly-pipeline-fn
+      interval: week
 
 # Resource pages
 resources:
