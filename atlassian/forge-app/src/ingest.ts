@@ -19,6 +19,7 @@ import { isEventSeen, markEventSeen, storeRawEvent } from './storage';
 import { markLastIngest } from './storage_debug';
 import { update_ingest_timeline } from './ingest_timeline';
 import { index_raw_shard } from './storage_index';
+import { add_org_to_index } from './run_ledgers';
 
 /**
  * Webtrigger handler for /webhook/ingest
@@ -144,6 +145,14 @@ export async function ingestEventHandler(request: any) {
     } catch (phase2Error) {
       console.warn('[Ingest] Phase 2 wiring error (non-fatal):', phase2Error);
       // Don't fail ingest if Phase 2 fails; these are best-effort enhancements
+    }
+
+    // 9.5. PHASE 3: Wire org index for pipeline discovery
+    try {
+      await add_org_to_index(orgKey);
+    } catch (phase3Error) {
+      console.warn('[Ingest] Phase 3 wiring error (non-fatal):', phase3Error);
+      // Don't fail ingest if Phase 3 fails; best-effort
     }
 
     // 10. Success response
