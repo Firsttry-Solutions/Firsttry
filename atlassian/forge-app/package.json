@@ -4,7 +4,8 @@
   "description": "FirstTry Governance - Atlassian Dual-Layer Integration",
   "main": "src/index.ts",
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "node src/validators.test.ts"
   },
   "dependencies": {},
   "devDependencies": {

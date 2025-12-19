@@ -1,6 +1,6 @@
 ---
 # Atlassian Forge App Manifest - FirstTry Governance Dual Layer
-# PHASE 0: Scaffold Only (No Implementation)
+# PHASE 1: Event ingestion endpoint with token auth, validation, idempotency, storage
 # Schema: Forge CLI v12+ for Jira Cloud
 
 app:
@@ -9,8 +9,9 @@ app:
   runtime:
     name: nodejs20.x
 
-# Minimal module scaffold: Dashboard Gadget for future expansion
+# Modules
 modules:
+  # Dashboard Gadget (PHASE 0: Static placeholder)
   jira:dashboardGadget:
     - key: governance-dashboard-gadget
       title: FirstTry Governance Status

@@ -113,71 +113,85 @@ Completeness = (events_received / events_expected) * 100%
 
 ---
 
-## D) EventV1 Schema (Strict Allow-List; Forbidden Fields)
+## D) EventV1 Schema (Strict Allow-List; Forbidden Fields) - PHASE 1 Finalized
 
-### Allowed Fields (ONLY these)
+### Allowed Fields (ONLY these - strict allow-list)
 
 ```typescript
 interface EventV1 {
+  // Schema
+  schema_version: "event.v1";     // Locked to "event.v1"
+  
   // Identity
-  event_id: string;               // UUID v4, unique globally
-  event_type: string;             // "run.started" | "run.completed" | "rule.executed" | "alert.triggered"
+  event_id: string;               // UUID v4, globally unique
   
   // Timing (ISO 8601)
-  event_timestamp: string;        // When event occurred (FirstTry Agent time)
-  _ingest_timestamp: string;      // When received by Forge app (UTC)
+  timestamp: string;              // ISO 8601 format (e.g., 2025-12-19T08:45:30.123Z)
   
-  // Source
-  agent_id: string;               // FirstTry Agent identifier
-  _ingest_source: string;         // Token name used for authentication
+  // Scope
+  org_key: string;                // Organization key (non-empty)
+  repo_key: string;               // Repository key (non-empty)
   
-  // Correlation
-  run_id?: string;                // Parent run, if applicable
-  rule_id?: string;               // Parent rule, if applicable
+  // Execution Context
+  profile: "fast" | "strict" | "ci"; // Execution profile
+  gates: string[];                // Array of gate names (all non-empty strings)
   
-  // Data (type-specific)
-  payload: Record<string, unknown>; // Event-specific data (see below)
-  
-  // Metadata
-  version: 1;                     // Schema version (locked to 1 for Phase 0+)
-  tags?: string[];                // Optional tags for filtering
+  // Metrics
+  duration_ms: number;            // Integer >= 0 (milliseconds)
+  status: "success" | "fail";     // Execution status
+  cache_hit: boolean;             // Whether cache was hit
+  retry_count: number;            // Integer >= 0 (number of retries)
 }
 ```
 
-### Forbidden Fields (HARD ERRORS on ingest if present)
+### Forbidden Fields (HARD BAN - Reject if Present)
 
-- `synthetic_flag` (no marking synthetic data; ban it outright)
-- `mock_data` (no test data in production storage)
-- `estimation_confidence` (use completeness matrix instead)
-- `forecast_value` (use reports with labeled assumptions)
+**Core Forbidden:**
+- `log` - No raw logs
+- `stdout` - No stdout capture
+- `stderr` - No stderr capture
+- `payload` - No free-form payloads (use schema fields)
+- `secrets` - No credentials
+- `token` - No tokens
+
+**Synthetic Data Prevention:**
+- `synthetic_flag` - No marking synthetic data
+- `mock_data` - No test data in production
+- `estimation_confidence` - Use completeness matrix instead
+- `forecast_value` - Use reports with assumptions
+
+**Reserved:**
 - Any field starting with `__` (reserved for internal use)
 
-### Event Type Payloads
+### Unknown Fields Policy
 
-#### `run.started`
+**STRICT ALLOW-LIST:** Any field NOT in the allowed list is rejected as unknown.
 
+Example rejections:
 ```json
 {
-  "event_type": "run.started",
-  "payload": {
-    "run_name": "string",
-    "schedule_key": "string",
-    "start_reason": "manual" | "scheduled" | "webhook",
-    "initial_rule_count": number
-  }
+  "schema_version": "event.v1",
+  "event_id": "...",
+  // ...
+  "extra_field": "value"  // ❌ REJECTED (unknown field)
 }
 ```
 
-#### `run.completed`
+### Validation Rules
 
-```json
-{
-  "event_type": "run.completed",
-  "payload": {
-    "run_name": "string",
-    "completion_status": "success" | "partial" | "failed",
-    "rules_executed": number,
-    "alerts_triggered": number,
+| Field | Type | Constraint | Example |
+|-------|------|-----------|---------|
+| schema_version | string | Must be exactly "event.v1" | "event.v1" |
+| event_id | string | Valid UUID v4 | "a1b2c3d4-e5f6-4789-a1b2-c3d4e5f6a1b2" |
+| timestamp | string | ISO 8601 format | "2025-12-19T08:45:30.123Z" |
+| org_key | string | Non-empty, trimmed | "myorg" |
+| repo_key | string | Non-empty, trimmed | "myrepo" |
+| profile | string | One of: fast, strict, ci | "strict" |
+| gates | array | Array of non-empty strings | ["lint", "test"] |
+| duration_ms | number | Integer >= 0 | 1500 |
+| status | string | One of: success, fail | "success" |
+| cache_hit | boolean | Boolean value | true |
+| retry_count | number | Integer >= 0 | 0 |
     "duration_ms": number
   }
 }
@@ -516,11 +530,144 @@ After installation, set app secrets in Forge UI:
 
 ---
 
+## I) EventV1 Ingestion Endpoint (PHASE 1)
+
+### Endpoint Contract
+
+**URL:** `POST /webhook/ingest` (Forge webtrigger)
+
+**Authentication:**
+- Header: `X-FT-INGEST-TOKEN` (required)
+- Value: Secret token stored in `FIRSTRY_INGEST_TOKEN` environment variable
+- If missing or invalid: **401 Unauthorized**
+
+**Request Body:**
+- Content-Type: `application/json`
+- Schema: EventV1 (see Section D)
+- All required fields must be present
+- Unknown fields rejected (strict allow-list)
+- Forbidden fields rejected (hard ban)
+
+**Response Codes:**
+
+| Code | Reason | Body |
+|------|--------|------|
+| 200 | Event accepted (new or duplicate) | `{status: "accepted"\|"duplicate", event_id, shard_id, ...}` |
+| 400 | Validation error | `{error: "INVALID_FIELDS"\|"VALIDATION_FAILED"\|"INVALID_JSON", message, fields}` |
+| 401 | Authentication failed | `{error: "UNAUTHORIZED", message}` |
+| 500 | Internal error | `{error: "INTERNAL_ERROR", message}` |
+
+### Request Example
+
+```bash
+curl -X POST https://your-site.atlassian.net/webhook/ingest \
+  -H "X-FT-INGEST-TOKEN: your-secret-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "schema_version": "event.v1",
+    "event_id": "a1b2c3d4-e5f6-4789-a1b2-c3d4e5f6a1b2",
+    "timestamp": "2025-12-19T08:45:30.123Z",
+    "org_key": "myorg",
+    "repo_key": "myrepo",
+    "profile": "strict",
+    "gates": ["lint", "test"],
+    "duration_ms": 1500,
+    "status": "success",
+    "cache_hit": true,
+    "retry_count": 0
+  }'
+```
+
+### Response Examples
+
+**Success (New Event):**
+```json
+{
+  "status": "accepted",
+  "event_id": "a1b2c3d4-e5f6-4789-a1b2-c3d4e5f6a1b2",
+  "shard_id": "0",
+  "storage_key": "raw/myorg/2025-12-19/0",
+  "message": "Event ingested successfully"
+}
+```
+
+**Success (Duplicate - Idempotent):**
+```json
+{
+  "status": "duplicate",
+  "event_id": "a1b2c3d4-e5f6-4789-a1b2-c3d4e5f6a1b2",
+  "message": "Event already processed (idempotent)"
+}
+```
+
+**Validation Error:**
+```json
+{
+  "error": "VALIDATION_FAILED",
+  "message": "Event validation failed",
+  "fields": {
+    "event_id": "Invalid event_id: must be UUID v4",
+    "unknown_field": "Unknown field (not in allow-list)"
+  }
+}
+```
+
+### Idempotency Guarantee
+
+- **Key:** `seen/{org_key}/{repo_key}/{event_id}`
+- **Behavior:** If event_id already exists, returns 200 with status "duplicate"
+- **Storage:** Marker stored with 90-day TTL (7,776,000 seconds)
+- **Guarantee:** Event processed at-most-once; duplicate submissions return same response
+
+### Storage Details (Bounded & Sharded)
+
+#### Idempotency Marker
+```
+Key: seen/{org_key}/{repo_key}/{event_id}
+Value: true (TTL: 90 days)
+```
+
+#### Raw Event Storage (Sharded)
+```
+Key: raw/{org_key}/{yyyy-mm-dd}/{shard_id}
+Value: Array of events (TTL: 90 days)
+Sharding: Max 200 events per shard; automatic rollover to next shard
+```
+
+#### Shard Metadata
+```
+Key: rawshard/{org_key}/{yyyy-mm-dd}/current
+Value: Current shard_id (string)
+
+Key: rawshard/{org_key}/{yyyy-mm-dd}/{shard_id}/count
+Value: Number of events in shard (int)
+```
+
+#### Sharding Algorithm
+1. Query `rawshard/{org}/{date}/current` → get shard_id
+2. Query `rawshard/{org}/{date}/{shard_id}/count` → get count
+3. If count >= 200:
+   - Increment shard_id (e.g., "0" → "1")
+   - Store new shard_id in current key
+   - Use new shard for incoming event
+4. Append event to `raw/{org}/{date}/{shard_id}` array
+5. Increment count in `rawshard/{org}/{date}/{shard_id}/count`
+
+#### Bounded Storage Guarantee
+
+- **Max events per shard:** 200 (prevents unbounded array growth)
+- **Max shards per day:** Unlimited (automatic rollover)
+- **Retention window:** 90 days (TTL enforced by Forge storage)
+- **No cleanup jobs needed:** TTL-based expiration handles retention
+
+---
+
 ## Version History
 
 | Version | Date | Status | Notes |
 |---------|------|--------|-------|
 | 0.1.0 | 2025-12-19 | PHASE 0 | Scaffold & spec only. No implementation. |
+| 0.2.0 | 2025-12-19 | PHASE 1 | Ingestion endpoint + storage + validation. |
 
 ---
 
