@@ -1,65 +1,63 @@
 ---
 # Atlassian Forge App Manifest - FirstTry Governance Dual Layer
 # PHASE 0: Scaffold Only (No Implementation)
+# Schema: Forge CLI v12+
 
 app:
-  name: FirstTry Governance
-  key: com.firstry.governance
+  id: ari:cloud:ecosystem::app/firstry-governance
   description: FirstTry Governance - Atlassian Dual-Layer Integration
-  documentation:
-    url: https://github.com/Global-domination/Firstry/blob/main/docs/ATLASSIAN_DUAL_LAYER_SPEC.md
   runtime:
     name: nodejs20.x
 
-  # UI modules for Jira Cloud
-  modules:
-    # Admin Page: Global Settings
-    admin_page:
-      - key: firstry-admin-page
-        title: FirstTry Governance Settings
-        description: Global configuration for FirstTry Governance
-        function: firstry-admin-page-handler
+# UI modules for Jira Cloud
+modules:
+  # Admin Page: Global Settings
+  admin_page:
+    - key: firstry-admin-page
+      title: FirstTry Governance Settings
+      description: Global configuration for FirstTry Governance
+      function: firstry-admin-page-handler
 
-    # Issue Panel: Display governance info on issues
-    issue_panel:
-      - key: firstry-issue-panel
-        title: FirstTry Governance Panel
-        description: Displays FirstTry governance status and metadata
-        function: firstry-issue-panel-handler
-        icon: https://developer.atlassian.com/cloud/jira/platform/images/issue-panel-icon.svg
+  # Issue Panel: Display governance info on issues
+  issue_panel:
+    - key: firstry-issue-panel
+      title: FirstTry Governance Panel
+      description: Displays FirstTry governance status and metadata
+      function: firstry-issue-panel-handler
+      icon: https://developer.atlassian.com/cloud/jira/platform/images/issue-panel-icon.svg
 
-  # Backend functions
-  functions:
-    firstry-admin-page-handler:
-      handler: index.adminPageHandler
-    firstry-issue-panel-handler:
-      handler: index.issuePanelHandler
+# Backend functions
+functions:
+  firstry-admin-page-handler:
+    handler: index.adminPageHandler
+  firstry-issue-panel-handler:
+    handler: index.issuePanelHandler
 
-  # Permissions required for future phases
-  permissions:
-    # Storage: Store configuration, event cache, run ledgers
-    - key: storage
-      scopes:
-        - read
-        - write
+# Permissions required for future phases
+permissions:
+  # Storage: Store configuration, event cache, run ledgers
+  - key: storage
+    scopes:
+      - read
+      - write
 
-    # Jira Cloud: Read project metadata, issues, properties
-    - key: jira:read
-      scopes:
-        - read:jira-work
-        - read:issue-details:jira
+  # Jira Cloud: Read project metadata, issues, properties
+  - key: jira:read
+    scopes:
+      - read:jira-work
+      - read:issue-details:jira
 
-    # Jira Cloud: Create issues for alerts (Phase 1+)
-    - key: jira:write
-      scopes:
-        - write:jira-work
-        - write:issues:jira
+  # Jira Cloud: Create issues for alerts (Phase 1+)
+  - key: jira:write
+    scopes:
+      - write:jira-work
+      - write:issues:jira
 
-    # Jira Cloud: Read/write issue properties for metadata
-    - key: jira:read-write
-      scopes:
-        - read:issue-property:jira
-        - write:issue-property:jira
+  # Jira Cloud: Read/write issue properties for metadata
+  - key: jira:read-write
+    scopes:
+      - read:issue-property:jira
+      - write:issue-property:jira
 
 # Environment variables (populate at install time)
 environments:
