@@ -265,6 +265,34 @@ Where:
 | `firstry:dual-layer:alert:{YYYYMMDD}:{shard}` | Alert records | By day + hash | 365 days |
 | `firstry:dual-layer:report:{report_id}` | Generated reports (cache) | By report | 7 days |
 
+### Phase 1 (Implemented) - Event Ingestion
+
+| Key Pattern | Purpose | Sharding | Retention |
+|-------------|---------|----------|-----------|
+| `seen/{org_key}/{repo_key}/{event_id}` | Idempotency marker (event already processed) | By org/repo/event | 90 days (TTL) |
+| `raw/{org_key}/{yyyy-mm-dd}/{shard_id}` | Raw event array (up to 200 events per shard) | By date, auto-rollover at 200 | 90 days (TTL) |
+| `rawshard/{org_key}/{yyyy-mm-dd}/current` | Current shard ID counter | By date | 90 days (TTL) |
+| `rawshard/{org_key}/{yyyy-mm-dd}/{shard_id}/count` | Event count in shard | By shard | 90 days (TTL) |
+| `ingest/{org}/first_event_at` | ISO timestamp of first event | By org | Indefinite |
+| `ingest/{org}/last_event_at` | ISO timestamp of last event | By org | Indefinite |
+| `debug:last_ingest:{org_key}:{repo_key}` | Debug marker (latest ingestion) | By org/repo | 7 days |
+
+### Phase 2 (Implemented) - Aggregation & Retention
+
+| Key Pattern | Purpose | Sharding | Retention |
+|-------------|---------|----------|-----------|
+| `agg/org/daily/{org}/{yyyy-mm-dd}` | Daily aggregate for org (all repos) | By date | 90 days |
+| `agg/daily/{org}/{repo}/{yyyy-mm-dd}` | Daily aggregate for specific repo | By date | 90 days |
+| `agg/org/weekly/{org}/{yyyy-WW}` | Weekly aggregate for org (summed from daily) | By ISO week | 90 days |
+| `agg/weekly/{org}/{repo}/{yyyy-WW}` | Weekly aggregate for repo | By ISO week | 90 days |
+| `coverage/{org}/distinct_days_with_data` | Count of days with events | By org | Indefinite |
+| `coverage/{org}/distinct_days_list` | Sorted list of dates with events (bounded to 365) | By org | Indefinite |
+| `coverage/{org}/notes` | Coverage metadata and disclosures | By org | Indefinite |
+| `index/raw/{org}/{yyyy-mm-dd}` | Index: list of raw shard keys for day | By date | 90 days |
+| `index/agg/daily/{org}/{yyyy-mm-dd}` | Index: list of daily aggregate keys for day | By date | 90 days |
+| `index/agg/weekly/{org}/{yyyy-WW}` | Index: list of weekly aggregate keys for week | By week | 90 days |
+| `index/meta/{org}` | Index metadata (last compaction, cleanup timestamp) | By org | Indefinite |
+
 ### Bounded Storage Guarantee
 
 **RULE:** No namespace stores an unbounded list.
@@ -662,22 +690,194 @@ Value: Number of events in shard (int)
 
 ---
 
+## F) Phase 2: Aggregation & Retention (IMPLEMENTED)
+
+### Daily Aggregation (recompute_daily)
+
+**Purpose:** Compute deterministic daily aggregates from raw shards.
+
+**Inputs:**
+- All raw shard keys for date (from Storage Index Ledger)
+- Raw events in each shard
+
+**Outputs (DailyAggregate):**
+```typescript
+{
+  org: string,
+  date: string,  // yyyy-mm-dd
+  total_events: number,
+  total_duration_ms: number,
+  success_count: number,
+  fail_count: number,
+  cache_hit_count?: number,
+  cache_miss_count?: number,
+  retry_total: number,
+  by_repo: [{ repo, total_events, success_count, fail_count, total_duration_ms }, ...],
+  by_gate: [{ gate, count }, ...],
+  by_profile: [{ profile, count }, ...],
+  incomplete_inputs: {
+    raw_shards_missing: boolean,
+    raw_shards_count: number,
+    raw_events_counted: number
+  },
+  notes: string[]
+}
+```
+
+**Storage Keys Written:**
+- `agg/org/daily/{org}/{yyyy-mm-dd}` (canonicalized)
+- `agg/daily/{org}/{repo}/{yyyy-mm-dd}` (per-repo rollup)
+- Index entry in `index/agg/daily/{org}/{yyyy-mm-dd}`
+
+**Missing Day Handling:**
+- If no raw shards for day: return aggregate with total_events=0, incomplete_inputs.raw_shards_missing=true
+- Never crash; still write aggregate (enables deterministic reporting)
+
+**Determinism:**
+- All object keys sorted lexicographically
+- Arrays of objects sorted by key field (repo, gate, profile)
+- Same input always produces identical SHA256 hash
+
+### Weekly Aggregation (recompute_week)
+
+**Purpose:** Sum daily aggregates for a week (do NOT re-read raw shards).
+
+**Inputs:**
+- Daily aggregates for all 7 days in ISO week (yyyy-WW format)
+
+**Outputs (WeeklyAggregate):**
+- Same schema as DailyAggregate, but:
+  - `week: string` (yyyy-WW instead of date)
+  - `days_expected: number`, `days_present: number`, `missing_days: [yyyy-mm-dd...]`
+  - Sums all fields from daily aggregates
+
+**Storage Keys Written:**
+- `agg/org/weekly/{org}/{yyyy-WW}` (canonicalized)
+- `agg/weekly/{org}/{repo}/{yyyy-WW}` (per-repo rollup)
+- Index entry in `index/agg/weekly/{org}/{yyyy-WW}`
+
+**Missing Day Handling:**
+- If aggregates missing for any day: mark in `missing_days` array
+- Set `incomplete_inputs.raw_shards_missing = true` if any missing days
+- Still write weekly aggregate (supports downstream reporting)
+
+### Coverage Primitives
+
+**Tracked:**
+- `coverage/{org}/distinct_days_with_data` (count of days with aggregates)
+- `coverage/{org}/distinct_days_list` (sorted list of yyyy-mm-dd, bounded to 365)
+- `coverage/{org}/notes` (disclosure notes)
+
+**Computed from:**
+- Scanning daily aggregate keys in storage
+- Safe enumeration without prefix list (uses index)
+
+**Deferred to Phase 6+:**
+- `install_at` (requires deployment event data)
+- `coverage_start` / `coverage_end` (requires reporting logic)
+
+### Storage Index Ledger (CRITICAL for Safe Deletion)
+
+**Design Principle:**
+Forge storage may not support "list by prefix" reliably. Instead, we maintain an explicit index.
+
+**Index Structure (minimal, append-only with bounded lists):**
+
+```
+index/raw/{org}/{yyyy-mm-dd}
+  → sorted, deduplicated list of raw shard keys touched that day
+  → max ~1000 keys; pagination if exceeded (not implemented in Phase 2)
+
+index/agg/daily/{org}/{yyyy-mm-dd}
+  → sorted, deduplicated list of daily aggregate keys for that day
+
+index/agg/weekly/{org}/{yyyy-WW}
+  → sorted, deduplicated list of weekly aggregate keys for that week
+
+index/meta/{org}
+  → metadata: last_cleanup_at, last_cleanup_cutoff, last_cleanup_deleted count
+```
+
+**Index Maintenance:**
+- Every write (raw shard, aggregate) also records minimal entry in index
+- Deduplication on write (use Set, sort, store array)
+- No unbounded growth (bounds enforced per key)
+
+### Retention Cleanup (retention_cleanup)
+
+**Purpose:** Hard delete data older than 90 days (UTC).
+
+**Cutoff Calculation:**
+```
+cutoff_date = now() - 90 days (UTC)
+delete only keys where key_date < cutoff_date
+```
+
+**Keys to Delete (ONLY indexed keys):**
+- Raw shards: `raw/...` listed in `index/raw/{org}/{yyyy-mm-dd}`
+- Shard counts: `rawshard/.../count` (derived from shard keys)
+- Daily aggregates: `agg/daily/.../...` listed in `index/agg/daily/...`
+- Weekly aggregates: `agg/weekly/.../...` listed in `index/agg/weekly/...`
+- Index buckets themselves (after successful key deletion)
+
+**Keys NEVER Deleted (not in index):**
+- Config keys: `index/meta/...`, `ingest/{org}/first_event_at`, etc.
+- App markers: Any key outside data index
+- Install markers: Not indexed; cannot be enumerated safely
+
+**Deletion Report (RetentionResult):**
+```typescript
+{
+  deleted_keys: string[],  // sorted list of deleted keys
+  skipped_keys_reason: string,  // "Non-indexed keys cannot be enumerated safely"
+  errors: [{ key, error }, ...],
+  cutoff_date: string,
+  deleted_count: number,
+  error_count: number
+}
+```
+
+**Safety Rules:**
+- Never claim deletion of non-indexed keys
+- Record errors for keys that fail deletion (don't silently skip)
+- Update `index/meta/{org}` with cleanup metadata
+- Update last_cleanup_at timestamp
+
+**Truthfulness Rule:**
+If you cannot delete a key because it's not indexed, explicitly record:
+```
+skipped_keys_reason: "Non-indexed keys cannot be enumerated safely; only indexed keys deleted"
+```
+
+---
+
 ## Version History
 
 | Version | Date | Status | Notes |
 |---------|------|--------|-------|
 | 0.1.0 | 2025-12-19 | PHASE 0 | Scaffold & spec only. No implementation. |
 | 0.2.0 | 2025-12-19 | PHASE 1 | Ingestion endpoint + storage + validation. |
+| 0.3.0 | 2025-12-19 | PHASE 2 | Aggregation + retention + storage index ledger. |
 
 ---
 
-## Next Steps (Phase 1+)
+## Next Steps (Phase 3+)
 
-- Implement event ingestion endpoint
-- Implement storage and run-ledger logic
+- Implement reporting engine (CSV, JSON API)
+- Implement alerting rules (thresholds, anomalies)
+- Implement issue creation/linking (Jira REST API)
 - Implement scheduler integration
-- Implement reporting engine
-- Implement alerting rules
-- Add issue creation/linking capabilities
+- Implement forecasting (confidence intervals)
 
-See `audit_artifacts/atlassian_dual_layer/phase_1_evidence.md` (when available).
+See `audit_artifacts/atlassian_dual_layer/phase_2_evidence.md` for Phase 2 evidence.
+See `audit_artifacts/atlassian_dual_layer/phase_3_evidence.md` (when available).
+
+---
+
+## Version History
+
+| Version | Date | Status | Notes |
+|---------|------|--------|-------|
+| 0.1.0 | 2025-12-19 | PHASE 0 | Scaffold & spec only. No implementation. |
+| 0.2.0 | 2025-12-19 | PHASE 1 | Ingestion endpoint + storage + validation. |
+| 0.3.0 | 2025-12-19 | PHASE 2 | Aggregation + retention + storage index ledger. |
