@@ -1,6 +1,7 @@
 /**
  * FirstTry Governance - Ingestion Endpoint Handler
  * PHASE 1: Webtrigger for EventV1 ingestion with auth, validation, idempotency, storage
+ * PHASE 2: Wire ingest timeline + storage index ledger writes
  *
  * Endpoint: POST /webhook/ingest
  * Auth: Header X-FT-INGEST-TOKEN
@@ -16,6 +17,8 @@ import api from '@forge/api';
 import { validateEventV1, redactSecret, extractDateFromTimestamp } from './validators';
 import { isEventSeen, markEventSeen, storeRawEvent } from './storage';
 import { markLastIngest } from './storage_debug';
+import { update_ingest_timeline } from './ingest_timeline';
+import { index_raw_shard } from './storage_index';
 
 /**
  * Webtrigger handler for /webhook/ingest
@@ -131,7 +134,19 @@ export async function ingestEventHandler(request: any) {
     // 8.5. Mark last ingest for debug snapshot (PHASE 1.1 only)
     await markLastIngest(orgKey, repoKey, eventId, shardId, 'success');
 
-    // 9. Success response
+    // 9. PHASE 2: Wire timeline + storage index
+    try {
+      // Update ingest timeline (first/last event timestamp per org)
+      await update_ingest_timeline(orgKey, timestamp);
+      
+      // Index the raw shard for safe enumeration and deletion
+      await index_raw_shard(orgKey, dateStr, storageKey);
+    } catch (phase2Error) {
+      console.warn('[Ingest] Phase 2 wiring error (non-fatal):', phase2Error);
+      // Don't fail ingest if Phase 2 fails; these are best-effort enhancements
+    }
+
+    // 10. Success response
     console.info(`[Ingest] Event stored: event_id=${eventId}, shard=${shardId}`);
     return {
       statusCode: 200,
