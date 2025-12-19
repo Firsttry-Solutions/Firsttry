@@ -105,11 +105,13 @@ Raw Events (EventV1)
 3. Canonical JSON serialization before storage
 4. SHA256 hash verification: **same input → identical output every time**
 
-### 90-Day Retention Policy
+### 90-Day Retention Policy (Unit Test Verified; Runtime Enforcement Phase 3)
+
+**Retention cleanup logic is implemented and verified by unit tests. Runtime enforcement (scheduler or admin-triggered execution) will be introduced in Phase 3.**
 
 **Cutoff Formula:** `now_utc - 90 days`
 
-**Deletion Targets (Index-Based):**
+**Deletion Targets (Index-Based, Unit Test Verified):**
 - Raw shards older than cutoff
 - Daily aggregates older than cutoff
 - Weekly aggregates with end_date older than cutoff
@@ -120,11 +122,13 @@ Raw Events (EventV1)
 - Install markers (preserved for schema tracking)
 - Any non-indexed keys (explicit disclosure)
 
-**Metadata:** Updated after each cleanup run with counts, cutoff date, and errors
+**Metadata:** Cleanup metadata structure is tested; runtime updates will occur in Phase 3 when scheduler/admin trigger is implemented.
 
 ---
 
 ## Proofs & Validations
+
+**Testing Approach:** No synthetic data is used in runtime evidence or client-visible outputs. Unit tests use deterministic synthetic fixtures for reproducibility and determinism verification.
 
 ### 1. Determinism Proof
 
@@ -163,21 +167,23 @@ Raw Events (EventV1)
 
 **Test:** `test_phase2_retention_deletes_only_old.ts` (10 tests)
 
+**Scope:** Unit test verification of timeline tracking logic (foundation for retention cutoff). No runtime execution of deletions has occurred.
+
 ```
-✓ Test 1: First event sets first_event_at and last_event_at
+✅ Test 1: First event sets first_event_at and last_event_at
   Proof: Timeline initialized correctly on first event
 
-✓ Test 2: Later event updates last_event_at only
+✅ Test 2: Later event updates last_event_at only
   Proof: Only last_event_at changes with later timestamps
 
-✓ Test 3: Earlier event overwrites first_event_at
+✅ Test 3: Earlier event overwrites first_event_at
   Proof: Correction allowed for out-of-order events
 
-✓ Test 4-10: Multiple orgs, invalid timestamps, precision
+✅ Test 4-10: Multiple orgs, invalid timestamps, precision
   Proof: Edge cases handled safely
 ```
 
-**Result:** ✅ **Timeline tracking enables safe retention via cutoff date**
+**Result:** ✅ **Timeline tracking verified. Retention cutoff logic tested and ready for Phase 3 scheduler wiring.**
 
 ### 3. Weekly Summation Proof
 
@@ -232,10 +238,10 @@ Proof: All disclosure flags present and correct
 | `raw/{org}/{date}/shard_{n}` | Raw event shard (compressed) | Hard delete at 90 days |
 | `raw/{org}/{date}/shard_count` | Event count for day | Hard delete at 90 days |
 | `idempotency/{org}/{repo}` | Seen event IDs (LRU) | Bounded rotation |
-| `debug/{org}/{repo}/last_ingest` | Latest event debug info | Always overwritten |
+| `debug:last_ingest:{org}:{repo}` | Latest event debug info | Always overwritten |
 | `config/{org}` | Org configuration (preserved) | **Permanent** |
 | `install/{org}` | Schema version (preserved) | **Permanent** |
-| `ingest/{org}/last_ingest_at` | Timestamp of last event | Updated on each event |
+| `ingest/{org}/last_event_at` | Timestamp of last event | Updated on each event |
 
 ### Phase 2 (11 new keys) - This Delivery
 

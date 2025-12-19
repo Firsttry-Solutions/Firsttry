@@ -184,6 +184,7 @@ npx tsc tests/test_phase2_daily_determinism.ts --outFile /tmp/t.js && node /tmp/
 
 ## Known Limitations
 
+- ⚠️ **Retention not runtime-enforced** (Phase 3): Cleanup logic implemented & tested, but no scheduler/admin trigger yet
 - ❌ **No forecasting** (Phase 4+)
 - ❌ **No alerting** (Phase 3)
 - ❌ **No reporting** (Phase 3)
@@ -220,9 +221,10 @@ npx tsc tests/test_phase2_daily_determinism.ts --outFile /tmp/t.js && node /tmp/
 ## Proofs & References
 
 **Determinism Proof:** `phase_2_evidence.md` → "Determinism Proof" section  
-**Retention Proof:** `phase_2_evidence.md` → "Retention Proof" section  
+**Retention Logic Verification:** `phase_2_evidence.md` → "Retention Logic Verification (Unit Tests)" section  
+**Retention Execution Status:** `phase_2_evidence.md` → "Retention Execution Status" section  
 **Complete Spec:** `ATLASSIAN_DUAL_LAYER_SPEC.md` → Section F (Phase 2 in detail)  
-**Full Delivery:** `PHASE_2_DELIVERY_SUMMARY.md` (456 lines)
+**Full Delivery:** `PHASE_2_DELIVERY_SUMMARY.md` (461 lines)
 
 ---
 
