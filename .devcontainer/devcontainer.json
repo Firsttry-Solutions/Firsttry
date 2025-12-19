@@ -1,6 +1,10 @@
 {
   "name": "firsttry-dev",
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
   "features": {
     "ghcr.io/devcontainers/features/node:1": { "version": "20" },
     "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
@@ -32,14 +36,14 @@
     }
   },
   "onCreateCommand": "bash .devcontainer/onCreate.sh",
-  "postCreateCommand": ".devcontainer/postCreate.sh",
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "postStartCommand": "bash .devcontainer/postStart.sh",
   "updateRemoteUserUID": false,
   "overrideCommand": false,
   "init": true,
   "containerEnv": {
     "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
   },
-  "remoteUser": "vscode",
   "runArgs": [
     "--cap-add=SYS_PTRACE",
     "--security-opt",
