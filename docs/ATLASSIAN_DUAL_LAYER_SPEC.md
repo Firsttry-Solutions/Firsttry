@@ -851,6 +851,122 @@ skipped_keys_reason: "Non-indexed keys cannot be enumerated safely; only indexed
 
 ---
 
+---
+
+## J) Phase 3: Scheduled Pipelines & Readiness Gating (IMPLEMENTED)
+
+### Scheduled Jobs
+
+**Daily Pipeline**
+- **Schedule:** 1 AM UTC daily (`0 1 * * *` cron)
+- **Handler:** `src/pipelines/daily_pipeline.ts::dailyPipelineHandler`
+- **Purpose:** Recompute daily aggregates, backfill missing dates (max 7 days), perform retention cleanup
+- **Best-Effort:** Errors logged, ledgers written regardless; continues to next org
+
+**Weekly Pipeline**
+- **Schedule:** Monday 2 AM UTC (`0 2 * * 1` cron)
+- **Handler:** `src/pipelines/weekly_pipeline.ts::weeklyPipelineHandler`
+- **Purpose:** Recompute weekly aggregates, evaluate first report readiness, write readiness status
+- **Best-Effort:** Errors logged, ledgers written regardless; continues to next org
+
+**Module Type:** `scheduled:trigger` (Forge v12+)
+
+**Timezone:** UTC (all times in ISO 8601 format)
+
+### Run Ledger Keys (Exact)
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `runs/{org}/daily/last_attempt_at` | ISO timestamp | When daily pipeline last attempted execution |
+| `runs/{org}/daily/last_success_at` | ISO timestamp or null | When daily pipeline last completed successfully |
+| `runs/{org}/weekly/last_attempt_at` | ISO timestamp | When weekly pipeline last attempted execution |
+| `runs/{org}/weekly/last_success_at` | ISO timestamp or null | When weekly pipeline last completed successfully |
+| `runs/{org}/last_error` | String (max 300 chars) | Sanitized error from last failed run (no tokens, no newlines) |
+| `index/orgs` | Sorted string[] | All orgs that have ingested events (deduplicated, sorted) |
+
+**Ledger Semantics:**
+- Attempt written at start of pipeline execution
+- Success written at end of successful execution
+- If pipeline fails, only attempt is recorded (no success); error is recorded in last_error
+- Ledgers are non-blocking: write failures do not crash the pipeline
+
+### Backfill Logic
+
+**Constants:**
+```typescript
+const MAX_DAILY_BACKFILL_DAYS = 7;
+```
+
+**Rules:**
+1. If `last_success_at` is null: Return dates from (today - 7 days) to today, inclusive
+2. If `last_success_at` exists: Return dates from (last_success_at + 1 day) to today, max 7 days
+3. All dates in UTC (yyyy-mm-dd format), sorted ascending
+4. Empty list allowed: pipeline still runs, ledgers still written
+
+**Example:**
+- Today: 2025-12-19
+- Last success: null
+- Backfill result: [2025-12-13, 2025-12-14, ..., 2025-12-19]
+
+**Example:**
+- Today: 2025-12-19
+- Last success: 2025-12-17
+- Backfill result: [2025-12-18, 2025-12-19]
+
+**Determinism:** Pure function, no external calls, no RNG; same input always produces same output.
+
+### Readiness Gating (12-Hour First Report Window)
+
+**Constants:**
+```typescript
+const REPORT_FIRST_DELAY_HOURS = 12;
+const MIN_EVENTS_FOR_FIRST_REPORT = 10;
+```
+
+**Status Enum (5 Values):**
+```typescript
+enum ReadinessStatus {
+  WAITING_FOR_DATA_WINDOW = "WAITING_FOR_DATA_WINDOW",
+  READY_BY_TIME_WINDOW = "READY_BY_TIME_WINDOW",
+  READY_BY_MIN_EVENTS = "READY_BY_MIN_EVENTS",
+  READY_BY_MANUAL_OVERRIDE = "READY_BY_MANUAL_OVERRIDE",
+  BLOCKED_MISSING_INSTALL_AT = "BLOCKED_MISSING_INSTALL_AT",
+}
+```
+
+**Eligibility Rules (ANY true = eligible):**
+1. `install_at` exists AND `(now - install_at) >= 12 hours` → `READY_BY_TIME_WINDOW`
+2. `event_count >= 10` → `READY_BY_MIN_EVENTS`
+3. `manual_override_flag == true` (Phase 6) → `READY_BY_MANUAL_OVERRIDE`
+4. `install_at` missing AND events < 10 AND no override → `BLOCKED_MISSING_INSTALL_AT`
+5. 12h not elapsed AND events < 10 AND no override → `WAITING_FOR_DATA_WINDOW`
+
+**Storage Keys:**
+| Key | Type | Meaning |
+|-----|------|---------|
+| `report/{org}/first_ready_status` | Enum value (string) | Which readiness condition was met |
+| `report/{org}/first_ready_reason` | String | Human-readable explanation |
+| `report/{org}/first_ready_checked_at` | ISO timestamp | When readiness was last evaluated |
+
+**Note:** Phase 3 writes readiness status ONLY. No reports (CSV/JSON) are generated; that is Phase 4+.
+
+### Org Discovery
+
+**Mechanism:** On successful `ingest()` call, org is added to `index/orgs`
+
+**Key:** `index/orgs` (sorted, deduplicated unique org list)
+
+**Bound:** Max 10,000 orgs per instance
+
+### Installation & Ledger Verification
+
+After `forge deploy`, verify:
+1. Scheduled triggers are recognized by Forge CLI: `forge validate`
+2. Handlers export correct signatures (function name matches manifest)
+3. Ledgers are readable via storage API (if debug surface available)
+
+---
+
 ## Version History
 
 | Version | Date | Status | Notes |
@@ -858,26 +974,16 @@ skipped_keys_reason: "Non-indexed keys cannot be enumerated safely; only indexed
 | 0.1.0 | 2025-12-19 | PHASE 0 | Scaffold & spec only. No implementation. |
 | 0.2.0 | 2025-12-19 | PHASE 1 | Ingestion endpoint + storage + validation. |
 | 0.3.0 | 2025-12-19 | PHASE 2 | Aggregation + retention + storage index ledger. |
+| 0.4.0 | 2025-12-19 | PHASE 3 | Scheduled pipelines, run ledgers, readiness gating. |
 
 ---
 
-## Next Steps (Phase 3+)
+## Next Steps (Phase 4+)
 
 - Implement reporting engine (CSV, JSON API)
 - Implement alerting rules (thresholds, anomalies)
 - Implement issue creation/linking (Jira REST API)
-- Implement scheduler integration
 - Implement forecasting (confidence intervals)
 
 See `audit_artifacts/atlassian_dual_layer/phase_2_evidence.md` for Phase 2 evidence.
-See `audit_artifacts/atlassian_dual_layer/phase_3_evidence.md` (when available).
-
----
-
-## Version History
-
-| Version | Date | Status | Notes |
-|---------|------|--------|-------|
-| 0.1.0 | 2025-12-19 | PHASE 0 | Scaffold & spec only. No implementation. |
-| 0.2.0 | 2025-12-19 | PHASE 1 | Ingestion endpoint + storage + validation. |
-| 0.3.0 | 2025-12-19 | PHASE 2 | Aggregation + retention + storage index ledger. |
+See `audit_artifacts/atlassian_dual_layer/phase_3_evidence.md` for Phase 3 verification & evidence.
