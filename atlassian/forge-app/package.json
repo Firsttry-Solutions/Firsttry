@@ -1,0 +1,15 @@
+{
+  "name": "@firstry/forge-app",
+  "version": "0.1.0",
+  "description": "FirstTry Governance - Atlassian Dual-Layer Integration",
+  "main": "src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "_comment": "Forge CLI packages (@forge/api, @forge/ui) require authentication to private Atlassian registry. Installed via 'forge create' workflow in production. See docs/ATLASSIAN_DUAL_LAYER_SPEC.md for installation instructions."
+}
