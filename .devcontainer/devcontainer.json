@@ -1,14 +1,14 @@
 {
   "name": "firsttry-dev",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "context": "."
   },
   "remoteUser": "vscode",
   "containerUser": "vscode",
   "updateRemoteUserUID": false,
   "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
-    "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
   },
   "customizations": {
     "vscode": {
@@ -19,11 +19,8 @@
         "dbaeumer.vscode-eslint"
       ],
       "settings": {
-        // --- I kept this from your inner config, as it's best practice ---
         "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
         "python.terminal.activateEnvInCurrentTerminal": true,
-
-        // --- I merged these from your outer, broken config ---
         "terminal.integrated.detectLocale": "off",
         "files.watcherExclude": {
           "**/.git/**": true,
@@ -51,7 +48,6 @@
   ],
   "hostRequirements": {
     "cpus": 4,
-    "memory": "8gb",
-    "storage": "16gb"
+    "memory": "8gb"
   }
 }
