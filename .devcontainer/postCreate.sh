@@ -6,13 +6,8 @@ set -euo pipefail
 
 echo "--- [postCreate] Starting setup ---"
 
-# --- System Tools (best-effort; requires sudo in some environments) ---
-if command -v apt-get >/dev/null 2>&1; then
-  echo "--- [postCreate] Installing system packages (apt) ---"
-  sudo apt-get update -y || true
-  sudo apt-get install -y --no-install-recommends jq ripgrep fd-find tree htop || true
-  sudo rm -rf /var/lib/apt/lists/* || true
-fi
+# System packages are installed in onCreate (OS-agnostic)
+# postCreate focuses on venv, pip packages, and node dependencies only
 
 cd "${WORKSPACE_FOLDER:-$PWD}"
 
