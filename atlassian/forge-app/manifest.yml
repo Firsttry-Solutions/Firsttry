@@ -1,71 +1,24 @@
 ---
 # Atlassian Forge App Manifest - FirstTry Governance Dual Layer
 # PHASE 0: Scaffold Only (No Implementation)
-# Schema: Forge CLI v12+
+# Schema: Forge CLI v12+ for Jira Cloud
 
 app:
-  id: ari:cloud:ecosystem::app/firstry-governance
+  id: ari:cloud:ecosystem::app/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc
   description: FirstTry Governance - Atlassian Dual-Layer Integration
   runtime:
     name: nodejs20.x
 
-# UI modules for Jira Cloud
+# Minimal module scaffold: Dashboard Gadget for future expansion
 modules:
-  # Admin Page: Global Settings
-  admin_page:
-    - key: firstry-admin-page
-      title: FirstTry Governance Settings
-      description: Global configuration for FirstTry Governance
-      function: firstry-admin-page-handler
+  jira:dashboardGadget:
+    - key: governance-dashboard-gadget
+      title: FirstTry Governance Status
+      description: FirstTry Governance - real-time status overview
+      resource: governance-gadget-page
+      thumbnail: https://www.atlassian.com/favicon.ico
 
-  # Issue Panel: Display governance info on issues
-  issue_panel:
-    - key: firstry-issue-panel
-      title: FirstTry Governance Panel
-      description: Displays FirstTry governance status and metadata
-      function: firstry-issue-panel-handler
-      icon: https://developer.atlassian.com/cloud/jira/platform/images/issue-panel-icon.svg
-
-# Backend functions
-functions:
-  firstry-admin-page-handler:
-    handler: index.adminPageHandler
-  firstry-issue-panel-handler:
-    handler: index.issuePanelHandler
-
-# Permissions required for future phases
-permissions:
-  # Storage: Store configuration, event cache, run ledgers
-  - key: storage
-    scopes:
-      - read
-      - write
-
-  # Jira Cloud: Read project metadata, issues, properties
-  - key: jira:read
-    scopes:
-      - read:jira-work
-      - read:issue-details:jira
-
-  # Jira Cloud: Create issues for alerts (Phase 1+)
-  - key: jira:write
-    scopes:
-      - write:jira-work
-      - write:issues:jira
-
-  # Jira Cloud: Read/write issue properties for metadata
-  - key: jira:read-write
-    scopes:
-      - read:issue-property:jira
-      - write:issue-property:jira
-
-# Environment variables (populate at install time)
-environments:
-  development:
-    secrets:
-      FIRSTRY_INGEST_TOKEN: ""
-      FIRSTRY_STORAGE_ENV: "dev"
-  production:
-    secrets:
-      FIRSTRY_INGEST_TOKEN: ""
-      FIRSTRY_STORAGE_ENV: "prod"
+# Resource pages
+resources:
+  - key: governance-gadget-page
+    path: src/gadget-ui
