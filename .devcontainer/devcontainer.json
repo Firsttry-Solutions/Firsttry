@@ -5,8 +5,10 @@
   },
   "remoteUser": "vscode",
   "containerUser": "vscode",
+  "updateRemoteUserUID": false,
   "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
   },
   "customizations": {
     "vscode": {
@@ -37,9 +39,8 @@
   "onCreateCommand": "bash .devcontainer/onCreate.sh",
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
   "postStartCommand": "bash .devcontainer/postStart.sh",
-  "updateRemoteUserUID": false,
-  "overrideCommand": false,
   "init": true,
+  "overrideCommand": false,
   "containerEnv": {
     "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
   },
