@@ -7,3 +7,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 USER vscode
+
+# CRITICAL: keep container alive for Codespaces attach
+CMD ["bash", "-lc", "sleep infinity"]

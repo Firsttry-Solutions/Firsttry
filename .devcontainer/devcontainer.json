@@ -33,9 +33,9 @@
       }
     }
   },
-  "onCreateCommand": "bash .devcontainer/onCreate.sh",
-  "postCreateCommand": "bash .devcontainer/postCreate.sh",
-  "postStartCommand": "bash .devcontainer/postStart.sh",
+  "onCreateCommand": "bash -lc 'echo onCreate disabled'",
+  "postCreateCommand": "bash -lc 'echo postCreate disabled'",
+  "postStartCommand": "bash -lc 'echo postStart disabled'",
   "init": true,
   "overrideCommand": false,
   "containerEnv": {
