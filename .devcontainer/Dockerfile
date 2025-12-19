@@ -1,6 +1,9 @@
 # .devcontainer/Dockerfile
-FROM mcr.microsoft.com/devcontainers/python:3.11-bookworm
+FROM mcr.microsoft.com/devcontainers/universal:2
 
-# Python base image already has vscode user and Python tooling.
-# We add Node via features in devcontainer.json.
-# This is much smaller than universal:2 (~500MB vs ~8GB).
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl ca-certificates build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
+USER vscode
