@@ -33,9 +33,9 @@
       }
     }
   },
-  "onCreateCommand": "bash -lc 'echo onCreate disabled'",
-  "postCreateCommand": "bash -lc 'echo postCreate disabled'",
-  "postStartCommand": "bash -lc 'echo postStart disabled'",
+  "onCreateCommand": "bash -lc 'set -euxo pipefail; bash .devcontainer/onCreate.sh'",
+  "postCreateCommand": "bash -lc 'set -euxo pipefail; bash .devcontainer/postCreate.sh'",
+  "postStartCommand": "bash -lc 'set -euxo pipefail; bash .devcontainer/postStart.sh''",
   "init": true,
   "overrideCommand": false,
   "containerEnv": {

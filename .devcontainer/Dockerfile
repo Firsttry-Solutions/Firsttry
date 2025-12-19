@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/devcontainers/python:3.11-bookworm
 
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl ca-certificates build-essential \
+    git curl ca-certificates build-essential ripgrep \
  && rm -rf /var/lib/apt/lists/*
 
 USER vscode
