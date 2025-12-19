@@ -15,6 +15,7 @@
 import api from '@forge/api';
 import { validateEventV1, redactSecret, extractDateFromTimestamp } from './validators';
 import { isEventSeen, markEventSeen, storeRawEvent } from './storage';
+import { markLastIngest } from './storage_debug';
 
 /**
  * Webtrigger handler for /webhook/ingest
@@ -105,6 +106,10 @@ export async function ingestEventHandler(request: any) {
     const alreadySeen = await isEventSeen(orgKey, repoKey, eventId);
     if (alreadySeen) {
       console.info(`[Ingest] Duplicate event (idempotent): event_id=${eventId}`);
+      // Mark debug for duplicate (PHASE 1.1 only)
+      const dateStr = extractDateFromTimestamp(timestamp);
+      // Estimate shard (typically shard_0 unless very high volume)
+      await markLastIngest(orgKey, repoKey, eventId, 'shard_0', 'duplicate');
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -122,6 +127,9 @@ export async function ingestEventHandler(request: any) {
 
     // 8. Mark event as seen (idempotency)
     await markEventSeen(orgKey, repoKey, eventId);
+
+    // 8.5. Mark last ingest for debug snapshot (PHASE 1.1 only)
+    await markLastIngest(orgKey, repoKey, eventId, shardId, 'success');
 
     // 9. Success response
     console.info(`[Ingest] Event stored: event_id=${eventId}, shard=${shardId}`);

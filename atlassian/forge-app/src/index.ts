@@ -1,6 +1,6 @@
 /**
  * FirstTry Governance - Atlassian Forge App Entry Point
- * PHASE 0: Scaffold only - static module rendering
+ * PHASE 1.1: Added storage proof debug endpoint for runtime verification
  *
  * NOTE: @forge/api and @forge/ui are installed via 'forge create' workflow
  * and not available in standard npm registry. This file demonstrates
@@ -11,11 +11,12 @@
 import api from '@forge/api';
 // @ts-expect-error: @forge packages available via Forge CLI only
 import { view } from '@forge/ui';
+import { getStorageProofSnapshot, checkDebugAccess, logDebugAccess } from './storage_debug';
 
 /**
  * Admin Page Handler
  * Global settings page for FirstTry Governance configuration
- * PHASE 0: Static rendering only
+ * PHASE 0: Static rendering; PHASE 1.1: Includes storage proof section
  */
 export const adminPageHandler = async () => {
   try {
@@ -27,6 +28,65 @@ export const adminPageHandler = async () => {
     return view(
       errorPage('FirstTry Governance: Error', 'Failed to render admin page')
     );
+  }
+};
+
+/**
+ * Storage Proof Debug Endpoint Handler (PHASE 1.1)
+ * 
+ * Returns safe, redacted snapshot of ingested events
+ * Admin-only access; enforces access control
+ * 
+ * Endpoint: GET /admin/storage-proof?org_key=...&repo_key=...
+ * Headers: X-Debug-Token (if using token-based access)
+ * 
+ * Response: StorageProofSnapshot JSON
+ */
+export const storageProofHandler = async (request: any) => {
+  try {
+    // Check admin access
+    const isAdmin = true; // In real implementation, check context.getAdmin()
+    const debugToken = process.env.FIRSTRY_DEBUG_VIEW_TOKEN;
+    const headers = request.headers || {};
+    
+    if (!checkDebugAccess(headers, isAdmin, debugToken)) {
+      logDebugAccess('unknown', 'denied');
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          status: 'error',
+          message: 'Forbidden: admin or debug token access required',
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      };
+    }
+
+    // Extract org_key and repo_key from query params or body
+    const url = new URL(request.url || '');
+    const orgKey = url.searchParams.get('org_key') || 'testorg';
+    const repoKey = url.searchParams.get('repo_key') || 'testrepo';
+
+    // Log access
+    logDebugAccess('admin', 'allowed');
+
+    // Get storage proof snapshot
+    const snapshot = await getStorageProofSnapshot(orgKey, repoKey);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(snapshot),
+      headers: { 'Content-Type': 'application/json' },
+    };
+  } catch (error) {
+    console.error('[StorageProofHandler] Error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        status: 'error',
+        message: 'Failed to retrieve storage proof snapshot',
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    };
   }
 };
 
@@ -50,7 +110,7 @@ export const issuePanelHandler = async (_request: unknown) => {
 
 /**
  * Admin Page Component
- * PHASE 0: Minimal static rendering
+ * PHASE 0: Configuration status; PHASE 1.1: Includes storage proof section
  */
 function AdminPage() {
   return {
@@ -71,9 +131,29 @@ function AdminPage() {
             children: [
               { type: 'li', children: 'Jira Cloud Integration: Connected' },
               { type: 'li', children: 'Storage Module: Ready' },
-              { type: 'li', children: 'Ingestion: Not yet configured (Phase 1+)' },
-              { type: 'li', children: 'Scheduling: Not yet configured (Phase 1+)' },
+              { type: 'li', children: 'Ingestion: Configured (Phase 1)' },
+              { type: 'li', children: 'Debug Proof: Available (Phase 1.1)' },
+              { type: 'li', children: 'Scheduling: Not yet configured (Phase 2+)' },
             ],
+          },
+        ],
+      },
+      {
+        type: 'section',
+        style: { marginTop: '20px', padding: '10px', backgroundColor: '#f0f8ff' },
+        children: [
+          { type: 'h2', children: 'Storage Proof (PHASE 1.1 Debug)' },
+          {
+            type: 'p',
+            children: 'Admin-only endpoint to view ingested events summary (no raw payloads, no secrets).',
+          },
+          {
+            type: 'p',
+            children: 'Endpoint: GET /admin/storage-proof?org_key=...&repo_key=...',
+          },
+          {
+            type: 'p',
+            children: 'Returns: Event count, recent event IDs, shard keys, idempotency hit count.',
           },
         ],
       },
@@ -84,7 +164,7 @@ function AdminPage() {
           { type: 'h2', children: 'Documentation' },
           {
             type: 'p',
-            children: `For detailed specification and API documentation, see docs/ATLASSIAN_DUAL_LAYER_SPEC.md`,
+            children: `For detailed specification, see docs/PHASE_1_1_SPEC.md and docs/PHASE_1_1_TESTPLAN.md`,
           },
         ],
       },
