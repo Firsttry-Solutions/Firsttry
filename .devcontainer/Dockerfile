@@ -1,9 +1,6 @@
 # .devcontainer/Dockerfile
-FROM mcr.microsoft.com/devcontainers/universal:2
+FROM mcr.microsoft.com/devcontainers/python:3.11-bookworm
 
-# Base image (universal:2) already has vscode user.
-# We explicitly disable UID/GID rewriting in devcontainer.json
-# to allow the existing vscode user to work as-is.
-# 
-# This avoids conflicts from trying to force UID/GID that may
-# differ from the base image's actual vscode user configuration.
+# Python base image already has vscode user and Python tooling.
+# We add Node via features in devcontainer.json.
+# This is much smaller than universal:2 (~500MB vs ~8GB).
