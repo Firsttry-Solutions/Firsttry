@@ -5,12 +5,17 @@
   "main": "src/index.ts",
   "scripts": {
     "type-check": "tsc --noEmit",
-    "test": "node src/validators.test.ts"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify:phase4": "node scripts/verify_phase4.mjs",
+    "verify:phase5": "node scripts/verify_phase5.mjs",
+    "verify:phase4-5": "node scripts/verify_phase4_5.mjs"
   },
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "@vitest/ui": "^4.0.16",
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.16"
   },
   "_comment": "Forge CLI packages (@forge/api, @forge/ui) require authentication to private Atlassian registry. Installed via 'forge create' workflow in production. See docs/ATLASSIAN_DUAL_LAYER_SPEC.md for installation instructions."
 }
