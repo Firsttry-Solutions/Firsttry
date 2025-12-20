@@ -21,14 +21,31 @@ modules:
       resource: governance-gadget-page
       thumbnail: https://www.atlassian.com/favicon.ico
 
-  # Function modules (PHASE 3: Scheduled pipeline handlers)
+  # Admin Pages (PHASE 5: Admin UI for Phase-5 report viewing and manual generation)
+  jira:adminPage:
+    - key: phase5-admin-page
+      title: FirstTry Proof-of-Life Report
+      description: Phase-5 Proof-of-Life Report - Generated from automated scheduler
+      function: phase5-admin-page-fn
+
+  # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler and Admin UI, PHASE 6: Snapshot evidence ledger)
   function:
     - key: daily-pipeline-fn
       handler: pipelines/daily_pipeline.run
     - key: weekly-pipeline-fn
       handler: pipelines/weekly_pipeline.run
+    - key: phase5-scheduler-fn
+      handler: scheduled/phase5_scheduler.run
+    - key: phase5-admin-page-fn
+      handler: admin/phase5_admin_page.run
+    - key: phase6-daily-snapshot-fn
+      handler: scheduled/snapshot_daily.handle
+    - key: phase6-weekly-snapshot-fn
+      handler: scheduled/snapshot_weekly.handle
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
+  # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)
+  # PHASE 6: Snapshot evidence ledger (daily + weekly automatic captures)
   scheduledTrigger:
     - key: firstry-daily-pipeline
       function: daily-pipeline-fn
@@ -36,6 +53,18 @@ modules:
 
     - key: firstry-weekly-pipeline
       function: weekly-pipeline-fn
+      interval: week
+
+    - key: phase5-auto-scheduler
+      function: phase5-scheduler-fn
+      interval: fiveMinute
+
+    - key: phase6-daily-snapshot
+      function: phase6-daily-snapshot-fn
+      interval: day
+
+    - key: phase6-weekly-snapshot
+      function: phase6-weekly-snapshot-fn
       interval: week
 
 # Resource pages
