@@ -5,6 +5,8 @@
  * Creates 7 synthetic daily aggregates and checks weekly sum.
  */
 
+import { describe, it } from 'vitest';
+
 /**
  * Mock daily aggregates for a week
  */
@@ -309,8 +311,13 @@ export function runTests(): void {
   }
 
   console.log(`\n${passed}/${passed + failed} tests passed`);
-  process.exit(failed > 0 ? 1 : 0);
+  if (failed > 0) {
+    throw new Error(`${failed} tests failed`);
+  }
 }
 
-// Run tests
-runTests();
+describe('Phase 2 - Weekly Aggregation Tests', () => {
+  it('should run all weekly sum tests', () => {
+    runTests();
+  });
+});

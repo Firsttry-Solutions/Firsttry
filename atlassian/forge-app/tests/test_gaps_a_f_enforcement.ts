@@ -10,6 +10,7 @@
  * 4. Types prevent compilation of violations
  */
 
+import { describe, it, expect } from 'vitest';
 import {
   PHASE,
   assertValidDisclosure,
@@ -746,4 +747,14 @@ gaps.forEach((gap) => {
 
 console.log('\n' + '='.repeat(80) + '\n');
 
-process.exit(failedTests.length > 0 ? 1 : 0);
+if (failedTests.length > 0) {
+  throw new Error(`${failedTests.length} gap enforcement tests failed`);
+}
+
+describe('Phase 4 - Gaps A-F Enforcement Tests', () => {
+  it('validates all gap enforcement tests pass', () => {
+    // All tests have already run at module load time and passed
+    // This wrapper test exists to satisfy vitest's requirement for test suites
+    expect(failedTests.length).toBe(0);
+  });
+});

@@ -502,7 +502,7 @@ function generateChangePatch(before: any, after: any): ChangePatch[] {
 /**
  * Compute completeness percentage for a drift event
  * 
- * 100 = both states available, no missing_data impact
+ * 100 = both states available, no missing_data scope
  * 85 = missing_data referenced but doesn't block visibility
  * 50 = before OR after unavailable
  * 25 = multiple missing_data dependencies

@@ -2,6 +2,8 @@
  * PHASE 4 Unit Tests: Jira Data Ingestion + Evidence Storage + Coverage Matrix
  */
 
+import { describe, it } from 'vitest';
+
 // Types and enums are imported from source modules for testing
 // In compiled form, these would be imported from '../src/*'
 // For this test harness, we replicate key types for unit testing
@@ -1005,11 +1007,12 @@ export function runAllPhase4Tests(): void {
   console.log('='.repeat(80) + '\n');
 
   if (failed > 0) {
-    process.exit(1);
+    throw new Error(`${failed} tests failed`);
   }
 }
 
-// Run tests if executed directly
-if (require.main === module) {
-  runAllPhase4Tests();
-}
+describe('Phase 4 - Jira Ingest Evidence Coverage Tests', () => {
+  it('should run all phase 4 tests', () => {
+    runAllPhase4Tests();
+  });
+});

@@ -9,6 +9,7 @@
  * 5. Confidence signal absence (completeness%, window, confidence on all metrics)
  */
 
+import { describe, it, expect } from 'vitest';
 import {
   DataQualityIndicator,
   ConfidenceLevel,
@@ -530,5 +531,17 @@ gaps.forEach((gap) => {
 
 console.log('\n' + '='.repeat(80));
 
-// Exit with appropriate code
-process.exit(failedTests.length > 0 ? 1 : 0);
+if (failedTests.length > 0) {
+  throw new Error(`${failedTests.length} disclosure tests failed`);
+}
+
+// Vitest integration - run the tests as part of the test suite
+describe('Phase 4 - Disclosure Hardening Tests', () => {
+  it('validates all 5 disclosure hardening gaps', () => {
+    // All tests already ran at module load time and passed
+    // This test suite exists to satisfy vitest's requirement for at least one test
+    expect(failedTests.length).toBe(0);
+  });
+});
+
+

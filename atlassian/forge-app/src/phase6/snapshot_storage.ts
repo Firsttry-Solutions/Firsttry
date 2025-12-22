@@ -11,7 +11,7 @@
  * - TTL-based auto-purge on max_days exceeded
  */
 
-import { storage } from '@forge/api';
+import { storage, api } from '@forge/api';
 import {
   Snapshot,
   SnapshotRun,
@@ -26,7 +26,10 @@ import {
   getRetentionPolicyKey,
   getSnapshotIndexKey,
   DEFAULT_RETENTION_POLICY,
+  type SnapshotType,
 } from './constants';
+import { computeCanonicalHash } from './canonicalization';
+import { createSnapshotLock } from './distributed_lock';
 
 /**
  * Snapshot Run Storage
@@ -141,6 +144,33 @@ export class SnapshotStorage {
     await this.addToIndex(snapshot);
     
     return snapshot;
+  }
+
+  /**
+   * Create a new snapshot with distributed lock protection
+   * 
+   * Prevents concurrent snapshot creation for the same tenant and time window.
+   * If lock cannot be acquired, returns null (caller should mark run as SKIPPED).
+   * 
+   * @param snapshot - Snapshot to create
+   * @param snapshotType - Snapshot type (daily or weekly)
+   * @param windowStartISO - Window start date (YYYY-MM-DD)
+   * @returns Created snapshot, or null if lock could not be acquired
+   */
+  async createSnapshotWithLock(
+    snapshot: Snapshot,
+    snapshotType: SnapshotType,
+    windowStartISO: string,
+  ): Promise<Snapshot | null> {
+    if (snapshot.tenant_id !== this.tenantId || snapshot.cloud_id !== this.cloudId) {
+      throw new Error('Tenant/cloud mismatch');
+    }
+
+    const lock = createSnapshotLock(this.tenantId, snapshotType, windowStartISO);
+    
+    return await lock.execute(async () => {
+      return await this.createSnapshot(snapshot);
+    });
   }
 
   /**
@@ -332,3 +362,63 @@ export class RetentionEnforcer {
     return { deleted_count: deletedCount, reason };
   }
 }
+
+/**
+ * PHASE 6 v2: Snapshot Ledger - Read-only evidence record
+ * 
+ * Provides immutable, read-only access to snapshot evidence.
+ * All modifications are rejected; ledger is write-once at creation time.
+ */
+export class SnapshotLedger {
+  constructor(private tenantId: string) {}
+
+  async getSnapshot(snapshotId: string): Promise<Snapshot> {
+    const key = getSnapshotKey(this.tenantId, snapshotId);
+    const data = await storage.get(key);
+    if (!data) {
+      throw new Error(`Snapshot not found: ${snapshotId}`);
+    }
+    return JSON.parse(data as string);
+  }
+
+  async getAllSnapshots(): Promise<Snapshot[]> {
+    const result = await storage.query().where('key', 'like', `snapshot:${this.tenantId}:*`).getKeys();
+    const snapshots: Snapshot[] = [];
+    for (const key of result) {
+      const data = await storage.get(key);
+      if (data) {
+        snapshots.push(JSON.parse(data as string));
+      }
+    }
+    return snapshots;
+  }
+}
+
+/**
+ * PHASE 6 v2: Evidence Integrity Checker - Cryptographic verification
+ * 
+ * Verifies snapshot immutability through hash validation.
+ * Detects tampering by comparing stored hash against recomputed value.
+ */
+export class EvidenceIntegrityChecker {
+  constructor(private tenantId: string) {}
+
+  async verifyIntegrity(snapshot: Snapshot): Promise<boolean> {
+    const currentHash = computeCanonicalHash(snapshot.payload);
+    return currentHash === snapshot.canonical_hash;
+  }
+
+  async verifyAllSnapshots(): Promise<Map<string, boolean>> {
+    const ledger = new SnapshotLedger(this.tenantId);
+    const snapshots = await ledger.getAllSnapshots();
+    const results = new Map<string, boolean>();
+
+    for (const snapshot of snapshots) {
+      const isValid = await this.verifyIntegrity(snapshot);
+      results.set(snapshot.snapshot_id, isValid);
+    }
+
+    return results;
+  }
+}
+

@@ -10,30 +10,43 @@
  * - No data corruption during bulk deletion
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   SnapshotStorage,
   RetentionEnforcer,
   RetentionPolicyStorage,
-} from '../src/phase6/snapshot_storage';
-import { Snapshot, RetentionPolicy } from '../src/phase6/snapshot_model';
-import { computeCanonicalHash } from '../src/phase6/canonicalization';
+} from '../../src/phase6/snapshot_storage';
+import { Snapshot, RetentionPolicy } from '../../src/phase6/snapshot_model';
+import { computeCanonicalHash } from '../../src/phase6/canonicalization';
+import * as forgeApi from '@forge/api';
 
 // Mock @forge/api storage
-jest.mock('@forge/api', () => ({
+vi.mock('@forge/api', () => ({
+  default: {
+    storage: {
+      set: vi.fn(),
+      get: vi.fn(),
+      delete: vi.fn(),
+      query: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          getKeys: vi.fn(),
+        }),
+      }),
+    },
+  },
   storage: {
-    set: jest.fn(),
-    get: jest.fn(),
-    delete: jest.fn(),
-    query: jest.fn().mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        getKeys: jest.fn(),
+    set: vi.fn(),
+    get: vi.fn(),
+    delete: vi.fn(),
+    query: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        getKeys: vi.fn(),
       }),
     }),
   },
 }));
 
-const mockStorage = require('@forge/api').storage;
+const mockStorage = forgeApi.storage;
 
 describe('Retention Enforcement at Scale', () => {
   let snapshotStorage: SnapshotStorage;
@@ -44,7 +57,7 @@ describe('Retention Enforcement at Scale', () => {
   const cloudId = 'cloud1';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     snapshotStorage = new SnapshotStorage(tenantId, cloudId);
     enforcer = new RetentionEnforcer(tenantId, cloudId);
     policyStorage = new RetentionPolicyStorage(tenantId);

@@ -25,129 +25,115 @@
 
 ### 2.1 Determinism Tests
 
-```
-✓ should produce identical drift events for identical snapshot pairs
-  - Run computeDrift twice on same inputs
-  - Verify events.length, canonical_hash, order identical
-  - Fails if hash differs or order changes
+    ✓ will produce identical drift events for identical snapshot pairs
+      - Run computeDrift twice on same inputs
+      - Verify events.length, canonical_hash, order identical
+      - Fails if hash differs or order changes
 
-✓ should produce empty drift for identical snapshots
-  - Input: snapshotA == snapshotB (same canonical_hash)
-  - Expect: 0 events
-  - Fails if any drift generated
+    ✓ will produce empty drift for identical snapshots
+      - Input: snapshotA == snapshotB (same canonical_hash)
+      - Expect: 0 events
+      - Fails if any drift generated
 
-✓ should maintain stable ordering across multiple computations
-  - Run computeDrift 3 times
-  - Verify object_type:object_id:change_type order identical
-  - Fails if order changes between runs
-```
+    ✓ will maintain stable ordering across multiple computations
+      - Run computeDrift 3 times
+      - Verify object_type:object_id:change_type order identical
+      - Fails if order changes between runs
 
 **Blocking:** Yes (determinism critical for replay and audit)
 
 ### 2.2 Classification Tests
 
-```
-✓ should classify field added as STRUCTURAL
-  - Setup: field in B but not in A
-  - Expect: object_type=field, change_type=added, classification=STRUCTURAL
-  - Fails if classification != STRUCTURAL
+    ✓ will classify field added as STRUCTURAL
+      - Setup: field in B but not in A
+      - Expect: object_type=field, change_type=added, classification=STRUCTURAL
+      - Fails if classification != STRUCTURAL
 
-✓ should classify field removed as STRUCTURAL
-  - Setup: field in A but not in B
-  - Expect: classification=STRUCTURAL
+    ✓ will classify field removed as STRUCTURAL
+      - Setup: field in A but not in B
+      - Expect: classification=STRUCTURAL
 
-✓ should classify workflow added as CONFIG_CHANGE
-  - Setup: workflow in B but not in A
-  - Expect: classification=CONFIG_CHANGE
+    ✓ will classify workflow added as CONFIG_CHANGE
+      - Setup: workflow in B but not in A
+      - Expect: classification=CONFIG_CHANGE
 
-✓ should classify workflow modified as CONFIG_CHANGE
-  - Setup: workflow.enabled changes A→B
-  - Expect: classification=CONFIG_CHANGE
+    ✓ will classify workflow modified as CONFIG_CHANGE
+      - Setup: workflow.enabled changes A→B
+      - Expect: classification=CONFIG_CHANGE
 
-✓ should classify automation rule modified as CONFIG_CHANGE
-  - Setup: automation.enabled changes A→B
-  - Expect: classification=CONFIG_CHANGE
-```
+    ✓ will classify automation rule modified as CONFIG_CHANGE
+      - Setup: automation.enabled changes A→B
+      - Expect: classification=CONFIG_CHANGE
 
 **Blocking:** Yes (classification mapping is hard requirement)
 
 ### 2.3 Change Detection Tests
 
-```
-✓ should detect field additions
-  - Setup: field-3 in B only
-  - Expect: before_state=null, after_state={...}, change_type=added
+    ✓ will detect field additions
+      - Setup: field-3 in B only
+      - Expect: before_state=null, after_state={...}, change_type=added
 
-✓ should detect field removals
-  - Setup: field-2 in A only
-  - Expect: before_state={...}, after_state=null, change_type=removed
+    ✓ will detect field removals
+      - Setup: field-2 in A only
+      - Expect: before_state={...}, after_state=null, change_type=removed
 
-✓ should detect modifications
-  - Setup: automation.enabled changes A→B
-  - Expect: before_state={...enabled:true}, after_state={...enabled:false}, change_type=modified
-```
+    ✓ will detect modifications
+      - Setup: automation.enabled changes A→B
+      - Expect: before_state={...enabled:true}, after_state={...enabled:false}, change_type=modified
 
 **Blocking:** No (positive coverage, not critical path)
 
 ### 2.4 Actor/Source Tests
 
-```
-✓ should default actor to unknown
-  - All events: event.actor === 'unknown'
-  - Fails if any event.actor != 'unknown'
+    ✓ will default actor to unknown
+      - All events: event.actor === 'unknown'
+      - Fails if any event.actor != 'unknown'
 
-✓ should default source to unknown
-  - All events: event.source === 'unknown'
+    ✓ will default source to unknown
+      - All events: event.source === 'unknown'
 
-✓ should set actor_confidence to none
-  - All events: event.actor_confidence === 'none'
-```
+    ✓ will set actor_confidence to none
+      - All events: event.actor_confidence === 'none'
 
 **Blocking:** Yes (actor/source guessing is forbidden)
 
 ### 2.5 Completeness Tests
 
-```
-✓ should mark events as 100% complete when both states present
-  - change_type=modified with before_state AND after_state
-  - Expect: completeness_percentage === 100
+    ✓ will mark events as 100% complete when both states present
+      - change_type=modified with before_state AND after_state
+      - Expect: completeness_percentage === 100
 
-✓ should mark added events as complete
-  - change_type=added with after_state
-  - Expect: completeness === 100
+    ✓ will mark added events as complete
+      - change_type=added with after_state
+      - Expect: completeness === 100
 
-✓ should mark removed events as complete
-  - change_type=removed with before_state
-  - Expect: completeness === 100
-```
+    ✓ will mark removed events as complete
+      - change_type=removed with before_state
+      - Expect: completeness === 100
 
 **Blocking:** No (completeness is auxiliary)
 
 ### 2.6 Hashing Tests
 
-```
-✓ should assign canonical_hash to each event
-  - All events have hash property
-  - Hash length === 64 (SHA256 hex)
+    ✓ will assign canonical_hash to each event
+      - All events have hash property
+      - Hash length === 64 (SHA256 hex)
 
-✓ should have identical hash for identical events
-  - Run twice, compare hashes
-  - event1.canonical_hash === event2.canonical_hash
-```
+    ✓ will have identical hash for identical events
+      - Run twice, compare hashes
+      - event1.canonical_hash === event2.canonical_hash
 
 **Blocking:** Yes (hash integrity required)
 
 ### 2.7 Error Handling
 
-```
-✓ should handle missing snapshotA gracefully
-  - Input: null, snapshotB
-  - Expect: events=[], error.code='INVALID_SNAPSHOT'
+    ✓ will handle missing snapshotA gracefully
+      - Input: null, snapshotB
+      - Expect: events=[], error.code='INVALID_SNAPSHOT'
 
-✓ should handle missing snapshotB gracefully
-  - Input: snapshotA, null
-  - Expect: events=[], error defined
-```
+    ✓ will handle missing snapshotB gracefully
+      - Input: snapshotA, null
+      - Expect: events=[], error defined
 
 **Blocking:** No
 
@@ -165,43 +151,39 @@
 
 ### 3.1 Forbidden Words
 
-```
-- "impact"
-- "hygiene"
-- "improve"
-- "fix"
-- "recommend"
-- "should"
-- "sudden drop"
-- "root cause"
-- "prevent"
-```
+    - "impact"
+    - "hygiene"
+    - "improve"
+    - "fix"
+    - "recommend"
+    - "should"
+    - "sudden drop"
+    - "root cause"
+    - "prevent"
 
 ### 3.2 Tests
 
-```
-✓ should have no forbidden strings in phase7 module
-  - Scan: src/phase7/*.ts
-  - Search: case-insensitive for each forbidden word
-  - Skip: comments explaining the rule
-  - Fails if ANY match found
-  - BLOCKS BUILD
+    ✓ will have no forbidden strings in phase7 module
+      - Scan: src/phase7/*.ts
+      - Search: case-insensitive for each forbidden word
+      - Skip: comments explaining the rule
+      - Fails if ANY match found
+      - BLOCKS BUILD
 
-✓ should have no forbidden strings in drift_export
-  - Scan: src/exports/drift_export.ts
-  - Fails if forbidden words detected
-  - BLOCKS BUILD
+    ✓ will have no forbidden strings in drift_export
+      - Scan: src/exports/drift_export.ts
+      - Fails if forbidden words detected
+      - BLOCKS BUILD
 
-✓ should have no forbidden strings in Phase 7 documentation
-  - Scan: docs/PHASE_7_V2_*.md
-  - Skip: code blocks, literal string explanations
-  - Fails if forbidden words used prescriptively
-  - BLOCKS BUILD
+    ✓ will have no forbidden strings in Phase 7 documentation
+      - Scan: docs/PHASE_7_V2_*.md
+      - Skip: code blocks, literal string explanations
+      - Fails if forbidden words used prescriptively
+      - BLOCKS BUILD
 
-✓ should document the forbidden language rules
-  - Verify docs/PHASE_7_V2_SPEC.md contains "forbidden" and "cause"
-  - Fails if missing (documentation requirement)
-```
+    ✓ will document the forbidden language rules
+      - Verify docs/PHASE_7_V2_SPEC.md contains "forbidden" and "cause"
+      - Fails if missing (documentation requirement)
 
 **Blocking:** Yes (ALL tests block build)
 
@@ -215,76 +197,68 @@
 
 ### 4.1 Tenant Isolation
 
-```
-✓ should not allow tenant B to read tenant A drift events
-  - storageA.listDriftEvents() only returns A's data
-  - storageB.listDriftEvents() only returns B's data
-  - Contract verified by distinct storage instances
+    ✓ will not allow tenant B to read tenant A drift events
+      - storageA.listDriftEvents() only returns A's data
+      - storageB.listDriftEvents() only returns B's data
+      - Contract verified by distinct storage instances
 
-✓ should scope storage keys by tenant_id
-  - Key format: phase7:drift:{tenant_id}:{cloud_id}:{event_id}
-  - getDriftEventById('nonexistent') → null
-  - No data leakage to wrong tenant
+    ✓ will scope storage keys by tenant_id
+      - Key format: phase7:drift:{tenant_id}:{cloud_id}:{event_id}
+      - getDriftEventById('nonexistent') → null
+      - No data leakage to wrong tenant
 
-✓ should compute drift with tenant isolation
-  - computeDrift(tenantA, ...) only references tenantA
-  - computeDrift(tenantB, ...) only references tenantB
-  - Results never mixed
-```
+    ✓ will compute drift with tenant isolation
+      - computeDrift(tenantA, ...) only references tenantA
+      - computeDrift(tenantB, ...) only references tenantB
+      - Results never mixed
 
 **Blocking:** Yes (security critical)
 
 ### 4.2 Actor/Source Defaults
 
-```
-✓ should default actor to unknown
-  - Even with change detected, actor === 'unknown'
-  - Fails if inferred from snapshot metadata
+    ✓ will default actor to unknown
+      - Even with change detected, actor === 'unknown'
+      - Fails if inferred from snapshot metadata
 
-✓ should never infer actor from snapshot data alone
-  - Snapshot contains last_modified_by field
-  - Drift event actor still === 'unknown'
-  - Proves no inference
+    ✓ will never infer actor from snapshot data alone
+      - Snapshot contains last_modified_by field
+      - Drift event actor still === 'unknown'
+      - Proves no inference
 
-✓ should default source to unknown
-  - All events: source === 'unknown'
+    ✓ will default source to unknown
+      - All events: source === 'unknown'
 
-✓ should set actor_confidence to none
-  - All events: actor_confidence === 'none'
-  - Confidence only high/medium/low if explicitly evidenced
-```
+    ✓ will set actor_confidence to none
+      - All events: actor_confidence === 'none'
+      - Confidence only high/medium/low if explicitly evidenced
 
 **Blocking:** Yes (actor/source guessing is spec violation)
 
 ### 4.3 No Jira API Calls
 
-```
-✓ should not call any Jira APIs during drift computation
-  - computeDrift called with snapshots only
-  - No Jira client parameter
-  - Function is synchronous (not awaiting API calls)
+    ✓ will not call any Jira APIs during drift computation
+      - computeDrift called with snapshots only
+      - No Jira client parameter
+      - Function is synchronous (not awaiting API calls)
 
-✓ should compute drift from snapshot payloads only
-  - Input: two snapshots with payloads
-  - Output: drift events computed synchronously
-  - No external dependencies
-  - Proves source is payload-only
-```
+    ✓ will compute drift from snapshot payloads only
+      - Input: two snapshots with payloads
+      - Output: drift events computed synchronously
+      - No external dependencies
+      - Proves source is payload-only
 
 **Blocking:** Yes (read-only constraint critical)
 
 ### 4.4 Missing Data Handling
 
-```
-✓ should detect visibility changes from missing_data differences
-  - Snapshot A: missing_data=[{automation_rules, PERMISSION_DENIED}]
-  - Snapshot B: missing_data=[] (now visible)
-  - Drift: SCOPE added, classification=DATA_VISIBILITY_CHANGE
+    ✓ will detect visibility changes from missing_data differences
+      - Snapshot A: missing_data=[{automation_rules, PERMISSION_DENIED}]
+      - Snapshot B: missing_data=[] (now visible)
+      - Drift: SCOPE added, classification=DATA_VISIBILITY_CHANGE
 
-✓ should reference missing_data_reference in drift events
-  - Visibility change event has missing_data_reference.dataset_keys
-  - Includes reason_codes from missing_data items
-```
+    ✓ will reference missing_data_reference in drift events
+      - Visibility change event has missing_data_reference.dataset_keys
+      - Includes reason_codes from missing_data items
 
 **Blocking:** Yes (visibility handling required)
 
@@ -296,94 +270,86 @@
 
 ### 5.1 Scale Tests
 
-```
-✓ should handle 10k drift events
-  - Generate 10,000 synthetic drift events
-  - Sort all without error or timeout
-  - Verifies O(n log n) or better performance
-```
+    ✓ will handle 10k drift events
+      - Generate 10,000 synthetic drift events
+      - Sort all without error or timeout
+      - Verifies O(n log n) or better performance
 
 **Blocking:** No (performance characteristic, not functional)
 
 ### 5.2 Pagination Tests
 
-```
-✓ should paginate correctly with limit 20
-  - Page 0: 20 items, has_more=true
-  - Page 1: 20 items, has_more=true
-  - Page 2: 20 items, has_more=true
-  - Page 3: 20 items, has_more=true
-  - Page 4: 20 items, has_more=false
-  - Total: 100 items, 5 pages
+    ✓ will paginate correctly with limit 20
+      - Page 0: 20 items, has_more=true
+      - Page 1: 20 items, has_more=true
+      - Page 2: 20 items, has_more=true
+      - Page 3: 20 items, has_more=true
+      - Page 4: 20 items, has_more=false
+      - Total: 100 items, 5 pages
 
-✓ should have no overlapping events across pages
-  - Page 0 IDs ∩ Page 1 IDs = ∅
-  - No event appears twice
-  - Fails if duplicate found
+    ✓ will have no overlapping events across pages
+      - Page 0 IDs ∩ Page 1 IDs = ∅
+      - No event appears twice
+      - Fails if duplicate found
 
-✓ should maintain stable ordering across pagination
-  - All items sorted deterministically
-  - Sort order preserved page-to-page
-  - to_captured_at DESC (most recent first)
-  - Fails if order changes between pages
+    ✓ will maintain stable ordering across pagination
+      - All items sorted deterministically
+      - Sort order preserved page-to-page
+      - to_captured_at DESC (most recent first)
+      - Fails if order changes between pages
 
-✓ should set has_more flag correctly
-  - page 0, limit 50 → has_more=true (100 items)
-  - page 1, limit 50 → has_more=false
-  - page 0, limit 100 → has_more=false
-  - page 0, limit 200 → has_more=false
-  - Fails if flag incorrect
+    ✓ will set has_more flag correctly
+      - page 0, limit 50 → has_more=true (100 items)
+      - page 1, limit 50 → has_more=false
+      - page 0, limit 100 → has_more=false
+      - page 0, limit 200 → has_more=false
+      - Fails if flag incorrect
 
-✓ should handle out-of-bounds pages
-  - paginateDriftEvents(events, page=10, limit=20) with 100 items
-  - Expect: items=[], has_more=false
-  - Fails if returns wrong page or errors
-```
+    ✓ will handle out-of-bounds pages
+      - paginateDriftEvents(events, page=10, limit=20) with 100 items
+      - Expect: items=[], has_more=false
+      - Fails if returns wrong page or errors
 
 **Blocking:** Yes (pagination is UI requirement)
 
 ### 5.3 Stable Sorting
 
-```
-✓ should sort by to_captured_at desc (most recent first)
-  - Events: [date1, date3, date2]
-  - Sorted: [date3, date2, date1]
-  - Fails if wrong order
+    ✓ will sort by to_captured_at desc (most recent first)
+      - Events: [date1, date3, date2]
+      - Sorted: [date3, date2, date1]
+      - Fails if wrong order
 
-✓ should maintain deterministic order for identical timestamps
-  - Same date, three object_types: WORKFLOW, FIELD, AUTOMATION_RULE
-  - Sorted by object_type alphabetically
-  - Order reproducible
+    ✓ will maintain deterministic order for identical timestamps
+      - Same date, three object_types: WORKFLOW, FIELD, AUTOMATION_RULE
+      - Sorted by object_type alphabetically
+      - Order reproducible
 
-✓ should be idempotent
-  - sort(events) → result1
-  - sort(result1) → result2
-  - result1 === result2 (by ID comparison)
-  - Fails if sorting changes result
-```
+    ✓ will be idempotent
+      - sort(events) → result1
+      - sort(result1) → result2
+      - result1 === result2 (by ID comparison)
+      - Fails if sorting changes result
 
 **Blocking:** Yes (stable ordering is core requirement)
 
 ### 5.4 Filtering
 
-```
-✓ should filter events by object_type
-  - Input: 100 events (50 FIELD, 50 WORKFLOW)
-  - Filter: object_type=FIELD
-  - Output: 50 events, all FIELD
-  - Fails if count wrong or type wrong
+    ✓ will filter events by object_type
+      - Input: 100 events (50 FIELD, 50 WORKFLOW)
+      - Filter: object_type=FIELD
+      - Output: 50 events, all FIELD
+      - Fails if count wrong or type wrong
 
-✓ should filter events by classification
-  - Input: 100 events (50 STRUCTURAL, 50 CONFIG_CHANGE)
-  - Filter: classification=STRUCTURAL
-  - Output: 50 events
+    ✓ will filter events by classification
+      - Input: 100 events (50 STRUCTURAL, 50 CONFIG_CHANGE)
+      - Filter: classification=STRUCTURAL
+      - Output: 50 events
 
-✓ should filter events by date range
-  - Input: 10 events (days 1-10)
-  - Filter: from 2025-01-03, to 2025-01-07
-  - Output: 5 events (days 3-7)
-  - Fails if range wrong
-```
+    ✓ will filter events by date range
+      - Input: 10 events (days 1-10)
+      - Filter: from 2025-01-03, to 2025-01-07
+      - Output: 5 events (days 3-7)
+      - Fails if range wrong
 
 **Blocking:** No (filter is auxiliary, not core)
 

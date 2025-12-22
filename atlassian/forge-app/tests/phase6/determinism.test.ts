@@ -7,11 +7,11 @@
  * Key principle: Same Jira state → Same snapshot payload → Same canonical hash
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   computeCanonicalHash,
   testDeterminism,
-} from '../src/phase6/canonicalization';
+} from '../../src/phase6/canonicalization';
 
 describe('Determinism: Critical Invariant', () => {
   it('should produce same hash for identical payloads captured at different times', () => {

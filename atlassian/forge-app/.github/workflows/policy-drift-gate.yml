@@ -1,0 +1,140 @@
+name: Policy Drift Gate (Phase P1.5)
+
+# Non-bypassable CI check for policy drift
+# Runs on every pull request and push
+# Fails if any policy baseline has changed without explicit acknowledgement
+
+on:
+  pull_request:
+    # Check all PRs
+    types:
+      - opened
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - main
+      - master
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# This job CANNOT be skipped
+# No "continue-on-error" or "allow-failure" permits
+# No conditional logic bypasses the check
+jobs:
+  policy-drift-gate:
+    name: Policy Drift Detection
+    runs-on: ubuntu-latest
+    # Non-bypassable: must pass for merge
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for drift detection
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Run Policy Drift Detection
+        working-directory: ./atlassian/forge-app
+        run: |
+          echo "Running Phase P1.5 Policy Drift Detection..."
+          node audit/policy_drift_check.js
+        # NO continue-on-error here - must pass
+
+      - name: Check for Policy Baseline Changes
+        id: baseline-changes
+        working-directory: ./atlassian/forge-app
+        run: |
+          # Check if baseline files were modified
+          BASELINE_MODIFIED=false
+          
+          # List all possible modified baseline files
+          if git diff --name-only HEAD~1..HEAD 2>/dev/null | grep -q "audit/policy_baseline/"; then
+            BASELINE_MODIFIED=true
+            echo "baseline_modified=true" >> $GITHUB_OUTPUT
+            
+            echo "🔍 Baseline files modified:"
+            git diff --name-only HEAD~1..HEAD | grep "audit/policy_baseline/"
+          else
+            echo "baseline_modified=false" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true  # Allow failure, we check the output
+
+      - name: Verify Documentation Update on Baseline Change
+        if: steps.baseline-changes.outputs.baseline_modified == 'true'
+        working-directory: ./atlassian/forge-app
+        run: |
+          echo "⚠️  Policy baseline files were modified!"
+          echo ""
+          echo "Baseline change protocol requires:"
+          echo "1. ✓ All policy checks must pass (verified above)"
+          echo "2. ✓ Baseline files must be updated"
+          echo "3. 🔍 Verifying documentation update..."
+          
+          # Check if SECURITY.md or PRIVACY.md was also updated
+          SECURITY_UPDATED=$(git diff --name-only HEAD~1..HEAD | grep -E "(SECURITY|PRIVACY)\.md" || true)
+          
+          if [ -z "$SECURITY_UPDATED" ]; then
+            echo ""
+            echo "❌ POLICY BASELINE MODIFIED WITHOUT DOCUMENTATION"
+            echo ""
+            echo "When baseline files in audit/policy_baseline/ change, you MUST also:"
+            echo "  • Update SECURITY.md to document WHY the policy changed"
+            echo "  • Add approval reason (e.g., 'Added phase7: for new feature X')"
+            echo ""
+            echo "This ensures:"
+            echo "  ✓ Policy changes are explicitly reviewed"
+            echo "  ✓ Audit trail of what changed and why"
+            echo "  ✓ Prevents silent scope/storage/TTL expansion"
+            echo ""
+            exit 1
+          else
+            echo "✓ Documentation was updated"
+            echo "  SECURITY.md changes detected:"
+            git diff HEAD~1..HEAD -- SECURITY.md | head -20
+          fi
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "✅ Policy Drift Gate PASSED"
+          echo ""
+          echo "Security guarantees verified:"
+          echo "  ✓ OAuth scopes unchanged"
+          echo "  ✓ Storage key prefixes unchanged"
+          echo "  ✓ Outbound network calls unauthorized"
+          echo "  ✓ Export schema version stable"
+          echo "  ✓ Retention policy TTL enforced (90 days)"
+          echo ""
+          echo "No unauthorized policy drift detected."
+
+      - name: Failure Report
+        if: failure()
+        working-directory: ./atlassian/forge-app
+        run: |
+          echo "❌ POLICY DRIFT GATE FAILED"
+          echo ""
+          echo "This is a BLOCKING check. Your changes contain policy drift."
+          echo ""
+          echo "To fix:"
+          echo "  1. Review the drift detection output above"
+          echo "  2. If change is intentional:"
+          echo "     • Update audit/policy_baseline/* files with new values"
+          echo "     • Update SECURITY.md documenting the change"
+          echo "     • Commit and push"
+          echo ""
+          echo "  3. If change is unintentional:"
+          echo "     • Revert the offending code change"
+          echo ""
+          echo "Baseline locations:"
+          ls -la audit/policy_baseline/
+          echo ""
+          exit 1

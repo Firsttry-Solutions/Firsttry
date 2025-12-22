@@ -1,0 +1,896 @@
+
+> @firstry/forge-app@0.1.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90m/workspaces/Firstry/atlassian/forge-app[39m
+
+[90mstdout[2m | tests/test_disclosure_standalone.ts
+[22m[39m✓ GAP 1.1: Insufficient window disclosure creates correct structure
+✓ GAP 1.2: Insufficient window for different periods
+✓ GAP 2.1: Automation visibility disclosure structure complete
+✓ GAP 2.2: Automation disclosure for disabled rules
+✓ GAP 3.1: Forecast has mandatory ESTIMATED label
+✓ GAP 3.2: Forecast has time window
+✓ GAP 3.3: Forecast confidence levels work
+✓ GAP 3.4: Forecast has mandatory disclaimer
+✓ GAP 4.1: Scope transparency disclosure complete
+✓ GAP 4.2: Scope transparency explains metadata-first
+✓ GAP 4.3: Scope transparency versioned
+✓ GAP 5.1: DataQualityIndicator has all required fields
+✓ GAP 5.2: Confidence levels express reliability
+✓ GAP 5.3: Observation window always present
+✓ INTEGRATION: All helper exports work
+✓ INTEGRATION: No zero without reason
+
+================================================================================
+PHASE 4 DISCLOSURE HARDENING TEST RESULTS
+================================================================================
+
+Tests Passed: 16/16
+
+================================================================================
+GAP CLOSURE STATUS
+================================================================================
+
+GAP 1: Zero-Value Misinterpretation: ✓ CLOSED
+GAP 2: Automation Visibility Illusion: ✓ CLOSED
+GAP 3: Forecast Trust Leakage: ✓ CLOSED
+GAP 4: Marketplace Reviewer Trap: ✓ CLOSED
+GAP 5: Confidence Signal Absence: ✓ CLOSED
+
+================================================================================
+
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mA. Tenant Identity Hardening[2m > [22m[2mshould accept valid cloudId from context
+[22m[39m[Phase5Scheduler] Starting for cloudId: valid-cloud-id at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mB. Installation Timestamp Hardening[2m > [22m[2mshould FAIL_CLOSED if installation timestamp not found in Phase-4
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mB. Installation Timestamp Hardening[2m > [22m[2mshould use installation timestamp from Phase-4 to calculate trigger
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mB. Installation Timestamp Hardening[2m > [22m[2mshould use installation timestamp from Phase-4 to calculate trigger
+[22m[39m[Phase5Scheduler] Attempting AUTO_12H generation for test-cloud (attempt #1)
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mB. Installation Timestamp Hardening[2m > [22m[2mshould use installation timestamp from Phase-4 to calculate trigger
+[22m[39m[Phase5Scheduler] AUTO_12H report generated successfully for test-cloud
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mC. Idempotency Hardening - DONE_KEY is Authoritative[2m > [22m[2mshould never regenerate if AUTO_12H DONE_KEY exists
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mC. Idempotency Hardening - DONE_KEY is Authoritative[2m > [22m[2mshould never regenerate if AUTO_12H DONE_KEY exists
+[22m[39m[Phase5Scheduler] No trigger due for test-cloud; auto_12h_done=true, auto_24h_done=false
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mC. Idempotency Hardening - DONE_KEY is Authoritative[2m > [22m[2mshould write DONE_KEY only on successful generation
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mC. Idempotency Hardening - DONE_KEY is Authoritative[2m > [22m[2mshould write DONE_KEY only on successful generation
+[22m[39m[Phase5Scheduler] No trigger due for test-cloud; auto_12h_done=false, auto_24h_done=false
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mC. Idempotency Hardening - DONE_KEY is Authoritative[2m > [22m[2mshould not write DONE_KEY on failed generation
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mC. Idempotency Hardening - DONE_KEY is Authoritative[2m > [22m[2mshould not write DONE_KEY on failed generation
+[22m[39m[Phase5Scheduler] No trigger due for test-cloud; auto_12h_done=false, auto_24h_done=false
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mD. Backoff Hardening - Bounded 30min, 120min, 24h[2m > [22m[2mshould apply 30min backoff on 1st failure
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mD. Backoff Hardening - Bounded 30min, 120min, 24h[2m > [22m[2mshould apply 30min backoff on 1st failure
+[22m[39m[Phase5Scheduler] No trigger due for test-cloud; auto_12h_done=false, auto_24h_done=false
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mD. Backoff Hardening - Bounded 30min, 120min, 24h[2m > [22m[2mshould apply 120min backoff on 2nd failure
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mD. Backoff Hardening - Bounded 30min, 120min, 24h[2m > [22m[2mshould apply 120min backoff on 2nd failure
+[22m[39m[Phase5Scheduler] No trigger due for test-cloud; auto_12h_done=false, auto_24h_done=false
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mD. Backoff Hardening - Bounded 30min, 120min, 24h[2m > [22m[2mshould apply 24h backoff on 3rd+ failures
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mD. Backoff Hardening - Bounded 30min, 120min, 24h[2m > [22m[2mshould apply 24h backoff on 3rd+ failures
+[22m[39m[Phase5Scheduler] No trigger due for test-cloud; auto_12h_done=false, auto_24h_done=false
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mD. Backoff Hardening - Bounded 30min, 120min, 24h[2m > [22m[2mshould skip generation if backoff is still active
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mD. Backoff Hardening - Bounded 30min, 120min, 24h[2m > [22m[2mshould skip generation if backoff is still active
+[22m[39m[Phase5Scheduler] No trigger due for test-cloud; auto_12h_done=false, auto_24h_done=false
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mE. Fail-Closed - Never Throws[2m > [22m[2mshould catch and return 500 on scheduler logic exception
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mE. Fail-Closed - Never Throws[2m > [22m[2mshould return 202 on generation error (not throw)
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mE. Fail-Closed - Never Throws[2m > [22m[2mshould return 202 on generation error (not throw)
+[22m[39m[Phase5Scheduler] Attempting AUTO_12H generation for test-cloud (attempt #1)
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mF. Single Code Path (handleAutoTrigger)[2m > [22m[2mshould always use handleAutoTrigger for generation (never direct logic)
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mF. Single Code Path (handleAutoTrigger)[2m > [22m[2mshould always use handleAutoTrigger for generation (never direct logic)
+[22m[39m[Phase5Scheduler] No trigger due for test-cloud; auto_12h_done=false, auto_24h_done=false
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mG. Concurrency Safety - Write-Once DONE Semantics[2m > [22m[2mshould track separate attempt counts for AUTO_12H and AUTO_24H
+[22m[39m[Phase5Scheduler] Starting for cloudId: test-cloud at 2024-01-15T12:00:00.000Z
+
+[90mstdout[2m | tests/scheduled/phase5_scheduler_hardening.test.ts[2m > [22m[2mPhase-5 Scheduler Hardening[2m > [22m[2mG. Concurrency Safety - Write-Once DONE Semantics[2m > [22m[2mshould track separate attempt counts for AUTO_12H and AUTO_24H
+[22m[39m[Phase5Scheduler] Attempting AUTO_24H generation for test-cloud (attempt #6)
+
+ [31m❯[39m tests/scheduled/phase5_scheduler_hardening.test.ts [2m([22m[2m17 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[32m 58[2mms[22m[39m
+       [32m✓[39m should FAIL_CLOSED if cloudId is missing from context[32m 9[2mms[22m[39m
+       [32m✓[39m should FAIL_CLOSED if cloudId is empty string[32m 1[2mms[22m[39m
+       [32m✓[39m should FAIL_CLOSED if cloudId is whitespace only[32m 1[2mms[22m[39m
+       [32m✓[39m should accept valid cloudId from context[32m 2[2mms[22m[39m
+       [32m✓[39m should FAIL_CLOSED if installation timestamp not found in Phase-4[32m 1[2mms[22m[39m
+       [32m✓[39m should use installation timestamp from Phase-4 to calculate trigger[32m 2[2mms[22m[39m
+[31m       [31m×[31m should never regenerate if AUTO_12H DONE_KEY exists[39m[32m 14[2mms[22m[39m
+[31m       [31m×[31m should write DONE_KEY only on successful generation[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m should not write DONE_KEY on failed generation[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m should apply 30min backoff on 1st failure[39m[32m 2[2mms[22m[39m
+[31m       [31m×[31m should apply 120min backoff on 2nd failure[39m[32m 2[2mms[22m[39m
+[31m       [31m×[31m should apply 24h backoff on 3rd+ failures[39m[32m 2[2mms[22m[39m
+[31m       [31m×[31m should skip generation if backoff is still active[39m[32m 2[2mms[22m[39m
+       [32m✓[39m should catch and return 500 on scheduler logic exception[32m 4[2mms[22m[39m
+       [32m✓[39m should return 202 on generation error (not throw)[32m 1[2mms[22m[39m
+[31m       [31m×[31m should always use handleAutoTrigger for generation (never direct logic)[39m[32m 3[2mms[22m[39m
+       [32m✓[39m should track separate attempt counts for AUTO_12H and AUTO_24H[32m 2[2mms[22m[39m
+[90mstdout[2m | tests/test_gaps_a_f_enforcement.ts
+[22m[39m✓ GAP A.1: Valid disclosure passes assertion
+✓ GAP A.2: Missing completeness_percent fails
+✓ GAP A.3: Missing confidence_level fails
+✓ GAP A.4: Missing disclosure_text fails
+✓ GAP A.5: Missing _phase_4_sealed fails
+✓ GAP A.6: exportPhase4Metric enforces disclosure
+✓ GAP A.7: Raw metric export without disclosure fails
+✓ GAP B.1: Zero metric with semantic state passes
+✓ GAP B.2: Zero metric without semantic state fails
+✓ GAP B.3: Zero metric without interpretation guard fails
+✓ GAP B.4: Zero without non_rankable flag fails
+✓ GAP B.5: All zero semantic state reasons work
+✓ GAP C.1: Valid automation rule with execution disclosure passes
+✓ GAP C.2: Automation rule missing definition fails
+✓ GAP C.3: Automation rule missing execution status fails
+✓ GAP C.4: Automation with wrong execution visibility fails
+✓ GAP C.5: Automation execution cannot be extracted
+✓ GAP C.6: Cannot infer "rule is broken" from metadata
+✓ GAP D.1: Valid forecast passes validation
+✓ GAP D.2: Forecast must be type ESTIMATED
+✓ GAP D.3: Forecast without confidence_level fails
+✓ GAP D.4: Forecast without disclaimer fails
+✓ GAP D.5: Forecast window < 7 days forces LOW confidence
+✓ GAP D.6: Forecast window >= 7 days can be MEDIUM
+✓ GAP D.7: Forecast must be immutable
+✓ GAP E.1: Create initial scope transparency
+✓ GAP E.2: Add new version on content change
+✓ GAP E.3: Cannot add new version without content change
+✓ GAP E.4: Cannot change version string without different version
+✓ GAP E.5: Old versions remain accessible
+✓ GAP F.1: PHASE constant is 4
+✓ GAP F.2: assertPhase4Context passes when PHASE = 4
+✓ GAP F.3: Reject transition_count signal
+✓ GAP F.4: Reject execution_count signal
+✓ GAP F.5: Reject hygiene_score signal
+✓ GAP F.6: Reject recommendation signal
+✓ GAP F.7: Reject behavior_confidence signal
+✓ GAP F.8: Reject benchmark signal
+✓ GAP F.9: Nested Phase-5 signals detected
+✓ GAP F.10: Clean Phase-4 data passes signal check
+✓ BYPASS-1: Cannot extract raw metric without disclosure
+✓ BYPASS-2: Cannot rank zero metrics
+✓ BYPASS-3: Cannot infer automation execution in Phase-4
+✓ BYPASS-4: Forecast cannot be unlabeled as ESTIMATED
+✓ BYPASS-5: Scope text cannot change without version bump
+✓ BYPASS-6: Cannot slip Phase-5 signals into Phase-4 data
+
+================================================================================
+PHASE 4 GAPS A-F: HARD ENFORCEMENT TEST RESULTS
+================================================================================
+
+Tests Passed: 46/46
+================================================================================
+GAP ENFORCEMENT STATUS
+================================================================================
+
+GAP A: Hard Disclosure Wrapper: ✓ SEALED
+GAP B: NON_FACTUAL_ZERO State: ✓ SEALED
+GAP C: Automation Dual Visibility: ✓ SEALED
+GAP D: Forecast Immutability: ✓ SEALED
+GAP E: Scope Versioning: ✓ SEALED
+GAP F: Phase-4 Boundary Guards: ✓ SEALED
+BYPASS PREVENTION: ✓ SEALED
+
+================================================================================
+
+
+[90mstdout[2m | tests/test_phase2_daily_determinism.ts
+[22m[39m✓ Daily aggregate deterministic
+✓ Canonicalized JSON ordering
+✓ Empty aggregate deterministic
+✓ Aggregate with optional cache fields
+✓ By_repo array sorted deterministically
+
+5/5 tests passed
+
+[90mstdout[2m | tests/test_phase2_ingest_timeline.ts
+[22m[39m✓ Missing day returns zero aggregate
+✓ Missing day sets incomplete_inputs.raw_shards_missing
+✓ Missing day shard count is zero
+✓ Missing day by_repo is empty
+✓ Missing day includes disclosure note
+✓ Missing day raw_events_counted is zero
+✓ Day with data has incomplete_inputs.raw_shards_missing=false
+✓ Day with data counts events correctly
+✓ Empty shards array treated as missing
+✓ Missing day aggregate is valid JSON
+
+10/10 tests passed
+
+[90mstdout[2m | tests/test_phase2_retention_deletes_only_old.ts
+[22m[39m✓ First event sets first_event_at and last_event_at
+✓ Later event updates last_event_at only
+✓ Earlier event overwrites first (correction)
+✓ Same timestamp idempotent
+✓ Multiple orgs tracked independently
+✓ Invalid timestamp skipped
+✓ Timestamp parsing handles ISO format
+✓ 10 events maintain correct first/last
+✓ Non-existent org returns empty
+✓ Millisecond precision preserved
+
+10/10 tests passed
+
+[90mstdout[2m | tests/test_phase2_weekly_sum.ts
+[22m[39m✓ Weekly total_events = sum of daily
+✓ Weekly success_count = sum of daily
+✓ Weekly fail_count = sum of daily
+✓ Weekly total_duration_ms = sum of daily
+✓ Weekly by_repo sums correctly
+✓ Weekly sums partial days
+✓ Weekly cache hits and misses sum
+✓ Weekly retry_total sums
+✓ Empty week sum is zero
+✓ Weekly with multiple repos
+
+10/10 tests passed
+
+[90mstdout[2m | tests/test_phase3_backfill_selector.ts
+[22m[39m=== Test: Backfill Selector ===
+
+✓ Test 1: No last success → last 7 days
+✓ Test 2: Last success 2 days ago → 2 dates
+✓ Test 3: Last success yesterday → today only
+✓ Test 4: Last success today → empty
+✓ Test 5: Results are sorted ascending
+✓ Test 6: Invalid ISO date → empty
+
+6/6 tests passed
+
+✅ All backfill selector tests PASS
+
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m=== Test: Daily Pipeline - No Data ===
+
+[DailyPipeline] Processing org: test-org
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: last_success = (never)
+[DailyPipeline] Org test-org: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org test-org: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m✓ Test 1: Ledgers written (no events)
+[DailyPipeline] Processing org: test-org
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: last_success = (never)
+[DailyPipeline] Org test-org: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org test-org: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m=== Test: Daily Pipeline - Partial Failure ===
+
+[DailyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m✗ Test 2 FAILED: Recovery ledgers not correct
+[DailyPipeline] Processing org: test-org
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: last_success = (never)
+[DailyPipeline] Org org1: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org org1: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: last_success = (never)
+[DailyPipeline] Org test-org: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org test-org: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m✓ Test 1: Pipeline attempts despite mid-process failure
+[DailyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: last_success = (never)
+[DailyPipeline] Org org1: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org org1: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m✓ Test 3: last_attempt_at always written
+[DailyPipeline] Processing org: test-org
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: last_success = 2025-12-19T02:15:00Z
+[DailyPipeline] Org test-org: backfill dates = []
+[DailyPipeline] Org test-org: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m[DailyPipeline] Org test-org: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts
+[22m[39m✓ Test 4: Pipeline survives storage errors gracefully
+
+3/4 tests passed
+
+❌ Some tests FAILED
+
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m✓ Test 2: Ledgers written despite phase2 failures
+[DailyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: last_success = (never)
+[DailyPipeline] Org org1: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org org1: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m✓ Test 3: Error handling graceful (no crash)
+[DailyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: last_success = (never)
+[DailyPipeline] Org org1: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org org1: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m✓ Test 4: Success ledger written after recovery
+[DailyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: last_success = (never)
+[DailyPipeline] Org org1: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org org1: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Processing org: org2
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org2: last_success = (never)
+[DailyPipeline] Org org2: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org org2: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org2: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org2: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org2: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org2: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org2: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org2: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org2: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org2: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Processing org: org3
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org3: last_success = (never)
+[DailyPipeline] Org org3: backfill dates = ["2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19"]
+[DailyPipeline] Org org3: running daily agg for 2025-12-13
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org3: running daily agg for 2025-12-14
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org3: running daily agg for 2025-12-15
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org3: running daily agg for 2025-12-16
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org3: running daily agg for 2025-12-17
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org3: running daily agg for 2025-12-18
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org3: running daily agg for 2025-12-19
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org3: running retention cleanup
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m[DailyPipeline] Org org3: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_partial_fail.ts
+[22m[39m✓ Test 5: All orgs processed independently
+
+5/5 tests passed
+
+✅ All daily pipeline (partial failure) tests PASS
+
+
+[90mstdout[2m | tests/test_phase3_readiness_gate.ts
+[22m[39m=== Test: Readiness Gate ===
+
+
+[90mstdout[2m | tests/test_phase3_readiness_gate.ts
+[22m[39m✓ Test 1: Missing install_at → BLOCKED_MISSING_INSTALL_AT
+
+[90mstdout[2m | tests/test_phase3_readiness_gate.ts
+[22m[39m✓ Test 2: install_at > 12h ago → READY_BY_TIME_WINDOW
+
+[90mstdout[2m | tests/test_phase3_readiness_gate.ts
+[22m[39m✓ Test 3: install_at < 12h ago & events < 10 → WAITING_FOR_DATA_WINDOW
+
+[90mstdout[2m | tests/test_phase3_readiness_gate.ts
+[22m[39m✓ Test 4: Manual override flag → READY_BY_MANUAL_OVERRIDE
+
+[90mstdout[2m | tests/test_phase3_readiness_gate.ts
+[22m[39m✓ Test 5: Event count >= 10 → READY_BY_MIN_EVENTS
+
+[90mstdout[2m | tests/test_phase3_readiness_gate.ts
+[22m[39m✓ Test 6: write_readiness_status writes all keys
+
+6/6 tests passed
+
+✅ All readiness gate tests PASS
+
+
+[90mstdout[2m | tests/test_phase3_run_ledgers.ts
+[22m[39m=== Test: Run Ledgers ===
+
+
+[90mstdout[2m | tests/test_phase3_run_ledgers.ts
+[22m[39m✓ Test 1: record_daily_attempt writes correct timestamp
+
+[90mstdout[2m | tests/test_phase3_run_ledgers.ts
+[22m[39m✓ Test 2: record_daily_success writes correct timestamp
+
+[90mstdout[2m | tests/test_phase3_run_ledgers.ts
+[22m[39m✓ Test 3: get_daily_last_success retrieves timestamp
+
+[90mstdout[2m | tests/test_phase3_run_ledgers.ts
+[22m[39m✓ Test 4: record_weekly_attempt writes correct timestamp
+
+[90mstdout[2m | tests/test_phase3_run_ledgers.ts
+[22m[39m✓ Test 5: record_last_error redacts to max 300 chars
+
+[90mstdout[2m | tests/test_phase3_run_ledgers.ts
+[22m[39m✓ Test 6: add_org_to_index deduplicates
+
+[90mstdout[2m | tests/test_phase3_run_ledgers.ts
+[22m[39m✓ Test 7: get_all_orgs returns sorted list
+
+[90mstdout[2m | tests/test_phase3_run_ledgers.ts
+[22m[39m✓ Test 8: get_daily_last_success returns null if never run
+
+8/8 tests passed
+
+✅ All run ledger tests PASS
+
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m=== Test: Weekly Pipeline - Ledgers & Readiness ===
+
+[WeeklyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: current week = 2025-W52
+[WeeklyPipeline] Org org1: running weekly agg for 2025-W52
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: evaluating readiness
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: readiness = BLOCKED_MISSING_INSTALL_AT
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m✓ Test 1: Weekly attempt timestamp written
+[WeeklyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: current week = 2025-W52
+[WeeklyPipeline] Org org1: running weekly agg for 2025-W52
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: evaluating readiness
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: readiness = BLOCKED_MISSING_INSTALL_AT
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m✓ Test 2: Weekly success timestamp written
+[WeeklyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: current week = 2025-W52
+[WeeklyPipeline] Org org1: running weekly agg for 2025-W52
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: evaluating readiness
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: readiness = READY_BY_MANUAL_OVERRIDE
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m✓ Test 3: Readiness status written (status, reason, checked_at)
+[WeeklyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: current week = 2025-W52
+[WeeklyPipeline] Org org1: running weekly agg for 2025-W52
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: evaluating readiness
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: readiness = BLOCKED_MISSING_INSTALL_AT
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m✓ Test 4: Weekly pipeline survives no event data
+[WeeklyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: current week = 2025-W52
+[WeeklyPipeline] Org org1: running weekly agg for 2025-W52
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: evaluating readiness
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: readiness = BLOCKED_MISSING_INSTALL_AT
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m✓ Test 5: No report generation (Phase 4+ deferred)
+[WeeklyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: current week = 2025-W52
+[WeeklyPipeline] Org org1: running weekly agg for 2025-W52
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: evaluating readiness
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: readiness = BLOCKED_MISSING_INSTALL_AT
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m✓ Test 6: Readiness written even without install_at
+[WeeklyPipeline] Processing org: org1
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: current week = 2025-W52
+[WeeklyPipeline] Org org1: running weekly agg for 2025-W52
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: evaluating readiness
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: readiness = BLOCKED_MISSING_INSTALL_AT
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m[WeeklyPipeline] Org org1: marked as success
+
+[90mstdout[2m | tests/test_phase3_weekly_pipeline.ts
+[22m[39m✓ Test 7: Weekly pipeline survives storage failures
+
+7/7 tests passed
+
+✅ All weekly pipeline tests PASS
+
+
+[90mstdout[2m | tests/test_phase4_standalone.ts
+[22m[39m
+================================================================================
+PHASE 4 UNIT TESTS: Jira Data Ingestion + Evidence Storage + Coverage Matrix
+================================================================================
+
+=== TEST 1: Coverage Status Enums ===
+✓ All coverage statuses defined
+✓ Statuses: AVAILABLE, PARTIAL, MISSING, NOT_PERMITTED_BY_SCOPE
+
+=== TEST 2: Project Metadata Parsing ===
+✓ Project metadata parsing correct
+✓ Projects: TEST, OPS
+
+=== TEST 3: Issue Type Metadata Parsing ===
+✓ Issue type metadata parsing correct
+✓ Issue types: Bug, Subtask, Story
+
+=== TEST 4: Status Metadata Parsing ===
+✓ Status metadata parsing correct
+✓ Statuses: To Do, In Progress, Done
+
+=== TEST 5: Field Metadata Parsing ===
+✓ Field metadata parsing correct
+✓ Fields: 3 (1 custom)
+
+=== TEST 6: Issue Events Parsing ===
+✓ Issue event parsing correct
+✓ Events: 2
+
+=== TEST 7: Automation Rule Metadata Parsing ===
+✓ Automation rule metadata parsing correct
+✓ Rules: 2 (1 enabled)
+
+=== TEST 8: Coverage Metrics Computation ===
+✓ Coverage metrics computation correct
+✓ Metrics: 2 projects, 4 fields
+
+=== TEST 9: Complete Coverage Matrix Snapshot ===
+✓ Complete coverage matrix snapshot correct
+✓ Data quality notes: 1
+
+=== TEST 10: Coverage Matrix with Missing Permissions ===
+✓ Coverage matrix with missing permissions correct
+✓ Permission errors captured in notes
+
+=== TEST 11: Read-Only Assertion ===
+✓ Read-only assertion passed
+✓ Ingestion scopes: read:jira-work, automation:read
+
+================================================================================
+RESULTS: 11 passed, 0 failed out of 11 tests
+================================================================================
+
+
+ [32m✓[39m tests/exports/phase5_export.test.ts [2m([22m[2m48 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m tests/phase9_5d/audit_readiness.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m tests/phase9_5e/auto_repair_log.test.ts [2m([22m[2m30 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m tests/phase9_5b/blind_spot_map.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m tests/phase9_5f/silence_indicator.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m tests/admin/phase5_admin_page.test.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m tests/phase9_5c/snapshot_reliability.test.ts [2m([22m[2m34 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/test_phase5_validation.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/phase9_5c/auto_notification.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/phase7/pagination_utils.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/test_phase5_scheduler.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/phase6/distributed_lock.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/auth/oauth_handler.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/admin/phase5_admin_static_enforcement.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m30 failed[39m[22m[2m | [22m[1m[32m14 passed[39m[22m[90m (44)[39m
+[2m      Tests [22m [1m[31m8 failed[39m[22m[2m | [22m[1m[32m325 passed[39m[22m[90m (333)[39m
+[2m     Errors [22m [1m[31m5 errors[39m[22m
+[2m   Start at [22m 15:59:02
+[2m   Duration [22m 3.58s[2m (transform 1.24s, setup 0ms, import 1.28s, tests 444ms, environment 8ms)[22m
+

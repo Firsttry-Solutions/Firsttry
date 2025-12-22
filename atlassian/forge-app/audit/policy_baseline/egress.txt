@@ -1,0 +1,14 @@
+# Outbound Network Calls Baseline
+# Lists all external HTTP/HTTPS calls made by the app
+# Only Forge-managed APIs allowed (api.asApp(), api.asUser())
+# Date: 2024-01-01T00:00:00Z
+
+# Scope: No direct HTTP calls in source code
+# All API access is through:
+# - api.asApp().requestStorage() - Forge storage API
+# - api.asUser().requestJira() - Jira Cloud REST API (read-only)
+# 
+# No external webhooks, no third-party APIs, no data exfiltration.
+# Approved: Jira Cloud platform APIs only (read-only, tenant-scoped)
+
+NONE

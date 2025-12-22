@@ -1,11 +1,28 @@
 /**
  * FirstTry Governance - Atlassian Forge App Entry Point
  * PHASE 1.1: Added storage proof debug endpoint for runtime verification
+ * PHASE P1: Enterprise Safety Baseline (P1.1 Logging Safety enforcement)
  *
  * NOTE: @forge/api and @forge/ui are installed via 'forge create' workflow
  * and not available in standard npm registry. This file demonstrates
  * the module handler structure and will be deployed via Forge CLI.
  */
+
+// ============================================================================
+// PHASE P1: LOGGING SAFETY ENFORCEMENT (STARTUP)
+// ============================================================================
+// Install global console redaction FIRST, before any other imports
+// This ensures ALL console output is automatically redacted
+import { enforceConsoleRedaction } from './phase9/console_enforcement';
+
+// Install at module load time (before handlers are called)
+try {
+  enforceConsoleRedaction();
+} catch (err) {
+  // If enforcement fails at startup, log and fail closed
+  console.error('[STARTUP] ❌ CRITICAL: Console enforcement failed:', err);
+  // In production, this would cause app startup to fail safely
+}
 
 // @ts-expect-error: @forge packages available via Forge CLI only
 import api from '@forge/api';

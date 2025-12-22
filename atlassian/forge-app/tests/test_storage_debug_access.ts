@@ -8,6 +8,7 @@
  * - No tokens/secrets in logs
  */
 
+import { describe, it } from 'vitest';
 import { checkDebugAccess, logDebugAccess } from '../src/storage_debug';
 
 /**
@@ -167,11 +168,12 @@ export function runAllTests(): void {
   console.log(`\n✅ Test Results: ${passed} passed, ${failed} failed\n`);
 
   if (failed > 0) {
-    process.exit(1);
+    throw new Error(`${failed} tests failed`);
   }
 }
 
-// Run tests if executed directly
-if (require.main === module) {
-  runAllTests();
-}
+describe('Storage Debug Access Tests', () => {
+  it('should run all storage access tests', () => {
+    runAllTests();
+  });
+});

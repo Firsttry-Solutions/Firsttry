@@ -28,7 +28,7 @@ modules:
       description: Phase-5 Proof-of-Life Report - Generated from automated scheduler
       function: phase5-admin-page-fn
 
-  # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler and Admin UI, PHASE 6: Snapshot evidence ledger)
+  # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler and Admin UI, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
   function:
     - key: daily-pipeline-fn
       handler: pipelines/daily_pipeline.run
@@ -42,10 +42,13 @@ modules:
       handler: scheduled/snapshot_daily.handle
     - key: phase6-weekly-snapshot-fn
       handler: scheduled/snapshot_weekly.handle
+    - key: token-refresh-job-fn
+      handler: scheduled/token_refresh_scheduler.handle
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)
   # PHASE 6: Snapshot evidence ledger (daily + weekly automatic captures)
+  # SEV-2-003: OAuth token refresh (every 12 hours to prevent expiry gaps)
   scheduledTrigger:
     - key: firstry-daily-pipeline
       function: daily-pipeline-fn
@@ -66,6 +69,10 @@ modules:
     - key: phase6-weekly-snapshot
       function: phase6-weekly-snapshot-fn
       interval: week
+
+    - key: token-refresh-job
+      function: token-refresh-job-fn
+      interval: 12hours
 
 # Resource pages
 resources:

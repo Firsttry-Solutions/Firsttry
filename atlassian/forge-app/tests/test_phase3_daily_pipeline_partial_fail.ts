@@ -3,6 +3,7 @@
  * PHASE 3: Verify pipeline continues processing after one org fails
  */
 
+import { describe, it } from 'vitest';
 import { process_org_daily, setMockApi } from '../src/pipelines/daily_pipeline';
 import { setMockApi as setLedgerMockApi } from '../src/run_ledgers';
 
@@ -186,14 +187,13 @@ async function runTests() {
 
   if (passCount === totalCount) {
     console.log('✅ All daily pipeline (partial failure) tests PASS\n');
-    process.exit(0);
   } else {
-    console.log('❌ Some tests FAILED\n');
-    process.exit(1);
+    throw new Error('Some tests FAILED');
   }
 }
 
-runTests().catch((error) => {
-  console.error('Test harness error:', error);
-  process.exit(1);
+describe('Phase 3 - Daily Pipeline Partial Fail Tests', () => {
+  it('should run all daily pipeline partial fail tests', async () => {
+    await runTests();
+  });
 });

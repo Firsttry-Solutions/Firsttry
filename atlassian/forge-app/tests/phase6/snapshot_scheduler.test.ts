@@ -10,32 +10,63 @@
  * - Tenant isolation
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getIdempotencyKey,
-} from '../src/phase6/constants';
+} from '../../src/phase6/constants';
+import * as forgeApi from '@forge/api';
 
 // Mock @forge/api
-jest.mock('@forge/api', () => ({
-  scheduled: {
-    on: jest.fn(),
-  },
-  storage: {
-    set: jest.fn(),
-    get: jest.fn(),
-    delete: jest.fn(),
-    query: jest.fn().mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        getKeys: jest.fn(),
+vi.mock('@forge/api', () => {
+  const requestJiraMock = vi.fn();
+  const asUserMock = vi.fn().mockReturnValue({
+    requestJira: requestJiraMock,
+  });
+  const asAppMock = vi.fn().mockReturnValue({
+    requestJira: requestJiraMock,
+  });
+
+  return {
+    default: {
+      api: {
+        asUser: asUserMock,
+        asApp: asAppMock,
+        requestJira: requestJiraMock,
+      },
+      scheduled: {
+        on: vi.fn(),
+      },
+      storage: {
+        set: vi.fn(),
+        get: vi.fn(),
+        delete: vi.fn(),
+        query: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            getKeys: vi.fn(),
+          }),
+        }),
+      },
+    },
+    api: {
+      asUser: asUserMock,
+      asApp: asAppMock,
+      requestJira: requestJiraMock,
+    },
+    scheduled: {
+      on: vi.fn(),
+    },
+    storage: {
+      set: vi.fn(),
+      get: vi.fn(),
+      delete: vi.fn(),
+      query: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          getKeys: vi.fn(),
+        }),
       }),
-    }),
-  },
-  api: {
-    asUser: jest.fn().mockReturnValue({
-      requestJira: jest.fn(),
-    }),
-  },
-}));
+    },
+  };
+});
 
 describe('Scheduler: Idempotency', () => {
   it('should generate consistent idempotency keys for daily snapshot', () => {
@@ -122,7 +153,7 @@ describe('Scheduler: Time Window Calculations', () => {
 
 describe('Scheduler: Registered Event Handlers', () => {
   it('should register phase6:daily scheduled handler', () => {
-    const mockScheduled = require('@forge/api').scheduled;
+    const mockScheduled = forgeApi.scheduled;
     
     // The handlers are registered when the modules are imported
     // We can't directly test this without importing, but we can verify the mock exists
@@ -130,7 +161,7 @@ describe('Scheduler: Registered Event Handlers', () => {
   });
 
   it('should register phase6:weekly scheduled handler', () => {
-    const mockScheduled = require('@forge/api').scheduled;
+    const mockScheduled = forgeApi.scheduled;
     expect(mockScheduled.on).toBeDefined();
   });
 });
@@ -138,7 +169,7 @@ describe('Scheduler: Registered Event Handlers', () => {
 describe('Scheduler: Error Handling', () => {
   it('should categorize rate limit errors', () => {
     // Error categorization happens in snapshot_capture.ts
-    const mockAPI = require('@forge/api').api;
+    const mockAPI = forgeApi.api;
     
     // When requestJira returns 429, it should be categorized as RATE_LIMIT
     mockAPI.asUser().requestJira.mockResolvedValue({
@@ -150,7 +181,7 @@ describe('Scheduler: Error Handling', () => {
   });
 
   it('should record error_detail for debugging', () => {
-    const mockAPI = require('@forge/api').api;
+    const mockAPI = forgeApi.api;
     const errorMsg = 'Test API error';
     
     mockAPI.asUser().requestJira.mockRejectedValue(new Error(errorMsg));
@@ -163,7 +194,7 @@ describe('Scheduler: Error Handling', () => {
 describe('Scheduler: Logging', () => {
   it('should log when snapshot completes successfully', () => {
     // Logging happens in scheduled handler
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation();
     
     // Cannot directly test without running scheduler, but interface is available
     expect(console.log).toBeDefined();
@@ -172,7 +203,7 @@ describe('Scheduler: Logging', () => {
   });
 
   it('should log on error', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
     
     expect(console.error).toBeDefined();
     

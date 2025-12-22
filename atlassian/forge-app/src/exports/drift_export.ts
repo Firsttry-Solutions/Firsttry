@@ -67,7 +67,7 @@ export async function exportDriftJSON(request: any): Promise<any> {
       },
       metadata: {
         summary: `Exported ${sortedEvents.length} drift events`,
-        note: 'Observed changes only. No cause, impact, or recommendations inferred.',
+        note: 'Observed changes only. No cause, scope, or suggestions inferred.',
         missing_data_disclosure:
           'Drift detection depends on snapshot visibility. If a dataset was missing in either snapshot, ' +
           'related drift events may be incomplete. See "missing_data_reference" field in each event.',

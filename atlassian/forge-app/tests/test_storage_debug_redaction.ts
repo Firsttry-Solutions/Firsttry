@@ -8,6 +8,7 @@
  * - Incomplete state is clearly marked when no data available
  */
 
+import { describe, it } from 'vitest';
 import { StorageProofSnapshot } from '../src/storage_debug';
 
 /**
@@ -258,11 +259,12 @@ export function runAllTests(): void {
   console.log(`\n✅ Test Results: ${passed} passed, ${failed} failed\n`);
 
   if (failed > 0) {
-    process.exit(1);
+    throw new Error(`${failed} tests failed`);
   }
 }
 
-// Run tests if executed directly
-if (require.main === module) {
-  runAllTests();
-}
+describe('Storage Debug Redaction Tests', () => {
+  it('should run all storage redaction tests', () => {
+    runAllTests();
+  });
+});

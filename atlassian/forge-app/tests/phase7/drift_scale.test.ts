@@ -7,7 +7,7 @@
  * - Deterministic hashing at scale
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   sortDriftEventsDeterministically,
   filterDriftEvents,
@@ -198,8 +198,8 @@ describe('Phase 7 v2: Scale and Pagination', () => {
       const sorted = sortDriftEventsDeterministically(events);
 
       // Should sort by object_type alphabetically when dates are same
-      expect(sorted[0].object_type).toBeLessThanOrEqual(sorted[1].object_type);
-      expect(sorted[1].object_type).toBeLessThanOrEqual(sorted[2].object_type);
+      expect(sorted[0].object_type.localeCompare(sorted[1].object_type)).toBeLessThanOrEqual(0);
+      expect(sorted[1].object_type.localeCompare(sorted[2].object_type)).toBeLessThanOrEqual(0);
     });
 
     it('should be idempotent (sorting twice gives same result)', () => {

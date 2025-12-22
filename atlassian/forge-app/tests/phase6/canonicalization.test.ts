@@ -8,13 +8,13 @@
  * This is essential for idempotency.
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   canonicalJSON,
   computeCanonicalHash,
   verifyCanonicalHash,
   testDeterminism,
-} from '../src/phase6/canonicalization';
+} from '../../src/phase6/canonicalization';
 
 describe('Canonicalization: canonicalJSON', () => {
   it('should handle null', () => {

@@ -9,7 +9,7 @@
  * - Completeness calculation
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { computeDrift } from '../../src/phase7/drift_compute';
 import { ChangeType, Classification, ObjectType } from '../../src/phase7/drift_model';
 

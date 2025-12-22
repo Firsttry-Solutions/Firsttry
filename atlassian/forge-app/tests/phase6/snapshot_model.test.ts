@@ -4,7 +4,7 @@
  * Tests for data structures and constants
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   ErrorCode,
   CoverageStatus,
@@ -15,7 +15,7 @@ import {
   getSnapshotKey,
   getRetentionPolicyKey,
   getSnapshotIndexKey,
-} from '../src/phase6/constants';
+} from '../../src/phase6/constants';
 
 describe('Phase 6 Constants', () => {
   it('should define all ErrorCode enum values', () => {

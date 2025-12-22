@@ -5,6 +5,8 @@
  * to avoid module dependency issues during testing.
  */
 
+import { describe, it } from 'vitest';
+
 // ============================================================================
 // TYPE DEFINITIONS (from src/jira_ingest.ts, src/evidence_storage.ts, src/coverage_matrix.ts)
 // ============================================================================
@@ -481,8 +483,12 @@ function runAllPhase4Tests(): void {
   console.log('='.repeat(80) + '\n');
 
   if (failed > 0) {
-    process.exit(1);
+    throw new Error(`${failed} tests failed`);
   }
 }
 
-runAllPhase4Tests();
+describe('Phase 4 - Standalone Tests', () => {
+  it('should run all phase 4 standalone tests', () => {
+    runAllPhase4Tests();
+  });
+});

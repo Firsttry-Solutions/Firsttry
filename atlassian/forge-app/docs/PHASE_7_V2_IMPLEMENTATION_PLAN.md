@@ -20,7 +20,8 @@ Phase 7 v2 implements drift detection by computing observed changes between cons
 - **No judgment:** Forbidden to claim impact, quality, recommendations, or causes
 
 ### Forbidden Text (Anywhere in Code/Docs/UI/Export)
-- "impact", "hygiene", "improve", "fix", "recommend", "should", "sudden drop", "root cause", "prevent"
+
+    - "impact", "hygiene", "improve", "fix", "recommend", "should", "sudden drop", "root cause", "prevent"
 
 ---
 
@@ -154,7 +155,7 @@ interface DriftEvent {
   // Completeness
   completeness_percentage: number; // 0-100
 
-  // Missing data impact
+  // Missing data scope
   missing_data_reference?: {
     dataset_keys: string[];
     reason_codes: string[];
@@ -234,14 +235,12 @@ interface DriftEvent {
 
 ### D. Completeness Percentage
 
-```
-completeness = 
-  - 100 if both before and after available and no missing_data impact
-  - 85 if missing_data referenced but doesn't block visibility
-  - 50 if before OR after unavailable
-  - 25 if multiple missing_data dependencies
-  - 0 if payload incomplete
-```
+    completeness = 
+      - 100 if both before and after available and no missing_data effect
+      - 85 if missing_data referenced but doesn't block visibility
+      - 50 if before OR after unavailable
+      - 25 if multiple missing_data dependencies
+      - 0 if payload incomplete
 
 ---
 

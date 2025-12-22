@@ -10,35 +10,48 @@
  * - Retention enforcement (FIFO deletion)
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   SnapshotRunStorage,
   SnapshotStorage,
   RetentionPolicyStorage,
   RetentionEnforcer,
-} from '../src/phase6/snapshot_storage';
+} from '../../src/phase6/snapshot_storage';
 import {
   SnapshotRun,
   Snapshot,
   RetentionPolicy,
-} from '../src/phase6/snapshot_model';
-import { ErrorCode, DEFAULT_RETENTION_POLICY } from '../src/phase6/constants';
+} from '../../src/phase6/snapshot_model';
+import { ErrorCode, DEFAULT_RETENTION_POLICY } from '../../src/phase6/constants';
+import * as forgeApi from '@forge/api';
 
 // Mock @forge/api storage
-jest.mock('@forge/api', () => ({
+vi.mock('@forge/api', () => ({
+  default: {
+    storage: {
+      set: vi.fn(),
+      get: vi.fn(),
+      delete: vi.fn(),
+      query: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          getKeys: vi.fn(),
+        }),
+      }),
+    },
+  },
   storage: {
-    set: jest.fn(),
-    get: jest.fn(),
-    delete: jest.fn(),
-    query: jest.fn().mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        getKeys: jest.fn(),
+    set: vi.fn(),
+    get: vi.fn(),
+    delete: vi.fn(),
+    query: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        getKeys: vi.fn(),
       }),
     }),
   },
 }));
 
-const mockStorage = require('@forge/api').storage;
+const mockStorage = forgeApi.storage;
 
 describe('SnapshotRunStorage', () => {
   let storage: SnapshotRunStorage;
@@ -46,7 +59,7 @@ describe('SnapshotRunStorage', () => {
   const cloudId = 'cloud1';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     storage = new SnapshotRunStorage(tenantId, cloudId);
   });
 
@@ -143,7 +156,7 @@ describe('SnapshotStorage', () => {
   const cloudId = 'cloud1';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     snapshotStorage = new SnapshotStorage(tenantId, cloudId);
   });
 
@@ -214,7 +227,7 @@ describe('RetentionPolicyStorage', () => {
   const tenantId = 'tenant1';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     policyStorage = new RetentionPolicyStorage(tenantId);
   });
 
@@ -272,7 +285,7 @@ describe('RetentionEnforcer', () => {
   const cloudId = 'cloud1';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     enforcer = new RetentionEnforcer(tenantId, cloudId);
   });
 
