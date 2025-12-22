@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createShakdownContext } from '../shk_harness';
+import { createShakdownContext } from '../shk_harness.mts';
 
 describe('RETENTION_DELETION Scenarios', () => {
   it('SHK-060: Data retention period is enforced', async () => {

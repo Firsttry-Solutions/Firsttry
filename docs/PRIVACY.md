@@ -2,7 +2,7 @@
 
 ## Overview
 
-FirstTry is designed for zero PII collection. We collect only the minimum data required to function, and all sensitive fields are immediately hashed.
+FirstTry is designed for zero-touch, automatic operation with zero PII collection. We collect only the minimum data required to function, and all sensitive fields are immediately hashed.
 
 ## Data Collection
 

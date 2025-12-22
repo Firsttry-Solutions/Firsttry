@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createShakdownContext } from '../shk_harness';
+import { createShakdownContext } from '../shk_harness.mts';
 
 describe('TENANT_ISOLATION Scenarios', () => {
   it('SHK-050: Tenant storage is completely isolated', async () => {

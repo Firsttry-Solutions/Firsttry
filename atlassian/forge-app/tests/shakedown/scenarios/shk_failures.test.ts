@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createShakdownContext } from '../shk_harness';
+import { createShakdownContext } from '../shk_harness.mts';
 
 describe('FAILURES_CHAOS Scenarios', () => {
   it('SHK-030: Rate limit errors are disclosed', async () => {
@@ -152,15 +152,15 @@ describe('FAILURES_CHAOS Scenarios', () => {
   it('SHK-034: Concurrent request failures do not cascade', async () => {
     const ctx = await createShakdownContext();
 
-    // Simulate 3 concurrent requests
+    // Inject failure on first request only BEFORE making requests
+    ctx.failures.injectApiError('RATE_LIMITED', { affectRequests: [0] });
+
+    // Simulate 3 concurrent requests AFTER failure injection
     const requests = [
       ctx.jira.getIssue('PROJ-1'),
       ctx.jira.getIssue('PROJ-2'),
       ctx.jira.getIssue('PROJ-3'),
     ];
-
-    // Inject failure on first request only
-    ctx.failures.injectApiError('RATE_LIMITED', { affectRequests: [0] });
 
     let failedCount = 0;
     let successCount = 0;

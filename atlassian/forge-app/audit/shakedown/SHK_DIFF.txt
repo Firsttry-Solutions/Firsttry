@@ -1,0 +1,39 @@
+{
+  "run1": {
+    "digest": "23556fe536bb0e8795df2fba64ab35719d653f4c2e83828d6b6c627a18ef5a1e",
+    "output": {
+      "timestamp": 1703222400000,
+      "runId": "shk-run-1",
+      "scenarios": {
+        "SHK-001": {
+          "passed": {
+            "status": "pass",
+            "description": "Placeholder"
+          }
+        }
+      },
+      "logs": [],
+      "errors": []
+    },
+    "errors": []
+  },
+  "runX": {
+    "digest": "349740e7cef688f2358b3093e08743d19481ae62641e8cee290261f5437abba9",
+    "output": {
+      "timestamp": 1703222400000,
+      "runId": "shk-run-2",
+      "scenarios": {
+        "SHK-001": {
+          "passed": {
+            "status": "pass",
+            "description": "Placeholder"
+          }
+        }
+      },
+      "logs": [],
+      "errors": []
+    },
+    "errors": []
+  },
+  "diffIndex": 1
+}

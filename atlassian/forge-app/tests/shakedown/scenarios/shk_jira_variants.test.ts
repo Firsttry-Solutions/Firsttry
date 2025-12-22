@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createShakdownContext } from '../shk_harness';
+import { createShakdownContext } from '../shk_harness.mts';
 
 describe('JIRA_DATA_VARIANTS Scenarios', () => {
   it('SHK-020: Normal Jira datasets are processed correctly', async () => {
