@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - FirstTry Governance</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+        h1 {
+            color: #0052CC;
+            border-bottom: 3px solid #0052CC;
+            padding-bottom: 0.5rem;
+        }
+        h2 {
+            color: #0052CC;
+            margin-top: 2rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.3rem;
+        }
+        .last-updated {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        .section {
+            margin-bottom: 2rem;
+        }
+        ul {
+            margin: 0.5rem 0;
+        }
+        li {
+            margin: 0.3rem 0;
+        }
+        strong {
+            color: #000;
+        }
+        .contact {
+            background: #f4f5f7;
+            padding: 1rem;
+            border-left: 4px solid #0052CC;
+            margin: 1rem 0;
+        }
+        footer {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #ddd;
+            font-size: 0.9rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Privacy Policy</h1>
+    <p class="last-updated"><strong>Last updated:</strong> 2025-12-22</p>
+
+    <div class="section">
+        <h2>Who We Are</h2>
+        <p><strong>Legal Entity:</strong> Arnab Poddar</p>
+        <p><strong>Contact Email:</strong> security@firsttry.run</p>
+        <p>FirstTry Governance is an Atlassian Forge app designed for governance monitoring and audit trail capture in Jira environments. This app operates entirely within the Atlassian Forge platform security sandbox.</p>
+    </div>
+
+    <div class="section">
+        <h2>What Data the App Accesses</h2>
+        <p>FirstTry Governance accesses the following <strong>configuration metadata only</strong> from your Jira instance in <strong>read-only mode</strong>:</p>
+        <ul>
+            <li><strong>Jira configuration metadata:</strong> Project configurations, issue type schemas, field definitions, workflow status values, automation rule metadata</li>
+            <li><strong>Audit-relevant metadata:</strong> Configuration timestamps, schema structure, field mappings</li>
+            <li><strong>System metadata:</strong> Available projects, fields, and statuses (schema-level information only)</li>
+        </ul>
+        <p><strong>Access Pattern:</strong> All data access is read-only. The app captures configuration state for governance monitoring purposes only.</p>
+    </div>
+
+    <div class="section">
+        <h2>What Data the App Does NOT Collect</h2>
+        <p>FirstTry Governance explicitly <strong>does NOT</strong> collect, access, or process:</p>
+        <ul>
+            <li><strong>No Personally Identifiable Information (PII):</strong> No user emails, names, profile information, or personal data</li>
+            <li><strong>No User Content:</strong> No issue descriptions, comments, attachments, or work logs</li>
+            <li><strong>No Credentials:</strong> No passwords, API tokens, or authentication secrets</li>
+            <li><strong>No Personal Profiles:</strong> No user preferences, avatars, or account details</li>
+            <li><strong>No Behavioral Tracking:</strong> No analytics, usage tracking, or behavioral profiling</li>
+        </ul>
+        <p>The app operates on configuration metadata only, with no access to issue content or user-generated data.</p>
+    </div>
+
+    <div class="section">
+        <h2>Where Data is Processed and Stored</h2>
+        <p><strong>Processing Location:</strong> All data processing occurs within the Atlassian Forge platform security sandbox.</p>
+        <p><strong>Storage Location:</strong> Data is stored exclusively in <strong>tenant-isolated Forge Storage</strong>, managed by Atlassian.</p>
+        <p><strong>Infrastructure:</strong> Atlassian-managed infrastructure only. No external servers or third-party hosting.</p>
+        <p><strong>Tenant Isolation:</strong> All stored data is isolated per Jira tenant. No cross-tenant data access or sharing occurs.</p>
+        <p><strong>Platform Security:</strong> Data security, encryption, and access control are managed by the Atlassian Forge platform. The app delegates authentication, authorization, and encryption to Atlassian's platform security mechanisms.</p>
+    </div>
+
+    <div class="section">
+        <h2>Third-Party Data Sharing</h2>
+        <p><strong>None.</strong></p>
+        <p>FirstTry Governance has <strong>zero external egress</strong>. The app does not:</p>
+        <ul>
+            <li>Share data with any third-party services</li>
+            <li>Make external API calls outside the Atlassian Forge platform</li>
+            <li>Transmit data to external servers or analytics services</li>
+            <li>Use external logging, monitoring, or tracking services</li>
+        </ul>
+        <p>All network communication is limited to Atlassian Forge platform APIs only. This is enforced by the Forge runtime sandbox and verified through automated testing.</p>
+    </div>
+
+    <div class="section">
+        <h2>Data Retention</h2>
+        <p><strong>Retention Period:</strong> Data is retained only while the app remains installed in your Jira instance.</p>
+        <p><strong>Data Export:</strong> Tenant administrators can export all stored data via the app's admin interface (JSON format).</p>
+        <p><strong>Data Deletion:</strong> When the app is uninstalled from your Jira instance:</p>
+        <ul>
+            <li>The app ceases all data collection immediately</li>
+            <li>Stored data persists in Forge Storage (Atlassian platform behavior)</li>
+            <li>To request complete data deletion, contact Atlassian Support and reference your Forge app installation ID</li>
+        </ul>
+        <p><strong>Note:</strong> Data deletion is controlled by the Atlassian Forge platform, not by the app developer. The app does not have direct deletion capabilities.</p>
+    </div>
+
+    <div class="section">
+        <h2>Security Practices</h2>
+        <p>FirstTry Governance leverages Atlassian Forge platform security mechanisms:</p>
+        <ul>
+            <li><strong>Platform Sandboxing:</strong> App executes in Atlassian's isolated Forge runtime environment</li>
+            <li><strong>No External Egress:</strong> Zero outbound network connections to external services (verified by automated testing)</li>
+            <li><strong>Tenant Isolation:</strong> Data is isolated per Jira tenant using Forge Storage scoping</li>
+            <li><strong>Atlassian-Managed Encryption:</strong> Encryption at rest and in transit managed by Atlassian Forge platform</li>
+            <li><strong>Platform Authentication:</strong> User authentication and authorization delegated to Atlassian platform</li>
+            <li><strong>Read-Only Access:</strong> App uses read-only Jira API access (no write permissions)</li>
+        </ul>
+        <p><strong>Security Disclosure:</strong> The app does not hold independent security certifications (SOC 2, ISO 27001). Security posture inherits from the Atlassian Forge platform.</p>
+        <p><strong>Vulnerability Reporting:</strong> To report security vulnerabilities, use <a href="https://github.com/Global-domination/Firstry/security/advisories/new">GitHub Security Advisory</a>.</p>
+    </div>
+
+    <div class="section">
+        <h2>Your Rights</h2>
+        <p>Depending on your jurisdiction, you may have the following rights:</p>
+        <ul>
+            <li><strong>Right to Access:</strong> Export your data via the app's admin interface (JSON export)</li>
+            <li><strong>Right to Deletion:</strong> Uninstall the app and contact Atlassian Support for Forge Storage deletion</li>
+            <li><strong>Right to Portability:</strong> Data export is available in machine-readable JSON format</li>
+        </ul>
+        <p><strong>Note:</strong> As a Forge app, data processing is governed by Atlassian's Data Processing Agreement (DPA). Refer to Atlassian's privacy policies for platform-level data handling.</p>
+    </div>
+
+    <div class="section">
+        <h2>Changes to This Policy</h2>
+        <p>This Privacy Policy may be updated from time to time. The "Last updated" date at the top of this page indicates when the policy was last revised. Continued use of the app after changes constitutes acceptance of the updated policy.</p>
+    </div>
+
+    <div class="section">
+        <h2>Contact</h2>
+        <div class="contact">
+            <p><strong>Privacy Questions:</strong> security@firsttry.run</p>
+            <p><strong>Security Issues:</strong> <a href="https://github.com/Global-domination/Firstry/security/advisories/new">GitHub Security Advisory</a></p>
+            <p><strong>General Support:</strong> <a href="https://github.com/Global-domination/Firstry/issues">GitHub Issues</a></p>
+        </div>
+    </div>
+
+    <footer>
+        <p><a href="index.html">← Back to Legal Documentation</a></p>
+        <p>FirstTry Governance is an Atlassian Forge app. Atlassian Forge is a trademark of Atlassian Pty Ltd.</p>
+    </footer>
+</body>
+</html>

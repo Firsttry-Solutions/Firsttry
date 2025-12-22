@@ -1,5 +1,10 @@
 # FirstTry Privacy Policy
 
+---
+**COMPLIANCE DISCLAIMER**: Any references to SOC 2, ISO 27001, HIPAA, GDPR, or Cloud Fortified in this document refer to Atlassian's platform-level certifications, NOT independent app-level certifications. FirstTry Governance inherits security posture from the Atlassian Forge platform. See [docs/SECURITY.md](../atlassian/forge-app/docs/SECURITY.md) for explicit disclaimers.
+---
+
+
 **Version**: 1.0  
 **Last Updated**: 2025-12-22  
 **Audience**: Atlassian Workspace Admins, Marketplace Reviewers, Enterprise Security Teams

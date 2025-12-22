@@ -74,6 +74,11 @@ modules:
       function: token-refresh-job-fn
       interval: 12hours
 
+# Permissions
+permissions:
+  scopes:
+    - storage:app  # Tenant-isolated storage (enforced by Forge platform)
+
 # Resource pages
 resources:
   - key: governance-gadget-page
