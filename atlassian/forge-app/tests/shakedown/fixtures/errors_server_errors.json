@@ -1,0 +1,12 @@
+{
+  "description": "Server error fixture (5xx Internal Server Error)",
+  "error": {
+    "code": 503,
+    "message": "Service Unavailable",
+    "retryAfter": 30
+  },
+  "metadata": {
+    "serverHealthy": false,
+    "maintenanceMode": true
+  }
+}
