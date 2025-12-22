@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - FirstTry Governance</title>
+    <title>Firsttry Governance for Jira – Privacy Policy</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -57,7 +57,7 @@
     </style>
 </head>
 <body>
-    <h1>Privacy Policy</h1>
+    <h1>Firsttry Governance for Jira – Privacy Policy</h1>
     <p class="last-updated"><strong>Last updated:</strong> 2025-12-22</p>
 
     <div class="section">
@@ -110,20 +110,13 @@
             <li>Transmit data to external servers or analytics services</li>
             <li>Use external logging, monitoring, or tracking services</li>
         </ul>
-        <p>All network communication is limited to Atlassian Forge platform APIs only. This is enforced by the Forge runtime sandbox and verified through automated testing.</p>
+        <p>All network communication is limited to Atlassian Forge platform APIs only. This is enforced by Forge platform egress controls and the app's current permission configuration.</p>
     </div>
 
     <div class="section">
         <h2>Data Retention</h2>
-        <p><strong>Retention Period:</strong> Data is retained only while the app remains installed in your Jira instance.</p>
+        <p><strong>Retention Period:</strong> Data stored in Atlassian Forge hosted storage follows Atlassian's Forge data lifecycle. Upon app uninstallation, hosted storage data is not immediately purged; it is retained for a limited period per Atlassian platform behavior and may be recoverable for a short window. After the platform retention period, hosted storage data is deleted.</p>
         <p><strong>Data Export:</strong> Tenant administrators can export all stored data via the app's admin interface (JSON format).</p>
-        <p><strong>Data Deletion:</strong> When the app is uninstalled from your Jira instance:</p>
-        <ul>
-            <li>The app ceases all data collection immediately</li>
-            <li>Stored data persists in Forge Storage (Atlassian platform behavior)</li>
-            <li>To request complete data deletion, contact Atlassian Support and reference your Forge app installation ID</li>
-        </ul>
-        <p><strong>Note:</strong> Data deletion is controlled by the Atlassian Forge platform, not by the app developer. The app does not have direct deletion capabilities.</p>
     </div>
 
     <div class="section">
@@ -146,7 +139,7 @@
         <p>Depending on your jurisdiction, you may have the following rights:</p>
         <ul>
             <li><strong>Right to Access:</strong> Export your data via the app's admin interface (JSON export)</li>
-            <li><strong>Right to Deletion:</strong> Uninstall the app and contact Atlassian Support for Forge Storage deletion</li>
+            <li><strong>Right to Deletion:</strong> Uninstall the app; hosted storage data will be deleted after the platform retention period</li>
             <li><strong>Right to Portability:</strong> Data export is available in machine-readable JSON format</li>
         </ul>
         <p><strong>Note:</strong> As a Forge app, data processing is governed by Atlassian's Data Processing Agreement (DPA). Refer to Atlassian's privacy policies for platform-level data handling.</p>
