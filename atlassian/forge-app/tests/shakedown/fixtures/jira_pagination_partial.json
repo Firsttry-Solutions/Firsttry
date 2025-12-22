@@ -1,0 +1,26 @@
+{
+  "issues": [
+    {
+      "key": "PROJ-300",
+      "id": "10300",
+      "summary": "Paginated issue 1",
+      "status": "OPEN",
+      "assignee": "user_1",
+      "issueType": "Task",
+      "created": "2023-12-01T00:00:00Z",
+      "updated": "2023-12-15T10:30:00Z",
+      "customFields": {"priority": "Medium"}
+    }
+  ],
+  "metadata": {
+    "total": 100,
+    "returnedCount": 1,
+    "nextPageUrl": "?startAt=1&maxResults=1",
+    "isLastPage": false,
+    "pageSize": 1
+  },
+  "error": {
+    "code": 404,
+    "message": "Next page not found (simulated incomplete pagination)"
+  }
+}

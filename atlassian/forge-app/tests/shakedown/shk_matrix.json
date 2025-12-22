@@ -1,0 +1,250 @@
+{
+  "scenarios": [
+    {
+      "id": "SHK-001",
+      "domain": "INSTALL_ZERO_TOUCH",
+      "title": "First install simulation (no user action) -> schedules available, initial snapshot path run",
+      "required": true,
+      "description": "Simulates fresh install, verifies no user action needed, schedules are registered"
+    },
+    {
+      "id": "SHK-002",
+      "domain": "INSTALL_ZERO_TOUCH",
+      "title": "Reinstall / upgrade simulation -> no duplication, idempotency holds",
+      "required": true,
+      "description": "Simulates app reinstall/upgrade, verifies no data duplication or corruption"
+    },
+    {
+      "id": "SHK-003",
+      "domain": "INSTALL_ZERO_TOUCH",
+      "title": "No configuration screens exist (static UI scan or route scan)",
+      "required": true,
+      "description": "Verifies no user-facing configuration screens are present in manifest"
+    },
+    {
+      "id": "SHK-010",
+      "domain": "SCHEDULER_PIPELINES",
+      "title": "Daily lightweight snapshot path",
+      "required": true,
+      "description": "Simulates daily pipeline execution with typical Jira dataset"
+    },
+    {
+      "id": "SHK-011",
+      "domain": "SCHEDULER_PIPELINES",
+      "title": "Weekly deep snapshot path",
+      "required": true,
+      "description": "Simulates weekly pipeline execution with full analysis"
+    },
+    {
+      "id": "SHK-012",
+      "domain": "SCHEDULER_PIPELINES",
+      "title": "Scheduler jitter/out-of-order runs -> idempotency and ledger correctness",
+      "required": true,
+      "description": "Simulates overlapping scheduled runs, verifies idempotency holds"
+    },
+    {
+      "id": "SHK-020",
+      "domain": "JIRA_DATA_VARIANTS",
+      "title": "Normal Jira config dataset",
+      "required": true,
+      "description": "Typical small-to-medium Jira config with standard fields"
+    },
+    {
+      "id": "SHK-021",
+      "domain": "JIRA_DATA_VARIANTS",
+      "title": "Very large dataset (stress) -> completes within test time budget and no truncation without disclosure",
+      "required": true,
+      "description": "Large-scale Jira config (10k+ issues), verifies no silent truncation"
+    },
+    {
+      "id": "SHK-022",
+      "domain": "JIRA_DATA_VARIANTS",
+      "title": "Partial pagination -> must disclose incomplete data",
+      "required": true,
+      "description": "Pagination interrupted mid-stream, verifies disclosure of incomplete data"
+    },
+    {
+      "id": "SHK-023",
+      "domain": "JIRA_DATA_VARIANTS",
+      "title": "API schema drift -> drift events created with correct classification",
+      "required": true,
+      "description": "Missing or modified fields in Jira API responses, verifies drift detection"
+    },
+    {
+      "id": "SHK-030",
+      "domain": "FAILURES_CHAOS",
+      "title": "429 rate limit bursts -> retries or fail-closed per policy; must disclose",
+      "required": true,
+      "description": "Rate limiting from Jira, verifies retry logic and disclosure"
+    },
+    {
+      "id": "SHK-031",
+      "domain": "FAILURES_CHAOS",
+      "title": "5xx transient -> bounded retry, then fail-closed with disclosure",
+      "required": true,
+      "description": "Server errors from Jira, verifies bounded retries and explicit failure"
+    },
+    {
+      "id": "SHK-032",
+      "domain": "FAILURES_CHAOS",
+      "title": "Permission reduced mid-run -> fail-closed, disclosure",
+      "required": true,
+      "description": "Permissions revoked during execution, verifies fail-closed behavior"
+    },
+    {
+      "id": "SHK-033",
+      "domain": "FAILURES_CHAOS",
+      "title": "Storage write failure -> fail-closed, disclosure, no corrupted partial state",
+      "required": true,
+      "description": "Storage write fails, verifies no partial/corrupted state left behind"
+    },
+    {
+      "id": "SHK-034",
+      "domain": "FAILURES_CHAOS",
+      "title": "Storage read corruption -> detect + fail-closed; must not emit \"green\" results",
+      "required": true,
+      "description": "Corrupted data in storage, verifies detection and fail-closed response"
+    },
+    {
+      "id": "SHK-035",
+      "domain": "FAILURES_CHAOS",
+      "title": "Canonicalization mismatch -> regeneration blocked and disclosure emitted",
+      "required": true,
+      "description": "Canonicalization fails, verifies regeneration is blocked"
+    },
+    {
+      "id": "SHK-036",
+      "domain": "FAILURES_CHAOS",
+      "title": "Missing critical fields -> no inference; explicit \"missing data\" in outputs",
+      "required": true,
+      "description": "Required fields missing from API response, verifies explicit missing data handling"
+    },
+    {
+      "id": "SHK-040",
+      "domain": "EXPORTS_REPORTS",
+      "title": "Export success -> includes schemaVersion, generatedAt, completeness info",
+      "required": true,
+      "description": "Successful export, verifies required metadata fields"
+    },
+    {
+      "id": "SHK-041",
+      "domain": "EXPORTS_REPORTS",
+      "title": "Export with incomplete data -> visible warnings and missing list",
+      "required": true,
+      "description": "Export with missing data, verifies warnings and missing data list"
+    },
+    {
+      "id": "SHK-042",
+      "domain": "EXPORTS_REPORTS",
+      "title": "Export after drift -> marked expired / unsafe",
+      "required": true,
+      "description": "Export after policy drift, verifies explicit expiration marking"
+    },
+    {
+      "id": "SHK-050",
+      "domain": "TENANT_ISOLATION",
+      "title": "Cross-tenant read attempt blocked",
+      "required": true,
+      "description": "Adversarial read from another tenant, verifies blocking"
+    },
+    {
+      "id": "SHK-051",
+      "domain": "TENANT_ISOLATION",
+      "title": "Cross-tenant write attempt blocked",
+      "required": true,
+      "description": "Adversarial write to another tenant, verifies blocking"
+    },
+    {
+      "id": "SHK-052",
+      "domain": "TENANT_ISOLATION",
+      "title": "Tenant spoof attempt blocked",
+      "required": true,
+      "description": "Forged tenant context, verifies authentication/verification"
+    },
+    {
+      "id": "SHK-060",
+      "domain": "RETENTION_DELETION",
+      "title": "Data expires after TTL (simulated time jump)",
+      "required": true,
+      "description": "Time advances past retention TTL, verifies expiration"
+    },
+    {
+      "id": "SHK-061",
+      "domain": "RETENTION_DELETION",
+      "title": "Purge job removes all expired data",
+      "required": true,
+      "description": "Purge job execution, verifies complete removal of expired data"
+    },
+    {
+      "id": "SHK-062",
+      "domain": "RETENTION_DELETION",
+      "title": "Tenant delete removes all tenant-scoped keys",
+      "required": true,
+      "description": "Tenant deletion, verifies complete tenant data removal"
+    },
+    {
+      "id": "SHK-070",
+      "domain": "POLICY_DRIFT_GATES",
+      "title": "Manifest scope diff detection test",
+      "required": true,
+      "description": "Manifest scope changes, verifies drift detection"
+    },
+    {
+      "id": "SHK-071",
+      "domain": "POLICY_DRIFT_GATES",
+      "title": "New egress detection test (any fetch/new domain must fail)",
+      "required": true,
+      "description": "New egress attempt, verifies blocking"
+    },
+    {
+      "id": "SHK-072",
+      "domain": "POLICY_DRIFT_GATES",
+      "title": "Storage schema drift detection test",
+      "required": true,
+      "description": "Storage schema changes, verifies drift detection"
+    },
+    {
+      "id": "SHK-073",
+      "domain": "POLICY_DRIFT_GATES",
+      "title": "Export schema version bump required test",
+      "required": true,
+      "description": "Export schema changes, verifies version bump requirement"
+    },
+    {
+      "id": "SHK-080",
+      "domain": "DOCS_COMPLIANCE",
+      "title": "docs_compliance.test.ts validates required docs exist and contain required sections",
+      "required": true,
+      "description": "Required docs validation"
+    },
+    {
+      "id": "SHK-081",
+      "domain": "DOCS_COMPLIANCE",
+      "title": "No \"configure/enable/setup\" language exists anywhere in docs/UI strings",
+      "required": true,
+      "description": "Forbidden phrase detection"
+    },
+    {
+      "id": "SHK-082",
+      "domain": "DOCS_COMPLIANCE",
+      "title": "Docs claims match code truth (scopes, data inventory, retention)",
+      "required": true,
+      "description": "Cross-validation of docs and code"
+    }
+  ],
+  "metadata": {
+    "totalScenarios": 32,
+    "requiredScenarios": 32,
+    "domains": [
+      "INSTALL_ZERO_TOUCH",
+      "SCHEDULER_PIPELINES",
+      "JIRA_DATA_VARIANTS",
+      "FAILURES_CHAOS",
+      "EXPORTS_REPORTS",
+      "TENANT_ISOLATION",
+      "RETENTION_DELETION",
+      "POLICY_DRIFT_GATES",
+      "DOCS_COMPLIANCE"
+    ]
+  }
+}

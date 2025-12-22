@@ -1,0 +1,138 @@
+name: Shakedown Test Suite
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  shakedown:
+    name: Run Shakedown Harness
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run shakedown test suite (N=10 runs)
+        id: shakedown
+        run: npm run test:shakedown:full
+        continue-on-error: true
+
+      - name: Check shakedown result
+        if: steps.shakedown.outcome == 'failure'
+        run: |
+          echo "::error::Shakedown test suite failed. See logs and artifacts above."
+          exit 1
+
+      - name: Upload shakedown artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: shakedown-artifacts
+          path: |
+            audit/shakedown/
+            tests/shakedown/
+          retention-days: 30
+
+      - name: Parse and report determinism
+        if: always()
+        run: |
+          if [ -f "audit/shakedown/SHK_DIGEST.txt" ]; then
+            echo "## Shakedown Determinism Report" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat audit/shakedown/SHK_DIGEST.txt >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "audit/shakedown/SHK_REPORT.md" ]; then
+            echo "## Shakedown Scenario Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            head -50 audit/shakedown/SHK_REPORT.md >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail job if nondeterminism detected
+        if: always() && hashFiles('audit/shakedown/SHK_DIFF.txt') != ''
+        run: |
+          echo "::error::Shakedown nondeterminism detected!"
+          cat audit/shakedown/SHK_DIFF.txt
+          exit 1
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "✓ Shakedown test suite passed"
+          echo "✓ Determinism verified (N=10 runs, all digests identical)"
+          echo "✓ All 32 scenarios completed"
+          echo "✓ No nondeterminism detected"
+
+  docs-compliance:
+    name: Verify Docs Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run docs compliance validator
+        run: npm run test -- tests/docs/docs_compliance.test.ts
+        continue-on-error: true
+
+      - name: Check compliance result
+        if: failure()
+        run: |
+          echo "::error::Docs compliance check failed."
+          echo "Required files missing or contain forbidden phrases:"
+          echo "- SECURITY.md"
+          echo "- PRIVACY.md"
+          echo "- RELIABILITY.md"
+          echo "- SUPPORT.md"
+          echo "- SHAKEDOWN.md"
+          echo ""
+          echo "Forbidden phrases: 'configure', 'setup', 'enable', 'please <action>'"
+          exit 1
+
+  final-check:
+    name: Final Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [shakedown, docs-compliance]
+    if: always()
+
+    steps:
+      - name: Check results
+        run: |
+          if [ "${{ needs.shakedown.result }}" != "success" ]; then
+            echo "::error::Shakedown job failed"
+            exit 1
+          fi
+          if [ "${{ needs.docs-compliance.result }}" != "success" ]; then
+            echo "::error::Docs compliance job failed"
+            exit 1
+          fi
+          echo "✓ All checks passed"

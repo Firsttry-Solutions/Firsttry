@@ -1,0 +1,22 @@
+{
+  "issues": [
+    {
+      "key": "PROJ-10000",
+      "id": "100000",
+      "summary": "Large dataset issue 1",
+      "status": "OPEN",
+      "assignee": "user_1",
+      "issueType": "Task",
+      "created": "2023-12-01T00:00:00Z",
+      "updated": "2023-12-15T10:30:00Z",
+      "customFields": {"priority": "Medium", "dueDate": "2024-01-15", "sprint": "Sprint 10"}
+    }
+  ],
+  "metadata": {
+    "total": 10000,
+    "returnedCount": 1,
+    "nextPageUrl": "?startAt=1&maxResults=1",
+    "isLastPage": false,
+    "pageSize": 1
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "issues": [
+    {
+      "key": "PROJ-200",
+      "id": "10200",
+      "summary": "Issue with missing custom field",
+      "status": "OPEN",
+      "assignee": "user_1",
+      "issueType": "Task",
+      "created": "2023-12-01T00:00:00Z",
+      "updated": "2023-12-15T10:30:00Z",
+      "customFields": {
+        "priority": "High"
+      }
+    },
+    {
+      "key": "PROJ-201",
+      "id": "10201",
+      "summary": "Issue with unknown custom field",
+      "status": "IN_PROGRESS",
+      "assignee": "user_2",
+      "issueType": "Bug",
+      "created": "2023-12-02T00:00:00Z",
+      "updated": "2023-12-15T09:15:00Z",
+      "customFields": {
+        "priority": "High",
+        "unknownField": "value_xyz",
+        "anotherUnknown": "data_abc"
+      }
+    }
+  ],
+  "metadata": {
+    "total": 2,
+    "returnedCount": 2,
+    "isLastPage": true,
+    "pageSize": 50
+  }
+}

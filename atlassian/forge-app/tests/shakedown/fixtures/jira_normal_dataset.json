@@ -1,0 +1,102 @@
+{
+  "issues": [
+    {
+      "key": "PROJ-1",
+      "id": "10000",
+      "summary": "Implement authentication",
+      "status": "IN_PROGRESS",
+      "assignee": "user_1",
+      "issueType": "Task",
+      "created": "2023-12-01T00:00:00Z",
+      "updated": "2023-12-15T10:30:00Z",
+      "customFields": {
+        "priority": "High",
+        "dueDate": "2023-12-20",
+        "sprint": "Sprint 1"
+      }
+    },
+    {
+      "key": "PROJ-2",
+      "id": "10001",
+      "summary": "Add error handling",
+      "status": "OPEN",
+      "assignee": "user_2",
+      "issueType": "Task",
+      "created": "2023-12-02T00:00:00Z",
+      "updated": "2023-12-14T14:20:00Z",
+      "customFields": {
+        "priority": "Medium",
+        "dueDate": "2023-12-25",
+        "sprint": "Sprint 1"
+      }
+    },
+    {
+      "key": "PROJ-3",
+      "id": "10002",
+      "summary": "Write unit tests",
+      "status": "IN_REVIEW",
+      "assignee": "user_3",
+      "issueType": "Task",
+      "created": "2023-12-03T00:00:00Z",
+      "updated": "2023-12-15T08:45:00Z",
+      "customFields": {
+        "priority": "Medium",
+        "dueDate": "2023-12-22",
+        "sprint": "Sprint 1"
+      }
+    },
+    {
+      "key": "PROJ-4",
+      "id": "10003",
+      "summary": "Fix performance regression",
+      "status": "DONE",
+      "assignee": "user_1",
+      "issueType": "Bug",
+      "created": "2023-12-04T00:00:00Z",
+      "updated": "2023-12-15T11:15:00Z",
+      "customFields": {
+        "priority": "High",
+        "dueDate": "2023-12-18",
+        "sprint": "Sprint 1"
+      }
+    },
+    {
+      "key": "PROJ-5",
+      "id": "10004",
+      "summary": "Refactor database layer",
+      "status": "OPEN",
+      "assignee": null,
+      "issueType": "Task",
+      "created": "2023-12-05T00:00:00Z",
+      "updated": "2023-12-15T09:00:00Z",
+      "customFields": {
+        "priority": "Low",
+        "dueDate": null,
+        "sprint": "Backlog"
+      }
+    }
+  ],
+  "transitions": {
+    "PROJ-1": [
+      { "name": "Start Progress", "id": "11" },
+      { "name": "Move to Review", "id": "21" },
+      { "name": "Close", "id": "31" }
+    ],
+    "PROJ-2": [
+      { "name": "Start Progress", "id": "11" },
+      { "name": "Move to Review", "id": "21" },
+      { "name": "Close", "id": "31" }
+    ],
+    "PROJ-3": [
+      { "name": "Start Progress", "id": "11" },
+      { "name": "Move to Review", "id": "21" },
+      { "name": "Close", "id": "31" }
+    ]
+  },
+  "metadata": {
+    "total": 5,
+    "returnedCount": 5,
+    "isLastPage": true,
+    "pageSize": 50
+  }
+}
