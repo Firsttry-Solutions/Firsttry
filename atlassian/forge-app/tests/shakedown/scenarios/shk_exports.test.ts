@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createShakdownContext } from '../shk_harness';
+import { createShakdownContext } from '../shk_harness.mts';
 
 describe('EXPORTS_REPORTS Scenarios', () => {
   it('SHK-040: Exports in JSON format are valid', async () => {

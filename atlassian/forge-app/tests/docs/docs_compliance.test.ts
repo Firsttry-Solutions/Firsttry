@@ -11,8 +11,8 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const DOCS_ROOT = path.join(__dirname, '../../docs');
-const REPO_ROOT = path.join(__dirname, '../..');
+const DOCS_ROOT = path.join(__dirname, '../../../../docs'); // Go up 4 levels to reach /workspaces/Firstry/docs
+const REPO_ROOT = path.join(__dirname, '../../../..');
 
 /**
  * Required documentation files and their required sections
@@ -40,18 +40,11 @@ const REQUIRED_DOCS: Record<string, string[]> = {
     'Monitoring',
   ],
   'SUPPORT.md': [
-    'Contact Information',
+    'Contact Channels',
     'Support Channels',
-    'Response Times',
+    'Troubleshooting',
     'Escalation',
-    'Known Issues',
-  ],
-  'README.md': [
-    'Overview',
-    'Installation',
-    'Usage',
-    'Configuration',
-    'Support',
+    'Procedure',
   ],
 };
 

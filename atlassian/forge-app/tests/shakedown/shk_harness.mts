@@ -82,6 +82,7 @@ export interface StorageAdapter {
   set(key: string, value: any): Promise<void>;
   get(key: string): Promise<any>;
   delete(key: string): Promise<void>;
+  remove(key: string): Promise<void>; // Alias for delete
   list(prefix: string): Promise<{ key: string; value: any }[]>;
   clear(): void;
 }
@@ -98,6 +99,9 @@ export function createStorageAdapter(): StorageAdapter {
       return val ? JSON.parse(JSON.stringify(val)) : undefined;
     },
     async delete(key: string): Promise<void> {
+      storage.delete(key);
+    },
+    async remove(key: string): Promise<void> {
       storage.delete(key);
     },
     async list(prefix: string): Promise<{ key: string; value: any }[]> {
@@ -273,6 +277,8 @@ export interface JiraApiAdapterFull extends JiraApiAdapter {
 export interface FailureInjector {
   injectApiError(type: string, options?: Record<string, any>): void;
   injectStorageError(type: string): void;
+  shouldInjectError(requestIndex?: number): boolean;
+  reset(): void;
 }
 
 /**
@@ -297,10 +303,11 @@ export function createShakdownContext(config: ShakdownConfig = defaultConfig()):
   const rng = new DeterministicRNG(config.seed);
   const time = createFrozenTime(config.startTime);
   const storage = createStorageAdapter();
-  const jira = createJiraApiAdapter();
 
   let apiErrorActive = false;
   let apiErrorType = '';
+  let affectedRequests: number[] = [];
+  let requestCounter = 0;
   let storageErrorActive = false;
 
   const output: NormalizedOutput = {
@@ -315,9 +322,132 @@ export function createShakdownContext(config: ShakdownConfig = defaultConfig()):
     injectApiError(type: string, options?: Record<string, any>): void {
       apiErrorActive = true;
       apiErrorType = type;
+      affectedRequests = options?.affectRequests || [0]; // Default: first request
+      requestCounter = 0; // Reset counter
     },
     injectStorageError(type: string): void {
       storageErrorActive = true;
+    },
+    shouldInjectError(requestIndex?: number): boolean {
+      if (!apiErrorActive) return false;
+      if (requestIndex === undefined) return true; // Default: inject error
+      return affectedRequests.includes(requestIndex);
+    },
+    reset(): void {
+      apiErrorActive = false;
+      apiErrorType = '';
+      affectedRequests = [];
+      requestCounter = 0;
+      storageErrorActive = false;
+    },
+  };
+
+  // Create jira adapter AFTER failures so it can check error state
+  const jira: JiraApiAdapterFull = {
+    async serve(method: string, path: string, query?: Record<string, any>): Promise<any> {
+      if (apiErrorActive && failures.shouldInjectError(requestCounter)) {
+        const err = new Error(`API error: ${apiErrorType}`);
+        (err as any).code = apiErrorType;
+        (err as any).statusCode = apiErrorType === 'RATE_LIMITED' ? 429 : 500;
+        requestCounter++;
+        throw err;
+      }
+      requestCounter++;
+      const fixtures: Record<string, any> = {};
+      const fixture = Object.entries(fixtures).find(([k]) => k.includes(method + path));
+      if (!fixture) {
+        throw new Error(`No fixture for ${method} ${path}`);
+      }
+      return fixture[1];
+    },
+    addFixture() {
+      // No-op for deterministic tests
+    },
+    clearFixtures() {
+      // No-op for deterministic tests
+    },
+    async getIssue(key: string): Promise<any> {
+      if (apiErrorActive && failures.shouldInjectError(requestCounter)) {
+        const err = new Error(`API error: ${apiErrorType}`);
+        (err as any).code = apiErrorType;
+        (err as any).statusCode = apiErrorType === 'RATE_LIMITED' ? 429 : 500;
+        requestCounter++;
+        throw err;
+      }
+      requestCounter++;
+      return { key, id: key.split('-')[1], status: 'OPEN', assignee: 'user_1' };
+    },
+    async searchIssues(jql: string): Promise<any[]> {
+      if (apiErrorActive && failures.shouldInjectError(requestCounter)) {
+        const err = new Error(`API error: ${apiErrorType}`);
+        (err as any).code = apiErrorType;
+        (err as any).statusCode = apiErrorType === 'RATE_LIMITED' ? 429 : 500;
+        requestCounter++;
+        throw err;
+      }
+      requestCounter++;
+      return [
+        { key: 'PROJ-1', id: '10000', status: 'OPEN', jql: true },
+        { key: 'PROJ-2', id: '10001', status: 'IN_PROGRESS', jql: true },
+      ];
+    },
+    async getTransitions(issueId: string): Promise<any[]> {
+      if (apiErrorActive && failures.shouldInjectError(requestCounter)) {
+        const err = new Error(`API error: ${apiErrorType}`);
+        (err as any).code = apiErrorType;
+        (err as any).statusCode = apiErrorType === 'RATE_LIMITED' ? 429 : 500;
+        requestCounter++;
+        throw err;
+      }
+      requestCounter++;
+      return [
+        { name: 'Start Progress', id: '11' },
+        { name: 'Close', id: '21' },
+      ];
+    },
+    async loadFixture(filename: string): Promise<any[]> {
+      if (apiErrorActive && failures.shouldInjectError(requestCounter)) {
+        const err = new Error(`API error: ${apiErrorType}`);
+        (err as any).code = apiErrorType;
+        (err as any).statusCode = apiErrorType === 'RATE_LIMITED' ? 429 : 500;
+        requestCounter++;
+        throw err;
+      }
+      requestCounter++;
+      const fixtures: Record<string, any> = {
+        'jira_normal_dataset.json': [
+          { key: 'PROJ-1', id: '10000', status: 'IN_PROGRESS' },
+          { key: 'PROJ-2', id: '10001', status: 'OPEN' },
+          { key: 'PROJ-3', id: '10002', status: 'DONE' },
+        ],
+        'jira_large_dataset.json': [
+          { key: 'PROJ-10000', id: '100000', status: 'OPEN' },
+        ],
+        'jira_missing_fields.json': [
+          { key: 'PROJ-200', id: '10200', status: 'OPEN', customFields: { priority: 'High' } },
+          { key: 'PROJ-201', id: '10201', status: 'IN_PROGRESS', customFields: { unknownField: 'value' } },
+        ],
+        'jira_pagination_partial.json': [
+          { key: 'PROJ-300', id: '10300', status: 'OPEN' },
+        ],
+      };
+      return fixtures[filename] || [];
+    },
+    async getMetadata(filename: string): Promise<any> {
+      if (apiErrorActive && failures.shouldInjectError(requestCounter)) {
+        const err = new Error(`API error: ${apiErrorType}`);
+        (err as any).code = apiErrorType;
+        (err as any).statusCode = apiErrorType === 'RATE_LIMITED' ? 429 : 500;
+        requestCounter++;
+        throw err;
+      }
+      requestCounter++;
+      const metadata: Record<string, any> = {
+        'jira_normal_dataset.json': { total: 5, returnedCount: 5, isLastPage: true, pageSize: 50 },
+        'jira_large_dataset.json': { total: 10000, returnedCount: 1, isLastPage: false, pageSize: 1, nextPageUrl: '?start=1' },
+        'jira_pagination_partial.json': { total: 100, returnedCount: 1, isLastPage: false, pageSize: 1, nextPageUrl: '?start=1' },
+      };
+      return metadata[filename] || { isLastPage: true };
     },
   };
 
@@ -326,7 +456,7 @@ export function createShakdownContext(config: ShakdownConfig = defaultConfig()):
     rng,
     time: time as FrozenTimeInterface,
     storage,
-    jira: jira as JiraApiAdapterFull,
+    jira,
     failures,
     output,
     addLog(msg: string) {
@@ -350,6 +480,9 @@ export function createShakdownContext(config: ShakdownConfig = defaultConfig()):
           return val ? JSON.parse(JSON.stringify(val)) : undefined;
         },
         async delete(key: string): Promise<void> {
+          tenantStorage.delete(`${tenantId}:${key}`);
+        },
+        async remove(key: string): Promise<void> {
           tenantStorage.delete(`${tenantId}:${key}`);
         },
         async list(prefix: string): Promise<{ key: string; value: any }[]> {
@@ -376,13 +509,13 @@ export function createShakdownContext(config: ShakdownConfig = defaultConfig()):
   };
 }
 
-function defaultConfig(): ShakdownConfig {
+export function defaultConfig(): ShakdownConfig {
   return {
     seed: 42,
     startTime: new Date('2023-12-22T00:00:00Z').getTime(),
     tenantKey: 'test-tenant',
     cloudId: 'test-cloud',
-    runId: 'run-' + Math.random().toString(36).substr(2, 9),
+    runId: 'shk-run-deterministic', // Deterministic, not random
   };
 }
 
