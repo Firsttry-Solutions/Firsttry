@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createShakdownContext } from '../shk_harness';
+import { createShakdownContext } from '../shk_harness.mts';
 
 describe('DOCS_COMPLIANCE Scenarios', () => {
   it('SHK-080: All required documentation files exist', async () => {

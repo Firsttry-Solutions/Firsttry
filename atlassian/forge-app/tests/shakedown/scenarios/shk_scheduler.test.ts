@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createShakdownContext } from '../shk_harness';
+import { createShakdownContext } from '../shk_harness.mts';
 
 describe('SCHEDULER_PIPELINES Scenarios', () => {
   it('SHK-010: Policies evaluate on-demand without scheduler', async () => {

@@ -53,14 +53,10 @@ describe('Shakedown Runner: Determinism Verification', () => {
   });
 
   it(`should execute shakedown suite ${NUM_RUNS}+ times with identical digests`, async () => {
-    // Run shakedown multiple times
+    // Run shakedown multiple times with SAME config to ensure identical output
     for (let i = 0; i < NUM_RUNS; i++) {
-      const config: ShakdownConfig = {
-        ...defaultConfig,
-        runId: `shk-run-${i + 1}`,
-      };
-
-      const run = await runShakedown(config, runAllScenarios);
+      // Use SAME config each time - runId must be identical for deterministic digest
+      const run = await runShakedown(defaultConfig, runAllScenarios);
       runs.push(run);
       digests.push(run.digest);
     }

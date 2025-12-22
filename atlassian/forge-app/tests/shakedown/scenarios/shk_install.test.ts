@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createShakdownContext } from '../shk_harness';
+import { createShakdownContext } from '../shk_harness.mts';
 
 describe('INSTALL_ZERO_TOUCH Scenarios', () => {
   it('SHK-001: Installation completes without config screen', async () => {

@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createShakdownContext } from '../shk_harness';
+import { createShakdownContext } from '../shk_harness.mts';
 
 describe('POLICY_DRIFT_GATES Scenarios', () => {
   it('SHK-070: Schema migrations are deterministic', async () => {
