@@ -1,0 +1,193 @@
+{
+  "version": "1.0.0",
+  "description": "Operator Verification SOP: Complete verification matrix for FirstTry",
+  "objectives": [
+    "LEVEL 1: Verify FirstTry against itself (determinism, counterfactuals, no misleading outputs)",
+    "LEVEL 2: Verify against raw Jira reality (attribution, pagination, permissions)",
+    "LEVEL 3: Verify against failure modes (API errors, storage failures, quarantine, repair, concurrency)",
+    "LEVEL 4: Verify against claims & docs (proof catalog, consistency, policy gates)",
+    "LEVEL 5: Verify adversarial audit readiness (traceability, no inference language)"
+  ],
+  "checks": [
+    {
+      "level": 1,
+      "checkId": "L1-DET-001",
+      "title": "Deterministic Replay (>=10 Runs)",
+      "description": "Invoke same scenario >=10 times with frozen time and seeded RNG; all digests must match exactly",
+      "implementation": "Run shakedown harness with fixed seed, collect digests, assert all identical",
+      "blockers": [],
+      "produces": ["OV_RUN_DIGESTS.txt"]
+    },
+    {
+      "level": 1,
+      "checkId": "L1-CF-001",
+      "title": "Counterfactual Proof Integrity",
+      "description": "Verify counterfactual ledger entries reference real snapshot IDs, include timestamps, and include 'derived from' pointers",
+      "implementation": "Locate evidence bundle, assert snapshot refs, timestamps, trace pointers all present",
+      "blockers": ["counterfactual_ledger_feature_existence"],
+      "produces": []
+    },
+    {
+      "level": 1,
+      "checkId": "L1-TRUTH-001",
+      "title": "No Misleading Outputs Invariant",
+      "description": "All outputs must include completenessStatus, missingDataList, confidenceLevel; incomplete outputs never marked OK/green",
+      "implementation": "Discover all output emitters, verify envelope structure, assert DEGRADED/BLOCKED for incomplete",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 2,
+      "checkId": "L2-ATTR-001",
+      "title": "Source Attribution Completeness",
+      "description": "Every evidence item must include: endpoint, timestamp, pagination state, permission context",
+      "implementation": "Parse evidence bundles, verify all attributes present in each item",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 2,
+      "checkId": "L2-PAG-001",
+      "title": "Pagination Integrity (No Silent Truncation)",
+      "description": "Simulate N=1000 page traversal; assert pagesFetched==N, itemsFetched==N",
+      "implementation": "Use fixture adapter with pagination loop, verify counts match expectations",
+      "blockers": ["pagination_fixture_adapter"],
+      "produces": []
+    },
+    {
+      "level": 2,
+      "checkId": "L2-PERM-001",
+      "title": "Permission Boundary Correctness",
+      "description": "Simulate 403 responses; assert no absence inference, explicit disclosure of missing permission",
+      "implementation": "Monkeypatch API to return 403, verify output is DEGRADED and explicit",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 3,
+      "checkId": "L3-FAIL-001",
+      "title": "Forced API Failure Handling",
+      "description": "Simulate 429/5xx/timeout; verify deterministic retries, exhaustion → BLOCKED + DISCLOSURE, no duplicate ledger entries",
+      "implementation": "Monkeypatch to return errors, verify retry logic and final state",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 3,
+      "checkId": "L3-STOR-001",
+      "title": "Storage Failure Handling",
+      "description": "Simulate quota/exceptions mid-run; assert no misleading OK outputs, explicit degraded markers, cache fallback stale-bounded",
+      "implementation": "Monkeypatch storage to fail, verify degradation and fallback behavior",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 3,
+      "checkId": "L3-PART-001",
+      "title": "Partial Write + Quarantine",
+      "description": "Inject failure after some writes but before commit; verify quarantine, no final 'complete' markers, consumers see incomplete",
+      "implementation": "Simulate partial write failure, verify quarantine state and rollback",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 3,
+      "checkId": "L3-REPAIR-001",
+      "title": "Repair on Rerun Matches Baseline",
+      "description": "After partial-write failure, rerun scenario; verify final artifacts match clean baseline",
+      "implementation": "Run, fail partway, rerun, compare to clean baseline",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 3,
+      "checkId": "L3-CONC-001",
+      "title": "Duplicate Invocation Idempotency",
+      "description": "Invoke same handler twice; verify idempotency prevents duplicates",
+      "implementation": "Trigger same handler concurrently, verify no duplicates in ledger",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 3,
+      "checkId": "L3-CONC-002",
+      "title": "Overlapping Run Interleaving",
+      "description": "Deterministically interleave operations of run A and run B; verify no corruption, final artifact equals baseline, ledger counts correct",
+      "implementation": "Deterministic interleaving of two concurrent runs, verify final state",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 4,
+      "checkId": "L4-CLAIMS-001",
+      "title": "Claims Proof Catalog Completeness",
+      "description": "Parse CLAIMS_PROOF_CATALOG.md; verify each claim has evidence refs (file:lines), status is PASS/PARTIAL/UNKNOWN (no blank)",
+      "implementation": "Read audit/CLAIMS_PROOF_CATALOG.md, parse table, verify structure",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 4,
+      "checkId": "L4-DOCS-001",
+      "title": "Docs Required Sections",
+      "description": "Enforce required docs exist and required headings present",
+      "implementation": "Check existence of 13 mandatory docs and their key sections",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 4,
+      "checkId": "L4-POLICY-001",
+      "title": "No Outbound Egress",
+      "description": "Static scan src/** for fetch/axios/request; runtime trap global fetch",
+      "implementation": "Grep src/ for fetch calls, monkeypatch global fetch in tests",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 4,
+      "checkId": "L4-POLICY-002",
+      "title": "No Scope Drift",
+      "description": "Parse manifest.yml scopes; fail if docs/matrices do not mention current scopes",
+      "implementation": "Read manifest.yml, cross-check against docs",
+      "blockers": ["manifest_yml_exists"],
+      "produces": []
+    },
+    {
+      "level": 4,
+      "checkId": "L4-POLICY-003",
+      "title": "No Storage Namespace Drift",
+      "description": "Scan storage key prefixes in src/**; fail if DATA_INVENTORY.md or equivalent does not include them",
+      "implementation": "Grep src/ for storage keys, verify in DATA_INVENTORY.md",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 4,
+      "checkId": "L4-POLICY-004",
+      "title": "No Console Logs in Production",
+      "description": "Fail if console.* appears in src/** (allow tests only)",
+      "implementation": "Grep src/ for console calls, fail if any found",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 5,
+      "checkId": "L5-TRACE-001",
+      "title": "Legal/Audit Traceability Check",
+      "description": "For each report: must include what was observed, what was missing, replay instructions, digest",
+      "implementation": "Verify all generated artifacts include required traceability fields",
+      "blockers": [],
+      "produces": []
+    },
+    {
+      "level": 5,
+      "checkId": "L5-NO-GUESS-001",
+      "title": "No Inference Language",
+      "description": "Scan reports for prohibited terms: compliant, secure, safe, guaranteed, certified, all good (unless explicitly qualified by evidence)",
+      "implementation": "Scan report text for forbidden keywords, fail if unqualified",
+      "blockers": [],
+      "produces": []
+    }
+  ]
+}
