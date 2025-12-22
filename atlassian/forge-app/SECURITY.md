@@ -1,5 +1,10 @@
 # Security Policy
 
+---
+**COMPLIANCE DISCLAIMER**: Any references to SOC 2, ISO 27001, HIPAA, GDPR, or Cloud Fortified in this document refer to Atlassian's platform-level certifications, NOT independent app-level certifications. FirstTry Governance inherits security posture from the Atlassian Forge platform. See [docs/SECURITY.md](../atlassian/forge-app/docs/SECURITY.md) for explicit disclaimers.
+---
+
+
 FirstTry Governance is committed to the highest standards of security and data protection. This document details the security guarantees built into the application.
 
 ## Phase P1: Enterprise Safety Baseline

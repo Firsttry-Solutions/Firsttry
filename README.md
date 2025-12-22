@@ -17,6 +17,17 @@ You may read, clone, study, and modify the code for personal or internal use.
 
 Commercial use, redistribution, hosting, or competing offerings are prohibited without a paid license.
 
+## Legal
+
+For Atlassian Marketplace legal compliance:
+
+- **Privacy Policy**: [docs/privacy.html](docs/privacy.html)
+- **Terms of Use**: [docs/terms.html](docs/terms.html)
+
+Once GitHub Pages is enabled, these will be available at:
+- Privacy: `https://global-domination.github.io/Firstry/privacy.html`
+- Terms: `https://global-domination.github.io/Firstry/terms.html`
+
 # FirstTry
 
 FirstTry is a local CI mirror and progressive CI runner that helps developers run CI-style checks (ruff, mypy, pytest, etc.) locally with caching and tiered profiles so you can verify code will pass CI before pushing.

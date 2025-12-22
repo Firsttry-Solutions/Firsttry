@@ -1,53 +1,64 @@
-# FirstTry Support & SLAs
+# Support Documentation
+
+**App Name**: FirstTry Governance - Atlassian Dual-Layer Integration  
+**Last Updated**: 2025-12-22  
+**Status**: Production  
+
+---
 
 ## Support Channels
 
-**Email:** [SUPPORT_EMAIL_TO_BE_SET]  
-**Hours:** Business hours, timezone TBD  
-**Response Targets:** See severity table below
+### Primary Support
 
-## Severity Classification
+**Method**: GitHub Issues  
+**URL**: https://github.com/Global-domination/Firstry/issues  
+**Response Time**: Best effort (no SLA)  
+**Scope**: Bug reports, feature requests, technical questions
 
-| Severity | Definition | Example | Response Time | Resolution Target |
-|----------|-----------|---------|---|---|
-| **SEV1** | System completely unavailable; zero exports or snapshots working | All Jira Cloud instances returning 500 errors | 15 minutes | 2 hours |
-| **SEV2** | Significant degradation; exports/snapshots work but have high error rate (>20%) | 30% of exports failing with VALIDATION errors | 1 hour | 8 hours |
-| **SEV3** | Minor issue affecting subset of users/data; <5% of operations impacted | Some projects show UNKNOWN drift status | 4 hours | 24 hours |
-| **SEV4** | Cosmetic or non-functional impact; no data loss | Health dashboard shows stale timestamp | Next business day | 5 business days |
+**Process**:
+1. Open issue in GitHub repository
+2. Include app version, Jira Cloud site ID (if applicable), and detailed description
+3. Maintainers will respond when available (no guaranteed timeframe)
 
-## What We Can See
+### Community Support
 
-When you report an issue, please include:
+**Method**: Public repository discussions  
+**URL**: https://github.com/Global-domination/Firstry/discussions  
+**Scope**: General questions, usage guidance, community-contributed solutions
 
-1. **Correlation ID** (format: `req-XXXXXXXX...`)
-   - Appears in error messages shown in Jira
-   - Uniquely identifies the operation that failed
-   - Enables us to trace through logs and metrics
+---
 
-2. **Jira Site Name**
-   - Required for tenant isolation verification
+## What We Support
 
-3. **Timestamp (ISO 8601)**
-   - When the issue occurred (e.g., `2024-01-15T14:23:45Z`)
+✅ **Bug Fixes**: Issues with app functionality as documented  
+✅ **Documentation Clarifications**: Ambiguities or errors in docs  
+✅ **Feature Requests**: Suggestions for future enhancements (no commitment)  
 
-4. **Operation Description**
-   - What you were doing (e.g., "Exporting snapshot for project KEY")
+❌ **NOT SUPPORTED**:
+- Jira Cloud platform issues (contact Atlassian support)
+- Forge runtime issues (contact Atlassian Forge support)
+- Custom development or consulting
+- Urgent/emergency support outside GitHub issues
+- Phone or video call support
 
-## What We Cannot See
+---
 
-For privacy and security, FirstTry **never** stores:
+## Security Vulnerabilities
 
-- Raw Jira **cloudId** or **accountId** in logs
-- User email addresses or account identifiers
-- Actual snapshot data or configuration contents
-- IP addresses or session tokens
-- Any personally identifiable information (PII)
+**DO NOT** report security vulnerabilities via GitHub issues.
 
-We can only see:
-- **Tenant token** (irreversible sha256 hash of your cloudId + accountId)
-- **Operation outcome** (SUCCESS, FAIL, BLOCKED, DEGRADED, EXPIRED)
-- **Error class** (AUTHZ, VALIDATION, DEPENDENCY, STORAGE, INVARIANT, UNKNOWN)
-- **Duration** in milliseconds
+See [SECURITY.md](SECURITY.md) for responsible disclosure process.
+
+---
+
+## Service Level Expectations
+
+**IMPORTANT**: This app provides **NO SERVICE LEVEL AGREEMENT (SLA)**.
+
+- **Availability**: Dependent on Atlassian Forge platform (see [PLATFORM_DEPENDENCIES.md](PLATFORM_DEPENDENCIES.md))
+- **Response Time**: Best effort, no guaranteed timeframe
+- **Resolution Time**: UNKNOWN
+- **Support Hours**: UNKNOWN (maintainers operate on voluntary basis)
 - **Correlation ID** for tracing
 
 ## Troubleshooting Steps
