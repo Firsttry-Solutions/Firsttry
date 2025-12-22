@@ -1,0 +1,11 @@
+# Storage Key Namespaces Baseline
+# Format: PREFIX:description
+# These are the authorized root prefixes for Forge storage.
+# Any new prefix must go through policy drift review.
+# Scanned from: src/**/*.ts STORAGE_PREFIXES constants
+# Date: 2024-01-01T00:00:00Z
+
+phase6:snapshot_run:Snapshot execution run results (P1.4 tenant-scoped)
+phase6:snapshot:Snapshot data storage (P1.4 tenant-scoped)
+phase6:retention_policy:Retention policy storage (P1.4 tenant-scoped)
+phase6:snapshot_index:Snapshot pagination index (P1.4 tenant-scoped)

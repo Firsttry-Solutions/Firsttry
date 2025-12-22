@@ -240,10 +240,9 @@ export function createSilenceIndicatorReport(params: {
 export function computeSilenceIndicatorHash(report: SilenceIndicatorReport): string {
   const crypto = require('crypto');
 
-  // Create canonical JSON with sorted keys
+  // Create canonical JSON with sorted keys (excluding timestamp for determinism)
   const canonical = JSON.stringify(
     {
-      timestamp: report.timestamp,
       tenant_id: report.tenant_id,
       indicator_state: report.indicator_state,
       conditions: report.conditions,
@@ -258,7 +257,6 @@ export function computeSilenceIndicatorHash(report: SilenceIndicatorReport): str
       schema_version: report.schema_version,
     },
     Object.keys({
-      timestamp: 0,
       tenant_id: 0,
       indicator_state: 0,
       conditions: 0,

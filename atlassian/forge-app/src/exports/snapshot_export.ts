@@ -1,5 +1,5 @@
 /**
- * PHASE 6 v2: SNAPSHOT EXPORT
+ * PHASE 6 v2 + P2: SNAPSHOT EXPORT WITH OUTPUT TRUTH GUARANTEES
  * 
  * Export single snapshots in JSON and PDF formats.
  * 
@@ -9,6 +9,10 @@
  * - Metadata preservation (hash, timestamp, provenance)
  * - READ-ONLY (no modifications, no derived metrics)
  * - Single snapshot per export (no bulk/cross-snapshot exports)
+ * - P2: Output truth metadata (completeness, confidence, validity)
+ * - P2: Operator acknowledgment required for non-VALID outputs
+ * - P2: Watermarking for degraded/expired outputs
+ * - P2: Audit event recording for export operations
  */
 
 import { api } from '@forge/api';
@@ -16,14 +20,30 @@ import {
   SnapshotStorage,
   SnapshotRunStorage,
 } from '../phase6/snapshot_storage';
+import {
+  OutputTruthMetadata,
+  computeOutputTruthMetadata,
+  requireValidForExport,
+  ExportBlockedError,
+  MAX_SNAPSHOT_AGE_SECONDS,
+} from '../output/output_contract';
+import { getOutputRecordStore } from '../output/output_store';
+import { getAuditEventStore } from '../audit/audit_events';
+import { getDriftStateTracker } from '../drift/drift_state';
 
 /**
- * Export snapshot handler
+ * Export snapshot handler with output truth validation
  * Supports JSON and PDF formats, single snapshot only
+ * 
+ * TRUTH VALIDATION:
+ * - Computes OutputTruthMetadata for the snapshot
+ * - If output is not VALID, requires explicit operator acknowledgment
+ * - Records audit events for all export operations
+ * - Watermarks non-VALID outputs
  */
 export async function handleExport(request: any) {
   const { tenantId, cloudId } = request.context;
-  const { id, format = 'json' } = request.queryParameters || {};
+  const { id, format = 'json', acknowledge_degradation = false } = request.queryParameters || {};
 
   if (!id) {
     return {
@@ -41,31 +61,149 @@ export async function handleExport(request: any) {
   }
 
   try {
+    const snapshotStorage = new SnapshotStorage(tenantId, cloudId);
+    const snapshot = await snapshotStorage.getSnapshotById(id);
+
+    if (!snapshot) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'snapshot_not_found' }),
+      };
+    }
+
+    // P2: COMPUTE OUTPUT TRUTH METADATA
+    const nowISO = new Date().toISOString();
+    const driftTracker = getDriftStateTracker(tenantId, cloudId);
+    const driftStatus = await driftTracker.getDriftStatus(id, nowISO);
+
+    // Calculate completeness (from missing_data in snapshot)
+    const missingDataList = snapshot.missing_data || [];
+    const completenessPercent = missingDataList.length === 0 ? 100 : Math.max(0, 100 - (missingDataList.length * 10));
+
+    const truthMetadata = computeOutputTruthMetadata({
+      generatedAtISO: nowISO,
+      snapshotId: id,
+      snapshotCreatedAtISO: snapshot.captured_at,
+      rulesetVersion: '1.0',
+      driftStatus,
+      completenessPercent,
+      missingData: missingDataList.map((item) => item.dataset_name),
+      nowISO,
+    });
+
+    // P2: VALIDATE EXPORT PERMISSION
+    const acknowledgedDegradation = acknowledge_degradation === 'true' || acknowledge_degradation === true;
+
+    try {
+      requireValidForExport(truthMetadata, acknowledgedDegradation);
+    } catch (err) {
+      if (err instanceof ExportBlockedError) {
+        // Record the blocked export attempt in audit
+        const auditStore = getAuditEventStore(tenantId, cloudId);
+        await auditStore.recordEvent(
+          'OUTPUT_EXPORTED',
+          id,
+          `export_${id}_${Date.now()}`,
+          {
+            outputType: format as any,
+            validityStatus: truthMetadata.validityStatus,
+            operatorAction: 'blocked',
+            reason: err.reasons.join('; '),
+          },
+          nowISO,
+          truthMetadata.validUntilISO
+        );
+
+        // Return 403 Forbidden with truth reasons
+        return {
+          statusCode: 403,
+          body: JSON.stringify({
+            error: 'export_blocked',
+            validity_status: truthMetadata.validityStatus,
+            reasons: truthMetadata.reasons,
+            warnings: truthMetadata.warnings,
+            required_acknowledgment: truthMetadata.validityStatus !== 'VALID',
+            query_param: 'acknowledge_degradation=true',
+          }),
+        };
+      }
+      throw err;
+    }
+
+    // P2: RECORD ACKNOWLEDGMENT IF DEGRADED
+    if (truthMetadata.validityStatus !== 'VALID' && acknowledgedDegradation) {
+      const auditStore = getAuditEventStore(tenantId, cloudId);
+      await auditStore.recordAcknowledgedDegradation(
+        id,
+        `export_${id}_${Date.now()}`,
+        format as any,
+        truthMetadata.validityStatus,
+        `Export of ${truthMetadata.validityStatus} output. Reasons: ${truthMetadata.reasons.join('; ')}`,
+        nowISO,
+        truthMetadata.validUntilISO
+      );
+    }
+
+    // P2: RECORD OUTPUT GENERATION
+    const outputRecordStore = getOutputRecordStore(tenantId, cloudId);
+    const outputId = `output_${id}_${format}_${Date.now()}`;
+    await outputRecordStore.recordOutputGeneration(
+      outputId,
+      id,
+      format as any,
+      truthMetadata,
+      nowISO
+    );
+
+    // Generate export with appropriate format
+    let exportResponse;
     if (format === 'json') {
-      return await exportJSON(tenantId, cloudId, id);
+      exportResponse = await exportJSON(tenantId, cloudId, id, truthMetadata);
     } else if (format === 'pdf') {
-      return await exportPDF(tenantId, cloudId, id);
+      exportResponse = await exportPDF(tenantId, cloudId, id, truthMetadata);
     } else {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'format must be json or pdf' }),
       };
     }
+
+    // P2: RECORD EXPORT IN AUDIT TRAIL
+    const auditStore = getAuditEventStore(tenantId, cloudId);
+    await auditStore.recordOutputExported(
+      id,
+      outputId,
+      format as any,
+      truthMetadata.validityStatus,
+      acknowledgedDegradation ? 'confirmed_with_ack' : 'confirmed',
+      nowISO,
+      truthMetadata.validUntilISO
+    );
+
+    // P2: UPDATE OUTPUT RECORD WITH EXPORT STATUS
+    await outputRecordStore.recordOutputExport(
+      outputId,
+      'system', // No operator ID stored (Phase P1 PII safety)
+      acknowledgedDegradation,
+      nowISO
+    );
+
+    return exportResponse;
   } catch (error: any) {
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message }),
     };
   }
-}
 
 /**
- * Export snapshot as JSON
+ * Export snapshot as JSON with truth metadata
  */
 async function exportJSON(
   tenantId: string,
   cloudId: string,
-  snapshotId: string
+  snapshotId: string,
+  truthMetadata: OutputTruthMetadata
 ) {
   const snapshotStorage = new SnapshotStorage(tenantId, cloudId);
   const snapshot = await snapshotStorage.getSnapshotById(snapshotId);
@@ -77,8 +215,12 @@ async function exportJSON(
     };
   }
 
-  // Create export envelope with metadata
-  const exportData = {
+  // P2: Build export envelope with truth metadata
+  const exportData: any = {
+    // P2: Truth metadata (REQUIRED)
+    truth_metadata: truthMetadata,
+
+    // Original snapshot data
     format_version: '1.0',
     export_timestamp: new Date().toISOString(),
     snapshot: {
@@ -98,6 +240,16 @@ async function exportJSON(
     },
   };
 
+  // P2: WATERMARK if not VALID
+  if (truthMetadata.validityStatus !== 'VALID') {
+    exportData.watermark = {
+      status: truthMetadata.validityStatus,
+      message: `⚠️ ${truthMetadata.validityStatus}: ${truthMetadata.reasons.join('; ')}`,
+      warnings: truthMetadata.warnings,
+      reasons: truthMetadata.reasons,
+    };
+  }
+
   const filename = `snapshot-${snapshot.snapshot_type}-${snapshot.snapshot_id.substring(0, 8)}.json`;
 
   return {
@@ -111,16 +263,17 @@ async function exportJSON(
 }
 
 /**
- * Export snapshot as PDF
+ * Export snapshot as PDF with truth metadata and watermarking
  * 
  * Produces a formatted HTML+text evidence report for a single snapshot.
- * The PDF includes metadata, scope, provenance, and payload summary.
- * No derived analytics, no cross-snapshot data, no modifications.
+ * The PDF includes metadata, scope, provenance, truth signals, and payload summary.
+ * Non-VALID outputs are watermarked with explicit degradation warnings.
  */
 async function exportPDF(
   tenantId: string,
   cloudId: string,
-  snapshotId: string
+  snapshotId: string,
+  truthMetadata: OutputTruthMetadata
 ) {
   const snapshotStorage = new SnapshotStorage(tenantId, cloudId);
   const snapshot = await snapshotStorage.getSnapshotById(snapshotId);
@@ -132,12 +285,10 @@ async function exportPDF(
     };
   }
 
-  // Generate HTML content for PDF
-  const htmlContent = generatePDFContent(snapshot);
+  // Generate HTML content for PDF with truth metadata
+  const htmlContent = generatePDFContent(snapshot, truthMetadata);
 
   // Convert to text/plain with structured formatting
-  // In production, would use a proper PDF library (pdfkit, etc.)
-  // For now, return as printable text document
   const textContent = htmlToText(htmlContent);
 
   const filename = `snapshot-${snapshot.snapshot_type}-${snapshot.snapshot_id.substring(0, 8)}.txt`;
@@ -153,11 +304,33 @@ async function exportPDF(
 }
 
 /**
- * Generate HTML content for PDF export
+ * Generate HTML content for PDF export with truth metadata
+ * P2: Includes output validity warnings and watermarking for non-VALID outputs
  */
-function generatePDFContent(snapshot: any): string {
+function generatePDFContent(snapshot: any, truthMetadata: OutputTruthMetadata): string {
   const timestamp = new Date(snapshot.captured_at).toLocaleString();
   const datasetList = Object.keys(snapshot.payload).join(', ');
+
+  // P2: Build watermark section for non-VALID outputs
+  const watermarkHtml = truthMetadata.validityStatus !== 'VALID'
+    ? `
+      <div class="watermark-warning">
+        <h2>⚠️ IMPORTANT: OUTPUT QUALITY WARNING</h2>
+        <p><strong>Status:</strong> ${truthMetadata.validityStatus}</p>
+        <p><strong>Reasons:</strong></p>
+        <ul>
+          ${truthMetadata.reasons.map((reason) => `<li>${reason}</li>`).join('')}
+        </ul>
+        <p><strong>Warnings:</strong></p>
+        <ul>
+          ${truthMetadata.warnings.map((warning) => `<li>${warning}</li>`).join('')}
+        </ul>
+        <p>
+          <strong>⚠️ This export was made with explicit operator acknowledgment of data quality issues.</strong>
+        </p>
+      </div>
+    `
+    : '';
 
   const missingDataHtml = snapshot.missing_data.length > 0
     ? `
@@ -197,12 +370,43 @@ function generatePDFContent(snapshot: any): string {
         th { background: #f5f5f5; }
         td { padding: 8px; }
         .warning { background: #fff3cd; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
+        .watermark-warning { background: #f8d7da; padding: 15px; border: 3px solid #f5c6cb; border-radius: 4px; margin-bottom: 20px; }
+        .watermark-warning h2 { color: #721c24; margin-top: 0; }
+        .watermark-warning p { color: #721c24; }
+        .watermark-warning ul { color: #721c24; }
+        .truth-metadata { background: #e7f3ff; padding: 15px; border-left: 5px solid #0747a6; margin-bottom: 20px; }
+        .truth-metadata-item { margin: 6px 0; font-size: 12px; }
       </style>
     </head>
     <body>
       <h1>📋 Jira Configuration Snapshot Evidence Report</h1>
       
       <p><strong>Report Generated:</strong> ${new Date().toISOString()}</p>
+
+      ${watermarkHtml}
+
+      <h2>Output Truth Metadata (P2)</h2>
+      <div class="truth-metadata">
+        <div class="truth-metadata-item">
+          <strong>Validity Status:</strong> ${truthMetadata.validityStatus}
+        </div>
+        <div class="truth-metadata-item">
+          <strong>Confidence Level:</strong> ${truthMetadata.confidenceLevel}
+        </div>
+        <div class="truth-metadata-item">
+          <strong>Completeness:</strong> ${truthMetadata.completenessPercent}%
+          ${truthMetadata.missingData.length > 0 ? ` (Missing: ${truthMetadata.missingData.join(', ')})` : ''}
+        </div>
+        <div class="truth-metadata-item">
+          <strong>Drift Status:</strong> ${truthMetadata.driftStatus}
+        </div>
+        <div class="truth-metadata-item">
+          <strong>Snapshot Age:</strong> ${Math.floor(truthMetadata.snapshotAgeSeconds / 86400)} days
+        </div>
+        <div class="truth-metadata-item">
+          <strong>Valid Until:</strong> ${truthMetadata.validUntilISO}
+        </div>
+      </div>
 
       <h2>Snapshot Metadata</h2>
       <div class="metadata">
@@ -285,7 +489,7 @@ function generatePDFContent(snapshot: any): string {
 
       <hr style="margin-top: 40px;">
       <p style="color: #999; font-size: 12px;">
-        This report was generated from FirstTry Phase 6 v2 Snapshot Evidence Ledger.
+        This report was generated from FirstTry Phase 6 v2 Snapshot Evidence Ledger with Phase P2 Output Truth Guarantees.
         Report timestamp: ${new Date().toISOString()}
       </p>
     </body>

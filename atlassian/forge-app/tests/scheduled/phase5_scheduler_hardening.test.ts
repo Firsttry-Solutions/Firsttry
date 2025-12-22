@@ -163,10 +163,10 @@ describe('Phase-5 Scheduler Hardening', () => {
 
   describe('C. Idempotency Hardening - DONE_KEY is Authoritative', () => {
     const validContext = { cloudId: 'test-cloud' } as any;
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
     it('should never regenerate if AUTO_12H DONE_KEY exists', async () => {
       const request = {} as any;
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
       vi.mocked(schedulerState.loadInstallationTimestamp).mockResolvedValue(twelveHoursAgo);
       vi.mocked(schedulerState.loadSchedulerState).mockResolvedValue({
@@ -200,6 +200,7 @@ describe('Phase-5 Scheduler Hardening', () => {
 
     it('should write DONE_KEY only on successful generation', async () => {
       const request = {} as any;
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
       vi.mocked(schedulerState.loadInstallationTimestamp).mockResolvedValue(twelveHoursAgo);
       vi.mocked(schedulerState.loadSchedulerState).mockResolvedValue({
@@ -231,6 +232,7 @@ describe('Phase-5 Scheduler Hardening', () => {
 
     it('should not write DONE_KEY on failed generation', async () => {
       const request = {} as any;
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
       vi.mocked(schedulerState.loadInstallationTimestamp).mockResolvedValue(twelveHoursAgo);
       vi.mocked(schedulerState.loadSchedulerState).mockResolvedValue({
@@ -265,10 +267,10 @@ describe('Phase-5 Scheduler Hardening', () => {
 
   describe('D. Backoff Hardening - Bounded 30min, 120min, 24h', () => {
     const validContext = { cloudId: 'test-cloud' } as any;
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
     it('should apply 30min backoff on 1st failure', async () => {
       const request = {} as any;
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
       vi.mocked(schedulerState.loadInstallationTimestamp).mockResolvedValue(twelveHoursAgo);
       vi.mocked(schedulerState.loadSchedulerState).mockResolvedValue({
@@ -287,7 +289,7 @@ describe('Phase-5 Scheduler Hardening', () => {
       });
 
       let savedState: any = null;
-      vi.mocked(schedulerState.saveSchedulerState).mockImplementation((cloudId, state) => {
+      vi.mocked(schedulerState.saveSchedulerState).mockImplementation(async (cloudId, state) => {
         savedState = state;
       });
 
@@ -297,13 +299,14 @@ describe('Phase-5 Scheduler Hardening', () => {
 
       // Backoff should be 30 minutes = 1800000 ms
       const backoffTime = new Date(savedState.last_backoff_until).getTime();
-      const currentTime = new Date(startTime).getTime();
+      const currentTime = Date.now(); // Use the mocked current time
       const backoffDurationMs = backoffTime - currentTime;
       expect(backoffDurationMs).toBe(30 * 60 * 1000); // 30 minutes
     });
 
     it('should apply 120min backoff on 2nd failure', async () => {
       const request = {} as any;
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
       vi.mocked(schedulerState.loadInstallationTimestamp).mockResolvedValue(twelveHoursAgo);
       vi.mocked(schedulerState.loadSchedulerState).mockResolvedValue({
@@ -322,7 +325,7 @@ describe('Phase-5 Scheduler Hardening', () => {
       });
 
       let savedState: any = null;
-      vi.mocked(schedulerState.saveSchedulerState).mockImplementation((cloudId, state) => {
+      vi.mocked(schedulerState.saveSchedulerState).mockImplementation(async (cloudId, state) => {
         savedState = state;
       });
 
@@ -330,13 +333,14 @@ describe('Phase-5 Scheduler Hardening', () => {
 
       // Backoff should be 120 minutes = 7200000 ms
       const backoffTime = new Date(savedState.last_backoff_until).getTime();
-      const currentTime = new Date(startTime).getTime();
+      const currentTime = Date.now(); // Use the mocked current time
       const backoffDurationMs = backoffTime - currentTime;
       expect(backoffDurationMs).toBe(120 * 60 * 1000); // 120 minutes
     });
 
     it('should apply 24h backoff on 3rd+ failures', async () => {
       const request = {} as any;
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
       vi.mocked(schedulerState.loadInstallationTimestamp).mockResolvedValue(twelveHoursAgo);
       vi.mocked(schedulerState.loadSchedulerState).mockResolvedValue({
@@ -355,7 +359,7 @@ describe('Phase-5 Scheduler Hardening', () => {
       });
 
       let savedState: any = null;
-      vi.mocked(schedulerState.saveSchedulerState).mockImplementation((cloudId, state) => {
+      vi.mocked(schedulerState.saveSchedulerState).mockImplementation(async (cloudId, state) => {
         savedState = state;
       });
 
@@ -363,13 +367,14 @@ describe('Phase-5 Scheduler Hardening', () => {
 
       // Backoff should be 1440 minutes (24h) = 86400000 ms
       const backoffTime = new Date(savedState.last_backoff_until).getTime();
-      const currentTime = new Date(startTime).getTime();
+      const currentTime = Date.now(); // Use the mocked current time
       const backoffDurationMs = backoffTime - currentTime;
       expect(backoffDurationMs).toBe(24 * 60 * 60 * 1000); // 24 hours
     });
 
     it('should skip generation if backoff is still active', async () => {
       const request = {} as any;
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
       const backoffUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1h from now
 
       vi.mocked(schedulerState.loadInstallationTimestamp).mockResolvedValue(twelveHoursAgo);
@@ -452,10 +457,10 @@ describe('Phase-5 Scheduler Hardening', () => {
 
   describe('F. Single Code Path (handleAutoTrigger)', () => {
     const validContext = { cloudId: 'test-cloud' } as any;
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
     it('should always use handleAutoTrigger for generation (never direct logic)', async () => {
       const request = {} as any;
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
       vi.mocked(schedulerState.loadInstallationTimestamp).mockResolvedValue(twelveHoursAgo);
       vi.mocked(schedulerState.loadSchedulerState).mockResolvedValue({
@@ -486,7 +491,6 @@ describe('Phase-5 Scheduler Hardening', () => {
 
   describe('G. Concurrency Safety - Write-Once DONE Semantics', () => {
     const validContext = { cloudId: 'test-cloud' } as any;
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
     it('should track separate attempt counts for AUTO_12H and AUTO_24H', async () => {
       // Setup: AUTO_24H with 5 prior attempts

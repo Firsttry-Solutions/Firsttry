@@ -3,6 +3,7 @@
  * PHASE 3: Verify ledger write/read operations and org discovery
  */
 
+import { describe, it } from 'vitest';
 import {
   record_daily_attempt,
   record_daily_success,
@@ -214,14 +215,13 @@ async function runTests() {
 
   if (passCount === totalCount) {
     console.log('✅ All run ledger tests PASS\n');
-    process.exit(0);
   } else {
-    console.log('❌ Some tests FAILED\n');
-    process.exit(1);
+    throw new Error('Some tests FAILED');
   }
 }
 
-runTests().catch((error) => {
-  console.error('Test harness error:', error);
-  process.exit(1);
+describe('Phase 3 - Run Ledgers Tests', () => {
+  it('should run all run ledgers tests', async () => {
+    await runTests();
+  });
 });

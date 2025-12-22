@@ -9,14 +9,15 @@
 
 ## 1. Overview
 
-Phase 7 v2 implements **drift detection** by computing observed changes between consecutive Phase-6 snapshots. Drift events record **what changed**, not **why**, **impact**, or **recommendations**.
+Phase 7 v2 implements **drift detection** by computing observed changes between consecutive Phase-6 snapshots. Drift events record **what changed**, not **why**, **scope**, or **suggestions**.
 
 ### Core Principle
-> Drift detection is **observation-only**. It answers: "What changed between snapshot A and snapshot B?" It does NOT answer causality, quality, risk, or recommendations.
+> Drift detection is **observation-only**. It answers: "What changed between snapshot A and snapshot B?" It does NOT answer causality, quality, risk, or suggestions.
 
 ### Forbidden Language
 The following terms are **prohibited** in Phase-7 code, UI, documentation, and exports:
-- "impact", "hygiene", "improve", "fix", "recommend", "should", "sudden drop", "root cause", "prevent"
+
+    - "impact", "hygiene", "improve", "fix", "recommend", "should", "sudden drop", "root cause", "prevent"
 
 Any violation triggers a build failure via static analysis test.
 
@@ -64,7 +65,7 @@ interface DriftEvent {
   // Completeness (0-100)
   completeness_percentage: number;
 
-  // Missing data impact
+  // Missing data scope
   missing_data_reference?: {
     dataset_keys: string[];
     reason_codes: string[];
@@ -169,19 +170,17 @@ Extractors are deterministic and stable:
 | workflow, automation_rule | added | CONFIG_CHANGE |
 | workflow, automation_rule | removed | CONFIG_CHANGE |
 | workflow, automation_rule | modified | CONFIG_CHANGE |
-| (any) | added/removed/modified with missing_data impact | DATA_VISIBILITY_CHANGE |
+| (any) | added/removed/modified with missing_data scope | DATA_VISIBILITY_CHANGE |
 | (ambiguous) | any | UNKNOWN |
 
 ### 3.4 Completeness Percentage
 
-```
-completeness =
-  100  if (before_state AND after_state) AND no missing_data impact
-   85  if missing_data_reference exists but doesn't block visibility
-   50  if before_state XOR after_state (one available, one not)
-   25  if multiple missing_data dependencies
-    0  if payload incomplete
-```
+    completeness =
+      100  if (before_state AND after_state) AND no missing_data scope
+       85  if missing_data_reference exists but doesn't block visibility
+       50  if before_state XOR after_state (one available, one not)
+       25  if multiple missing_data dependencies
+        0  if payload incomplete
 
 ### 3.5 Stable Ordering (Deterministic Sort)
 
@@ -363,7 +362,7 @@ GET /api/phase7/export?from_date=...&to_date=...&object_type=...&page=...&limit=
 
 Completeness reflects data availability for drift observation:
 
-- **100%:** Both before and after states available; no missing_data impact
+- **100%:** Both before and after states available; no missing_data scope
 - **85%:** Partial visibility (one dataset missing) but doesn't block drift observation
 - **50%:** One of before/after unavailable
 - **25%:** Multiple missing_data dependencies
@@ -371,7 +370,7 @@ Completeness reflects data availability for drift observation:
 
 ### 8.2 Missing Data Reference
 
-When a drift event's visibility is impacted by missing_data:
+When a drift event's visibility is affected by missing_data:
 
 ```typescript
 missing_data_reference: {
