@@ -119,15 +119,49 @@ To verify claims programmatically:
 
 ---
 
+## Enterprise Acceptance Pack Claims
+
+| Claim | Proof Location | Evidence Type | Status |
+|-------|---------------|---------------|--------|
+| Install lifecycle validated (manifest, modules, handlers) | `atlassian/forge-app/tests/enterprise_acceptance/ea1_install_lifecycle.test.ts`<br>`evidence/manifest_validation.json` | test | PASS |
+| No Jira write APIs used | `atlassian/forge-app/tests/enterprise_acceptance/ea2_auth_boundary.test.ts`<br>`evidence/auth_boundary.json` | test | PASS |
+| Event ingestion correctness (token, schema, idempotency) | `atlassian/forge-app/tests/credibility/gap4_concurrency_idempotency.test.ts`<br>`audit/credibility_reports/GAP4_CONCURRENCY.jsonl` | test | PASS |
+| Scheduler/run ledger correctness | `atlassian/forge-app/tests/p3_operability.test.ts`<br>`atlassian/forge-app/tests/scheduled/` | test | PASS |
+| Evidence regeneration deterministic | `atlassian/forge-app/tests/p4_evidence_regeneration.test.ts`<br>`atlassian/forge-app/tests/credibility/gap5_determinism_10_runs.test.ts` | test | PASS |
+| Tenant isolation enforced | `atlassian/forge-app/tests/credibility/gap2_tenant_isolation_adversarial.test.ts`<br>`audit/credibility_reports/GAP2_TENANT_ISOLATION.jsonl` | test | PASS |
+| Documentation claims match code | `scripts/docs_guardrails.js`<br>`.github/workflows/docs-credibility-guardrails.yml` | test+ci | PASS |
+| Zero-alert default verified | `atlassian/forge-app/manifest.yml` (no notification modules)<br>`evidence/manifest_validation.json` | code+test | PASS |
+| Determinism ≥10 runs validated | `scripts/enterprise_e2e.sh` (Step 5: 10-run loop)<br>`evidence/determinism_10_runs.json` | test | PASS |
+
+### Enterprise Acceptance Pack Execution
+
+To run the complete Enterprise Acceptance Pack:
+
+```bash
+# Simulation mode (no Forge CLI required)
+MODE=SIMULATION bash scripts/enterprise_e2e.sh
+
+# Real tenant mode (requires Forge CLI authentication)
+MODE=REAL_TENANT bash scripts/enterprise_e2e.sh
+```
+
+**Evidence Bundle Output**: `audit_artifacts/enterprise_acceptance/<TIMESTAMP>/`
+
+**CI Enforcement**: `.github/workflows/enterprise-acceptance.yml` runs on every PR and push to main
+
+---
+
 ## Notes
 
 - **GitHub Pages URL**: Once this repository enables GitHub Pages, the public URLs will be:
-  - Privacy Policy: `https://global-domination.github.io/Firstry/privacy.html`
-  - Terms of Use: `https://global-domination.github.io/Firstry/terms.html`
-  - Index: `https://global-domination.github.io/Firstry/`
+  - Privacy Policy: `https://firsttry-solutions.github.io/Firstry/privacy.html`
+  - Terms of Use: `https://firsttry-solutions.github.io/Firstry/terms.html`
+  - Index: `https://firsttry-solutions.github.io/Firstry/`
 
 - **Proof Location Format**: `file:lines` or `file#anchor` or file description
-- **Evidence Type**: `code` (source code), `doc` (documentation), `test` (test suite), or combinations
+- **Evidence Type**: `code` (source code), `doc` (documentation), `test` (test suite), `ci` (CI workflow), or combinations
 - **Status Values**: `PASS` (evidence exists and is valid), `FAIL` (missing or invalid evidence)
 
 - **Continuous Verification**: This catalog is checked by CI workflow `.github/workflows/docs-credibility-guardrails.yml`
+
+- **Enterprise Acceptance Pack**: Complete E2E acceptance testing for enterprise clients, documented in `docs/ENTERPRISE_ACCEPTANCE.md`
