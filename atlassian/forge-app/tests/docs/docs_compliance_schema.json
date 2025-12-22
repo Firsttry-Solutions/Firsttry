@@ -1,0 +1,238 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FirstTry Documentation Compliance Schema",
+  "description": "Schema to validate documentation claims against evidence requirements",
+  "definitions": {
+    "requiredFiles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "All documentation files that must exist",
+      "default": [
+        "docs/README.md",
+        "docs/SECURITY.md",
+        "docs/PRIVACY.md",
+        "docs/RELIABILITY.md",
+        "docs/SUPPORT.md",
+        "docs/SHAKEDOWN.md"
+      ]
+    },
+    "forbiddenPhrases": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Phrases that are forbidden in all documentation (no evidence possible)",
+      "default": [
+        "setup wizard",
+        "configuration screen",
+        "setup required",
+        "onboarding flow",
+        "initial setup",
+        "per-workspace setup",
+        "SOC2 certified",
+        "HIPAA compliant",
+        "military-grade encryption",
+        "guaranteed uptime",
+        "zero data retention",
+        "zero configuration"
+      ]
+    },
+    "numericClaims": {
+      "type": "object",
+      "description": "Numeric claims that must be backed by code evidence",
+      "properties": {
+        "retention_days": {
+          "description": "Data retention period in days",
+          "requiresCodeBacking": true,
+          "codePattern": "RETENTION.*=.*\\d+",
+          "acceptedFiles": ["src/**/*.ts", "src/**/*.js"]
+        },
+        "cache_ttl_days": {
+          "description": "Cache time-to-live in days",
+          "requiresCodeBacking": true,
+          "codePattern": "TTL.*=.*\\d+",
+          "acceptedFiles": ["src/**/*.ts", "src/**/*.js"]
+        },
+        "audit_log_days": {
+          "description": "Audit log retention in days",
+          "requiresCodeBacking": true,
+          "codePattern": "AUDIT.*=.*\\d+",
+          "acceptedFiles": ["src/**/*.ts", "src/**/*.js"]
+        },
+        "concurrent_users": {
+          "description": "Concurrent user capacity",
+          "requiresCodeBacking": true,
+          "codePattern": "MAX_CONCURRENT|CAPACITY",
+          "acceptedFiles": ["src/**/*.ts", "src/**/*.js"]
+        }
+      }
+    },
+    "requiredSections": {
+      "type": "object",
+      "description": "Required sections per documentation file",
+      "properties": {
+        "SECURITY.md": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "Tenant Isolation",
+            "Data Encryption",
+            "Zero-Touch Setup",
+            "Limitations"
+          ]
+        },
+        "PRIVACY.md": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "Data Collection",
+            "Data Retention",
+            "Retention Periods",
+            "Limitations"
+          ]
+        },
+        "RELIABILITY.md": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "Availability",
+            "Fault Tolerance",
+            "Limitations"
+          ]
+        },
+        "SUPPORT.md": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "Support Channels",
+            "Response Times",
+            "Coverage"
+          ]
+        },
+        "SHAKEDOWN.md": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "Simulation Boundaries",
+            "Frozen Time",
+            "Deterministic RNG",
+            "Fixtures"
+          ]
+        }
+      }
+    },
+    "claimEvidenceMapping": {
+      "type": "object",
+      "description": "Claims that require specific evidence",
+      "properties": {
+        "zero_touch": {
+          "claim": "Zero-touch setup; no per-workspace configuration required",
+          "requiredEvidence": [
+            "manifest.yml has NO webTrigger modules",
+            "manifest.yml has NO customUI modules",
+            "manifest.yml has NO appPage modules",
+            "src/ contains NO setup/configure/isConfigured logic",
+            "storage.ts key builders have NO setup guards"
+          ],
+          "backingTests": ["shk_manifest_inspection.test.ts", "shk_source_scan_setup_free.test.ts"]
+        },
+        "tenant_isolation": {
+          "claim": "Multi-tenant isolation enforced via storage keys",
+          "requiredEvidence": [
+            "Production key builders in src/storage.ts",
+            "All keys scoped by {orgKey}",
+            "orgKey always first scoping parameter",
+            "Cross-tenant keys produce different results"
+          ],
+          "backingTests": ["shk_keying_proof.test.ts"]
+        },
+        "pagination_completeness": {
+          "claim": "All pagination results complete; no silent truncation",
+          "requiredEvidence": [
+            "Real pagination loop executed (not metadata assertions)",
+            "Page count verified against fixtures",
+            "Failure injection detects incomplete pagination",
+            "Degradation explicitly disclosed"
+          ],
+          "backingTests": ["shk_pagination_real_traversal.test.ts"]
+        },
+        "cache_fallback_truth": {
+          "claim": "Cache fallback results marked DEGRADED; never misleading",
+          "requiredEvidence": [
+            "Fallback to cache returns DEGRADED status (never OK)",
+            "Stale cache returns explicit age/TTL disclosure",
+            "Storage failure + cache miss returns MISS (not OK)",
+            "All DEGRADED results include degradationReason field"
+          ],
+          "backingTests": ["shk_cache_fallback_truth.test.ts"]
+        },
+        "no_test_only_branches": {
+          "claim": "Production code has zero test-only semantic branches",
+          "requiredEvidence": [
+            "src/ scanned for IS_TEST, TEST_MODE, MOCK_MODE keywords",
+            "Zero matches in production code logic",
+            "Allowed only in comments, strings, type names",
+            "Test-only branches forbidden in conditionals"
+          ],
+          "backingTests": ["shk_test_only_drift_guard.test.ts"]
+        }
+      }
+    }
+  },
+  "claimValidationRules": [
+    {
+      "claim": "The app requires zero per-workspace setup or configuration",
+      "requiredFiles": ["docs/SECURITY.md"],
+      "forbidden": ["setup wizard", "configuration screen", "onboarding flow"],
+      "evidence": {
+        "manifestInspection": "manifest.yml must have zero setup modules",
+        "sourceScanning": "src/ must have zero setup logic gates"
+      }
+    },
+    {
+      "claim": "Multi-tenant isolation is enforced",
+      "requiredFiles": ["docs/SECURITY.md"],
+      "evidence": {
+        "keyingProof": "All keys must start with {orgKey}"
+      }
+    },
+    {
+      "claim": "Cache returns degraded status when stale or fallback",
+      "requiredFiles": ["docs/PRIVACY.md"],
+      "evidence": {
+        "cacheFallback": "Stale/fallback results must have status !== OK"
+      }
+    },
+    {
+      "claim": "Data retention is 90 days",
+      "requiredFiles": ["docs/PRIVACY.md"],
+      "numericClaimValue": 90,
+      "evidence": {
+        "codeConstant": "src/ must define RETENTION_DAYS = 90"
+      }
+    },
+    {
+      "claim": "Cache time-to-live is 7 days",
+      "requiredFiles": ["docs/PRIVACY.md"],
+      "numericClaimValue": 7,
+      "evidence": {
+        "codeConstant": "src/ must define CACHE_TTL_DAYS = 7"
+      }
+    },
+    {
+      "claim": "Audit logs retained for 1 year",
+      "requiredFiles": ["docs/PRIVACY.md"],
+      "numericClaimValue": 365,
+      "evidence": {
+        "codeConstant": "src/ must define AUDIT_RETENTION_DAYS = 365"
+      }
+    }
+  ],
+  "validationChecks": {
+    "fileExistence": "All required files in requiredFiles must exist at exact paths",
+    "forbiddenPhrases": "No doc may contain any forbidden phrase; use alternatives instead",
+    "requiredSections": "Each file must contain all required section headings",
+    "numericBackings": "All numeric claims must be backed by constants in code",
+    "manifestValidation": "manifest.yml must be valid YAML and contain only allowed modules",
+    "sourceCodeScan": "src/ must be scannable and contain zero setup/configure logic",
+    "determinism": "Shakedown tests must produce identical digest on 10+ runs"
+  }
+}

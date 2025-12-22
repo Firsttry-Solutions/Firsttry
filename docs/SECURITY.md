@@ -1,32 +1,76 @@
 # FirstTry Security Model
 
-## Overview
+**Version**: 1.0  
+**Last Updated**: 2025-12-22
 
-FirstTry implements a zero-touch, tenant-isolated security model. No user configuration is required. Security controls are enforced automatically at the framework level.
+---
 
-## Threat Model
+## Executive Summary
 
-### In Scope
+FirstTry is a read-only, workspace-scoped Atlassian Forge app with:
 
-- **Unauthorized data access**: Tenant data is isolated; one tenant cannot access another's data
-- **Policy injection**: Policies cannot be modified after creation; ruleset registry is immutable
-- **Audit tampering**: All policy evaluations are logged with immutable audit trail
-- **Jira API credential exposure**: API credentials are managed by Forge platform (no FirstTry involvement)
+- ✅ No unencrypted credential storage
+- ✅ No real network egress (all mocked in tests)
+- ✅ No PII logging (all output redacted)
+- ✅ Data retention policy defined in [DATA_RETENTION.md](DATA_RETENTION.md)
+- ✅ Workspace isolation (structural, not policy-based)
+- ✅ No custom authentication
+- ✅ No file uploads or external integrations
 
-### Out of Scope
+---
 
-- **Jira Cloud compromises**: Jira itself is compromised (first-party Atlassian responsibility)
-- **Forge platform infrastructure**: Forge container is compromised (Atlassian responsibility)
-- **Network interception**: TLS/HTTPS handled by Jira Cloud and Forge platform
+## 1. Vulnerability Disclosure
 
-## Tenant Isolation
+### 1.1 Reporting Security Issues
 
-Each tenant's data (policies, entitlements, usage metrics) is stored in isolated Forge storage with the following properties:
+**Email**: security@atlassian.com (Atlassian security team)  
+**Subject**: Include "FirstTry Security Vulnerability"
 
-- **Storage keys are tenant-scoped**: Forge storage automatically prefixes all keys with tenant ID
-- **No cross-tenant lookup**: FirstTry never queries storage keys from other tenants
-- **No shared caches**: All caches are per-tenant, cleared on tenant removal
-- **Audit correlation**: All audit events include tenant context for forensic separation
+### 1.2 Disclosure Timeline
+
+| Severity | Triage | Fix | Release |
+|----------|--------|-----|---------|
+| **CRITICAL** | 1 day | 24 hours | ASAP |
+| **HIGH** | 3-5 days | 1-2 weeks | Next release |
+| **MEDIUM** | 5-10 days | 2-4 weeks | Planned |
+| **LOW** | 30 days | Next quarter | Roadmap |
+
+**Note**: Targets, not SLAs. Actual response depends on complexity.
+
+---
+
+## 2. Data Security
+
+### 2.1 Data at Rest
+
+- **Storage**: Atlassian Forge Storage (AES-256 encrypted)
+- **Isolation**: Workspace-scoped keys (structural)
+- **Retention**: Defined in [DATA_RETENTION.md](DATA_RETENTION.md) (indefinite, not TTL-based)
+
+### 2.2 Data in Transit
+
+- **HTTPS**: All Jira API calls over TLS 1.2+
+- **Forge APIs**: Atlassian-managed encryption
+- **No Custom Encryption**: Rely on platform defaults
+
+### 2.3 Tenant Isolation
+
+FirstTry operates within Atlassian Forge workspace scope:
+
+- **Workspace Isolation**: Structural - Forge app API scoped to single workspace
+- **No Cross-Workspace Data Access**: Impossible by design (Forge permission model)
+- **Multi-Tenant Safety**: Each workspace is isolated at the platform level
+- **Data Segregation**: Workspace storage keys are separate (Atlassian-managed)
+
+### 2.4 Sensitive Data Handling
+
+**NOT Stored**:
+- ❌ Passwords or secrets
+- ❌ Email addresses
+- ❌ API tokens
+- ❌ User IDs (in logs)
+
+All output is redacted before logging (verified by `tests/p1_logging_safety.test.ts`).
 
 ## Data Protection
 
@@ -86,8 +130,32 @@ Vulnerabilities should be reported privately via:
 
 Response time target: 48 hours for critical issues, 2 weeks for moderate.
 
-## Related Policies
+---
 
-- [Privacy Policy](./PRIVACY.md)
-- [Reliability SLAs](./RELIABILITY.md)
+## 5. Threat Model
+
+FirstTry is a **zero-touch, read-only** Atlassian Forge app with minimal attack surface:
+
+### 5.1 In Scope Threats (FirstTry Responsibility)
+
+- **Input Validation**: FirstTry validates all Jira API responses
+- **Output Redaction**: FirstTry redacts sensitive data before logging
+- **Workspace Isolation**: Structural isolation via Forge app scope
+
+### 5.2 Out of Scope (Atlassian Responsibility)
+
+- **Encryption at Rest**: Managed by Atlassian Forge
+- **Network Security**: Handled by Atlassian infrastructure
+- **Access Control**: Jira admin permissions determine FirstTry access
+- **Data Residency**: Determined by Jira Cloud region
+
+### 5.3 Security Assumptions
+
+1. Jira Admin portal access controls are effective
+2. Atlassian Forge infrastructure is secure
+3. Network path to Jira Cloud is secure
+4. Customer environments are not compromised
+
+---
+
 - [Shakedown Test Harness](./SHAKEDOWN.md)

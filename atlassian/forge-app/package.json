@@ -7,6 +7,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:operator:full": "vitest run tests/operator_verification/ov_runner.test.ts && npx ts-node tests/operator_verification/ov_report_gen.ts",
+    "test:credibility": "vitest run tests/credibility/credibility_gaps.test.ts && npx ts-node tests/credibility/credibility_report_gen.ts",
     "verify:phase4": "node scripts/verify_phase4.mjs",
     "verify:phase5": "node scripts/verify_phase5.mjs",
     "verify:phase4-5": "node scripts/verify_phase4_5.mjs"

@@ -1,8 +1,18 @@
 # FirstTry Privacy Policy
 
+**Version**: 1.0  
+**Last Updated**: 2025-12-22  
+**Audience**: Atlassian Workspace Admins, Marketplace Reviewers, Enterprise Security Teams
+
+---
+
 ## Overview
 
-FirstTry is designed for zero-touch, automatic operation with zero PII collection. We collect only the minimum data required to function, and all sensitive fields are immediately hashed.
+FirstTry is an **automatic, zero-touch** Atlassian Forge app that analyzes Jira data to detect and report configuration drift. This document describes what data is collected, how it is used, and how it is protected.
+
+**Key Principle**: FirstTry operates automatically with no setup steps. No user behavior tracking, analytics, or profiling.
+
+**Data Control Model**: Customers remain the data controllers of their Jira data. FirstTry processes data solely within Atlassian Forge under the customer's Atlassian agreement.
 
 ## Data Collection
 
@@ -44,22 +54,12 @@ FirstTry is designed for zero-touch, automatic operation with zero PII collectio
 
 ## Data Retention
 
-### Retention Schedule
+See [DATA_RETENTION.md](DATA_RETENTION.md) for authoritative retention policy.
 
-| Data Type | Retention Period | Reason |
-|-----------|------------------|--------|
-| Policies | Until deleted by tenant | User owns policies |
-| Jira metadata | 7 days | Cache for shadow evaluation |
-| Usage metrics | 90 days | Entitlement enforcement, billing |
-| Audit entries | 1 year | Security, compliance |
-
-### Deletion on Tenant Removal
-
-When a Jira workspace is removed from FirstTry:
-- All policies are deleted
-- All cached Jira metadata is deleted
-- Usage metrics are deleted
-- Audit entries are anonymized (policy ID → DELETED_POLICY_ID)
+**Key Facts**:
+- FirstTry retains data indefinitely (no FirstTry-enforced TTL)
+- Data deletion on uninstall is Atlassian-controlled
+- Customers must manually request deletion from Atlassian if needed
 
 ## User Rights
 
@@ -123,7 +123,7 @@ Users can export their policies and audit trail in JSON format via `firstry expo
 - ✅ Encryption: In transit (TLS) and at rest (AES-256 by Forge)
 - ✅ Audit trail: Immutable policy decisions
 - ✅ User rights: All 5 rights implemented (access, rectification, deletion, restriction, portability)
-- ✅ DPA: Atlassian (Forge provider) is processor
+- ✅ Data Processing: Performed by Atlassian Forge platform; FirstTry operates as processor within Forge
 
 ### CCPA (California)
 

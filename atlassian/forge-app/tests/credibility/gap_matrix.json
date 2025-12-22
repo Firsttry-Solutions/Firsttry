@@ -1,0 +1,213 @@
+{
+  "credibility_gaps": {
+    "GAP_1": {
+      "id": "GAP_1",
+      "title": "PII Logging Safety (All Error Paths)",
+      "objective": "Prove whether PII can or cannot leak through logs under failures",
+      "tests": [
+        {
+          "test_id": "GAP1_STATIC_SCAN",
+          "name": "Static PII Logging Pattern Scan",
+          "type": "static",
+          "method": "Grep src/** for logging statements; categorize by sensitivity",
+          "inputs": [],
+          "expected_pass_condition": "No sensitive patterns (email, UUID, key, token) in logs",
+          "classification": "PASS / FAIL / UNKNOWN"
+        },
+        {
+          "test_id": "GAP1_ERROR_INJECTION",
+          "name": "Error-Driven PII Leak Detection",
+          "type": "runtime",
+          "method": "Inject errors with PII patterns; capture logs; scan for leakage",
+          "inputs": [
+            "error: new Error('user@example.com failed')",
+            "error: new Error('userId=12345 invalid')",
+            "error: new Error('apiKey=sk_... missing')"
+          ],
+          "expected_pass_condition": "PII patterns do NOT appear in captured logs",
+          "classification": "PASS / FAIL / UNKNOWN"
+        }
+      ],
+      "implementation_status": "pending",
+      "evidence_lock": "must_include_file_paths_line_ranges_repro_commands"
+    },
+    "GAP_2": {
+      "id": "GAP_2",
+      "title": "Tenant Isolation (Adversarial)",
+      "objective": "Prove whether data from tenant A can ever be read under tenant B context",
+      "tests": [
+        {
+          "test_id": "GAP2_STORAGE_KEY_ISOLATION",
+          "name": "Cross-Tenant Storage Key Isolation",
+          "type": "runtime",
+          "method": "Simulate two tenants; attempt key reuse and cross-context access",
+          "inputs": [
+            "tenant A storage key written",
+            "tenant B attempts read with forged context",
+            "tenant B attempts read with replayed A's key"
+          ],
+          "expected_pass_condition": "Access denied; empty result; no cross-tenant data visible",
+          "classification": "PASS / FAIL / UNKNOWN"
+        }
+      ],
+      "implementation_status": "pending",
+      "evidence_lock": "must_prove_isolation_with_real_storage_access"
+    },
+    "GAP_3": {
+      "id": "GAP_3",
+      "title": "Outbound Egress (Static + Runtime)",
+      "objective": "Prove whether any undeclared outbound network access exists",
+      "tests": [
+        {
+          "test_id": "GAP3_STATIC_EGRESS_SCAN",
+          "name": "Static Network API Scan",
+          "type": "static",
+          "method": "Grep src/** for fetch, axios, request, got, http, https, WebSocket, DNS, URL",
+          "inputs": [],
+          "expected_pass_condition": "No network API imports found (or only documented/mocked)",
+          "classification": "PASS / FAIL / UNKNOWN"
+        },
+        {
+          "test_id": "GAP3_RUNTIME_EGRESS_TRAP",
+          "name": "Runtime Network Trap",
+          "type": "runtime",
+          "method": "Monkey-patch global.fetch, http.request, etc.; run shakedown; verify no calls",
+          "inputs": ["full shakedown execution"],
+          "expected_pass_condition": "Zero network calls during execution",
+          "classification": "PASS / FAIL / UNKNOWN"
+        }
+      ],
+      "implementation_status": "pending",
+      "evidence_lock": "must_include_repro_command_and_call_signatures"
+    },
+    "GAP_4": {
+      "id": "GAP_4",
+      "title": "Concurrency & Duplicate Invocation",
+      "objective": "Prove idempotency under real duplicate execution pressure",
+      "tests": [
+        {
+          "test_id": "GAP4_CONCURRENT_EXECUTION",
+          "name": "Concurrent Handler Invocation",
+          "type": "runtime",
+          "method": "Launch 2+ simultaneous invocations; compare outputs with baseline",
+          "inputs": [
+            "concurrent invocation 1",
+            "concurrent invocation 2",
+            "baseline (sequential) output"
+          ],
+          "expected_pass_condition": "All concurrent outputs match baseline; no duplication or corruption",
+          "classification": "PASS / FAIL / UNKNOWN"
+        },
+        {
+          "test_id": "GAP4_DUPLICATE_EVENT",
+          "name": "Duplicate Event Idempotency",
+          "type": "runtime",
+          "method": "Replay same event twice; verify side-effects identical",
+          "inputs": ["event payload, delivered twice"],
+          "expected_pass_condition": "Side-effects identical (stored state, output count)",
+          "classification": "PASS / FAIL / UNKNOWN"
+        }
+      ],
+      "implementation_status": "pending",
+      "evidence_lock": "must_include_concurrency_control_and_output_hashes"
+    },
+    "GAP_5": {
+      "id": "GAP_5",
+      "title": "Deterministic Shakedown (≥10 Runs)",
+      "objective": "Prove install-and-forget determinism",
+      "tests": [
+        {
+          "test_id": "GAP5_10_RUN_DETERMINISM",
+          "name": "10-Run Determinism Verification",
+          "type": "runtime",
+          "method": "Run shakedown ≥10 times; compute digest per run; compare",
+          "inputs": ["run 1..10, frozen time, seeded RNG"],
+          "expected_pass_condition": "All digests identical (content hash + event count + artifact count)",
+          "classification": "PASS / FAIL / UNKNOWN"
+        }
+      ],
+      "implementation_status": "pending",
+      "evidence_lock": "must_include_digest_values_and_run_logs"
+    },
+    "GAP_6": {
+      "id": "GAP_6",
+      "title": "Data Growth & Quota Behavior",
+      "objective": "Prove behavior when storage grows unbounded",
+      "tests": [
+        {
+          "test_id": "GAP6_QUOTA_OVERFLOW",
+          "name": "Storage Quota Overflow Behavior",
+          "type": "runtime",
+          "method": "Simulate quota exhaustion; observe failure mode and disclosure",
+          "inputs": ["grow data to near-quota", "final write triggering overflow"],
+          "expected_pass_condition": "Fail-closed + explicit error; no silent truncation",
+          "classification": "PASS / FAIL / UNKNOWN"
+        }
+      ],
+      "implementation_status": "pending",
+      "evidence_lock": "must_include_error_messages_and_state_verification"
+    },
+    "GAP_7": {
+      "id": "GAP_7",
+      "title": "Support & Incident Reality (Evidence)",
+      "objective": "Prove that documented support & incident statements are evidence-backed",
+      "tests": [
+        {
+          "test_id": "GAP7_SUPPORT_CONTACT_VERIFICATION",
+          "name": "Support Contact Existence Verification",
+          "type": "static",
+          "method": "Verify docs/ contains support contact; verify not fake; verify no implied SLA",
+          "inputs": ["SUPPORT.md or equivalent"],
+          "expected_pass_condition": "Real contact info; no unqualified SLA promises",
+          "classification": "PASS / FAIL / UNKNOWN"
+        },
+        {
+          "test_id": "GAP7_INCIDENT_RESPONSE_DOCS",
+          "name": "Incident Response Documentation",
+          "type": "static",
+          "method": "Verify incident response doc exists and is realistic",
+          "inputs": ["INCIDENT_RESPONSE.md or equivalent"],
+          "expected_pass_condition": "Doc exists; no unqualified response time promises",
+          "classification": "PASS / FAIL / UNKNOWN"
+        }
+      ],
+      "implementation_status": "pending",
+      "evidence_lock": "must_include_doc_path_and_quote"
+    }
+  },
+  "determinism_config": {
+    "frozen_time": "2025-12-22T10:00:00Z",
+    "rng_seed": 42,
+    "runs_required": 10,
+    "digest_fields": [
+      "content_hash",
+      "event_count",
+      "artifact_count",
+      "storage_keys_count",
+      "error_count"
+    ]
+  },
+  "evidence_requirements": {
+    "PASS": [
+      "test_name",
+      "file_path_with_line_range",
+      "repro_command",
+      "actual_result",
+      "assertion_details"
+    ],
+    "FAIL": [
+      "test_name",
+      "file_path_with_line_range",
+      "repro_command",
+      "expected_result",
+      "actual_result",
+      "diff_if_applicable"
+    ],
+    "UNKNOWN": [
+      "test_name",
+      "reason_untestable",
+      "required_product_change_for_testability",
+      "reference_to_needs_scope_expansion"
+    ]
+  }
+}
