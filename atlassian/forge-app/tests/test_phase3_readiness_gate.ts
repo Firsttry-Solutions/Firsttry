@@ -3,6 +3,7 @@
  * PHASE 3: Verify readiness status determination
  */
 
+import { describe, it } from 'vitest';
 import { ReadinessStatus, evaluate_readiness, write_readiness_status, setMockApi } from '../src/readiness_gate';
 
 // Mock storage for testing
@@ -152,14 +153,14 @@ async function runTests() {
 
   if (passCount === totalCount) {
     console.log('✅ All readiness gate tests PASS\n');
-    process.exit(0);
+    // success
   } else {
-    console.log('❌ Some tests FAILED\n');
-    process.exit(1);
+    throw new Error('Some tests FAILED');
   }
 }
 
-runTests().catch((error) => {
-  console.error('Test harness error:', error);
-  process.exit(1);
+describe('Phase 3 - Readiness Gate Tests', () => {
+  it('should run all readiness gate tests', async () => {
+    await runTests();
+  });
 });

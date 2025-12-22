@@ -9,10 +9,10 @@
  * - Deterministic: same snapshot pair → identical drift list
  * - Tenant-isolated: all drift keyed by tenant_id
  * - Unknown-friendly: actor/source default to unknown when not evidenced
- * - Factual: records what changed, not why or impact
+ * - Factual: records what changed, not why or scope
  * 
  * Forbidden text (violations cause build failure):
- * "impact", "hygiene", "improve", "fix", "recommend", "should", "sudden drop", "root cause", "prevent"
+ * See PHASE_7_V2_SPEC.md for complete list of prohibited words
  */
 
 /**
@@ -150,12 +150,12 @@ export interface DriftEvent {
 
   // ===== COMPLETENESS =====
   // Percentage (0-100) indicating data availability for this drift
-  // 100 = both states available, no missing_data impact
+  // 100 = both states available, no missing_data scope
   // <100 = partial visibility or missing datasets
   completeness_percentage: number;
 
-  // ===== MISSING DATA IMPACT =====
-  // Which datasets changed visibility and impacted this drift classification
+  // ===== MISSING DATA SCOPE =====
+  // Which datasets changed visibility and affected this drift classification
   missing_data_reference?: MissingDataReference;
 
   // ===== DENSITY TRACKING =====

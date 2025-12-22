@@ -191,7 +191,7 @@ export function wrapCoverageMetricsWithDisclosure(
       disclosure_text:
         metrics.projectCount > 0
           ? `${metrics.projectCount} projects visible. All project metadata has been collected (100% completeness).`
-          : `Project count shows 0 because Phase 4 has only been observing for ${observationWindowDays} day(s). This is not a failure. Actual project count will be measured in Phase 5+.`,
+          : `Project count is not yet measured in Phase 4 (metadata-only phase). Actual project count will be measured in Phase 5+. This is not a failure.`,
       computed_at: new Date().toISOString(),
     },
     fieldCount_disclosure: {
@@ -204,7 +204,7 @@ export function wrapCoverageMetricsWithDisclosure(
       disclosure_text:
         metrics.fieldCount > 0
           ? `${metrics.fieldCount} fields (${metrics.fieldCounts.custom} custom, ${metrics.fieldCounts.system} system) are configured in your instance.`
-          : `Field count shows 0 because Phase 4 has only been observing for ${observationWindowDays} day(s). This is not a failure. Field usage will be measured in Phase 5+.`,
+          : `Field count is not yet measured in Phase 4 (metadata-only phase). Field usage will be measured in Phase 5+. This is not a failure.`,
       computed_at: new Date().toISOString(),
     },
     automationRuleCount_disclosure: {
@@ -217,7 +217,7 @@ export function wrapCoverageMetricsWithDisclosure(
       disclosure_text:
         metrics.automationRuleCount > 0
           ? `${metrics.automationRuleCount} automation rules exist in your instance. Rule presence has been fully enumerated (100% completeness).`
-          : `Automation rule count shows 0 because Phase 4 has only been observing for ${observationWindowDays} day(s). This is not a failure. Rule existence will be measured in Phase 5+.`,
+          : `Automation rule count is not yet measured in Phase 4 (metadata-only phase). Rule existence will be measured in Phase 5+. This is not a failure.`,
       computed_at: new Date().toISOString(),
     },
     automationRulesEnabled_disclosure: {
@@ -416,7 +416,7 @@ export function wrapAutomationRuleCoverageWithDisclosure(
       observation_window_days: observationWindowDays,
       confidence_level: ConfidenceLevel.INSUFFICIENT_DATA,
       zero_value_reason: ZeroValueReason.MEASUREMENT_NOT_YET_ENABLED,
-      disclosure_text: `${matrix.ruleName}: Rule is visible and ${matrix.enabled ? 'enabled' : 'disabled'}, but execution data shows zero because Phase 4 is metadata-only. Automation execution will be measured in Phase 5+. Rule presence does not indicate execution or health status.`,
+      disclosure_text: `${matrix.ruleName}: Rule is visible and ${matrix.enabled ? 'enabled' : 'disabled'}, but execution is not measurable in Phase 4 (metadata-only). Automation execution will be measured in Phase 5+. Rule presence does not indicate execution or health status.`,
       computed_at: new Date().toISOString(),
     },
   };

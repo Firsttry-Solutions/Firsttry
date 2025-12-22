@@ -236,20 +236,20 @@ export function createForecastWithMandatoryDisclosure(
 export function createScopeTransparencyDisclosure(): ScopeTransparencyDisclosure {
   return {
     title: "Why FirstTry Collects Metadata Before Analyzing Behavior",
-    body: `FirstTry follows a safety-first approach: we collect comprehensive Jira metadata (projects, issue types, statuses, custom fields, and automation rule definitions) before implementing behavior-analysis features. This phase-based approach ensures:
+    body: `FirstTry follows a safety-first approach: we collect comprehensive Jira metadata (projects, issue types, statuses, custom fields, and automation rule definitions) before implementing behavior-analysis features. Phase 4 is metadata-only. no behavioral analysis happens in Phase 4.
+
+This phase-based approach ensures:
 
 1. **Configuration Clarity**: Understand your exact Jira setup before building dependencies on it
 2. **Permission Transparency**: Verify all required API scopes before attempting analytics
 3. **Migration Safety**: Have complete metadata snapshots to enable future auditing and compliance
 4. **Audit Trail**: Maintain immutable evidence of what data existed and when
-5. **Honest Reporting**: Never show measurements without explaining what was observed
-
-No behavioral analysis happens in Phase 4. All metrics are zero, as expected. This is not a failure—it's the correct foundation for future phases.`,
+5. **Honest Reporting**: Never show measurements without explaining what was observed`,
     why_metadata_first: [
       "Behavioral analysis requires understanding the complete context (all fields, all rule definitions, all project structures) first",
       "Without metadata baselines, we cannot tell if behavior 'changed' or if configuration changed",
       "Marketplace trust requires proving we respect API scope boundaries before using behavior data",
-      "Admins must see exactly what we can access before trusting us with usage analytics. Audit trail of metadata ensures transparency.",
+      "Admins must see exactly what we can access before trusting us with usage analytics. Maintaining an audit trail of what data existed when ensures transparency.",
     ],
     published_at: new Date().toISOString(),
     version: "1.0",

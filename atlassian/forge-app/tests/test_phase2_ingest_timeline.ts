@@ -198,8 +198,17 @@ export function runTests(): void {
   }
 
   console.log(`\n${passed}/${passed + failed} tests passed`);
-  process.exit(failed > 0 ? 1 : 0);
+
+  if (failed > 0) {
+    throw new Error(`${failed} test(s) failed`);
+  }
 }
 
-// Run tests
-runTests();
+// Run tests wrapped in describe/it for Vitest
+import { describe, it } from 'vitest';
+
+describe('Phase 2: Ingest Timeline', () => {
+  it('should handle missing days correctly', () => {
+    runTests();
+  });
+});

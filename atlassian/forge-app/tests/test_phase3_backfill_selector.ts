@@ -3,6 +3,7 @@
  * PHASE 3: Verify backfill dates are selected correctly
  */
 
+import { describe, it, expect } from 'vitest';
 import { select_backfill_dates } from '../src/backfill_selector';
 
 function runTests() {
@@ -136,13 +137,13 @@ function runTests() {
 
   console.log(`\n${passCount}/${totalCount} tests passed\n`);
 
-  if (passCount === totalCount) {
-    console.log('✅ All backfill selector tests PASS\n');
-    process.exit(0);
-  } else {
-    console.log('❌ Some tests FAILED\n');
-    process.exit(1);
+  if (passCount !== totalCount) {
+    throw new Error(`${passCount}/${totalCount} tests FAILED`);
   }
 }
 
-runTests();
+describe('Phase 3: Backfill Selector', () => {
+  it('should pass all backfill selector tests', () => {
+    runTests();
+  });
+});

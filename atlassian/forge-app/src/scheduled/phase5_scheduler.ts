@@ -92,7 +92,7 @@ async function decideDueTrigger(
 ): Promise<'AUTO_12H' | 'AUTO_24H' | null> {
   try {
     const installTime = new Date(installationTimestamp).getTime();
-    const now = new Date().getTime();
+    const now = Date.now(); // Use Date.now() which respects fake timers
     const ageMs = now - installTime;
     const ageHours = ageMs / (1000 * 60 * 60);
 
@@ -207,6 +207,7 @@ export async function phase5SchedulerHandler(
           success: true,
           message: 'Installation timestamp not available; skipping generation',
           cloudId,
+          report_generated: false,
           timestamp: startTime,
         } as SchedulerResult),
       };
@@ -229,6 +230,29 @@ export async function phase5SchedulerHandler(
     const dueTrigger = await decideDueTrigger(cloudId, installationTimestamp);
 
     if (!dueTrigger) {
+      // Check if a DONE_KEY exists (trigger already generated)
+      if (auto12hDone || auto24hDone) {
+        const doneTrigger = auto12hDone ? 'AUTO_12H' : 'AUTO_24H';
+        console.info(
+          `[Phase5Scheduler] ${doneTrigger} has already been generated for ${cloudId}`
+        );
+        // Update last_run_at
+        state.last_run_at = startTime;
+        await saveSchedulerState(cloudId, state);
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            success: true,
+            message: `${doneTrigger} has already been generated`,
+            reason: 'DONE_KEY_EXISTS',
+            cloudId,
+            due_trigger: null,
+            report_generated: false,
+            timestamp: startTime,
+          } as SchedulerResult),
+        };
+      }
+
       console.info(
         `[Phase5Scheduler] No trigger due for ${cloudId}; ` +
         `auto_12h_done=${auto12hDone}, auto_24h_done=${auto24hDone}`
@@ -243,6 +267,7 @@ export async function phase5SchedulerHandler(
           message: 'No trigger due at this time',
           cloudId,
           due_trigger: null,
+          report_generated: false,
           timestamp: startTime,
         } as SchedulerResult),
       };
@@ -297,6 +322,7 @@ export async function phase5SchedulerHandler(
           message: `Backoff period active for ${dueTrigger}; deferring to next run`,
           cloudId,
           due_trigger: dueTrigger,
+          report_generated: false,
           backoff_expires_at: state.last_backoff_until,
           timestamp: startTime,
         } as SchedulerResult),

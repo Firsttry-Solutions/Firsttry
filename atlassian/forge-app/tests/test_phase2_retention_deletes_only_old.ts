@@ -5,6 +5,8 @@
  * Tests retention semantics through timeline management.
  */
 
+import { describe, it, expect } from 'vitest';
+
 /**
  * Mock in-memory timeline storage (synchronous)
  */
@@ -206,7 +208,13 @@ function runTests(): void {
   }
 
   console.log(`\n${passed}/${passed + failed} tests passed`);
-  process.exit(failed > 0 ? 1 : 0);
+  if (failed > 0) {
+    throw new Error(`${failed} tests failed`);
+  }
 }
 
-runTests();
+describe('Phase 2 - Retention Timeline Tests', () => {
+  it('should run all retention timeline tests', () => {
+    runTests();
+  });
+});

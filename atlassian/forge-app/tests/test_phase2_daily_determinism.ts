@@ -5,6 +5,7 @@
  * Runs recompute twice with the same fixtures and verifies deep equality.
  */
 
+import { describe, it, expect } from 'vitest';
 import { recompute_daily } from '../src/aggregation/daily';
 import { canonicalHash, canonicalizeToJSON } from '../src/canonicalize';
 
@@ -244,8 +245,14 @@ export function runTests(): void {
   }
 
   console.log(`\n${passed}/${passed + failed} tests passed`);
-  process.exit(failed > 0 ? 1 : 0);
+
+  if (failed > 0) {
+    throw new Error(`${failed} test(s) failed`);
+  }
 }
 
-// Run tests
-runTests();
+describe('Phase 2: Daily Aggregate Determinism', () => {
+  it('should produce identical output for same input', () => {
+    runTests();
+  });
+});

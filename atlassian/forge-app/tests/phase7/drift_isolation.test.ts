@@ -7,7 +7,7 @@
  * - No Jira API calls during drift computation
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { computeDrift } from '../../src/phase7/drift_compute';
 import { DriftEventStorage } from '../../src/phase7/drift_storage';
 

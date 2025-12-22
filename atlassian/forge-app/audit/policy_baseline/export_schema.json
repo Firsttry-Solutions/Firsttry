@@ -1,0 +1,52 @@
+{
+  "description": "Export data schema and metadata format",
+  "effective_date": "2024-01-01T00:00:00Z",
+  "source": "src/phase9/export_truth.ts EXPORT_SCHEMA_VERSION",
+  "schema_version": "1.0",
+  "breaking_change_policy": "Version must be incremented for any breaking changes to export format",
+  "required_metadata_fields": [
+    {
+      "field": "schemaVersion",
+      "type": "string",
+      "required": true,
+      "description": "Export format version for backward compatibility"
+    },
+    {
+      "field": "generatedAt",
+      "type": "string (ISO 8601 timestamp)",
+      "required": true,
+      "description": "When the export was generated"
+    },
+    {
+      "field": "snapshotAge",
+      "type": "object {days, hours, minutes}",
+      "required": true,
+      "description": "Age of underlying snapshot data"
+    },
+    {
+      "field": "completenessStatus",
+      "type": "enum: 'complete' | 'partial' | 'incomplete'",
+      "required": true,
+      "description": "Whether exported data is complete or has gaps"
+    },
+    {
+      "field": "missingDataList",
+      "type": "array of MissingDataEntry",
+      "required": true,
+      "description": "Details of any missing or incomplete data"
+    },
+    {
+      "field": "warnings",
+      "type": "array of strings",
+      "required": true,
+      "description": "Human-readable warnings about data quality or completeness"
+    }
+  ],
+  "missing_data_entry_schema": {
+    "category": "string",
+    "reason": "string",
+    "count": "number (optional)",
+    "date": "string ISO date (optional)",
+    "details": "string (optional)"
+  }
+}
