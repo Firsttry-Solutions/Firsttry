@@ -76,8 +76,7 @@ modules:
 
 # Permissions
 permissions:
-  scopes:
-    - storage:app  # Tenant-isolated storage (enforced by Forge platform)
+  scopes: []
 
 # Resource pages
 resources:

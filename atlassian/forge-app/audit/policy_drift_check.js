@@ -60,15 +60,101 @@ function checkScopes() {
     // Read manifest.yml to check for new scopes
     const manifestPath = path.join(__dirname, '../manifest.yml');
     const manifest = fs.readFileSync(manifestPath, 'utf8');
-    
-    if (manifest.includes('permissions:') || manifest.includes('scopes:')) {
-      logFail('DRIFT DETECTED: scopes section found in manifest.yml');
-      return false;
+    // Parse baseline expected scopes from baseline_scopes (array)
+    const expected = Array.isArray(baseline.baseline_scopes) ? baseline.baseline_scopes.slice() : [];
+    // Normalize baseline
+    const expectedSet = new Set(expected.map(s => String(s).trim()).filter(Boolean));
+
+    // Parse manifest.yml for permissions.scopes (robust, indentation-aware)
+    const lines = manifest.split(/\r?\n/);
+    const actual = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const rawLine = lines[i];
+      const leading = rawLine.match(/^(\s*)/)[1];
+      const trimmed = rawLine.trim();
+
+      // Detect a permissions: block
+      if (/^permissions:\s*$/.test(trimmed)) {
+        const permIndent = leading.length;
+        // scan inside permissions block
+        for (let j = i + 1; j < lines.length; j++) {
+          const lineJ = lines[j];
+          const leadingJ = lineJ.match(/^(\s*)/)[1];
+          const indentJ = leadingJ.length;
+          const tJ = lineJ.trim();
+
+          // If we dedent to same or less than permissions indent and encounter a new key, stop permissions scan
+          if (indentJ <= permIndent && /^[^\s-].+:/.test(tJ)) {
+            break;
+          }
+
+          // Detect scopes: line (inline or block)
+          const scopesInline = tJ.match(/^scopes:\s*\[([^\]]*)\]\s*$/);
+          if (/^scopes:\s*/.test(tJ)) {
+            // If inline array present, parse items inside brackets
+            if (scopesInline) {
+              const items = scopesInline[1].split(',').map(s => s.trim()).filter(Boolean);
+              for (const it of items) {
+                actual.push(it.replace(/^['"]|['"]$/g, ''));
+              }
+              continue;
+            }
+
+            // If scopes: is an empty mapping like 'scopes: []' or 'scopes: {}', handle
+            if (/^scopes:\s*\[\s*\]\s*$/.test(tJ) || /^scopes:\s*\{\s*\}\s*$/.test(tJ)) {
+              // explicit empty list
+              continue;
+            }
+
+            // Otherwise, collect subsequent dash-prefixed list items under scopes
+            const scopesIndent = indentJ;
+            for (let k = j + 1; k < lines.length; k++) {
+              const lineK = lines[k];
+              const leadingK = lineK.match(/^(\s*)/)[1];
+              const indentK = leadingK.length;
+              const tK = lineK.trim();
+
+              // stop if we dedent to same or less than scopes line or encounter new key
+              if (indentK <= scopesIndent && /^[^\s-].+:/.test(tK)) break;
+              // match '- item'
+              const m = tK.match(/^[-]\s*(.+)$/);
+              if (m) {
+                const raw = m[1].split('#')[0].trim();
+                if (raw) actual.push(raw);
+                continue;
+              }
+              // stop on non-list content at the same or lesser indent
+              if (tK === '' || /^[^\s-].+:/.test(tK)) break;
+            }
+          }
+        }
+      }
     }
-    
-    // Forge apps inherit scopes - no explicit scopes should be present
-    logPass('No OAuth scope drift detected (manifest inherits from Forge platform)');
-    return true;
+
+    // Normalize actual scopes
+    const actualSet = new Set(actual.map(s => String(s).trim()).filter(Boolean));
+
+    // Determine diffs (sorted for determinism)
+    const missingInManifest = Array.from(expectedSet).filter(s => !actualSet.has(s)).sort();
+    const extraInManifest = Array.from(actualSet).filter(s => !expectedSet.has(s)).sort();
+
+    if (missingInManifest.length === 0 && extraInManifest.length === 0) {
+      logPass('OAuth scopes match baseline');
+      return true;
+    }
+
+    // Report precise drift
+    logFail('DRIFT DETECTED: scopes section found in manifest.yml');
+    logFail('POLICY_DRIFT_SCOPES_UNAPPROVED: scope mismatch between manifest and baseline');
+    if (missingInManifest.length > 0) {
+      logFail(`MISSING_IN_MANIFEST: ${missingInManifest.join(', ')}`);
+    }
+    if (extraInManifest.length > 0) {
+      logFail(`EXTRA_IN_MANIFEST: ${extraInManifest.join(', ')}`);
+    }
+
+    return false;
   } catch (err) {
     logWarn(`Error checking scopes: ${err.message}`);
     return false;
