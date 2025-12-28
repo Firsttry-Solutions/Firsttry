@@ -75,6 +75,17 @@ export class RulesetInvariantError extends Error {
 export const DEFAULT_CURRENT_RULESET_VERSION: RulesetVersion = 'ruleset/2025-12-22';
 
 /**
+ * Legacy/default ruleset version used when evidence omits a pinned version.
+ *
+ * Backward-compatibility note:
+ * - Older evidence may reference simple numeric versions like '1.0'.
+ * - We keep a named constant so regeneration can deterministically fall back
+ *   to a stable legacy ruleset when the stored bundle lacks a version.
+ * - This constant is intentionally separate from the current ruleset id.
+ */
+export const DEFAULT_RULESET_VERSION: RulesetVersion = '1.0';
+
+/**
  * Registry of all known rulesets (immutable after registration)
  * Internal storage: version → definition
  */
@@ -163,7 +174,10 @@ export function initializeDefaultRulesets(): void {
   registerRuleset({
     version: DEFAULT_CURRENT_RULESET_VERSION,
     description: 'Default truth computation ruleset (2025-12-22)',
-    createdAtISO: new Date().toISOString(),
+    // Use a stable, deterministic createdAt timestamp to avoid test-time
+    // non-determinism. This file is source-controlled and the timestamp is
+    // a historical marker, not runtime state.
+    createdAtISO: '2025-12-22T00:00:00.000Z',
     
     computeTruth: (inputs: RulesetComputeInputs): OutputTruthMetadata => {
       // Current truth computation logic
@@ -186,7 +200,44 @@ export function initializeDefaultRulesets(): void {
       };
     },
   });
+
+  // Register a legacy '1.0' ruleset to remain compatible with historical
+  // evidence produced early in the project's lifecycle. This ruleset
+  // reproduces the earlier computation behavior deterministically so that
+  // regeneration of legacy evidence remains stable.
+  registerRuleset({
+    version: DEFAULT_RULESET_VERSION,
+    description: 'Legacy ruleset (1.0) — maintained for backward compatibility',
+    createdAtISO: '2025-12-20T00:00:00.000Z',
+    computeTruth: (inputs: RulesetComputeInputs): OutputTruthMetadata => {
+      // Reconstruct the legacy OutputTruthMetadata deterministically from
+      // the provided inputs. This mirrors the historical rules used when
+      // the evidence was originally generated.
+      const snapshotAgeSeconds = Math.floor(
+        (new Date(inputs.nowISO).getTime() - new Date(inputs.generatedAtISO).getTime()) / 1000
+      );
+
+      return {
+        generatedAtISO: inputs.nowISO,
+        completenessPercent: inputs.completenessPercent,
+        confidenceLevel: inputs.confidenceLevel,
+        validityStatus: inputs.validityStatus,
+        driftStatus: inputs.driftStatus,
+        missingData: Array.isArray(inputs.missingData) ? [...inputs.missingData].sort() : [],
+        snapshotAgeSeconds,
+        validUntilISO: new Date(new Date(inputs.nowISO).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        rulesetVersion: inputs.rulesetVersion,
+        warnings: [],
+      };
+    },
+  });
 }
+
+// Initialize default rulesets eagerly so that consumers importing this module
+// can rely on legacy and current ruleset ids being resolvable without
+// requiring explicit runtime initialization calls. This is safe because
+// registration is idempotent and does not mutate behavior.
+initializeDefaultRulesets();
 
 /**
  * Validate that a ruleset version is available
