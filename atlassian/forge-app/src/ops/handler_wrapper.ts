@@ -19,6 +19,7 @@ import { createTraceContext, TraceContext } from './trace';
 import { classifyError } from './errors';
 import { recordMetricEvent, OperationOutcome } from './metrics';
 import { TenantContext } from '../security/tenant_context';
+import { wrapRequestJira } from '../runtime_guards';
 
 export interface OperationRequest {
   [key: string]: unknown;
@@ -91,6 +92,23 @@ export function wrapHandler(
         tenantContext = extractTenantContext(request);
       }
 
+      // Ensure a local `api` is available on the request object so handlers
+      // can obtain `asApp()` / `asUser()` through a single runtime boundary.
+      // This injection is minimal and only applied per-request (no globals).
+      if (!(request as any).api) {
+        const baseRequestJira = async (route: string, options?: any) => {
+          if ((request as any).__forwardRequestJira) {
+            return (request as any).__forwardRequestJira(route, options);
+          }
+          return { route, options };
+        };
+        const wrapped = wrapRequestJira(baseRequestJira);
+        (request as any).api = {
+          asApp() { return { requestJira: wrapped }; },
+          asUser() { return { requestJira: wrapped }; },
+        };
+      }
+
       // Call the actual handler
       const response = await handler(request);
 
@@ -153,6 +171,7 @@ export function wrapHandler(
           console.error('[HandlerWrapper] Failed to record metric:', metricErr);
         }
       }
+      
     }
   };
 }
