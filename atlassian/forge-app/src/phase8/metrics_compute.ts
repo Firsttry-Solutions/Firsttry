@@ -175,7 +175,7 @@ export function computeM2_InconsistentFieldUsage(
   const disclosures = [
     'Measures variance of field usage across projects.',
     'Threshold for inconsistency: 0.35 (variance as proportion of mean).',
-    'Does not identify root causes or prescribe changes.',
+    'Does not identify underlying factors or prescribe changes.',
     'Missing project-level usage data causes NOT_AVAILABLE status.',
   ];
 
