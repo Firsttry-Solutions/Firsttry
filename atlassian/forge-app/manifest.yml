@@ -76,7 +76,8 @@ modules:
 
 # Permissions
 permissions:
-  scopes: []
+  scopes:
+    - storage:app
 
 # Resource pages
 resources:
