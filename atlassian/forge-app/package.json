@@ -12,7 +12,8 @@
     "verify:phase4": "node scripts/verify_phase4.mjs",
     "verify:phase5": "node scripts/verify_phase5.mjs",
     "verify:phase4-5": "node scripts/verify_phase4_5.mjs",
-    "lint": "echo \"lint: not configured (intentional)\""
+    "lint": "echo \"lint: not configured (intentional)\"",
+    "build": "echo \"build: not configured (intentional)\""
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
