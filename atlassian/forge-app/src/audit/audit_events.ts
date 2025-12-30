@@ -218,6 +218,54 @@ export class AuditEventStore {
   private getAuditEventKey(eventId: string): string {
     return `${this.tenantId}:audit:${eventId}`;
   }
+
+  /**
+   * Convenience: record a generic failure event for system operations
+   */
+  async recordFailureEvent(eventName: string, message: string, context: any): Promise<void> {
+    const nowISO = new Date().toISOString();
+    const expiresAtISO = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const snapshotId = context?.snapshotId || context?.evidenceId || 'unknown';
+    const outputId = context?.outputId || context?.evidenceId || 'unknown';
+
+    await this.recordEvent(
+      'OUTPUT_GENERATED',
+      snapshotId,
+      outputId,
+      {
+        outputType: undefined,
+        validityStatus: context?.originalTruth || context?.validityStatus || undefined,
+        operatorAction: 'failed',
+        reason: typeof context === 'string' ? context : JSON.stringify(context || {}),
+      },
+      nowISO,
+      expiresAtISO
+    );
+  }
+
+  /**
+   * Convenience: record a generic success event for system operations
+   */
+  async recordSuccessEvent(eventName: string, message: string, context: any): Promise<void> {
+    const nowISO = new Date().toISOString();
+    const expiresAtISO = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const snapshotId = context?.snapshotId || context?.evidenceId || 'unknown';
+    const outputId = context?.outputId || context?.evidenceId || 'unknown';
+
+    await this.recordEvent(
+      'OUTPUT_GENERATED',
+      snapshotId,
+      outputId,
+      {
+        outputType: undefined,
+        validityStatus: context?.originalTruth || context?.validityStatus || undefined,
+        operatorAction: 'succeeded',
+        reason: typeof context === 'string' ? context : JSON.stringify(context || {}),
+      },
+      nowISO,
+      expiresAtISO
+    );
+  }
 }
 
 /**

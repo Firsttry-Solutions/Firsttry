@@ -79,7 +79,7 @@ The health endpoint returns:
 |--------|---------|--------|
 | **HEALTHY** | All SLIs above target, recent operations succeeding, data complete | None; system working as expected |
 | **DEGRADED** | One or more SLIs below target (e.g., success rate 95%), but not critical | Investigate metric events for error patterns |
-| **UNHEALTHY** | Critical SLI violation (e.g., success rate <80% or false_green_rate >0.0%) | Page on-call engineer immediately |
+| **UNHEALTHY** | Critical SLI violation (e.g., success rate (80% or false_green_rate)0.0%) | Page on-call engineer immediately |
 | **UNKNOWN** | Insufficient data to determine health (e.g., <10 operations in window) | Create more snapshots/exports to populate metrics; not a failure |
 
 ### When Health is UNKNOWN
@@ -276,8 +276,8 @@ Every operation generates a unique correlation ID (format: 32-char hex, no times
 ## Contact Engineering
 
 For issues related to:
-- truth_determinism_rate < 100%
-- false_green_rate > 0%
+- truth_determinism_rate (100%
+- false_green_rate) 0%
 - Any INVARIANT class errors
 - Unexplained SLI degradation
 

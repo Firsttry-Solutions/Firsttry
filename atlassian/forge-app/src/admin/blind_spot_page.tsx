@@ -13,6 +13,7 @@
  */
 
 import React, { useState } from 'react';
+import { view } from "@forge/ui";
 
 // ============================================================================
 // TYPES
@@ -105,7 +106,6 @@ export function BlindSpotTimeline(props: {
                 width: `${width}%`,
                 backgroundColor: REASON_COLORS[period.reason],
                 cursor: 'pointer',
-                title: REASON_TOOLTIPS[period.reason],
               }}
               title={REASON_TOOLTIPS[period.reason]}
             />

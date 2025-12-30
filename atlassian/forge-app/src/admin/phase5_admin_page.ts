@@ -17,7 +17,6 @@
  * - No interpretation, no adjectives, no scoring
  */
 
-// @ts-expect-error: @forge/api available via Forge CLI only
 import api from '@forge/api';
 import { loadAdminPageState, saveLatestReport, AdminPageState } from './admin_page_loader';
 import { handleManualTrigger, handleAutoTrigger } from '../phase5_report_generator';

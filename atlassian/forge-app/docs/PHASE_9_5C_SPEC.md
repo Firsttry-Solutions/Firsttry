@@ -386,7 +386,7 @@ After each snapshot:
 ### 2. Admin Dashboard
 ```
 Display:
-  - Last snapshot: <date> ago
+  - Last snapshot: (date) ago
   - 7/30/90-day reliability charts
   - Current alert conditions (if any)
   - Notification history

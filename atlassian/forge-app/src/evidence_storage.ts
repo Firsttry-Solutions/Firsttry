@@ -11,7 +11,6 @@
  * - coverage_flags (AVAILABLE | PARTIAL | MISSING | NOT_PERMITTED_BY_SCOPE)
  */
 
-// @ts-expect-error: @forge/api available via Forge CLI only
 import api from '@forge/api';
 
 export enum EvidenceSource {
@@ -64,7 +63,6 @@ export async function storeEvidenceRecord(
   // Store in Forge storage under evidence index
   const storageKey = `evidence/${evidenceId}`;
 
-  // @ts-expect-error: api types
   await api.asApp().requestStorage(async (storage) => {
     // Check if already exists (idempotency)
     const existing = await storage.get(storageKey);
@@ -94,7 +92,6 @@ export async function storeEvidenceRecord(
 export async function getEvidenceRecord(evidenceId: string): Promise<EvidenceRecord | null> {
   const storageKey = `evidence/${evidenceId}`;
 
-  // @ts-expect-error: api types
   const record = await api.asApp().requestStorage(async (storage) => {
     return await storage.get(storageKey);
   });
@@ -109,7 +106,6 @@ export async function listEvidenceRecords(
   limit: number = 100,
   offset: number = 0
 ): Promise<EvidenceRecord[]> {
-  // @ts-expect-error: api types
   const records = await api.asApp().requestStorage(async (storage) => {
     const indexKey = `evidence:index`;
     const index = (await storage.get(indexKey) || []) as string[];
@@ -137,7 +133,6 @@ export async function listEvidenceRecords(
  * Filter evidence records by source
  */
 export async function filterEvidenceBySource(source: EvidenceSource): Promise<EvidenceRecord[]> {
-  // @ts-expect-error: api types
   const records = await api.asApp().requestStorage(async (storage) => {
     const indexKey = `evidence:index`;
     const index = (await storage.get(indexKey) || []) as string[];
@@ -176,7 +171,6 @@ export async function getMostRecentEvidence(source: EvidenceSource): Promise<Evi
  * Count total evidence records
  */
 export async function countEvidenceRecords(): Promise<number> {
-  // @ts-expect-error: api types
   const count = await api.asApp().requestStorage(async (storage) => {
     const indexKey = `evidence:index`;
     const index = (await storage.get(indexKey) || []) as string[];

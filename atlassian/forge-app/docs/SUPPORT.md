@@ -8,6 +8,12 @@
 
 ## Support Channels
 
+## Support contact
+**Primary contact (paste-ready):** GitHub Issues — https://github.com/Global-domination/Firstry/issues
+**Acknowledgement target:** Best effort (no SLA). If a stricter timeline is required, mark as UNKNOWN and request via the issue text.
+
+---
+
 ### Primary Support
 
 **Method**: GitHub Issues  
@@ -16,9 +22,9 @@
 **Scope**: Bug reports, feature requests, technical questions
 
 **Process**:
-1. Open issue in GitHub repository
+1. Open an issue at: https://github.com/Global-domination/Firstry/issues
 2. Include app version, Jira Cloud site ID (if applicable), and detailed description
-3. Maintainers will respond when available (no guaranteed timeframe)
+3. Maintainers will respond when available (best effort; no guaranteed SLA)
 
 ### Community Support
 
@@ -120,10 +126,10 @@ If any SLI drops below target, we escalate automatically.
 
 ## Escalation Path
 
-1. Initial support email: [SUPPORT_EMAIL_TO_BE_SET]
-2. If no response in 2x response target: escalate to engineering
-3. If SEV1 unresolved after 4 hours: escalate to on-call engineer
-4. All escalations include full correlation ID trace
+1. Primary: GitHub Issues (link above)
+2. If an issue requires escalation, include `@maintainers` and request an expedited response in the issue body
+3. If SEV1 unresolved after an agreed acknowledgement, escalate within repository issue to maintainers
+4. All escalations should include the correlation ID trace
 
 ## FAQ
 
@@ -146,5 +152,8 @@ A: Your actual snapshot and configuration data is never sent to FirstTry. We onl
 
 For support escalations or questions about this policy:
 
-**Email:** [SUPPORT_EMAIL_TO_BE_SET]  
-**Status Page:** [STATUS_PAGE_URL_TO_BE_SET]
+**Primary support (issues):** https://github.com/Global-domination/Firstry/issues
+**Status Page:** Not documented
+
+## Contact
+For support requests, contact: contact@firsttry.run

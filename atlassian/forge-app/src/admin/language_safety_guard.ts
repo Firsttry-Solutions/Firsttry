@@ -187,7 +187,6 @@ export function validateAllStaticUIStrings(): void {
 }
 
 // Run validation at module load (in Node.js environment only)
-// @ts-expect-error: window may not be defined in server environment
 if (typeof window === 'undefined') {
   // Running in Node.js (server-side) - safe to validate
   validateAllStaticUIStrings();

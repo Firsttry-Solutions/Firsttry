@@ -9,6 +9,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { view } from "@forge/ui";
 import { AuditReadinessMap } from '../phase9_5d/audit_readiness';
 
 interface AuditReadinessPageProps {

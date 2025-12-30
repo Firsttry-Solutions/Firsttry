@@ -11,7 +11,13 @@
  * - System chooses safe defaults automatically (no user interaction)
  */
 
-import { OutputTruthMetadata } from '../output/output_contract';
+import {
+  OutputTruthMetadata,
+  OutputValidityStatus,
+  DriftStatus,
+  ConfidenceLevel,
+  OUTPUT_TRUTH_SCHEMA_VERSION,
+} from '../output/output_contract';
 import { EvidenceBundle } from '../evidence/evidence_model';
 
 /**
@@ -46,11 +52,12 @@ export interface RulesetDefinition {
 export interface RulesetComputeInputs {
   generatedAtISO: string;
   snapshotId: string;
+  snapshotCreatedAtISO: string;
   rulesetVersion: string;
   completenessPercent: number;
-  confidenceLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
-  validityStatus: 'VALID' | 'INVALID' | 'UNKNOWN';
-  driftStatus: 'stable' | 'detected' | 'unknown';
+  confidenceLevel: ConfidenceLevel;
+  validityStatus: OutputValidityStatus;
+  driftStatus: DriftStatus;
   missingData: string[];
   nowISO: string;
 }
@@ -182,22 +189,27 @@ export function initializeDefaultRulesets(): void {
     computeTruth: (inputs: RulesetComputeInputs): OutputTruthMetadata => {
       // Current truth computation logic
       // This function is deterministic: same inputs → same output always
+      const snapshotAgeSeconds = Math.floor(
+        (new Date(inputs.nowISO).getTime() - new Date(inputs.generatedAtISO).getTime()) / 1000
+      );
+      const completenessStatus = inputs.completenessPercent === 100 ? 'COMPLETE' : 'INCOMPLETE';
       return {
+        schemaVersion: OUTPUT_TRUTH_SCHEMA_VERSION,
         generatedAtISO: inputs.generatedAtISO,
+        snapshotId: inputs.snapshotId,
+        snapshotCreatedAtISO: inputs.snapshotCreatedAtISO,
+        snapshotAgeSeconds,
+        rulesetVersion: inputs.rulesetVersion,
+        driftStatus: inputs.driftStatus,
         completenessPercent: inputs.completenessPercent,
+        missingData: inputs.missingData,
+        completenessStatus,
         confidenceLevel: inputs.confidenceLevel,
         validityStatus: inputs.validityStatus,
-        driftStatus: inputs.driftStatus,
-        missingData: inputs.missingData,
-        snapshotAgeSeconds: Math.floor(
-          (new Date(inputs.nowISO).getTime() - new Date(inputs.generatedAtISO).getTime()) / 1000
-        ),
-        validUntilISO: new Date(
-          new Date(inputs.generatedAtISO).getTime() + 90 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        rulesetVersion: inputs.rulesetVersion,
+        validUntilISO: new Date(new Date(inputs.generatedAtISO).getTime() + 90 * 24 * 60 * 60 * 1000).toISOString(),
         warnings: [],
-      };
+        reasons: [],
+      } as OutputTruthMetadata;
     },
   });
 
@@ -216,9 +228,12 @@ export function initializeDefaultRulesets(): void {
       const snapshotAgeSeconds = Math.floor(
         (new Date(inputs.nowISO).getTime() - new Date(inputs.generatedAtISO).getTime()) / 1000
       );
-
+      const completenessStatus = inputs.completenessPercent === 100 ? 'COMPLETE' : 'INCOMPLETE';
       return {
+        schemaVersion: OUTPUT_TRUTH_SCHEMA_VERSION,
         generatedAtISO: inputs.nowISO,
+        snapshotId: inputs.snapshotId,
+        snapshotCreatedAtISO: inputs.snapshotCreatedAtISO,
         completenessPercent: inputs.completenessPercent,
         confidenceLevel: inputs.confidenceLevel,
         validityStatus: inputs.validityStatus,
@@ -227,8 +242,10 @@ export function initializeDefaultRulesets(): void {
         snapshotAgeSeconds,
         validUntilISO: new Date(new Date(inputs.nowISO).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         rulesetVersion: inputs.rulesetVersion,
+        completenessStatus,
         warnings: [],
-      };
+        reasons: [],
+      } as OutputTruthMetadata;
     },
   });
 }
