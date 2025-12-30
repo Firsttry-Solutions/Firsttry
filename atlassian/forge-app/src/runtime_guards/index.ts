@@ -15,11 +15,11 @@ export function wrapRequestJira<TReq extends { method?: string }>(
       const route = req as string;
       const options = rest[0] as any;
       assertReadOnlyRequest(options?.method);
-      return requestJiraFn(route, options);
+      return (requestJiraFn as any)(route, options);
     }
 
     assertReadOnlyRequest(req?.method);
-    return requestJiraFn(req, ...rest);
+    return (requestJiraFn as any)(req, ...rest);
   };
 }
 

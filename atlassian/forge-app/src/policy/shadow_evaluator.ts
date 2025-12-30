@@ -107,11 +107,22 @@ export function computeShadowEvaluation(bundle: EvidenceBundle): ShadowEvaluatio
     const computeInputs: RulesetComputeInputs = {
       generatedAtISO: bundle.generatedAtISO,
       snapshotId: bundle.snapshotRefs[0]?.snapshotId || 'unknown',
+      snapshotCreatedAtISO: bundle.snapshotRefs[0]?.capturedAtISO || bundle.generatedAtISO,
       rulesetVersion: currentRulesetVersion,
       completenessPercent: bundle.outputTruthMetadata.completenessPercent,
       confidenceLevel: bundle.outputTruthMetadata.confidenceLevel,
       validityStatus: bundle.outputTruthMetadata.validityStatus,
-      driftStatus: bundle.driftStatusAtGeneration.driftStatusSummary,
+      driftStatus: ((): any => {
+        const s = bundle.driftStatusAtGeneration.driftStatusSummary;
+        switch (s) {
+          case 'stable':
+            return 'NO_DRIFT';
+          case 'detected':
+            return 'DRIFT_DETECTED';
+          default:
+            return 'UNKNOWN';
+        }
+      })(),
       missingData: bundle.missingData.map((d) => d.datasetName),
       nowISO: evaluatedAtISO,
     };

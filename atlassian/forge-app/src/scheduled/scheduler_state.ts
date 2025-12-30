@@ -16,7 +16,6 @@
  * - phase5:scheduler:{cloudId}:AUTO_24H:ATTEMPT → timestamp of last attempt
  */
 
-// @ts-expect-error: @forge/api available via Forge CLI only
 import api from '@forge/api';
 
 export interface SchedulerState {

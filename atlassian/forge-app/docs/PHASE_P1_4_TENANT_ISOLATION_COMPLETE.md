@@ -63,16 +63,16 @@ Phase P1.4 implements **canonical tenant isolation enforcement** at all data bou
   - Rejects reserved prefixes (cloud:)
   - Single point of key generation
 
-- `tenantStorageGet(ctx: TenantContext, logicalKey: string): Promise<any>`
+- `tenantStorageGet(ctx: TenantContext, logicalKey: string): Promise(any)`
   - Retrieves value from tenant-scoped storage
   - Requires valid TenantContext (fail-closed)
 
-- `tenantStorageSet(ctx: TenantContext, logicalKey: string, value, options?): Promise<void>`
+- `tenantStorageSet(ctx: TenantContext, logicalKey: string, value, options?): Promise(void)`
   - Stores value in tenant-scoped storage
   - Supports TTL and other Forge options
   - Requires valid TenantContext (fail-closed)
 
-- `tenantStorageDelete(ctx: TenantContext, logicalKey: string): Promise<void>`
+- `tenantStorageDelete(ctx: TenantContext, logicalKey: string): Promise(void)`
   - Deletes from tenant-scoped storage
   - Requires valid TenantContext (fail-closed)
 

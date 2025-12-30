@@ -11,7 +11,6 @@
  * 5. Do NOT mutate Jira state (read-only)
  */
 
-// @ts-expect-error: @forge/api available via Forge CLI only
 import api from '@forge/api';
 import {
   Phase5Report,

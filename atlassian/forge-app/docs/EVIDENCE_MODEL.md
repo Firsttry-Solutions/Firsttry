@@ -244,12 +244,12 @@ Mismatches are NEVER hidden:
 
 ### Export Formats
 
-**JSON Export** (`evidence_<id>.json`)
+**JSON Export** (`evidence_(id).json`)
 - Full structured data
 - Machine-readable
 - For systems integration and archival
 
-**Markdown Export** (`evidence_<id>.md`)
+**Markdown Export** (`evidence_(id).md`)
 - Human-readable report
 - Includes verification status
 - Shows watermarks if unverified

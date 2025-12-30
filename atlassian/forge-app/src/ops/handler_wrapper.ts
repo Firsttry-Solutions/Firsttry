@@ -102,7 +102,7 @@ export function wrapHandler(
           }
           return { route, options };
         };
-        const wrapped = wrapRequestJira(baseRequestJira);
+        const wrapped = wrapRequestJira(baseRequestJira as any);
         (request as any).api = {
           asApp() { return { requestJira: wrapped }; },
           asUser() { return { requestJira: wrapped }; },

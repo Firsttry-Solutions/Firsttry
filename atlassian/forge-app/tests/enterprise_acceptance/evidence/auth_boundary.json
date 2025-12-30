@@ -1,0 +1,55 @@
+{
+  "check": "auth_boundary_sanity",
+  "status": "PASS",
+  "details": {
+    "files_scanned": 120,
+    "write_api_violations": [],
+    "write_api_count": 0,
+    "no_write_apis": true,
+    "jira_api_calls": [
+      {
+        "file": "src/jira_ingest.ts",
+        "line": 155,
+        "method": "GET",
+        "endpoint": "/rest/api/3/project"
+      },
+      {
+        "file": "src/jira_ingest.ts",
+        "line": 218,
+        "method": "GET",
+        "endpoint": "/rest/api/3/issuetype"
+      },
+      {
+        "file": "src/jira_ingest.ts",
+        "line": 281,
+        "method": "GET",
+        "endpoint": "/rest/api/3/status"
+      },
+      {
+        "file": "src/jira_ingest.ts",
+        "line": 344,
+        "method": "GET",
+        "endpoint": "/rest/api/3/fields"
+      },
+      {
+        "file": "src/jira_ingest.ts",
+        "line": 411,
+        "method": "GET",
+        "endpoint": "/rest/api/3/search"
+      },
+      {
+        "file": "src/jira_ingest.ts",
+        "line": 490,
+        "method": "GET",
+        "endpoint": "/rest/api/3/automations"
+      }
+    ],
+    "total_jira_calls": 6,
+    "non_get_calls": [],
+    "interactive_violations": [],
+    "no_user_interaction_required": true,
+    "external_auth_libraries": [],
+    "no_external_auth": true
+  },
+  "limitations": []
+}
