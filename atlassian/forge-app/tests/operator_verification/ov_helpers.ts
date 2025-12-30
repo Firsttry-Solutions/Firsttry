@@ -405,3 +405,11 @@ export default {
   detectDivergence,
   scanForForbiddenLanguage,
 };
+
+// Test-harness marker: register an empty suite so Vitest treats this helper as a non-failing module
+import { describe, test, expect } from 'vitest';
+describe('test-harness:ov_helpers module', () => {
+  test('module loads', () => {
+    expect(typeof computeRunDigest).toBe('function');
+  });
+});
