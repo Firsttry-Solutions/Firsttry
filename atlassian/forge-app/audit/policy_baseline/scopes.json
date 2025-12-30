@@ -1,7 +1,9 @@
 {
   "description": "Authorized OAuth scopes for the Forge app",
-  "note": "Forge apps inherit scopes from the platform - no explicit scopes in manifest.yml",
+  "note": "Forge apps inherit scopes from the platform - declared baseline for explicit scopes",
   "effective_date": "2024-01-01T00:00:00Z",
-  "source": "manifest.yml (no scopes section)",
-  "baseline_scopes": []
+  "source": "manifest.yml",
+  "baseline_scopes": [
+    "storage:app"
+  ]
 }

@@ -16,7 +16,6 @@
  * No marketing language. No aspirational claims.
  */
 
-import { htmlEscape } from './data_handling_page';
 import type { ProcurementPacket } from './procurement_packet';
 
 export interface DataHandlingPageOptions {

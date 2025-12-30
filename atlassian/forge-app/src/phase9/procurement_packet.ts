@@ -170,7 +170,7 @@ export function createProcurementPacket(
         'All API calls are read-only GET requests',
       ],
       rate_limit_behavior: 'Respects Jira Cloud rate limits (100 requests/minute). Backs off on 429 responses.',
-      recording_started_at,
+      recording_started_at: recordingStartedAt,
     },
 
     determinism_proof: {

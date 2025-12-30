@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/react": "^18.2.21",
     "@vitest/ui": "^4.0.16",
     "glob": "^13.0.0",
     "typescript": "^5.0.0",
@@ -24,5 +25,8 @@
     "vitest": "^4.0.16",
     "yaml": "^2.8.2"
   },
-  "_comment": "Forge CLI packages (@forge/api, @forge/ui) require authentication to private Atlassian registry. Installed via 'forge create' workflow in production. See docs/ATLASSIAN_DUAL_LAYER_SPEC.md for installation instructions."
+  "_comment": "Forge CLI packages (@forge/api, @forge/ui) require authentication to private Atlassian registry. Installed via 'forge create' workflow in production. See docs/ATLASSIAN_DUAL_LAYER_SPEC.md for installation instructions.",
+  "dependencies": {
+    "@forge/api": "6.4.2"
+  }
 }

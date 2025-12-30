@@ -349,15 +349,15 @@ function detectScopeChanges(
 ): DriftEvent[] {
   const events: DriftEvent[] = [];
 
-  const missingA = new Map(
-    (snapshotA.missing_data || []).map((item: any) => [item.dataset_name, item])
+  const missingA = new Map<string, any>(
+    (snapshotA.missing_data || []).map((item: any) => [String(item.dataset_name), item])
   );
-  const missingB = new Map(
-    (snapshotB.missing_data || []).map((item: any) => [item.dataset_name, item])
+  const missingB = new Map<string, any>(
+    (snapshotB.missing_data || []).map((item: any) => [String(item.dataset_name), item])
   );
 
   // Check for datasets that became visible or invisible
-  const allDatasets = new Set([...missingA.keys(), ...missingB.keys()]);
+  const allDatasets = new Set<string>([...Array.from(missingA.keys()).map(k => String(k)), ...Array.from(missingB.keys()).map(k => String(k))]);
 
   allDatasets.forEach((datasetName) => {
     const itemA = missingA.get(datasetName);
@@ -365,6 +365,7 @@ function detectScopeChanges(
 
     if (itemA && !itemB) {
       // Dataset is now visible (was missing, now not)
+      const reasonCode: string = ((itemA && typeof itemA === 'object' && 'reason_code' in itemA) ? (itemA as any).reason_code : 'unknown') as string;
       const event: DriftEvent = {
         tenant_id: tenantId,
         cloud_id: cloudId,
@@ -379,7 +380,7 @@ function detectScopeChanges(
         object_id: datasetName,
         change_type: ChangeType.ADDED, // Became visible
         classification: Classification.DATA_VISIBILITY_CHANGE,
-        before_state: { status: 'missing', reason: itemA.reason_code },
+        before_state: { status: 'missing', reason: reasonCode },
         after_state: { status: 'visible' },
         actor: 'unknown',
         source: 'unknown',
@@ -387,7 +388,7 @@ function detectScopeChanges(
         completeness_percentage: 90,
         missing_data_reference: {
           dataset_keys: [datasetName],
-          reason_codes: [itemA.reason_code],
+          reason_codes: [reasonCode],
         },
         repeat_count: 1,
         schema_version: '7.0',
@@ -398,6 +399,7 @@ function detectScopeChanges(
       events.push(event);
     } else if (!itemA && itemB) {
       // Dataset is now missing (was visible, now not)
+      const reasonCodeB: string = ((itemB && typeof itemB === 'object' && 'reason_code' in itemB) ? (itemB as any).reason_code : 'unknown') as string;
       const event: DriftEvent = {
         tenant_id: tenantId,
         cloud_id: cloudId,
@@ -413,14 +415,14 @@ function detectScopeChanges(
         change_type: ChangeType.REMOVED, // Became invisible
         classification: Classification.DATA_VISIBILITY_CHANGE,
         before_state: { status: 'visible' },
-        after_state: { status: 'missing', reason: itemB.reason_code },
+        after_state: { status: 'missing', reason: reasonCodeB },
         actor: 'unknown',
         source: 'unknown',
         actor_confidence: 'none',
         completeness_percentage: 90,
         missing_data_reference: {
           dataset_keys: [datasetName],
-          reason_codes: [itemB.reason_code],
+          reason_codes: [reasonCodeB],
         },
         repeat_count: 1,
         schema_version: '7.0',
