@@ -321,3 +321,11 @@ export function assertNoNetworkCalls() {
     );
   }
 }
+
+// Test-harness marker: register an empty suite so Vitest treats this harness as a non-failing module
+import { describe, test, expect } from 'vitest';
+describe('test-harness:determinism harness', () => {
+  test('harness loads', () => {
+    expect(typeof withDeterminism.setup).toBe('function');
+  });
+});
