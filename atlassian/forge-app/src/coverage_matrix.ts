@@ -14,7 +14,6 @@
  * NO forecasting, NO recommendations, NO benchmarks.
  */
 
-// @ts-expect-error: @forge/api available via Forge CLI only
 import api from '@forge/api';
 import { JiraIngestionResult } from './jira_ingest';
 import {
@@ -539,7 +538,6 @@ export async function storeCoverageMatrixSnapshot(
 ): Promise<string> {
   const snapshotId = `coverage_${org}_${new Date(snapshot.snapshotTimestamp).getTime()}`;
 
-  // @ts-expect-error: api types
   await api.asApp().requestStorage(async (storage) => {
     // Store snapshot
     const storageKey = `coverage/${snapshotId}`;
@@ -561,7 +559,6 @@ export async function storeCoverageMatrixSnapshot(
  * Retrieve most recent coverage matrix for org
  */
 export async function getMostRecentCoverageMatrix(org: string): Promise<CoverageMatrixSnapshot | null> {
-  // @ts-expect-error: api types
   const snapshot = await api.asApp().requestStorage(async (storage) => {
     const indexKey = `coverage:index:${org}`;
     const index = (await storage.get(indexKey) || []) as string[];
@@ -583,7 +580,6 @@ export async function getMostRecentCoverageMatrix(org: string): Promise<Coverage
  * Get all coverage matrices for org with pagination
  */
 export async function listCoverageMatrices(org: string, limit: number = 100): Promise<CoverageMatrixSnapshot[]> {
-  // @ts-expect-error: api types
   const snapshots = await api.asApp().requestStorage(async (storage) => {
     const indexKey = `coverage:index:${org}`;
     const index = (await storage.get(indexKey) || []) as string[];

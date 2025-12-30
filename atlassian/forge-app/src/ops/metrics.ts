@@ -22,7 +22,6 @@
  * - SLI computation is deterministic and testable
  */
 
-// @ts-expect-error: @forge/api available via Forge CLI only
 import api from '@forge/api';
 import crypto from 'crypto';
 import { TenantContext } from '../security/tenant_context';

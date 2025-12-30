@@ -141,6 +141,7 @@ export function regenerateOutputTruth(bundle: EvidenceBundle): OutputTruthMetada
   const computeInputs: RulesetComputeInputs = {
     generatedAtISO: snapshotRef?.capturedAtISO || workingBundle.generatedAtISO,
     snapshotId: snapshotRef?.snapshotId || 'unknown',
+    snapshotCreatedAtISO: snapshotRef?.capturedAtISO || workingBundle.generatedAtISO,
     rulesetVersion: pinnedVersion, // Keep pinned version (not current)
     // Derive completeness deterministically from missing data so that
     // regeneration does not accidentally echo a tampered stored output.
@@ -156,7 +157,17 @@ export function regenerateOutputTruth(bundle: EvidenceBundle): OutputTruthMetada
     ),
     confidenceLevel: workingBundle.outputTruthMetadata.confidenceLevel,
     validityStatus: workingBundle.outputTruthMetadata.validityStatus,
-    driftStatus: workingBundle.driftStatusAtGeneration.driftStatusSummary,
+    driftStatus: ((): any => {
+      const s = workingBundle.driftStatusAtGeneration.driftStatusSummary;
+      switch (s) {
+        case 'stable':
+          return 'NO_DRIFT';
+        case 'detected':
+          return 'DRIFT_DETECTED';
+        default:
+          return 'UNKNOWN';
+      }
+    })(),
     missingData: (workingBundle.missingData || []).map(md => md.datasetName).sort(),
     nowISO: workingBundle.generatedAtISO, // Use evidence generation time deterministically
   };

@@ -75,27 +75,37 @@ This app stores in Forge Storage API:
 **Reports**: New report overwrites previous (no versioning)  
 **Events**: Append-only (no updates to historical events)  
 
-### Data Deletion
-
-**Mechanism**: See [Data Deletion Procedures](#data-deletion-procedures) below
-
----
-
 ## Data Deletion Procedures
 
 ### App Uninstallation
 
 **Behavior**: Forge platform **does not** automatically delete app data on uninstall.
 
-**Action Required**: Customer must manually delete data before uninstalling.
+**Action Required**: Customer must manually delete data before uninstalling if they require removal of stored artifacts.
 
 **Process**:
-1. Use admin UI export feature to backup data (if desired)
-2. Uninstall app via Jira admin console
-3. Forge Storage data **persists** after uninstall
-4. Contact Atlassian support to request Forge Storage deletion (if needed)
+1. Use admin UI export feature to backup data (if desired).
+2. Uninstall app via Jira admin console.
+3. Forge Storage data **persists** after uninstall.
+4. Contact Atlassian support to request Forge Storage deletion (if needed).
 
 **IMPORTANT**: App developers **cannot** delete customer data. Only Atlassian Forge platform can delete Forge Storage.
+
+### How to delete data (customer steps)
+
+1. Export required reports via the admin UI (see `EXPORT_FORMAT.md`).
+2. Uninstall the app from the Jira admin console.
+3. Contact Atlassian support with a request to delete Forge Storage for the app, including the app id `ari:cloud:ecosystem::app/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc` and the tenant cloudId.
+4. Keep a copy of the support request and response for audit evidence.
+
+Template support request (copy-paste):
+```
+Subject: Request to delete Forge Storage for FirstTry app
+
+Please delete Forge Storage for app id ari:cloud:ecosystem::app/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc for tenant the site identifier (cloudId). The customer has uninstalled the app and requests permanent deletion of app storage. Contact: contact@firsttry.run
+```
+
+**Notes**: The platform (Atlassian) controls storage deletion timelines; the timeline is UNKNOWN and depends on Atlassian support processes.
 
 ### Per-Tenant Deletion
 
@@ -113,6 +123,11 @@ App does **not** provide:
 **Capability**: **NOT IMPLEMENTED**
 
 App does **not** provide:
+- Delete specific events
+- Delete specific reports
+- Delete date ranges
+
+**Rationale**: Governance app design assumes immutability of historical data.
 - Delete specific events
 - Delete specific reports
 - Delete date ranges

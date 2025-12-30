@@ -152,7 +152,7 @@ interface AuditReadinessMap {
 ### PRIMARY STATEMENT (Text Only)
 
 ```
-An audit conducted today would have <X> days of verifiable governance evidence.
+An audit conducted today would have (X) days of verifiable governance evidence.
 ```
 
 This is the ONLY metric displayed prominently. Examples:

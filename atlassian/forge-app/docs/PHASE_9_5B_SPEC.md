@@ -289,7 +289,7 @@ await db.storeBlindSpotMap(blindSpots);
 // Add to admin page routing:
 const blindSpots = await db.getBlindSpotMap(tenantId);
 return (
-  <BlindSpotAdminPage blindSpotMap={blindSpots} />
+  (BlindSpotAdminPage blindSpotMap={blindSpots} /)
 );
 ```
 

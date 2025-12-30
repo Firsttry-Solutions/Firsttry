@@ -6,6 +6,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { view } from "@forge/ui";
 import { AutoRepairLog, AutoRepairEvent } from '../phase9_5e/auto_repair_log';
 
 interface AutoRepairPageProps {
@@ -282,7 +283,7 @@ const AutoRepairBreakdown: React.FC<{ log: AutoRepairLog }> = ({ log }) => {
                 <div
                   className="bar"
                   style={{
-                    width: `${(count / log.total_events) * 100}%`,
+                    width: `${(Number(count) / Number(log.total_events)) * 100}%`,
                   }}
                 />
               </div>
@@ -302,7 +303,7 @@ const AutoRepairBreakdown: React.FC<{ log: AutoRepairLog }> = ({ log }) => {
                 <div
                   className="bar"
                   style={{
-                    width: `${(count / log.total_events) * 100}%`,
+                    width: `${(Number(count) / Number(log.total_events)) * 100}%`,
                   }}
                 />
               </div>
@@ -322,7 +323,7 @@ const AutoRepairBreakdown: React.FC<{ log: AutoRepairLog }> = ({ log }) => {
                 <div
                   className="bar"
                   style={{
-                    width: `${(count / log.total_events) * 100}%`,
+                    width: `${(Number(count) / Number(log.total_events)) * 100}%`,
                   }}
                 />
               </div>

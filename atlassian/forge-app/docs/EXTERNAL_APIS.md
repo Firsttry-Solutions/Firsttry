@@ -2,6 +2,8 @@
 
 This file lists real outbound network destinations observed in the code (evidence-backed). Entries are limited to calls present in the runtime code — comments, docs, examples, or tests are excluded unless they perform an actual network call.
 
+No external third-party APIs are used. All network activity is limited to Atlassian platform APIs or same-origin app endpoints (see details below).
+
 **Atlassian Jira REST API (via Forge `requestJira`)**
 - **Destination:** Jira Cloud REST API (queried via Forge `requestJira`; resolved by Forge runtime to Atlassian endpoints)
 - **Purpose:** Read-only ingestion and snapshot capture of Jira metadata for reporting and governance (projects, issue types, statuses, fields, search results, automation rule metadata).
@@ -76,10 +78,8 @@ All network activity is:
 - Rate limiting
 - Network isolation (cannot call arbitrary URLs)
 
-**Manifest Scopes** (read-only):
-- `read:jira-work`
-- `read:jira-user`
-- `storage:app`
+**Manifest Scopes** (documented baseline):
+- `storage:app` (see `/workspaces/Firsttry/atlassian/forge-app/manifest.yml` and `audit/policy_baseline/scopes.json`)
 
 ### 2. Forge Storage API (via @forge/api)
 
@@ -172,6 +172,12 @@ The app includes an OAuth handler ([src/auth/oauth_handler.ts](../src/auth/oauth
    - Not currently invoked in runtime code
 
 **Current Runtime Behavior**: No OAuth flows active. No external service integrations.
+
+## Auth tokens and scope mapping
+
+- Authentication and authorization are provided by Atlassian Forge (`api.asUser()`, `api.asApp()`).
+- `storage:app` (manifest) is used to persist generated artifacts in Forge Storage. Tokens for Forge/Atlassian calls are managed by the Forge runtime and are not persisted in source code.
+
 
 ---
 

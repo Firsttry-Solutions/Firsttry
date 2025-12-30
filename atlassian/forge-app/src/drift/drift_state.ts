@@ -11,7 +11,7 @@
  */
 
 import { api } from '@forge/api';
-import { DriftStatus } from './output_contract';
+import { DriftStatus } from '../output/output_contract';
 
 /**
  * Drift event record

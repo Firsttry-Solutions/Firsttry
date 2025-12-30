@@ -41,9 +41,9 @@ Phase 7 v2 implements drift detection by computing observed changes between cons
 2. **drift_compute.ts** (300-400 lines)
    - `computeDrift(snapshotA, snapshotB): DriftEvent[]`
    - Canonical extractors:
-     - `extractFields(payload): Map<id, FieldCanonical>`
-     - `extractWorkflows(payload): Map<name, WorkflowCanonical>`
-     - `extractAutomationRules(payload): Map<id, AutomationCanonical>`
+     - `extractFields(payload): Map(id, FieldCanonical)`
+     - `extractWorkflows(payload): Map(name, WorkflowCanonical)`
+     - `extractAutomationRules(payload): Map(id, AutomationCanonical)`
    - Classification logic (deterministic mapping)
    - Actor/source population (zero guessing)
    - Completeness calculation
@@ -51,9 +51,9 @@ Phase 7 v2 implements drift detection by computing observed changes between cons
 
 3. **drift_storage.ts** (200-250 lines)
    - `DriftEventStorage` class with methods:
-     - `storeDriftEvent(tenantId, cloudId, event): Promise<void>`
-     - `listDriftEvents(tenantId, cloudId, filters, page, limit): Promise<{items, has_more}>`
-     - `getDriftEventById(tenantId, cloudId, eventId): Promise<DriftEvent | null>`
+     - `storeDriftEvent(tenantId, cloudId, event): Promise(void)`
+     - `listDriftEvents(tenantId, cloudId, filters, page, limit): Promise({items, has_more})`
+     - `getDriftEventById(tenantId, cloudId, eventId): Promise(DriftEvent | null)`
    - Pagination support (cursor or page+limit)
    - Indexes: by tenant_id, by time_window, by object_type
 
@@ -145,7 +145,7 @@ interface DriftEvent {
   // State deltas
   before_state: CanonicalSubset | null;
   after_state: CanonicalSubset | null;
-  change_patch?: Array<{op: string, path: string, from?: any, value?: any}>;
+  change_patch?: Array({op: string, path: string, from?: any, value?: any});
 
   // Actor/source (unknown by default)
   actor: 'user' | 'automation' | 'app' | 'unknown';

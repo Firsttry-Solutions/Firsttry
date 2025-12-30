@@ -17,7 +17,6 @@
  * FAIL HARD if any required scope is unavailable
  */
 
-// @ts-expect-error: @forge/api available via Forge CLI only
 import api from '@forge/api';
 
 /**
@@ -151,7 +150,6 @@ async function ingestProjects(): Promise<{
   errorMessage?: string;
 }> {
   try {
-    // @ts-expect-error: api types
     const response = await api
       .asApp()
       .requestJira('/rest/api/3/project', {
@@ -175,7 +173,6 @@ async function ingestProjects(): Promise<{
       };
     }
 
-    // @ts-expect-error: response json
     const projects = await response.json();
 
     if (!Array.isArray(projects)) {
@@ -216,7 +213,6 @@ async function ingestIssueTypes(): Promise<{
   errorMessage?: string;
 }> {
   try {
-    // @ts-expect-error: api types
     const response = await api
       .asApp()
       .requestJira('/rest/api/3/issuetype', {
@@ -240,7 +236,6 @@ async function ingestIssueTypes(): Promise<{
       };
     }
 
-    // @ts-expect-error: response json
     const issueTypes = await response.json();
 
     if (!Array.isArray(issueTypes)) {
@@ -281,7 +276,6 @@ async function ingestStatuses(): Promise<{
   errorMessage?: string;
 }> {
   try {
-    // @ts-expect-error: api types
     const response = await api
       .asApp()
       .requestJira('/rest/api/3/status', {
@@ -305,7 +299,6 @@ async function ingestStatuses(): Promise<{
       };
     }
 
-    // @ts-expect-error: response json
     const statuses = await response.json();
 
     if (!Array.isArray(statuses)) {
@@ -346,7 +339,6 @@ async function ingestFields(): Promise<{
   errorMessage?: string;
 }> {
   try {
-    // @ts-expect-error: api types
     const response = await api
       .asApp()
       .requestJira('/rest/api/3/fields', {
@@ -370,7 +362,6 @@ async function ingestFields(): Promise<{
       };
     }
 
-    // @ts-expect-error: response json
     const fields = await response.json();
 
     if (!Array.isArray(fields)) {
@@ -415,7 +406,6 @@ async function ingestIssueEvents(maxIssues: number = 1000): Promise<{
 }> {
   try {
     // Use JQL to query all issues with pagination
-    // @ts-expect-error: api types
     const response = await api
       .asApp()
       .requestJira('/rest/api/3/search', {
@@ -445,7 +435,6 @@ async function ingestIssueEvents(maxIssues: number = 1000): Promise<{
       };
     }
 
-    // @ts-expect-error: response json
     const searchResult = await response.json();
 
     if (!searchResult.issues || !Array.isArray(searchResult.issues)) {
@@ -496,7 +485,6 @@ async function ingestAutomationRules(): Promise<{
 }> {
   try {
     // Automation API endpoint (requires automation admin scope)
-    // @ts-expect-error: api types
     const response = await api
       .asApp()
       .requestJira('/rest/api/3/automations', {
@@ -528,7 +516,6 @@ async function ingestAutomationRules(): Promise<{
       };
     }
 
-    // @ts-expect-error: response json
     const automations = await response.json();
 
     let rules: AutomationRuleMetadata[] = [];
@@ -570,7 +557,6 @@ async function getAppInstallationState(): Promise<{
     // For Phase 4, we store this when the app is first installed
     const storageKey = 'app:installation:timestamp';
 
-    // @ts-expect-error: api types
     const timestamp = await api
       .asApp()
       .requestStorage(async (storage) => {
@@ -651,7 +637,6 @@ export async function recordAppInstallation(installedAt?: string): Promise<void>
   const timestamp = installedAt || new Date().toISOString();
   const storageKey = 'app:installation:timestamp';
 
-  // @ts-expect-error: api types
   await api.asApp().requestStorage(async (storage) => {
     const existing = await storage.get(storageKey);
     // Only write if not already set (idempotent)

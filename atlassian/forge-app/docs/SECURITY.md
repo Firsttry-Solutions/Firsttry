@@ -91,6 +91,12 @@ Static scans show logging statements in src/. Runtime behavior requires verifica
 
 **Mitigation**: See GAP-1 tests ([gap1_pii_logging.test.ts](../tests/credibility/gap1_pii_logging.test.ts)) for PII detection patterns.
 
+### Logging and PII handling (clarification)
+
+- App-level logging: The repository does not implement a centralized app-level audit log. Static scans find logging statements in `src/` but the behavior and retention of logs in production are not documented.
+- PII in logs: The code and `DATA_RETENTION.md` assert that PII is not stored (no email addresses, account names). However, static scans may find logging statements; reviewers should assume PII-in-logs is UNKNOWN until runtime review. See tests `gap1_pii_logging.test.ts` for detection coverage.
+- Log retention: Not documented (UNKNOWN). Additions to `SECURITY.md` or operations runbook should specify log retention and redaction policies.
+
 ### 2. Storage Quota Behavior
 
 **Status**: PLATFORM-DEPENDENT

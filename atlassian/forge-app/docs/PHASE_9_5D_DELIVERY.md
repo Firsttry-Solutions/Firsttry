@@ -149,9 +149,9 @@ const report = generateAuditReadinessReport(result);
 ```typescript
 import AuditReadinessAdminPage from './admin/audit_readiness_page';
 
-<AuditReadinessAdminPage
+(AuditReadinessAdminPage
   auditReadinessMap={result}
-  onExportJson={() => downloadJson(result)}
+  onExportJson={() =) downloadJson(result)}
   onExportReport={() => downloadReport(result)}
 />
 ```
@@ -162,7 +162,7 @@ import AuditReadinessAdminPage from './admin/audit_readiness_page';
 import { AuditReadinessCard } from './admin/audit_readiness_page';
 
 // Embed in dashboards
-<AuditReadinessCard map={result} />
+(AuditReadinessCard map={result} /)
 ```
 
 ### Features

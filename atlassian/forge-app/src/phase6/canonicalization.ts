@@ -12,7 +12,7 @@
  * 5. SHA256 hash of resulting string
  */
 
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 /**
  * Canonical JSON: sorted keys, no whitespace

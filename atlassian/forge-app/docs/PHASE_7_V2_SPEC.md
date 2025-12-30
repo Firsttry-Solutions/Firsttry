@@ -55,7 +55,7 @@ interface DriftEvent {
   // State deltas
   before_state: CanonicalSubset | null;
   after_state: CanonicalSubset | null;
-  change_patch?: Array<{op, path, from?, value?}>;
+  change_patch?: Array({op, path, from?, value?});
 
   // Actor/source (unknown by default, never guessed)
   actor: 'user' | 'automation' | 'app' | 'unknown';

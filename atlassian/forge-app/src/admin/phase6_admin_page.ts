@@ -63,7 +63,7 @@ export async function handler(request: any) {
 
     // Phase 6: Snapshots and integrity checks
     if (action === 'view-run') {
-      return await renderRunDetail(request, tenantId, cloudId);
+      return await renderSnapshotDetail(request, tenantId, cloudId);
     }
 
     if (action === 'view-snapshot') {

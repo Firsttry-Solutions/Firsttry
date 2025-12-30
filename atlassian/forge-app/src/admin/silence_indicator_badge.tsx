@@ -8,6 +8,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { view } from "@forge/ui";
 import {
   SilenceIndicatorReport,
   SilenceTimeline,

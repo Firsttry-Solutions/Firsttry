@@ -24,9 +24,7 @@ try {
   // In production, this would cause app startup to fail safely
 }
 
-// @ts-expect-error: @forge packages available via Forge CLI only
 import api from '@forge/api';
-// @ts-expect-error: @forge packages available via Forge CLI only
 import { view } from '@forge/ui';
 import { getStorageProofSnapshot, checkDebugAccess, logDebugAccess } from './storage_debug';
 
