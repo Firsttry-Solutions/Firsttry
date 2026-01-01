@@ -148,3 +148,10 @@ artifacts/parity_report.json
 # Coverage artifacts from CI/CD runs (not .coveragerc - that's tracked project config)
 .coverage.*
 .testmondata
+## BLOCKED_FORENSICS_AND_QUARANTINE (never commit)
+fs_forensics_child.jsonl
+**/fs_forensics_child.jsonl
+audit_reports/**/_quarantine/**
+audit_reports/**/_salvaged_*/**
+audit_reports/**/_final_cleanup/**/_quarantine/**
+audit_reports/**/_final_validation/**/_quarantine/**
