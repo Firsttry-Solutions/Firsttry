@@ -155,3 +155,6 @@ audit_reports/**/_quarantine/**
 audit_reports/**/_salvaged_*/**
 audit_reports/**/_final_cleanup/**/_quarantine/**
 audit_reports/**/_final_validation/**/_quarantine/**
+
+# Runtime evidence artifacts (retained separately, not for version control)
+audit_artifacts/
