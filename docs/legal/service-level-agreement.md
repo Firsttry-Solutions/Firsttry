@@ -1,8 +1,10 @@
 # Service Level Agreement (SLA)
 
+**Last Updated**: January 2, 2026
+
 ## Introduction
 
-This Service Level Agreement describes service level intentions for Firsttry applications available on the Atlassian Marketplace. Firsttry applications are informational, read-only, and governance-focused tools designed to provide visibility into development workflows and compliance metrics. These applications do not enforce policies, modify Jira data, or provide real-time operational controls.
+This Service Level Agreement describes service level intentions for Firsttry Solutions applications available on the Atlassian Marketplace. Firsttry applications are informational, read-only, and governance-focused tools designed to provide visibility into development workflows and compliance metrics. These applications do not enforce policies, modify Jira data, or provide real-time operational controls.
 
 ## Service Availability
 

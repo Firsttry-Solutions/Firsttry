@@ -89,4 +89,4 @@ Data handling practices may change as the App evolves. Updates to this document 
 
 ---
 
-**Platform Dependency**: Data handling is constrained by Atlassian Forge platform capabilities and limitations. See PLATFORM_DEPENDENCIES.md for Forge-specific details.
+**Platform Dependency**: Data handling is constrained by Atlassian Forge platform capabilities and limitations. Service availability depends on Atlassian Cloud and Forge platform.

@@ -10,12 +10,12 @@ This privacy policy describes how Firsttry ("the App") handles data when deploye
 
 ### Data Read from Jira
 
-The App reads Jira metadata including:
-- Issue keys, summaries, descriptions, and custom fields
-- Project information and metadata
+The App may read Jira metadata and configuration information permitted by declared scopes, including:
+- Issue keys and project information
+- Metadata accessible via Atlassian APIs
 - User context (as provided by Atlassian Forge)
 
-This data is read for informational and governance reporting purposes only.
+This data is read for informational and governance reporting purposes only. The App does not write to Jira.
 
 ### Data Storage
 
