@@ -30,17 +30,13 @@ modules:
 
   # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler and Admin UI, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
   function:
-    - key: daily-pipeline-fn
-      handler: pipelines/daily_pipeline.run
-    - key: weekly-pipeline-fn
-      handler: pipelines/weekly_pipeline.run
     - key: phase5-scheduler-fn
       handler: scheduled/phase5_scheduler.run
     - key: phase5-admin-page-fn
       handler: admin/phase5_admin_page.run
-    - key: phase6-daily-snapshot-fn
+    - key: phase6-daily-snap-fn
       handler: scheduled/snapshot_daily.handle
-    - key: phase6-weekly-snapshot-fn
+    - key: phase6-weekly-snap-fn
       handler: scheduled/snapshot_weekly.handle
     - key: token-refresh-job-fn
       handler: scheduled/token_refresh_scheduler.handle
@@ -50,34 +46,27 @@ modules:
   # PHASE 6: Snapshot evidence ledger (daily + weekly automatic captures)
   # SEV-2-003: OAuth token refresh (every 12 hours to prevent expiry gaps)
   scheduledTrigger:
-    - key: firstry-daily-pipeline
-      function: daily-pipeline-fn
-      interval: day
-
-    - key: firstry-weekly-pipeline
-      function: weekly-pipeline-fn
-      interval: week
-
     - key: phase5-auto-scheduler
       function: phase5-scheduler-fn
       interval: fiveMinute
 
     - key: phase6-daily-snapshot
-      function: phase6-daily-snapshot-fn
+      function: phase6-daily-snap-fn
       interval: day
 
     - key: phase6-weekly-snapshot
-      function: phase6-weekly-snapshot-fn
+      function: phase6-weekly-snap-fn
       interval: week
 
     - key: token-refresh-job
       function: token-refresh-job-fn
-      interval: 12hours
+      interval: hour
 
 # Permissions
 permissions:
   scopes:
     - storage:app
+    - read:jira-work
 
 # Resource pages
 resources:
