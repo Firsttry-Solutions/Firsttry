@@ -89,6 +89,8 @@ Marketplace screenshots must be captured manually using the checklist at docs/ma
 
 Governance note: tests must not create or write files inside src/ directories. Future tests must use dedicated temporary directories (e.g., OS temp folders or test-scoped temp paths) to avoid filesystem pollution and nondeterministic behavior.
 
+Process note: automated test execution may generate tracked audit or verification artifacts during runtime. These artifacts are restored prior to commit to ensure that only intentional source and documentation changes are shipped. Audit artifacts are retained separately for evidence and are not part of production releases.
+
 ---
 
 **Report Generated**: 2026-01-02 09:17 UTC  
