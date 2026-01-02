@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>screenshots-checklist</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+    h1 { border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    h2 { margin-top: 24px; margin-bottom: 16px; }
+    h3 { margin-top: 20px; margin-bottom: 12px; }
+    ul { padding-left: 2em; }
+    hr { border: 0; border-top: 1px solid #eee; margin: 24px 0; }
+  </style>
+</head>
+<body>
+<h1>Marketplace Screenshots Checklist</h1>
+
+<p><strong>Last Updated</strong>: January 2, 2026</p>
+
+<h2>Overview</h2>
+
+<p>This checklist guides the creation of screenshots for the Atlassian Marketplace listing. Screenshots must be captured manually from a non-production environment.</p>
+
+<h2>General Requirements</h2>
+
+<ul>
+<li><strong>Resolution</strong>: Minimum 1280x720 pixels</li>
+<li><strong>Format</strong>: PNG or JPEG</li>
+<li><strong>Tenant</strong>: Use a non-production Jira Cloud tenant</li>
+<li><strong>Redaction</strong>: Remove all personal data, email addresses, and sensitive identifiers</li>
+
+<h2>Required Screenshots</h2>
+
+<h3>1. App Installation Confirmation</h3>
+<li><strong>What to capture</strong>: Forge app installed confirmation screen in Jira</li>
+<li><strong>Purpose</strong>: Shows the app is successfully installed</li>
+<li><strong>Redaction</strong>: Remove any visible tenant URLs or admin emails</li>
+
+<h3>2. Admin Dashboard Overview</h3>
+<li><strong>What to capture</strong>: Main administrative dashboard showing governance metrics</li>
+<li><strong>Purpose</strong>: Primary interface view</li>
+<li><strong>Redaction</strong>: Redact project names, issue keys, user names, email addresses</li>
+
+<h3>3. Configuration Panel (if applicable)</h3>
+<li><strong>What to capture</strong>: App configuration settings page</li>
+<li><strong>Purpose</strong>: Shows available configuration options</li>
+<li><strong>Redaction</strong>: Remove any custom field names that might reveal sensitive context</li>
+
+<h3>4. Sample Report Output</h3>
+<li><strong>What to capture</strong>: A generated governance report showing representative data</li>
+<li><strong>Purpose</strong>: Demonstrates reporting capabilities</li>
+<li><strong>Redaction</strong>: </li>
+  - Replace real issue keys with dummy values (e.g., DEMO-123)
+  - Remove user names and emails
+  - Generalize project names (e.g., "Project A", "Project B")
+  - Remove any dates that reveal production timeline
+
+<h3>5. Feature Highlight (Optional)</h3>
+<li><strong>What to capture</strong>: Key feature demonstration (e.g., disclosure envelope, evidence bundle)</li>
+<li><strong>Purpose</strong>: Highlights unique selling point</li>
+<li><strong>Redaction</strong>: Same as report output</li>
+
+<h2>Screenshot Capture Process</h2>
+
+<p>1. <strong>Prepare Test Environment</strong>    - Create a non-production Jira Cloud tenant OR use a dedicated test tenant    - Install the App in test mode    - Populate with representative but non-sensitive test data</p>
+
+<p>2. <strong>Capture Screenshots</strong>    - Use browser screenshot tools or OS screen capture    - Ensure full UI elements are visible (no cut-off buttons or text)    - Capture at appropriate zoom level (100% recommended)</p>
+
+<p>3. <strong>Redaction</strong>    - Use image editing software to:      - Black out or blur sensitive text      - Replace real values with generic placeholders      - Remove email addresses and URLs    - Verify no sensitive data is visible before saving</p>
+
+<p>4. <strong>File Naming</strong>    - Use descriptive names: `01_installation.png`, `02_dashboard_overview.png`, etc.    - Keep file sizes reasonable (< 5MB per image)</p>
+
+<p>5. <strong>Review</strong>    - Double-check each screenshot for:      - No personal data visible      - No production URLs or tenant names      - No sensitive project or issue identifiers      - Clear, readable UI elements      - Professional appearance</p>
+
+<h2>Prohibited Content</h2>
+
+Do NOT include in screenshots:
+<li>Real user email addresses</li>
+<li>Production tenant URLs</li>
+<li>Sensitive project names or codes</li>
+<li>Real issue keys from production</li>
+<li>Internal company identifiers</li>
+<li>Personal identifiable information (PII)</li>
+<li>Authentication tokens or credentials</li>
+
+<h2>Storage</h2>
+
+Store captured and redacted screenshots in:
+<li>`docs/marketplace/screenshots/` (not committed to repo)</li>
+<li>Upload directly to Marketplace listing portal</li>
+</ul>
+
+<p>Do NOT commit screenshots to the Git repository unless they are generic demo images with zero sensitive data.</p>
+
+<h2>Compliance Note</h2>
+
+<p>Screenshots are for demonstration purposes only and do not constitute guarantees of functionality, performance, or compliance outcomes.</p>
+
+<hr>
+
+<p><strong>Reminder</strong>: All screenshots must be manually reviewed by a human before uploading to the Marketplace listing. Automated tools cannot guarantee complete redaction of sensitive data. </p>
+</body>
+</html>
