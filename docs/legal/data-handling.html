@@ -1,18 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>data-handling</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
-    h1 { border-bottom: 1px solid #eee; padding-bottom: 10px; }
-    h2 { margin-top: 24px; margin-bottom: 16px; }
-    h3 { margin-top: 20px; margin-bottom: 12px; }
-    ul { padding-left: 2em; }
-    hr { border: 0; border-top: 1px solid #eee; margin: 24px 0; }
-  </style>
-</head>
+<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
 <body>
 <h1>Data Handling</h1>
 
@@ -26,62 +14,75 @@
 
 <h3>Input</h3>
 
-The App reads data from Jira Cloud via Atlassian's REST APIs:
+<p>The App reads data from Jira Cloud via Atlassian's REST APIs:</p>
 <ul>
 <li>Issue metadata (keys, summaries, descriptions, custom fields)</li>
 <li>Project information</li>
 <li>User context (as provided by Forge)</li>
+</ul>
 
 <p><strong>Scope</strong>: Data access is limited to permissions granted via declared Forge scopes in the app manifest.</p>
 
 <h3>Transform</h3>
 
-Data is analyzed for governance patterns and reporting purposes:
+<p>Data is analyzed for governance patterns and reporting purposes:</p>
+<ul>
 <li>Issue classification and categorization</li>
 <li>Metadata extraction and aggregation</li>
 <li>Governance metrics calculation</li>
+</ul>
 
 <p>All processing occurs within the Atlassian Forge runtime environment.</p>
 
 <h3>Storage</h3>
 
-Analyzed data and governance reports are stored using:
+<p>Analyzed data and governance reports are stored using:</p>
+<ul>
 <li><strong>Atlassian Forge Storage API</strong>: App-scoped key-value storage</li>
 <li><strong>Isolation</strong>: Storage is isolated per Jira tenant</li>
 <li><strong>Management</strong>: Storage is managed by Atlassian infrastructure</li>
+</ul>
 
 <p>Storage quota limits are determined by Atlassian's Forge platform policies.</p>
 
 <h3>Output</h3>
 
-Output is delivered through:
+<p>Output is delivered through:</p>
+<ul>
 <li>Forge UI components rendered in Jira</li>
 <li>Administrative dashboards within Jira</li>
 <li>Reports generated within the App's UI</li>
+</ul>
 
 <p><strong>No External Output</strong>: The App does not transmit data to external third-party services. All network communication is limited to Atlassian-hosted APIs.</p>
 
 <h2>Data Security</h2>
 
-Security is provided by:
+<p>Security is provided by:</p>
+<ul>
 <li>Atlassian Forge's sandboxed runtime environment</li>
 <li>Atlassian's infrastructure security controls</li>
 <li>App-scoped storage isolation per tenant</li>
+</ul>
 
 <h2>Data Retention</h2>
 
+<ul>
 <li><strong>In-App Storage</strong>: Data persists in Forge storage until explicitly deleted or the app is uninstalled</li>
 <li><strong>Retention Policies</strong>: Specific retention periods vary based on data type and operational needs</li>
 <li><strong>Deletion</strong>: Data can be removed by uninstalling the App or through app-specific cleanup operations</li>
+</ul>
 
 <p>For storage growth behavior and quota handling, see the platform dependencies documentation.</p>
 
 <h2>Data Subject Rights</h2>
 
-Users may request:
+<p>Users may request:</p>
+<ul>
 <li>Information about what data is stored</li>
 <li>Deletion of stored data (by uninstalling the App)</li>
 <li>Clarification of data handling practices</li>
+</ul>
 
 <p>Contact: contact@firsttry.run</p>
 
@@ -89,12 +90,15 @@ Users may request:
 
 <p><strong>No Third-Party Sharing</strong>: The App does not share data with third-party services outside the Atlassian ecosystem.</p>
 
-Network access is limited to:
+<p>Network access is limited to:</p>
+<ul>
 <li>Atlassian Forge APIs</li>
 <li>Atlassian Jira Cloud APIs (as permitted by declared scopes)</li>
+</ul>
 
 <h2>Compliance Notes</h2>
 
+<ul>
 <li>The App is designed as a read-only, informational tool</li>
 <li>It does not modify Jira data (no writes, creates, or deletes)</li>
 <li>It does not enforce policies or apply automated remediation</li>
@@ -107,6 +111,7 @@ Network access is limited to:
 
 <hr>
 
-<p><strong>Platform Dependency</strong>: Data handling is constrained by Atlassian Forge platform capabilities and limitations. See PLATFORM_DEPENDENCIES.md for Forge-specific details. </p>
+<p><strong>Platform Dependency</strong>: Data handling is constrained by Atlassian Forge platform capabilities and limitations. See PLATFORM_DEPENDENCIES.md for Forge-specific details.</p>
+
 </body>
 </html>
