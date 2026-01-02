@@ -1,0 +1,49 @@
+# Service Level Agreement (SLA)
+
+## Introduction
+
+This Service Level Agreement describes service level intentions for Firsttry applications available on the Atlassian Marketplace. Firsttry applications are informational, read-only, and governance-focused tools designed to provide visibility into development workflows and compliance metrics. These applications do not enforce policies, modify Jira data, or provide real-time operational controls.
+
+## Service Availability
+
+Firsttry applications are hosted on the Atlassian Forge platform and rely on Atlassian Cloud infrastructure for availability and performance. Service availability is dependent on the underlying Atlassian Cloud platform. Firsttry makes no specific uptime guarantees or availability percentages.
+
+## Support Scope
+
+Support for Firsttry applications is provided on a best-effort basis and covers:
+
+- Application behavior and functionality
+- Data accuracy and integrity within the application's scope
+- Documentation clarity and completeness
+
+Support explicitly excludes:
+
+- Jira platform outages or performance issues
+- Atlassian infrastructure availability or maintenance
+- Interpretation of compliance standards or regulatory requirements
+- Integration issues with third-party services outside Firsttry's control
+
+## Response Targets (Intent Only)
+
+Firsttry intends to acknowledge support requests within 2–5 business days. Resolution timelines vary based on issue complexity and are not guaranteed. These targets represent intentions, not commitments.
+
+## Maintenance & Changes
+
+Firsttry may update applications without prior notice to address bugs, security issues, or platform compatibility requirements. Material changes to application behavior or functionality will be documented in release notes or application documentation.
+
+## Exclusions
+
+This SLA does not apply to:
+
+- Beta, experimental, or preview features explicitly marked as such
+- Service interruptions caused by Atlassian Cloud platform outages
+- Issues arising from third-party integrations or dependencies outside Firsttry's direct control
+- Customizations or modifications made outside official Firsttry distribution channels
+
+## Contact
+
+For support inquiries, please contact: contact@firsttry.run
+
+## Legal Note
+
+This Service Level Agreement is informational and non-binding. It describes Firsttry's service intentions and support practices but does not constitute a legal guarantee or warranty. Actual service levels may vary based on factors outside Firsttry's control, including but not limited to Atlassian Cloud platform availability and performance.

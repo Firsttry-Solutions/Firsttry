@@ -81,6 +81,14 @@ All Forge manifest issues resolved in prior commits:
 **Commit History**: Full audit trail on release branch  
 **Forge Deployment**: Verified in development environment
 
+## Compliance & Submission Notes
+
+Firsttry is designed as an informational, read-only governance application. It does not create, modify, or delete Jira issues and is not intended to enforce policies or apply remediation actions. The app does not perform outbound internet calls to third-party services; any network access is limited to Atlassian-hosted APIs as permitted by declared Forge scopes.
+
+Marketplace screenshots must be captured manually using the checklist at docs/marketplace/screenshots-checklist.md. Screenshots should be taken from a non-production tenant and must be redacted to remove personal data, email addresses, and any sensitive identifiers.
+
+Governance note: tests must not create or write files inside src/ directories. Future tests must use dedicated temporary directories (e.g., OS temp folders or test-scoped temp paths) to avoid filesystem pollution and nondeterministic behavior.
+
 ---
 
 **Report Generated**: 2026-01-02 09:17 UTC  
