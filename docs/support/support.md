@@ -24,7 +24,7 @@ Support may assist with:
 
 Support explicitly does NOT include:
 - **Compliance Interpretation**: The App provides informational data only. Support cannot provide legal, regulatory, or compliance advice
-- **Jira Administration**: Questions about Jira itself should be directed to Atlassian Support
+- **Jira Platform Issues**: For Jira platform incidents or Atlassian Cloud outages, consult Atlassian public documentation and status pages
 - **Custom Development**: Feature requests or custom modifications are evaluated on a case-by-case basis but are not guaranteed
 - **24/7 Availability**: Support is not available around the clock
 - **Guaranteed Response Times**: No SLA or response time guarantees are provided
@@ -85,4 +85,4 @@ Support is provided on a best-effort, as-available basis without guarantees. The
 
 ---
 
-**Important**: For issues with the Atlassian Forge platform itself, contact Atlassian Support directly. This support channel is for App-specific issues only.
+**Important**: For issues with the Atlassian Forge platform itself, consult Atlassian public documentation and status pages. This support channel is for App-specific issues only.
