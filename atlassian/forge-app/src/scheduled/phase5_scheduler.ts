@@ -214,7 +214,7 @@ export async function phase5SchedulerHandler(
     // 2. Load Installation Timestamp
     // ====================================================================
 
-    const installationTimestamp = await loadInstallationTimestamp(cloudId || '');
+    const installationTimestamp = await loadInstallationTimestamp(cloudId);
 
     if (!installationTimestamp) {
       console.warn(`[Phase5Scheduler] Installation timestamp not found for ${tenantKey}`);
