@@ -109,10 +109,10 @@ function createErrorSnapshot(errorMessage: string) {
  * Main resolver handler
  * Invoked by dashboard gadget to display real-time governance status
  */
-export async function get(): Promise<Record<string, unknown>> {
+export async function get(request: any, context: any): Promise<Record<string, unknown>> {
   try {
     // Resolve tenant identity from Forge context
-    const tenantId = await resolveTenantIdentity();
+    const tenantId = await resolveTenantIdentity(context);
 
     if (!tenantId || !tenantId.cloudId) {
       return createErrorSnapshot('Unable to resolve tenant cloudId from Forge context');
