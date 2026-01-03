@@ -16,7 +16,9 @@
  * 3. Parse context.installationContext as ARI string (extract site ID)
  *    - Format: "ari:cloud:jira::site/<CLOUDID>"
  *    - Returns extracted <CLOUDID> if valid
- * 4. Return null if none above succeed
+ * 4. Check environment variables (FORGE_TENANT_ID, CLOUD_ID)
+ * 5. Try to extract from context.accountId or other Jira identifiers
+ * 6. Return null if none above succeed
  * 
  * @param context - Forge request context (any)
  * @returns cloudId string if derivable, null otherwise
@@ -68,6 +70,26 @@ export function resolveCloudId(context: any): string | null {
       if (id.length > 0) {
         return id;
       }
+    }
+  }
+
+  // Strategy 4: Check environment variables (may be set by Forge runtime)
+  if (typeof process !== 'undefined' && process.env) {
+    const envCloudId = process.env.FORGE_TENANT_ID || process.env.CLOUD_ID || process.env.JIRA_SITE_ID;
+    if (envCloudId && typeof envCloudId === 'string') {
+      const id = envCloudId.trim();
+      if (id.length > 0) {
+        return id;
+      }
+    }
+  }
+
+  // Strategy 5: Check for context.accountId (Jira-specific identifier)
+  if (context.accountId && typeof context.accountId === 'string') {
+    const id = context.accountId.trim();
+    if (id.length > 0 && id.includes(':')) {
+      // Only return if it looks like an ARI
+      return id;
     }
   }
 
