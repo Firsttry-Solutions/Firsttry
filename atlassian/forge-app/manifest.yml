@@ -18,7 +18,7 @@ modules:
     - key: governance-dashboard-gadget
       title: FirstTry Governance Status
       description: FirstTry Governance - real-time status overview
-      resource: governance-gadget-page
+      resource: governance-gadget-page-v2140
       resolver:
         function: status-resolver-fn
       thumbnail: https://www.atlassian.com/favicon.ico
@@ -65,5 +65,5 @@ permissions:
 
 # Resource pages
 resources:
-  - key: governance-gadget-page
+  - key: governance-gadget-page-v2140
     path: src/gadget-ui
