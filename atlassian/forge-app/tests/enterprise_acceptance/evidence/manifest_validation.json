@@ -5,54 +5,26 @@
     "manifest_parsed": true,
     "runtime": "nodejs20.x",
     "function_modules": [
-      "daily-pipeline-fn",
-      "weekly-pipeline-fn",
       "phase5-scheduler-fn",
-      "phase5-admin-page-fn",
-      "phase6-daily-snapshot-fn",
-      "phase6-weekly-snapshot-fn",
+      "phase6-daily-snap-fn",
+      "phase6-weekly-snap-fn",
       "token-refresh-job-fn"
     ],
     "has_scheduled_triggers": false,
     "scheduler_handlers": [
       {
-        "key": "daily-pipeline-fn",
-        "handler": "pipelines/daily_pipeline.run"
-      },
-      {
-        "key": "weekly-pipeline-fn",
-        "handler": "pipelines/weekly_pipeline.run"
-      },
-      {
         "key": "phase5-scheduler-fn",
         "handler": "scheduled/phase5_scheduler.run"
-      },
-      {
-        "key": "phase6-daily-snapshot-fn",
-        "handler": "scheduled/snapshot_daily.handle"
-      },
-      {
-        "key": "phase6-weekly-snapshot-fn",
-        "handler": "scheduled/snapshot_weekly.handle"
       }
     ],
-    "handler_path_daily-pipeline-fn": "pipelines/daily_pipeline/run.ts",
-    "handler_path_weekly-pipeline-fn": "pipelines/weekly_pipeline/run.ts",
     "handler_path_phase5-scheduler-fn": "scheduled/phase5_scheduler/run.ts",
-    "handler_path_phase6-daily-snapshot-fn": "scheduled/snapshot_daily/handle.ts",
-    "handler_path_phase6-weekly-snapshot-fn": "scheduled/snapshot_weekly/handle.ts",
     "permissions_scopes": [
-      "storage:app"
+      "storage:app",
+      "read:jira-work"
     ],
     "has_external_fetch": false,
     "minimal_permissions": true,
-    "admin_pages": [
-      {
-        "key": "phase5-admin-page",
-        "title": "FirstTry Proof-of-Life Report",
-        "function": "phase5-admin-page-fn"
-      }
-    ]
+    "admin_pages_status": "REMOVED (no admin UI)"
   },
   "limitations": [
     "Cannot verify live app installation"
