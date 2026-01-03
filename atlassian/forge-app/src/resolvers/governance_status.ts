@@ -208,6 +208,13 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
     }
 
     return {
+      // App Identity (Diagnostic)
+      appId: process.env.FORGE_APP_ID || 'UNKNOWN',
+      environment: APP_ENVIRONMENT,
+      cloudId: cloudId || 'UNKNOWN',
+      installationId: process.env.FORGE_INSTALLATION_ID || 'UNKNOWN',
+      serverBuildStamp: 'SERVER_BUILD__2026-01-03T154524',
+      
       // Identity & availability
       tenantIdentity: {
         available: true,
@@ -261,13 +268,20 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       schemaVersion: '2.14.0',
       generatedAt: new Date().toISOString(),
       version: APP_VERSION,
-      environment: APP_ENVIRONMENT,
       systemStatus,
       mode: 'Scheduled monitoring (read-only)',
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return {
+      // App Identity (Diagnostic)
+      appId: process.env.FORGE_APP_ID || 'UNKNOWN',
+      environment: APP_ENVIRONMENT,
+      cloudId: 'UNKNOWN',
+      installationId: process.env.FORGE_INSTALLATION_ID || 'UNKNOWN',
+      serverBuildStamp: 'SERVER_BUILD__2026-01-03T154524',
+      
+      // Identity & availability
       tenantIdentity: { available: true },
       permissionVisibility: { determined: false, reasonCode: 'RESOLVER_ERROR' },
       expectedScheduleIntervalMinutes: EXPECTED_SCHEDULE_INTERVAL_MINUTES,
@@ -304,7 +318,6 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       schemaVersion: '2.14.0',
       generatedAt: new Date().toISOString(),
       version: APP_VERSION,
-      environment: APP_ENVIRONMENT,
       systemStatus: 'DEGRADED',
       mode: 'Scheduled monitoring (read-only)',
     };
@@ -316,6 +329,14 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
  */
 function createDegradedPayload(reasonCode: string): Record<string, unknown> {
   return {
+    // App Identity (Diagnostic)
+    appId: process.env.FORGE_APP_ID || 'UNKNOWN',
+    environment: APP_ENVIRONMENT,
+    cloudId: 'UNKNOWN',
+    installationId: process.env.FORGE_INSTALLATION_ID || 'UNKNOWN',
+    serverBuildStamp: 'SERVER_BUILD__2026-01-03T154524',
+    
+    // Identity & availability
     tenantIdentity: { available: false, reasonCode },
     permissionVisibility: { determined: false },
     expectedScheduleIntervalMinutes: EXPECTED_SCHEDULE_INTERVAL_MINUTES,
@@ -352,7 +373,6 @@ function createDegradedPayload(reasonCode: string): Record<string, unknown> {
     schemaVersion: '2.14.0',
     generatedAt: new Date().toISOString(),
     version: APP_VERSION,
-    environment: APP_ENVIRONMENT,
     systemStatus: 'DEGRADED',
     mode: 'Scheduled monitoring (read-only)',
   };
