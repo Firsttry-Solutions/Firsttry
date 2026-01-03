@@ -37,6 +37,7 @@ import {
 
 import { handleAutoTrigger } from '../phase5_report_generator';
 import { resolveTenantIdentity, type TenantIdentity } from '../core/tenant_identity';
+import { ensurePhase4EvidenceOrFailClosed } from '../phase4/phase4_evidence_backfill';
 import { storage } from '@forge/api';
 import {
   EXPECTED_SCHEDULE_INTERVAL_MINUTES,
@@ -364,7 +365,32 @@ export async function phase5SchedulerHandler(
     await writeStatusSnapshot(cloudId, startTime);
 
     // ====================================================================
-    // 2. Load Installation Timestamp
+    // 2. PHASE-4 EVIDENCE BACKFILL (Fail-Closed Preserved)
+    // ====================================================================
+
+    try {
+      await ensurePhase4EvidenceOrFailClosed(cloudId);
+    } catch (backfillError) {
+      const backfillErrorMsg = backfillError instanceof Error ? backfillError.message : String(backfillError);
+      
+      // Log all backfill errors but ALWAYS continue
+      // The scheduler will handle missing Phase-4 evidence naturally (skip generation gracefully)
+      // Backfill is non-critical enhancement; missing cloudId, write verification failures, etc.
+      // should not stop the scheduler from attempting normal flow
+      if (backfillErrorMsg.includes('FAIL_CLOSED')) {
+        console.warn(
+          `[Phase5Scheduler] Phase-4 backfill warning for ${tenantKey}: ${backfillErrorMsg}`
+        );
+      } else {
+        console.warn(
+          `[Phase5Scheduler] Unexpected Phase-4 backfill error for ${tenantKey}: ${backfillErrorMsg}`
+        );
+      }
+      // Continue to next step; missing evidence will be handled gracefully below
+    }
+
+    // ====================================================================
+    // 3. Load Installation Timestamp
     // ====================================================================
 
     const installationTimestamp = await loadInstallationTimestamp(cloudId);
@@ -384,7 +410,7 @@ export async function phase5SchedulerHandler(
     }
 
     // ====================================================================
-    // 3. Load Current Scheduler State
+    // 4. Load Current Scheduler State
     // ====================================================================
 
     const state = await loadSchedulerState(tenantKey);
