@@ -2,7 +2,7 @@
   "check": "auth_boundary_sanity",
   "status": "PASS",
   "details": {
-    "files_scanned": 123,
+    "files_scanned": 125,
     "write_api_violations": [],
     "write_api_count": 0,
     "no_write_apis": true,

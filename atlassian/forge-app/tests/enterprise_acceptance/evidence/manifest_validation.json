@@ -8,7 +8,8 @@
       "phase5-scheduler-fn",
       "phase6-daily-snap-fn",
       "phase6-weekly-snap-fn",
-      "token-refresh-job-fn"
+      "token-refresh-job-fn",
+      "status-resolver-fn"
     ],
     "has_scheduled_triggers": false,
     "scheduler_handlers": [
