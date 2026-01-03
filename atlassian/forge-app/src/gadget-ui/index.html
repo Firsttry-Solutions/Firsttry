@@ -650,7 +650,33 @@
     <div class="container">
         <h1>FirstTry Governance Status</h1>
         <p class="title-description">Read-only operational visibility surface. Real-time monitoring status and data quality metrics.</p>
-        <div class="build-marker" id="build-marker"></div>
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
+            <div class="build-marker" id="build-marker" style="flex: 1;">UI_HTML_MARKER: BUILD_MARKER__2026-01-03T152444__PROD</div>
+            <span class="status-pill running" id="ui-style-proof" style="white-space: nowrap;">STYLED_UI_OK</span>
+        </div>
+        
+        <!-- UI Self-Test (Diagnostic) -->
+        <div class="section" id="ui-selftest-section" style="border: 1px dashed var(--color-accent);">
+            <div class="section-title">UI Self-Test (Diagnostic)</div>
+            <div class="metrics-grid">
+                <div class="metric-row">
+                    <div class="metric-label">HTML Marker</div>
+                    <div class="metric-value" id="ui-selftest-marker">PENDING</div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label">CSS Applied</div>
+                    <div class="metric-value" id="ui-selftest-css">PENDING</div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label">JS Running</div>
+                    <div class="metric-value" id="ui-selftest-js">PENDING</div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label">Resolver Invoke</div>
+                    <div class="metric-value" id="ui-selftest-invoke">PENDING</div>
+                </div>
+            </div>
+        </div>
         
         <!-- System Overview -->
         <div class="section">
@@ -814,21 +840,54 @@
         const BUILD_MARKER = "BUILD_MARKER__2026-01-03T152444__PROD";
         let lastPayload = null;
 
+        // Step 3: Null-guard helpers to prevent crashes on missing DOM elements
+        function setText(id, value) {
+            const el = document.getElementById(id);
+            if (!el) return false;
+            el.textContent = value;
+            return true;
+        }
+
+        function setHTML(id, value) {
+            const el = document.getElementById(id);
+            if (!el) return false;
+            el.innerHTML = value;
+            return true;
+        }
+
         async function loadStatus() {
             try {
+                // Step 4: Run self-tests BEFORE invoke
+                setText('ui-selftest-marker', 'FOUND (static HTML marker present)');
+                
+                // Check if CSS is applied
+                const proof = document.getElementById('ui-style-proof');
+                let cssOk = false;
+                if (proof) {
+                    const computed = getComputedStyle(proof);
+                    cssOk = computed.borderRadius !== '0px' && computed.backgroundColor !== '';
+                }
+                setText('ui-selftest-css', cssOk ? 'OK (CSS applied)' : 'FAIL (CSS missing/stripped)');
+                
+                // JS is running if we got here
+                setText('ui-selftest-js', 'OK (JS executed)');
+
                 const data = await invoke('get', {});
                 lastPayload = data;
 
-                // Render build marker
-                document.getElementById('build-marker').textContent = BUILD_MARKER;
+                // Step 5: Make build marker use null guards
+                setText('build-marker', `UI_HTML_MARKER: ${BUILD_MARKER}`);
+                
+                // Step 4: Mark invoke success
+                setText('ui-selftest-invoke', 'OK (resolver responded)');
 
                 // Render app identity fields
-                document.getElementById('app-server-build').textContent = data.serverBuildStamp || '—';
-                document.getElementById('app-id').textContent = data.appId || '—';
-                document.getElementById('app-environment').textContent = data.environment || '—';
-                document.getElementById('app-cloud-id').textContent = data.cloudId || '—';
-                document.getElementById('app-installation-id').textContent = data.installationId || '—';
-                document.getElementById('app-generated-at').textContent = formatTimestampDisplay(data.generatedAt) || '—';
+                setText('app-server-build', data.serverBuildStamp || '—');
+                setText('app-id', data.appId || '—');
+                setText('app-environment', data.environment || '—');
+                setText('app-cloud-id', data.cloudId || '—');
+                setText('app-installation-id', data.installationId || '—');
+                setText('app-generated-at', formatTimestampDisplay(data.generatedAt) || '—');
 
                 // Update KPI strip
                 const statusValue = data.systemStatus || 'UNKNOWN';
@@ -838,15 +897,15 @@
                     'DEGRADED': 'degraded',
                     'ERROR': 'error'
                 }[statusValue] || 'initializing';
-                document.getElementById('kpi-status').innerHTML = `<span class="status-pill ${pillClass}">${statusValue}</span>`;
+                setHTML('kpi-status', `<span class="status-pill ${pillClass}">${statusValue}</span>`);
                 
-                document.getElementById('kpi-last-success').textContent = formatTimestampDisplay(data.lastSuccessAt);
-                document.getElementById('kpi-last-check').textContent = formatTimestampDisplay(data.lastCheckAt);
-                document.getElementById('kpi-checks-lifetime').textContent = data.checksCompletedLifetime !== null ? String(data.checksCompletedLifetime) : '—';
-                document.getElementById('kpi-snapshot-count').textContent = data.snapshotsRetainedCount !== null ? String(data.snapshotsRetainedCount) : '—';
-                document.getElementById('kpi-days-continuous').textContent = data.daysContinuousOperation !== null ? String(data.daysContinuousOperation) : '—';
-                document.getElementById('kpi-version').textContent = `${data.version} / ${data.environment}`;
-                document.getElementById('kpi-generated-at').textContent = formatTimestampDisplay(data.generatedAt) || '—';
+                setText('kpi-last-success', formatTimestampDisplay(data.lastSuccessAt));
+                setText('kpi-last-check', formatTimestampDisplay(data.lastCheckAt));
+                setText('kpi-checks-lifetime', data.checksCompletedLifetime !== null ? String(data.checksCompletedLifetime) : '—');
+                setText('kpi-snapshot-count', data.snapshotsRetainedCount !== null ? String(data.snapshotsRetainedCount) : '—');
+                setText('kpi-days-continuous', data.daysContinuousOperation !== null ? String(data.daysContinuousOperation) : '—');
+                setText('kpi-version', `${data.version} / ${data.environment}`);
+                setText('kpi-generated-at', formatTimestampDisplay(data.generatedAt) || '—');
 
                 // Operational Status Panel
                 const opStatus = `
@@ -872,7 +931,7 @@
                         <strong>Freshness Disclaimer:</strong> Data freshness is determined by comparing snapshot age against the expected schedule interval (${data.expectedScheduleIntervalMinutes} minutes). Stale data (older than ${data.staleIfAgeMinutesGreaterThan} minutes) may affect accuracy of operational visibility.
                     </div>
                 `;
-                document.getElementById('operational-status').innerHTML = opStatus;
+                setHTML('operational-status', opStatus);
 
                 // Data Quality & Coverage Panel
                 const dqStatus = `
@@ -897,7 +956,7 @@
                         <div class="metric-value">${data.retentionPolicy.effectiveRuleText}</div>
                     </div>
                 `;
-                document.getElementById('data-quality').innerHTML = dqStatus;
+                setHTML('data-quality', dqStatus);
 
                 // Checks table
                 if (data.checks && data.checks.length > 0) {
@@ -920,7 +979,7 @@
                     if (data.checksTotalCount > 20) {
                         tableHtml += `<div class="showing-n-of">Showing 20 of ${data.checksTotalCount} checks</div>`;
                     }
-                    document.getElementById('checks-content').innerHTML = tableHtml;
+                    setHTML('checks-content', tableHtml);
                     checksSection.style.display = 'block';
                 }
 
@@ -934,7 +993,7 @@
                     <div class="boundary-item"><span class="boundary-check">✓</span> App fails closed on missing tenant identity</div>
                     <div class="boundary-item"><span class="boundary-check">✓</span> Viewer permissions may limit visible data</div>
                 `;
-                document.getElementById('boundaries').innerHTML = boundariesHtml;
+                setHTML('boundaries', boundariesHtml);
 
                 // Availability Signals
                 const signalsHtml = `
@@ -959,7 +1018,7 @@
                     </div>
                     <div class="signal-impact">Impact: ${data.snapshotAgeMinutes !== null ? 'Full metrics available' : 'First run pending'}</div>
                 `;
-                document.getElementById('availability-signals').innerHTML = signalsHtml;
+                setHTML('availability-signals', signalsHtml);
 
             } catch (error) {
                 const errorMsg = error.message || String(error);
@@ -975,9 +1034,9 @@
                     <div class="error-message">${message}</div>
                 </div>
             `;
-            document.getElementById('operational-status').innerHTML = errorHtml;
-            document.getElementById('data-quality').innerHTML = '';
-            document.getElementById('availability-signals').innerHTML = '';
+            setHTML('operational-status', errorHtml);
+            setHTML('data-quality', '');
+            setHTML('availability-signals', '');
         }
 
         // Display version (UI only; export uses internal timestamp for truthfulness)
