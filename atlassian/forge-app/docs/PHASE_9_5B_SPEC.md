@@ -4,6 +4,8 @@
 **Status:** Complete (with test fixes pending)  
 **Key Invariant:** Visually expose unknown time ranges WITHOUT inferring causes.
 
+⚠️ **HISTORICAL NOTE:** This specification describes Phase-9 functionality including admin page integration. Current builds expose no admin UI surface. This document is retained for architectural reference. Future implementations should use programmatic APIs instead of admin page UI for blind-spot data access.
+
 ---
 
 ## OVERVIEW

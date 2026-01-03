@@ -1,5 +1,9 @@
 # Data Flow (text diagram)
 
+**⚠️ HISTORICAL NOTE:** This document describes Phase-5 architecture (admin page UI). Current builds expose no admin UI surface; all metrics are collected automatically and stored in Forge Storage. The dashboard gadget provides read-only transparency. This document is retained for architectural context.
+
+---
+
 Inputs
 - Jira Cloud REST API (via Forge `requestJira`): project list, issue type metadata, statuses, fields, search results (timestamps/ids).
 
@@ -11,7 +15,7 @@ Storage
 - All generated artifacts (snapshots, reports, ledgers) are stored in Atlassian Forge Storage API — tenant-scoped. See `DATA_RETENTION.md`.
 
 Outputs / Exports
-- Admin UI report view (Phase-5 admin page) — user can export JSON or PDF of the latest report. Exports are served as browser downloads (not stored externally). See `EXPORT_FORMAT.md` for schema.
+- Metrics are stored in Forge Storage and accessible via programmatic APIs. No user-facing admin UI is exposed in current builds.
 
 External sharing
 - None: no external third-party APIs are used. Only Atlassian platform APIs and same-origin app endpoints are invoked (see `EXTERNAL_APIS.md`).
