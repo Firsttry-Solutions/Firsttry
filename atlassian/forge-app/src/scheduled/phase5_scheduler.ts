@@ -177,10 +177,17 @@ export async function phase5SchedulerHandler(
 
     // NO FIXTURES. NO FALLBACKS.
     if (!isValidCloudId(cloudId)) {
+      const contextKeys = Object.keys(context || {});
+      const debugInfo = {
+        keys: contextKeys,
+        installationContext: context?.installationContext ? (typeof context.installationContext === 'string' ? `<ARI string: ${context.installationContext.substring(0, 80)}...>` : `<object: ${Object.keys(context.installationContext).join(', ')}>`) : 'undefined',
+        hasCloudId: 'cloudId' in (context || {}),
+        hasAccountId: 'accountId' in (context || {}),
+        hasRequest: 'request' in (context || {}),
+      };
       console.error(
         '[Phase5Scheduler] FAIL_CLOSED: Tenant identity (cloudId) is missing, null, or invalid',
-        'context keys:', Object.keys(context || {}),
-        'installationContext:', typeof context?.installationContext === 'string' ? `<ARI string: ${context.installationContext.substring(0, 50)}...>` : context?.installationContext
+        'debug:', JSON.stringify(debugInfo)
       );
       return {
         statusCode: 400,
