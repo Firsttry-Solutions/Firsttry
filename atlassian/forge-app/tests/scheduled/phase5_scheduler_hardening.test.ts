@@ -227,7 +227,8 @@ describe('Phase-5 Scheduler Hardening', () => {
       expect(body.report_generated).toBe(true);
 
       // writeCompletionMarker should be called with AUTO_12H
-      expect(schedulerState.writeCompletionMarker).toHaveBeenCalledWith('test-cloud', 'AUTO_12H');
+      // tenantKey is derived as "cloudId:test-cloud" from context.cloudId
+      expect(schedulerState.writeCompletionMarker).toHaveBeenCalledWith('cloudId:test-cloud', 'AUTO_12H');
     });
 
     it('should not write DONE_KEY on failed generation', async () => {

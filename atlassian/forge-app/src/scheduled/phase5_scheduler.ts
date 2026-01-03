@@ -36,7 +36,7 @@ import {
 } from './scheduler_state';
 
 import { handleAutoTrigger } from '../phase5_report_generator';
-import { resolveCloudId, isValidCloudId } from '../core/tenant_identity';
+import { resolveTenantIdentity, type TenantIdentity } from '../core/tenant_identity';
 
 // ============================================================================
 // HELPERS
@@ -88,7 +88,7 @@ export interface SchedulerResult {
  * @returns 'AUTO_12H' | 'AUTO_24H' | null
  */
 async function decideDueTrigger(
-  cloudId: string,
+  tenantKey: string,
   installationTimestamp: string,
 ): Promise<'AUTO_12H' | 'AUTO_24H' | null> {
   try {
@@ -98,13 +98,13 @@ async function decideDueTrigger(
     const ageHours = ageMs / (1000 * 60 * 60);
 
     // Check AUTO_12H
-    const auto12hDone = await hasCompletionMarker(cloudId, 'AUTO_12H');
+    const auto12hDone = await hasCompletionMarker(tenantKey, 'AUTO_12H');
     if (!auto12hDone && ageHours >= 12 && ageHours < 24) {
       return 'AUTO_12H';
     }
 
     // Check AUTO_24H
-    const auto24hDone = await hasCompletionMarker(cloudId, 'AUTO_24H');
+    const auto24hDone = await hasCompletionMarker(tenantKey, 'AUTO_24H');
     if (!auto24hDone && ageHours >= 24) {
       return 'AUTO_24H';
     }
@@ -112,7 +112,7 @@ async function decideDueTrigger(
     // Nothing due
     return null;
   } catch (error) {
-    console.error(`[Phase5Scheduler] Error deciding due trigger for ${cloudId}:`, error);
+    console.error(`[Phase5Scheduler] Error deciding due trigger for ${tenantKey}:`, error);
     return null;
   }
 }
@@ -131,9 +131,9 @@ async function decideDueTrigger(
  * - No prior failure
  * - Backoff period still active
  */
-async function shouldRetryAfterFailure(cloudId: string): Promise<boolean> {
+async function shouldRetryAfterFailure(tenantKey: string): Promise<boolean> {
   try {
-    const state = await loadSchedulerState(cloudId);
+    const state = await loadSchedulerState(tenantKey);
 
     // No prior error: always proceed
     if (!state.last_error) {
@@ -141,10 +141,10 @@ async function shouldRetryAfterFailure(cloudId: string): Promise<boolean> {
     }
 
     // Check if backoff is still active
-    const active = await isBackoffActive(cloudId);
+    const active = await isBackoffActive(tenantKey);
     return !active;
   } catch (error) {
-    console.error(`[Phase5Scheduler] Error checking backoff for ${cloudId}:`, error);
+    console.error(`[Phase5Scheduler] Error checking backoff for ${tenantKey}:`, error);
     return false;
   }
 }
@@ -173,20 +173,20 @@ export async function phase5SchedulerHandler(
     // 1. Get Tenant Context - FAIL CLOSED
     // ====================================================================
 
-    const cloudId = resolveCloudId(context);
+    const tenantId = resolveTenantIdentity(context);
 
-    // NO FIXTURES. NO FALLBACKS.
-    if (!isValidCloudId(cloudId)) {
+    // FAIL CLOSED: Only if tenant identity completely unavailable
+    if (!tenantId) {
       const contextKeys = Object.keys(context || {});
       const debugInfo = {
         context_keys: contextKeys,
-        context_cloudId: context?.cloudId || null,
-        context_payload: context?.payload ? Object.keys(context.payload) : null,
-        context_context: context?.context ? Object.keys(context.context) : null,
-        context_installationContext: context?.installationContext ? (typeof context.installationContext === 'string' ? `ARI: ${context.installationContext.substring(0, 100)}` : Object.keys(context.installationContext).join(', ')) : null,
+        context_installContext: context?.installContext ? (typeof context.installContext === 'string' ? context.installContext.substring(0, 100) : 'object') : null,
+        context_workspaceId: context?.workspaceId || null,
+        context_installation: context?.installation ? 'present' : null,
+        context_principal: context?.principal ? 'present' : null,
       };
       console.error(
-        '[Phase5Scheduler] FAIL_CLOSED: cloudId not derivable. Context debug:',
+        '[Phase5Scheduler] FAIL_CLOSED: No tenant identity available. Context debug:',
         JSON.stringify(debugInfo, null, 2)
       );
       return {
@@ -194,29 +194,36 @@ export async function phase5SchedulerHandler(
         body: JSON.stringify({
           success: false,
           error_code: 'TENANT_CONTEXT_UNAVAILABLE',
-          message: 'Tenant identity not available in Forge context',
+          message: 'No tenant identity available in Forge context (installContext, installationContext, or cloudId required)',
           severity: 'ERROR',
           timestamp: startTime,
         } as SchedulerResult),
       };
     }
 
-    console.info(`[Phase5Scheduler] Starting for cloudId: ${cloudId} at ${startTime}`);
+    // Use tenantKey as primary tenant identifier
+    const tenantKey = tenantId.tenantKey;
+    const cloudId = tenantId.cloudId;
+    
+    console.info(
+      `[Phase5Scheduler] Starting for tenantKey: ${tenantKey} (source: ${tenantId.source}) at ${startTime}` +
+      (cloudId ? ` [cloudId: ${cloudId}]` : ' [no cloudId available]')
+    );
 
     // ====================================================================
     // 2. Load Installation Timestamp
     // ====================================================================
 
-    const installationTimestamp = await loadInstallationTimestamp(cloudId);
+    const installationTimestamp = await loadInstallationTimestamp(tenantKey);
 
     if (!installationTimestamp) {
-      console.warn(`[Phase5Scheduler] Installation timestamp not found for ${cloudId}`);
+      console.warn(`[Phase5Scheduler] Installation timestamp not found for ${tenantKey}`);
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
           message: 'Installation timestamp not available; skipping generation',
-          cloudId,
+          cloudId: cloudId || tenantKey,
           report_generated: false,
           timestamp: startTime,
         } as SchedulerResult),
@@ -227,35 +234,35 @@ export async function phase5SchedulerHandler(
     // 3. Load Current Scheduler State
     // ====================================================================
 
-    const state = await loadSchedulerState(cloudId);
+    const state = await loadSchedulerState(tenantKey);
 
     // ====================================================================
     // 5. Decide Due Trigger (with authoritative DONE check)
     // ====================================================================
 
     // AUTHORITATIVE CHECK: If DONE_KEY exists, never run again
-    const auto12hDone = await hasCompletionMarker(cloudId, 'AUTO_12H');
-    const auto24hDone = await hasCompletionMarker(cloudId, 'AUTO_24H');
+    const auto12hDone = await hasCompletionMarker(tenantKey, 'AUTO_12H');
+    const auto24hDone = await hasCompletionMarker(tenantKey, 'AUTO_24H');
 
-    const dueTrigger = await decideDueTrigger(cloudId, installationTimestamp);
+    const dueTrigger = await decideDueTrigger(tenantKey, installationTimestamp);
 
     if (!dueTrigger) {
       // Check if a DONE_KEY exists (trigger already generated)
       if (auto12hDone || auto24hDone) {
         const doneTrigger = auto12hDone ? 'AUTO_12H' : 'AUTO_24H';
         console.info(
-          `[Phase5Scheduler] ${doneTrigger} has already been generated for ${cloudId}`
+          `[Phase5Scheduler] ${doneTrigger} has already been generated for ${tenantKey}`
         );
         // Update last_run_at
         state.last_run_at = startTime;
-        await saveSchedulerState(cloudId, state);
+        await saveSchedulerState(tenantKey, state);
         return {
           statusCode: 200,
           body: JSON.stringify({
             success: true,
             message: `${doneTrigger} has already been generated`,
             reason: 'DONE_KEY_EXISTS',
-            cloudId,
+            cloudId: cloudId || tenantKey,
             due_trigger: null,
             report_generated: false,
             timestamp: startTime,
@@ -264,18 +271,18 @@ export async function phase5SchedulerHandler(
       }
 
       console.info(
-        `[Phase5Scheduler] No trigger due for ${cloudId}; ` +
+        `[Phase5Scheduler] No trigger due for ${tenantKey}; ` +
         `auto_12h_done=${auto12hDone}, auto_24h_done=${auto24hDone}`
       );
       // Update last_run_at
       state.last_run_at = startTime;
-      await saveSchedulerState(cloudId, state);
+      await saveSchedulerState(tenantKey, state);
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
           message: 'No trigger due at this time',
-          cloudId,
+          cloudId: cloudId || tenantKey,
           due_trigger: null,
           report_generated: false,
           timestamp: startTime,
@@ -287,20 +294,20 @@ export async function phase5SchedulerHandler(
     // 6. Check Authoritative DONE Marker (MUST PREVENT REGENERATION)
     // ====================================================================
 
-    const triggerDone = await hasCompletionMarker(cloudId, dueTrigger);
+    const triggerDone = await hasCompletionMarker(tenantKey, dueTrigger);
     if (triggerDone) {
       console.info(
-        `[Phase5Scheduler] AUTHORITATIVE: ${dueTrigger} DONE_KEY exists; never regenerating for ${cloudId}`
+        `[Phase5Scheduler] AUTHORITATIVE: ${dueTrigger} DONE_KEY exists; never regenerating for ${tenantKey}`
       );
       // Update last_run_at
       state.last_run_at = startTime;
-      await saveSchedulerState(cloudId, state);
+      await saveSchedulerState(tenantKey, state);
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
           message: `${dueTrigger} has already been generated (authoritative DONE marker exists)`,
-          cloudId,
+          cloudId: cloudId || tenantKey,
           due_trigger: dueTrigger,
           report_generated: false,
           reason: 'DONE_KEY_EXISTS',
@@ -320,17 +327,17 @@ export async function phase5SchedulerHandler(
       const backoffExpiresAt = new Date(state.last_backoff_until!);
       const minutesRemaining = Math.ceil((backoffExpiresAt.getTime() - Date.now()) / (60 * 1000));
       console.info(
-        `[Phase5Scheduler] Backoff active for ${dueTrigger} (${minutesRemaining} min remaining); skipping for ${cloudId}`
+        `[Phase5Scheduler] Backoff active for ${dueTrigger} (${minutesRemaining} min remaining); skipping for ${tenantKey}`
       );
       // Update last_run_at but don't attempt
       state.last_run_at = startTime;
-      await saveSchedulerState(cloudId, state);
+      await saveSchedulerState(tenantKey, state);
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
           message: `Backoff period active for ${dueTrigger}; deferring to next run`,
-          cloudId,
+          cloudId: cloudId || tenantKey,
           due_trigger: dueTrigger,
           report_generated: false,
           backoff_expires_at: state.last_backoff_until,
@@ -344,7 +351,7 @@ export async function phase5SchedulerHandler(
     // ====================================================================
 
     console.info(
-      `[Phase5Scheduler] Attempting ${dueTrigger} generation for ${cloudId} (attempt #${attemptCount + 1})`
+      `[Phase5Scheduler] Attempting ${dueTrigger} generation for ${tenantKey} (attempt #${attemptCount + 1})`
     );
     const newAttemptCount = attemptCount + 1;
     if (dueTrigger === 'AUTO_12H') {
@@ -352,7 +359,7 @@ export async function phase5SchedulerHandler(
     } else {
       state.auto_24h_attempt_count = newAttemptCount;
     }
-    await recordAttemptTime(cloudId, dueTrigger);
+    await recordAttemptTime(tenantKey, dueTrigger);
 
     // ====================================================================
     // 9. Generate Report (SINGLE CODE PATH: handleAutoTrigger)
@@ -365,11 +372,11 @@ export async function phase5SchedulerHandler(
       const result = await handleAutoTrigger(dueTrigger);
 
       if (result.success) {
-        console.info(`[Phase5Scheduler] ${dueTrigger} report generated successfully for ${cloudId}`);
+        console.info(`[Phase5Scheduler] ${dueTrigger} report generated successfully for ${tenantKey}`);
         reportGenerated = true;
 
         // AUTHORITATIVE: Write DONE marker (prevents future runs)
-        await writeCompletionMarker(cloudId, dueTrigger);
+        await writeCompletionMarker(tenantKey, dueTrigger);
 
         // Update state
         if (dueTrigger === 'AUTO_12H') {
@@ -383,7 +390,7 @@ export async function phase5SchedulerHandler(
         // result.success === false, so we know result has 'error' field
         generationError = (result as { success: false; error: string }).error;
         console.error(
-          `[Phase5Scheduler] ${dueTrigger} generation failed (attempt #${newAttemptCount}) for ${cloudId}: ${generationError}`
+          `[Phase5Scheduler] ${dueTrigger} generation failed (attempt #${newAttemptCount}) for ${tenantKey}: ${generationError}`
         );
 
         // Apply bounded backoff on failure (specific to this trigger)
@@ -429,7 +436,7 @@ export async function phase5SchedulerHandler(
     // ====================================================================
 
     state.last_run_at = startTime;
-    await saveSchedulerState(cloudId, state);
+    await saveSchedulerState(tenantKey, state);
 
     const httpStatus = reportGenerated ? 200 : 202;
 
@@ -438,7 +445,7 @@ export async function phase5SchedulerHandler(
       body: JSON.stringify({
         success: reportGenerated,
         message: reportGenerated ? `${dueTrigger} report generated successfully` : `${dueTrigger} generation failed: ${generationError}`,
-        cloudId,
+        cloudId: cloudId || tenantKey,
         due_trigger: dueTrigger,
         report_generated: reportGenerated,
         attempt_count: newAttemptCount,
