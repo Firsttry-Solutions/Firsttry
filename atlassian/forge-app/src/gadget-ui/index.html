@@ -1,393 +1,267 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FirstTry Operational Trust Dashboard</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/@forge/ui@latest/dist/index.js"></script>
+    <title>FirstTry Governance Status</title>
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
         body {
-            margin: 0;
-            padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: #f5f5f5;
+            padding: 20px;
         }
-        #root {
-            min-height: 100vh;
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #172b4d;
+            margin-bottom: 20px;
+        }
+        .section {
+            background: white;
+            border-radius: 3px;
+            box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #172b4d;
+            margin-bottom: 12px;
+        }
+        .trust-block {
+            background: #f8f9fa;
+            border-left: 4px solid #0052cc;
+            padding: 12px;
+            border-radius: 2px;
+        }
+        .trust-list {
+            list-style: none;
+            color: #626262;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .trust-list li {
+            margin: 4px 0;
+        }
+        .message {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 3px;
+            font-size: 14px;
+            color: #626262;
+        }
+        .error-panel {
+            background: #ffebee !important;
+            border-left: 4px solid #ae2a19;
+        }
+        .error-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ae2a19;
+            margin-bottom: 8px;
+        }
+        .error-code {
+            font-size: 12px;
+            font-weight: 600;
+            color: #626262;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .error-message {
+            font-size: 14px;
+            color: #626262;
+            word-break: break-word;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .metric-row {
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .metric-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #626262;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .metric-value {
+            font-size: 14px;
+            color: #172b4d;
+            word-break: break-word;
+        }
+        .metric-value.unknown {
+            color: #ae2a19;
+        }
+        .checks-table {
+            border: 1px solid #f0f0f0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            background: #f8f9fa;
+            border-bottom: 1px solid #f0f0f0;
+            font-weight: 600;
+            font-size: 12px;
+            color: #626262;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .table-header > div,
+        .table-row > div {
+            padding: 8px 12px;
+        }
+        .table-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+            color: #626262;
+        }
+        .table-row:last-child {
+            border-bottom: none;
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel">
-        /**
-         * HEARTBEAT TRUST DASHBOARD GADGET
-         * 
-         * READ-ONLY dashboard that displays operational proof of FirstTry.
-         * 
-         * This gadget proves operation visibility only.
-         * No Jira writes, no config changes, no enforcement, no recommendations.
-         * All UNKNOWN values are disclosed with reason codes.
-         */
+    <div class="container">
+        <h1>FirstTry Governance Status</h1>
+        
+        <!-- Trust Boundaries (visible immediately) -->
+        <div class="section">
+            <div class="section-title">Trust Boundaries</div>
+            <div class="trust-block">
+                <ul class="trust-list">
+                    <li>✓ Monitoring active</li>
+                    <li>✓ Read-only mode</li>
+                    <li>✓ No Jira writes</li>
+                    <li>✓ No configuration changes</li>
+                    <li>✓ No enforcement</li>
+                </ul>
+            </div>
+        </div>
 
-        const React = window.React;
-        const ReactDOM = window.ReactDOM;
+        <!-- Status (changes after resolver call) -->
+        <div class="section" id="status-section">
+            <div class="section-title">Operational Status</div>
+            <div class="message">Loading…</div>
+        </div>
 
-        // ========================================================================
-        // COMPONENT
-        // ========================================================================
+        <!-- Checks (rendered after resolver call) -->
+        <div class="section" id="checks-section" style="display: none;">
+            <div class="section-title">Check Results</div>
+            <div id="checks-content"></div>
+        </div>
+    </div>
 
-        function HeartbeatGadget() {
-            const [heartbeat, setHeartbeat] = React.useState(null);
-            const [loading, setLoading] = React.useState(true);
-            const [error, setError] = React.useState(null);
-            const [unknownFields, setUnknownFields] = React.useState([]);
+    <script type="module">
+        import { invoke } from '@forge/bridge';
 
-            // Two-layer timing model
-            const platformTriggerMinutes = 5;      // Forge limitation
-            const cadenceIntervalMinutes = 15;     // FirstTry meaningful check cadence
-            const staleThresholdMinutes = 2 * cadenceIntervalMinutes; // 30 minutes
-
-            // Version from package.json
-            const version = "0.1.0";
-
-            // Environment (not available in Jira context)
-            const environment = "UNKNOWN";
-
-            // Format ISO 8601 timestamp with timezone awareness
-            function formatTimestamp(isoString) {
-                if (!isoString) return "UNKNOWN";
-
-                try {
-                    const date = new Date(isoString);
-                    if (isNaN(date.getTime())) return "UNKNOWN";
-
-                    try {
-                        const formatted = new Intl.DateTimeFormat("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                            timeZoneName: "short",
-                        }).format(date);
-                        return formatted;
-                    } catch {
-                        return `${date.toISOString()} UTC`;
-                    }
-                } catch {
-                    return "UNKNOWN";
-                }
-            }
-
-            // Calculate days since timestamp
-            function calculateDaysSince(isoString) {
-                if (!isoString) return "UNKNOWN";
-
-                try {
-                    const startTime = new Date(isoString).getTime();
-                    const now = Date.now();
-
-                    if (isNaN(startTime) || isNaN(now)) return "UNKNOWN";
-
-                    const daysSince = Math.floor((now - startTime) / 86400000);
-                    return `${daysSince} days`;
-                } catch {
-                    return "UNKNOWN";
-                }
-            }
-
-            // Compute display status (cadence-based staleness)
-            function computeDisplayStatus(record, cadenceInterval, staleThreshold) {
-                if (!record) return "INITIALIZING";
-
-                // Check staleness using cadence time (lastCadenceCheckAt or lastCheckAt for backward compat)
-                const cadenceTime = record.lastCadenceCheckAt || record.lastCheckAt;
-
-                if (cadenceTime) {
-                    try {
-                        const lastCadence = new Date(cadenceTime).getTime();
-                        const now = Date.now();
-                        const staleLimitMs = staleThreshold * 60 * 1000;
-
-                        if (now - lastCadence > staleLimitMs) {
-                            return "DEGRADED (STALE)";
-                        }
-                    } catch {
-                        // Fall back to stored status
-                    }
-                }
-
-                return record.status || "UNKNOWN";
-            }
-
-            // Load heartbeat on mount
-            React.useEffect(() => {
-                async function loadHeartbeat() {
-                    try {
-                        setLoading(true);
-                        setError(null);
-
-                        // Try to get context via Forge API
-                        // Note: In a real Forge app, this would use view.getContext()
-                        // For now, we check localStorage or request headers
-
-                        const mockCloudId = "mock-cloud-id"; // Placeholder
-
-                        // Mock data for now (would be fetched from Storage API in real app)
-                        const mockRecord = {
-                            status: "INITIALIZING",
-                        };
-
-                        setHeartbeat(mockRecord);
-
-                        const unknown = [
-                            { label: "Last Successful Run", reasonCode: "STORAGE_EMPTY" },
-                            { label: "Last Check", reasonCode: "STORAGE_EMPTY" },
-                            { label: "Number of Checks Completed", reasonCode: "STORAGE_EMPTY" },
-                            { label: "Snapshot Count", reasonCode: "STORAGE_EMPTY" },
-                            { label: "Days Since First Successful Run", reasonCode: "STORAGE_EMPTY" },
-                            { label: "Environment", reasonCode: "NOT_DECLARED" },
-                        ];
-
-                        setUnknownFields(unknown);
-                    } catch (err) {
-                        setError(err.message || "Unknown error");
-                        setHeartbeat(null);
-                    } finally {
-                        setLoading(false);
-                    }
-                }
-
-                loadHeartbeat();
-            }, []);
-
-            const displayStatus = computeDisplayStatus(heartbeat, cadenceIntervalMinutes, staleThresholdMinutes);
-
-            const metrics = [
-                { label: "Status", value: displayStatus },
-                { label: "Platform trigger interval", value: `${platformTriggerMinutes} minutes (Forge)` },
-                { label: "FirstTry check cadence", value: `${cadenceIntervalMinutes} minutes` },
-                { label: "Last platform trigger ping", value: formatTimestamp(heartbeat?.lastTriggerAt), unknown: !heartbeat?.lastTriggerAt },
-                { label: "Last meaningful check", value: formatTimestamp(heartbeat?.lastCadenceCheckAt || heartbeat?.lastCheckAt), unknown: !(heartbeat?.lastCadenceCheckAt || heartbeat?.lastCheckAt) },
-                { label: "Last successful meaningful check", value: formatTimestamp(heartbeat?.lastSuccessAt), unknown: !heartbeat?.lastSuccessAt },
-                { label: "Mode", value: "Scheduled monitoring (read-only)" },
-                { label: "Platform pings observed", value: heartbeat?.triggerCount ? `${heartbeat.triggerCount} (best-effort counter)` : "UNKNOWN", unknown: !heartbeat?.triggerCount },
-                { label: "Meaningful checks completed", value: heartbeat?.runCount ? `${heartbeat.runCount} (best-effort counter)` : "UNKNOWN", unknown: !heartbeat?.runCount },
-                { label: "Snapshot count", value: heartbeat?.snapshotCount !== undefined ? `${heartbeat.snapshotCount}` : "0 — No snapshots recorded" },
-                { label: "Days Since First Successful Run", value: calculateDaysSince(heartbeat?.firstSuccessAt), unknown: !heartbeat?.firstSuccessAt },
-                { label: "Staleness threshold", value: `${staleThresholdMinutes} minutes (cadence-based)` },
-                { label: "Version", value: version },
-                { label: "Environment", value: environment, unknown: environment === "UNKNOWN" },
-            ];
-
-            return (
-                <div style={styles.container}>
-                    <h1 style={styles.title}>FirstTry Operational Trust Dashboard</h1>
-
-                    {loading && (
-                        <div style={styles.message}>
-                            <p>Loading operational status...</p>
+        async function loadStatus() {
+            try {
+                // Call the resolver
+                const data = await invoke('get', {});
+                
+                // Render status section
+                const statusSection = document.getElementById('status-section');
+                const statusHtml = `
+                    <div class="metrics-grid">
+                        <div class="metric-row">
+                            <div class="metric-label">App Name</div>
+                            <div class="metric-value">${data.appName || 'FirstTry'}</div>
                         </div>
-                    )}
-
-                    {error && (
-                        <div style={{ ...styles.message, backgroundColor: "#fff7d6" }}>
-                            <p><strong>Error:</strong> {error}</p>
+                        <div class="metric-row">
+                            <div class="metric-label">Mode</div>
+                            <div class="metric-value">${data.mode || 'Scheduled monitoring (read-only)'}</div>
                         </div>
-                    )}
+                        <div class="metric-row">
+                            <div class="metric-label">Last Check Attempt</div>
+                            <div class="metric-value">${formatTimestamp(data.lastAttemptAt)}</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-label">Last Successful Check</div>
+                            <div class="metric-value">${formatTimestamp(data.lastSuccessAt)}</div>
+                        </div>
+                        ${data.lastFailureReason ? `
+                        <div class="metric-row">
+                            <div class="metric-label">Last Failure</div>
+                            <div class="metric-value unknown">${data.lastFailureReason}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                statusSection.innerHTML = statusHtml;
 
-                    {!loading && !error && (
-                        <>
-                            {/* Trust Boundaries */}
-                            <div style={styles.section}>
-                                <h2 style={styles.sectionTitle}>Trust Boundaries</h2>
-                                <div style={styles.trustBlock}>
-                                    <ul style={styles.trustList}>
-                                        <li>✓ Read-only operation</li>
-                                        <li>✓ No Jira writes</li>
-                                        <li>✓ No configuration changes</li>
-                                        <li>✓ No policy enforcement</li>
-                                        <li>✓ No recommendations</li>
-                                        <li>✓ No external network calls / no data egress</li>
-                                        <li>✓ No admin actions required</li>
-                                    </ul>
-                                </div>
+                // Render checks section if available
+                if (data.checks && data.checks.length > 0) {
+                    const checksSection = document.getElementById('checks-section');
+                    let tableHtml = '<div class="checks-table"><div class="table-header"><div>Check</div><div>Source</div><div>Status</div><div>Reason</div></div>';
+                    
+                    data.checks.forEach(check => {
+                        tableHtml += `
+                            <div class="table-row">
+                                <div>${check.name || check.id || 'Unknown'}</div>
+                                <div>${check.source || '—'}</div>
+                                <div>${check.status || 'UNKNOWN'}</div>
+                                <div>${check.reasonCode || '—'}</div>
                             </div>
-
-                            {/* Operational Status */}
-                            <div style={styles.section}>
-                                <h2 style={styles.sectionTitle}>Operational Status</h2>
-                                <div style={styles.metricsGrid}>
-                                    {metrics.map((metric, idx) => (
-                                        <div key={idx} style={styles.metricRow}>
-                                            <div style={styles.metricLabel}>{metric.label}</div>
-                                            <div style={{
-                                                ...styles.metricValue,
-                                                color: metric.unknown ? "#ae2a19" : "#172b4d",
-                                            }}>
-                                                {metric.value}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Data Availability */}
-                            <div style={styles.section}>
-                                <h2 style={styles.sectionTitle}>Data Availability</h2>
-                                {unknownFields.length === 0 ? (
-                                    <div style={styles.availabilityRow}>
-                                        <span style={styles.availabilityStatus}>✓ All fields available.</span>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        {unknownFields.map((field, idx) => (
-                                            <div key={idx} style={styles.availabilityRow}>
-                                                <span>{field.label} — UNKNOWN — {field.reasonCode}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Disclosure */}
-                            <div style={styles.section}>
-                                <h2 style={styles.sectionTitle}>Disclosure</h2>
-                                <div style={styles.disclosureText}>
-                                    <p>
-                                        <strong>Two-layer timing model:</strong> Forge schedules the trigger every 5 minutes (platform limitation).
-                                        FirstTry applies a storage-based cadence gate so meaningful checks run every 15 minutes.
-                                        Both layers are shown here for transparency. Staleness is computed from the cadence layer (30-minute threshold).
-                                    </p>
-                                    <p>
-                                        <strong>Counters are best-effort:</strong> Due to Forge Storage eventual consistency,
-                                        counters are approximate and should not be treated as precise audit logs.
-                                    </p>
-                                    <p>
-                                        <strong>Purpose:</strong> This gadget proves operational visibility only. It does not prove
-                                        compliance, enforcement, or policy success. All metrics are transparent about their limitations.
-                                    </p>
-                                    <p>
-                                        <strong>Staleness:</strong> If no meaningful check has occurred within 30 minutes (2× the 15-minute cadence),
-                                        status is displayed as DEGRADED (STALE). This does not reflect platform trigger frequency (5 minutes).
-                                    </p>
-                                    <p>
-                                        <strong>What UNKNOWN means:</strong> A field shows UNKNOWN when the underlying data has not been
-                                        recorded, the required environment variable or file is missing, or the Forge context does not
-                                        provide the required identifier. This is disclosed to prevent assumptions.
-                                    </p>
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
-            );
+                        `;
+                    });
+                    
+                    tableHtml += '</div>';
+                    document.getElementById('checks-content').innerHTML = tableHtml;
+                    checksSection.style.display = 'block';
+                }
+            } catch (error) {
+                // Render error
+                const statusSection = document.getElementById('status-section');
+                statusSection.innerHTML = `
+                    <div class="error-panel section" style="margin: 0;">
+                        <div class="error-header">⚠ Resolver Invocation Failed</div>
+                        <div class="error-code">RESOLVER_INVOKE_FAILED</div>
+                        <div class="error-message">${error.message || 'Unknown error'}</div>
+                    </div>
+                `;
+            }
         }
 
-        // ========================================================================
-        // STYLES
-        // ========================================================================
+        function formatTimestamp(iso) {
+            if (!iso) return 'Pending…';
+            try {
+                const date = new Date(iso);
+                return new Intl.DateTimeFormat('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZoneName: 'short'
+                }).format(date);
+            } catch {
+                return iso;
+            }
+        }
 
-        const styles = {
-            container: {
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                padding: "20px",
-                backgroundColor: "#f5f5f5",
-                minHeight: "100vh",
-            },
-            title: {
-                margin: "0 0 20px 0",
-                fontSize: "24px",
-                fontWeight: 600,
-                color: "#172b4d",
-            },
-            section: {
-                backgroundColor: "white",
-                borderRadius: "3px",
-                boxShadow: "0 1px 1px rgba(9, 30, 66, 0.13)",
-                padding: "16px",
-                marginBottom: "16px",
-            },
-            sectionTitle: {
-                margin: "0 0 12px 0",
-                fontSize: "16px",
-                fontWeight: 600,
-                color: "#172b4d",
-            },
-            trustBlock: {
-                backgroundColor: "#f8f9fa",
-                borderLeft: "4px solid #0052cc",
-                padding: "12px",
-                borderRadius: "2px",
-            },
-            trustList: {
-                margin: "0",
-                paddingLeft: "20px",
-                color: "#626262",
-                fontSize: "14px",
-                lineHeight: "1.6",
-            },
-            metricsGrid: {
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-            },
-            metricRow: {
-                paddingBottom: "8px",
-                borderBottom: "1px solid #f0f0f0",
-            },
-            metricLabel: {
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#626262",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                marginBottom: "4px",
-            },
-            metricValue: {
-                fontSize: "14px",
-                color: "#172b4d",
-                wordBreak: "break-word",
-            },
-            availabilityRow: {
-                padding: "8px 0",
-                fontSize: "14px",
-                color: "#626262",
-                borderBottom: "1px solid #f0f0f0",
-            },
-            availabilityStatus: {
-                color: "#216e4e",
-            },
-            message: {
-                backgroundColor: "#f0f0f0",
-                padding: "12px",
-                borderRadius: "3px",
-                fontSize: "14px",
-                color: "#626262",
-            },
-            disclosureText: {
-                fontSize: "13px",
-                color: "#626262",
-                lineHeight: "1.6",
-            },
-        };
-
-        // ========================================================================
-        // MOUNT
-        // ========================================================================
-
-        ReactDOM.render(
-            <HeartbeatGadget />,
-            document.getElementById("root")
-        );
+        // Load status on page load
+        loadStatus();
     </script>
 </body>
 </html>
