@@ -19,6 +19,8 @@ modules:
       title: FirstTry Governance Status
       description: FirstTry Governance - real-time status overview
       resource: governance-gadget-page
+      resolver:
+        function: status-resolver-fn
       thumbnail: https://www.atlassian.com/favicon.ico
 
   # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
@@ -31,6 +33,8 @@ modules:
       handler: scheduled/snapshot_weekly.handle
     - key: token-refresh-job-fn
       handler: scheduled/token_refresh_scheduler.handle
+    - key: status-resolver-fn
+      handler: resolvers/governance_status.get
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)
