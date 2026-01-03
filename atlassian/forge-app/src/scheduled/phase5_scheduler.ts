@@ -37,6 +37,7 @@ import {
 
 import { handleAutoTrigger } from '../phase5_report_generator';
 import { resolveTenantIdentity, type TenantIdentity } from '../core/tenant_identity';
+import { storage } from '@forge/api';
 
 // ============================================================================
 // HELPERS
@@ -54,6 +55,87 @@ function calculateBackoffMs(attemptCount: number): number {
     minutes = 120; // 2 hours
   }
   return minutes * 60 * 1000;
+}
+
+/**
+ * Write governance status snapshot (tenant-scoped)
+ * Fails silently to not block scheduler execution
+ */
+async function writeStatusSnapshot(
+  cloudId: string | undefined,
+  lastAttemptAt: string,
+  lastSuccessAt: string | null = null,
+  lastFailureReason: { code: string; message: string } | null = null
+): Promise<void> {
+  try {
+    // Fail-safe: do not write with empty cloudId
+    if (!cloudId || cloudId.trim() === '') {
+      return;
+    }
+
+    const key = `governance:status:snapshot:${cloudId}`;
+    const snapshot = {
+      appName: 'FirstTry',
+      version: null,
+      environment: null,
+      mode: 'Scheduled monitoring (read-only)',
+      boundaries: {
+        monitoringActive: true,
+        readOnlyMode: true,
+        noJiraWrites: true,
+        noConfigChanges: true,
+        noEnforcement: true,
+      },
+      lastAttemptAt,
+      lastSuccessAt,
+      lastFailureAt: lastFailureReason ? lastAttemptAt : null,
+      lastFailureReason,
+      checks: [
+        {
+          id: 'phase4-evidence',
+          name: 'Phase-4 Evidence Collection',
+          source: 'Scheduled Phase-4 snapshot (daily)',
+          status: lastSuccessAt ? 'READY' : 'PENDING',
+          lastAttemptAt,
+          lastSuccessAt,
+          reasonCode: lastSuccessAt ? null : 'COLLECTING',
+          reasonMessage: lastSuccessAt ? null : 'Collecting initial evidence snapshots.',
+        },
+        {
+          id: 'phase5-report',
+          name: 'Phase-5 Trust Report Generation',
+          source: 'Scheduled Phase-5 trigger (every 5 minutes)',
+          status: lastSuccessAt ? 'READY' : 'PENDING',
+          lastAttemptAt,
+          lastSuccessAt,
+          reasonCode: lastSuccessAt ? null : 'PENDING_EVIDENCE',
+          reasonMessage: lastSuccessAt ? null : 'Waiting for Phase-4 evidence collection.',
+        },
+        {
+          id: 'jira-scope',
+          name: 'Jira Metadata Access',
+          source: 'App manifest (read:jira-work scope)',
+          status: 'READY',
+          lastAttemptAt: null,
+          lastSuccessAt: null,
+          reasonCode: null,
+          reasonMessage: null,
+        },
+      ],
+      counters: {
+        checksCompleted: lastSuccessAt ? 1 : 0,
+        snapshotsCount: lastSuccessAt ? 1 : 0,
+        daysContinuousOperation: 0,
+      },
+    };
+
+    await storage.set(key, snapshot);
+  } catch (error) {
+    // Silently fail; this is informational write and should not block scheduler
+    console.warn(
+      `[Phase5Scheduler] Failed to write status snapshot: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }
 
 // ============================================================================
@@ -209,6 +291,9 @@ export async function phase5SchedulerHandler(
       `[Phase5Scheduler] Starting for tenantKey: ${tenantKey} (source: ${tenantId.source}) at ${startTime}` +
       (cloudId ? ` [cloudId: ${cloudId}]` : ' [no cloudId available]')
     );
+
+    // Write status snapshot at start (for dashboard transparency)
+    await writeStatusSnapshot(cloudId, startTime);
 
     // ====================================================================
     // 2. Load Installation Timestamp
@@ -437,6 +522,16 @@ export async function phase5SchedulerHandler(
 
     state.last_run_at = startTime;
     await saveSchedulerState(tenantKey, state);
+
+    // Write final status snapshot
+    if (reportGenerated) {
+      await writeStatusSnapshot(cloudId, startTime, startTime, null);
+    } else if (generationError) {
+      await writeStatusSnapshot(cloudId, startTime, null, {
+        code: 'GENERATION_ERROR',
+        message: generationError,
+      });
+    }
 
     const httpStatus = reportGenerated ? 200 : 202;
 
