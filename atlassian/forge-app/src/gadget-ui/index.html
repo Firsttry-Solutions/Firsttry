@@ -148,61 +148,10 @@
         }
 
         /* ========================================================================
-           KPI STRIP
+           KPI STRIP (DEPRECATED - kept for reference, not used)
            ======================================================================== */
         .kpi-strip {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: var(--space-16);
-            margin-bottom: var(--space-24);
-        }
-
-        @media (min-width: 900px) {
-            .kpi-strip {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        @media (min-width: 1400px) {
-            .kpi-strip {
-                grid-template-columns: repeat(8, 1fr);
-            }
-        }
-
-        .kpi-item {
-            background: var(--color-bg-card);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-8);
-            padding: var(--space-12);
-            transition: all 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-8);
-        }
-
-        .kpi-item:hover {
-            border-color: var(--color-accent);
-            box-shadow: var(--shadow-card);
-        }
-
-        .kpi-label {
-            font-size: var(--font-size-small);
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .kpi-value {
-            font-size: 18px;
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-text-primary);
-            word-break: break-word;
-            line-height: 1.2;
-        }
-
-        .kpi-value.error {
-            color: var(--color-status-error-text);
+            display: none;
         }
 
         /* ========================================================================
@@ -703,21 +652,82 @@
         <p class="title-description">Read-only operational visibility surface. Real-time monitoring status and data quality metrics.</p>
         <div class="build-marker" id="build-marker"></div>
         
-        <!-- App Identity (Diagnostic) -->
-        <div class="section" id="app-identity-section" style="background-color: #fef5e7; border-color: #f9e79f;">
-            <div class="section-title" style="border-bottom-color: #f9e79f;">App Identity (Diagnostic)</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 12px;">
-                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
-                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Server Build Stamp</div>
-                    <div id="app-server-build" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+        <!-- System Overview -->
+        <div class="section">
+            <div class="section-title">System Overview</div>
+            <div class="metrics-grid">
+                <div class="metric-row">
+                    <div class="metric-label">System Status</div>
+                    <div class="metric-value" id="kpi-status"><span class="status-pill initializing">INITIALIZING</span></div>
                 </div>
+                <div class="metric-row">
+                    <div class="metric-label">Mode</div>
+                    <div class="metric-value">Scheduled monitoring (read-only)</div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label">Last Successful Run</div>
+                    <div class="metric-value" id="kpi-last-success">Awaiting first successful run</div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label">Days of Continuous Operation</div>
+                    <div class="metric-value" id="kpi-days-continuous">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operational Metrics -->
+        <div class="section">
+            <div class="section-title">Operational Metrics</div>
+            <div class="metrics-grid">
+                <div class="metric-row">
+                    <div class="metric-label">Checks Completed (Lifetime)</div>
+                    <div class="metric-value" id="kpi-checks-lifetime">0</div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label">Snapshot Count (Retained)</div>
+                    <div class="metric-value" id="kpi-snapshot-count">0</div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label">Last Check</div>
+                    <div class="metric-value" id="kpi-last-check">Awaiting first check</div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label">Generated At</div>
+                    <div class="metric-value" id="kpi-generated-at">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operational Boundaries -->
+        <div class="section" style="border-left: 4px solid var(--color-accent); background: var(--color-accent-subtle);">
+            <div class="section-title" style="border-bottom-color: var(--color-accent);">Operational Boundaries</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div style="padding-bottom: 12px; border-bottom: 1px solid var(--color-border);">
+                    <div style="font-weight: 600; color: #172b4d; font-size: 14px; margin-bottom: 6px;">✓ No Jira Writes</div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary);">This app is read-only and performs no Jira API writes.</div>
+                </div>
+                <div style="padding-bottom: 12px; border-bottom: 1px solid var(--color-border);">
+                    <div style="font-weight: 600; color: #172b4d; font-size: 14px; margin-bottom: 6px;">✓ No Config Changes</div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary);">Monitoring only. No configuration is modified.</div>
+                </div>
+                <div style="padding-bottom: 12px; border-bottom: none;">
+                    <div style="font-weight: 600; color: #172b4d; font-size: 14px; margin-bottom: 6px;">✓ No Enforcement</div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary);">Observational monitoring. No enforcement actions taken.</div>
+                </div>
+                <div style="padding-bottom: 12px; border-bottom: none;">
+                    <div style="font-weight: 600; color: #172b4d; font-size: 14px; margin-bottom: 6px;">✓ Read-Only Only</div>
+                    <div style="font-size: 12px; color: var(--color-text-secondary);">Requires read:jira-work scope only.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- App Identity (Diagnostics) -->
+        <div class="section" id="app-identity-section" style="background-color: #fef5e7; border-color: #f9e79f;">
+            <div class="section-title" style="border-bottom-color: #f9e79f;">App Identity (Diagnostics)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 12px;">
                 <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
                     <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">App ID</div>
                     <div id="app-id" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
-                </div>
-                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
-                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Environment</div>
-                    <div id="app-environment" style="color: #172b4d; font-weight: 500;">—</div>
                 </div>
                 <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
                     <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Cloud ID</div>
@@ -727,46 +737,18 @@
                     <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Installation ID</div>
                     <div id="app-installation-id" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
                 </div>
+                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
+                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Version / Environment</div>
+                    <div id="kpi-version" style="color: #172b4d; font-weight: 500;">— / —</div>
+                </div>
+                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
+                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Server Build Stamp</div>
+                    <div id="app-server-build" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+                </div>
                 <div style="padding-bottom: 12px; border-bottom: none;">
                     <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Generated At</div>
                     <div id="app-generated-at" style="color: #172b4d; font-weight: 500;">—</div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- KPI Strip -->
-        <div class="kpi-strip" id="kpi-strip">
-            <div class="kpi-item">
-                <div class="kpi-label">System Status</div>
-                <div class="kpi-value" id="kpi-status"><span class="status-pill initializing">INITIALIZING</span></div>
-            </div>
-            <div class="kpi-item">
-                <div class="kpi-label">Mode</div>
-                <div class="kpi-value">Scheduled monitoring (read-only)</div>
-            </div>
-            <div class="kpi-item">
-                <div class="kpi-label">Last Successful Run</div>
-                <div class="kpi-value" id="kpi-last-success">Awaiting first successful run</div>
-            </div>
-            <div class="kpi-item">
-                <div class="kpi-label">Last Check</div>
-                <div class="kpi-value" id="kpi-last-check">Awaiting first check</div>
-            </div>
-            <div class="kpi-item">
-                <div class="kpi-label">Checks Completed (Lifetime)</div>
-                <div class="kpi-value" id="kpi-checks-lifetime">0</div>
-            </div>
-            <div class="kpi-item">
-                <div class="kpi-label">Snapshot Count (Retained)</div>
-                <div class="kpi-value" id="kpi-snapshot-count">0</div>
-            </div>
-            <div class="kpi-item">
-                <div class="kpi-label">Days of Continuous Operation</div>
-                <div class="kpi-value" id="kpi-days-continuous">0</div>
-            </div>
-            <div class="kpi-item">
-                <div class="kpi-label">Version / Environment</div>
-                <div class="kpi-value" id="kpi-version">— / —</div>
             </div>
         </div>
 
@@ -864,6 +846,7 @@
                 document.getElementById('kpi-snapshot-count').textContent = data.snapshotsRetainedCount !== null ? String(data.snapshotsRetainedCount) : '—';
                 document.getElementById('kpi-days-continuous').textContent = data.daysContinuousOperation !== null ? String(data.daysContinuousOperation) : '—';
                 document.getElementById('kpi-version').textContent = `${data.version} / ${data.environment}`;
+                document.getElementById('kpi-generated-at').textContent = formatTimestampDisplay(data.generatedAt) || '—';
 
                 // Operational Status Panel
                 const opStatus = `
