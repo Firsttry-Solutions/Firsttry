@@ -27,14 +27,11 @@ export const RETENTION_MAX_SNAPSHOTS = 100;
  */
 export const RETENTION_MAX_DAYS = 30;
 
-/**
- * Application version (used in gadget and exports).
- * Must match manifest/package.json version during deployment.
- */
-export const APP_VERSION = '2.14.0';
+// APP_VERSION is derived from package.json at build time.
+// It is not user-configurable, not tenant-specific, and cannot be overridden at runtime.
+const pkg = require('../../package.json');
+export const APP_VERSION = `v${pkg.version}`;
 
-/**
- * Application environment (production, staging, etc.).
- * Set by deployment context; defaults to 'production'.
- */
+// environment reflects the Forge deployment environment (e.g., production or staging).
+// It is derived from the Forge runtime context and is not user-configurable.
 export const APP_ENVIRONMENT = process.env.FORGE_ENVIRONMENT || 'production';

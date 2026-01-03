@@ -10,6 +10,9 @@
  * - Fields with missing data are null; completeness status reflects truth
  * - All timestamps ISO 8601 UTC
  * - Returns DEGRADED if tenant identity unavailable
+ * 
+ * NOTE: Contract version comments are documentation-only.
+ * They do not affect runtime behavior, exports, UI rendering, or version reporting.
  */
 
 import { storage } from '@forge/api';
@@ -270,6 +273,13 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       version: APP_VERSION,
       systemStatus,
       mode: 'Scheduled monitoring (read-only)',
+      
+      // This resolver is read-only:
+      // - No Jira writes
+      // - No configuration mutation
+      // - No enforcement
+      // - No recommendations
+      // Version/environment fields are informational only.
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -320,6 +330,13 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       version: APP_VERSION,
       systemStatus: 'DEGRADED',
       mode: 'Scheduled monitoring (read-only)',
+      
+      // This resolver is read-only:
+      // - No Jira writes
+      // - No configuration mutation
+      // - No enforcement
+      // - No recommendations
+      // Version/environment fields are informational only.
     };
   }
 }
@@ -375,6 +392,13 @@ function createDegradedPayload(reasonCode: string): Record<string, unknown> {
     version: APP_VERSION,
     systemStatus: 'DEGRADED',
     mode: 'Scheduled monitoring (read-only)',
+    
+    // This resolver is read-only:
+    // - No Jira writes
+    // - No configuration mutation
+    // - No enforcement
+    // - No recommendations
+    // Version/environment fields are informational only.
   };
 }
 
