@@ -169,6 +169,18 @@ export async function phase5SchedulerHandler(
   const startTime = new Date().toISOString();
 
   try {
+    // [DEPLOY_SENTINEL] Log deployed commit hash
+    console.log('[DEPLOY_SENTINEL] Phase5Scheduler start', { commit: '819026e0' });
+
+    // [CONTEXT_SHAPE] Log context structure (keys only, no values/secrets)
+    console.log('[CONTEXT_SHAPE] scheduler_context', {
+      hasRequest: !!(context && (context as any).request),
+      hasPrincipal: !!(context && (context as any).principal),
+      hasInstallContext: !!(context && (context as any).installContext),
+      hasInstallation: !!(context && (context as any).installation),
+      keys: context ? Object.keys(context as any).sort() : [],
+    });
+
     // ====================================================================
     // 1. Get Tenant Context - FAIL CLOSED
     // ====================================================================
