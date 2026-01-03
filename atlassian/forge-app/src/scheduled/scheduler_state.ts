@@ -17,6 +17,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 
 export interface SchedulerState {
   last_run_at: string; // ISO 8601
@@ -213,9 +214,7 @@ export async function loadInstallationTimestamp(cloudId: string): Promise<string
   try {
     // Production: Read from Phase-4 append-only evidence storage
     // Path: `phase4:evidence:installation:${cloudId}`
-    const installationEvidence = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(`phase4:evidence:installation:${cloudId}`);
-    });
+    const installationEvidence = await storage.get(`phase4:evidence:installation:${cloudId}`);
 
     if (!installationEvidence || !installationEvidence.installed_at) {
       console.warn(
