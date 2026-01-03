@@ -271,6 +271,7 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       schemaVersion: '2.14.0',
       generatedAt: new Date().toISOString(),
       version: APP_VERSION,
+      uiExpectedBuild: `UI_${APP_VERSION}`,
       systemStatus,
       mode: 'Scheduled monitoring (read-only)',
       
@@ -328,6 +329,7 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       schemaVersion: '2.14.0',
       generatedAt: new Date().toISOString(),
       version: APP_VERSION,
+      uiExpectedBuild: `UI_${APP_VERSION}`,
       systemStatus: 'DEGRADED',
       mode: 'Scheduled monitoring (read-only)',
       
@@ -390,6 +392,7 @@ function createDegradedPayload(reasonCode: string): Record<string, unknown> {
     schemaVersion: '2.14.0',
     generatedAt: new Date().toISOString(),
     version: APP_VERSION,
+    uiExpectedBuild: `UI_${APP_VERSION}`,
     systemStatus: 'DEGRADED',
     mode: 'Scheduled monitoring (read-only)',
     

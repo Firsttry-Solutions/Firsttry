@@ -829,6 +829,9 @@
         <!-- Footer -->
         <div class="footer">
             <p>This dashboard is a read-only operational visibility surface. It exists to provide transparency into app activity and data quality.</p>
+            <div class="export-note" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border); font-size: 0.875em; color: var(--color-text-secondary);">
+                <strong>Cache Refresh:</strong> If this dashboard does not reflect the latest version shown above, remove and re-add the gadget to force a UI cache refresh.
+            </div>
         </div>
     </div>
 
@@ -837,7 +840,9 @@
     <script type="module">
         import { invoke } from '@forge/bridge';
 
-        const BUILD_MARKER = "BUILD_MARKER__2026-01-03T152444__PROD";
+        // Version-based build marker derived from backend (2.14.0)
+        // This must match the backend's uiExpectedBuild value exactly
+        const UI_BUILD_VERSION = "UI_2.14.0";
         let lastPayload = null;
 
         // Step 3: Null-guard helpers to prevent crashes on missing DOM elements
@@ -875,11 +880,28 @@
                 const data = await invoke('get', {});
                 lastPayload = data;
 
-                // Step 5: Make build marker use null guards
-                setText('build-marker', `UI_HTML_MARKER: ${BUILD_MARKER}`);
+                // Display UI version
+                setText('build-marker', `UI BUILD: ${UI_BUILD_VERSION}`);
                 
-                // Step 4: Mark invoke success
-                setText('ui-selftest-invoke', 'OK (resolver responded)');
+                // Step 4: Verify version match (CRITICAL)
+                if (data.uiExpectedBuild && data.uiExpectedBuild !== UI_BUILD_VERSION) {
+                    const warning = `
+                        <div class="error-panel">
+                            <div class="error-header">UI Version Mismatch</div>
+                            <div class="error-code">STALE_UI_CACHE</div>
+                            <div class="error-message">
+                                This dashboard UI (${UI_BUILD_VERSION}) does not match the backend version
+                                (${data.uiExpectedBuild}).<br/><br/>
+                                Remove and re-add the gadget, or perform a hard refresh.
+                            </div>
+                        </div>
+                    `;
+                    setHTML('operational-status', warning);
+                    setText('ui-selftest-invoke', 'FAIL (version mismatch)');
+                } else {
+                    setText('ui-selftest-invoke', 'OK (resolver responded)');
+                }
+
 
                 // Render app identity fields
                 setText('app-server-build', data.serverBuildStamp || '—');
