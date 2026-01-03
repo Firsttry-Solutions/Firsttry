@@ -7,7 +7,9 @@
 
 **App Name**: FirstTry Governance - Atlassian Dual-Layer Integration  
 **Last Updated**: 2025-12-22  
-**Purpose**: Document all dependencies on Atlassian Forge platform and trust boundaries  
+**Purpose**: Document all dependencies on Atlassian Forge platform and trust boundaries
+
+⚠️ **HISTORICAL NOTE**: Some sections reference admin page UI functionality. Current builds expose no admin UI surface. Admin page references in this document describe historical/future risk scenarios only; they do not apply to current deployments.
 
 ---
 
