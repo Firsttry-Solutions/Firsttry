@@ -1,27 +1,44 @@
 /**
  * GOVERNANCE STATUS RESOLVER
  * 
- * Provides real-time governance monitoring status to the dashboard gadget.
+ * Provides comprehensive governance monitoring status to the dashboard gadget.
  * 
- * Contract:
- * - Always returns a snapshot (never null)
+ * Contract (v2.14.0):
+ * - Always returns a complete payload (never null)
  * - Tenant-scoped (storage key includes cloudId)
- * - Shows app name, monitoring state, boundaries, and check availability
- * - Returns INITIALIZING state if no snapshot yet (first run pending)
+ * - Returns all required fields per spec
+ * - Fields with missing data are null; completeness status reflects truth
+ * - All timestamps ISO 8601 UTC
+ * - Returns DEGRADED if tenant identity unavailable
  */
 
 import { storage } from '@forge/api';
 import { resolveTenantIdentity } from '../core/tenant_identity';
+import {
+  EXPECTED_SCHEDULE_INTERVAL_MINUTES,
+  STALENESS_MULTIPLIER,
+  RETENTION_MAX_SNAPSHOTS,
+  RETENTION_MAX_DAYS,
+  APP_VERSION,
+  APP_ENVIRONMENT,
+} from '../core/constants';
 
-// Storage key for governance status snapshot (tenant-scoped)
+// Storage key prefixes
 const SNAPSHOT_KEY_PREFIX = 'governance:status:snapshot';
+const METRICS_KEY_PREFIX = 'governance:metrics';
 
 function getSnapshotKey(cloudId: string): string {
-  // Fail-safe: do not create key with empty cloudId
   if (!cloudId || cloudId.trim() === '') {
     return '';
   }
   return `${SNAPSHOT_KEY_PREFIX}:${cloudId}`;
+}
+
+function getMetricsKey(cloudId: string): string {
+  if (!cloudId || cloudId.trim() === '') {
+    return '';
+  }
+  return `${METRICS_KEY_PREFIX}:${cloudId}`;
 }
 
 /**
@@ -106,8 +123,244 @@ function createErrorSnapshot(errorMessage: string) {
 }
 
 /**
- * Main resolver handler
- * Invoked by dashboard gadget to display real-time governance status
+ * Build comprehensive resolver payload per v2.14.0 spec
+ */
+async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
+  try {
+    // Load snapshot and metrics
+    const snapshotKey = getSnapshotKey(cloudId);
+    const metricsKey = getMetricsKey(cloudId);
+
+    const snapshot = await storage.get(snapshotKey);
+    const metrics = await storage.get(metricsKey);
+
+    // Calculate staleness
+    const lastSuccessAt = snapshot?.lastSuccessAt || metrics?.lastSuccessAt || null;
+    const lastCheckAt = snapshot?.lastAttemptAt || metrics?.lastCheckAt || null;
+
+    let snapshotAgeMinutes: number | null = null;
+    let isStale: boolean | null = null;
+    let systemStatus = 'INITIALIZING';
+    let staleIfAgeMinutesGreaterThan: number | null = null;
+
+    if (lastSuccessAt) {
+      const ageMs = Date.now() - new Date(lastSuccessAt).getTime();
+      snapshotAgeMinutes = Math.floor(ageMs / 60000);
+      staleIfAgeMinutesGreaterThan = EXPECTED_SCHEDULE_INTERVAL_MINUTES * STALENESS_MULTIPLIER;
+      isStale = snapshotAgeMinutes > staleIfAgeMinutesGreaterThan;
+      systemStatus = isStale ? 'DEGRADED' : 'RUNNING';
+    } else if (lastCheckAt) {
+      const ageMs = Date.now() - new Date(lastCheckAt).getTime();
+      snapshotAgeMinutes = Math.floor(ageMs / 60000);
+      staleIfAgeMinutesGreaterThan = EXPECTED_SCHEDULE_INTERVAL_MINUTES * STALENESS_MULTIPLIER;
+      isStale = snapshotAgeMinutes > staleIfAgeMinutesGreaterThan;
+      systemStatus = isStale ? 'DEGRADED' : 'RUNNING';
+    }
+
+    // Compute checks completed lifetime
+    const checksCompletedLifetime = metrics?.checksCompletedLifetime || null;
+    const snapshotsRetainedCount = metrics?.snapshotsRetainedCount || null;
+    const continuousSince = metrics?.continuousSince || null;
+    const daysContinuousOperation = metrics?.daysContinuousOperation || null;
+
+    // Determine completeness
+    let completenessStatus: 'COMPLETE' | 'PARTIAL' | 'INCOMPLETE' = 'COMPLETE';
+    const coverageIncluded: string[] = [];
+    const coverageExcluded: string[] = [];
+    const knownDataGaps: string[] = [];
+
+    if (lastSuccessAt && lastCheckAt) {
+      coverageIncluded.push('Last successful run timestamp', 'Last check timestamp');
+    }
+    if (checksCompletedLifetime !== null) {
+      coverageIncluded.push('Lifetime checks completed count');
+    } else {
+      coverageExcluded.push('Lifetime checks completed count');
+      knownDataGaps.push('Lifetime counts not yet available');
+      completenessStatus = 'PARTIAL';
+    }
+    if (snapshotsRetainedCount !== null) {
+      coverageIncluded.push('Retained snapshots count');
+    } else {
+      coverageExcluded.push('Retained snapshots count');
+      completenessStatus = 'PARTIAL';
+    }
+    if (daysContinuousOperation !== null) {
+      coverageIncluded.push('Days of continuous operation');
+    } else {
+      coverageExcluded.push('Days of continuous operation');
+      completenessStatus = 'PARTIAL';
+    }
+
+    // Parse checks from snapshot
+    const checks: any[] = [];
+    if (snapshot?.checks && Array.isArray(snapshot.checks)) {
+      snapshot.checks.slice(0, 20).forEach((check: any) => {
+        checks.push({
+          name: check.name || 'Unknown',
+          status: check.status || 'UNKNOWN',
+          lastRunAt: check.lastSuccessAt || check.lastAttemptAt || null,
+          reasonCode: check.reasonCode || '—',
+          impact: check.reasonMessage || '—',
+          severityRank: check.status === 'FAIL' ? 1 : check.status === 'WARN' ? 2 : 3,
+        });
+      });
+    }
+
+    return {
+      // Identity & availability
+      tenantIdentity: {
+        available: true,
+      },
+      permissionVisibility: {
+        determined: true,
+      },
+
+      // Schedule + staleness
+      expectedScheduleIntervalMinutes: EXPECTED_SCHEDULE_INTERVAL_MINUTES,
+      stalenessMultiplier: STALENESS_MULTIPLIER,
+      staleIfAgeMinutesGreaterThan,
+      lastCheckAt,
+      lastSuccessAt,
+      snapshotAgeMinutes,
+      isStale,
+
+      // Counts + continuity
+      checksCompletedLifetime,
+      snapshotsRetainedCount,
+      continuousSince,
+      daysContinuousOperation,
+
+      // Data quality
+      completenessStatus,
+      coverageIncluded,
+      coverageExcluded,
+      knownDataGaps,
+      retentionPolicy: {
+        maxSnapshots: RETENTION_MAX_SNAPSHOTS,
+        maxDays: RETENTION_MAX_DAYS,
+        effectiveRuleText: `Last ${RETENTION_MAX_SNAPSHOTS} snapshots OR last ${RETENTION_MAX_DAYS} days (whichever is smaller)`,
+      },
+
+      // Checks
+      checks,
+      checksTotalCount: snapshot?.checks?.length || 0,
+
+      // Boundaries
+      boundaries: {
+        noJiraWrites: true,
+        noConfigChanges: true,
+        noEnforcement: true,
+        noRecommendations: true,
+        noExternalEgress: true,
+        observationalOnly: true,
+        failClosedOnMissingTenantIdentity: true,
+      },
+
+      // Metadata
+      schemaVersion: '2.14.0',
+      generatedAt: new Date().toISOString(),
+      version: APP_VERSION,
+      environment: APP_ENVIRONMENT,
+      systemStatus,
+      mode: 'Scheduled monitoring (read-only)',
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      tenantIdentity: { available: true },
+      permissionVisibility: { determined: false, reasonCode: 'RESOLVER_ERROR' },
+      expectedScheduleIntervalMinutes: EXPECTED_SCHEDULE_INTERVAL_MINUTES,
+      stalenessMultiplier: STALENESS_MULTIPLIER,
+      staleIfAgeMinutesGreaterThan: null,
+      lastCheckAt: null,
+      lastSuccessAt: null,
+      snapshotAgeMinutes: null,
+      isStale: null,
+      checksCompletedLifetime: null,
+      snapshotsRetainedCount: null,
+      continuousSince: null,
+      daysContinuousOperation: null,
+      completenessStatus: 'INCOMPLETE',
+      coverageIncluded: [],
+      coverageExcluded: ['All operational metrics'],
+      knownDataGaps: [errorMessage],
+      retentionPolicy: {
+        maxSnapshots: RETENTION_MAX_SNAPSHOTS,
+        maxDays: RETENTION_MAX_DAYS,
+        effectiveRuleText: `Last ${RETENTION_MAX_SNAPSHOTS} snapshots OR last ${RETENTION_MAX_DAYS} days (whichever is smaller)`,
+      },
+      checks: [],
+      checksTotalCount: 0,
+      boundaries: {
+        noJiraWrites: true,
+        noConfigChanges: true,
+        noEnforcement: true,
+        noRecommendations: true,
+        noExternalEgress: true,
+        observationalOnly: true,
+        failClosedOnMissingTenantIdentity: true,
+      },
+      schemaVersion: '2.14.0',
+      generatedAt: new Date().toISOString(),
+      version: APP_VERSION,
+      environment: APP_ENVIRONMENT,
+      systemStatus: 'DEGRADED',
+      mode: 'Scheduled monitoring (read-only)',
+    };
+  }
+}
+
+/**
+ * Handle missing tenant identity
+ */
+function createDegradedPayload(reasonCode: string): Record<string, unknown> {
+  return {
+    tenantIdentity: { available: false, reasonCode },
+    permissionVisibility: { determined: false },
+    expectedScheduleIntervalMinutes: EXPECTED_SCHEDULE_INTERVAL_MINUTES,
+    stalenessMultiplier: STALENESS_MULTIPLIER,
+    staleIfAgeMinutesGreaterThan: null,
+    lastCheckAt: null,
+    lastSuccessAt: null,
+    snapshotAgeMinutes: null,
+    isStale: null,
+    checksCompletedLifetime: null,
+    snapshotsRetainedCount: null,
+    continuousSince: null,
+    daysContinuousOperation: null,
+    completenessStatus: 'INCOMPLETE',
+    coverageIncluded: [],
+    coverageExcluded: ['All operational metrics'],
+    knownDataGaps: [`Tenant identity unavailable: ${reasonCode}`],
+    retentionPolicy: {
+      maxSnapshots: RETENTION_MAX_SNAPSHOTS,
+      maxDays: RETENTION_MAX_DAYS,
+      effectiveRuleText: `Last ${RETENTION_MAX_SNAPSHOTS} snapshots OR last ${RETENTION_MAX_DAYS} days (whichever is smaller)`,
+    },
+    checks: [],
+    checksTotalCount: 0,
+    boundaries: {
+      noJiraWrites: true,
+      noConfigChanges: true,
+      noEnforcement: true,
+      noRecommendations: true,
+      noExternalEgress: true,
+      observationalOnly: true,
+      failClosedOnMissingTenantIdentity: true,
+    },
+    schemaVersion: '2.14.0',
+    generatedAt: new Date().toISOString(),
+    version: APP_VERSION,
+    environment: APP_ENVIRONMENT,
+    systemStatus: 'DEGRADED',
+    mode: 'Scheduled monitoring (read-only)',
+  };
+}
+
+/**
+ * Main resolver handler (v2.14.0)
+ * Invoked by dashboard gadget to display comprehensive governance status
  */
 export async function get(request: any, context: any): Promise<Record<string, unknown>> {
   try {
@@ -115,28 +368,15 @@ export async function get(request: any, context: any): Promise<Record<string, un
     const tenantId = await resolveTenantIdentity(context);
 
     if (!tenantId || !tenantId.cloudId) {
-      return createErrorSnapshot('Unable to resolve tenant cloudId from Forge context');
+      return createDegradedPayload('TENANT_IDENTITY_UNAVAILABLE');
     }
 
     const cloudId = tenantId.cloudId;
-    const key = getSnapshotKey(cloudId);
 
-    if (!key) {
-      return createErrorSnapshot('Invalid cloudId: cannot create storage key');
-    }
-
-    // Attempt to load existing snapshot
-    const snapshot = await storage.get(key);
-
-    if (snapshot) {
-      // Return existing snapshot
-      return snapshot as Record<string, unknown>;
-    }
-
-    // No snapshot exists yet; return INITIALIZING state
-    return createInitializingSnapshot();
+    // Build comprehensive payload
+    return await buildPayload(cloudId);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return createErrorSnapshot(errorMessage);
+    return createDegradedPayload(`RESOLVER_ERROR: ${errorMessage}`);
   }
 }
