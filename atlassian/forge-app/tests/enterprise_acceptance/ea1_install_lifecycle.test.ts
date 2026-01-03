@@ -125,15 +125,11 @@ describe('EA1: Install Lifecycle Sanity', () => {
     }
   });
 
-  it('admin page modules exist (for report viewing)', () => {
+  it('no admin page modules (future-safe removal)', () => {
     const adminPages = manifest.modules['jira:adminPage'] || [];
     
-    expect(adminPages.length).toBeGreaterThan(0);
+    expect(adminPages.length).toBe(0);
     
-    evidence.details.admin_pages = adminPages.map((p: any) => ({
-      key: p.key,
-      title: p.title,
-      function: p.function
-    }));
+    evidence.details.admin_pages_status = 'REMOVED (no admin UI)';
   });
 });

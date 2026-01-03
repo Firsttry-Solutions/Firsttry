@@ -18,14 +18,12 @@ No external third-party APIs are used. All network activity is limited to Atlass
 - **Secrets / auth:** The code example includes an Authorization header placeholder; real auth would be provided by Forge/runtime. No secrets hard-coded in source.
 - **Code reference:** [src/storage_debug.ts](src/storage_debug.ts#L80) (Request to api.atlassian.com site storage)
 
-**Admin UI — Same-origin fetches (app origin)**
-- **Destination:** Same-origin (the app's own URL; client-side `fetch(window.location.href + ...)`).
-- **Purpose:** Admin UI actions: trigger report generation and export JSON/PDF of admin reports.
-- **Data categories:** Generated export blobs (JSON/PDF), report metadata. These are served from the app origin — not an external third-party domain.
-- **Secrets / auth:** Browser session/auth handled via app runtime; no secrets embedded in the client-side code.
-- **Code references:** [src/admin/phase5_admin_page.ts](src/admin/phase5_admin_page.ts#L1137) (generate), [src/admin/phase5_admin_page.ts](src/admin/phase5_admin_page.ts#L1166) (export JSON), [src/admin/phase5_admin_page.ts](src/admin/phase5_admin_page.ts#L1184) (export PDF).
+**No external APIs**
+- FirstTry does not make any calls to external APIs or services.
+- All data is stored and processed within tenant-scoped Forge Storage.
+- No user-facing UI operations require external network calls.
 
-----
+---
 
 Notes and exclusions
 - The codebase contains a comment describing the standard OAuth token endpoint (`https://api.atlassian.com/oauth/token`) in [src/auth/oauth_handler.ts](src/auth/oauth_handler.ts#L102), however that POST is currently only documented in comments and the refresh function is a placeholder (no network request is issued). Per the allowlist rules, commented-only destinations are not included as outbound entries.
@@ -117,17 +115,12 @@ All network activity is:
 
 **Calls**:
 
-| File | Line | Method | URL Pattern | Purpose |
-|------|------|--------|-------------|---------|
-| [src/admin/phase5_admin_page.ts](../src/admin/phase5_admin_page.ts#L1137) | 1137 | `fetch(window.location.href + '?action=generateNow')` | Same origin | Trigger manual report generation |
-| [src/admin/phase5_admin_page.ts](../src/admin/phase5_admin_page.ts#L1166) | 1166 | `fetch(window.location.href + '?export=json')` | Same origin | Export report as JSON |
-| [src/admin/phase5_admin_page.ts](../src/admin/phase5_admin_page.ts#L1184) | 1184 | `fetch(window.location.href + '?export=pdf')` | Same origin | Export report as PDF |
+No admin UI is provided. All report generation and data collection occurs automatically via scheduled triggers.
 
 **Network Characteristics**:
-- **Target**: Same Forge function (`phase5-admin-page-fn`) that rendered the page
-- **Method**: POST (generateNow), GET (exports)
-- **Data**: No external egress; calls back into app's own handler
-- **Security**: Atlassian Forge iframe sandbox; user authentication required
+- No external network calls are made by FirstTry.
+- All data is stored in tenant-scoped Forge Storage.
+- No user-facing UI is required for report generation.
 
 ---
 

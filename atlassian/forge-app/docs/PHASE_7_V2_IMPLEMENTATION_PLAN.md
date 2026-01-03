@@ -71,13 +71,10 @@ Phase 7 v2 implements drift detection by computing observed changes between cons
    - `renderDriftDetailModal(event)`
    - HTML templates with pagination controls
 
-#### Modified Files (2)
-6. **phase6_admin_page.ts** (~20-30 line addition)
-   - Add import for drift UI
-   - Add "Drift History" tab/section to admin page
-   - No Phase-6 logic changes
-
-7. **index.ts** (Minimal changes)
+#### Modified Files (1)
+6. **drift_storage.ts** — Storage operations for drift ledger
+   - Write: New drift events captured during scheduled snapshot comparison
+   - Read: Export handler retrieves drift ledger in time-window chunks
    - Export new drift functions if needed
 
 #### Test Files (6)
@@ -244,35 +241,11 @@ interface DriftEvent {
 
 ---
 
-## 5. UI Additions (phase6_admin_page.ts)
+## 5. Storage (drift_storage.ts)
 
-### Drift History Tab
-- Table columns: time_window | object_type | object_id | change_type | classification | actor/source | completeness%
-- Pagination: 20 events per page
-- Filters: date range, object_type, classification, change_type
-- Sorting: by to_captured_at desc (most recent first)
+Drift ledger is stored in tenant-scoped Forge Storage. No UI is provided for viewing drift history.
 
-### Drift Detail View (on click)
-- before_state / after_state (JSON)
-- change_patch (if present)
-- missing_data disclosure
-- Explicit statement: "Observed change only. No cause inferred."
-- Back link to list
-
----
-
-## 6. Export (drift_export.ts)
-
-### JSON Export
-- Endpoint: `/api/phase7/export?from_date=...&to_date=...&object_type=...&page=1`
-- Chunked: 100 events per response
-- Ordered: deterministic (identical to UI)
-- Includes:
-  - export_timestamp
-  - schema_version: "7.0"
-  - filters_used
-  - missing_data_disclosure
-  - events[]
+Drift events are stored automatically and accessible programmatically via Forge Storage.
 
 ---
 
@@ -305,14 +278,12 @@ interface DriftEvent {
 1. ✅ Create drift_model.ts (data structures)
 2. ✅ Create drift_compute.ts (core algorithm)
 3. ✅ Create drift_storage.ts (Forge storage wrapper)
-4. ✅ Create drift_export.ts (JSON export)
-5. ✅ Create drift_ui.ts (HTML templates)
-6. ✅ Update phase6_admin_page.ts (integrate UI)
-7. ✅ Create test files (6 test suites)
-8. ✅ Create PHASE_7_V2_SPEC.md
-9. ✅ Create PHASE_7_V2_TESTPLAN.md
-10. ✅ Run forbidden language scan
-11. ✅ Run all tests
+4. ✅ Create drift_export.ts (programmatic export)
+5. ✅ Create test files (6 test suites)
+6. ✅ Create PHASE_7_V2_SPEC.md
+7. ✅ Create PHASE_7_V2_TESTPLAN.md
+8. ✅ Run forbidden language scan
+9. ✅ Run all tests
 12. ✅ Verify no Jira calls in drift path
 
 ---

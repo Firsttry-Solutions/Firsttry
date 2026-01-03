@@ -6,11 +6,11 @@ What it does (factual)
 - Collects Jira metadata and generates governance evidence, drift signals, and exportable reports. Data storage is tenant-scoped Forge Storage.
 
 Where to view reports / outputs
-- Admin UI: `phase5-admin-page` (manifest `jira:adminPage` entry). Exact UI path for reviewers: UNKNOWN — the manifest declares `phase5-admin-page` but the repository does not publish clickable screenshots or a documented admin UI path. Look for "FirstTry Proof-of-Life Report" in Jira admin pages after install. See `PHASE_7_V2_IMPLEMENTATION_PLAN.md` and `P4_P5_COMPLETE_REFERENCE.md` for implementation details.
+- No admin UI is provided. All governance metrics are captured automatically via scheduled triggers. Reports are stored in tenant-scoped Forge Storage.
 
 What runs automatically vs manual
 - Scheduled functions defined in `manifest.yml` run automatically at the declared intervals (daily, weekly, fiveMinute, 12hours for token-refresh). See `manifest.yml` scheduledTrigger section.
-- Admin-triggered report generation and manual exports are available via the admin UI (manual action).
+- No manual actions are required.
 
 Quickstart install steps (developer-facing)
 1. Deploy or install the Forge app to your Jira Cloud site using the Forge CLI or Marketplace install flow.

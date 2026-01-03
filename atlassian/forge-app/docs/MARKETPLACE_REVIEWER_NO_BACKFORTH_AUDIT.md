@@ -119,11 +119,11 @@ Note: For documents that do not exist the audit marks them MISSING and lists the
 - Unclear/unremediable retention & deletion: DATA_RETENTION.md states indefinite retention and that uninstall does not delete data; absent a tenant-deletion mechanism or explicit steps and timelines, reviewers may reject or require a human-process for deletion with a support SLA.
 - Unclear external data sharing: EXTERNAL_APIS.md claims only Atlassian endpoints but lacks explicit statements about third-party telemetry/analytics — reviewers may request this clarification.
 - Unjustified scope for `storage:app`: Manifest and baseline include `storage:app`, but there is no SCOPES_JUSTIFICATION.md explaining minimality; reviewers commonly require justification per scope.
-- Unclear UI location for outputs: docs reference an admin page (Phase-5 admin page) but do not provide a clear UI path or screenshots for reviewers to validate where outputs are accessible.
+- No admin UI is provided. Reports are stored in Forge Storage automatically.
 
 5) User confusion triggers (explicit)
 
-- Where to view reports: Admin page `phase5-admin-page` is declared in manifest, but docs do not include a single short path or screenshot stating "Admin > FirstTry Proof-of-Life Report"; this can confuse reviewers and users. (manifest: `/workspaces/Firsttry/atlassian/forge-app/manifest.yml` under `jira:adminPage`)
+- No admin UI is provided. No manual actions are required to view or export reports.
 - What runs automatically vs manual: scheduled triggers are declared (daily/weekly/fiveMinute) in manifest but docs do not present a clear table indicating which routines are automatic, which are manual, and default frequencies (manifest lists intervals but DATA_RETENTION.md does not summarize automatic behavior).
 - What data is stored: DATA_RETENTION.md lists categories, but users may be confused about exact fields stored (e.g., field definitions vs values). Provide short table mapping stored artifact -> example keys. Currently missing.
 - How to export: DATA_RETENTION.md mentions JSON/PDF via admin UI, but there is no step-by-step export instruction or export schema sample in docs/ (EXPORT_FORMAT.md missing).
