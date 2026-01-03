@@ -21,19 +21,10 @@ modules:
       resource: governance-gadget-page
       thumbnail: https://www.atlassian.com/favicon.ico
 
-  # Admin Pages (PHASE 5: Admin UI for Phase-5 report viewing and manual generation)
-  jira:adminPage:
-    - key: phase5-admin-page
-      title: FirstTry Proof-of-Life Report
-      description: Phase-5 Proof-of-Life Report - Generated from automated scheduler
-      function: phase5-admin-page-fn
-
-  # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler and Admin UI, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
+  # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
   function:
     - key: phase5-scheduler-fn
       handler: scheduled/phase5_scheduler.run
-    - key: phase5-admin-page-fn
-      handler: admin/phase5_admin_page.run
     - key: phase6-daily-snap-fn
       handler: scheduled/snapshot_daily.handle
     - key: phase6-weekly-snap-fn
