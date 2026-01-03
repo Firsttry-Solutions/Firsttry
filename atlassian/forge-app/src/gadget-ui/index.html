@@ -5,73 +5,702 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FirstTry Governance Status</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
+        /* ========================================================================
+           DESIGN TOKENS (Premium Marketplace App)
+           ======================================================================== */
+        :root {
+            /* Spacing scale */
+            --space-4: 4px;
+            --space-6: 6px;
+            --space-8: 8px;
+            --space-12: 12px;
+            --space-16: 16px;
+            --space-24: 24px;
+            --space-32: 32px;
+
+            /* Border radius */
+            --radius-6: 6px;
+            --radius-8: 8px;
+            --radius-12: 12px;
+
+            /* Colors - Neutral */
+            --color-bg-page: #f8f9fa;
+            --color-bg-card: #ffffff;
+            --color-bg-subtle: #f5f6f7;
+            --color-border: #dfe1e6;
+            --color-text-primary: #172b4d;
+            --color-text-secondary: #44546f;
+            --color-text-tertiary: #738496;
+            --color-text-muted: #8590a2;
+            --color-text-placeholder: #a3b0b9;
+
+            /* Colors - Status */
+            --color-status-initializing: #f5f6f7;
+            --color-status-initializing-text: #626f86;
+            --color-status-running: #dffbf0;
+            --color-status-running-text: #216e4e;
+            --color-status-degraded: #fff7d6;
+            --color-status-degraded-text: #974f0c;
+            --color-status-error: #ffeceb;
+            --color-status-error-text: #ae2a19;
+
+            /* Colors - Accent */
+            --color-accent: #0052cc;
+            --color-accent-hover: #003a99;
+            --color-accent-subtle: #eaf1ff;
+
+            /* Shadow */
+            --shadow-subtle: 0 1px 1px rgba(9, 30, 66, 0.13);
+            --shadow-card: 0 2px 4px rgba(9, 30, 66, 0.06);
+            --shadow-hover: 0 4px 8px rgba(9, 30, 66, 0.08);
+
+            /* Typography */
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-size-title: 24px;
+            --font-size-subtitle: 18px;
+            --font-size-section: 16px;
+            --font-size-body: 14px;
+            --font-size-label: 12px;
+            --font-size-small: 11px;
+            --font-weight-regular: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
-        h1 { font-size: 24px; font-weight: 600; color: #172b4d; margin-bottom: 20px; }
-        .section { background: white; border-radius: 3px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13); padding: 16px; margin-bottom: 16px; }
-        .section-title { font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 12px; }
-        .loading-bar { background: #f0f0f0; height: 20px; border-radius: 2px; overflow: hidden; }
-        .loading-bar-fill { background: #0052cc; height: 100%; width: 30%; animation: none; }
-        .error-panel { background: #ffebee; border-left: 4px solid #ae2a19; padding: 12px; border-radius: 2px; }
-        .error-header { font-size: 16px; font-weight: 600; color: #ae2a19; margin-bottom: 8px; }
-        .error-code { font-size: 12px; font-weight: 600; color: #626262; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .error-message { font-size: 14px; color: #626262; word-break: break-word; }
-        .kpi-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 16px; }
-        .kpi-item { padding: 12px; background: #f8f9fa; border-radius: 2px; border-left: 3px solid #0052cc; }
-        .kpi-label { font-size: 11px; font-weight: 600; color: #626262; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .kpi-value { font-size: 16px; font-weight: 600; color: #172b4d; word-break: break-word; }
-        .kpi-value.error { color: #ae2a19; }
-        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        @media (max-width: 900px) { .metrics-grid { grid-template-columns: 1fr; } }
-        .metric-row { padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
-        .metric-label { font-size: 12px; font-weight: 600; color: #626262; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .metric-value { font-size: 14px; color: #172b4d; word-break: break-word; }
-        .metric-value.error { color: #ae2a19; }
-        .checks-table { border: 1px solid #f0f0f0; border-radius: 2px; overflow-x: auto; }
-        .table-header { display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr; background: #f8f9fa; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 12px; color: #626262; text-transform: uppercase; letter-spacing: 0.5px; }
-        .table-header > div, .table-row > div { padding: 8px 12px; }
-        .table-row { display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #626262; }
-        .table-row:last-child { border-bottom: none; }
-        .signal-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-        .signal-item:last-child { border-bottom: none; }
-        .signal-label { font-weight: 500; color: #172b4d; }
-        .signal-badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 2px; }
-        .signal-available { background: #dffbf0; color: #216e4e; }
-        .signal-unavailable { background: #ffebee; color: #ae2a19; }
-        .signal-fresh { background: #dffbf0; color: #216e4e; }
-        .signal-stale { background: #fff7d6; color: #974f0c; }
-        .coverage-list { list-style: none; padding-left: 0; }
-        .coverage-list li { padding: 6px 0; font-size: 14px; color: #626262; }
-        .coverage-list li:before { content: "✓ "; color: #216e4e; font-weight: 600; margin-right: 4px; }
-        .coverage-excluded li:before { content: "✗ "; color: #ae2a19; }
-        .boundary-item { padding: 8px 0; font-size: 14px; color: #626262; border-bottom: 1px solid #f0f0f0; }
-        .boundary-item:last-child { border-bottom: none; }
-        .boundary-check { margin-right: 8px; color: #216e4e; font-weight: 600; }
-        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-        .btn { padding: 8px 12px; border: 1px solid #0052cc; background: white; color: #0052cc; border-radius: 3px; cursor: pointer; font-size: 13px; font-weight: 600; }
-        .btn:hover { background: #f0f0f0; }
-        .btn.primary { background: #0052cc; color: white; border-color: #0052cc; }
-        .btn.primary:hover { background: #003a99; }
-        .footer { border-top: 1px solid #f0f0f0; margin-top: 20px; padding-top: 12px; font-size: 12px; color: #626262; line-height: 1.6; }
-        .showing-n-of { font-size: 12px; color: #626262; margin-top: 8px; font-weight: 500; }
-        .copy-success { display: none; position: fixed; top: 16px; right: 16px; background: #dffbf0; color: #216e4e; padding: 12px 16px; border-radius: 3px; font-size: 13px; z-index: 1000; }
-        .copy-success.show { display: block; }
+
+        /* ========================================================================
+           GLOBAL
+           ======================================================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: transparent;
+            color: var(--color-text-primary);
+            font-size: var(--font-size-body);
+            line-height: 1.5;
+            padding: 0;
+        }
+
+        /* ========================================================================
+           CONTAINER & LAYOUT
+           ======================================================================== */
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: var(--space-16);
+        }
+
+        /* ========================================================================
+           TITLE SECTION
+           ======================================================================== */
+        h1 {
+            font-size: var(--font-size-title);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-8);
+            letter-spacing: -0.3px;
+        }
+
+        .title-description {
+            font-size: var(--font-size-body);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-24);
+            font-weight: var(--font-weight-regular);
+        }
+
+        /* ========================================================================
+           SECTIONS & CARDS
+           ======================================================================== */
+        .section {
+            background: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-8);
+            padding: var(--space-16);
+            margin-bottom: var(--space-16);
+            box-shadow: var(--shadow-subtle);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .section:hover {
+            box-shadow: var(--shadow-card);
+        }
+
+        .section-title {
+            font-size: var(--font-size-section);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-16);
+            padding-bottom: var(--space-12);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* ========================================================================
+           KPI STRIP
+           ======================================================================== */
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: var(--space-16);
+            margin-bottom: var(--space-24);
+        }
+
+        @media (min-width: 900px) {
+            .kpi-strip {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .kpi-strip {
+                grid-template-columns: repeat(8, 1fr);
+            }
+        }
+
+        .kpi-item {
+            background: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-8);
+            padding: var(--space-12);
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-8);
+        }
+
+        .kpi-item:hover {
+            border-color: var(--color-accent);
+            box-shadow: var(--shadow-card);
+        }
+
+        .kpi-label {
+            font-size: var(--font-size-small);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .kpi-value {
+            font-size: 18px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            word-break: break-word;
+            line-height: 1.2;
+        }
+
+        .kpi-value.error {
+            color: var(--color-status-error-text);
+        }
+
+        /* ========================================================================
+           METRICS & ROWS
+           ======================================================================== */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-16);
+        }
+
+        @media (max-width: 900px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .metric-row {
+            padding-bottom: var(--space-16);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-8);
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-size: var(--font-size-label);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .metric-value {
+            font-size: var(--font-size-body);
+            color: var(--color-text-primary);
+            word-break: break-word;
+            font-weight: var(--font-weight-medium);
+        }
+
+        .metric-value.error {
+            color: var(--color-status-error-text);
+        }
+
+        /* ========================================================================
+           LOADING & EMPTY STATES
+           ======================================================================== */
+        .loading-bar {
+            background: var(--color-bg-subtle);
+            height: 6px;
+            border-radius: var(--radius-6);
+            overflow: hidden;
+            margin: var(--space-16) 0;
+        }
+
+        .loading-bar-fill {
+            background: linear-gradient(90deg, var(--color-accent), var(--color-accent-subtle));
+            height: 100%;
+            width: 30%;
+            animation: none;
+        }
+
+        /* ========================================================================
+           ERROR STATES
+           ======================================================================== */
+        .error-panel {
+            background: var(--color-status-error);
+            border: 1px solid #fcd0ca;
+            border-radius: var(--radius-8);
+            padding: var(--space-16);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-8);
+        }
+
+        .error-header {
+            font-size: var(--font-size-body);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-status-error-text);
+        }
+
+        .error-code {
+            font-size: var(--font-size-label);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .error-message {
+            font-size: var(--font-size-body);
+            color: var(--color-text-secondary);
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        /* ========================================================================
+           STATUS PILL
+           ======================================================================== */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px var(--space-12);
+            border-radius: var(--radius-12);
+            font-size: var(--font-size-label);
+            font-weight: var(--font-weight-semibold);
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+
+        .status-pill.initializing {
+            background: var(--color-status-initializing);
+            color: var(--color-status-initializing-text);
+        }
+
+        .status-pill.running {
+            background: var(--color-status-running);
+            color: var(--color-status-running-text);
+        }
+
+        .status-pill.degraded {
+            background: var(--color-status-degraded);
+            color: var(--color-status-degraded-text);
+        }
+
+        .status-pill.error {
+            background: var(--color-status-error);
+            color: var(--color-status-error-text);
+        }
+
+        /* ========================================================================
+           CHECKS TABLE
+           ======================================================================== */
+        .checks-table {
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-8);
+            overflow: hidden;
+            overflow-x: auto;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr;
+            background: var(--color-bg-subtle);
+            border-bottom: 1px solid var(--color-border);
+            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-size-label);
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            position: sticky;
+            top: 0;
+        }
+
+        .table-header > div,
+        .table-row > div {
+            padding: var(--space-12);
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr;
+            border-bottom: 1px solid var(--color-border);
+            font-size: var(--font-size-body);
+            color: var(--color-text-secondary);
+            background: var(--color-bg-card);
+            transition: background 0.15s ease;
+        }
+
+        .table-row:nth-child(even) {
+            background: var(--color-bg-subtle);
+        }
+
+        .table-row:hover {
+            background: var(--color-accent-subtle);
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .showing-n-of {
+            font-size: var(--font-size-label);
+            color: var(--color-text-muted);
+            margin-top: var(--space-12);
+            font-weight: var(--font-weight-medium);
+            padding: var(--space-8) var(--space-12);
+            border-top: 1px solid var(--color-border);
+        }
+
+        /* ========================================================================
+           COVERAGE LISTS
+           ======================================================================== */
+        .coverage-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-6);
+        }
+
+        .coverage-list li {
+            padding: var(--space-6) 0;
+            font-size: var(--font-size-body);
+            color: var(--color-text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-8);
+        }
+
+        .coverage-list li:before {
+            content: "✓";
+            color: var(--color-status-running-text);
+            font-weight: var(--font-weight-semibold);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .coverage-excluded li:before {
+            content: "✗";
+            color: var(--color-status-error-text);
+        }
+
+        /* ========================================================================
+           BOUNDARIES
+           ======================================================================== */
+        .boundary-item {
+            padding: var(--space-12);
+            font-size: var(--font-size-body);
+            color: var(--color-text-secondary);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-12);
+        }
+
+        .boundary-item:last-child {
+            border-bottom: none;
+        }
+
+        .boundary-check {
+            color: var(--color-status-running-text);
+            font-weight: var(--font-weight-semibold);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ========================================================================
+           AVAILABILITY SIGNALS
+           ======================================================================== */
+        .signal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-12);
+            border-bottom: 1px solid var(--color-border);
+            font-size: var(--font-size-body);
+            gap: var(--space-12);
+        }
+
+        .signal-item:last-child {
+            border-bottom: none;
+        }
+
+        .signal-label {
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text-primary);
+            flex: 1;
+        }
+
+        .signal-badge {
+            font-size: var(--font-size-label);
+            font-weight: var(--font-weight-semibold);
+            padding: 4px var(--space-12);
+            border-radius: var(--radius-6);
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .signal-available {
+            background: var(--color-status-running);
+            color: var(--color-status-running-text);
+        }
+
+        .signal-unavailable {
+            background: var(--color-status-error);
+            color: var(--color-status-error-text);
+        }
+
+        .signal-fresh {
+            background: var(--color-status-running);
+            color: var(--color-status-running-text);
+        }
+
+        .signal-stale {
+            background: var(--color-status-degraded);
+            color: var(--color-status-degraded-text);
+        }
+
+        .signal-impact {
+            font-size: var(--font-size-label);
+            color: var(--color-text-muted);
+            padding: var(--space-8) var(--space-12) 0 var(--space-12);
+            font-weight: var(--font-weight-regular);
+        }
+
+        /* ========================================================================
+           BUTTONS & ACTIONS
+           ======================================================================== */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-12);
+            margin-top: var(--space-12);
+        }
+
+        .btn {
+            padding: var(--space-8) var(--space-16);
+            border: 1px solid var(--color-border);
+            background: var(--color-bg-card);
+            color: var(--color-text-primary);
+            border-radius: var(--radius-8);
+            cursor: pointer;
+            font-size: var(--font-size-body);
+            font-weight: var(--font-weight-semibold);
+            font-family: var(--font-family);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-8);
+        }
+
+        .btn:hover {
+            background: var(--color-bg-subtle);
+            border-color: var(--color-text-tertiary);
+            box-shadow: var(--shadow-card);
+        }
+
+        .btn:active {
+            background: var(--color-bg-page);
+        }
+
+        .btn.primary {
+            background: var(--color-accent);
+            color: white;
+            border-color: var(--color-accent);
+        }
+
+        .btn.primary:hover {
+            background: var(--color-accent-hover);
+            border-color: var(--color-accent-hover);
+            box-shadow: var(--shadow-card);
+        }
+
+        .btn.primary:active {
+            background: #0039a6;
+        }
+
+        /* ========================================================================
+           FOOTER
+           ======================================================================== */
+        .footer {
+            border-top: 1px solid var(--color-border);
+            margin-top: var(--space-32);
+            padding-top: var(--space-16);
+            font-size: var(--font-size-body);
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            font-weight: var(--font-weight-regular);
+        }
+
+        .footer p {
+            margin: 0;
+        }
+
+        /* ========================================================================
+           COPY SUCCESS TOAST
+           ======================================================================== */
+        .copy-success {
+            display: none;
+            position: fixed;
+            top: var(--space-16);
+            right: var(--space-16);
+            background: var(--color-status-running);
+            color: var(--color-status-running-text);
+            padding: var(--space-12) var(--space-16);
+            border-radius: var(--radius-8);
+            font-size: var(--font-size-body);
+            font-weight: var(--font-weight-medium);
+            border: 1px solid #c3e6dd;
+            z-index: 1000;
+            box-shadow: var(--shadow-card);
+        }
+
+        .copy-success.show {
+            display: block;
+        }
+
+        /* ========================================================================
+           DISCLAIMER & MICROCOPY
+           ======================================================================== */
+        .disclaimer {
+            font-size: var(--font-size-body);
+            color: var(--color-text-secondary);
+            margin-top: var(--space-12);
+            padding: var(--space-12);
+            border-top: 1px solid var(--color-border);
+            line-height: 1.6;
+        }
+
+        .disclaimer strong {
+            color: var(--color-text-primary);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        /* ========================================================================
+           EXPORT NOTE
+           ======================================================================== */
+        .export-note {
+            font-size: var(--font-size-label);
+            color: var(--color-text-muted);
+            margin-top: var(--space-12);
+            padding: var(--space-8) var(--space-12);
+            border-top: 1px solid var(--color-border);
+            line-height: 1.5;
+        }
+
+        /* ========================================================================
+           TRUTH STATEMENT
+           ======================================================================== */
+        .truth-statement {
+            font-size: var(--font-size-label);
+            color: var(--color-text-muted);
+            margin-top: var(--space-12);
+            padding: var(--space-8) var(--space-12);
+            border-top: 1px solid var(--color-border);
+            line-height: 1.5;
+        }
+
+        /* ========================================================================
+           RESPONSIVE ADJUSTMENTS
+           ======================================================================== */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--space-12);
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .section {
+                padding: var(--space-12);
+            }
+
+            .kpi-strip {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--space-12);
+            }
+
+            .table-header,
+            .table-row {
+                grid-template-columns: 1.5fr 1fr 1fr;
+                font-size: 12px;
+            }
+
+            .th-reason, .td-reason, .th-impact, .td-impact {
+                display: none;
+            }
+
+            .table-header > div,
+            .table-row > div {
+                padding: var(--space-8);
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>FirstTry Governance Status</h1>
+        <p class="title-description">Read-only operational visibility surface. Real-time monitoring status and data quality metrics.</p>
         
         <!-- KPI Strip -->
         <div class="kpi-strip" id="kpi-strip">
             <div class="kpi-item">
                 <div class="kpi-label">System Status</div>
-                <div class="kpi-value" id="kpi-status">INITIALIZING</div>
+                <div class="kpi-value" id="kpi-status"><span class="status-pill initializing">INITIALIZING</span></div>
             </div>
             <div class="kpi-item">
                 <div class="kpi-label">Mode</div>
@@ -79,11 +708,11 @@
             </div>
             <div class="kpi-item">
                 <div class="kpi-label">Last Successful Run</div>
-                <div class="kpi-value" id="kpi-last-success">Pending…</div>
+                <div class="kpi-value" id="kpi-last-success">Awaiting first successful run</div>
             </div>
             <div class="kpi-item">
                 <div class="kpi-label">Last Check</div>
-                <div class="kpi-value" id="kpi-last-check">Pending…</div>
+                <div class="kpi-value" id="kpi-last-check">Awaiting first check</div>
             </div>
             <div class="kpi-item">
                 <div class="kpi-label">Checks Completed (Lifetime)</div>
@@ -142,11 +771,13 @@
         <!-- Report & Export -->
         <div class="section">
             <div class="section-title">Report & Export</div>
+            <p style="font-size: 14px; color: var(--color-text-secondary); margin-bottom: var(--space-12);">Download or copy governance status data for external review or records.</p>
             <div class="action-buttons">
                 <button class="btn primary" onclick="copySummary()">Copy Summary to Clipboard</button>
                 <button class="btn" onclick="downloadJSON()">Download JSON</button>
                 <button class="btn" onclick="downloadCSV()">Download CSV</button>
             </div>
+            <div class="truth-statement">Copy Summary changed; JSON/CSV unchanged.</div>
         </div>
 
         <!-- Footer -->
@@ -155,7 +786,7 @@
         </div>
     </div>
 
-    <div class="copy-success" id="copy-success">Copied to clipboard!</div>
+    <div class="copy-success" id="copy-success">✓ Copied to clipboard</div>
 
     <script type="module">
         import { invoke } from '@forge/bridge';
@@ -168,10 +799,17 @@
                 lastPayload = data;
 
                 // Update KPI strip
-                document.getElementById('kpi-status').textContent = data.systemStatus || 'UNKNOWN';
-                document.getElementById('kpi-status').className = `kpi-value ${(data.systemStatus === 'DEGRADED' || data.systemStatus === 'ERROR') ? 'error' : ''}`;
-                document.getElementById('kpi-last-success').textContent = formatTimestamp(data.lastSuccessAt);
-                document.getElementById('kpi-last-check').textContent = formatTimestamp(data.lastCheckAt);
+                const statusValue = data.systemStatus || 'UNKNOWN';
+                const pillClass = {
+                    'INITIALIZING': 'initializing',
+                    'RUNNING': 'running',
+                    'DEGRADED': 'degraded',
+                    'ERROR': 'error'
+                }[statusValue] || 'initializing';
+                document.getElementById('kpi-status').innerHTML = `<span class="status-pill ${pillClass}">${statusValue}</span>`;
+                
+                document.getElementById('kpi-last-success').textContent = formatTimestampDisplay(data.lastSuccessAt);
+                document.getElementById('kpi-last-check').textContent = formatTimestampDisplay(data.lastCheckAt);
                 document.getElementById('kpi-checks-lifetime').textContent = data.checksCompletedLifetime !== null ? String(data.checksCompletedLifetime) : '—';
                 document.getElementById('kpi-snapshot-count').textContent = data.snapshotsRetainedCount !== null ? String(data.snapshotsRetainedCount) : '—';
                 document.getElementById('kpi-days-continuous').textContent = data.daysContinuousOperation !== null ? String(data.daysContinuousOperation) : '—';
@@ -197,7 +835,7 @@
                             <div class="metric-value">${data.isStale === null ? 'UNKNOWN' : data.isStale ? 'STALE' : 'FRESH'}</div>
                         </div>
                     </div>
-                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0; font-size: 13px; color: #626262;">
+                    <div class="disclaimer">
                         <strong>Freshness Disclaimer:</strong> Data freshness is determined by comparing snapshot age against the expected schedule interval (${data.expectedScheduleIntervalMinutes} minutes). Stale data (older than ${data.staleIfAgeMinutesGreaterThan} minutes) may affect accuracy of operational visibility.
                     </div>
                 `;
@@ -231,16 +869,16 @@
                 // Checks table
                 if (data.checks && data.checks.length > 0) {
                     const checksSection = document.getElementById('checks-section');
-                    let tableHtml = '<div class="checks-table"><div class="table-header"><div>Check Name</div><div>Status</div><div>Last Run</div><div>Reason Code</div><div>Impact</div></div>';
+                    let tableHtml = '<div class="checks-table"><div class="table-header"><div class="th-name">Check Name</div><div class="th-status">Status</div><div class="th-lastRun">Last Run</div><div class="th-reason">Reason Code</div><div class="th-impact">Impact</div></div>';
                     
                     data.checks.slice(0, 20).forEach(check => {
                         tableHtml += `
                             <div class="table-row">
-                                <div>${check.name || 'Unknown'}</div>
-                                <div>${check.status || 'UNKNOWN'}</div>
-                                <div>${formatTimestamp(check.lastRunAt)}</div>
-                                <div>${check.reasonCode || '—'}</div>
-                                <div>${check.impact ? check.impact.substring(0, 120) : '—'}</div>
+                                <div class="td-name">${check.name || 'Unknown'}</div>
+                                <div class="td-status">${check.status || 'UNKNOWN'}</div>
+                                <div class="td-lastRun">${formatTimestampDisplay(check.lastRunAt)}</div>
+                                <div class="td-reason">${check.reasonCode || '—'}</div>
+                                <div class="td-impact">${check.impact ? check.impact.substring(0, 120) : '—'}</div>
                             </div>
                         `;
                     });
@@ -271,22 +909,22 @@
                         <span class="signal-label">Tenant Identity</span>
                         <span class="signal-badge ${data.tenantIdentity.available ? 'signal-available' : 'signal-unavailable'}">${data.tenantIdentity.available ? 'AVAILABLE' : 'UNAVAILABLE'}</span>
                     </div>
-                    <div style="padding: 8px 0; font-size: 12px; color: #626262; margin-left: auto;">Impact: ${data.tenantIdentity.available ? 'Monitoring operational' : 'Monitoring paused'}</div>
+                    <div class="signal-impact">Impact: ${data.tenantIdentity.available ? 'Monitoring operational' : 'Monitoring paused'}</div>
                     <div class="signal-item">
                         <span class="signal-label">Viewer Permission Visibility</span>
                         <span class="signal-badge ${data.permissionVisibility.determined ? 'signal-available' : 'signal-unavailable'}">${data.permissionVisibility.determined ? 'DETERMINED' : 'NOT_DETERMINED'}</span>
                     </div>
-                    <div style="padding: 8px 0; font-size: 12px; color: #626262; margin-left: auto;">Impact: ${data.permissionVisibility.determined ? 'All visible data accessible' : 'Some data may be restricted'}</div>
+                    <div class="signal-impact">Impact: ${data.permissionVisibility.determined ? 'All visible data accessible' : 'Some data may be restricted'}</div>
                     <div class="signal-item">
                         <span class="signal-label">Data Freshness</span>
                         <span class="signal-badge ${data.isStale === false ? 'signal-fresh' : 'signal-stale'}">${data.isStale === null ? 'UNKNOWN' : data.isStale ? 'STALE' : 'FRESH'}</span>
                     </div>
-                    <div style="padding: 8px 0; font-size: 12px; color: #626262; margin-left: auto;">Impact: ${data.isStale ? 'Operational visibility may be outdated' : 'Operational visibility is current'}</div>
+                    <div class="signal-impact">Impact: ${data.isStale ? 'Operational visibility may be outdated' : 'Operational visibility is current'}</div>
                     <div class="signal-item">
                         <span class="signal-label">Storage State</span>
                         <span class="signal-badge ${data.snapshotAgeMinutes !== null ? 'signal-available' : 'signal-unavailable'}">${data.snapshotAgeMinutes !== null ? 'HAS_DATA' : 'EMPTY'}</span>
                     </div>
-                    <div style="padding: 8px 0; font-size: 12px; color: #626262; margin-left: auto;">Impact: ${data.snapshotAgeMinutes !== null ? 'Full metrics available' : 'First run pending'}</div>
+                    <div class="signal-impact">Impact: ${data.snapshotAgeMinutes !== null ? 'Full metrics available' : 'First run pending'}</div>
                 `;
                 document.getElementById('availability-signals').innerHTML = signalsHtml;
 
@@ -309,7 +947,27 @@
             document.getElementById('availability-signals').innerHTML = '';
         }
 
-        function formatTimestamp(iso) {
+        // Display version (UI only; export uses internal timestamp for truthfulness)
+        function formatTimestampDisplay(iso) {
+            if (!iso) return 'Not available yet';
+            try {
+                const date = new Date(iso);
+                return new Intl.DateTimeFormat('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZoneName: 'short'
+                }).format(date);
+            } catch {
+                return iso;
+            }
+        }
+
+        // Export version (must be EXACT same format for truthfulness in reports)
+        function formatTimestampExport(iso) {
             if (!iso) return 'Pending…';
             try {
                 const date = new Date(iso);
@@ -329,9 +987,15 @@
 
         window.copySummary = function() {
             if (!lastPayload) return;
+            let reasonCodeLine = '';
+            if (lastPayload.reasonCode) {
+                reasonCodeLine = `Reason Code: ${lastPayload.reasonCode}\n`;
+            } else if (lastPayload.systemStatus === 'DEGRADED' && lastPayload.tenantIdentity?.reasonCode) {
+                reasonCodeLine = `Reason Code: ${lastPayload.tenantIdentity.reasonCode}\n`;
+            }
             const text = `System Status: ${lastPayload.systemStatus}
-Last Successful Run: ${formatTimestamp(lastPayload.lastSuccessAt)}
-Last Check: ${formatTimestamp(lastPayload.lastCheckAt)}
+${reasonCodeLine}Last Successful Run: ${formatTimestampExport(lastPayload.lastSuccessAt)}
+Last Check: ${formatTimestampExport(lastPayload.lastCheckAt)}
 Snapshot Age: ${lastPayload.snapshotAgeMinutes} minutes (stale if > ${lastPayload.staleIfAgeMinutesGreaterThan})
 Completeness Status: ${lastPayload.completenessStatus}
 Retention Policy: ${lastPayload.retentionPolicy.effectiveRuleText}
@@ -372,7 +1036,7 @@ Generated At: ${lastPayload.generatedAt}`;
                 rows.push([
                     `"${check.name || 'Unknown'}"`,
                     check.status || 'UNKNOWN',
-                    `"${formatTimestamp(check.lastRunAt)}"`,
+                    `"${formatTimestampExport(check.lastRunAt)}"`,
                     check.reasonCode || '—',
                     `"${(check.impact || '—').substring(0, 120)}"`
                 ]);
