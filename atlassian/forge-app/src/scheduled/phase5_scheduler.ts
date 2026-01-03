@@ -179,15 +179,15 @@ export async function phase5SchedulerHandler(
     if (!isValidCloudId(cloudId)) {
       const contextKeys = Object.keys(context || {});
       const debugInfo = {
-        keys: contextKeys,
-        installationContext: context?.installationContext ? (typeof context.installationContext === 'string' ? `<ARI string: ${context.installationContext.substring(0, 80)}...>` : `<object: ${Object.keys(context.installationContext).join(', ')}>`) : 'undefined',
-        hasCloudId: 'cloudId' in (context || {}),
-        hasAccountId: 'accountId' in (context || {}),
-        hasRequest: 'request' in (context || {}),
+        context_keys: contextKeys,
+        context_cloudId: context?.cloudId || null,
+        context_payload: context?.payload ? Object.keys(context.payload) : null,
+        context_context: context?.context ? Object.keys(context.context) : null,
+        context_installationContext: context?.installationContext ? (typeof context.installationContext === 'string' ? `ARI: ${context.installationContext.substring(0, 100)}` : Object.keys(context.installationContext).join(', ')) : null,
       };
       console.error(
-        '[Phase5Scheduler] FAIL_CLOSED: Tenant identity (cloudId) is missing, null, or invalid',
-        'debug:', JSON.stringify(debugInfo)
+        '[Phase5Scheduler] FAIL_CLOSED: cloudId not derivable. Context debug:',
+        JSON.stringify(debugInfo, null, 2)
       );
       return {
         statusCode: 400,
