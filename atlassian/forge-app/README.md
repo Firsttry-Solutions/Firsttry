@@ -1,6 +1,6 @@
 # FirstTry Governance - Atlassian Forge App
 
-PHASE 0 Scaffold: Minimal static UI modules for Jira Cloud.
+Dashboard gadget providing operational transparency for governance monitoring.
 
 ## Structure
 
@@ -8,7 +8,9 @@ PHASE 0 Scaffold: Minimal static UI modules for Jira Cloud.
 atlassian/forge-app/
 ├── manifest.yml          # Jira Cloud app manifest (permissions + modules)
 ├── src/
-│   └── index.ts         # Entry point (admin page + issue panel handlers)
+│   ├── gadget-ui/       # Dashboard gadget UI (React)
+│   ├── ops/             # Heartbeat recording + cadence gate logic
+│   └── index.ts         # Entry point
 ├── package.json         # Dependencies
 ├── tsconfig.json        # TypeScript config
 └── README.md            # This file
@@ -16,24 +18,26 @@ atlassian/forge-app/
 
 ## Modules
 
-### Admin Page (`firstry-admin-page`)
-- Global settings/status page
-- PHASE 0: Static "FirstTry Governance: Installed" message
-- Future: Configuration, run history, alerts configuration
+### Dashboard Gadget (`governance-dashboard-gadget`)
+- Displays operational metrics and heartbeat status
+- Read-only interface: shows platform trigger interval (5 min) and meaningful check cadence (15 min)
+- Data availability disclosure: shows UNKNOWN fields with reason codes (STORAGE_EMPTY, NOT_YET_OBSERVED, NOT_DECLARED)
+- Two-layer timing transparency: separates platform trigger pings from meaningful cadence checks
 
-### Issue Panel (`firstry-issue-panel`)
-- Panel on Jira issues
-- PHASE 0: Static "FirstTry Governance Panel" message
-- Future: Display governance status, linked runs, issue properties
+## Scheduling
 
-## Permissions (Minimal, Sufficient for Future Phases)
+- **Platform trigger interval**: 5 minutes (Forge `scheduledTrigger` minimum)
+- **Meaningful check cadence**: 15 minutes (enforced by storage-based cadence gate)
+- **Staleness threshold**: 30 minutes (2 × 15-minute cadence)
+
+No admin actions are required. All metric collection occurs automatically.
+
+## Permissions
 
 | Permission | Scope | Purpose |
 |-----------|-------|---------|
-| `storage` | read, write | Config, event cache, run ledgers |
-| `jira:read` | read:jira-work, read:issue-details:jira | Read project metadata, issues |
-| `jira:write` | write:jira-work, write:issues:jira | Create alert issues (Phase 1+) |
-| `jira:read-write` | read/write:issue-property:jira | Issue metadata |
+| `storage:app` | read, write | Heartbeat metrics storage (Forge Storage) |
+| `read:jira-work` | read | Read project/issue metadata |
 
 ## Installation (Dev)
 
@@ -48,15 +52,9 @@ forge install -e development --site <YOUR_DEV_SITE>
 forge logs --follow
 ```
 
-## Deployment
+## Documentation
 
-See `docs/ATLASSIAN_DUAL_LAYER_SPEC.md` for full deployment model.
-
-## PHASE 0 Notes
-
-- **No ingestion implemented**: Modules are static only.
-- **No storage writes**: Storage permissions defined but not used.
-- **No scheduling**: Scheduler triggers defined in spec but not implemented.
-- **No agent integration**: Agent changes deferred to Phase 1+.
-
-Next: See evidence pack `audit_artifacts/atlassian_dual_layer/phase_0_evidence.md`.
+See `docs/` directory for detailed documentation:
+- `HEARTBEAT_TRUST_DASHBOARD.md` — Complete reference
+- `HEARTBEAT_DELIVERY_SUMMARY.md` — Executive summary
+- `HEARTBEAT_QUICK_REF.md` — Quick reference guide
