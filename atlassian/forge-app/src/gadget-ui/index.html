@@ -112,6 +112,12 @@
             font-weight: var(--font-weight-regular);
         }
 
+        .build-marker {
+            font-size: var(--font-size-label);
+            color: var(--color-text-muted);
+            margin-top: var(--space-8);
+        }
+
         /* ========================================================================
            SECTIONS & CARDS
            ======================================================================== */
@@ -695,6 +701,7 @@
     <div class="container">
         <h1>FirstTry Governance Status</h1>
         <p class="title-description">Read-only operational visibility surface. Real-time monitoring status and data quality metrics.</p>
+        <div class="build-marker" id="build-marker"></div>
         
         <!-- KPI Strip -->
         <div class="kpi-strip" id="kpi-strip">
@@ -791,12 +798,16 @@
     <script type="module">
         import { invoke } from '@forge/bridge';
 
+        const BUILD_MARKER = "BUILD_MARKER__2026-01-03T152444__PROD";
         let lastPayload = null;
 
         async function loadStatus() {
             try {
                 const data = await invoke('get', {});
                 lastPayload = data;
+
+                // Render build marker
+                document.getElementById('build-marker').textContent = BUILD_MARKER;
 
                 // Update KPI strip
                 const statusValue = data.systemStatus || 'UNKNOWN';
