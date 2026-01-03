@@ -46,6 +46,32 @@ export function resolveCloudId(context: any): string | null {
     }
   }
 
+  // Strategy 2B: request.context.cloudId (from Forge request parameter in scheduled triggers)
+  if (context.context && typeof context.context === 'object') {
+    if (context.context.cloudId && typeof context.context.cloudId === 'string') {
+      const id = context.context.cloudId.trim();
+      if (id.length > 0) {
+        return id;
+      }
+    }
+  }
+
+  // Strategy 2C: request.payload.cloudId or .tenantId (from newer Forge scheduled API)
+  if (context.payload && typeof context.payload === 'object') {
+    if (context.payload.cloudId && typeof context.payload.cloudId === 'string') {
+      const id = context.payload.cloudId.trim();
+      if (id.length > 0) {
+        return id;
+      }
+    }
+    if (context.payload.tenantId && typeof context.payload.tenantId === 'string') {
+      const id = context.payload.tenantId.trim();
+      if (id.length > 0) {
+        return id;
+      }
+    }
+  }
+
   // Strategy 3: installationContext as ARI string
   // Format: "ari:cloud:jira::site/<CLOUDID>" or similar variants
   if (context.installationContext && typeof context.installationContext === 'string') {
