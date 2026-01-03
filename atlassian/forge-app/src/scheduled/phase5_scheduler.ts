@@ -38,6 +38,11 @@ import {
 import { handleAutoTrigger } from '../phase5_report_generator';
 import { resolveTenantIdentity, type TenantIdentity } from '../core/tenant_identity';
 import { storage } from '@forge/api';
+import {
+  EXPECTED_SCHEDULE_INTERVAL_MINUTES,
+  RETENTION_MAX_SNAPSHOTS,
+  RETENTION_MAX_DAYS,
+} from '../core/constants';
 
 // ============================================================================
 // HELPERS
@@ -134,6 +139,69 @@ async function writeStatusSnapshot(
     // Silently fail; this is informational write and should not block scheduler
     console.warn(
       `[Phase5Scheduler] Failed to write status snapshot: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Update metrics storage (lifetime counts, continuity, retention tracking)
+ * Called after successful runs to persist metrics for resolver
+ */
+async function updateMetrics(
+  cloudId: string | undefined,
+  isSuccess: boolean,
+  installationTimestamp?: string
+): Promise<void> {
+  try {
+    if (!cloudId || cloudId.trim() === '') {
+      return;
+    }
+
+    const metricsKey = `governance:metrics:${cloudId}`;
+    const existing = (await storage.get(metricsKey)) || {};
+
+    // Update on success
+    if (isSuccess) {
+      const now = new Date().toISOString();
+      const checksCompletedLifetime = (existing.checksCompletedLifetime || 0) + 1;
+      const snapshotsRetainedCount = Math.min((existing.snapshotsRetainedCount || 0) + 1, RETENTION_MAX_SNAPSHOTS);
+
+      let continuousSince = existing.continuousSince || now;
+      let daysContinuousOperation = 0;
+
+      if (installationTimestamp) {
+        continuousSince = installationTimestamp;
+        const installTime = new Date(installationTimestamp).getTime();
+        const ageMs = Date.now() - installTime;
+        daysContinuousOperation = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+      }
+
+      const metrics = {
+        ...existing,
+        lastCheckAt: now,
+        lastSuccessAt: now,
+        checksCompletedLifetime,
+        snapshotsRetainedCount,
+        continuousSince,
+        daysContinuousOperation,
+        updatedAt: now,
+      };
+
+      await storage.set(metricsKey, metrics);
+    } else {
+      // Update on failure
+      const now = new Date().toISOString();
+      const metrics = {
+        ...existing,
+        lastCheckAt: now,
+        updatedAt: now,
+      };
+      await storage.set(metricsKey, metrics);
+    }
+  } catch (error) {
+    // Silently fail
+    console.warn(
+      `[Phase5Scheduler] Failed to update metrics: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
@@ -471,6 +539,9 @@ export async function phase5SchedulerHandler(
         }
         state.last_error = null;
         state.last_backoff_until = null;
+
+        // Update metrics for resolver
+        await updateMetrics(cloudId, true, installationTimestamp);
       } else {
         // result.success === false, so we know result has 'error' field
         generationError = (result as { success: false; error: string }).error;
@@ -487,6 +558,9 @@ export async function phase5SchedulerHandler(
           trigger: dueTrigger,
           attempt_count: newAttemptCount,
         };
+
+        // Update metrics for resolver (failure)
+        await updateMetrics(cloudId, false);
 
         console.warn(
           `[Phase5Scheduler] Backoff ${backoffMs}ms (${newAttemptCount} attempt(s)) applied; ` +
@@ -509,6 +583,9 @@ export async function phase5SchedulerHandler(
         trigger: dueTrigger,
         attempt_count: nextAttempt,
       };
+
+      // Update metrics for resolver (error)
+      await updateMetrics(cloudId, false);
 
       console.warn(
         `[Phase5Scheduler] Backoff ${backoffMs}ms (attempt ${nextAttempt}) applied; ` +

@@ -1,6 +1,6 @@
 {
   "name": "@firstry/forge-app",
-  "version": "0.1.0",
+  "version": "2.14.0",
   "description": "FirstTry Governance - Atlassian Dual-Layer Integration",
   "main": "src/index.ts",
   "scripts": {

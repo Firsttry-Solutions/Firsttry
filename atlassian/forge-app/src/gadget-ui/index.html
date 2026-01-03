@@ -5,241 +5,308 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FirstTry Governance Status</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: #f5f5f5;
             padding: 20px;
         }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        h1 {
-            font-size: 24px;
-            font-weight: 600;
-            color: #172b4d;
-            margin-bottom: 20px;
-        }
-        .section {
-            background: white;
-            border-radius: 3px;
-            box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);
-            padding: 16px;
-            margin-bottom: 16px;
-        }
-        .section-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #172b4d;
-            margin-bottom: 12px;
-        }
-        .trust-block {
-            background: #f8f9fa;
-            border-left: 4px solid #0052cc;
-            padding: 12px;
-            border-radius: 2px;
-        }
-        .trust-list {
-            list-style: none;
-            color: #626262;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .trust-list li {
-            margin: 4px 0;
-        }
-        .message {
-            background: #f0f0f0;
-            padding: 12px;
-            border-radius: 3px;
-            font-size: 14px;
-            color: #626262;
-        }
-        .error-panel {
-            background: #ffebee !important;
-            border-left: 4px solid #ae2a19;
-        }
-        .error-header {
-            font-size: 16px;
-            font-weight: 600;
-            color: #ae2a19;
-            margin-bottom: 8px;
-        }
-        .error-code {
-            font-size: 12px;
-            font-weight: 600;
-            color: #626262;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-        .error-message {
-            font-size: 14px;
-            color: #626262;
-            word-break: break-word;
-        }
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        .metric-row {
-            padding-bottom: 8px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .metric-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #626262;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        .metric-value {
-            font-size: 14px;
-            color: #172b4d;
-            word-break: break-word;
-        }
-        .metric-value.unknown {
-            color: #ae2a19;
-        }
-        .checks-table {
-            border: 1px solid #f0f0f0;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .table-header {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            background: #f8f9fa;
-            border-bottom: 1px solid #f0f0f0;
-            font-weight: 600;
-            font-size: 12px;
-            color: #626262;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .table-header > div,
-        .table-row > div {
-            padding: 8px 12px;
-        }
-        .table-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 13px;
-            color: #626262;
-        }
-        .table-row:last-child {
-            border-bottom: none;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { font-size: 24px; font-weight: 600; color: #172b4d; margin-bottom: 20px; }
+        .section { background: white; border-radius: 3px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13); padding: 16px; margin-bottom: 16px; }
+        .section-title { font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 12px; }
+        .loading-bar { background: #f0f0f0; height: 20px; border-radius: 2px; overflow: hidden; }
+        .loading-bar-fill { background: #0052cc; height: 100%; width: 30%; animation: none; }
+        .error-panel { background: #ffebee; border-left: 4px solid #ae2a19; padding: 12px; border-radius: 2px; }
+        .error-header { font-size: 16px; font-weight: 600; color: #ae2a19; margin-bottom: 8px; }
+        .error-code { font-size: 12px; font-weight: 600; color: #626262; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .error-message { font-size: 14px; color: #626262; word-break: break-word; }
+        .kpi-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .kpi-item { padding: 12px; background: #f8f9fa; border-radius: 2px; border-left: 3px solid #0052cc; }
+        .kpi-label { font-size: 11px; font-weight: 600; color: #626262; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .kpi-value { font-size: 16px; font-weight: 600; color: #172b4d; word-break: break-word; }
+        .kpi-value.error { color: #ae2a19; }
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 900px) { .metrics-grid { grid-template-columns: 1fr; } }
+        .metric-row { padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+        .metric-label { font-size: 12px; font-weight: 600; color: #626262; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .metric-value { font-size: 14px; color: #172b4d; word-break: break-word; }
+        .metric-value.error { color: #ae2a19; }
+        .checks-table { border: 1px solid #f0f0f0; border-radius: 2px; overflow-x: auto; }
+        .table-header { display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr; background: #f8f9fa; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 12px; color: #626262; text-transform: uppercase; letter-spacing: 0.5px; }
+        .table-header > div, .table-row > div { padding: 8px 12px; }
+        .table-row { display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #626262; }
+        .table-row:last-child { border-bottom: none; }
+        .signal-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .signal-item:last-child { border-bottom: none; }
+        .signal-label { font-weight: 500; color: #172b4d; }
+        .signal-badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 2px; }
+        .signal-available { background: #dffbf0; color: #216e4e; }
+        .signal-unavailable { background: #ffebee; color: #ae2a19; }
+        .signal-fresh { background: #dffbf0; color: #216e4e; }
+        .signal-stale { background: #fff7d6; color: #974f0c; }
+        .coverage-list { list-style: none; padding-left: 0; }
+        .coverage-list li { padding: 6px 0; font-size: 14px; color: #626262; }
+        .coverage-list li:before { content: "✓ "; color: #216e4e; font-weight: 600; margin-right: 4px; }
+        .coverage-excluded li:before { content: "✗ "; color: #ae2a19; }
+        .boundary-item { padding: 8px 0; font-size: 14px; color: #626262; border-bottom: 1px solid #f0f0f0; }
+        .boundary-item:last-child { border-bottom: none; }
+        .boundary-check { margin-right: 8px; color: #216e4e; font-weight: 600; }
+        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .btn { padding: 8px 12px; border: 1px solid #0052cc; background: white; color: #0052cc; border-radius: 3px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .btn:hover { background: #f0f0f0; }
+        .btn.primary { background: #0052cc; color: white; border-color: #0052cc; }
+        .btn.primary:hover { background: #003a99; }
+        .footer { border-top: 1px solid #f0f0f0; margin-top: 20px; padding-top: 12px; font-size: 12px; color: #626262; line-height: 1.6; }
+        .showing-n-of { font-size: 12px; color: #626262; margin-top: 8px; font-weight: 500; }
+        .copy-success { display: none; position: fixed; top: 16px; right: 16px; background: #dffbf0; color: #216e4e; padding: 12px 16px; border-radius: 3px; font-size: 13px; z-index: 1000; }
+        .copy-success.show { display: block; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>FirstTry Governance Status</h1>
         
-        <!-- Trust Boundaries (visible immediately) -->
-        <div class="section">
-            <div class="section-title">Trust Boundaries</div>
-            <div class="trust-block">
-                <ul class="trust-list">
-                    <li>✓ Monitoring active</li>
-                    <li>✓ Read-only mode</li>
-                    <li>✓ No Jira writes</li>
-                    <li>✓ No configuration changes</li>
-                    <li>✓ No enforcement</li>
-                </ul>
+        <!-- KPI Strip -->
+        <div class="kpi-strip" id="kpi-strip">
+            <div class="kpi-item">
+                <div class="kpi-label">System Status</div>
+                <div class="kpi-value" id="kpi-status">INITIALIZING</div>
+            </div>
+            <div class="kpi-item">
+                <div class="kpi-label">Mode</div>
+                <div class="kpi-value">Scheduled monitoring (read-only)</div>
+            </div>
+            <div class="kpi-item">
+                <div class="kpi-label">Last Successful Run</div>
+                <div class="kpi-value" id="kpi-last-success">Pending…</div>
+            </div>
+            <div class="kpi-item">
+                <div class="kpi-label">Last Check</div>
+                <div class="kpi-value" id="kpi-last-check">Pending…</div>
+            </div>
+            <div class="kpi-item">
+                <div class="kpi-label">Checks Completed (Lifetime)</div>
+                <div class="kpi-value" id="kpi-checks-lifetime">0</div>
+            </div>
+            <div class="kpi-item">
+                <div class="kpi-label">Snapshot Count (Retained)</div>
+                <div class="kpi-value" id="kpi-snapshot-count">0</div>
+            </div>
+            <div class="kpi-item">
+                <div class="kpi-label">Days of Continuous Operation</div>
+                <div class="kpi-value" id="kpi-days-continuous">0</div>
+            </div>
+            <div class="kpi-item">
+                <div class="kpi-label">Version / Environment</div>
+                <div class="kpi-value" id="kpi-version">v2.14.0 / production</div>
             </div>
         </div>
 
-        <!-- Status (changes after resolver call) -->
-        <div class="section" id="status-section">
+        <!-- Operational Status Panel -->
+        <div class="section">
             <div class="section-title">Operational Status</div>
-            <div class="message">Loading…</div>
+            <div id="operational-status">
+                <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+            </div>
         </div>
 
-        <!-- Checks (rendered after resolver call) -->
+        <!-- Data Quality & Coverage Panel -->
+        <div class="section">
+            <div class="section-title">Data Quality & Coverage</div>
+            <div id="data-quality">
+                <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+            </div>
+        </div>
+
+        <!-- Checks Table -->
         <div class="section" id="checks-section" style="display: none;">
             <div class="section-title">Check Results</div>
             <div id="checks-content"></div>
         </div>
+
+        <!-- Explicit Boundaries & Limitations -->
+        <div class="section">
+            <div class="section-title">Explicit Boundaries & Limitations</div>
+            <div id="boundaries"></div>
+        </div>
+
+        <!-- Availability Signals -->
+        <div class="section">
+            <div class="section-title">Availability Signals</div>
+            <div id="availability-signals">
+                <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+            </div>
+        </div>
+
+        <!-- Report & Export -->
+        <div class="section">
+            <div class="section-title">Report & Export</div>
+            <div class="action-buttons">
+                <button class="btn primary" onclick="copySummary()">Copy Summary to Clipboard</button>
+                <button class="btn" onclick="downloadJSON()">Download JSON</button>
+                <button class="btn" onclick="downloadCSV()">Download CSV</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>This dashboard is a read-only operational visibility surface. It exists to provide transparency into app activity and data quality.</p>
+        </div>
     </div>
+
+    <div class="copy-success" id="copy-success">Copied to clipboard!</div>
 
     <script type="module">
         import { invoke } from '@forge/bridge';
 
+        let lastPayload = null;
+
         async function loadStatus() {
             try {
-                // Call the resolver
                 const data = await invoke('get', {});
-                
-                // Render status section
-                const statusSection = document.getElementById('status-section');
-                const statusHtml = `
+                lastPayload = data;
+
+                // Update KPI strip
+                document.getElementById('kpi-status').textContent = data.systemStatus || 'UNKNOWN';
+                document.getElementById('kpi-status').className = `kpi-value ${(data.systemStatus === 'DEGRADED' || data.systemStatus === 'ERROR') ? 'error' : ''}`;
+                document.getElementById('kpi-last-success').textContent = formatTimestamp(data.lastSuccessAt);
+                document.getElementById('kpi-last-check').textContent = formatTimestamp(data.lastCheckAt);
+                document.getElementById('kpi-checks-lifetime').textContent = data.checksCompletedLifetime !== null ? String(data.checksCompletedLifetime) : '—';
+                document.getElementById('kpi-snapshot-count').textContent = data.snapshotsRetainedCount !== null ? String(data.snapshotsRetainedCount) : '—';
+                document.getElementById('kpi-days-continuous').textContent = data.daysContinuousOperation !== null ? String(data.daysContinuousOperation) : '—';
+                document.getElementById('kpi-version').textContent = `${data.version} / ${data.environment}`;
+
+                // Operational Status Panel
+                const opStatus = `
                     <div class="metrics-grid">
                         <div class="metric-row">
-                            <div class="metric-label">App Name</div>
-                            <div class="metric-value">${data.appName || 'FirstTry'}</div>
+                            <div class="metric-label">Expected Schedule Interval</div>
+                            <div class="metric-value">${data.expectedScheduleIntervalMinutes !== null ? data.expectedScheduleIntervalMinutes + ' minutes' : 'UNKNOWN'}</div>
                         </div>
                         <div class="metric-row">
-                            <div class="metric-label">Mode</div>
-                            <div class="metric-value">${data.mode || 'Scheduled monitoring (read-only)'}</div>
+                            <div class="metric-label">Staleness Threshold Rule</div>
+                            <div class="metric-value">${data.staleIfAgeMinutesGreaterThan !== null ? '> ' + data.staleIfAgeMinutesGreaterThan + ' minutes' : 'UNKNOWN'}</div>
                         </div>
                         <div class="metric-row">
-                            <div class="metric-label">Last Check Attempt</div>
-                            <div class="metric-value">${formatTimestamp(data.lastAttemptAt)}</div>
+                            <div class="metric-label">Snapshot Age</div>
+                            <div class="metric-value">${data.snapshotAgeMinutes !== null ? data.snapshotAgeMinutes + ' minutes' : 'No snapshots yet'}</div>
                         </div>
                         <div class="metric-row">
-                            <div class="metric-label">Last Successful Check</div>
-                            <div class="metric-value">${formatTimestamp(data.lastSuccessAt)}</div>
+                            <div class="metric-label">Data Freshness</div>
+                            <div class="metric-value">${data.isStale === null ? 'UNKNOWN' : data.isStale ? 'STALE' : 'FRESH'}</div>
                         </div>
-                        ${data.lastFailureReason ? `
-                        <div class="metric-row">
-                            <div class="metric-label">Last Failure</div>
-                            <div class="metric-value unknown">${data.lastFailureReason}</div>
-                        </div>
-                        ` : ''}
+                    </div>
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0; font-size: 13px; color: #626262;">
+                        <strong>Freshness Disclaimer:</strong> Data freshness is determined by comparing snapshot age against the expected schedule interval (${data.expectedScheduleIntervalMinutes} minutes). Stale data (older than ${data.staleIfAgeMinutesGreaterThan} minutes) may affect accuracy of operational visibility.
                     </div>
                 `;
-                statusSection.innerHTML = statusHtml;
+                document.getElementById('operational-status').innerHTML = opStatus;
 
-                // Render checks section if available
+                // Data Quality & Coverage Panel
+                const dqStatus = `
+                    <div class="metric-row">
+                        <div class="metric-label">Completeness Status</div>
+                        <div class="metric-value">${data.completenessStatus}</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Coverage Included</div>
+                        <ul class="coverage-list">${data.coverageIncluded.map(item => `<li>${item}</li>`).join('')}</ul>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Coverage Excluded</div>
+                        <ul class="coverage-list coverage-excluded">${data.coverageExcluded.map(item => `<li>${item}</li>`).join('')}</ul>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Known Data Gaps</div>
+                        <div>${data.knownDataGaps.length === 0 ? '<em>None</em>' : '<ul class="coverage-list">' + data.knownDataGaps.map(item => `<li>${item}</li>`).join('') + '</ul>'}</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Retention Policy</div>
+                        <div class="metric-value">${data.retentionPolicy.effectiveRuleText}</div>
+                    </div>
+                `;
+                document.getElementById('data-quality').innerHTML = dqStatus;
+
+                // Checks table
                 if (data.checks && data.checks.length > 0) {
                     const checksSection = document.getElementById('checks-section');
-                    let tableHtml = '<div class="checks-table"><div class="table-header"><div>Check</div><div>Source</div><div>Status</div><div>Reason</div></div>';
+                    let tableHtml = '<div class="checks-table"><div class="table-header"><div>Check Name</div><div>Status</div><div>Last Run</div><div>Reason Code</div><div>Impact</div></div>';
                     
-                    data.checks.forEach(check => {
+                    data.checks.slice(0, 20).forEach(check => {
                         tableHtml += `
                             <div class="table-row">
-                                <div>${check.name || check.id || 'Unknown'}</div>
-                                <div>${check.source || '—'}</div>
+                                <div>${check.name || 'Unknown'}</div>
                                 <div>${check.status || 'UNKNOWN'}</div>
+                                <div>${formatTimestamp(check.lastRunAt)}</div>
                                 <div>${check.reasonCode || '—'}</div>
+                                <div>${check.impact ? check.impact.substring(0, 120) : '—'}</div>
                             </div>
                         `;
                     });
                     
                     tableHtml += '</div>';
+                    if (data.checksTotalCount > 20) {
+                        tableHtml += `<div class="showing-n-of">Showing 20 of ${data.checksTotalCount} checks</div>`;
+                    }
                     document.getElementById('checks-content').innerHTML = tableHtml;
                     checksSection.style.display = 'block';
                 }
-            } catch (error) {
-                // Render error
-                const statusSection = document.getElementById('status-section');
-                statusSection.innerHTML = `
-                    <div class="error-panel section" style="margin: 0;">
-                        <div class="error-header">⚠ Resolver Invocation Failed</div>
-                        <div class="error-code">RESOLVER_INVOKE_FAILED</div>
-                        <div class="error-message">${error.message || 'Unknown error'}</div>
-                    </div>
+
+                // Boundaries & Limitations
+                const boundariesHtml = `
+                    <div class="boundary-item"><span class="boundary-check">✓</span> No Jira writes are performed</div>
+                    <div class="boundary-item"><span class="boundary-check">✓</span> No configuration changes are made</div>
+                    <div class="boundary-item"><span class="boundary-check">✓</span> No enforcement actions are taken</div>
+                    <div class="boundary-item"><span class="boundary-check">✓</span> No recommendations are generated</div>
+                    <div class="boundary-item"><span class="boundary-check">✓</span> Data is observational only</div>
+                    <div class="boundary-item"><span class="boundary-check">✓</span> App fails closed on missing tenant identity</div>
+                    <div class="boundary-item"><span class="boundary-check">✓</span> Viewer permissions may limit visible data</div>
                 `;
+                document.getElementById('boundaries').innerHTML = boundariesHtml;
+
+                // Availability Signals
+                const signalsHtml = `
+                    <div class="signal-item">
+                        <span class="signal-label">Tenant Identity</span>
+                        <span class="signal-badge ${data.tenantIdentity.available ? 'signal-available' : 'signal-unavailable'}">${data.tenantIdentity.available ? 'AVAILABLE' : 'UNAVAILABLE'}</span>
+                    </div>
+                    <div style="padding: 8px 0; font-size: 12px; color: #626262; margin-left: auto;">Impact: ${data.tenantIdentity.available ? 'Monitoring operational' : 'Monitoring paused'}</div>
+                    <div class="signal-item">
+                        <span class="signal-label">Viewer Permission Visibility</span>
+                        <span class="signal-badge ${data.permissionVisibility.determined ? 'signal-available' : 'signal-unavailable'}">${data.permissionVisibility.determined ? 'DETERMINED' : 'NOT_DETERMINED'}</span>
+                    </div>
+                    <div style="padding: 8px 0; font-size: 12px; color: #626262; margin-left: auto;">Impact: ${data.permissionVisibility.determined ? 'All visible data accessible' : 'Some data may be restricted'}</div>
+                    <div class="signal-item">
+                        <span class="signal-label">Data Freshness</span>
+                        <span class="signal-badge ${data.isStale === false ? 'signal-fresh' : 'signal-stale'}">${data.isStale === null ? 'UNKNOWN' : data.isStale ? 'STALE' : 'FRESH'}</span>
+                    </div>
+                    <div style="padding: 8px 0; font-size: 12px; color: #626262; margin-left: auto;">Impact: ${data.isStale ? 'Operational visibility may be outdated' : 'Operational visibility is current'}</div>
+                    <div class="signal-item">
+                        <span class="signal-label">Storage State</span>
+                        <span class="signal-badge ${data.snapshotAgeMinutes !== null ? 'signal-available' : 'signal-unavailable'}">${data.snapshotAgeMinutes !== null ? 'HAS_DATA' : 'EMPTY'}</span>
+                    </div>
+                    <div style="padding: 8px 0; font-size: 12px; color: #626262; margin-left: auto;">Impact: ${data.snapshotAgeMinutes !== null ? 'Full metrics available' : 'First run pending'}</div>
+                `;
+                document.getElementById('availability-signals').innerHTML = signalsHtml;
+
+            } catch (error) {
+                const errorMsg = error.message || String(error);
+                showError('Resolver Invocation Failed', 'RESOLVER_INVOKE_FAILED', errorMsg);
             }
+        }
+
+        function showError(header, code, message) {
+            const errorHtml = `
+                <div class="error-panel">
+                    <div class="error-header">${header}</div>
+                    <div class="error-code">${code}</div>
+                    <div class="error-message">${message}</div>
+                </div>
+            `;
+            document.getElementById('operational-status').innerHTML = errorHtml;
+            document.getElementById('data-quality').innerHTML = '';
+            document.getElementById('availability-signals').innerHTML = '';
         }
 
         function formatTimestamp(iso) {
@@ -260,7 +327,66 @@
             }
         }
 
-        // Load status on page load
+        window.copySummary = function() {
+            if (!lastPayload) return;
+            const text = `System Status: ${lastPayload.systemStatus}
+Last Successful Run: ${formatTimestamp(lastPayload.lastSuccessAt)}
+Last Check: ${formatTimestamp(lastPayload.lastCheckAt)}
+Snapshot Age: ${lastPayload.snapshotAgeMinutes} minutes (stale if > ${lastPayload.staleIfAgeMinutesGreaterThan})
+Completeness Status: ${lastPayload.completenessStatus}
+Retention Policy: ${lastPayload.retentionPolicy.effectiveRuleText}
+Explicit Boundaries: No Jira writes, no config changes, no enforcement, no recommendations, data observational only
+Version / Environment: ${lastPayload.version} / ${lastPayload.environment}
+Generated At: ${lastPayload.generatedAt}`;
+            navigator.clipboard.writeText(text).then(() => {
+                const elem = document.getElementById('copy-success');
+                elem.classList.add('show');
+                setTimeout(() => elem.classList.remove('show'), 2000);
+            });
+        };
+
+        window.downloadJSON = function() {
+            if (!lastPayload) return;
+            const payload = {
+                schemaVersion: lastPayload.schemaVersion,
+                generatedAt: lastPayload.generatedAt,
+                snapshotAge: lastPayload.snapshotAgeMinutes,
+                completenessStatus: lastPayload.completenessStatus,
+                boundaries: lastPayload.boundaries,
+                truncated: false,
+                ...lastPayload
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `governance-status-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        window.downloadCSV = function() {
+            if (!lastPayload || !lastPayload.checks) return;
+            const rows = [['Check Name', 'Status', 'Last Run', 'Reason Code', 'Impact']];
+            lastPayload.checks.slice(0, 100).forEach(check => {
+                rows.push([
+                    `"${check.name || 'Unknown'}"`,
+                    check.status || 'UNKNOWN',
+                    `"${formatTimestamp(check.lastRunAt)}"`,
+                    check.reasonCode || '—',
+                    `"${(check.impact || '—').substring(0, 120)}"`
+                ]);
+            });
+            const csv = rows.map(r => r.join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `governance-checks-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
         loadStatus();
     </script>
 </body>
