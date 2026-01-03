@@ -703,6 +703,37 @@
         <p class="title-description">Read-only operational visibility surface. Real-time monitoring status and data quality metrics.</p>
         <div class="build-marker" id="build-marker"></div>
         
+        <!-- App Identity (Diagnostic) -->
+        <div class="section" id="app-identity-section" style="background-color: #fef5e7; border-color: #f9e79f;">
+            <div class="section-title" style="border-bottom-color: #f9e79f;">App Identity (Diagnostic)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 12px;">
+                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
+                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Server Build Stamp</div>
+                    <div id="app-server-build" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+                </div>
+                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
+                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">App ID</div>
+                    <div id="app-id" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+                </div>
+                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
+                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Environment</div>
+                    <div id="app-environment" style="color: #172b4d; font-weight: 500;">—</div>
+                </div>
+                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
+                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Cloud ID</div>
+                    <div id="app-cloud-id" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+                </div>
+                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
+                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Installation ID</div>
+                    <div id="app-installation-id" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+                </div>
+                <div style="padding-bottom: 12px; border-bottom: none;">
+                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Generated At</div>
+                    <div id="app-generated-at" style="color: #172b4d; font-weight: 500;">—</div>
+                </div>
+            </div>
+        </div>
+        
         <!-- KPI Strip -->
         <div class="kpi-strip" id="kpi-strip">
             <div class="kpi-item">
@@ -808,6 +839,14 @@
 
                 // Render build marker
                 document.getElementById('build-marker').textContent = BUILD_MARKER;
+
+                // Render app identity fields
+                document.getElementById('app-server-build').textContent = data.serverBuildStamp || '—';
+                document.getElementById('app-id').textContent = data.appId || '—';
+                document.getElementById('app-environment').textContent = data.environment || '—';
+                document.getElementById('app-cloud-id').textContent = data.cloudId || '—';
+                document.getElementById('app-installation-id').textContent = data.installationId || '—';
+                document.getElementById('app-generated-at').textContent = formatTimestampDisplay(data.generatedAt) || '—';
 
                 // Update KPI strip
                 const statusValue = data.systemStatus || 'UNKNOWN';
