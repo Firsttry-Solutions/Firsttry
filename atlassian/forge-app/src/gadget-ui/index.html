@@ -77,21 +77,22 @@
         }
 
         body {
-            font-family: var(--font-family);
-            background: transparent;
-            color: var(--color-text-primary);
-            font-size: var(--font-size-body);
-            line-height: 1.5;
-            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            background: transparent !important;
+            color: #172b4d !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
 
         /* ========================================================================
            CONTAINER & LAYOUT
            ======================================================================== */
         .container {
-            max-width: 100%;
-            margin: 0 auto;
-            padding: var(--space-16);
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            padding: 16px !important;
         }
 
         /* ========================================================================
@@ -122,29 +123,29 @@
            SECTIONS & CARDS
            ======================================================================== */
         .section {
-            background: var(--color-bg-card);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-8);
-            padding: var(--space-16);
-            margin-bottom: var(--space-16);
-            box-shadow: var(--shadow-subtle);
+            background: #ffffff !important;
+            border: 1px solid #dfe1e6 !important;
+            border-radius: 8px !important;
+            padding: 16px !important;
+            margin-bottom: 16px !important;
+            box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13) !important;
             transition: box-shadow 0.2s ease;
         }
 
         .section:hover {
-            box-shadow: var(--shadow-card);
+            box-shadow: 0 2px 4px rgba(9, 30, 66, 0.06) !important;
         }
 
         .section-title {
-            font-size: var(--font-size-section);
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-text-primary);
-            margin-bottom: var(--space-16);
-            padding-bottom: var(--space-12);
-            border-bottom: 1px solid var(--color-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            color: #172b4d !important;
+            margin-bottom: 16px !important;
+            padding-bottom: 12px !important;
+            border-bottom: 1px solid #dfe1e6 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
         }
 
         /* ========================================================================
@@ -256,35 +257,35 @@
            STATUS PILL
            ======================================================================== */
         .status-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px var(--space-12);
-            border-radius: var(--radius-12);
-            font-size: var(--font-size-label);
-            font-weight: var(--font-weight-semibold);
+            display: inline-flex !important;
+            align-items: center !important;
+            padding: 4px 12px !important;
+            border-radius: 12px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
             text-transform: uppercase;
             letter-spacing: 0.2px;
-            white-space: nowrap;
+            white-space: nowrap !important;
         }
 
         .status-pill.initializing {
-            background: var(--color-status-initializing);
-            color: var(--color-status-initializing-text);
+            background: #f5f6f7 !important;
+            color: #626f86 !important;
         }
 
         .status-pill.running {
-            background: var(--color-status-running);
-            color: var(--color-status-running-text);
+            background: #dffbf0 !important;
+            color: #216e4e !important;
         }
 
         .status-pill.degraded {
-            background: var(--color-status-degraded);
-            color: var(--color-status-degraded-text);
+            background: #fff7d6 !important;
+            color: #974f0c !important;
         }
 
         .status-pill.error {
-            background: var(--color-status-error);
-            color: var(--color-status-error-text);
+            background: #ffeceb !important;
+            color: #ae2a19 !important;
         }
 
         /* ========================================================================
