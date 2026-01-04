@@ -37,6 +37,36 @@ let invoke: any = null;
 })();
 
 // ============================================================================
+// BRIDGE RUNTIME DETECTION (CRITICAL PROBE)
+// ============================================================================
+
+// Track Bridge availability for diagnostics
+let bridgeGlobal: boolean = false;
+let bridgeInvokeFn: boolean = false;
+
+// Probe for Bridge at module load time
+(async () => {
+    try {
+        // @ts-ignore - Bridge is injected by Forge at runtime
+        const windowBridge = (typeof (window as any).Bridge !== 'undefined') ? (window as any).Bridge : null;
+        
+        if (windowBridge) {
+            bridgeGlobal = true;
+            if (typeof windowBridge.invoke === 'function') {
+                bridgeInvokeFn = true;
+                invoke = windowBridge.invoke;
+            } else {
+                console.warn('Bridge exists but invoke is not a function:', typeof windowBridge.invoke);
+            }
+        } else {
+            console.warn('Bridge global is not available in window object');
+        }
+    } catch (e) {
+        console.error('Error probing for Bridge:', e);
+    }
+})();
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
@@ -123,6 +153,43 @@ async function loadStatus() {
         // Mark JS as running
         setText('ui-js-boot', 'RAN');
 
+        // STEP 0: Report Bridge probe results FIRST (before any other logic)
+        setText('ui-selftest-bridge-global', bridgeGlobal ? 'PRESENT' : 'MISSING');
+        setText('ui-selftest-bridge-invoke-fn', bridgeInvokeFn ? 'PRESENT' : 'MISSING');
+
+        // If Bridge is missing, show error and stop
+        if (!bridgeGlobal) {
+            const errorHtml = `
+                <div class="error-panel" style="background: #fff7d6; border: 1px solid #f5cd47; border-radius: 8px; padding: 16px; color: #7f5f01;">
+                    <div style="font-weight: 600; font-size: 14px;">CRITICAL: Bridge Global Not Available</div>
+                    <div style="margin-top: 8px; font-size: 12px;">
+                        The gadget could not find the Bridge global object injected by Forge.
+                        This usually means the gadget iframe is not properly initialized.
+                        Try hard refresh, clear cache, or reinstall the gadget.
+                    </div>
+                </div>
+            `;
+            setHTML('operational-status', errorHtml);
+            setText('ui-selftest-invoke', 'SKIP (Bridge not available)');
+            return;
+        }
+
+        // If Bridge exists but invoke is missing, show error
+        if (!bridgeInvokeFn) {
+            const errorHtml = `
+                <div class="error-panel" style="background: #fff7d6; border: 1px solid #f5cd47; border-radius: 8px; padding: 16px; color: #7f5f01;">
+                    <div style="font-weight: 600; font-size: 14px;">CRITICAL: Bridge.invoke Function Not Available</div>
+                    <div style="margin-top: 8px; font-size: 12px;">
+                        Bridge global exists but the invoke function is missing or not callable.
+                        Gadget functionality is unavailable.
+                    </div>
+                </div>
+            `;
+            setHTML('operational-status', errorHtml);
+            setText('ui-selftest-invoke', 'FAIL (invoke not callable)');
+            return;
+        }
+
         // Step 1: CSS canary check
         if (!checkCSSCanary()) {
             const details = 'CSS canary check failed - CSS not applied or stripped';
@@ -151,23 +218,45 @@ async function loadStatus() {
         // JS is running if we got here
         setText('ui-selftest-js', 'OK (JS executed)');
 
-        // Step 3: Verify we have invoke function
-        if (!invoke) {
-            throw new Error('invoke function not available from @forge/bridge');
+        // Step 3: Invoke resolver with try/catch for error handling
+        let data: any = null;
+        let invokeError: string | null = null;
+
+        try {
+            // @ts-ignore - invoke is checked above
+            data = await invoke('get', {});
+        } catch (e) {
+            invokeError = e instanceof Error ? e.message : String(e);
+            console.error('Bridge.invoke failed:', invokeError);
         }
 
-        // Step 4: Invoke resolver
-        const data = await invoke('get', {});
-        lastPayload = data;
+        if (!data || invokeError) {
+            const errorMsg = invokeError || 'No data returned from resolver';
+            const errorHtml = `
+                <div class="error-panel" style="background: #ffeceb; border: 1px solid #f87462; border-radius: 8px; padding: 16px; color: #5d1f1a;">
+                    <div style="font-weight: 600; font-size: 14px;">Resolver Invocation Failed</div>
+                    <div style="margin-top: 8px; font-size: 12px;">
+                        <div><strong>Error:</strong> ${errorMsg}</div>
+                        <div style="margin-top: 8px;">The backend resolver did not respond successfully. Check that the status-resolver-fn is deployed and functioning.</div>
+                    </div>
+                </div>
+            `;
+            setHTML('operational-status', errorHtml);
+            setText('ui-selftest-invoke', `FAIL (error: ${errorMsg})`);
+            return;
+        }
 
-        // Step 5: Update SERVE_PROOF banner dynamically
+        lastPayload = data;
+        setText('ui-selftest-invoke', 'OK (resolver responded)');
+
+        // Step 4: Update SERVE_PROOF banner dynamically
         const banner = document.getElementById('ui-serve-proof-banner');
         if (banner) {
             const match = data.uiExpectedBuild === UI_BUILD_VERSION ? 'MATCH' : 'MISMATCH';
             banner.textContent = `SERVE_PROOF: ${UI_BUILD_PROOF} | resource:${UI_RESOURCE_KEY} | uiVersion:${UI_BUILD_VERSION} | resolverOK:${match}`;
         }
 
-        // Step 6: Verify version match (CRITICAL)
+        // Step 5: Verify version match (CRITICAL)
         if (data.uiExpectedBuild && data.uiExpectedBuild !== UI_BUILD_VERSION) {
             const warning = `
                 <div class="error-panel">
@@ -181,16 +270,13 @@ async function loadStatus() {
                 </div>
             `;
             setHTML('operational-status', warning);
-            setText('ui-selftest-invoke', 'FAIL (version mismatch)');
             return;
         }
 
-        setText('ui-selftest-invoke', 'OK (resolver responded)');
-
-        // Step 7: Display UI version
+        // Step 6: Display UI version
         setText('build-marker', `UI BUILD: ${UI_BUILD_PROOF} | Version: ${UI_BUILD_VERSION}`);
 
-        // Step 8: Render app identity fields
+        // Step 7: Render app identity fields
         setText('app-server-build', data.serverBuildStamp || '—');
         setText('app-id', data.appId || '—');
         setText('app-environment', data.environment || '—');
@@ -198,7 +284,7 @@ async function loadStatus() {
         setText('app-installation-id', data.installationId || '—');
         setText('app-generated-at', formatTimestampDisplay(data.generatedAt) || '—');
 
-        // Step 9: Update KPI strip
+        // Step 8: Update KPI strip
         const statusValue = data.systemStatus || 'UNKNOWN';
         const pillClass = {
             'INITIALIZING': 'initializing',
@@ -216,7 +302,7 @@ async function loadStatus() {
         setText('kpi-version', `${data.version} / ${data.environment}`);
         setText('kpi-generated-at', formatTimestampDisplay(data.generatedAt) || '—');
 
-        // Step 10: Operational Status Panel
+        // Step 9: Operational Status Panel
         const opStatus = `
             <div class="metrics-grid">
                 <div class="metric-row">
@@ -242,7 +328,7 @@ async function loadStatus() {
         `;
         setHTML('operational-status', opStatus);
 
-        // Step 11: Data Quality & Coverage Panel
+        // Step 10: Data Quality & Coverage Panel
         const dqStatus = `
             <div class="metric-row">
                 <div class="metric-label">Completeness Status</div>
@@ -267,7 +353,7 @@ async function loadStatus() {
         `;
         setHTML('data-quality', dqStatus);
 
-        // Step 12: Checks table
+        // Step 11: Checks table
         if (data.checks && data.checks.length > 0) {
             const checksSection = document.getElementById('checks-section');
             let tableHtml = '<div class="checks-table"><div class="table-header"><div class="th-name">Check Name</div><div class="th-status">Status</div><div class="th-lastRun">Last Run</div><div class="th-reason">Reason Code</div><div class="th-impact">Impact</div></div>';
@@ -294,7 +380,7 @@ async function loadStatus() {
             }
         }
 
-        // Step 13: Boundaries & Limitations
+        // Step 12: Boundaries & Limitations
         const boundariesHtml = `
             <div class="boundary-item"><span class="boundary-check">✓</span> No Jira writes are performed</div>
             <div class="boundary-item"><span class="boundary-check">✓</span> No configuration changes are made</div>
@@ -306,7 +392,7 @@ async function loadStatus() {
         `;
         setHTML('boundaries', boundariesHtml);
 
-        // Step 14: Availability Signals
+        // Step 13: Availability Signals
         const signalsHtml = `
             <div class="signal-item">
                 <span class="signal-label">Tenant Identity</span>
@@ -333,8 +419,7 @@ async function loadStatus() {
 
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
-        showError('Resolver Invocation Failed', 'RESOLVER_INVOKE_FAILED', errorMsg);
-        setText('ui-selftest-invoke', 'FAIL (error thrown)');
+        showError('Unexpected Error', 'UNEXPECTED_ERROR', errorMsg);
     }
 }
 
