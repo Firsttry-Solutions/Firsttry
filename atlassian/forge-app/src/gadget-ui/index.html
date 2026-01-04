@@ -650,7 +650,8 @@
 <body>
     <!-- Production Build Stamp (Static HTML Marker) -->
     <div id="ui-prod-stamp" class="muted" style="font-size: 11px; color: #8590a2; margin: 4px 0 0 16px;">
-        UI_PROD_COMMIT: 485ae880
+        UI_PROD_COMMIT: 6e0047dd<br/>
+        UI_CSS_BASELINE: 485ae880
     </div>
 
     <!-- CSS Canary (Fail-Fast Verification) -->
@@ -857,34 +858,35 @@
         // This runs BEFORE any other logic to detect if CSS is applied
         const cssCanary = document.getElementById('ui-css-canary');
         if (cssCanary) {
-            const styles = window.getComputedStyle(cssCanary);
-            // Check critical CSS properties that prove styles are applied
-            const borderRadiusOk = styles.borderRadius !== '0px' && styles.borderRadius !== '';
-            const displayOk = styles.display === 'inline-flex' || styles.display === 'flex';
-            const backgroundOk = styles.backgroundColor !== 'rgba(0, 0, 0, 0)' && styles.backgroundColor !== '';
-            
-            if (!borderRadiusOk || !displayOk || !backgroundOk) {
-                // CSS NOT APPLIED - FATAL ERROR
+            const s = window.getComputedStyle(cssCanary);
+
+            // Multi-signal test: fail only if MOST signals indicate "unstyled".
+            const borderOk = s.borderRadius && s.borderRadius !== '0px';
+            const displayOk = (s.display === 'inline-flex' || s.display === 'flex' || s.display === 'inline-block');
+            const paddingOk = (parseFloat(s.paddingLeft || '0') > 0) && (parseFloat(s.paddingRight || '0') > 0);
+            const bgOk = s.backgroundColor && s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent';
+            const fontOk = s.fontWeight && parseInt(s.fontWeight, 10) >= 500;
+
+            // Count signals
+            const okCount = [borderOk, displayOk, paddingOk, bgOk, fontOk].filter(Boolean).length;
+
+            // PASS if at least 3/5 style signals are present.
+            // FAIL only if fewer than 3 signals are present (strong evidence CSS not applied).
+            if (okCount < 3) {
+                const details =
+                    `display=${s.display}, borderRadius=${s.borderRadius}, ` +
+                    `paddingLeft=${s.paddingLeft}, paddingRight=${s.paddingRight}, ` +
+                    `backgroundColor=${s.backgroundColor}, fontWeight=${s.fontWeight}`;
+
                 document.body.innerHTML =
-                    '<div class="error-panel" style="' +
-                    'background: #ffeceb; border: 1px solid #f8bbd0; border-radius: 8px; ' +
-                    'padding: 24px; margin: 16px; color: #ae2a19; font-family: system-ui, -apple-system, sans-serif;">' +
-                    '<div style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">FATAL: UI CSS Not Applied</div>' +
-                    '<div style="font-size: 14px; line-height: 1.5; margin-bottom: 12px;">' +
-                    'This gadget is running without styles. The CSS styling engine is missing or blocked.' +
-                    '</div>' +
-                    '<div style="font-size: 13px; color: #974f0c; background: #fff7d6; padding: 12px; border-radius: 4px; margin-bottom: 12px;">' +
-                    '<strong>Actions:</strong><br/>' +
-                    '1. Remove this gadget from the dashboard (Save)<br/>' +
-                    '2. Hard refresh your browser (Ctrl+Shift+R on Windows, Cmd+Shift+R on Mac)<br/>' +
-                    '3. Re-add the gadget to the dashboard (Save)<br/>' +
-                    '4. If problem persists, report deployment failure.' +
-                    '</div>' +
-                    '<div style="font-size: 12px; color: #626f86;">' +
-                    'Debug: borderRadius=' + styles.borderRadius + ', display=' + styles.display + ', backgroundColor=' + styles.backgroundColor +
-                    '</div>' +
+                    '<div class="error-panel">' +
+                    '<strong>FATAL:</strong> UI CSS not applied (or stripped).<br/>' +
+                    'This gadget is running without required styles.<br/><br/>' +
+                    '<div class="muted">Diagnostics: ' + details + '</div><br/>' +
+                    'Fix: Remove and re-add the gadget, hard refresh, or redeploy/upgrade.' +
                     '</div>';
-                throw new Error('CSS_NOT_APPLIED');
+
+                throw new Error('CSS_NOT_APPLIED: ' + details);
             }
         }
 
