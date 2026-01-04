@@ -41,9 +41,7 @@ export interface SchedulerState {
 export async function loadSchedulerState(cloudId: string): Promise<SchedulerState> {
   try {
     const stateKey = `phase5:scheduler:state:${cloudId}`;
-    const state = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(stateKey);
-    });
+    const state = await storage.get(stateKey);
 
     if (state && typeof state === 'object') {
       return state as SchedulerState;
@@ -71,10 +69,8 @@ export async function loadSchedulerState(cloudId: string): Promise<SchedulerStat
 export async function saveSchedulerState(cloudId: string, state: SchedulerState): Promise<void> {
   try {
     const stateKey = `phase5:scheduler:state:${cloudId}`;
-    await api.asApp().requestStorage(async (storage) => {
-      // TTL: 90 days (in seconds)
-      await storage.set(stateKey, state, { ttl: 7776000 });
-    });
+    // TTL: 90 days (in seconds)
+    await storage.set(stateKey, state, { ttl: 7776000 });
   } catch (error) {
     console.error(`[SchedulerState] Error saving state for ${cloudId}:`, error);
     throw error;
@@ -91,9 +87,7 @@ export async function hasCompletionMarker(
 ): Promise<boolean> {
   try {
     const doneKey = `phase5:scheduler:${cloudId}:${trigger}:DONE`;
-    const marker = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(doneKey);
-    });
+    const marker = await storage.get(doneKey);
     return marker !== undefined;
   } catch (error) {
     console.error(`[SchedulerState] Error checking completion marker for ${trigger}:`, error);
@@ -111,13 +105,11 @@ export async function writeCompletionMarker(
 ): Promise<void> {
   try {
     const doneKey = `phase5:scheduler:${cloudId}:${trigger}:DONE`;
-    await api.asApp().requestStorage(async (storage) => {
-      // Only write if not already present
-      const existing = await storage.get(doneKey);
-      if (!existing) {
-        await storage.set(doneKey, { completed_at: new Date().toISOString() }, { ttl: 7776000 });
-      }
-    });
+    // Only write if not already present
+    const existing = await storage.get(doneKey);
+    if (!existing) {
+      await storage.set(doneKey, { completed_at: new Date().toISOString() }, { ttl: 7776000 });
+    }
   } catch (error) {
     console.error(`[SchedulerState] Error writing completion marker for ${trigger}:`, error);
     throw error;
@@ -134,9 +126,7 @@ export async function getLastAttemptTime(
 ): Promise<string | null> {
   try {
     const attemptKey = `phase5:scheduler:${cloudId}:${trigger}:ATTEMPT`;
-    const timestamp = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(attemptKey);
-    });
+    const timestamp = await storage.get(attemptKey);
     return timestamp as string | null;
   } catch (error) {
     console.error(`[SchedulerState] Error getting last attempt time for ${trigger}:`, error);
@@ -153,9 +143,7 @@ export async function recordAttemptTime(
 ): Promise<void> {
   try {
     const attemptKey = `phase5:scheduler:${cloudId}:${trigger}:ATTEMPT`;
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(attemptKey, new Date().toISOString(), { ttl: 7776000 });
-    });
+    await storage.set(attemptKey, new Date().toISOString(), { ttl: 7776000 });
   } catch (error) {
     console.error(`[SchedulerState] Error recording attempt time for ${trigger}:`, error);
     throw error;

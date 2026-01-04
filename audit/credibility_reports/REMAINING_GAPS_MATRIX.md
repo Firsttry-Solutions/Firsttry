@@ -80,6 +80,9 @@
 | GAP_1 | GAP1_ERROR_INJECTION | ⚠️ UNKNOWN | tests/credibility/gap_1_pii_logging.test.ts | MEDIUM |
 | GAP_1 | GAP1_STATIC_SCAN | ⚠️ UNKNOWN | none | MEDIUM |
 | GAP_1 | GAP1_ERROR_INJECTION | ⚠️ UNKNOWN | tests/credibility/gap_1_pii_logging.test.ts | MEDIUM |
+| GAP_1 | GAP1_STATIC_SCAN | ⚠️ UNKNOWN | none | MEDIUM |
+| GAP_1 | GAP1_ERROR_INJECTION | ⚠️ UNKNOWN | tests/credibility/gap_1_pii_logging.test.ts | MEDIUM |
+| GAP_2 | GAP2_STORAGE_KEY_ISOLATION | ⚠️ UNKNOWN | tests/credibility/gap_2_tenant_isolation.test.ts | MEDIUM |
 | GAP_2 | GAP2_STORAGE_KEY_ISOLATION | ⚠️ UNKNOWN | tests/credibility/gap_2_tenant_isolation.test.ts | MEDIUM |
 | GAP_2 | GAP2_STORAGE_KEY_ISOLATION | ⚠️ UNKNOWN | tests/credibility/gap_2_tenant_isolation.test.ts | MEDIUM |
 | GAP_2 | GAP2_STORAGE_KEY_ISOLATION | ⚠️ UNKNOWN | tests/credibility/gap_2_tenant_isolation.test.ts | MEDIUM |
@@ -197,6 +200,10 @@
 | GAP_3 | GAP3_RUNTIME_EGRESS_TRAP | ⚠️ UNKNOWN | tests/credibility/gap_3_outbound_egress.test.ts | MEDIUM (egress proven safe) |
 | GAP_3 | GAP3_STATIC_EGRESS_SCAN | ✅ PASS | none | NONE |
 | GAP_3 | GAP3_RUNTIME_EGRESS_TRAP | ⚠️ UNKNOWN | tests/credibility/gap_3_outbound_egress.test.ts | MEDIUM (egress proven safe) |
+| GAP_3 | GAP3_STATIC_EGRESS_SCAN | ✅ PASS | none | NONE |
+| GAP_3 | GAP3_RUNTIME_EGRESS_TRAP | ⚠️ UNKNOWN | tests/credibility/gap_3_outbound_egress.test.ts | MEDIUM (egress proven safe) |
+| GAP_4 | GAP4_CONCURRENT_EXECUTION | ⚠️ UNKNOWN | tests/credibility/gap_4_concurrency.test.ts | MEDIUM |
+| GAP_4 | GAP4_DUPLICATE_EVENT | ⚠️ UNKNOWN | tests/credibility/gap_4_concurrency.test.ts | MEDIUM |
 | GAP_4 | GAP4_CONCURRENT_EXECUTION | ⚠️ UNKNOWN | tests/credibility/gap_4_concurrency.test.ts | MEDIUM |
 | GAP_4 | GAP4_DUPLICATE_EVENT | ⚠️ UNKNOWN | tests/credibility/gap_4_concurrency.test.ts | MEDIUM |
 | GAP_4 | GAP4_CONCURRENT_EXECUTION | ⚠️ UNKNOWN | tests/credibility/gap_4_concurrency.test.ts | MEDIUM |
@@ -314,6 +321,8 @@
 | GAP_5 | GAP5_10_RUN_DETERMINISM | ⚠️ UNKNOWN | none | MEDIUM |
 | GAP_5 | GAP5_10_RUN_DETERMINISM | ⚠️ UNKNOWN | none | MEDIUM |
 | GAP_5 | GAP5_10_RUN_DETERMINISM | ⚠️ UNKNOWN | none | MEDIUM |
+| GAP_5 | GAP5_10_RUN_DETERMINISM | ⚠️ UNKNOWN | none | MEDIUM |
+| GAP_6 | GAP6_QUOTA_OVERFLOW | ⚠️ UNKNOWN | tests/credibility/gap_6_data_growth.test.ts | MEDIUM |
 | GAP_6 | GAP6_QUOTA_OVERFLOW | ⚠️ UNKNOWN | tests/credibility/gap_6_data_growth.test.ts | MEDIUM |
 | GAP_6 | GAP6_QUOTA_OVERFLOW | ⚠️ UNKNOWN | tests/credibility/gap_6_data_growth.test.ts | MEDIUM |
 | GAP_6 | GAP6_QUOTA_OVERFLOW | ⚠️ UNKNOWN | tests/credibility/gap_6_data_growth.test.ts | MEDIUM |
@@ -361,6 +370,8 @@
 | GAP_7 | GAP7_INCIDENT_RESPONSE_DOCS | ✅ PASS | /workspaces/Firstry/docs/INCIDENT_RESPONSE.md | NONE |
 | GAP_7 | GAP7_SUPPORT_CONTACT_VERIFICATION | ✅ PASS | /workspaces/Firstry/docs/SUPPORT.md | NONE |
 | GAP_7 | GAP7_INCIDENT_RESPONSE_DOCS | ✅ PASS | /workspaces/Firstry/docs/INCIDENT_RESPONSE.md | NONE |
+| GAP_7 | GAP7_SUPPORT_CONTACT_VERIFICATION | ✅ PASS | /workspaces/Firsttry/docs/SUPPORT.md | NONE |
+| GAP_7 | GAP7_INCIDENT_RESPONSE_DOCS | ✅ PASS | /workspaces/Firsttry/docs/INCIDENT_RESPONSE.md | NONE |
 | GAP_7 | GAP7_SUPPORT_CONTACT_VERIFICATION | ✅ PASS | /workspaces/Firsttry/docs/SUPPORT.md | NONE |
 | GAP_7 | GAP7_INCIDENT_RESPONSE_DOCS | ✅ PASS | /workspaces/Firsttry/docs/INCIDENT_RESPONSE.md | NONE |
 | GAP_7 | GAP7_SUPPORT_CONTACT_VERIFICATION | ✅ PASS | /workspaces/Firsttry/docs/SUPPORT.md | NONE |
