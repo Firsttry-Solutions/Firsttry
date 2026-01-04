@@ -13,7 +13,7 @@ app:
 
 # Modules
 modules:
-  # Dashboard Gadget (PHASE 0: Static placeholder)
+  # Dashboard Gadget (Bundled UI via Vite)
   jira:dashboardGadget:
     - key: governance-dashboard-gadget
       title: FirstTry Governance Status
@@ -66,4 +66,4 @@ permissions:
 # Resource pages
 resources:
   - key: govGadget2140
-    path: src/gadget-ui
+    path: src/gadget-ui/dist
