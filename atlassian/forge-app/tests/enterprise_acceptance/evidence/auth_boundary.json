@@ -2,7 +2,7 @@
   "check": "auth_boundary_sanity",
   "status": "PASS",
   "details": {
-    "files_scanned": 283,
+    "files_scanned": 126,
     "write_api_violations": [],
     "write_api_count": 0,
     "no_write_apis": true,
@@ -46,39 +46,8 @@
     ],
     "total_jira_calls": 6,
     "non_get_calls": [],
-    "interactive_violations": [
-      {
-        "file": "src/gadget-ui/node_modules/typescript/lib/lib.dom.d.ts",
-        "line": 26011,
-        "pattern": "prompt("
-      },
-      {
-        "file": "src/gadget-ui/node_modules/typescript/lib/lib.dom.d.ts",
-        "line": 26015,
-        "pattern": "prompt("
-      },
-      {
-        "file": "src/gadget-ui/node_modules/typescript/lib/lib.dom.d.ts",
-        "line": 36738,
-        "pattern": "prompt("
-      },
-      {
-        "file": "src/gadget-ui/node_modules/typescript/lib/lib.dom.d.ts",
-        "line": 36742,
-        "pattern": "prompt("
-      },
-      {
-        "file": "src/gadget-ui/node_modules/typescript/lib/lib.dom.d.ts",
-        "line": 38774,
-        "pattern": "prompt("
-      },
-      {
-        "file": "src/gadget-ui/node_modules/typescript/lib/lib.dom.d.ts",
-        "line": 38778,
-        "pattern": "prompt("
-      }
-    ],
-    "no_user_interaction_required": false,
+    "interactive_violations": [],
+    "no_user_interaction_required": true,
     "external_auth_libraries": [],
     "no_external_auth": true
   },
