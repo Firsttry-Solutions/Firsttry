@@ -2,69 +2,24 @@
  * FirstTry Governance Dashboard Gadget - Main Entrypoint
  * 
  * This module is bundled by Vite and served in the Forge gadget iframe.
- * @forge/bridge is injected at runtime by the Forge platform.
+ * @forge/bridge is bundled with the gadget and provides invoke() for resolver calls.
  */
 
-// Declare @forge/bridge as a global (injected by Forge platform at runtime)
-declare const Bridge: any;
-
+// Import invoke from @forge/bridge (now bundled, not injected as global)
+import { invoke } from '@forge/bridge';
 import './styles.css';
 
 // ============================================================================
 // BUILD & PROOF MARKERS
 // ============================================================================
 const UI_BUILD_VERSION = "UI_v2.14.0";
-const UI_BUILD_PROOF = "abb16841__2026-01-04T062515Z";
+const UI_BUILD_PROOF = "591f91ce__2026-01-04T165752Z";
 const UI_RESOURCE_KEY = "govGadget2140";
+const BRIDGE_MODE = "BUNDLED";
+const INVOKE_AVAILABLE = true;
 
 // Track last payload for export functions
 let lastPayload: any = null;
-
-// Dynamically access invoke from @forge/bridge at runtime
-let invoke: any = null;
-
-// Get the invoke function at runtime
-(async () => {
-    try {
-        // @ts-ignore - Bridge is injected by Forge at runtime
-        if (typeof Bridge !== 'undefined' && Bridge.invoke) {
-            // @ts-ignore
-            invoke = Bridge.invoke;
-        }
-    } catch (e) {
-        console.warn('Could not access Bridge.invoke:', e);
-    }
-})();
-
-// ============================================================================
-// BRIDGE RUNTIME DETECTION (CRITICAL PROBE)
-// ============================================================================
-
-// Track Bridge availability for diagnostics
-let bridgeGlobal: boolean = false;
-let bridgeInvokeFn: boolean = false;
-
-// Probe for Bridge at module load time
-(async () => {
-    try {
-        // @ts-ignore - Bridge is injected by Forge at runtime
-        const windowBridge = (typeof (window as any).Bridge !== 'undefined') ? (window as any).Bridge : null;
-        
-        if (windowBridge) {
-            bridgeGlobal = true;
-            if (typeof windowBridge.invoke === 'function') {
-                bridgeInvokeFn = true;
-                invoke = windowBridge.invoke;
-            } else {
-                console.warn('Bridge exists but invoke is not a function:', typeof windowBridge.invoke);
-            }
-        } else {
-            console.warn('Bridge global is not available in window object');
-        }
-    } catch (e) {
-        console.error('Error probing for Bridge:', e);
-    }
-})();
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -153,40 +108,23 @@ async function loadStatus() {
         // Mark JS as running
         setText('ui-js-boot', 'RAN');
 
-        // STEP 0: Report Bridge probe results FIRST (before any other logic)
-        setText('ui-selftest-bridge-global', bridgeGlobal ? 'PRESENT' : 'MISSING');
-        setText('ui-selftest-bridge-invoke-fn', bridgeInvokeFn ? 'PRESENT' : 'MISSING');
+        // STEP 0: Report Bridge mode and invoke availability (both always available now)
+        setText('ui-selftest-bridge-mode', BRIDGE_MODE);
+        setText('ui-selftest-invoke-available', INVOKE_AVAILABLE ? 'YES' : 'NO');
 
-        // If Bridge is missing, show error and stop
-        if (!bridgeGlobal) {
+        // If invoke is not available, show error and stop
+        if (!INVOKE_AVAILABLE) {
             const errorHtml = `
                 <div class="error-panel" style="background: #fff7d6; border: 1px solid #f5cd47; border-radius: 8px; padding: 16px; color: #7f5f01;">
-                    <div style="font-weight: 600; font-size: 14px;">CRITICAL: Bridge Global Not Available</div>
+                    <div style="font-weight: 600; font-size: 14px;">CRITICAL: invoke() Not Available</div>
                     <div style="margin-top: 8px; font-size: 12px;">
-                        The gadget could not find the Bridge global object injected by Forge.
-                        This usually means the gadget iframe is not properly initialized.
-                        Try hard refresh, clear cache, or reinstall the gadget.
+                        The @forge/bridge invoke function could not be loaded or is not available.
+                        This is a critical issue with the gadget setup.
                     </div>
                 </div>
             `;
             setHTML('operational-status', errorHtml);
-            setText('ui-selftest-invoke', 'SKIP (Bridge not available)');
-            return;
-        }
-
-        // If Bridge exists but invoke is missing, show error
-        if (!bridgeInvokeFn) {
-            const errorHtml = `
-                <div class="error-panel" style="background: #fff7d6; border: 1px solid #f5cd47; border-radius: 8px; padding: 16px; color: #7f5f01;">
-                    <div style="font-weight: 600; font-size: 14px;">CRITICAL: Bridge.invoke Function Not Available</div>
-                    <div style="margin-top: 8px; font-size: 12px;">
-                        Bridge global exists but the invoke function is missing or not callable.
-                        Gadget functionality is unavailable.
-                    </div>
-                </div>
-            `;
-            setHTML('operational-status', errorHtml);
-            setText('ui-selftest-invoke', 'FAIL (invoke not callable)');
+            setText('ui-selftest-invoke', 'FAIL (invoke not available)');
             return;
         }
 
