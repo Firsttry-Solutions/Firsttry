@@ -4,663 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FirstTry Governance Status</title>
-    <style>
-        /* ========================================================================
-           DESIGN TOKENS (Premium Marketplace App)
-           ======================================================================== */
-        :root {
-            /* Spacing scale */
-            --space-4: 4px;
-            --space-6: 6px;
-            --space-8: 8px;
-            --space-12: 12px;
-            --space-16: 16px;
-            --space-24: 24px;
-            --space-32: 32px;
-
-            /* Border radius */
-            --radius-6: 6px;
-            --radius-8: 8px;
-            --radius-12: 12px;
-
-            /* Colors - Neutral */
-            --color-bg-page: #f8f9fa;
-            --color-bg-card: #ffffff;
-            --color-bg-subtle: #f5f6f7;
-            --color-border: #dfe1e6;
-            --color-text-primary: #172b4d;
-            --color-text-secondary: #44546f;
-            --color-text-tertiary: #738496;
-            --color-text-muted: #8590a2;
-            --color-text-placeholder: #a3b0b9;
-
-            /* Colors - Status */
-            --color-status-initializing: #f5f6f7;
-            --color-status-initializing-text: #626f86;
-            --color-status-running: #dffbf0;
-            --color-status-running-text: #216e4e;
-            --color-status-degraded: #fff7d6;
-            --color-status-degraded-text: #974f0c;
-            --color-status-error: #ffeceb;
-            --color-status-error-text: #ae2a19;
-
-            /* Colors - Accent */
-            --color-accent: #0052cc;
-            --color-accent-hover: #003a99;
-            --color-accent-subtle: #eaf1ff;
-
-            /* Shadow */
-            --shadow-subtle: 0 1px 1px rgba(9, 30, 66, 0.13);
-            --shadow-card: 0 2px 4px rgba(9, 30, 66, 0.06);
-            --shadow-hover: 0 4px 8px rgba(9, 30, 66, 0.08);
-
-            /* Typography */
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            --font-size-title: 24px;
-            --font-size-subtitle: 18px;
-            --font-size-section: 16px;
-            --font-size-body: 14px;
-            --font-size-label: 12px;
-            --font-size-small: 11px;
-            --font-weight-regular: 400;
-            --font-weight-medium: 500;
-            --font-weight-semibold: 600;
-        }
-
-        /* ========================================================================
-           GLOBAL
-           ======================================================================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-            background: transparent !important;
-            color: #172b4d !important;
-            font-size: 14px !important;
-            line-height: 1.5 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-
-        /* ========================================================================
-           CONTAINER & LAYOUT
-           ======================================================================== */
-        .container {
-            max-width: 100% !important;
-            margin: 0 auto !important;
-            padding: 16px !important;
-        }
-
-        /* ========================================================================
-           TITLE SECTION
-           ======================================================================== */
-        h1 {
-            font-size: var(--font-size-title);
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-text-primary);
-            margin-bottom: var(--space-8);
-            letter-spacing: -0.3px;
-        }
-
-        .title-description {
-            font-size: var(--font-size-body);
-            color: var(--color-text-secondary);
-            margin-bottom: var(--space-24);
-            font-weight: var(--font-weight-regular);
-        }
-
-        .build-marker {
-            font-size: var(--font-size-label);
-            color: var(--color-text-muted);
-            margin-top: var(--space-8);
-        }
-
-        /* ========================================================================
-           SECTIONS & CARDS
-           ======================================================================== */
-        .section {
-            background: #ffffff !important;
-            border: 1px solid #dfe1e6 !important;
-            border-radius: 8px !important;
-            padding: 16px !important;
-            margin-bottom: 16px !important;
-            box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13) !important;
-            transition: box-shadow 0.2s ease;
-        }
-
-        .section:hover {
-            box-shadow: 0 2px 4px rgba(9, 30, 66, 0.06) !important;
-        }
-
-        .section-title {
-            font-size: 16px !important;
-            font-weight: 600 !important;
-            color: #172b4d !important;
-            margin-bottom: 16px !important;
-            padding-bottom: 12px !important;
-            border-bottom: 1px solid #dfe1e6 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-        }
-
-        /* ========================================================================
-           KPI STRIP (DEPRECATED - kept for reference, not used)
-           ======================================================================== */
-        .kpi-strip {
-            display: none;
-        }
-
-        /* ========================================================================
-           METRICS & ROWS
-           ======================================================================== */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--space-16);
-        }
-
-        @media (max-width: 900px) {
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .metric-row {
-            padding-bottom: var(--space-16);
-            border-bottom: 1px solid var(--color-border);
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-8);
-        }
-
-        .metric-row:last-child {
-            border-bottom: none;
-        }
-
-        .metric-label {
-            font-size: var(--font-size-label);
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .metric-value {
-            font-size: var(--font-size-body);
-            color: var(--color-text-primary);
-            word-break: break-word;
-            font-weight: var(--font-weight-medium);
-        }
-
-        .metric-value.error {
-            color: var(--color-status-error-text);
-        }
-
-        /* ========================================================================
-           LOADING & EMPTY STATES
-           ======================================================================== */
-        .loading-bar {
-            background: var(--color-bg-subtle);
-            height: 6px;
-            border-radius: var(--radius-6);
-            overflow: hidden;
-            margin: var(--space-16) 0;
-        }
-
-        .loading-bar-fill {
-            background: linear-gradient(90deg, var(--color-accent), var(--color-accent-subtle));
-            height: 100%;
-            width: 30%;
-            animation: none;
-        }
-
-        /* ========================================================================
-           ERROR STATES
-           ======================================================================== */
-        .error-panel {
-            background: var(--color-status-error);
-            border: 1px solid #fcd0ca;
-            border-radius: var(--radius-8);
-            padding: var(--space-16);
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-8);
-        }
-
-        .error-header {
-            font-size: var(--font-size-body);
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-status-error-text);
-        }
-
-        .error-code {
-            font-size: var(--font-size-label);
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .error-message {
-            font-size: var(--font-size-body);
-            color: var(--color-text-secondary);
-            word-break: break-word;
-            line-height: 1.5;
-        }
-
-        /* ========================================================================
-           STATUS PILL
-           ======================================================================== */
-        .status-pill {
-            display: inline-flex !important;
-            align-items: center !important;
-            padding: 4px 12px !important;
-            border-radius: 12px !important;
-            font-size: 12px !important;
-            font-weight: 600 !important;
-            text-transform: uppercase;
-            letter-spacing: 0.2px;
-            white-space: nowrap !important;
-        }
-
-        .status-pill.initializing {
-            background: #f5f6f7 !important;
-            color: #626f86 !important;
-        }
-
-        .status-pill.running {
-            background: #dffbf0 !important;
-            color: #216e4e !important;
-        }
-
-        .status-pill.degraded {
-            background: #fff7d6 !important;
-            color: #974f0c !important;
-        }
-
-        .status-pill.error {
-            background: #ffeceb !important;
-            color: #ae2a19 !important;
-        }
-
-        /* ========================================================================
-           CHECKS TABLE
-           ======================================================================== */
-        .checks-table {
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-8);
-            overflow: hidden;
-            overflow-x: auto;
-        }
-
-        .table-header {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr;
-            background: var(--color-bg-subtle);
-            border-bottom: 1px solid var(--color-border);
-            font-weight: var(--font-weight-semibold);
-            font-size: var(--font-size-label);
-            color: var(--color-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            position: sticky;
-            top: 0;
-        }
-
-        .table-header > div,
-        .table-row > div {
-            padding: var(--space-12);
-        }
-
-        .table-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1.5fr 1fr 2fr;
-            border-bottom: 1px solid var(--color-border);
-            font-size: var(--font-size-body);
-            color: var(--color-text-secondary);
-            background: var(--color-bg-card);
-            transition: background 0.15s ease;
-        }
-
-        .table-row:nth-child(even) {
-            background: var(--color-bg-subtle);
-        }
-
-        .table-row:hover {
-            background: var(--color-accent-subtle);
-        }
-
-        .table-row:last-child {
-            border-bottom: none;
-        }
-
-        .showing-n-of {
-            font-size: var(--font-size-label);
-            color: var(--color-text-muted);
-            margin-top: var(--space-12);
-            font-weight: var(--font-weight-medium);
-            padding: var(--space-8) var(--space-12);
-            border-top: 1px solid var(--color-border);
-        }
-
-        /* ========================================================================
-           COVERAGE LISTS
-           ======================================================================== */
-        .coverage-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-6);
-        }
-
-        .coverage-list li {
-            padding: var(--space-6) 0;
-            font-size: var(--font-size-body);
-            color: var(--color-text-secondary);
-            display: flex;
-            align-items: flex-start;
-            gap: var(--space-8);
-        }
-
-        .coverage-list li:before {
-            content: "✓";
-            color: var(--color-status-running-text);
-            font-weight: var(--font-weight-semibold);
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .coverage-excluded li:before {
-            content: "✗";
-            color: var(--color-status-error-text);
-        }
-
-        /* ========================================================================
-           BOUNDARIES
-           ======================================================================== */
-        .boundary-item {
-            padding: var(--space-12);
-            font-size: var(--font-size-body);
-            color: var(--color-text-secondary);
-            border-bottom: 1px solid var(--color-border);
-            display: flex;
-            align-items: flex-start;
-            gap: var(--space-12);
-        }
-
-        .boundary-item:last-child {
-            border-bottom: none;
-        }
-
-        .boundary-check {
-            color: var(--color-status-running-text);
-            font-weight: var(--font-weight-semibold);
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        /* ========================================================================
-           AVAILABILITY SIGNALS
-           ======================================================================== */
-        .signal-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--space-12);
-            border-bottom: 1px solid var(--color-border);
-            font-size: var(--font-size-body);
-            gap: var(--space-12);
-        }
-
-        .signal-item:last-child {
-            border-bottom: none;
-        }
-
-        .signal-label {
-            font-weight: var(--font-weight-medium);
-            color: var(--color-text-primary);
-            flex: 1;
-        }
-
-        .signal-badge {
-            font-size: var(--font-size-label);
-            font-weight: var(--font-weight-semibold);
-            padding: 4px var(--space-12);
-            border-radius: var(--radius-6);
-            text-transform: uppercase;
-            letter-spacing: 0.2px;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .signal-available {
-            background: var(--color-status-running);
-            color: var(--color-status-running-text);
-        }
-
-        .signal-unavailable {
-            background: var(--color-status-error);
-            color: var(--color-status-error-text);
-        }
-
-        .signal-fresh {
-            background: var(--color-status-running);
-            color: var(--color-status-running-text);
-        }
-
-        .signal-stale {
-            background: var(--color-status-degraded);
-            color: var(--color-status-degraded-text);
-        }
-
-        .signal-impact {
-            font-size: var(--font-size-label);
-            color: var(--color-text-muted);
-            padding: var(--space-8) var(--space-12) 0 var(--space-12);
-            font-weight: var(--font-weight-regular);
-        }
-
-        /* ========================================================================
-           BUTTONS & ACTIONS
-           ======================================================================== */
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--space-12);
-            margin-top: var(--space-12);
-        }
-
-        .btn {
-            padding: var(--space-8) var(--space-16);
-            border: 1px solid var(--color-border);
-            background: var(--color-bg-card);
-            color: var(--color-text-primary);
-            border-radius: var(--radius-8);
-            cursor: pointer;
-            font-size: var(--font-size-body);
-            font-weight: var(--font-weight-semibold);
-            font-family: var(--font-family);
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-8);
-        }
-
-        .btn:hover {
-            background: var(--color-bg-subtle);
-            border-color: var(--color-text-tertiary);
-            box-shadow: var(--shadow-card);
-        }
-
-        .btn:active {
-            background: var(--color-bg-page);
-        }
-
-        .btn.primary {
-            background: var(--color-accent);
-            color: white;
-            border-color: var(--color-accent);
-        }
-
-        .btn.primary:hover {
-            background: var(--color-accent-hover);
-            border-color: var(--color-accent-hover);
-            box-shadow: var(--shadow-card);
-        }
-
-        .btn.primary:active {
-            background: #0039a6;
-        }
-
-        /* ========================================================================
-           FOOTER
-           ======================================================================== */
-        .footer {
-            border-top: 1px solid var(--color-border);
-            margin-top: var(--space-32);
-            padding-top: var(--space-16);
-            font-size: var(--font-size-body);
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-            font-weight: var(--font-weight-regular);
-        }
-
-        .footer p {
-            margin: 0;
-        }
-
-        /* ========================================================================
-           COPY SUCCESS TOAST
-           ======================================================================== */
-        .copy-success {
-            display: none;
-            position: fixed;
-            top: var(--space-16);
-            right: var(--space-16);
-            background: var(--color-status-running);
-            color: var(--color-status-running-text);
-            padding: var(--space-12) var(--space-16);
-            border-radius: var(--radius-8);
-            font-size: var(--font-size-body);
-            font-weight: var(--font-weight-medium);
-            border: 1px solid #c3e6dd;
-            z-index: 1000;
-            box-shadow: var(--shadow-card);
-        }
-
-        .copy-success.show {
-            display: block;
-        }
-
-        /* ========================================================================
-           DISCLAIMER & MICROCOPY
-           ======================================================================== */
-        .disclaimer {
-            font-size: var(--font-size-body);
-            color: var(--color-text-secondary);
-            margin-top: var(--space-12);
-            padding: var(--space-12);
-            border-top: 1px solid var(--color-border);
-            line-height: 1.6;
-        }
-
-        .disclaimer strong {
-            color: var(--color-text-primary);
-            font-weight: var(--font-weight-semibold);
-        }
-
-        /* ========================================================================
-           EXPORT NOTE
-           ======================================================================== */
-        .export-note {
-            font-size: var(--font-size-label);
-            color: var(--color-text-muted);
-            margin-top: var(--space-12);
-            padding: var(--space-8) var(--space-12);
-            border-top: 1px solid var(--color-border);
-            line-height: 1.5;
-        }
-
-        /* ========================================================================
-           TRUTH STATEMENT
-           ======================================================================== */
-        .truth-statement {
-            font-size: var(--font-size-label);
-            color: var(--color-text-muted);
-            margin-top: var(--space-12);
-            padding: var(--space-8) var(--space-12);
-            border-top: 1px solid var(--color-border);
-            line-height: 1.5;
-        }
-
-        /* ========================================================================
-           RESPONSIVE ADJUSTMENTS
-           ======================================================================== */
-        @media (max-width: 768px) {
-            .container {
-                padding: var(--space-12);
-            }
-
-            h1 {
-                font-size: 20px;
-            }
-
-            .section {
-                padding: var(--space-12);
-            }
-
-            .kpi-strip {
-                grid-template-columns: repeat(2, 1fr);
-                gap: var(--space-12);
-            }
-
-            .table-header,
-            .table-row {
-                grid-template-columns: 1.5fr 1fr 1fr;
-                font-size: 12px;
-            }
-
-            .th-reason, .td-reason, .th-impact, .td-impact {
-                display: none;
-            }
-
-            .table-header > div,
-            .table-row > div {
-                padding: var(--space-8);
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-    </style>
 </head>
 <body>
-    <!-- Production Build Stamp (Static HTML Marker) -->
-    <div id="ui-prod-stamp" class="muted" style="font-size: 11px; color: #8590a2; margin: 4px 0 0 16px;">
-        UI_PROD_COMMIT: 6e0047dd<br/>
-        UI_CSS_BASELINE: 485ae880
-    </div>
-
     <!-- UI SERVE_PROOF MARKER (Always visible for deployment verification) -->
     <div id="ui-serve-proof-banner" style="background: #f5f6f7; border-bottom: 1px solid #dfe1e6; padding: 8px 16px; font-size: 11px; color: #626f86; font-family: monospace; overflow-x: auto; white-space: nowrap;">
         SERVE_PROOF: abb16841__2026-01-04T062515Z__resource:govGadget2140 | UI_v2.14.0
     </div>
 
+    <!-- JS_BOOT marker (updated by main.ts) -->
+    <div id="ui-js-boot-marker" style="display:none;">JS_BOOT: NOT RUN</div>
+
     <!-- CSS Canary (Fail-Fast Verification) -->
-    <div id="ui-css-canary" class="status-pill running" style="margin: 8px 16px 0 16px; white-space: nowrap;">
+    <div id="ui-css-canary" class="status-pill running" style="margin: 8px 16px 0 16px; white-space: nowrap; display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; background: #dffbf0 !important; color: #216e4e !important;">
         CSS_CANARY_OK
     </div>
 
@@ -669,566 +24,132 @@
         <p class="title-description">Read-only operational visibility surface. Real-time monitoring status and data quality metrics.</p>
         <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
             <div class="build-marker" id="build-marker" style="flex: 1;">UI BUILD: abb16841 (2026-01-04T06:25:15Z)</div>
-            <span class="status-pill running" id="ui-style-proof" style="white-space: nowrap;">CSS_LOADED</span>
+            <span class="status-pill running" id="ui-style-proof" style="white-space: nowrap; display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; background: #dffbf0 !important; color: #216e4e !important;">CSS_LOADED</span>
         </div>
         
         <!-- UI Self-Test (Diagnostic) -->
-        <div class="section" id="ui-selftest-section" style="border: 1px dashed var(--color-accent);">
-            <div class="section-title">UI Self-Test (Diagnostic)</div>
-            <div class="metrics-grid">
-                <div class="metric-row">
-                    <div class="metric-label">HTML Marker</div>
-                    <div class="metric-value" id="ui-selftest-marker">PENDING</div>
+        <div class="section" id="ui-selftest-section" style="border: 1px dashed #0052cc; background: #ffffff; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">UI Self-Test (Diagnostic)</div>
+            <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">HTML Marker</div>
+                    <div class="metric-value" id="ui-selftest-marker" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
                 </div>
-                <div class="metric-row">
-                    <div class="metric-label">CSS Applied</div>
-                    <div class="metric-value" id="ui-selftest-css">PENDING</div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">CSS Applied</div>
+                    <div class="metric-value" id="ui-selftest-css" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
                 </div>
-                <div class="metric-row">
-                    <div class="metric-label">JS Running</div>
-                    <div class="metric-value" id="ui-selftest-js">PENDING</div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">JS Running</div>
+                    <div class="metric-value" id="ui-selftest-js" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
                 </div>
-                <div class="metric-row">
-                    <div class="metric-label">Resolver Invoke</div>
-                    <div class="metric-value" id="ui-selftest-invoke">PENDING</div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Resolver Invoke</div>
+                    <div class="metric-value" id="ui-selftest-invoke" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
                 </div>
             </div>
         </div>
         
         <!-- System Overview -->
-        <div class="section">
-            <div class="section-title">System Overview</div>
-            <div class="metrics-grid">
-                <div class="metric-row">
-                    <div class="metric-label">System Status</div>
-                    <div class="metric-value" id="kpi-status"><span class="status-pill initializing">INITIALIZING</span></div>
+        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">System Overview</div>
+            <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">System Status</div>
+                    <div class="metric-value" id="kpi-status" style="font-size: 14px; color: #172b4d; font-weight: 500;"><span class="status-pill initializing" style="display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; background: #f5f6f7 !important; color: #626f86 !important;">INITIALIZING</span></div>
                 </div>
-                <div class="metric-row">
-                    <div class="metric-label">Mode</div>
-                    <div class="metric-value">Scheduled monitoring (read-only)</div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Mode</div>
+                    <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">Scheduled monitoring (read-only)</div>
                 </div>
-                <div class="metric-row">
-                    <div class="metric-label">Last Successful Run</div>
-                    <div class="metric-value" id="kpi-last-success">Awaiting first successful run</div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Last Successful Run</div>
+                    <div class="metric-value" id="kpi-last-success" style="font-size: 14px; color: #172b4d; font-weight: 500;">Awaiting first successful run</div>
                 </div>
-                <div class="metric-row">
-                    <div class="metric-label">Days of Continuous Operation</div>
-                    <div class="metric-value" id="kpi-days-continuous">0</div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Days of Continuous Operation</div>
+                    <div class="metric-value" id="kpi-days-continuous" style="font-size: 14px; color: #172b4d; font-weight: 500;">0</div>
                 </div>
             </div>
         </div>
 
         <!-- Operational Metrics -->
-        <div class="section">
-            <div class="section-title">Operational Metrics</div>
-            <div class="metrics-grid">
-                <div class="metric-row">
-                    <div class="metric-label">Checks Completed (Lifetime)</div>
-                    <div class="metric-value" id="kpi-checks-lifetime">0</div>
+        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Operational Metrics</div>
+            <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Checks Completed (Lifetime)</div>
+                    <div class="metric-value" id="kpi-checks-lifetime" style="font-size: 14px; color: #172b4d; font-weight: 500;">0</div>
                 </div>
-                <div class="metric-row">
-                    <div class="metric-label">Snapshot Count (Retained)</div>
-                    <div class="metric-value" id="kpi-snapshot-count">0</div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Snapshot Count (Retained)</div>
+                    <div class="metric-value" id="kpi-snapshot-count" style="font-size: 14px; color: #172b4d; font-weight: 500;">0</div>
                 </div>
-                <div class="metric-row">
-                    <div class="metric-label">Last Check</div>
-                    <div class="metric-value" id="kpi-last-check">Awaiting first check</div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Last Check</div>
+                    <div class="metric-value" id="kpi-last-check" style="font-size: 14px; color: #172b4d; font-weight: 500;">Awaiting first check</div>
                 </div>
-                <div class="metric-row">
-                    <div class="metric-label">Generated At</div>
-                    <div class="metric-value" id="kpi-generated-at">—</div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Generated At</div>
+                    <div class="metric-value" id="kpi-generated-at" style="font-size: 14px; color: #172b4d; font-weight: 500;">—</div>
                 </div>
             </div>
         </div>
 
         <!-- Operational Boundaries -->
-        <div class="section">
-            <div class="section-title">Operational Boundaries</div>
-            <div class="metrics-grid">
-                <div class="metric-row">
-                    <div class="metric-label">✓ No Jira Writes</div>
-                    <div class="metric-value">This app is read-only and performs no Jira API writes.</div>
-                </div>
-                <div class="metric-row">
-                    <div class="metric-label">✓ No Config Changes</div>
-                    <div class="metric-value">Monitoring only. No configuration is modified.</div>
-                </div>
-                <div class="metric-row">
-                    <div class="metric-label">✓ No Enforcement</div>
-                    <div class="metric-value">Observational monitoring. No enforcement actions taken.</div>
-                </div>
-                <div class="metric-row">
-                    <div class="metric-label">✓ Read-Only Only</div>
-                    <div class="metric-value">Requires read:jira-work scope only.</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- App Identity (Diagnostics) -->
-        <div class="section" id="app-identity-section">
-            <div class="section-title">App Identity (Diagnostics)</div>
-            <div class="metrics-grid">
-                <div class="metric-row">
-                    <div class="metric-label">App ID</div>
-                    <div class="metric-value" id="app-id">—</div>
-                </div>
-                <div class="metric-row">
-                    <div class="metric-label">Cloud ID</div>
-                    <div class="metric-value" id="app-cloud-id">—</div>
-                </div>
-                <div class="metric-row">
-                    <div class="metric-label">Installation ID</div>
-                    <div class="metric-value" id="app-installation-id">—</div>
-                </div>
-                <div class="metric-row">
-                    <div class="metric-label">Version / Environment</div>
-                    <div class="metric-value" id="kpi-version">— / —</div>
-                </div>
-                <div class="metric-row">
-                    <div class="metric-label">Server Build Stamp</div>
-                    <div class="metric-value" id="app-server-build">—</div>
-                </div>
-                <div class="metric-row">
-                    <div class="metric-label">Generated At</div>
-                    <div class="metric-value" id="app-generated-at">—</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Operational Status Panel -->
-        <div class="section">
-            <div class="section-title">Operational Status</div>
-            <div id="operational-status">
-                <div class="loading-bar"><div class="loading-bar-fill"></div></div>
-            </div>
-        </div>
-
-        <!-- Data Quality & Coverage Panel -->
-        <div class="section">
-            <div class="section-title">Data Quality & Coverage</div>
-            <div id="data-quality">
-                <div class="loading-bar"><div class="loading-bar-fill"></div></div>
-            </div>
-        </div>
-
-        <!-- Checks Table -->
-        <div class="section" id="checks-section" style="display: none;">
-            <div class="section-title">Check Results</div>
-            <div id="checks-content"></div>
-        </div>
-
-        <!-- Explicit Boundaries & Limitations -->
-        <div class="section">
-            <div class="section-title">Explicit Boundaries & Limitations</div>
+        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Operational Boundaries</div>
             <div id="boundaries"></div>
         </div>
 
+        <!-- Operational Status -->
+        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Operational Status</div>
+            <div id="operational-status"></div>
+        </div>
+
+        <!-- Data Quality & Coverage Panel -->
+        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Data Quality & Coverage</div>
+            <div id="data-quality"></div>
+        </div>
+
+        <!-- Checks Table -->
+        <div class="section" id="checks-section" style="display: none; background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Check Results</div>
+            <div id="checks-content"></div>
+        </div>
+
         <!-- Availability Signals -->
-        <div class="section">
-            <div class="section-title">Availability Signals</div>
-            <div id="availability-signals">
-                <div class="loading-bar"><div class="loading-bar-fill"></div></div>
-            </div>
+        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Availability Signals</div>
+            <div id="availability-signals"></div>
         </div>
 
         <!-- Report & Export -->
-        <div class="section">
-            <div class="section-title">Report & Export</div>
-            <p style="font-size: 14px; color: var(--color-text-secondary); margin-bottom: var(--space-12);">Download or copy governance status data for external review or records.</p>
-            <div class="action-buttons">
-                <button class="btn primary" onclick="copySummary()">Copy Summary to Clipboard</button>
-                <button class="btn" onclick="downloadJSON()">Download JSON</button>
-                <button class="btn" onclick="downloadCSV()">Download CSV</button>
+        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Report & Export</div>
+            <p style="font-size: 14px; color: #44546f; margin-bottom: 12px;">Download or copy governance status data for external review or records.</p>
+            <div class="action-buttons" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;">
+                <button class="btn primary" onclick="window.copySummary()" style="padding: 8px 16px; border: 1px solid #0052cc; background: #0052cc; color: white; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Copy Summary to Clipboard</button>
+                <button class="btn" onclick="window.downloadJSON()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download JSON</button>
+                <button class="btn" onclick="window.downloadCSV()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download CSV</button>
             </div>
-            <div class="truth-statement">Copy Summary changed; JSON/CSV unchanged.</div>
+            <div class="truth-statement" style="font-size: 12px; color: #8590a2; margin-top: 12px; padding: 8px 12px; border-top: 1px solid #dfe1e6; line-height: 1.5;">Copy Summary changed; JSON/CSV unchanged.</div>
         </div>
 
         <!-- Footer -->
-        <div class="footer">
+        <div class="footer" style="border-top: 1px solid #dfe1e6; margin-top: 32px; padding-top: 16px; font-size: 14px; color: #44546f; line-height: 1.6; font-weight: 400;">
             <p>This dashboard is a read-only operational visibility surface. It exists to provide transparency into app activity and data quality.</p>
-            <div class="export-note" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border); font-size: 0.875em; color: var(--color-text-secondary);">
+            <div class="export-note" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #dfe1e6; font-size: 0.875em; color: #8590a2;">
                 <strong>Cache Refresh:</strong> If this dashboard does not reflect the latest version shown above, remove and re-add the gadget to force a UI cache refresh.
             </div>
         </div>
     </div>
 
-    <div class="copy-success" id="copy-success">✓ Copied to clipboard</div>
+    <div class="copy-success" id="copy-success" style="display: none; position: fixed; top: 16px; right: 16px; background: #dffbf0; color: #216e4e; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: 1px solid #c3e6dd; z-index: 1000; box-shadow: 0 2px 4px rgba(9, 30, 66, 0.06);">✓ Copied to clipboard</div>
 
-    <script type="module">
-        import { invoke } from '@forge/bridge';
-
-        // ========================================================================
-        // STEP 1: CSS CANARY FAIL-FAST CHECK (MUST RUN IMMEDIATELY)
-        // ========================================================================
-        // This runs BEFORE any other logic to detect if CSS is applied
-        const cssCanary = document.getElementById('ui-css-canary');
-        if (cssCanary) {
-            const s = window.getComputedStyle(cssCanary);
-
-            // Multi-signal test: fail only if MOST signals indicate "unstyled".
-            const borderOk = s.borderRadius && s.borderRadius !== '0px';
-            const displayOk = (s.display === 'inline-flex' || s.display === 'flex' || s.display === 'inline-block');
-            const paddingOk = (parseFloat(s.paddingLeft || '0') > 0) && (parseFloat(s.paddingRight || '0') > 0);
-            const bgOk = s.backgroundColor && s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent';
-            const fontOk = s.fontWeight && parseInt(s.fontWeight, 10) >= 500;
-
-            // Count signals
-            const okCount = [borderOk, displayOk, paddingOk, bgOk, fontOk].filter(Boolean).length;
-
-            // PASS if at least 3/5 style signals are present.
-            // FAIL only if fewer than 3 signals are present (strong evidence CSS not applied).
-            if (okCount < 3) {
-                const details =
-                    `display=${s.display}, borderRadius=${s.borderRadius}, ` +
-                    `paddingLeft=${s.paddingLeft}, paddingRight=${s.paddingRight}, ` +
-                    `backgroundColor=${s.backgroundColor}, fontWeight=${s.fontWeight}`;
-
-                document.body.innerHTML =
-                    '<div class="error-panel">' +
-                    '<strong>FATAL:</strong> UI CSS not applied (or stripped).<br/>' +
-                    'This gadget is running without required styles.<br/><br/>' +
-                    '<div class="muted">Diagnostics: ' + details + '</div><br/>' +
-                    'Fix: Remove and re-add the gadget, hard refresh, or redeploy/upgrade.' +
-                    '</div>';
-
-                throw new Error('CSS_NOT_APPLIED: ' + details);
-            }
-        }
-
-        // Version-based build marker derived from backend (v2.14.0)
-        // This must match the backend's uiExpectedBuild value exactly
-        // SERVE_PROOF: git commit abb16841 (2026-01-04T06:25:15Z) - resource govGadget2140
-        const UI_BUILD_VERSION = "UI_v2.14.0";
-        const UI_BUILD_PROOF = "abb16841__2026-01-04T062515Z";
-        const UI_RESOURCE_KEY = "govGadget2140";
-
-        // Step 3: Null-guard helpers to prevent crashes on missing DOM elements
-        function setText(id, value) {
-            const el = document.getElementById(id);
-            if (!el) return false;
-            el.textContent = value;
-            return true;
-        }
-
-        function setHTML(id, value) {
-            const el = document.getElementById(id);
-            if (!el) return false;
-            el.innerHTML = value;
-            return true;
-        }
-
-        async function loadStatus() {
-            try {
-                // Step 4: Run self-tests BEFORE invoke
-                setText('ui-selftest-marker', 'FOUND (static HTML marker present)');
-                
-                // Check if CSS is applied
-                const proof = document.getElementById('ui-style-proof');
-                let cssOk = false;
-                if (proof) {
-                    const computed = getComputedStyle(proof);
-                    cssOk = computed.borderRadius !== '0px' && computed.backgroundColor !== '';
-                }
-                setText('ui-selftest-css', cssOk ? 'OK (CSS applied)' : 'FAIL (CSS missing/stripped)');
-                
-                // JS is running if we got here
-                setText('ui-selftest-js', 'OK (JS executed)');
-
-                const data = await invoke('get', {});
-                lastPayload = data;
-
-                // Display UI version
-                setText('build-marker', `UI BUILD: ${UI_BUILD_PROOF} | Version: ${UI_BUILD_VERSION}`);
-                
-                // Also update the serve-proof banner dynamically
-                const banner = document.getElementById('ui-serve-proof-banner');
-                if (banner) {
-                    banner.textContent = `SERVE_PROOF: ${UI_BUILD_PROOF} | resource:${UI_RESOURCE_KEY} | uiVersion:${UI_BUILD_VERSION} | resolverOK:${data.uiExpectedBuild === UI_BUILD_VERSION ? 'MATCH' : 'MISMATCH'}`;
-                }
-                
-                // Step 4: Verify version match (CRITICAL)
-                if (data.uiExpectedBuild && data.uiExpectedBuild !== UI_BUILD_VERSION) {
-                    const warning = `
-                        <div class="error-panel">
-                            <div class="error-header">UI Version Mismatch</div>
-                            <div class="error-code">STALE_UI_CACHE</div>
-                            <div class="error-message">
-                                This dashboard UI (${UI_BUILD_VERSION}) does not match the backend version
-                                (${data.uiExpectedBuild}).<br/><br/>
-                                Remove and re-add the gadget, or perform a hard refresh.
-                            </div>
-                        </div>
-                    `;
-                    setHTML('operational-status', warning);
-                    setText('ui-selftest-invoke', 'FAIL (version mismatch)');
-                } else {
-                    setText('ui-selftest-invoke', 'OK (resolver responded)');
-                }
-
-
-                // Render app identity fields
-                setText('app-server-build', data.serverBuildStamp || '—');
-                setText('app-id', data.appId || '—');
-                setText('app-environment', data.environment || '—');
-                setText('app-cloud-id', data.cloudId || '—');
-                setText('app-installation-id', data.installationId || '—');
-                setText('app-generated-at', formatTimestampDisplay(data.generatedAt) || '—');
-
-                // Update KPI strip
-                const statusValue = data.systemStatus || 'UNKNOWN';
-                const pillClass = {
-                    'INITIALIZING': 'initializing',
-                    'RUNNING': 'running',
-                    'DEGRADED': 'degraded',
-                    'ERROR': 'error'
-                }[statusValue] || 'initializing';
-                setHTML('kpi-status', `<span class="status-pill ${pillClass}">${statusValue}</span>`);
-                
-                setText('kpi-last-success', formatTimestampDisplay(data.lastSuccessAt));
-                setText('kpi-last-check', formatTimestampDisplay(data.lastCheckAt));
-                setText('kpi-checks-lifetime', data.checksCompletedLifetime !== null ? String(data.checksCompletedLifetime) : '—');
-                setText('kpi-snapshot-count', data.snapshotsRetainedCount !== null ? String(data.snapshotsRetainedCount) : '—');
-                setText('kpi-days-continuous', data.daysContinuousOperation !== null ? String(data.daysContinuousOperation) : '—');
-                setText('kpi-version', `${data.version} / ${data.environment}`);
-                setText('kpi-generated-at', formatTimestampDisplay(data.generatedAt) || '—');
-
-                // Operational Status Panel
-                const opStatus = `
-                    <div class="metrics-grid">
-                        <div class="metric-row">
-                            <div class="metric-label">Expected Schedule Interval</div>
-                            <div class="metric-value">${data.expectedScheduleIntervalMinutes !== null ? data.expectedScheduleIntervalMinutes + ' minutes' : 'UNKNOWN'}</div>
-                        </div>
-                        <div class="metric-row">
-                            <div class="metric-label">Staleness Threshold Rule</div>
-                            <div class="metric-value">${data.staleIfAgeMinutesGreaterThan !== null ? '> ' + data.staleIfAgeMinutesGreaterThan + ' minutes' : 'UNKNOWN'}</div>
-                        </div>
-                        <div class="metric-row">
-                            <div class="metric-label">Snapshot Age</div>
-                            <div class="metric-value">${data.snapshotAgeMinutes !== null ? data.snapshotAgeMinutes + ' minutes' : 'No snapshots yet'}</div>
-                        </div>
-                        <div class="metric-row">
-                            <div class="metric-label">Data Freshness</div>
-                            <div class="metric-value">${data.isStale === null ? 'UNKNOWN' : data.isStale ? 'STALE' : 'FRESH'}</div>
-                        </div>
-                    </div>
-                    <div class="disclaimer">
-                        <strong>Freshness Disclaimer:</strong> Data freshness is determined by comparing snapshot age against the expected schedule interval (${data.expectedScheduleIntervalMinutes} minutes). Stale data (older than ${data.staleIfAgeMinutesGreaterThan} minutes) may affect accuracy of operational visibility.
-                    </div>
-                `;
-                setHTML('operational-status', opStatus);
-
-                // Data Quality & Coverage Panel
-                const dqStatus = `
-                    <div class="metric-row">
-                        <div class="metric-label">Completeness Status</div>
-                        <div class="metric-value">${data.completenessStatus}</div>
-                    </div>
-                    <div class="metric-row">
-                        <div class="metric-label">Coverage Included</div>
-                        <ul class="coverage-list">${data.coverageIncluded.map(item => `<li>${item}</li>`).join('')}</ul>
-                    </div>
-                    <div class="metric-row">
-                        <div class="metric-label">Coverage Excluded</div>
-                        <ul class="coverage-list coverage-excluded">${data.coverageExcluded.map(item => `<li>${item}</li>`).join('')}</ul>
-                    </div>
-                    <div class="metric-row">
-                        <div class="metric-label">Known Data Gaps</div>
-                        <div>${data.knownDataGaps.length === 0 ? '<em>None</em>' : '<ul class="coverage-list">' + data.knownDataGaps.map(item => `<li>${item}</li>`).join('') + '</ul>'}</div>
-                    </div>
-                    <div class="metric-row">
-                        <div class="metric-label">Retention Policy</div>
-                        <div class="metric-value">${data.retentionPolicy.effectiveRuleText}</div>
-                    </div>
-                `;
-                setHTML('data-quality', dqStatus);
-
-                // Checks table
-                if (data.checks && data.checks.length > 0) {
-                    const checksSection = document.getElementById('checks-section');
-                    let tableHtml = '<div class="checks-table"><div class="table-header"><div class="th-name">Check Name</div><div class="th-status">Status</div><div class="th-lastRun">Last Run</div><div class="th-reason">Reason Code</div><div class="th-impact">Impact</div></div>';
-                    
-                    data.checks.slice(0, 20).forEach(check => {
-                        tableHtml += `
-                            <div class="table-row">
-                                <div class="td-name">${check.name || 'Unknown'}</div>
-                                <div class="td-status">${check.status || 'UNKNOWN'}</div>
-                                <div class="td-lastRun">${formatTimestampDisplay(check.lastRunAt)}</div>
-                                <div class="td-reason">${check.reasonCode || '—'}</div>
-                                <div class="td-impact">${check.impact ? check.impact.substring(0, 120) : '—'}</div>
-                            </div>
-                        `;
-                    });
-                    
-                    tableHtml += '</div>';
-                    if (data.checksTotalCount > 20) {
-                        tableHtml += `<div class="showing-n-of">Showing 20 of ${data.checksTotalCount} checks</div>`;
-                    }
-                    setHTML('checks-content', tableHtml);
-                    checksSection.style.display = 'block';
-                }
-
-                // Boundaries & Limitations
-                const boundariesHtml = `
-                    <div class="boundary-item"><span class="boundary-check">✓</span> No Jira writes are performed</div>
-                    <div class="boundary-item"><span class="boundary-check">✓</span> No configuration changes are made</div>
-                    <div class="boundary-item"><span class="boundary-check">✓</span> No enforcement actions are taken</div>
-                    <div class="boundary-item"><span class="boundary-check">✓</span> No recommendations are generated</div>
-                    <div class="boundary-item"><span class="boundary-check">✓</span> Data is observational only</div>
-                    <div class="boundary-item"><span class="boundary-check">✓</span> App fails closed on missing tenant identity</div>
-                    <div class="boundary-item"><span class="boundary-check">✓</span> Viewer permissions may limit visible data</div>
-                `;
-                setHTML('boundaries', boundariesHtml);
-
-                // Availability Signals
-                const signalsHtml = `
-                    <div class="signal-item">
-                        <span class="signal-label">Tenant Identity</span>
-                        <span class="signal-badge ${data.tenantIdentity.available ? 'signal-available' : 'signal-unavailable'}">${data.tenantIdentity.available ? 'AVAILABLE' : 'UNAVAILABLE'}</span>
-                    </div>
-                    <div class="signal-impact">Impact: ${data.tenantIdentity.available ? 'Monitoring operational' : 'Monitoring paused'}</div>
-                    <div class="signal-item">
-                        <span class="signal-label">Viewer Permission Visibility</span>
-                        <span class="signal-badge ${data.permissionVisibility.determined ? 'signal-available' : 'signal-unavailable'}">${data.permissionVisibility.determined ? 'DETERMINED' : 'NOT_DETERMINED'}</span>
-                    </div>
-                    <div class="signal-impact">Impact: ${data.permissionVisibility.determined ? 'All visible data accessible' : 'Some data may be restricted'}</div>
-                    <div class="signal-item">
-                        <span class="signal-label">Data Freshness</span>
-                        <span class="signal-badge ${data.isStale === false ? 'signal-fresh' : 'signal-stale'}">${data.isStale === null ? 'UNKNOWN' : data.isStale ? 'STALE' : 'FRESH'}</span>
-                    </div>
-                    <div class="signal-impact">Impact: ${data.isStale ? 'Operational visibility may be outdated' : 'Operational visibility is current'}</div>
-                    <div class="signal-item">
-                        <span class="signal-label">Storage State</span>
-                        <span class="signal-badge ${data.snapshotAgeMinutes !== null ? 'signal-available' : 'signal-unavailable'}">${data.snapshotAgeMinutes !== null ? 'HAS_DATA' : 'EMPTY'}</span>
-                    </div>
-                    <div class="signal-impact">Impact: ${data.snapshotAgeMinutes !== null ? 'Full metrics available' : 'First run pending'}</div>
-                `;
-                setHTML('availability-signals', signalsHtml);
-
-            } catch (error) {
-                const errorMsg = error.message || String(error);
-                showError('Resolver Invocation Failed', 'RESOLVER_INVOKE_FAILED', errorMsg);
-            }
-        }
-
-        function showError(header, code, message) {
-            const errorHtml = `
-                <div class="error-panel">
-                    <div class="error-header">${header}</div>
-                    <div class="error-code">${code}</div>
-                    <div class="error-message">${message}</div>
-                </div>
-            `;
-            setHTML('operational-status', errorHtml);
-            setHTML('data-quality', '');
-            setHTML('availability-signals', '');
-        }
-
-        // Display version (UI only; export uses internal timestamp for truthfulness)
-        function formatTimestampDisplay(iso) {
-            if (!iso) return 'Not available yet';
-            try {
-                const date = new Date(iso);
-                return new Intl.DateTimeFormat('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    timeZoneName: 'short'
-                }).format(date);
-            } catch {
-                return iso;
-            }
-        }
-
-        // Export version (must be EXACT same format for truthfulness in reports)
-        function formatTimestampExport(iso) {
-            if (!iso) return 'Pending…';
-            try {
-                const date = new Date(iso);
-                return new Intl.DateTimeFormat('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    timeZoneName: 'short'
-                }).format(date);
-            } catch {
-                return iso;
-            }
-        }
-
-        window.copySummary = function() {
-            if (!lastPayload) return;
-            let reasonCodeLine = '';
-            if (lastPayload.reasonCode) {
-                reasonCodeLine = `Reason Code: ${lastPayload.reasonCode}\n`;
-            } else if (lastPayload.systemStatus === 'DEGRADED' && lastPayload.tenantIdentity?.reasonCode) {
-                reasonCodeLine = `Reason Code: ${lastPayload.tenantIdentity.reasonCode}\n`;
-            }
-            const text = `System Status: ${lastPayload.systemStatus}
-${reasonCodeLine}Last Successful Run: ${formatTimestampExport(lastPayload.lastSuccessAt)}
-Last Check: ${formatTimestampExport(lastPayload.lastCheckAt)}
-Snapshot Age: ${lastPayload.snapshotAgeMinutes} minutes (stale if > ${lastPayload.staleIfAgeMinutesGreaterThan})
-Completeness Status: ${lastPayload.completenessStatus}
-Retention Policy: ${lastPayload.retentionPolicy.effectiveRuleText}
-Explicit Boundaries: No Jira writes, no config changes, no enforcement, no recommendations, data observational only
-Version / Environment: ${lastPayload.version} / ${lastPayload.environment}
-Generated At: ${lastPayload.generatedAt}`;
-            navigator.clipboard.writeText(text).then(() => {
-                const elem = document.getElementById('copy-success');
-                elem.classList.add('show');
-                setTimeout(() => elem.classList.remove('show'), 2000);
-            });
-        };
-
-        window.downloadJSON = function() {
-            if (!lastPayload) return;
-            const payload = {
-                schemaVersion: lastPayload.schemaVersion,
-                generatedAt: lastPayload.generatedAt,
-                snapshotAge: lastPayload.snapshotAgeMinutes,
-                completenessStatus: lastPayload.completenessStatus,
-                boundaries: lastPayload.boundaries,
-                truncated: false,
-                ...lastPayload
-            };
-            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `governance-status-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        };
-
-        window.downloadCSV = function() {
-            if (!lastPayload || !lastPayload.checks) return;
-            const rows = [['Check Name', 'Status', 'Last Run', 'Reason Code', 'Impact']];
-            lastPayload.checks.slice(0, 100).forEach(check => {
-                rows.push([
-                    `"${check.name || 'Unknown'}"`,
-                    check.status || 'UNKNOWN',
-                    `"${formatTimestampExport(check.lastRunAt)}"`,
-                    check.reasonCode || '—',
-                    `"${(check.impact || '—').substring(0, 120)}"`
-                ]);
-            });
-            const csv = rows.map(r => r.join(',')).join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `governance-checks-${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-        };
-
-        loadStatus();
-    </script>
+    <!-- Main entry point (bundled by Vite) -->
+    <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "type-check": "tsc --noEmit",
+    "build:gadget": "cd src/gadget-ui && npm install && npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:operator:full": "vitest run tests/operator_verification/ov_runner.test.ts && npx ts-node tests/operator_verification/ov_report_gen.ts",
@@ -13,7 +14,7 @@
     "verify:phase5": "node scripts/verify_phase5.mjs",
     "verify:phase4-5": "node scripts/verify_phase4_5.mjs",
     "lint": "echo \"lint: not configured (intentional)\"",
-    "build": "echo \"build: not configured (intentional)\""
+    "build": "npm run build:gadget && echo \"Backend build: not configured (intentional)\""
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
