@@ -737,55 +737,55 @@
         </div>
 
         <!-- Operational Boundaries -->
-        <div class="section" style="border-left: 4px solid var(--color-accent); background: var(--color-accent-subtle);">
-            <div class="section-title" style="border-bottom-color: var(--color-accent);">Operational Boundaries</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <div style="padding-bottom: 12px; border-bottom: 1px solid var(--color-border);">
-                    <div style="font-weight: 600; color: #172b4d; font-size: 14px; margin-bottom: 6px;">✓ No Jira Writes</div>
-                    <div style="font-size: 12px; color: var(--color-text-secondary);">This app is read-only and performs no Jira API writes.</div>
+        <div class="section">
+            <div class="section-title">Operational Boundaries</div>
+            <div class="metrics-grid">
+                <div class="metric-row">
+                    <div class="metric-label">✓ No Jira Writes</div>
+                    <div class="metric-value">This app is read-only and performs no Jira API writes.</div>
                 </div>
-                <div style="padding-bottom: 12px; border-bottom: 1px solid var(--color-border);">
-                    <div style="font-weight: 600; color: #172b4d; font-size: 14px; margin-bottom: 6px;">✓ No Config Changes</div>
-                    <div style="font-size: 12px; color: var(--color-text-secondary);">Monitoring only. No configuration is modified.</div>
+                <div class="metric-row">
+                    <div class="metric-label">✓ No Config Changes</div>
+                    <div class="metric-value">Monitoring only. No configuration is modified.</div>
                 </div>
-                <div style="padding-bottom: 12px; border-bottom: none;">
-                    <div style="font-weight: 600; color: #172b4d; font-size: 14px; margin-bottom: 6px;">✓ No Enforcement</div>
-                    <div style="font-size: 12px; color: var(--color-text-secondary);">Observational monitoring. No enforcement actions taken.</div>
+                <div class="metric-row">
+                    <div class="metric-label">✓ No Enforcement</div>
+                    <div class="metric-value">Observational monitoring. No enforcement actions taken.</div>
                 </div>
-                <div style="padding-bottom: 12px; border-bottom: none;">
-                    <div style="font-weight: 600; color: #172b4d; font-size: 14px; margin-bottom: 6px;">✓ Read-Only Only</div>
-                    <div style="font-size: 12px; color: var(--color-text-secondary);">Requires read:jira-work scope only.</div>
+                <div class="metric-row">
+                    <div class="metric-label">✓ Read-Only Only</div>
+                    <div class="metric-value">Requires read:jira-work scope only.</div>
                 </div>
             </div>
         </div>
         
         <!-- App Identity (Diagnostics) -->
-        <div class="section" id="app-identity-section" style="background-color: #fef5e7; border-color: #f9e79f;">
-            <div class="section-title" style="border-bottom-color: #f9e79f;">App Identity (Diagnostics)</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 12px;">
-                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
-                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">App ID</div>
-                    <div id="app-id" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+        <div class="section" id="app-identity-section">
+            <div class="section-title">App Identity (Diagnostics)</div>
+            <div class="metrics-grid">
+                <div class="metric-row">
+                    <div class="metric-label">App ID</div>
+                    <div class="metric-value" id="app-id">—</div>
                 </div>
-                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
-                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Cloud ID</div>
-                    <div id="app-cloud-id" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+                <div class="metric-row">
+                    <div class="metric-label">Cloud ID</div>
+                    <div class="metric-value" id="app-cloud-id">—</div>
                 </div>
-                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
-                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Installation ID</div>
-                    <div id="app-installation-id" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+                <div class="metric-row">
+                    <div class="metric-label">Installation ID</div>
+                    <div class="metric-value" id="app-installation-id">—</div>
                 </div>
-                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
-                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Version / Environment</div>
-                    <div id="kpi-version" style="color: #172b4d; font-weight: 500;">— / —</div>
+                <div class="metric-row">
+                    <div class="metric-label">Version / Environment</div>
+                    <div class="metric-value" id="kpi-version">— / —</div>
                 </div>
-                <div style="padding-bottom: 12px; border-bottom: 1px solid #f9e79f;">
-                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Server Build Stamp</div>
-                    <div id="app-server-build" style="color: #172b4d; font-weight: 500; word-break: break-all;">—</div>
+                <div class="metric-row">
+                    <div class="metric-label">Server Build Stamp</div>
+                    <div class="metric-value" id="app-server-build">—</div>
                 </div>
-                <div style="padding-bottom: 12px; border-bottom: none;">
-                    <div style="font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Generated At</div>
-                    <div id="app-generated-at" style="color: #172b4d; font-weight: 500;">—</div>
+                <div class="metric-row">
+                    <div class="metric-label">Generated At</div>
+                    <div class="metric-value" id="app-generated-at">—</div>
                 </div>
             </div>
         </div>
