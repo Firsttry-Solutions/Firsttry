@@ -19,6 +19,37 @@
 import api from '@forge/api';
 import { storage } from '@forge/api';
 
+/**
+ * Sanitize raw key to match Forge storage pattern: ^(?!\s+$)[a-zA-Z0-9:._\s-#]+$
+ * - Trim whitespace
+ * - Replace disallowed characters with underscore
+ * - Collapse multiple underscores to single
+ * - Ensure non-empty (fallback "unknown")
+ */
+function safeKey(raw: string): string {
+  // Trim whitespace
+  let result = raw.trim();
+
+  // If result is empty after trim, return fallback
+  if (result.length === 0) {
+    return 'unknown';
+  }
+
+  // Replace any disallowed character with underscore
+  // Allowed: a-z, A-Z, 0-9, :, ., _, space, -, #
+  result = result.replace(/[^a-zA-Z0-9:._\s\-#]/g, '_');
+
+  // Collapse multiple underscores to single
+  result = result.replace(/_+/g, '_');
+
+  // Final check: ensure non-empty
+  if (result.length === 0) {
+    return 'unknown';
+  }
+
+  return result;
+}
+
 export interface SchedulerState {
   last_run_at: string; // ISO 8601
   auto_12h_generated_at: string | null; // ISO 8601, null if not yet generated
@@ -40,7 +71,7 @@ export interface SchedulerState {
  */
 export async function loadSchedulerState(cloudId: string): Promise<SchedulerState> {
   try {
-    const stateKey = `phase5:scheduler:state:${cloudId}`;
+    const stateKey = `scheduler:state:${safeKey(cloudId)}`;
     const state = await storage.get(stateKey);
 
     if (state && typeof state === 'object') {
@@ -58,6 +89,12 @@ export async function loadSchedulerState(cloudId: string): Promise<SchedulerStat
       auto_24h_attempt_count: 0,
     };
   } catch (error) {
+    const stateKey = `scheduler:state:${safeKey(cloudId)}`;
+    console.error('[SchedulerState] invalid key diagnostic', {
+      cloudId,
+      key: stateKey,
+      keyLen: stateKey.length,
+    });
     console.error(`[SchedulerState] Error loading state for ${cloudId}:`, error);
     throw error;
   }
@@ -68,10 +105,16 @@ export async function loadSchedulerState(cloudId: string): Promise<SchedulerStat
  */
 export async function saveSchedulerState(cloudId: string, state: SchedulerState): Promise<void> {
   try {
-    const stateKey = `phase5:scheduler:state:${cloudId}`;
+    const stateKey = `scheduler:state:${safeKey(cloudId)}`;
     // TTL: 90 days (in seconds)
     await storage.set(stateKey, state, { ttl: 7776000 });
   } catch (error) {
+    const stateKey = `scheduler:state:${safeKey(cloudId)}`;
+    console.error('[SchedulerState] invalid key diagnostic', {
+      cloudId,
+      key: stateKey,
+      keyLen: stateKey.length,
+    });
     console.error(`[SchedulerState] Error saving state for ${cloudId}:`, error);
     throw error;
   }
@@ -86,10 +129,16 @@ export async function hasCompletionMarker(
   trigger: 'AUTO_12H' | 'AUTO_24H'
 ): Promise<boolean> {
   try {
-    const doneKey = `phase5:scheduler:${cloudId}:${trigger}:DONE`;
+    const doneKey = `scheduler:${safeKey(cloudId)}:${trigger}:DONE`;
     const marker = await storage.get(doneKey);
     return marker !== undefined;
   } catch (error) {
+    const doneKey = `scheduler:${safeKey(cloudId)}:${trigger}:DONE`;
+    console.error('[SchedulerState] invalid key diagnostic', {
+      cloudId,
+      key: doneKey,
+      keyLen: doneKey.length,
+    });
     console.error(`[SchedulerState] Error checking completion marker for ${trigger}:`, error);
     throw error;
   }
@@ -104,13 +153,19 @@ export async function writeCompletionMarker(
   trigger: 'AUTO_12H' | 'AUTO_24H'
 ): Promise<void> {
   try {
-    const doneKey = `phase5:scheduler:${cloudId}:${trigger}:DONE`;
+    const doneKey = `scheduler:${safeKey(cloudId)}:${trigger}:DONE`;
     // Only write if not already present
     const existing = await storage.get(doneKey);
     if (!existing) {
       await storage.set(doneKey, { completed_at: new Date().toISOString() }, { ttl: 7776000 });
     }
   } catch (error) {
+    const doneKey = `scheduler:${safeKey(cloudId)}:${trigger}:DONE`;
+    console.error('[SchedulerState] invalid key diagnostic', {
+      cloudId,
+      key: doneKey,
+      keyLen: doneKey.length,
+    });
     console.error(`[SchedulerState] Error writing completion marker for ${trigger}:`, error);
     throw error;
   }
@@ -125,10 +180,16 @@ export async function getLastAttemptTime(
   trigger: 'AUTO_12H' | 'AUTO_24H'
 ): Promise<string | null> {
   try {
-    const attemptKey = `phase5:scheduler:${cloudId}:${trigger}:ATTEMPT`;
+    const attemptKey = `scheduler:${safeKey(cloudId)}:${trigger}:ATTEMPT`;
     const timestamp = await storage.get(attemptKey);
     return timestamp as string | null;
   } catch (error) {
+    const attemptKey = `scheduler:${safeKey(cloudId)}:${trigger}:ATTEMPT`;
+    console.error('[SchedulerState] invalid key diagnostic', {
+      cloudId,
+      key: attemptKey,
+      keyLen: attemptKey.length,
+    });
     console.error(`[SchedulerState] Error getting last attempt time for ${trigger}:`, error);
     throw error;
   }
@@ -142,9 +203,15 @@ export async function recordAttemptTime(
   trigger: 'AUTO_12H' | 'AUTO_24H'
 ): Promise<void> {
   try {
-    const attemptKey = `phase5:scheduler:${cloudId}:${trigger}:ATTEMPT`;
+    const attemptKey = `scheduler:${safeKey(cloudId)}:${trigger}:ATTEMPT`;
     await storage.set(attemptKey, new Date().toISOString(), { ttl: 7776000 });
   } catch (error) {
+    const attemptKey = `scheduler:${safeKey(cloudId)}:${trigger}:ATTEMPT`;
+    console.error('[SchedulerState] invalid key diagnostic', {
+      cloudId,
+      key: attemptKey,
+      keyLen: attemptKey.length,
+    });
     console.error(`[SchedulerState] Error recording attempt time for ${trigger}:`, error);
     throw error;
   }
