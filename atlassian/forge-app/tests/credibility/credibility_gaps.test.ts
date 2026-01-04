@@ -479,7 +479,8 @@ function findFilesInDirectory(
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory() && !entry.name.startsWith('.')) {
+    // Skip node_modules, dist, and hidden directories
+    if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules' && entry.name !== 'dist') {
       files.push(...findFilesInDirectory(fullPath, extension));
     } else if (entry.isFile() && entry.name.endsWith(extension)) {
       files.push(fullPath);

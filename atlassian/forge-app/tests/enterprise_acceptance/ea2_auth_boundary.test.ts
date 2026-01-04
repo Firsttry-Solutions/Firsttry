@@ -34,8 +34,11 @@ describe('EA2: Auth Boundary Sanity', () => {
       limitations: []
     };
     
-    // Find all TypeScript source files
-    sourceFiles = await glob('src/**/*.ts', { cwd: path.join(__dirname, '../..') });
+    // Find all TypeScript source files (exclude node_modules, dist, and type definitions)
+    sourceFiles = await glob('src/**/*.ts', {
+      cwd: path.join(__dirname, '../..'),
+      ignore: ['**/node_modules/**', '**/dist/**', '**/*.d.ts']
+    });
     evidence.details.files_scanned = sourceFiles.length;
     
     if (!fs.existsSync(EVIDENCE_DIR)) {
