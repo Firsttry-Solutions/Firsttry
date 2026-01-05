@@ -20,6 +20,7 @@ import { resolveTenantIdentity } from '../core/tenant_identity';
 import { getTenantIdentityFromContext } from '../core/health/tenant';
 import { getRunRecord } from '../core/health/storage';
 import { computeHealth } from '../core/health/compute';
+import { getTimeline } from '../phase4/timeline';
 import {
   EXPECTED_SCHEDULE_INTERVAL_MINUTES,
   STALENESS_MULTIPLIER,
@@ -322,6 +323,9 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
     const perfSignalsSnapshotKey = `perf_signals:snapshot:${cloudId}`;
     const perfSignals = await storage.get(perfSignalsSnapshotKey);
 
+    // Load Phase 4 change timeline (append-only)
+    const phase4Timeline = await getTimeline(cloudId);
+
     // Load run record and compute health
     const runRecord = await getRunRecord(cloudId);
     const health = computeHealth(runRecord);
@@ -466,6 +470,9 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       // Performance Signals (Phase 3)
       perfSignals: perfSignals || null,
 
+      // Change Awareness Timeline (Phase 4 - SEALED SPEC: Read-only, Append-only)
+      phase4Timeline: phase4Timeline || null,
+
       // Health Status (minimal, deterministic)
       health,
 
@@ -542,6 +549,7 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       checksTotalCount: 0,
       configVisibility: null,
       perfSignals: null,
+      phase4Timeline: null,
       boundaries: {
         noJiraWrites: true,
         noConfigChanges: true,
