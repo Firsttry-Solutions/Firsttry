@@ -479,6 +479,49 @@ async function loadStatus() {
         }
         setHTML('perf-signals-content', perfSignalsHtml);
 
+        // Step 9.6: Phase 4 Change Awareness Timeline (Read-Only, Append-Only)
+        let phase4TimelineHtml = '';
+        const phase4 = data.phase4Timeline;
+        if (phase4 && phase4.isAvailable && phase4.events && phase4.events.length > 0) {
+            // Render chronological timeline (most recent first)
+            phase4TimelineHtml = '<div style="border: 1px solid #dfe1e6; border-radius: 4px; overflow: hidden;">';
+            
+            phase4.events.slice(0, 50).forEach((event: any, index: number) => {
+                const isFirst = index === 0;
+                const borderTop = isFirst ? '' : 'border-top: 1px solid #dfe1e6;';
+                phase4TimelineHtml += `
+                    <div style="padding: 12px 16px; ${borderTop}">
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #172b4d; margin-bottom: 4px;">${event.description || 'Setting changed'}</div>
+                                <div style="font-size: 12px; color: #626f86; margin-bottom: 8px;">
+                                    <strong>Setting:</strong> ${event.settingKey || '—'}
+                                </div>
+                                <div style="font-size: 12px; color: #626f86;">
+                                    <strong>Previous:</strong> <code style="background: #f5f6f7; padding: 2px 4px; border-radius: 2px; font-family: monospace;">${event.previousValue !== null ? String(event.previousValue) : 'null'}</code>
+                                    <strong style="margin-left: 12px;">Current:</strong> <code style="background: #f5f6f7; padding: 2px 4px; border-radius: 2px; font-family: monospace;">${event.currentValue !== null ? String(event.currentValue) : 'null'}</code>
+                                </div>
+                            </div>
+                            <div style="text-align: right; white-space: nowrap;">
+                                <div style="font-size: 11px; color: #8590a2;">${formatTimestampDisplay(event.detectedAt)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (phase4.totalEventCount > 50) {
+                phase4TimelineHtml += `<div style="padding: 12px 16px; text-align: center; color: #8590a2; font-size: 12px; border-top: 1px solid #dfe1e6; background: #f5f6f7;">Showing 50 of ${phase4.totalEventCount} events. All events are retained in storage.</div>`;
+            }
+
+            phase4TimelineHtml += '</div>';
+        } else if (phase4 && phase4.isAvailable) {
+            phase4TimelineHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">No configuration changes detected yet. Timeline will populate once changes are detected by the daily scheduler.</div>';
+        } else {
+            phase4TimelineHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">Timeline data not yet available. Scheduled detection begins after first daily run.</div>';
+        }
+        setHTML('phase4-timeline-content', phase4TimelineHtml);
+
         // Step 10: Data Quality & Coverage Panel
         const coverageList = data.coverageIncluded.map((item: string) => `<li>${item}</li>`).join('');
         const dqStatus = `
