@@ -9,6 +9,7 @@
       "phase6-daily-snap-fn",
       "phase6-weekly-snap-fn",
       "token-refresh-job-fn",
+      "config-visibility-scheduler-fn",
       "status-resolver-fn"
     ],
     "has_scheduled_triggers": false,
@@ -16,9 +17,14 @@
       {
         "key": "phase5-scheduler-fn",
         "handler": "scheduled/phase5_scheduler.run"
+      },
+      {
+        "key": "config-visibility-scheduler-fn",
+        "handler": "scheduled/config_visibility_scheduler.run"
       }
     ],
     "handler_path_phase5-scheduler-fn": "scheduled/phase5_scheduler/run.ts",
+    "handler_path_config-visibility-scheduler-fn": "scheduled/config_visibility_scheduler/run.ts",
     "permissions_scopes": [
       "storage:app",
       "read:jira-work"
