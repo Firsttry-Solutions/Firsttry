@@ -18,6 +18,23 @@ Phase 2 adds a new observational section to the dashboard: **Jira Configuration 
 
 The configuration visibility metrics are collected via scheduled snapshot on a daily basis. They are read-only observations only. FirstTry does not modify Jira configuration, does not recommend changes, and does not enforce policies based on these observations.
 
+## Phase 3: Performance & Reliability Signals
+
+Phase 3 adds observational performance and reliability metrics: **Performance & Reliability Signals (Observed)**. This section records latencies, error counts, and rate limit information from Jira API interactions.
+
+**Scope:** Observational data collection only.
+- Records latency percentiles (p50, p95, max) in milliseconds
+- Records request error count (24-hour window)
+- Records API rate limit status (remaining, limit, reset time)
+- Records scheduler run success/failure and duration
+- Does NOT aggregate across 7-day windows (no rolling state)
+- Does NOT interpret metrics or make recommendations
+- Does NOT modify any Jira configuration or settings
+
+The performance signals are collected via scheduled snapshot on a daily basis. They are purely observational. FirstTry does not recommend changes and does not enforce policies based on these signals.
+
+**Completeness:** Signals are marked as EMPTY (no data), PARTIAL (scheduler OR API data), or COMPLETE (both present). Viewers can assess data quality directly.
+
 ## Purpose
 
 The gadget builds user trust through transparency, including transparency about what is unknown or unavailable.
