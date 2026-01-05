@@ -332,6 +332,91 @@ async function loadStatus() {
             setHTML('health-boundaries', boundariesHtml);
         }
 
+        // Step 9.5: Jira Configuration Visibility (Phase 2)
+        // This is fetched from scheduled snapshot storage if available
+        // If not available yet, show "awaiting first snapshot"
+        let configVisibilityHtml = '';
+        if (data.configVisibility) {
+            const cv = data.configVisibility;
+            const metrics = cv.metrics || {};
+            
+            // Build table rows with metric names and values
+            const tableRows = [
+                { label: 'Custom fields', value: metrics.customFieldCount },
+                { label: 'Workflows', value: metrics.workflowCount },
+                { label: 'Workflow schemes', value: metrics.workflowSchemeCount },
+                { label: 'Max workflows in a scheme', value: metrics.maxWorkflowsPerScheme },
+                { label: 'Screens', value: metrics.screenCount },
+                { label: 'Permission schemes', value: metrics.permissionSchemeCount },
+                { label: 'Max projects in a permission scheme', value: metrics.maxProjectsPerPermissionScheme },
+            ];
+
+            // Build issue map for quick lookup (metric -> reason)
+            const issueMap: Record<string, string> = {};
+            if (cv.issues && Array.isArray(cv.issues)) {
+                for (const issue of cv.issues) {
+                    issueMap[issue.metric] = issue.reason;
+                }
+            }
+
+            let metricsTableHtml = '<table class="config-visibility-table" style="width: 100%; border-collapse: collapse; border: 1px solid #dfe1e6;">';
+            metricsTableHtml += '<thead><tr style="background: #f5f6f7; border-bottom: 1px solid #dfe1e6;"><th style="padding: 12px; text-align: left; font-weight: 600; color: #172b4d; font-size: 13px;">Metric</th><th style="padding: 12px; text-align: left; font-weight: 600; color: #172b4d; font-size: 13px;">Value</th></tr></thead>';
+            metricsTableHtml += '<tbody>';
+
+            for (const row of tableRows) {
+                const displayValue = row.value !== null && row.value !== undefined ? String(row.value) : 'Not available';
+                const reason = issueMap[row.label.replace(/ /g, '').toLowerCase().replace(/maxprojectsina/g, 'maxProjectsPerPermissionScheme').replace(/maxworkflows/g, 'maxWorkflowsPerScheme').replace(/customfields/g, 'customFieldCount').replace(/workflows/g, 'workflowCount').replace(/workflowschemes/g, 'workflowSchemeCount').replace(/screens/g, 'screenCount').replace(/permissionschemes/g, 'permissionSchemeCount')] || '';
+                
+                // Simplified: get issue reason by matching row.label to metric name
+                let metricKey = '';
+                if (row.label === 'Custom fields') metricKey = 'customFieldCount';
+                else if (row.label === 'Workflows') metricKey = 'workflowCount';
+                else if (row.label === 'Workflow schemes') metricKey = 'workflowSchemeCount';
+                else if (row.label === 'Max workflows in a scheme') metricKey = 'maxWorkflowsPerScheme';
+                else if (row.label === 'Screens') metricKey = 'screenCount';
+                else if (row.label === 'Permission schemes') metricKey = 'permissionSchemeCount';
+                else if (row.label === 'Max projects in a permission scheme') metricKey = 'maxProjectsPerPermissionScheme';
+                
+                const reasonText = issueMap[metricKey] ? ` (${issueMap[metricKey]})` : '';
+                
+                metricsTableHtml += `<tr style="border-bottom: 1px solid #dfe1e6;">`;
+                metricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px;">${row.label}</td>`;
+                metricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px;">${displayValue}${reasonText}</td>`;
+                metricsTableHtml += `</tr>`;
+            }
+
+            metricsTableHtml += '</tbody></table>';
+
+            configVisibilityHtml = `
+                <div>
+                    ${metricsTableHtml}
+                    <div style="margin-top: 16px; padding: 12px; background: #f5f6f7; border-radius: 4px; border: 1px solid #dfe1e6;">
+                        <div class="metric-row" style="display: flex; gap: 16px; margin-bottom: 12px;">
+                            <div>
+                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Risk Band</div>
+                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${cv.riskBand || '—'}</div>
+                                <div style="font-size: 11px; color: #8590a2; margin-top: 4px;">Band indicates observed scale only.</div>
+                            </div>
+                            <div>
+                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Completeness</div>
+                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${cv.completeness || '—'}</div>
+                            </div>
+                            <div>
+                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Evaluated At</div>
+                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${formatTimestampDisplay(cv.evaluatedAtISO)}</div>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid #dfe1e6; padding-top: 12px; margin-top: 12px; font-size: 12px; color: #44546f; line-height: 1.5;">
+                            <strong>Observational Only:</strong> FirstTry does not modify Jira configuration. This view is observational only.
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            configVisibilityHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">Awaiting first scheduled snapshot. The configuration visibility report will appear here once collected.</div>';
+        }
+        setHTML('config-visibility-content', configVisibilityHtml);
+
         // Step 10: Data Quality & Coverage Panel
         const coverageList = data.coverageIncluded.map((item: string) => `<li>${item}</li>`).join('');
         const dqStatus = `

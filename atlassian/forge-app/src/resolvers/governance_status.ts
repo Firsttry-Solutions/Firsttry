@@ -314,6 +314,10 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
     const snapshot = await storage.get(snapshotKey);
     const metrics = await storage.get(metricsKey);
 
+    // Load config visibility snapshot (Phase 2)
+    const configVisibilitySnapshotKey = `config_visibility:snapshot:${cloudId}`;
+    const configVisibility = await storage.get(configVisibilitySnapshotKey);
+
     // Load run record and compute health
     const runRecord = await getRunRecord(cloudId);
     const health = computeHealth(runRecord);
@@ -452,6 +456,9 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       checks,
       checksTotalCount: snapshot?.checks?.length || 0,
 
+      // Config Visibility (Phase 2)
+      configVisibility: configVisibility || null,
+
       // Health Status (minimal, deterministic)
       health,
 
@@ -526,6 +533,7 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       },
       checks: [],
       checksTotalCount: 0,
+      configVisibility: null,
       boundaries: {
         noJiraWrites: true,
         noConfigChanges: true,

@@ -33,6 +33,8 @@ modules:
       handler: scheduled/snapshot_weekly.handle
     - key: token-refresh-job-fn
       handler: scheduled/token_refresh_scheduler.handle
+    - key: config-visibility-scheduler-fn
+      handler: scheduled/config_visibility_scheduler.run
     - key: status-resolver-fn
       handler: resolvers/governance_status.get
 
@@ -40,6 +42,7 @@ modules:
   # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)
   # PHASE 6: Snapshot evidence ledger (daily + weekly automatic captures)
   # SEV-2-003: OAuth token refresh (every 12 hours to prevent expiry gaps)
+  # PHASE 2: Config visibility scheduler (daily config complexity snapshot)
   scheduledTrigger:
     - key: phase5-auto-scheduler
       function: phase5-scheduler-fn
@@ -56,6 +59,10 @@ modules:
     - key: token-refresh-job
       function: token-refresh-job-fn
       interval: hour
+
+    - key: config-visibility-scheduler
+      function: config-visibility-scheduler-fn
+      interval: day
 
 # Permissions
 permissions:
