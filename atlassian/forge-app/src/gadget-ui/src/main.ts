@@ -1033,6 +1033,64 @@ window.downloadCSV = async function() {
 };
 
 // ============================================================================
+// AUDIT SNAPSHOT EXPORT (Phase 5)
+// ============================================================================
+
+/**
+ * Export Trust Snapshot (Phase 5)
+ * 
+ * Calls exportTrustSnapshot resolver, downloads JSON + PDF
+ */
+async function handleExportTrustSnapshot() {
+    const statusEl = document.getElementById('export-status');
+    if (!statusEl) return;
+
+    try {
+        statusEl.textContent = 'Generating...';
+        statusEl.style.color = '#0052cc';
+
+        // Call resolver
+        const response = await invoke('exportTrustSnapshot', {});
+
+        if (!response || !response.snapshotId) {
+            statusEl.textContent = 'Export unavailable';
+            statusEl.style.color = '#ae2a19';
+            return;
+        }
+
+        // Download JSON
+        const jsonBlob = new Blob([response.jsonCanonicalText], { type: 'application/json; charset=utf-8' });
+        const jsonUrl = URL.createObjectURL(jsonBlob);
+        const jsonLink = document.createElement('a');
+        jsonLink.href = jsonUrl;
+        jsonLink.download = response.jsonFilename;
+        document.body.appendChild(jsonLink);
+        jsonLink.click();
+        document.body.removeChild(jsonLink);
+        URL.revokeObjectURL(jsonUrl);
+
+        // Download PDF
+        const pdfBytes = Buffer.from(response.pdfBase64, 'base64');
+        const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        const pdfLink = document.createElement('a');
+        pdfLink.href = pdfUrl;
+        pdfLink.download = response.pdfFilename;
+        document.body.appendChild(pdfLink);
+        pdfLink.click();
+        document.body.removeChild(pdfLink);
+        URL.revokeObjectURL(pdfUrl);
+
+        // Show success
+        statusEl.textContent = `Export generated: ${response.snapshotId}`;
+        statusEl.style.color = '#216e4e';
+    } catch (error) {
+        statusEl.textContent = 'Export unavailable';
+        statusEl.style.color = '#ae2a19';
+    }
+}
+
+// ============================================================================
 // BUTTON WIRE-UP (Deterministic event listeners)
 // ============================================================================
 
@@ -1045,6 +1103,7 @@ function wireExportButtons() {
         const copyBtn = document.getElementById('copy-summary-btn');
         const jsonBtn = document.getElementById('download-json-btn');
         const csvBtn = document.getElementById('download-csv-btn');
+        const exportSnapshotBtn = document.getElementById('export-trust-snapshot-btn');
 
         if (copyBtn) {
             copyBtn.addEventListener('click', () => window.copySummary());
@@ -1054,6 +1113,9 @@ function wireExportButtons() {
         }
         if (csvBtn) {
             csvBtn.addEventListener('click', () => window.downloadCSV());
+        }
+        if (exportSnapshotBtn) {
+            exportSnapshotBtn.addEventListener('click', () => handleExportTrustSnapshot());
         }
 
         // Verify all buttons are present
