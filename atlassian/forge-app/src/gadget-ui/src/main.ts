@@ -237,6 +237,39 @@ async function loadStatus() {
         setText('kpi-checks-lifetime', data.checksCompletedLifetime !== null ? String(data.checksCompletedLifetime) : '—');
         setText('kpi-snapshot-count', data.snapshotsRetainedCount !== null ? String(data.snapshotsRetainedCount) : '—');
         setText('kpi-days-continuous', data.daysContinuousOperation !== null ? String(data.daysContinuousOperation) : '—');
+
+        // PHASE 1 LOCK-IN: Display 7-day aggregates
+        setText('kpi-failures-7d', data.failureCount7d !== undefined ? String(data.failureCount7d) : 'Not available (telemetry missing)');
+        
+        // Freshness status label
+        let freshnessLabel = '—';
+        if (data.freshnessStatus === 'FRESH') {
+            freshnessLabel = 'Fresh';
+        } else if (data.freshnessStatus === 'AGING') {
+            freshnessLabel = 'Aging';
+        } else if (data.freshnessStatus === 'STALE') {
+            freshnessLabel = 'Stale';
+        } else if (data.freshnessStatus === 'NOT_AVAILABLE') {
+            freshnessLabel = 'Not available (telemetry missing)';
+        }
+        setText('kpi-freshness-status', freshnessLabel);
+        
+        // Skipped checks
+        setText('kpi-skipped-checks-7d', 
+            data.skippedChecksCount7d !== undefined 
+                ? (data.skippedChecksCount7d === 0 ? '0' : `${data.skippedChecksCount7d} (${data.skippedChecksPrimaryReason7d || 'UNKNOWN'})`)
+                : 'Not available (telemetry missing)'
+        );
+        
+        // Degraded reason (only show if degraded)
+        const degradedReasonEl = document.getElementById('kpi-degraded-reason');
+        if (data.systemStatus === 'DEGRADED' && data.degradedReason) {
+            setText('kpi-degraded-reason', data.degradedReason);
+            if (degradedReasonEl) degradedReasonEl.style.display = 'block';
+        } else {
+            if (degradedReasonEl) degradedReasonEl.style.display = 'none';
+        }
+
         setText('kpi-version', `${data.version} / ${data.environment}`);
         setText('kpi-generated-at', formatTimestampDisplay(data.generatedAt) || '—');
 
@@ -270,6 +303,29 @@ async function loadStatus() {
         if (data.systemStatus === 'DEGRADED') {
             const clarif = document.getElementById('degraded-clarification');
             if (clarif) clarif.style.display = 'block';
+        }
+
+        // Step 9.5: Render Health Status (Minimal)
+        if (data.health) {
+            const h = data.health;
+            setText('health-state', h.state || 'UNKNOWN');
+            setText('health-last-success', formatTimestampDisplay(h.lastSuccessAt));
+            setText('health-last-attempt', formatTimestampDisplay(h.lastAttemptAt));
+            setText('health-freshness', h.dataFreshnessMinutes !== undefined 
+                ? `${h.dataFreshnessMinutes} minutes` 
+                : 'UNKNOWN');
+
+            // Render reasons
+            const reasonsHtml = h.reasons && h.reasons.length > 0
+                ? h.reasons.map(r => `<div>${r.code}: ${r.message}</div>`).join('')
+                : '<div>No issues detected.</div>';
+            setHTML('health-reasons', reasonsHtml);
+
+            // Render boundaries
+            const boundariesHtml = h.boundaries
+                ? `<div><strong>Boundaries:</strong> noJiraWrites=${h.boundaries.noJiraWrites}, noConfigChanges=${h.boundaries.noConfigChanges}, noEnforcement=${h.boundaries.noEnforcement}</div>`
+                : '';
+            setHTML('health-boundaries', boundariesHtml);
         }
 
         // Step 10: Data Quality & Coverage Panel

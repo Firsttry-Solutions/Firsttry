@@ -17,6 +17,9 @@
 
 import { storage } from '@forge/api';
 import { resolveTenantIdentity } from '../core/tenant_identity';
+import { getTenantIdentityFromContext } from '../core/health/tenant';
+import { getRunRecord } from '../core/health/storage';
+import { computeHealth } from '../core/health/compute';
 import {
   EXPECTED_SCHEDULE_INTERVAL_MINUTES,
   STALENESS_MULTIPLIER,
@@ -42,6 +45,180 @@ function getMetricsKey(cloudId: string): string {
     return '';
   }
   return `${METRICS_KEY_PREFIX}:${cloudId}`;
+}
+
+/**
+ * PHASE 1 LOCK-IN: Compute 7-day failure aggregates
+ * Uses only structured signals from existing telemetry.
+ */
+function computeFailureCount7d(snapshot: any, metrics: any): { count: number; buckets: Record<string, number> } {
+  // Initialize buckets
+  const buckets: Record<string, number> = {
+    IDENTITY: 0,
+    PERMISSION: 0,
+    SCHEDULER: 0,
+    API: 0,
+    UNKNOWN: 0,
+  };
+
+  // Rolling window: last 7 days in seconds
+  const now = Date.now();
+  const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
+
+  // Parse failures from snapshot checks (if available)
+  if (snapshot?.checks && Array.isArray(snapshot.checks)) {
+    snapshot.checks.forEach((check: any) => {
+      // Only count failures
+      if (check.status !== 'FAIL') return;
+
+      // Check timestamp
+      const checkTime = check.lastAttemptAt ? new Date(check.lastAttemptAt).getTime() : 0;
+      if (checkTime < sevenDaysAgoMs) return; // Outside window
+
+      // Categorize by reasonCode
+      const code = check.reasonCode || 'UNKNOWN';
+      if (code.includes('IDENTITY')) {
+        buckets['IDENTITY']++;
+      } else if (code.includes('PERMISSION')) {
+        buckets['PERMISSION']++;
+      } else if (code.includes('SCHEDULER')) {
+        buckets['SCHEDULER']++;
+      } else if (code.includes('API') || code.includes('THROTTL')) {
+        buckets['API']++;
+      } else {
+        buckets['UNKNOWN']++;
+      }
+    });
+  }
+
+  const count = Object.values(buckets).reduce((a, b) => a + b, 0);
+  return { count, buckets };
+}
+
+/**
+ * PHASE 1 LOCK-IN: Compute degraded reason (single sentence, priority-based)
+ * Only returns a reason if state is DEGRADED; otherwise null.
+ */
+function computeDegradedReason(
+  health: any,
+  snapshot: any,
+  metrics: any,
+  failureCount7d: number
+): string | null {
+  // Only set if state is DEGRADED
+  if (health?.state !== 'DEGRADED') {
+    return null;
+  }
+
+  // Priority 1: Identity missing/invalid (fail-closed)
+  if (!health?.cloudId || health.cloudId === 'unknown') {
+    return 'Tenant identity is unavailable or invalid.';
+  }
+
+  // Priority 2: Scheduler missed run / scheduler error
+  if (health?.reasons?.some((r: any) => r.code === 'SCHEDULER')) {
+    return 'Scheduler failed to execute the last check.';
+  }
+
+  // Priority 3: Partial check failures
+  if (failureCount7d > 0) {
+    return `${failureCount7d} check(s) failed in the last 7 days.`;
+  }
+
+  // Priority 4: Dependency unavailable
+  if (health?.reasons?.some((r: any) => r.code?.includes('DEPENDENCY'))) {
+    return 'A required dependency is unavailable.';
+  }
+
+  // Priority 5: Unknown system error
+  if (health?.reasons?.some((r: any) => r.code === 'RUNTIME_EXCEPTION')) {
+    return 'An unexpected system error occurred.';
+  }
+
+  // Fallback (should rarely reach here)
+  return 'System is degraded; see operational status for details.';
+}
+
+/**
+ * PHASE 1 LOCK-IN: Compute skipped checks count and primary reason
+ * Only counts checks explicitly marked as SKIPPED in snapshot.
+ */
+function computeSkippedChecks7d(snapshot: any): { count: number; primaryReason: string } {
+  const now = Date.now();
+  const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
+
+  let count = 0;
+  const reasonCodes: Map<string, number> = new Map();
+
+  // Parse skipped checks from snapshot
+  if (snapshot?.checks && Array.isArray(snapshot.checks)) {
+    snapshot.checks.forEach((check: any) => {
+      if (check.status !== 'SKIPPED') return;
+
+      const checkTime = check.lastAttemptAt ? new Date(check.lastAttemptAt).getTime() : 0;
+      if (checkTime < sevenDaysAgoMs) return;
+
+      count++;
+
+      // Track reason codes
+      const reason = check.reasonCode || 'UNKNOWN';
+      reasonCodes.set(reason, (reasonCodes.get(reason) || 0) + 1);
+    });
+  }
+
+  // Determine primary reason (most frequent)
+  let primaryReason = 'NOT_AVAILABLE';
+  if (count > 0) {
+    const mostFrequent = Array.from(reasonCodes.entries()).sort((a, b) => b[1] - a[1])[0];
+    const code = mostFrequent[0];
+
+    if (code.includes('PERMISSION')) {
+      primaryReason = 'PERMISSION_UNAVAILABLE';
+    } else if (code.includes('IDENTITY')) {
+      primaryReason = 'IDENTITY_UNAVAILABLE';
+    } else if (code.includes('THROTTL')) {
+      primaryReason = 'API_THROTTLED';
+    } else if (code.includes('DEPENDENCY')) {
+      primaryReason = 'DEPENDENCY_UNAVAILABLE';
+    } else if (code.includes('SAFETY')) {
+      primaryReason = 'SAFETY_BLOCK';
+    } else {
+      primaryReason = 'NOT_AVAILABLE';
+    }
+  }
+
+  return { count, primaryReason };
+}
+
+/**
+ * PHASE 1 LOCK-IN: Compute data freshness status label
+ * Based on time since lastSuccessAt.
+ */
+function computeFreshnessStatus(lastSuccessAt: string | null): {
+  status: 'FRESH' | 'AGING' | 'STALE' | 'NOT_AVAILABLE';
+  ageSeconds: number | null;
+} {
+  if (!lastSuccessAt) {
+    return { status: 'NOT_AVAILABLE', ageSeconds: null };
+  }
+
+  const lastSuccessMs = new Date(lastSuccessAt).getTime();
+  const nowMs = Date.now();
+  const ageSeconds = Math.floor((nowMs - lastSuccessMs) / 1000);
+
+  const hours24 = 24 * 60 * 60;
+  const hours72 = 72 * 60 * 60;
+
+  let status: 'FRESH' | 'AGING' | 'STALE';
+  if (ageSeconds < hours24) {
+    status = 'FRESH';
+  } else if (ageSeconds <= hours72) {
+    status = 'AGING';
+  } else {
+    status = 'STALE';
+  }
+
+  return { status, ageSeconds };
 }
 
 /**
@@ -137,6 +314,10 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
     const snapshot = await storage.get(snapshotKey);
     const metrics = await storage.get(metricsKey);
 
+    // Load run record and compute health
+    const runRecord = await getRunRecord(cloudId);
+    const health = computeHealth(runRecord);
+
     // Calculate staleness
     const lastSuccessAt = snapshot?.lastSuccessAt || metrics?.lastSuccessAt || null;
     const lastCheckAt = snapshot?.lastAttemptAt || metrics?.lastCheckAt || null;
@@ -210,6 +391,12 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       });
     }
 
+    // PHASE 1 LOCK-IN: Compute 7-day metrics
+    const failureCount7d = computeFailureCount7d(snapshot, metrics);
+    const skippedChecks7d = computeSkippedChecks7d(snapshot);
+    const freshness = computeFreshnessStatus(lastSuccessAt);
+    const degradedReason = computeDegradedReason(health, snapshot, metrics, failureCount7d.count);
+
     return {
       // App Identity (Diagnostic)
       appId: process.env.FORGE_APP_ID || 'UNKNOWN',
@@ -241,6 +428,15 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       continuousSince,
       daysContinuousOperation,
 
+      // PHASE 1 LOCK-IN: 7-day aggregates
+      failureCount7d: failureCount7d.count,
+      failureBuckets7d: failureCount7d.buckets,
+      degradedReason,
+      skippedChecksCount7d: skippedChecks7d.count,
+      skippedChecksPrimaryReason7d: skippedChecks7d.primaryReason,
+      freshnessStatus: freshness.status,
+      freshnessAgeSeconds: freshness.ageSeconds,
+
       // Data quality
       completenessStatus,
       coverageIncluded,
@@ -255,6 +451,9 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       // Checks
       checks,
       checksTotalCount: snapshot?.checks?.length || 0,
+
+      // Health Status (minimal, deterministic)
+      health,
 
       // Boundaries
       boundaries: {
@@ -306,6 +505,16 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       snapshotsRetainedCount: null,
       continuousSince: null,
       daysContinuousOperation: null,
+
+      // PHASE 1 LOCK-IN: 7-day aggregates (all unavailable on error)
+      failureCount7d: 0,
+      failureBuckets7d: { IDENTITY: 0, PERMISSION: 0, SCHEDULER: 0, API: 0, UNKNOWN: 0 },
+      degradedReason: null,
+      skippedChecksCount7d: 0,
+      skippedChecksPrimaryReason7d: 'NOT_AVAILABLE',
+      freshnessStatus: 'NOT_AVAILABLE' as const,
+      freshnessAgeSeconds: null,
+
       completenessStatus: 'INCOMPLETE',
       coverageIncluded: [],
       coverageExcluded: ['All operational metrics'],
@@ -369,6 +578,16 @@ function createDegradedPayload(reasonCode: string): Record<string, unknown> {
     snapshotsRetainedCount: null,
     continuousSince: null,
     daysContinuousOperation: null,
+
+    // PHASE 1 LOCK-IN: 7-day aggregates (all unavailable when identity missing)
+    failureCount7d: 0,
+    failureBuckets7d: { IDENTITY: 0, PERMISSION: 0, SCHEDULER: 0, API: 0, UNKNOWN: 0 },
+    degradedReason: 'Tenant identity is unavailable or invalid.',
+    skippedChecksCount7d: 0,
+    skippedChecksPrimaryReason7d: 'NOT_AVAILABLE',
+    freshnessStatus: 'NOT_AVAILABLE' as const,
+    freshnessAgeSeconds: null,
+
     completenessStatus: 'INCOMPLETE',
     coverageIncluded: [],
     coverageExcluded: ['All operational metrics'],
