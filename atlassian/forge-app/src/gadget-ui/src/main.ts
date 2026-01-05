@@ -441,78 +441,265 @@ function showError(header: string, code: string, message: string) {
 }
 
 // ============================================================================
-// EXPORT FUNCTIONS
+// EXPORT UTILITIES (DOM-ONLY)
+// ============================================================================
+
+/**
+ * Helper: safely read text content from DOM element
+ * Returns null if element missing or empty
+ */
+function readText(elementId: string): string | null {
+    const el = document.getElementById(elementId);
+    if (!el) return null;
+    const text = el.textContent?.trim();
+    return text && text !== '—' ? text : null;
+}
+
+/**
+ * Build export payload from currently visible DOM state
+ * All data is derived from rendered values; no backend calls
+ */
+function buildExportPayload() {
+    if (!lastPayload) {
+        return null;
+    }
+
+    return {
+        timestamp: new Date().toISOString(),
+        source: 'dashboard-gadget-ui',
+        systemStatus: lastPayload.systemStatus || 'UNKNOWN',
+        mode: lastPayload.mode || 'Scheduled monitoring (read-only)',
+        lastSuccessfulRun: lastPayload.lastSuccessAt || null,
+        lastCheck: lastPayload.lastCheckAt || null,
+        snapshotAgeMinutes: lastPayload.snapshotAgeMinutes || null,
+        dataFreshness: lastPayload.isStale === null ? 'UNKNOWN' : (lastPayload.isStale ? 'STALE' : 'FRESH'),
+        operationalMetrics: {
+            checksCompletedLifetime: lastPayload.checksCompletedLifetime || 0,
+            snapshotCountRetained: lastPayload.snapshotsRetainedCount || 0,
+            daysContinuousOperation: lastPayload.daysContinuousOperation || 0,
+            failureCount7d: lastPayload.failureCount7d || 0,
+            skippedChecksCount7d: lastPayload.skippedChecksCount7d || 0,
+        },
+        availabilitySignals: {
+            tenantIdentityAvailable: lastPayload.tenantIdentity?.available !== false,
+            permissionVisibilityDetermined: lastPayload.permissionVisibility?.determined !== false,
+        },
+        boundaries: {
+            noJiraWrites: lastPayload.boundaries?.noJiraWrites || false,
+            noConfigChanges: lastPayload.boundaries?.noConfigChanges || false,
+            noEnforcement: lastPayload.boundaries?.noEnforcement || false,
+        },
+        completenessStatus: lastPayload.completenessStatus || 'UNKNOWN',
+        retentionPolicy: lastPayload.retentionPolicy?.effectiveRuleText || null,
+        checks: (lastPayload.checks || []).map((c: any) => ({
+            name: c.name,
+            status: c.status,
+            lastRun: c.lastRunAt,
+            reasonCode: c.reasonCode,
+        })),
+        version: lastPayload.version || 'UNKNOWN',
+        environment: lastPayload.environment || 'UNKNOWN',
+        generatedAt: lastPayload.generatedAt || new Date().toISOString(),
+    };
+}
+
+/**
+ * Flatten object to dot-notation for CSV/TSV export
+ */
+function flattenObject(obj: any, prefix = ''): Record<string, any> {
+    const result: Record<string, any> = {};
+
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            const value = obj[key];
+            const newKey = prefix ? `${prefix}.${key}` : key;
+
+            if (value === null || value === undefined) {
+                result[newKey] = null;
+            } else if (Array.isArray(value)) {
+                value.forEach((item, idx) => {
+                    if (typeof item === 'object' && item !== null) {
+                        const flattened = flattenObject(item, `${newKey}[${idx}]`);
+                        Object.assign(result, flattened);
+                    } else {
+                        result[`${newKey}[${idx}]`] = item;
+                    }
+                });
+            } else if (typeof value === 'object') {
+                const flattened = flattenObject(value, newKey);
+                Object.assign(result, flattened);
+            } else {
+                result[newKey] = value;
+            }
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Show temporary export success message
+ */
+function showExportSuccess(message: string) {
+    const elem = document.getElementById('copy-success');
+    if (!elem) return;
+    elem.textContent = message;
+    elem.classList.add('show');
+    setTimeout(() => elem.classList.remove('show'), 3000);
+}
+
+/**
+ * Silent failure handler: update UI minimally
+ */
+function handleExportFailure() {
+    const elem = document.getElementById('copy-success');
+    if (elem) {
+        elem.textContent = 'Export failed — no data was modified.';
+        elem.classList.add('show');
+        setTimeout(() => elem.classList.remove('show'), 3000);
+    }
+}
+
+// ============================================================================
+// EXPORT FUNCTIONS (DOM-ONLY)
 // ============================================================================
 
 // @ts-ignore - Expose globally for button onclick handlers
 window.copySummary = function() {
-    if (!lastPayload) return;
-    let reasonCodeLine = '';
-    if (lastPayload.reasonCode) {
-        reasonCodeLine = `Reason Code: ${lastPayload.reasonCode}\n`;
-    } else if (lastPayload.systemStatus === 'DEGRADED' && lastPayload.tenantIdentity?.reasonCode) {
-        reasonCodeLine = `Reason Code: ${lastPayload.tenantIdentity.reasonCode}\n`;
-    }
-    const text = `System Status: ${lastPayload.systemStatus}
-${reasonCodeLine}Last Successful Run: ${formatTimestampExport(lastPayload.lastSuccessAt)}
-Last Check: ${formatTimestampExport(lastPayload.lastCheckAt)}
-Snapshot Age: ${lastPayload.snapshotAgeMinutes} minutes (stale if > ${lastPayload.staleIfAgeMinutesGreaterThan})
-Completeness Status: ${lastPayload.completenessStatus}
-Retention Policy: ${lastPayload.retentionPolicy.effectiveRuleText}
-Explicit Boundaries: No Jira writes, no config changes, no enforcement, no recommendations, data observational only
-Version / Environment: ${lastPayload.version} / ${lastPayload.environment}
-Generated At: ${lastPayload.generatedAt}`;
-    navigator.clipboard.writeText(text).then(() => {
-        const elem = document.getElementById('copy-success');
-        if (elem) {
-            elem.classList.add('show');
-            setTimeout(() => elem.classList.remove('show'), 2000);
+    try {
+        const payload = buildExportPayload();
+        if (!payload) {
+            handleExportFailure();
+            return;
         }
-    });
+
+        const text = `═════════════════════════════════════════════════════════════
+FirstTry Governance Dashboard — Status Summary
+═════════════════════════════════════════════════════════════
+Generated: ${payload.timestamp}
+
+SYSTEM STATUS
+─────────────────────────────────────────────────────────────
+Status: ${payload.systemStatus}
+Mode: ${payload.mode}
+Data Freshness: ${payload.dataFreshness}
+
+OPERATIONAL METRICS (Lifetime)
+─────────────────────────────────────────────────────────────
+Checks Completed: ${payload.operationalMetrics.checksCompletedLifetime}
+Snapshots Retained: ${payload.operationalMetrics.snapshotCountRetained}
+Days Continuous: ${payload.operationalMetrics.daysContinuousOperation}
+
+7-DAY WINDOW
+─────────────────────────────────────────────────────────────
+Failures: ${payload.operationalMetrics.failureCount7d}
+Skipped Checks: ${payload.operationalMetrics.skippedChecksCount7d}
+
+BOUNDARIES (Read-Only)
+─────────────────────────────────────────────────────────────
+✓ No Jira writes: ${payload.boundaries.noJiraWrites}
+✓ No config changes: ${payload.boundaries.noConfigChanges}
+✓ No enforcement: ${payload.boundaries.noEnforcement}
+
+DATA QUALITY
+─────────────────────────────────────────────────────────────
+Completeness: ${payload.completenessStatus}
+Retention: ${payload.retentionPolicy}
+
+VERSION
+─────────────────────────────────────────────────────────────
+App: ${payload.version}
+Environment: ${payload.environment}
+
+═════════════════════════════════════════════════════════════
+`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            showExportSuccess('✓ Summary copied to clipboard');
+        }).catch(() => {
+            handleExportFailure();
+        });
+    } catch (e) {
+        handleExportFailure();
+    }
 };
 
 // @ts-ignore - Expose globally for button onclick handlers
 window.downloadJSON = function() {
-    if (!lastPayload) return;
-    const payload = {
-        schemaVersion: lastPayload.schemaVersion,
-        generatedAt: lastPayload.generatedAt,
-        snapshotAge: lastPayload.snapshotAgeMinutes,
-        completenessStatus: lastPayload.completenessStatus,
-        boundaries: lastPayload.boundaries,
-        truncated: false,
-        ...lastPayload
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `governance-status-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+        const payload = buildExportPayload();
+        if (!payload) {
+            handleExportFailure();
+            return;
+        }
+
+        const json = JSON.stringify(payload, null, 2);
+        if (!json || json.length === 0) {
+            handleExportFailure();
+            return;
+        }
+
+        const blob = new Blob([json], { type: 'application/json; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `governance-status-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showExportSuccess('✓ JSON downloaded');
+    } catch (e) {
+        handleExportFailure();
+    }
 };
 
 // @ts-ignore - Expose globally for button onclick handlers
 window.downloadCSV = function() {
-    if (!lastPayload || !lastPayload.checks) return;
-    const rows = [['Check Name', 'Status', 'Last Run', 'Reason Code', 'Impact']];
-    lastPayload.checks.slice(0, 100).forEach((check: any) => {
-        rows.push([
-            `"${check.name || 'Unknown'}"`,
-            check.status || 'UNKNOWN',
-            `"${formatTimestampExport(check.lastRunAt)}"`,
-            check.reasonCode || '—',
-            `"${(check.impact || '—').substring(0, 120)}"`
-        ]);
-    });
-    const csv = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `governance-checks-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+        const payload = buildExportPayload();
+        if (!payload) {
+            handleExportFailure();
+            return;
+        }
+
+        const flat = flattenObject(payload);
+        const keys = Object.keys(flat).sort();
+        const rows: string[] = [];
+
+        // Header row
+        rows.push(keys.map(k => `"${k}"`).join(','));
+
+        // Data row
+        const values = keys.map(k => {
+            const v = flat[k];
+            if (v === null) return '';
+            if (typeof v === 'string') return `"${v.replace(/"/g, '""')}"`;
+            return String(v);
+        });
+        rows.push(values.join(','));
+
+        const csv = rows.join('\n');
+        if (!csv || csv.length === 0) {
+            handleExportFailure();
+            return;
+        }
+
+        const blob = new Blob([csv], { type: 'text/csv; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `governance-status-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showExportSuccess('✓ CSV downloaded');
+    } catch (e) {
+        handleExportFailure();
+    }
 };
 
 // ============================================================================
