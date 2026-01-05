@@ -8,14 +8,28 @@
  * D) Data freshness indicator label (Fresh/Aging/Stale)
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+
+// DETERMINISTIC TIME: Freeze system time to prevent flakiness
+const FIXED_NOW_ISO = '2026-01-01T00:00:00.000Z';
+const FIXED_NOW_MS = new Date(FIXED_NOW_ISO).getTime();
+const NOW = FIXED_NOW_MS;
+
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(FIXED_NOW_ISO));
+});
+
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 // Mock snapshot with 7-day window checks
 const createMockSnapshot = (options?: { checksCount?: number; failureCount?: number; skippedCount?: number }) => {
   const checksCount = options?.checksCount ?? 3;
   const failureCount = options?.failureCount ?? 0;
   const skippedCount = options?.skippedCount ?? 0;
-  const now = Date.now();
+  const now = NOW;
   const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
   const eightDaysAgoMs = now - 8 * 24 * 60 * 60 * 1000;
 
@@ -83,7 +97,7 @@ const createMockHealth = (state: string, reasons: any[] = []) => ({
 describe('PHASE 1 LOCK-IN: 7-day Failure Aggregates', () => {
   it('should count zero failures when all checks pass', () => {
     const snapshot = createMockSnapshot({ checksCount: 3, failureCount: 0 });
-    const now = Date.now();
+    const now = NOW;
     const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
 
     let failureCount = 0;
@@ -116,7 +130,7 @@ describe('PHASE 1 LOCK-IN: 7-day Failure Aggregates', () => {
 
   it('should count failures within 7-day window only', () => {
     const snapshot = createMockSnapshot({ checksCount: 5, failureCount: 2 });
-    const now = Date.now();
+    const now = NOW;
     const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
 
     let failureCount = 0;
@@ -136,7 +150,7 @@ describe('PHASE 1 LOCK-IN: 7-day Failure Aggregates', () => {
 
   it('should categorize failures by reasonCode', () => {
     const snapshot = createMockSnapshot({ checksCount: 3, failureCount: 3 });
-    const now = Date.now();
+    const now = NOW;
     const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
 
     const buckets: Record<string, number> = {
@@ -170,10 +184,10 @@ describe('PHASE 1 LOCK-IN: 7-day Failure Aggregates', () => {
 
 describe('PHASE 1 LOCK-IN: Freshness Classification Boundaries', () => {
   it('should classify as FRESH when < 24h old', () => {
-    const now = new Date();
-    const twentyThreeHoursFiftyNineMin = new Date(now.getTime() - 23 * 60 * 60 * 1000 - 59 * 60 * 1000);
+    const now = NOW;
+    const twentyThreeHoursFiftyNineMin = now - (23 * 60 * 60 * 1000 + 59 * 60 * 1000);
 
-    const ageSeconds = Math.floor((now.getTime() - twentyThreeHoursFiftyNineMin.getTime()) / 1000);
+    const ageSeconds = Math.floor((now - twentyThreeHoursFiftyNineMin) / 1000);
     const hours24 = 24 * 60 * 60;
 
     const status = ageSeconds < hours24 ? 'FRESH' : ageSeconds <= 72 * 60 * 60 ? 'AGING' : 'STALE';
@@ -182,10 +196,10 @@ describe('PHASE 1 LOCK-IN: Freshness Classification Boundaries', () => {
   });
 
   it('should classify as AGING when exactly 24h old', () => {
-    const now = new Date();
-    const exactlyTwentyFourHours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const now = NOW;
+    const exactlyTwentyFourHours = now - 24 * 60 * 60 * 1000;
 
-    const ageSeconds = Math.floor((now.getTime() - exactlyTwentyFourHours.getTime()) / 1000);
+    const ageSeconds = Math.floor((now - exactlyTwentyFourHours) / 1000);
     const hours24 = 24 * 60 * 60;
     const hours72 = 72 * 60 * 60;
 
@@ -195,10 +209,10 @@ describe('PHASE 1 LOCK-IN: Freshness Classification Boundaries', () => {
   });
 
   it('should classify as AGING when 72h old', () => {
-    const now = new Date();
-    const seventy2Hours = new Date(now.getTime() - 72 * 60 * 60 * 1000);
+    const now = NOW;
+    const seventy2Hours = now - 72 * 60 * 60 * 1000;
 
-    const ageSeconds = Math.floor((now.getTime() - seventy2Hours.getTime()) / 1000);
+    const ageSeconds = Math.floor((now - seventy2Hours) / 1000);
     const hours24 = 24 * 60 * 60;
     const hours72 = 72 * 60 * 60;
 
@@ -208,10 +222,10 @@ describe('PHASE 1 LOCK-IN: Freshness Classification Boundaries', () => {
   });
 
   it('should classify as STALE when > 72h old', () => {
-    const now = new Date();
-    const seventyTwoHoursOneSec = new Date(now.getTime() - (72 * 60 * 60 * 1000 + 1000));
+    const now = NOW;
+    const seventyTwoHoursOneSec = now - (72 * 60 * 60 * 1000 + 1000);
 
-    const ageSeconds = Math.floor((now.getTime() - seventyTwoHoursOneSec.getTime()) / 1000);
+    const ageSeconds = Math.floor((now - seventyTwoHoursOneSec) / 1000);
     const hours24 = 24 * 60 * 60;
     const hours72 = 72 * 60 * 60;
 
@@ -289,7 +303,7 @@ describe('PHASE 1 LOCK-IN: Degraded Reason Priority', () => {
 describe('PHASE 1 LOCK-IN: Skipped Checks Aggregation', () => {
   it('should count zero skipped when all checks pass', () => {
     const snapshot = createMockSnapshot({ checksCount: 3, failureCount: 0, skippedCount: 0 });
-    const now = Date.now();
+    const now = NOW;
     const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
 
     let count = 0;
@@ -308,7 +322,7 @@ describe('PHASE 1 LOCK-IN: Skipped Checks Aggregation', () => {
 
   it('should count skipped checks within 7-day window only', () => {
     const snapshot = createMockSnapshot({ checksCount: 5, failureCount: 0, skippedCount: 2 });
-    const now = Date.now();
+    const now = NOW;
     const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
 
     let count = 0;
@@ -327,7 +341,7 @@ describe('PHASE 1 LOCK-IN: Skipped Checks Aggregation', () => {
 
   it('should identify primary skip reason (most frequent)', () => {
     const snapshot = createMockSnapshot({ checksCount: 3, failureCount: 0, skippedCount: 3 });
-    const now = Date.now();
+    const now = NOW;
     const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
 
     let count = 0;
@@ -355,7 +369,7 @@ describe('PHASE 1 LOCK-IN: Skipped Checks Aggregation', () => {
 
   it('should return NOT_AVAILABLE when no skip telemetry exists', () => {
     const snapshot = createMockSnapshot({ checksCount: 3, failureCount: 0, skippedCount: 0 });
-    const now = Date.now();
+    const now = NOW;
     const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
 
     let count = 0;
@@ -382,7 +396,7 @@ describe('PHASE 1 LOCK-IN: Skipped Checks Aggregation', () => {
 describe('PHASE 1 LOCK-IN: 7-day Aggregation Window', () => {
   it('should only count events within last 7 days', () => {
     const snapshot = createMockSnapshot({ checksCount: 5, failureCount: 2 });
-    const now = Date.now();
+    const now = NOW;
     const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
 
     let countWithin7d = 0;
