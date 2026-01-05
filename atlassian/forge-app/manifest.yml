@@ -35,6 +35,8 @@ modules:
       handler: scheduled/token_refresh_scheduler.handle
     - key: config-visibility-scheduler-fn
       handler: scheduled/config_visibility_scheduler.run
+    - key: perf-signals-scheduler-fn
+      handler: scheduled/perf_signals_scheduler.run
     - key: status-resolver-fn
       handler: resolvers/governance_status.get
 
@@ -62,6 +64,10 @@ modules:
 
     - key: config-visibility-scheduler
       function: config-visibility-scheduler-fn
+      interval: day
+
+    - key: perf-signals-scheduler
+      function: perf-signals-scheduler-fn
       interval: day
 
 # Permissions

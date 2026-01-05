@@ -417,6 +417,68 @@ async function loadStatus() {
         }
         setHTML('config-visibility-content', configVisibilityHtml);
 
+        // Step 9.5: Performance & Reliability Signals (Phase 3)
+        let perfSignalsHtml = '';
+        const ps = data.perfSignals;
+        if (ps) {
+            // Build metrics table for perf signals
+            let perfMetricsTableHtml = '<table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;"><tbody>';
+            
+            // Scheduler section
+            const schedulerRows = [
+                { label: 'Last Run', value: formatTimestampDisplay(ps.scheduler?.lastRunAtISO) },
+                { label: 'Last Success', value: formatTimestampDisplay(ps.scheduler?.lastSuccessAtISO) },
+                { label: 'Last Duration (ms)', value: ps.scheduler?.lastDurationMs !== null ? String(ps.scheduler.lastDurationMs) : 'Not available' },
+                { label: 'Last Failure Reason', value: ps.scheduler?.lastFailureReason || 'None' },
+            ];
+
+            // Jira API section
+            const jiraApiRows = [
+                { label: 'Requests (24h)', value: ps.jiraApi?.requestCount || 0 },
+                { label: 'Errors (24h)', value: ps.jiraApi?.errorCount || 0 },
+                { label: 'p50 Latency (ms)', value: ps.jiraApi?.latency?.p50ms !== null ? String(ps.jiraApi.latency.p50ms) : 'Not available' },
+                { label: 'p95 Latency (ms)', value: ps.jiraApi?.latency?.p95ms !== null ? String(ps.jiraApi.latency.p95ms) : 'Not available' },
+                { label: 'Max Latency (ms)', value: ps.jiraApi?.latency?.maxMs !== null ? String(ps.jiraApi.latency.maxMs) : 'Not available' },
+                { label: 'Rate Limit Remaining', value: ps.jiraApi?.rateLimit?.remaining !== null ? String(ps.jiraApi.rateLimit.remaining) : 'Not available' },
+                { label: 'Rate Limit Total', value: ps.jiraApi?.rateLimit?.limit !== null ? String(ps.jiraApi.rateLimit.limit) : 'Not available' },
+            ];
+
+            const allRows = [...schedulerRows, ...jiraApiRows];
+            
+            for (const row of allRows) {
+                perfMetricsTableHtml += `<tr style="border-bottom: 1px solid #dfe1e6;">`;
+                perfMetricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px; font-weight: 500; width: 40%;">${row.label}</td>`;
+                perfMetricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px;">${row.value}</td>`;
+                perfMetricsTableHtml += `</tr>`;
+            }
+
+            perfMetricsTableHtml += '</tbody></table>';
+
+            perfSignalsHtml = `
+                <div>
+                    ${perfMetricsTableHtml}
+                    <div style="margin-top: 16px; padding: 12px; background: #f5f6f7; border-radius: 4px; border: 1px solid #dfe1e6;">
+                        <div class="metric-row" style="display: flex; gap: 16px; margin-bottom: 12px;">
+                            <div>
+                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Completeness</div>
+                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${ps.completeness || '—'}</div>
+                            </div>
+                            <div>
+                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Evaluated At</div>
+                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${formatTimestampDisplay(ps.evaluatedAtISO)}</div>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid #dfe1e6; padding-top: 12px; margin-top: 12px; font-size: 12px; color: #44546f; line-height: 1.5;">
+                            <strong>Observational Only:</strong> Signals record latencies, error counts, and rate limits from Jira API interactions. FirstTry does not interpret, recommend, or enforce changes based on these signals.
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            perfSignalsHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">Awaiting first scheduled snapshot. Performance signals will appear here once collected.</div>';
+        }
+        setHTML('perf-signals-content', perfSignalsHtml);
+
         // Step 10: Data Quality & Coverage Panel
         const coverageList = data.coverageIncluded.map((item: string) => `<li>${item}</li>`).join('');
         const dqStatus = `
