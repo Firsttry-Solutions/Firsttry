@@ -12,6 +12,12 @@ The **Heartbeat Trust Dashboard** is a read-only Jira dashboard gadget that disp
 - No external network calls
 - No admin actions
 
+## Phase 2: Jira Configuration Visibility
+
+Phase 2 adds a new observational section to the dashboard: **Jira Configuration Visibility (Read-only)**. This section displays counts and a neutral risk band for Jira configuration complexity, without changing configuration or making recommendations.
+
+The configuration visibility metrics are collected via scheduled snapshot on a daily basis. They are read-only observations only. FirstTry does not modify Jira configuration, does not recommend changes, and does not enforce policies based on these observations.
+
 ## Purpose
 
 The gadget builds user trust through transparency, including transparency about what is unknown or unavailable.
