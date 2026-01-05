@@ -261,12 +261,19 @@ async function loadStatus() {
                 </div>
             </div>
             <div class="disclaimer">
-                <strong>Freshness Disclaimer:</strong> Data freshness is determined by comparing snapshot age against the expected schedule interval (${data.expectedScheduleIntervalMinutes} minutes). Stale data (older than ${data.staleIfAgeMinutesGreaterThan} minutes) may affect accuracy of operational visibility.
+                <strong>Freshness:</strong> Based on snapshot age vs schedule interval (${data.expectedScheduleIntervalMinutes} min). Data older than ${data.staleIfAgeMinutesGreaterThan} min is marked STALE.
             </div>
         `;
         setHTML('operational-status', opStatus);
+        
+        // Show degraded clarification if status is DEGRADED
+        if (data.systemStatus === 'DEGRADED') {
+            const clarif = document.getElementById('degraded-clarification');
+            if (clarif) clarif.style.display = 'block';
+        }
 
         // Step 10: Data Quality & Coverage Panel
+        const coverageList = data.coverageIncluded.map((item: string) => `<li>${item}</li>`).join('');
         const dqStatus = `
             <div class="metric-row">
                 <div class="metric-label">Completeness Status</div>
@@ -274,7 +281,10 @@ async function loadStatus() {
             </div>
             <div class="metric-row">
                 <div class="metric-label">Coverage Included</div>
-                <ul class="coverage-list">${data.coverageIncluded.map((item: string) => `<li>${item}</li>`).join('')}</ul>
+                <details style="margin-top: 8px;">
+                    <summary style="cursor: pointer; font-weight: 500; color: #172b4d;">View coverage details</summary>
+                    <ul class="coverage-list" style="margin-top: 8px;">${coverageList}</ul>
+                </details>
             </div>
             <div class="metric-row">
                 <div class="metric-label">Coverage Excluded</div>
