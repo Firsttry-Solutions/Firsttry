@@ -478,37 +478,67 @@ function showExportToast(kind: 'ok' | 'warn' | 'err', msg: string) {
 }
 
 /**
- * Copy text using Clipboard API with fallback
+ * Download a blob as a file with the given filename
+ * Tries standard download mechanism; falls back gracefully on error
+ * Returns true if successful, false otherwise
  */
-function copyTextFallback(text: string): boolean {
+function downloadBlob(filename: string, mime: string, content: string): boolean {
     try {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        const success = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        return success;
+        const blob = new Blob([content], { type: mime });
+        const url = URL.createObjectURL(blob);
+        try {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            return true;
+        } finally {
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
     } catch (e) {
         return false;
     }
 }
 
 /**
- * Copy text with Clipboard API, fallback to execCommand
+ * Copy text to clipboard with fallback
+ * Returns { ok: true } on success
+ * Returns { ok: false, reason: string } on failure
  */
-async function copyText(text: string): Promise<boolean> {
-    try {
-        if (CLIPBOARD_API_AVAILABLE) {
+async function copyToClipboard(text: string): Promise<{ ok: true } | { ok: false, reason: string }> {
+    // Try Clipboard API first
+    if (CLIPBOARD_API_AVAILABLE) {
+        try {
             await navigator.clipboard.writeText(text);
-            return true;
-        } else {
-            return copyTextFallback(text);
+            return { ok: true };
+        } catch (clipboardErr) {
+            // Fall through to fallback
         }
-    } catch (e) {
-        return copyTextFallback(text);
+    }
+
+    // Fallback: execCommand approach
+    try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const success = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        if (success) {
+            return { ok: true };
+        } else {
+            return { ok: false, reason: 'Copy command failed (execCommand returned false)' };
+        }
+    } catch (fallbackErr) {
+        return { ok: false, reason: 'Copy unavailable in this browser' };
     }
 }
 
@@ -706,22 +736,23 @@ window.copySummary = async function() {
     try {
         const payload = buildExportPayload();
         if (!payload) {
-            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh the gadget after the next scheduled check.');
+            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
             return;
         }
 
         const text = toSummaryText(payload);
-        const copied = await copyText(text);
+        const result = await copyToClipboard(text);
 
-        if (copied) {
-            showExportToast('ok', '✓ Summary copied to clipboard');
+        if (result.ok) {
+            showExportToast('ok', '✓ Copied to clipboard');
         } else {
-            // Fallback: render to panel and instruct user to copy manually
+            // Show clear error with reason
+            showExportToast('err', `Copy failed: ${result.reason}. Use Download JSON instead.`);
+            // Also render to export panel as fallback
             renderExportOutput('SUMMARY EXPORT', text);
-            showExportToast('warn', 'Summary ready below. Select & copy manually.');
         }
     } catch (e) {
-        showExportToast('err', 'Export failed — no data was modified.');
+        showExportToast('err', 'Export error: see panel below.');
     }
 };
 
@@ -730,53 +761,41 @@ window.downloadJSON = async function() {
     try {
         const payload = buildExportPayload();
         if (!payload) {
-            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh the gadget after the next scheduled check.');
+            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
             return;
         }
 
         const json = toJSONText(payload);
         if (!json || json.length === 0) {
-            showExportToast('err', 'Export failed — no data was modified.');
+            showExportToast('err', 'JSON content empty: cannot export.');
             return;
         }
 
-        // Check if downloads are allowed
-        if (EXPORT_MODE === 'COPY_ONLY') {
-            // Downloads blocked: render to panel and copy to clipboard
-            renderExportOutput('JSON EXPORT', json);
-            const copied = await copyText(json);
-            if (copied) {
-                showExportToast('ok', 'JSON copied. Download is blocked by Jira gadget sandbox.');
-            } else {
-                showExportToast('warn', 'JSON ready below. Copy manually (download blocked by Jira gadget sandbox).');
-            }
-            return;
-        }
+        // Derive filename from payload timestamp if available
+        const dateStr = payload.generatedAt 
+            ? new Date(payload.generatedAt).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0];
+        const filename = `governance-status-${dateStr}.json`;
 
-        // Download mode: attempt Blob download
-        try {
-            const blob = new Blob([json], { type: 'application/json; charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `governance-status-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showExportToast('ok', '✓ JSON downloaded');
-        } catch (downloadErr) {
-            // Download failed: fallback to render + copy
-            renderExportOutput('JSON EXPORT', json);
-            const copied = await copyText(json);
-            if (copied) {
-                showExportToast('warn', 'JSON copied (download failed). Download is blocked by Jira gadget sandbox.');
+        // Always try download first (deterministic)
+        const downloadSuccess = downloadBlob(filename, 'application/json; charset=utf-8', json);
+
+        if (downloadSuccess) {
+            showExportToast('ok', `✓ Downloaded ${filename}`);
+        } else {
+            // Download failed: show error and offer copy
+            showExportToast('err', 'Download blocked. Copying to clipboard instead...');
+            const copyResult = await copyToClipboard(json);
+            if (copyResult.ok) {
+                showExportToast('ok', '✓ JSON copied to clipboard');
             } else {
-                showExportToast('warn', 'JSON ready below. Copy manually (download blocked by Jira gadget sandbox).');
+                // Final fallback: show in export panel
+                renderExportOutput('JSON EXPORT', json);
+                showExportToast('warn', 'JSON ready in panel below (copy/download unavailable).');
             }
         }
     } catch (e) {
-        showExportToast('err', 'Export failed — no data was modified.');
+        showExportToast('err', 'Export error: see panel below.');
     }
 };
 
@@ -785,53 +804,41 @@ window.downloadCSV = async function() {
     try {
         const payload = buildExportPayload();
         if (!payload) {
-            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh the gadget after the next scheduled check.');
+            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
             return;
         }
 
         const csv = toCSVText(payload);
         if (!csv || csv.length === 0) {
-            showExportToast('err', 'Export failed — no data was modified.');
+            showExportToast('err', 'CSV content empty: cannot export.');
             return;
         }
 
-        // Check if downloads are allowed
-        if (EXPORT_MODE === 'COPY_ONLY') {
-            // Downloads blocked: render to panel and copy to clipboard
-            renderExportOutput('CSV EXPORT', csv);
-            const copied = await copyText(csv);
-            if (copied) {
-                showExportToast('ok', 'CSV copied. Download is blocked by Jira gadget sandbox.');
-            } else {
-                showExportToast('warn', 'CSV ready below. Copy manually (download blocked by Jira gadget sandbox).');
-            }
-            return;
-        }
+        // Derive filename from payload timestamp if available
+        const dateStr = payload.generatedAt 
+            ? new Date(payload.generatedAt).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0];
+        const filename = `governance-status-${dateStr}.csv`;
 
-        // Download mode: attempt Blob download
-        try {
-            const blob = new Blob([csv], { type: 'text/csv; charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `governance-status-${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showExportToast('ok', '✓ CSV downloaded');
-        } catch (downloadErr) {
-            // Download failed: fallback to render + copy
-            renderExportOutput('CSV EXPORT', csv);
-            const copied = await copyText(csv);
-            if (copied) {
-                showExportToast('warn', 'CSV copied (download failed). Download is blocked by Jira gadget sandbox.');
+        // Always try download first (deterministic)
+        const downloadSuccess = downloadBlob(filename, 'text/csv; charset=utf-8', csv);
+
+        if (downloadSuccess) {
+            showExportToast('ok', `✓ Downloaded ${filename}`);
+        } else {
+            // Download failed: show error and offer copy
+            showExportToast('err', 'Download blocked. Copying to clipboard instead...');
+            const copyResult = await copyToClipboard(csv);
+            if (copyResult.ok) {
+                showExportToast('ok', '✓ CSV copied to clipboard');
             } else {
-                showExportToast('warn', 'CSV ready below. Copy manually (download blocked by Jira gadget sandbox).');
+                // Final fallback: show in export panel
+                renderExportOutput('CSV EXPORT', csv);
+                showExportToast('warn', 'CSV ready in panel below (copy/download unavailable).');
             }
         }
     } catch (e) {
-        showExportToast('err', 'Export failed — no data was modified.');
+        showExportToast('err', 'Export error: see panel below.');
     }
 };
 
