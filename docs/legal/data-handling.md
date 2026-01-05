@@ -53,9 +53,9 @@ Security is provided by:
 
 ## Data Retention
 
-- **In-App Storage**: Data persists in Forge storage until explicitly deleted or the app is uninstalled
+- **In-App Storage**: Data persists in Forge storage until the app is uninstalled
 - **Retention Policies**: Specific retention periods vary based on data type and operational needs
-- **Deletion**: Data can be removed by uninstalling the App or through app-specific cleanup operations
+- **Deletion**: Data is deleted when the app is uninstalled. Atlassian Forge automatically removes all app-scoped storage upon uninstall.
 
 For storage growth behavior and quota handling, see the platform dependencies documentation.
 
