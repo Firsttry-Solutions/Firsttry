@@ -55,6 +55,14 @@
                     <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Resolver Invoke</div>
                     <div class="metric-value" id="ui-selftest-invoke" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
                 </div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Export Mode</div>
+                    <div class="metric-value" id="ui-selftest-export-mode" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                </div>
+                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Clipboard</div>
+                    <div class="metric-value" id="ui-selftest-clipboard" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                </div>
             </div>
         </div>
         
@@ -181,11 +189,19 @@
             <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Report & Export</div>
             <p style="font-size: 14px; color: #44546f; margin-bottom: 12px;">Download or copy governance status data for external review or records.</p>
             <div class="action-buttons" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;">
-                <button class="btn primary" onclick="window.copySummary()" style="padding: 8px 16px; border: 1px solid #0052cc; background: #0052cc; color: white; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Copy Summary to Clipboard</button>
-                <button class="btn" onclick="window.downloadJSON()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download JSON</button>
-                <button class="btn" onclick="window.downloadCSV()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download CSV</button>
+                <button class="btn primary" id="copy-summary-btn" onclick="window.copySummary()" style="padding: 8px 16px; border: 1px solid #0052cc; background: #0052cc; color: white; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Copy Summary to Clipboard</button>
+                <button class="btn" id="download-json-btn" onclick="window.downloadJSON()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download JSON</button>
+                <button class="btn" id="download-csv-btn" onclick="window.downloadCSV()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download CSV</button>
             </div>
-            <div class="truth-statement" style="font-size: 12px; color: #8590a2; margin-top: 12px; padding: 8px 12px; border-top: 1px solid #dfe1e6; line-height: 1.5;">Copy Summary changed; JSON/CSV unchanged.</div>
+            <details style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dfe1e6;">
+                <summary style="cursor: pointer; font-size: 14px; font-weight: 600; color: #0052cc; margin-bottom: 12px;">Export Output (for manual copy)</summary>
+                <div style="padding: 12px; background: #f1f2f4; border-radius: 4px; margin-top: 8px;">
+                    <div id="export-output-title" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;"></div>
+                    <textarea id="export-output-text" readonly style="width: 100%; min-height: 220px; padding: 12px; border: 1px solid #dfe1e6; border-radius: 4px; font-family: 'Monaco', 'Courier New', monospace; font-size: 12px; color: #172b4d; background: #ffffff; box-sizing: border-box;"></textarea>
+                    <div style="font-size: 12px; color: #8590a2; margin-top: 8px; line-height: 1.4;">If downloads are blocked in Jira gadgets, use this box to copy exports manually.</div>
+                </div>
+            </details>
+            <div class="truth-statement" style="font-size: 12px; color: #8590a2; margin-top: 12px; padding: 8px 12px; border-top: 1px solid #dfe1e6; line-height: 1.5;">Exports always produce a result: download (if allowed) or manual copy panel.</div>
         </div>
 
         <!-- Footer -->
