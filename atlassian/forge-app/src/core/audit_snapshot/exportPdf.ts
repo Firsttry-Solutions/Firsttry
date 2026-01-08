@@ -1,251 +1,556 @@
 /**
  * PDF Export from Trust Snapshot
  * 
- * Generates human-readable PDF from TrustSnapshot data.
- * Output must not exceed 900 KB.
+ * Generates professional-grade, deterministic PDF from TrustSnapshot data.
+ * Uses pdf-lib (pure JavaScript) for maximum Forge runtime compatibility.
  * 
- * Uses a minimal PDF generator compatible with Node.js runtime.
+ * Output is deterministic (byte-for-byte identical) for identical input.
+ * Output must not exceed 900 KB (FAIL CLOSED if exceeded).
+ * 
+ * Determinism markers embedded in PDF metadata:
+ * - PDF_LAYOUT_VERSION: tracks section layout and formatting
+ * - PDF_ENGINE: identifies pdf-lib version
+ * - All timestamps are parsed from record.generatedAtISO (no new Date() calls)
  */
 
+import { PDFDocument, PDFPage, rgb, PageSizes, StandardFonts } from 'pdf-lib';
 import { TrustSnapshot, SnapshotRecord } from './types';
+
+// ============================================================================
+// DETERMINISM MARKERS
+// ============================================================================
+
+const PDF_LAYOUT_VERSION = "PDF_LAYOUT_v1";
+const PDF_ENGINE = "pdf-lib@1.17.1";
+
+// ============================================================================
+// HELPER FUNCTIONS FOR TEXT RENDERING
+// ============================================================================
+
+/**
+ * Safe text conversion that handles any value
+ */
+function safeText(v: unknown): string {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'string') return v;
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  if (typeof v === 'number') return String(v);
+  return String(v);
+}
+
+/**
+ * Wrap text to fit within max width
+ * Returns array of lines
+ */
+function wrapText(
+  text: string,
+  maxWidth: number,
+  fontSizePoints: number,
+  characterWidthEstimate: number = 0.5
+): string[] {
+  if (!text) return [''];
+
+  // Estimate characters that fit per line based on font size
+  const avgCharsPerPoint = characterWidthEstimate;
+  const maxCharsPerLine = Math.max(1, Math.floor(maxWidth / (fontSizePoints * avgCharsPerPoint)));
+
+  const lines: string[] = [];
+  const words = text.split(/\s+/);
+  let currentLine = '';
+
+  for (const word of words) {
+    if (!word) continue;
+
+    if (currentLine.length === 0) {
+      currentLine = word;
+    } else if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+      currentLine += ' ' + word;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) lines.push(currentLine);
+  return lines.length > 0 ? lines : [''];
+}
+
+/**
+ * PDF rendering state tracker
+ */
+interface RenderState {
+  pdfDoc: PDFDocument;
+  pages: PDFPage[];
+  currentPageIndex: number;
+  cursorY: number;
+  margin: number;
+  pageWidth: number;
+  pageHeight: number;
+  fonts: {
+    sans: any;
+    sansBold: any;
+    mono: any;
+  };
+}
+
+/**
+ * Create new page and redraw header
+ */
+function ensureSpace(state: RenderState, neededHeight: number): void {
+  const minY = state.margin + 40; // Reserve space for footer
+
+  if (state.cursorY - neededHeight < minY) {
+    // Add new page
+    const newPage = state.pdfDoc.addPage();
+    state.pages.push(newPage);
+    state.currentPageIndex = state.pages.length - 1;
+    state.cursorY = state.pageHeight - state.margin;
+    drawHeader(state);
+  }
+}
+
+/**
+ * Draw header on current page
+ */
+function drawHeader(state: RenderState): void {
+  const page = state.pages[state.currentPageIndex];
+  const headerY = state.pageHeight - state.margin + 10;
+
+  page.drawText('FirstTry Trust Snapshot', {
+    x: state.margin,
+    y: headerY,
+    size: 11,
+    font: state.fonts.sansBold,
+    color: rgb(0.1, 0.1, 0.1),
+  });
+
+  page.drawText('Read-only evidence export', {
+    x: state.pageWidth - state.margin - 200,
+    y: headerY,
+    size: 8,
+    font: state.fonts.sans,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+}
+
+/**
+ * Draw footer with page numbers on current page
+ * Note: Called at end when total page count is known
+ */
+function drawFooter(state: RenderState, pageNum: number, totalPages: number): void {
+  const page = state.pages[state.currentPageIndex];
+  const footerY = state.margin - 10;
+
+  page.drawText(`Page ${pageNum} of ${totalPages}`, {
+    x: state.margin,
+    y: footerY,
+    size: 8,
+    font: state.fonts.sans,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+
+  page.drawText('FirstTry — Read-only evidence export', {
+    x: state.pageWidth / 2 - 100,
+    y: footerY,
+    size: 8,
+    font: state.fonts.sans,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+}
+
+/**
+ * Draw section title
+ */
+function sectionTitle(state: RenderState, title: string): void {
+  ensureSpace(state, 20);
+
+  const page = state.pages[state.currentPageIndex];
+  page.drawText(title, {
+    x: state.margin,
+    y: state.cursorY,
+    size: 12,
+    font: state.fonts.sansBold,
+    color: rgb(0.1, 0.1, 0.1),
+  });
+
+  state.cursorY -= 16;
+}
+
+/**
+ * Draw key-value table
+ */
+function kvTable(
+  state: RenderState,
+  rows: Array<{ label: string; value: string; mono?: boolean }>
+): void {
+  ensureSpace(state, rows.length * 14 + 10);
+
+  const page = state.pages[state.currentPageIndex];
+  const labelWidth = 120;
+  const valueX = state.margin + labelWidth + 10;
+  const maxValueWidth = state.pageWidth - valueX - state.margin - 10;
+
+  for (const row of rows) {
+    // Label (bold)
+    page.drawText(safeText(row.label), {
+      x: state.margin,
+      y: state.cursorY,
+      size: 9,
+      font: state.fonts.sansBold,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+
+    // Value (wrapped if needed)
+    const valueLines = wrapText(safeText(row.value), maxValueWidth, 9);
+    const valueFont = row.mono ? state.fonts.mono : state.fonts.sans;
+
+    page.drawText(valueLines[0] || '', {
+      x: valueX,
+      y: state.cursorY,
+      size: 9,
+      font: valueFont,
+      color: rgb(0.15, 0.15, 0.15),
+    });
+
+    state.cursorY -= 12;
+
+    // Draw wrapped lines
+    for (let i = 1; i < valueLines.length; i++) {
+      ensureSpace(state, 14);
+      page.drawText(valueLines[i], {
+        x: valueX,
+        y: state.cursorY,
+        size: 9,
+        font: valueFont,
+        color: rgb(0.15, 0.15, 0.15),
+      });
+      state.cursorY -= 12;
+    }
+  }
+
+  state.cursorY -= 4; // Extra spacing after table
+}
+
+/**
+ * Draw bullet list
+ */
+function bulletList(state: RenderState, title: string, bullets: string[]): void {
+  sectionTitle(state, title);
+
+  ensureSpace(state, bullets.length * 14 + 10);
+
+  const page = state.pages[state.currentPageIndex];
+  const bulletX = state.margin + 15;
+  const textX = bulletX + 12;
+  const maxWidth = state.pageWidth - textX - state.margin - 10;
+
+  for (const bullet of bullets) {
+    ensureSpace(state, 14);
+
+    // Bullet point
+    page.drawCircle({
+      x: bulletX,
+      y: state.cursorY - 3,
+      size: 2,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+
+    // Text (wrapped)
+    const lines = wrapText(safeText(bullet), maxWidth, 9);
+    page.drawText(lines[0] || '', {
+      x: textX,
+      y: state.cursorY,
+      size: 9,
+      font: state.fonts.sans,
+      color: rgb(0.15, 0.15, 0.15),
+    });
+
+    state.cursorY -= 12;
+
+    for (let i = 1; i < lines.length; i++) {
+      ensureSpace(state, 14);
+      page.drawText(lines[i], {
+        x: textX,
+        y: state.cursorY,
+        size: 9,
+        font: state.fonts.sans,
+        color: rgb(0.15, 0.15, 0.15),
+      });
+      state.cursorY -= 12;
+    }
+  }
+
+  state.cursorY -= 4;
+}
+
+// ============================================================================
+// MAIN PDF GENERATION
+// ============================================================================
 
 /**
  * Generate PDF buffer from TrustSnapshot
- * Returns PDF bytes
+ * 
+ * Returns deterministic PDF bytes.
+ * Throws with PDF_TOO_LARGE if buffer exceeds 900 KB.
+ * Throws with PDF_INVALID if generated PDF is malformed.
  */
 export async function generateTrustSnapshotPdf(
   snapshot: TrustSnapshot,
   record: SnapshotRecord
 ): Promise<Buffer> {
-  try {
-    // Attempt to use pdfkit if available, otherwise fallback to simple PDF
-    const pdfLibAvailable = await checkPdfLibAvailable();
-    
-    if (pdfLibAvailable) {
-      return await generatePdfWithLibrary(snapshot, record);
-    } else {
-      return generateSimplePdf(snapshot, record);
-    }
-  } catch (error) {
-    // Fallback to simple PDF even if library is available but fails
-    return generateSimplePdf(snapshot, record);
-  }
-}
+  // Create PDF document with deterministic settings
+  const pdfDoc = await PDFDocument.create();
 
-async function checkPdfLibAvailable(): Promise<boolean> {
-  try {
-    // Try to dynamically import pdfkit
-    const module = await import('pdfkit');
-    return !!module;
-  } catch {
-    return false;
-  }
-}
+  // Embed determinism markers in metadata
+  pdfDoc.setTitle('FirstTry Trust Snapshot');
+  pdfDoc.setSubject('Read-only evidence report');
+  pdfDoc.setKeywords([
+    'FirstTry Trust Snapshot',
+    'Evidence Identity',
+    'Operational State',
+    'Monitoring Continuity',
+    'Configuration Risk Summary',
+    'Change Summary',
+    'App Behavior Guarantees',
+    'Issues',
+    PDF_LAYOUT_VERSION,
+    PDF_ENGINE,
+  ]);
+  pdfDoc.setCreator(`FirstTry PDF Generator (${PDF_ENGINE})`);
+  pdfDoc.setProducer(`pdf-lib (${PDF_ENGINE}, layout ${PDF_LAYOUT_VERSION})`);
 
-async function generatePdfWithLibrary(snapshot: TrustSnapshot, record: SnapshotRecord): Promise<Buffer> {
-  try {
-    const PDFDocument = (await import('pdfkit')).default;
-    const chunks: Buffer[] = [];
+  // Embed creation date from record (deterministic, not from Date.now())
+  // Parse timestamp string to get date without timezone variations
+  const creationDate = new Date(record.generatedAtISO);
+  pdfDoc.setCreationDate(creationDate);
 
-    const doc = new PDFDocument({
-      size: 'A4',
-      margin: 50,
+  // Create first page (A4: 595.28 × 841.89 points)
+  const pageWidth = PageSizes.A4[0];
+  const pageHeight = PageSizes.A4[1];
+  const firstPage = pdfDoc.addPage([pageWidth, pageHeight]);
+
+  // Embed fonts for maximum determinism (standard fonts)
+  const sansBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const sans = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const mono = await pdfDoc.embedFont(StandardFonts.Courier);
+
+  const margin = 50;
+
+  // Initialize render state
+  const state: RenderState = {
+    pdfDoc,
+    pages: [firstPage],
+    currentPageIndex: 0,
+    cursorY: pageHeight - margin - 20,
+    margin,
+    pageWidth,
+    pageHeight,
+    fonts: {
+      sans,
+      sansBold,
+      mono,
+    },
+  };
+
+  // Draw header on first page
+  drawHeader(state);
+
+  // ========================================================================
+  // SECTION 1: Evidence Identity
+  // ========================================================================
+  sectionTitle(state, 'Evidence Identity');
+  kvTable(state, [
+    { label: 'Snapshot ID', value: record.snapshotId, mono: true },
+    { label: 'JSON SHA256', value: record.jsonSha256, mono: true },
+    { label: 'Generated At (UTC)', value: String(record.generatedAtISO).substring(0, 19) },
+    { label: 'App Version', value: snapshot.versioning.appVersion },
+    { label: 'Environment', value: snapshot.versioning.environment },
+  ]);
+
+  // ========================================================================
+  // SECTION 2: Operational State
+  // ========================================================================
+  sectionTitle(state, 'Operational State');
+  kvTable(state, [
+    { label: 'Status', value: snapshot.operationalState.status },
+    {
+      label: 'Last Successful Run (UTC)',
+      value: snapshot.operationalState.lastSuccessfulRunAtISO
+        ? String(snapshot.operationalState.lastSuccessfulRunAtISO).substring(0, 19)
+        : 'Not available',
+    },
+    {
+      label: 'Days Operational',
+      value:
+        snapshot.operationalState.consecutiveDaysOperational !== null
+          ? String(snapshot.operationalState.consecutiveDaysOperational)
+          : 'Not available',
+    },
+  ]);
+
+  // ========================================================================
+  // SECTION 3: Monitoring Continuity
+  // ========================================================================
+  sectionTitle(state, 'Monitoring Continuity');
+  kvTable(state, [
+    { label: 'Scheduler Active', value: String(snapshot.monitoringContinuity.schedulerActive) },
+    {
+      label: 'Last Run (UTC)',
+      value: snapshot.monitoringContinuity.lastRunAtISO
+        ? String(snapshot.monitoringContinuity.lastRunAtISO).substring(0, 19)
+        : 'Not available',
+    },
+    { label: 'Data Completeness', value: snapshot.monitoringContinuity.dataCompleteness },
+  ]);
+
+  // ========================================================================
+  // SECTION 4: Configuration Risk Summary
+  // ========================================================================
+  sectionTitle(state, 'Configuration Risk Summary');
+  kvTable(state, [
+    { label: 'Risk Band', value: snapshot.configurationRiskSummary.riskBand },
+    {
+      label: 'Metrics Included',
+      value: snapshot.configurationRiskSummary.metricsIncluded.length > 0
+        ? snapshot.configurationRiskSummary.metricsIncluded.join(', ')
+        : '(none)',
+    },
+    {
+      label: 'Evaluated At (UTC)',
+      value: snapshot.configurationRiskSummary.evaluatedAtISO
+        ? String(snapshot.configurationRiskSummary.evaluatedAtISO).substring(0, 19)
+        : 'Not available',
+    },
+  ]);
+
+  // ========================================================================
+  // SECTION 5: Change Summary
+  // ========================================================================
+  sectionTitle(state, 'Change Summary');
+  kvTable(state, [
+    { label: 'Event Count', value: String(snapshot.changeSummary.eventCount) },
+    {
+      label: 'Categories',
+      value: snapshot.changeSummary.categoriesPresent.length > 0
+        ? snapshot.changeSummary.categoriesPresent.join(', ')
+        : '(none)',
+    },
+    {
+      label: 'Last Change (UTC)',
+      value: snapshot.changeSummary.lastChangeAtISO
+        ? String(snapshot.changeSummary.lastChangeAtISO).substring(0, 19)
+        : 'Not available',
+    },
+  ]);
+
+  // ========================================================================
+  // SECTION 6: App Behavior Guarantees
+  // ========================================================================
+  sectionTitle(state, 'App Behavior Guarantees');
+  kvTable(state, [
+    { label: 'Read-Only', value: String(snapshot.appBehaviorGuarantees.readOnly) },
+    { label: 'No Jira Writes', value: String(snapshot.appBehaviorGuarantees.noJiraWrites) },
+    { label: 'No Config Changes', value: String(snapshot.appBehaviorGuarantees.noConfigChanges) },
+    { label: 'No Enforcement', value: String(snapshot.appBehaviorGuarantees.noEnforcement) },
+  ]);
+
+  // ========================================================================
+  // SECTION 7: Issues
+  // ========================================================================
+  if (snapshot.issues.length === 0) {
+    sectionTitle(state, 'Issues');
+    ensureSpace(state, 14);
+    const page = state.pages[state.currentPageIndex];
+    page.drawText('No issues recorded.', {
+      x: state.margin,
+      y: state.cursorY,
+      size: 9,
+      font: state.fonts.sans,
+      color: rgb(0.15, 0.15, 0.15),
     });
+    state.cursorY -= 12;
+  } else {
+    const issueBullets = snapshot.issues.map(
+      (issue) => `${issue.source}: ${issue.reason} (${issue.errorCode})`
+    );
+    bulletList(state, 'Issues', issueBullets);
+  }
 
-    // Collect output
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+  // ========================================================================
+  // SECTION 8: Evidence Notes
+  // ========================================================================
+  sectionTitle(state, 'Evidence Notes');
+  ensureSpace(state, 28);
+  const page = state.pages[state.currentPageIndex];
 
-    // Title
-    doc.fontSize(18).font('Helvetica-Bold').text('Trust Snapshot', { underline: true });
-    doc.fontSize(10).text('');
+  const notes = [
+    'This PDF is derived from the canonical snapshot JSON identified by JSON SHA256 above.',
+    'FirstTry is observational only and performs no Jira writes.',
+  ];
 
-    // Snapshot ID and Hash
-    doc.fontSize(10).font('Helvetica-Bold').text('Evidence Identity:');
-    doc.fontSize(9).font('Helvetica').text(`Snapshot ID: ${record.snapshotId}`);
-    doc.fontSize(9).text(`JSON SHA256: ${record.jsonSha256}`);
-    doc.fontSize(9).text(`Generated: ${record.generatedAtISO}`);
-    doc.fontSize(10).text('');
-
-    // Operational State
-    doc.fontSize(10).font('Helvetica-Bold').text('Operational State:');
-    doc.fontSize(9).font('Helvetica').text(`Status: ${snapshot.operationalState.status}`);
-    if (snapshot.operationalState.lastSuccessfulRunAtISO) {
-      doc.fontSize(9).text(`Last Successful Run: ${snapshot.operationalState.lastSuccessfulRunAtISO}`);
-    }
-    if (snapshot.operationalState.consecutiveDaysOperational !== null) {
-      doc.fontSize(9).text(`Days Operational: ${snapshot.operationalState.consecutiveDaysOperational}`);
-    }
-    doc.fontSize(10).text('');
-
-    // Monitoring Continuity
-    doc.fontSize(10).font('Helvetica-Bold').text('Monitoring Continuity:');
-    doc.fontSize(9).font('Helvetica').text(`Scheduler Active: ${snapshot.monitoringContinuity.schedulerActive}`);
-    if (snapshot.monitoringContinuity.lastRunAtISO) {
-      doc.fontSize(9).text(`Last Run: ${snapshot.monitoringContinuity.lastRunAtISO}`);
-    }
-    doc.fontSize(9).text(`Data Completeness: ${snapshot.monitoringContinuity.dataCompleteness}`);
-    doc.fontSize(10).text('');
-
-    // Configuration Risk
-    doc.fontSize(10).font('Helvetica-Bold').text('Configuration Risk Summary:');
-    doc.fontSize(9).font('Helvetica').text(`Risk Band: ${snapshot.configurationRiskSummary.riskBand}`);
-    doc.fontSize(9).text(`Metrics Included: ${snapshot.configurationRiskSummary.metricsIncluded.join(', ') || '(none)'}`);
-    if (snapshot.configurationRiskSummary.evaluatedAtISO) {
-      doc.fontSize(9).text(`Evaluated: ${snapshot.configurationRiskSummary.evaluatedAtISO}`);
-    }
-    doc.fontSize(10).text('');
-
-    // Change Summary
-    doc.fontSize(10).font('Helvetica-Bold').text('Change Summary (Last 30 Days):');
-    doc.fontSize(9).font('Helvetica').text(`Event Count: ${snapshot.changeSummary.eventCount}`);
-    if (snapshot.changeSummary.categoriesPresent.length > 0) {
-      doc.fontSize(9).text(`Categories: ${snapshot.changeSummary.categoriesPresent.join(', ')}`);
-    }
-    if (snapshot.changeSummary.lastChangeAtISO) {
-      doc.fontSize(9).text(`Last Change: ${snapshot.changeSummary.lastChangeAtISO}`);
-    }
-    doc.fontSize(10).text('');
-
-    // App Behavior Guarantees
-    doc.fontSize(10).font('Helvetica-Bold').text('App Behavior Guarantees:');
-    doc.fontSize(9).font('Helvetica').text(`Read-Only: ${snapshot.appBehaviorGuarantees.readOnly}`);
-    doc.fontSize(9).text(`No Jira Writes: ${snapshot.appBehaviorGuarantees.noJiraWrites}`);
-    doc.fontSize(9).text(`No Config Changes: ${snapshot.appBehaviorGuarantees.noConfigChanges}`);
-    doc.fontSize(9).text(`No Enforcement: ${snapshot.appBehaviorGuarantees.noEnforcement}`);
-    doc.fontSize(10).text('');
-
-    // Versioning
-    doc.fontSize(10).font('Helvetica-Bold').text('Versioning:');
-    doc.fontSize(9).font('Helvetica').text(`App Version: ${snapshot.versioning.appVersion}`);
-    doc.fontSize(9).text(`Environment: ${snapshot.versioning.environment}`);
-    doc.fontSize(10).text('');
-
-    // Completeness
-    doc.fontSize(10).font('Helvetica-Bold').text('Completeness:');
-    doc.fontSize(9).font('Helvetica').text(`Status: ${snapshot.completeness}`);
-
-    // Issues (if any)
-    if (snapshot.issues.length > 0) {
-      doc.fontSize(10).text('');
-      doc.fontSize(10).font('Helvetica-Bold').text('Issues:');
-      for (const issue of snapshot.issues) {
-        doc.fontSize(9).font('Helvetica').text(`• ${issue.source}: ${issue.reason} (${issue.errorCode})`);
-      }
-    }
-
-    // Footer
-    doc.fontSize(8).text('');
-    doc.text('Generated by FirstTry — Read-only evidence export', { align: 'center' });
-
-    doc.end();
-
-    return new Promise((resolve, reject) => {
-      doc.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        if (buffer.length > 900 * 1024) {
-          reject(new Error('PDF exceeds 900 KB size limit'));
-        } else {
-          resolve(buffer);
-        }
+  for (const note of notes) {
+    const lines = wrapText(note, state.pageWidth - state.margin * 2 - 10, 8);
+    for (const line of lines) {
+      ensureSpace(state, 12);
+      page.drawText(line, {
+        x: state.margin,
+        y: state.cursorY,
+        size: 8,
+        font: state.fonts.sans,
+        color: rgb(0.3, 0.3, 0.3),
       });
-      doc.on('error', reject);
-    });
-  } catch (error) {
-    throw error;
+      state.cursorY -= 11;
+    }
+    state.cursorY -= 2;
   }
+
+  // ========================================================================
+  // ADD FOOTERS TO ALL PAGES NOW THAT TOTAL COUNT IS KNOWN
+  // ========================================================================
+  const totalPages = state.pages.length;
+  for (let i = 0; i < totalPages; i++) {
+    state.currentPageIndex = i;
+    drawFooter(state, i + 1, totalPages);
+  }
+
+  // ========================================================================
+  // SAVE AND VALIDATE
+  // ========================================================================
+
+  // Save with deterministic settings (no object streams to maximize consistency)
+  const pdfBytes = await pdfDoc.save({ useObjectStreams: false });
+
+  // Validate PDF structure
+  assertPdfLooksValid(pdfBytes);
+
+  return Buffer.from(pdfBytes);
 }
 
-function generateSimplePdf(snapshot: TrustSnapshot, record: SnapshotRecord): Buffer {
-  /**
-   * Minimal PDF generator for fallback
-   * Creates a basic PDF structure manually
-   */
-  let content = '';
-
-  // PDF header
-  content += '%PDF-1.4\n';
-  content += '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
-  content += '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
-
-  // Build text content
-  let textContent = 'Trust Snapshot\n\n';
-  textContent += `Evidence Identity:\n`;
-  textContent += `Snapshot ID: ${record.snapshotId}\n`;
-  textContent += `JSON SHA256: ${record.jsonSha256}\n`;
-  textContent += `Generated: ${record.generatedAtISO}\n\n`;
-
-  textContent += `Operational State:\n`;
-  textContent += `Status: ${snapshot.operationalState.status}\n`;
-  if (snapshot.operationalState.lastSuccessfulRunAtISO) {
-    textContent += `Last Successful Run: ${snapshot.operationalState.lastSuccessfulRunAtISO}\n`;
-  }
-  textContent += `\n`;
-
-  textContent += `Monitoring Continuity:\n`;
-  textContent += `Scheduler Active: ${snapshot.monitoringContinuity.schedulerActive}\n`;
-  textContent += `Data Completeness: ${snapshot.monitoringContinuity.dataCompleteness}\n\n`;
-
-  textContent += `Configuration Risk Summary:\n`;
-  textContent += `Risk Band: ${snapshot.configurationRiskSummary.riskBand}\n`;
-  textContent += `Metrics Included: ${snapshot.configurationRiskSummary.metricsIncluded.join(', ') || '(none)'}\n\n`;
-
-  textContent += `Change Summary (Last 30 Days):\n`;
-  textContent += `Event Count: ${snapshot.changeSummary.eventCount}\n`;
-  if (snapshot.changeSummary.categoriesPresent.length > 0) {
-    textContent += `Categories: ${snapshot.changeSummary.categoriesPresent.join(', ')}\n`;
-  }
-  textContent += `\n`;
-
-  textContent += `App Behavior Guarantees:\n`;
-  textContent += `Read-Only: true\n`;
-  textContent += `No Jira Writes: true\n`;
-  textContent += `No Config Changes: true\n`;
-  textContent += `No Enforcement: true\n\n`;
-
-  textContent += `Versioning:\n`;
-  textContent += `App Version: ${snapshot.versioning.appVersion}\n`;
-  textContent += `Environment: ${snapshot.versioning.environment}\n\n`;
-
-  textContent += `Completeness: ${snapshot.completeness}\n`;
-
-  if (snapshot.issues.length > 0) {
-    textContent += `\nIssues:\n`;
-    for (const issue of snapshot.issues) {
-      textContent += `• ${issue.source}: ${issue.reason} (${issue.errorCode})\n`;
-    }
+/**
+ * Validate that the generated PDF is well-formed
+ * Throws PDF_INVALID if not valid
+ * Throws PDF_TOO_LARGE if buffer exceeds 900 KB
+ */
+function assertPdfLooksValid(bytes: Uint8Array): void {
+  // Check minimum size
+  if (bytes.length < 20) {
+    throw new Error('PDF_INVALID: buffer too small');
   }
 
-  textContent += `\nGenerated by FirstTry — Read-only evidence export\n`;
-
-  // Encode text stream
-  const streamContent = Buffer.from(textContent).toString('latin1');
-
-  // Page stream
-  content += '3 0 obj\n';
-  content += '<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /MediaBox [0 0 612 792] /Contents 4 0 R >>\n';
-  content += 'endobj\n';
-
-  // Stream with text
-  const streamContent2 = `BT\n/F1 12 Tf\n50 750 Td\n(${streamContent.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}) Tj\nET\n`;
-  const streamBytes = Buffer.from(streamContent2);
-
-  content += '4 0 obj\n';
-  content += `<< /Length ${streamBytes.length} >>\nstream\n`;
-  content += streamBytes.toString('latin1');
-  content += '\nendstream\nendobj\n';
-
-  // Cross-reference table
-  const xrefPos = Buffer.byteLength(content, 'latin1');
-  content += `xref\n0 5\n0000000000 65535 f\n`;
-  content += `0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000217 00000 n\n`;
-  content += `trailer\n<< /Size 5 /Root 1 0 R >>\n`;
-  content += `startxref\n${xrefPos}\n%%EOF\n`;
-
-  const buffer = Buffer.from(content, 'latin1');
-
-  if (buffer.length > 900 * 1024) {
-    throw new Error('PDF exceeds 900 KB size limit');
+  // Check PDF header
+  const header = Buffer.from(bytes.slice(0, 5)).toString('utf8');
+  if (header !== '%PDF-') {
+    throw new Error('PDF_INVALID: missing PDF header');
   }
 
-  return buffer;
+  // Check EOF marker
+  const tail = Buffer.from(bytes.slice(-20)).toString('utf8');
+  if (!tail.includes('%%EOF')) {
+    throw new Error('PDF_INVALID: missing EOF marker');
+  }
+
+  // Check size limit
+  if (bytes.length > 900 * 1024) {
+    throw new Error(`PDF_TOO_LARGE: ${bytes.length} bytes (limit 900 KB)`);
+  }
 }
