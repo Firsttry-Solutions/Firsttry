@@ -319,10 +319,9 @@ export async function generateTrustSnapshotPdf(
   pdfDoc.setCreator(`FirstTry PDF Generator (${PDF_ENGINE})`);
   pdfDoc.setProducer(`pdf-lib (${PDF_ENGINE}, layout ${PDF_LAYOUT_VERSION})`);
 
-  // Embed creation date from record (deterministic, not from Date.now())
-  // Parse timestamp string to get date without timezone variations
-  const creationDate = new Date(record.generatedAtISO);
-  pdfDoc.setCreationDate(creationDate);
+  // NOTE: Do NOT call setCreationDate() - pdf-lib embeds current system time
+  // which breaks determinism. PDF will use default metadata (fixed in pdf-lib).
+  // The record.generatedAtISO is embedded in the PDF content instead (line 1).
 
   // Create first page (A4: 595.28 × 841.89 points)
   const pageWidth = PageSizes.A4[0];
