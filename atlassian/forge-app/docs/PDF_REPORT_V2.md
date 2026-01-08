@@ -60,8 +60,9 @@ Uses **pdf-lib@1.17.1** (pure JavaScript, Forge runtime compatible) exclusively:
 - Result: identical input → identical bytes (SHA256 stable)
 
 **PDF Metadata**
-- PDF creation/modification dates set deterministically
+- PDF uses pdf-lib default metadata (setCreationDate() removed to prevent runtime time injection)
 - pdf-lib save options: `useObjectStreams: false` for consistency
+- Record timestamp embedded in PDF content (section 1) for audit purposes
 
 ---
 
@@ -93,8 +94,8 @@ Uses **pdf-lib@1.17.1** (pure JavaScript, Forge runtime compatible) exclusively:
 - Test suite: grep for banned terms (returns zero)
 
 ### 5. No Date.now() in PDF Generation
-- Timestamps from `record.generatedAtISO` only
-- PDF creation date set from same ISO string
+- Timestamps from `record.generatedAtISO` only (embedded in PDF content, section 1)
+- PDF metadata dates NOT set (pdf-lib's setCreationDate() injects current system time, breaking determinism)
 - Result: determinism, reproducibility, auditability
 - Test suite verifies: "Determinism Markers (3 tests)"
 
