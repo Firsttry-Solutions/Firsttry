@@ -1,6 +1,44 @@
 # FirstTry — Documentation Index
 
-Key docs: [PRIVACY.md](PRIVACY.md), [TERMS.md](TERMS.md), [SECURITY.md](SECURITY.md), [SUPPORT.md](SUPPORT.md), [DATA_RETENTION.md](DATA_RETENTION.md), [EXTERNAL_APIS.md](EXTERNAL_APIS.md), [SCOPES_JUSTIFICATION.md](SCOPES_JUSTIFICATION.md), [EXPORT_FORMAT.md](EXPORT_FORMAT.md), [EVIDENCE_INTEGRITY.md](EVIDENCE_INTEGRITY.md), [UNINSTALL.md](UNINSTALL.md)
+---
+
+## 🚀 START HERE (Choose Your Path)
+
+### For Enterprise Buyers
+→ **[ENTERPRISE_PACKET.md](ENTERPRISE_PACKET.md)** — Curated docs for decision-makers (C-suite, legal, security)  
+_45-60 min read covering business case, security, privacy, implementation, pricing_
+
+### For Marketplace Reviewers  
+→ **[REVIEWER_PACKET.md](REVIEWER_PACKET.md)** — Comprehensive approval packet for Atlassian Marketplace reviewers  
+_60-90 min read with verification checklists and decision matrix_
+
+### For Jira Admins (Implementation)
+→ **[AUDIT_USAGE_GUIDE.md](AUDIT_USAGE_GUIDE.md)** — Step-by-step installation and usage guide  
+_5-10 min setup, 5 min configuration, 30-60 days to audit-ready_
+
+### For Security/Compliance Review
+→ **[READ_ONLY_ASSURANCE.md](READ_ONLY_ASSURANCE.md)** — Authoritative read-only verification  
+→ **[FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md)** — Single source of truth for all factual claims  
+→ **[DOC_STANDARD.md](DOC_STANDARD.md)** — Documentation quality standard and template
+
+---
+
+## Key Documentation
+
+**Core Docs**: [PRIVACY.md](PRIVACY.md), [TERMS.md](TERMS.md), [SECURITY.md](SECURITY.md), [SUPPORT.md](SUPPORT.md), [DATA_RETENTION.md](DATA_RETENTION.md)  
+**Technical Docs**: [EXTERNAL_APIS.md](EXTERNAL_APIS.md), [SCOPES_JUSTIFICATION.md](SCOPES_JUSTIFICATION.md), [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md), [EVIDENCE_INTEGRITY.md](EVIDENCE_INTEGRITY.md), [EXPORT_FORMAT.md](EXPORT_FORMAT.md)  
+**Operational Docs**: [UNINSTALL.md](UNINSTALL.md), [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md), [AUDIT_USAGE_GUIDE.md](AUDIT_USAGE_GUIDE.md)
+
+---
+
+## ⚠️ Internal Engineering Documentation (Not Customer-Facing)
+
+The following docs are **internal engineering/phase docs** and are **not required for customer approval or Marketplace review**. They document the development history and engineering decisions.
+
+**Reference Only** — For FirstTry team and code reviewers only:  
+[PHASE_P1_COMPLETE_SUMMARY.md](PHASE_P1_COMPLETE_SUMMARY.md), [PHASE_P1_DOCUMENTATION_INDEX.md](PHASE_P1_DOCUMENTATION_INDEX.md), [PHASE_P1_PROGRESS.md](PHASE_P1_PROGRESS.md), [PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md](PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md), [PHASE_P1_5_POLICY_DRIFT_COMPLETE.md](PHASE_P1_5_POLICY_DRIFT_COMPLETE.md), [PHASE_7_V2_SPEC.md](PHASE_7_V2_SPEC.md), [PHASE_7_V2_IMPLEMENTATION_PLAN.md](PHASE_7_V2_IMPLEMENTATION_PLAN.md), [PHASE_7_V2_TESTPLAN.md](PHASE_7_V2_TESTPLAN.md), [PHASE_9_5B_SPEC.md](PHASE_9_5B_SPEC.md), [PHASE_9_5B_DELIVERY.md](PHASE_9_5B_DELIVERY.md), [PHASE_9_5C_SPEC.md](PHASE_9_5C_SPEC.md), [PHASE_9_5C_DELIVERY.md](PHASE_9_5C_DELIVERY.md), [PHASE_9_5D_SPEC.md](PHASE_9_5D_SPEC.md), [PHASE_9_5D_DELIVERY.md](PHASE_9_5D_DELIVERY.md), [PHASE4_SEALED_SPEC.md](PHASE4_SEALED_SPEC.md), [PHASE5_AUDIT_EXPORT.md](PHASE5_AUDIT_EXPORT.md), [P4_P5_IMPLEMENTATION_SUMMARY.md](P4_P5_IMPLEMENTATION_SUMMARY.md), [P4_P5_COMPLETE_REFERENCE.md](P4_P5_COMPLETE_REFERENCE.md), [P5_PROCUREMENT_ACCELERATION.md](P5_PROCUREMENT_ACCELERATION.md), [HEARTBEAT_DELIVERABLES_INDEX.md](HEARTBEAT_DELIVERABLES_INDEX.md), [HEARTBEAT_INTEGRATION.md](HEARTBEAT_INTEGRATION.md), [HEARTBEAT_QUICK_REF.md](HEARTBEAT_QUICK_REF.md), [HEARTBEAT_TRUST_DASHBOARD.md](HEARTBEAT_TRUST_DASHBOARD.md), [HEARTBEAT_VERIFICATION.md](HEARTBEAT_VERIFICATION.md), [HEARTBEAT_DELIVERY_SUMMARY.md](HEARTBEAT_DELIVERY_SUMMARY.md), [PDF_REPORT_V2.md](PDF_REPORT_V2.md), [RELEASE_PDF_REPORT_V2.md](RELEASE_PDF_REPORT_V2.md), [MARKETPLACE_REVIEWER_NO_BACKFORTH_AUDIT.md](MARKETPLACE_REVIEWER_NO_BACKFORTH_AUDIT.md), [MARKETPLACE_SUBMISSION_INDEX.md](MARKETPLACE_SUBMISSION_INDEX.md)
+
+**Internal References** (not customer-facing): [DATA_FLOW.md](DATA_FLOW.md), [EVIDENCE_MODEL.md](EVIDENCE_MODEL.md), [OUTPUT_CONTRACT.md](OUTPUT_CONTRACT.md), [OPERATIONAL_BEHAVIOR.md](OPERATIONAL_BEHAVIOR.md), [REGENERATION_GUARANTEES.md](REGENERATION_GUARANTEES.md), [RELIABILITY.md](RELIABILITY.md), [CHANGELOG.md](CHANGELOG.md)
 
 What it does (factual)
 - Collects Jira metadata and generates governance evidence, drift signals, and exportable reports. Data storage is tenant-scoped Forge Storage.

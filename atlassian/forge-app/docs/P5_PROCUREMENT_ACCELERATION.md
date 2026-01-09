@@ -105,7 +105,7 @@ Combines all P5 components:
 
 ### For Legal Teams
 1. Review Section 2: Data Collected (explicit list)
-2. Review Section 3: Data Retention (90 days, GDPR compliant)
+2. Review Section 3: Data Retention (indefinite by default; see [DATA_RETENTION.md](DATA_RETENTION.md))
 3. Check Section 10: Tenant Isolation (no cross-tenant access)
 4. Confirm Section 14: Limitations (explicit list of NOT SUPPORTED)
 5. ✅ Approve without any runtime evaluation
