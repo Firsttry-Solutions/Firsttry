@@ -1,0 +1,2 @@
+TIMESTAMP=2026-01-09T11:30:54Z
+ls: cannot access 'docs/_tools/': No such file or directory
