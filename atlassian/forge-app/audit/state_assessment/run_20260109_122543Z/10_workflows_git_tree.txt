@@ -1,0 +1,45 @@
+TIMESTAMP_START: 2026-01-09T12:27:29Z
+
+COMMAND:
+git ls-tree -r --name-only HEAD .github/workflows 2>/dev/null | sort || true
+
+OUTPUT:
+.github/workflows/audit-hardened.yml
+.github/workflows/audit.yml
+.github/workflows/ci-dev.yml
+.github/workflows/ci-gate.yml
+.github/workflows/ci-golden-cache.yml
+.github/workflows/ci-hardened.yml
+.github/workflows/ci-parity.yml
+.github/workflows/ci.yml
+.github/workflows/codeql.yml
+.github/workflows/docs-credibility-guardrails.yml
+.github/workflows/enterprise-acceptance.yml
+.github/workflows/enterprise-audit.yml
+.github/workflows/firsttry-ci-parity.yml
+.github/workflows/firsttry-ci-parity.yml.bak
+.github/workflows/firsttry-ci.yml
+.github/workflows/firsttry-proof.yml
+.github/workflows/firsttry-quality.yml
+.github/workflows/firsttry-smoke.yml
+.github/workflows/ft-fastpath.yml
+.github/workflows/gates-safety-suite.yml
+.github/workflows/hardening-guards.yml
+.github/workflows/json-lint.yml
+.github/workflows/licensing-ci.yml
+.github/workflows/nightly-stability.yml
+.github/workflows/node-ci.yml
+.github/workflows/policy-gates.yml
+.github/workflows/publish.yml
+.github/workflows/quality.yml
+.github/workflows/readonly-audit-example.yml
+.github/workflows/release-vsix.yml
+.github/workflows/remote-cache-e2e.yml
+.github/workflows/remote-cache-hardened.yml
+.github/workflows/remote-cache.yml
+.github/workflows/sbom.yml
+.github/workflows/shakedown.yml
+.github/workflows/supply-chain-audit.yml
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:27:29Z

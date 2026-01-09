@@ -1,0 +1,13 @@
+TIMESTAMP_START: 2026-01-09T12:26:38Z
+
+COMMAND:
+echo "UNPUSHED COMMITS (origin/main..HEAD):"; git --no-pager log --oneline --decorate origin/main..HEAD || true
+
+OUTPUT:
+UNPUSHED COMMITS (origin/main..HEAD):
+d1c55998 (HEAD -> main) audit: stop report (local main ahead of origin/main) with proof evidence
+c2f0946a audit: re-audit doc gates blocker with git-truth evidence
+460638ed audit: current state + readiness report (git-truth)
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:26:38Z

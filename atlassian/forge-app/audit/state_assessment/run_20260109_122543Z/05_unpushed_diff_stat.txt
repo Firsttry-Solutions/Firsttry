@@ -1,0 +1,27 @@
+TIMESTAMP_START: 2026-01-09T12:26:54Z
+
+COMMAND:
+git --no-pager diff --stat origin/main..HEAD || true
+
+OUTPUT:
+ .../run_20260109_113220Z/03_workflows.txt          |  41 ++
+ .../run_20260109_113220Z/04_tools.txt              |   2 +
+ .../run_20260109_113220Z/06_marketplace.txt        |   7 +
+ .../run_20260109_113220Z/07_manifest.txt           |  88 +++
+ .../run_20260109_113220Z/08_static.txt             |  58 ++
+ .../01_pages_sphinx_existence.txt                  |   5 +
+ .../02_git_tree_specific_tools.txt                 |   5 +
+ .../03_pages_sphinx_filesystem.txt                 |   5 +
+ .../run_20260109_121627Z/00_repo_state.txt         |  16 +
+ .../01_origin_main_identity.txt                    |  17 +
+ .../02_unpushed_commits_list.txt                   |  12 +
+ .../03_unpushed_commits_stats.txt                  |  30 +
+ .../04_forbidden_paths_guard_unpushed.txt          |  10 +
+ .../run_20260109_121627Z/05_unpushed_full_diff.txt | 609 +++++++++++++++++++++
+ .../run_20260109_121627Z/run_ev.sh                 |  21 +
+ .../docs/CURRENT_STATE_AND_READINESS_REPORT.md     | 335 ++++++++++++
+ .../docs/PROOF_GRADE_STATE_REAUDIT_REPORT.md       |  37 ++
+ 17 files changed, 1298 insertions(+)
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:26:54Z
