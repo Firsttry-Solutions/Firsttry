@@ -1,0 +1,5 @@
+TIMESTAMP_START: 2026-01-09T11:56:22Z
+COMMAND: git ls-tree -r --name-only HEAD | grep -E '(link_graph_check|overclaim_check|sync_forge_docs_to_sphinx)'
+OUTPUT: (no output = no matches)
+EXIT_CODE: 1
+TIMESTAMP_END: 2026-01-09T11:56:22Z
