@@ -259,7 +259,7 @@
 Auto-generated from code. Includes:
 - Data collected (explicit list)
 - Data never collected (explicit list)
-- Data retention (90 days, GDPR compliant)
+- Data retention (90 days, supports GDPR Article 17 compliance evaluation)
 - Evidence immutability guarantees
 - Regeneration guarantees (pure function, deterministic)
 - Operability metrics (P1-P3 maintained)
