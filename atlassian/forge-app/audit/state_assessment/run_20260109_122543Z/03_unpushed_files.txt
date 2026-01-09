@@ -1,0 +1,46 @@
+TIMESTAMP_START: 2026-01-09T12:26:38Z
+
+COMMAND:
+echo "UNPUSHED FILES (name-status):"; git --no-pager diff --name-status origin/main..HEAD || true; echo; echo "UNPUSHED FILES (name-only):"; git --no-pager diff --name-only origin/main..HEAD | sort || true
+
+OUTPUT:
+UNPUSHED FILES (name-status):
+A	atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/03_workflows.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/04_tools.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/06_marketplace.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/07_manifest.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/08_static.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_115621Z/01_pages_sphinx_existence.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_115621Z/02_git_tree_specific_tools.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_115621Z/03_pages_sphinx_filesystem.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/00_repo_state.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/01_origin_main_identity.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/02_unpushed_commits_list.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/03_unpushed_commits_stats.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/04_forbidden_paths_guard_unpushed.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt
+A	atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/run_ev.sh
+A	atlassian/forge-app/docs/CURRENT_STATE_AND_READINESS_REPORT.md
+A	atlassian/forge-app/docs/PROOF_GRADE_STATE_REAUDIT_REPORT.md
+
+UNPUSHED FILES (name-only):
+atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/03_workflows.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/04_tools.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/06_marketplace.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/07_manifest.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_113220Z/08_static.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_115621Z/01_pages_sphinx_existence.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_115621Z/02_git_tree_specific_tools.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_115621Z/03_pages_sphinx_filesystem.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/00_repo_state.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/01_origin_main_identity.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/02_unpushed_commits_list.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/03_unpushed_commits_stats.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/04_forbidden_paths_guard_unpushed.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt
+atlassian/forge-app/audit/state_assessment/run_20260109_121627Z/run_ev.sh
+atlassian/forge-app/docs/CURRENT_STATE_AND_READINESS_REPORT.md
+atlassian/forge-app/docs/PROOF_GRADE_STATE_REAUDIT_REPORT.md
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:26:38Z

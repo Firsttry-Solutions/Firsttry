@@ -1,0 +1,12 @@
+TIMESTAMP_START: 2026-01-09T12:27:14Z
+
+COMMAND:
+echo "LOCAL_HEAD=$(git rev-parse --short HEAD)"; echo "ORIGIN_MAIN=$(git rev-parse --short origin/main)"; test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" && echo "SYNCED" || (echo "NOT_SYNCED" && exit 1)
+
+OUTPUT:
+LOCAL_HEAD=d1c55998
+ORIGIN_MAIN=d1c55998
+SYNCED
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:27:14Z

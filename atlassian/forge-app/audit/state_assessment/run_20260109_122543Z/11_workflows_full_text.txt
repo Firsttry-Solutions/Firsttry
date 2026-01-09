@@ -1,0 +1,4557 @@
+TIMESTAMP_START: 2026-01-09T12:27:29Z
+
+COMMAND:
+for f in .github/workflows/*.yml .github/workflows/*.yaml; do [ -f "$f" ] && { echo "===== $f ====="; nl -ba "$f"; echo; } ; done || true
+
+OUTPUT:
+===== .github/workflows/audit-hardened.yml =====
+     1	name: Enterprise Audit (hardened)
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  audit:
+     8	    name: Run enterprise audit
+     9	    runs-on: ubuntu-latest
+    10	    steps:
+    11	      - name: Checkout
+    12	        uses: actions/checkout@v4
+    13	
+    14	      - name: Setup Python
+    15	        uses: actions/setup-python@v4
+    16	        with:
+    17	          python-version: '3.x'
+    18	
+    19	      - name: Run probes (read-only)
+    20	        run: |
+    21	          bash .firsttry/audit/enterprise_full_20251114-142800/tmp/run_probes.sh
+    22	
+    23	      - name: Assemble reports
+    24	        run: |
+    25	          python3 .firsttry/audit/enterprise_full_20251114-142800/tmp/assemble_final.py
+    26	
+    27	      - name: Upload audit reports
+    28	        uses: actions/upload-artifact@v4
+    29	        with:
+    30	          name: enterprise-audit
+    31	          path: .firsttry/audit/enterprise_full_20251114-142800/reports/*
+    32	
+    33	      - name: Strict gating (fail job if critical buckets NOT READY)
+    34	        env:
+    35	          STRICT: '1'
+    36	        run: |
+    37	          # Run assembler in strict-mode; it exits non-zero when critical buckets are NOT READY
+    38	          python3 .firsttry/audit/enterprise_full_20251114-142800/tmp/assemble_final.py --strict
+    39	name: Audit - CI/CD Security & Compliance
+    40	
+    41	on:
+    42	  workflow_run:
+    43	    workflows:
+    44	      - "CI - FirstTry Enterprise Pipeline"
+    45	      - "Security - CodeQL Analysis"
+    46	      - "Remote Cache - OIDC AWS Integration (Hardened)"
+    47	    types: [completed]
+    48	    branches: [main, develop]
+    49	
+    50	permissions:
+    51	  contents: read
+    52	  checks: read
+    53	  statuses: read
+    54	  security-events: read
+    55	  pull-requests: read
+    56	
+    57	concurrency:
+    58	  group: audit-${{ github.ref }}
+    59	  cancel-in-progress: false
+    60	
+    61	env:
+    62	  AUDIT_LOG_RETENTION: 90
+    63	
+    64	jobs:
+    65	  audit-permissions:
+    66	    name: Audit - GitHub Permissions
+    67	    runs-on: ubuntu-latest
+    68	    permissions:
+    69	      contents: read
+    70	    steps:
+    71	      - name: Checkout
+    72	        uses: actions/checkout@v4
+    73	
+    74	      - name: Audit workflow permissions
+    75	        run: |
+    76	          echo "## Permission Audit Results"
+    77	          echo ""
+    78	          echo "### ci-hardened.yml"
+    79	          grep -A 5 "^permissions:" .github/workflows/ci-hardened.yml | tail -n +2 | sed 's/^/  /'
+    80	          echo ""
+    81	          echo "### remote-cache-hardened.yml"
+    82	          grep -A 5 "^permissions:" .github/workflows/remote-cache-hardened.yml | tail -n +2 | sed 's/^/  /'
+    83	          echo ""
+    84	          echo "### codeql.yml"
+    85	          grep -A 3 "^permissions:" .github/workflows/codeql.yml | tail -n +2 | sed 's/^/  /'
+    86	          echo ""
+    87	          echo "✅ Permissions audit complete"
+    88	
+    89	  audit-action-pins:
+    90	    name: Audit - Action SHA Pinning
+    91	    runs-on: ubuntu-latest
+    92	    steps:
+    93	      - name: Checkout
+    94	        uses: actions/checkout@v4
+    95	
+    96	      - name: Check action SHA pinning
+    97	        run: |
+    98	          echo "## Action SHA Pinning Audit"
+    99	          echo ""
+   100	          echo "✅ All actions are version-pinned (minor versions acceptable)"
+   101	
+   102	  audit-dependencies:
+   103	    name: Audit - Dependency Security
+   104	    runs-on: ubuntu-latest
+   105	    steps:
+   106	      - name: Checkout
+   107	        uses: actions/checkout@v4
+   108	
+   109	      - name: Set up Python
+   110	        uses: actions/setup-python@v4
+   111	        with:
+   112	          python-version: "3.11"
+   113	
+   114	      - name: Audit Python dependencies
+   115	        run: |
+   116	          echo "## Dependency Security Audit"
+   117	          echo ""
+   118	          
+   119	          pip install --upgrade pip safety
+   120	          
+   121	          echo "### Known vulnerabilities check (safety)"
+   122	          if safety check --json 2>/dev/null > /tmp/safety.json; then
+   123	            echo "✅ No known vulnerabilities detected"
+   124	          else
+   125	            echo "⚠️  Safety check found issues"
+   126	            cat /tmp/safety.json | python -m json.tool || cat /tmp/safety.json
+   127	          fi
+   128	
+   129	  audit-compliance:
+   130	    name: Audit - CI/CD Compliance
+   131	    runs-on: ubuntu-latest
+   132	    needs:
+   133	      - audit-permissions
+   134	      - audit-action-pins
+   135	      - audit-dependencies
+   136	    if: always()
+   137	    steps:
+   138	      - name: Checkout
+   139	        uses: actions/checkout@v4
+   140	
+   141	      - name: Generate audit report
+   142	        run: |
+   143	          cat > /tmp/audit_report.md << 'AUDIT'
+   144	          # CI/CD Security & Compliance Audit Report
+   145	          
+   146	          **Workflow Run:** ${{ github.run_id }}
+   147	          **Trigger:** ${{ github.event_name }}
+   148	          **Branch:** ${{ github.ref }}
+   149	          **Commit:** ${{ github.sha }}
+   150	          
+   151	          ## Checks
+   152	          - [x] Permissions audit (completed)
+   153	          - [x] Action SHA pinning (completed)
+   154	          - [x] Dependency security (completed)
+   155	          - [x] OIDC AWS auth (via remote-cache workflow)
+   156	          - [x] CodeQL security analysis (via security workflow)
+   157	          
+   158	          ## Compliance Status
+   159	          - Permissions: Restricted (read-only by default)
+   160	          - Actions: SHA pinned (supply-chain secure)
+   161	          - Dependencies: Monitored (Dependabot active)
+   162	          - Secrets: No static keys (OIDC auth)
+   163	          - Cache: Encrypted (AES256)
+   164	          
+   165	          ## Recommendations
+   166	          1. Review CodeQL security findings in Security → Code scanning
+   167	          2. Monitor Dependabot PRs for timely updates
+   168	          3. Test OIDC role assumption in staging environment
+   169	          4. Verify S3 cache encryption in CloudTrail
+   170	          AUDIT
+   171	          
+   172	          cat /tmp/audit_report.md
+   173	          echo ""
+   174	          echo "✅ Compliance audit complete"
+   175	
+   176	      - name: Upload audit report
+   177	        if: always()
+   178	        uses: actions/upload-artifact@v4  # v3
+   179	        with:
+   180	          name: audit-report-${{ github.run_number }}
+   181	          path: /tmp/audit_report.md
+   182	          retention-days: 90
+
+===== .github/workflows/audit.yml =====
+     1	name: Audit & Compliance - Policy Enforcement
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	permissions:
+     7	  contents: read
+     8	  pull-requests: write
+     9	  statuses: write
+    10	
+    11	concurrency:
+    12	  group: ${{ github.workflow }}-${{ github.ref }}
+    13	  cancel-in-progress: true
+    14	
+    15	env:
+    16	  AUDIT_TIER: strict
+    17	
+    18	jobs:
+    19	  validate-workflows:
+    20	    name: Validate Workflows (syntax + deprecations)
+    21	    runs-on: ubuntu-latest
+    22	    steps:
+    23	      - uses: actions/checkout@v4
+    24	      - name: Validate workflow YAML (self)
+    25	        run: |
+    26	          python - <<'PY'
+    27	          import textwrap
+    28	          code = """
+    29	          import sys, yaml, glob
+    30	          bad=[]
+    31	          for f in glob.glob('.github/workflows/*.yml') + glob.glob('.github/workflows/*.yaml'):
+    32	              try:
+    33	                  yaml.safe_load(open(f, 'r', encoding='utf-8'))
+    34	              except Exception as e:
+    35	                  bad.append((f, str(e)))
+    36	          if bad:
+    37	              print('❌ YAML errors:')
+    38	              for f, e in bad:
+    39	                  print(f'- {f}: {e}')
+    40	              sys.exit(1)
+    41	          print('✅ Workflows parse correctly')
+    42	          """
+    43	          exec(textwrap.dedent(code))
+    44	          PY
+    45	
+    46	      - name: Check for deprecated set-output usage
+    47	        run: |
+    48	          # build the literal safely (avoid embedding the raw pattern in this workflow file)
+    49	          PAT=$(printf '\x3a\x3aset-output')
+    50	          if grep -R "$PAT" .github/workflows >/dev/null 2>&1; then
+    51	            echo "❌ Deprecated set-output detected. Use \$GITHUB_OUTPUT."
+    52	            exit 1
+    53	          fi
+    54	          echo "✅ No deprecated set-output usage"
+    55	
+    56	  policy-validation:
+    57	    name: Policy Validation
+    58	    runs-on: ubuntu-latest
+    59	    outputs:
+    60	      policy-status: ${{ steps.policy-check.outputs.status }}
+    61	    steps:
+    62	      - uses: actions/checkout@v4
+    63	
+    64	      - name: Validate license enforcement
+    65	        id: policy-check
+    66	        run: |
+    67	          echo "🔐 Validating policy enforcement..."
+    68	          
+    69	          # Check 1: License guard exists
+    70	          if [ -f "src/firsttry/license_guard.py" ]; then
+    71	              echo "✅ License guard module found"
+    72	          else
+    73	              echo "❌ License guard module missing"
+    74	              echo "status=fail" >> $GITHUB_OUTPUT
+    75	              exit 1
+    76	          fi
+    77	          
+    78	          # Check 2: Tier gating implemented
+    79	          GATE_COUNT=$(grep -r "ensure_license_for_current_tier" src/ | wc -l)
+    80	          if [ "$GATE_COUNT" -gt 0 ]; then
+    81	              echo "✅ License tier gating implemented ($GATE_COUNT locations)"
+    82	          else
+    83	              echo "❌ License tier gating not found"
+    84	              echo "status=fail" >> $GITHUB_OUTPUT
+    85	              exit 1
+    86	          fi
+    87	          
+    88	            # Check 3: No hardcoded secrets (exclude source and tests where
+    89	            # legitimate usage/messages may appear). Only scan non-source
+    90	            # areas for accidental hardcoded keys.
+    91	            if grep -R --include="*.py" "FIRSTTRY_LICENSE_KEY=" . --exclude-dir=src --exclude-dir=tests >/dev/null 2>&1; then
+    92	              echo "❌ Hardcoded license keys found!"
+    93	              echo "status=fail" >> $GITHUB_OUTPUT
+    94	              exit 1
+    95	            else
+    96	              echo "✅ No hardcoded license keys found"
+    97	            fi
+    98	          
+    99	          # Check 4: Policy lock pattern
+   100	          if grep -r "policy.lock\|tier_lock" src/ | grep -q "."; then
+   101	              echo "✅ Policy lock mechanism found"
+   102	          else
+   103	              echo "⚠️  Policy lock mechanism not found (optional)"
+   104	          fi
+   105	          
+   106	          echo "status=pass" >> $GITHUB_OUTPUT
+   107	
+   108	      - name: Upload dependency reports
+   109	        if: always()
+   110	        uses: actions/upload-artifact@v4
+   111	        with:
+   112	          name: dependency-audit
+   113	          path: |
+   114	            .firsttry/pip_audit_report.json
+   115	          retention-days: 90
+   116	
+   117	  sbom-generation:
+   118	    name: SBOM Generation
+   119	    runs-on: ubuntu-latest
+   120	    steps:
+   121	      - uses: actions/checkout@v4
+   122	
+   123	      - name: Set up Python
+   124	        uses: actions/setup-python@v4
+   125	        with:
+   126	          python-version: "3.11"
+   127	
+   128	      - name: Install SBOM tools
+   129	        run: |
+   130	          python -m pip install --upgrade pip
+   131	          pip install "cyclonedx-bom>=4.1,<8.0" wheel setuptools
+   132	
+   133	      - name: Generate Python SBOM (CycloneDX)
+   134	        run: |
+   135	          echo "📦 Generating Python SBOM (CycloneDX format)..."
+   136	          
+   137	          python -c "
+   138	          import json
+   139	          from pathlib import Path
+   140	          from datetime import datetime
+   141	          import sys
+   142	          
+   143	          # Create CycloneDX SBOM structure
+   144	          sbom = {
+   145	              'bomFormat': 'CycloneDX',
+   146	              'specVersion': '1.4',
+   147	              'serialNumber': 'urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79',
+   148	              'version': 1,
+   149	              'metadata': {
+   150	                  'timestamp': datetime.utcnow().isoformat() + 'Z',
+   151	                  'tools': [
+   152	                      {
+   153	                          'vendor': 'FirstTry',
+   154	                          'name': 'SBOM Generator',
+   155	                          'version': '1.0.0'
+   156	                      }
+   157	                  ],
+   158	                  'component': {
+   159	                      'type': 'application',
+   160	                      'name': 'FirstTry Enterprise',
+   161	                      'version': '0.4.1'
+   162	                  }
+   163	              },
+   164	              'components': []
+   165	          }
+   166	          
+   167	          # Add Python dependencies
+   168	          requirements_file = Path('requirements.txt')
+   169	          if requirements_file.exists():
+   170	              for line in requirements_file.read_text().strip().split('\n'):
+   171	                  if line and not line.startswith('#'):
+   172	                      parts = line.split('==')
+   173	                      if len(parts) == 2:
+   174	                          name, version = parts
+   175	                          sbom['components'].append({
+   176	                              'type': 'library',
+   177	                              'name': name,
+   178	                              'version': version,
+   179	                              'purl': f'pkg:pypi/{name}@{version}'
+   180	                          })
+   181	          
+   182	          # Write SBOM
+   183	          output_dir = Path('.firsttry')
+   184	          output_dir.mkdir(exist_ok=True)
+   185	          
+   186	          with open(output_dir / 'sbom.json', 'w') as f:
+   187	              json.dump(sbom, f, indent=2)
+   188	          
+   189	          print(f'✅ SBOM generated with {len(sbom[\"components\"])} components')
+   190	          "
+   191	
+   192	      - name: Generate Node SBOM (if applicable)
+   193	        if: hashFiles('package.json') != ''
+   194	        run: |
+   195	          echo "📦 Generating Node.js SBOM..."
+   196	          npm list --depth=0 --json > .firsttry/npm_components.json 2>/dev/null || true
+   197	          echo "✅ Node SBOM generated"
+   198	
+   199	      - name: Upload SBOM artifacts
+   200	        if: always()
+   201	        uses: actions/upload-artifact@v4
+   202	        with:
+   203	          name: sbom-reports
+   204	          path: |
+   205	            .firsttry/sbom.json
+   206	            .firsttry/npm_components.json
+   207	          retention-days: 90
+   208	
+   209	  compliance-checks:
+   210	    name: Compliance Verification
+   211	    runs-on: ubuntu-latest
+   212	    steps:
+   213	      - uses: actions/checkout@v4
+   214	
+   215	      - name: Check compliance requirements
+   216	        run: |
+   217	          echo "✓ Verifying compliance requirements..."
+   218	          echo ""
+   219	          echo "1️⃣  Security & Access Control"
+   220	          if grep -r "subprocess.run" src/ --include="*.py" > /dev/null; then
+   221	              echo "   ✅ Subprocess calls use safe patterns (args list, not string)"
+   222	          fi
+   223	          
+   224	          echo ""
+   225	          echo "2️⃣  Telemetry & Privacy"
+   226	          if grep -r "FT_SEND_TELEMETRY" src/ --include="*.py" > /dev/null; then
+   227	              echo "   ✅ Telemetry is opt-in (default disabled)"
+   228	          fi
+   229	          
+   230	          echo ""
+   231	          echo "3️⃣  License Enforcement"
+   232	          if grep -r "ensure_license_for_current_tier\|license_guard" src/ --include="*.py" > /dev/null; then
+   233	              echo "   ✅ License tier gating implemented"
+   234	          fi
+   235	          
+   236	          echo ""
+   237	          echo "4️⃣  Code Quality Standards"
+   238	          echo "   - Test Coverage: 27.6% (acceptable for orchestration)"
+   239	          echo "   - Type Safety: Zero errors in critical modules"
+   240	          echo "   - Security: No unsafe patterns detected"
+   241	          
+   242	          echo ""
+   243	          echo "✅ All compliance checks passed"
+   244	
+   245	      - name: Generate compliance report
+   246	        run: |
+   247	          python -c "
+   248	          import json
+   249	          from pathlib import Path
+   250	          from datetime import datetime
+   251	          
+   252	          compliance = {
+   253	              'report_date': datetime.utcnow().isoformat() + 'Z',
+   254	              'compliance_version': '1.0',
+   255	              'checks': {
+   256	                  'security': {
+   257	                      'status': 'pass',
+   258	                      'items': [
+   259	                          'No unsafe subprocess patterns',
+   260	                          'License enforcement active',
+   261	                          'No hardcoded secrets',
+   262	                          'Telemetry opt-in only'
+   263	                      ]
+   264	                  },
+   265	                  'testing': {
+   266	                      'status': 'pass',
+   267	                      'metrics': {
+   268	                          'total_tests': 419,
+   269	                          'pass_rate': 100.0,
+   270	                          'coverage_percent': 27.6
+   271	                      }
+   272	                  },
+   273	                  'code_quality': {
+   274	                      'status': 'pass',
+   275	                      'items': [
+   276	                          'Type safety enforced (MyPy)',
+   277	                          'Linting enforced (Ruff)',
+   278	                          'All gates operational'
+   279	                      ]
+   280	                  },
+   281	                  'dependencies': {
+   282	                      'status': 'pass',
+   283	                      'audit_method': 'pip-audit + npm audit'
+   284	                  }
+   285	              },
+   286	              'overall_status': 'COMPLIANT'
+   287	          }
+   288	          
+   289	          output_dir = Path('.firsttry')
+   290	          output_dir.mkdir(exist_ok=True)
+   291	          
+   292	          with open(output_dir / 'compliance_report.json', 'w') as f:
+   293	              json.dump(compliance, f, indent=2)
+   294	          
+   295	          print('✅ Compliance report generated')
+   296	          "
+   297	      
+   298	      
+   299	      - name: Compute policy hash
+   300	        id: policy
+   301	        shell: bash
+   302	        run: |
+   303	          set -euo pipefail
+   304	          # Make FT_POLICY_URL optional for audit runs. If not provided,
+   305	          # emit empty outputs and continue (non-blocking).
+   306	          if [ -z "${FT_POLICY_URL:-}" ]; then
+   307	            echo "url=" >> "$GITHUB_OUTPUT"
+   308	            echo "hash=" >> "$GITHUB_OUTPUT"
+   309	            exit 0
+   310	          fi
+   311	          if [[ "$FT_POLICY_URL" == file://* ]]; then
+   312	            f="${FT_POLICY_URL#file://}"
+   313	            if [[ ! -f "$f" ]]; then
+   314	              echo "Policy file not found: $f" >&2
+   315	              exit 1
+   316	            fi
+   317	            url="$FT_POLICY_URL"
+   318	            hash="$(sha256sum "$f" | awk '{print $1}')"
+   319	          else
+   320	            tmp="$(mktemp)"
+   321	            curl -fsSL "$FT_POLICY_URL" -o "$tmp"
+   322	            hash="$(sha256sum "$tmp" | awk '{print $1}')"
+   323	            url="$FT_POLICY_URL"
+   324	          fi
+   325	          {
+   326	            echo "url=$url"
+   327	            echo "hash=$hash"
+   328	          } >> "$GITHUB_OUTPUT"
+   329	
+   330	      - name: Emit audit (policy proof)
+   331	        shell: bash
+   332	        env:
+   333	          FT_POLICY_URL: ${{ steps.policy.outputs.url }}
+   334	          FT_POLICY_HASH: ${{ steps.policy.outputs.hash }}
+   335	        run: |
+   336	          python3 tools/emit_audit_with_policy.py
+   337	
+   338	      - name: Assert policy proof present in audit
+   339	        run: |
+   340	          python - << 'PY'
+   341	          import json, sys, pathlib
+   342	          p = pathlib.Path('.firsttry/audit.json')
+   343	          if not p.exists():
+   344	              print('audit report not found:', p)
+   345	              sys.exit(1)
+   346	          r = json.loads(p.read_text(encoding='utf-8'))
+   347	          comp = r.get('compliance', {})
+   348	          assert comp.get('policy_enforced') is True, 'policy_enforced missing/false'
+   349	          assert comp.get('policy_hash','').startswith('sha256:'), 'policy_hash missing'
+   350	          assert comp.get('policy_url','') != '', 'policy_url missing'
+   351	          print('Policy proof present ✅')
+   352	          PY
+   353	
+   354	      - name: Embed coverage into audit (if available)
+   355	        if: always()
+   356	        shell: bash
+   357	        run: |
+   358	          if [ -f "coverage.json" ]; then
+   359	            python tools/coverage_embed.py || true
+   360	          fi
+   361	
+   362	      - name: Upload audit artifacts
+   363	        if: always()
+   364	        uses: actions/upload-artifact@v4
+   365	        with:
+   366	          name: audit-proof
+   367	          if-no-files-found: warn
+   368	          path: |
+   369	            .firsttry/audit.json
+   370	            .firsttry/audit_summary.txt
+   371	
+   372	      - name: Upload compliance report
+   373	        if: always()
+   374	        uses: actions/upload-artifact@v4
+   375	        with:
+   376	          name: compliance-reports
+   377	          path: |
+   378	            .firsttry/compliance_report.json
+   379	          retention-days: 90
+   380	
+   381	  release-readiness:
+   382	    name: Release Readiness Check
+   383	    runs-on: ubuntu-latest
+   384	    needs: [policy-validation, sbom-generation, compliance-checks]
+   385	    if: always()
+   386	    steps:
+   387	      - uses: actions/checkout@v4
+   388	
+   389	      - name: Verify release requirements
+   390	        run: |
+   391	          echo "🚀 Release Readiness Assessment"
+   392	          echo "================================"
+   393	          echo ""
+   394	          echo "Criteria:"
+   395	          echo "  ✅ Policy Validation: ${{ needs.policy-validation.result }}"
+   396	          echo "  ✅ Dependency Audit: N/A"
+   397	          echo "  ✅ SBOM Generated: ${{ needs.sbom-generation.result }}"
+   398	          echo "  ✅ Compliance Checks: ${{ needs.compliance-checks.result }}"
+   399	            echo ""
+   400	
+   401	            if [[ "${{ needs.policy-validation.result }}" == "success" ]] && \
+   402	              [[ "${{ needs.sbom-generation.result }}" == "success" ]] && \
+   403	              [[ "${{ needs.compliance-checks.result }}" == "success" ]]; then
+   404	              echo "✅ RELEASE READY - All criteria met"
+   405	              exit 0
+   406	            else
+   407	              echo "❌ RELEASE BLOCKED - Some criteria not met"
+   408	              exit 1
+   409	            fi
+   410	
+   411	  audit-summary:
+   412	    name: Audit Summary
+   413	    runs-on: ubuntu-latest
+   414	    needs: [policy-validation, sbom-generation, compliance-checks, release-readiness]
+   415	    if: always()
+   416	    steps:
+   417	      - name: Generate audit summary
+   418	        run: |
+   419	          echo "📋 Compliance Audit Summary"
+   420	          echo "=============================="
+   421	          echo ""
+   422	          echo "Workflow Results:"
+   423	          echo "  Policy Validation:   ${{ needs.policy-validation.result }}"
+   424	          echo "  Dependency Audit:    N/A"
+   425	          echo "  SBOM Generation:     ${{ needs.sbom-generation.result }}"
+   426	          echo "  Compliance Checks:   ${{ needs.compliance-checks.result }}"
+   427	          echo "  Release Readiness:   ${{ needs.release-readiness.result }}"
+   428	          echo ""
+   429	          echo "Enterprise Audit Score: 92-95/100"
+   430	          echo "  - Core Architecture: 95/100 ✅"
+   431	          echo "  - Security: 98/100 ✅"
+   432	          echo "  - Performance: 90/100 ✅"
+   433	          echo "  - Test Coverage: 85/100 ✅"
+   434	          echo "  - Enforcement: 90/100 ✅"
+   435	          echo "  - CI-Parity: 92/100 ✅"
+   436	          echo ""
+   437	          echo "Status: 🟢 PRODUCTION READY"
+
+===== .github/workflows/ci-dev.yml =====
+     1	name: FirstTry Dev CI
+     2	
+     3	on:
+     4	  push:
+     5	    branches:
+     6	      - main
+     7	  pull_request:
+     8	    branches:
+     9	      - main
+    10	
+    11	jobs:
+    12	  dev:
+    13	    runs-on: ubuntu-latest
+    14	    env:
+    15	      FIRSTTRY_TIER: dev
+    16	    steps:
+    17	      - name: Checkout
+    18	        uses: actions/checkout@v4
+    19	
+    20	      - name: Setup Python
+    21	        uses: actions/setup-python@v5
+    22	        with:
+    23	          python-version: "3.11"
+    24	
+    25	      - name: Install dev dependencies
+    26	        run: pip install ".[dev]"
+    27	
+    28	      - name: Run FirstTry dev gate
+    29	        run: firsttry gate dev
+
+===== .github/workflows/ci-gate.yml =====
+     1	name: ci-gate
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	permissions:
+     7	  contents: read
+     8	
+     9	concurrency:
+    10	  group: ci-gate-${{ github.ref }}
+    11	  cancel-in-progress: true
+    12	
+    13	jobs:
+    14	  ci-gate:
+    15	    runs-on: ubuntu-latest
+    16	    timeout-minutes: 15
+    17	    env:
+    18	      FIRSTTRY_SHARED_SECRET: "dev-ci-shared-secret-xxxxxxxxxxxxxxxxxxxxxxxx"
+    19	
+    20	    steps:
+    21	      - name: Checkout
+    22	        uses: actions/checkout@v4
+    23	
+    24	      - name: Set up Python
+    25	        uses: actions/setup-python@v4
+    26	        with:
+    27	          python-version: "3.11"
+    28	          cache: "pip"
+    29	
+    30	      - name: Ensure deterministic pytest
+    31	        run: echo "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" >> $GITHUB_ENV
+    32	
+    33	      - name: Install project + dev dependencies
+    34	        run: |
+    35	          python -m pip install --upgrade pip
+    36	
+    37	          # Prefer editable install with dev extras; fall back to a non-editable install
+    38	          python -m pip install -e ".[dev]" || python -m pip install ".[dev]"
+    39	
+    40	          # If present, install pinned dev tool versions to avoid surprises from
+    41	          # floating dev-dependency versions. This file is created/committed by
+    42	          # contributors to lock the toolchain used in CI.
+    43	          if [ -f requirements-dev.txt ]; then
+    44	            python -m pip install -r requirements-dev.txt
+    45	          fi
+    46	
+    47	          # install the FirstTry CLI/tooling package (tools/firsttry) so tests can `import firsttry.*`
+    48	          if [ -d "tools/firsttry" ]; then
+    49	            python -m pip install -e tools/firsttry
+    50	          fi
+    51	
+    52	      - name: FirstTry lite (must be green)
+    53	        run: python -m firsttry.cli run --tier lite
+    54	
+    55	      - name: Run tests with coverage
+    56	        run: |
+    57	          coverage run --rcfile=.coveragerc -m pytest -q
+    58	          coverage xml --rcfile=.coveragerc
+    59	          coverage report -m --rcfile=.coveragerc
+    60	
+    61	      - name: Enforce temporary relaxed coverage gate (45%)
+    62	        run: |
+    63	          python - << 'PY'
+    64	          import sys, xml.etree.ElementTree as ET
+    65	          tree = ET.parse("coverage.xml")
+    66	          total = tree.getroot().attrib.get("line-rate")
+    67	          if total is None:
+    68	              print("ERROR: no line-rate in coverage.xml")
+    69	              sys.exit(1)
+    70	          pct = float(total) * 100.0
+    71	          print(f"Total coverage: {pct:.2f}%")
+    72	          # Relaxed target for now — aim to keep >~45% in CI while ramping tests
+    73	          THRESH = 45.0
+    74	          if pct < THRESH:
+    75	              print(f"::error ::Coverage {pct:.2f}% is below {THRESH}% threshold")
+    76	              sys.exit(1)
+    77	          PY
+
+===== .github/workflows/ci-golden-cache.yml =====
+     1	name: ci-golden-cache
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  build-golden-cache:
+     8	    runs-on: ubuntu-latest
+     9	
+    10	    steps:
+    11	      - name: Checkout repository
+    12	        uses: actions/checkout@v4
+    13	
+    14	      - name: Set up Python
+    15	        uses: actions/setup-python@v5
+    16	        with:
+    17	          python-version: "3.11"
+    18	
+    19	      - name: Create virtualenv and install project
+    20	        run: |
+    21	          python -m venv .venv
+    22	          . .venv/bin/activate
+    23	          pip install --upgrade pip
+    24	          pip install -e .[dev] || pip install -e .
+    25	
+    26	      - name: Build warm cache
+    27	        run: |
+    28	          . .venv/bin/activate
+    29	          # 🔧 Replace this with your real warm-cache command
+    30	          # Example: python -m firsttry.cli run --gate pre-commit
+    31	          python -m firsttry.cli run --gate pre-commit || true
+    32	
+    33	      - name: Package golden cache
+    34	        run: |
+    35	          mkdir -p .firsttry/artifacts
+    36	          if [ -d ".firsttry/warm" ]; then
+    37	            tar -czf .firsttry/artifacts/golden-cache.tar.gz -C .firsttry warm
+    38	          else
+    39	            echo "No .firsttry/warm directory created; skipping archive" >&2
+    40	            exit 1
+    41	          fi
+    42	          ls -R .firsttry
+    43	
+    44	      - name: Upload golden cache artifact
+    45	        uses: actions/upload-artifact@v4
+    46	        with:
+    47	          name: golden-cache
+    48	          path: .firsttry/artifacts/golden-cache.tar.gz
+    49	
+    50	      - name: Run golden cache unit tests
+    51	        run: |
+    52	          . .venv/bin/activate
+    53	          pytest -q tests/firsttry/test_golden_cache_utils.py
+    54	name: golden-cache
+    55	
+    56	on:
+    57	  push:
+    58	    branches:
+    59	      - main
+    60	
+    61	jobs:
+    62	  build-golden-cache:
+    63	    runs-on: ubuntu-latest
+    64	    steps:
+    65	      - name: Checkout
+    66	        uses: actions/checkout@v4
+    67	
+    68	      - name: Set up Python
+    69	        uses: actions/setup-python@v5
+    70	        with:
+    71	          python-version: '3.11'
+    72	
+    73	      - name: Install FirstTry (editable)
+    74	        run: |
+    75	          python -m pip install --upgrade pip
+    76	          pip install -e ".[dev]"
+    77	
+    78	      - name: Build warm cache
+    79	        run: |
+    80	          # Adjust this to your real warm-path command
+    81	          python -m firsttry.cli pre-commit --warm-only || true
+    82	          ls -R .firsttry || true
+    83	
+    84	      - name: Archive warm cache
+    85	        run: |
+    86	          mkdir -p .firsttry/artifacts
+    87	          tar -czf .firsttry/artifacts/golden-cache.tar.gz .firsttry/warm || true
+    88	
+    89	      - name: Upload golden cache artifact
+    90	        uses: actions/upload-artifact@v4
+    91	        with:
+    92	          name: golden-cache
+    93	          path: .firsttry/artifacts/golden-cache.tar.gz
+
+===== .github/workflows/ci-hardened.yml =====
+     1	name: CI - FirstTry Enterprise Pipeline (Hardened)
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	# 1. LOCK DOWN PERMISSIONS - Most restrictive defaults, override per job
+     7	permissions:
+     8	  contents: read
+     9	  actions: read
+    10	  checks: write
+    11	  pull-requests: write
+    12	  statuses: write
+    13	
+    14	# 2. CANCEL SUPERSEDED JOBS - Save minutes, cleaner PRs
+    15	concurrency:
+    16	  group: ${{ github.workflow }}-${{ github.ref }}
+    17	  cancel-in-progress: true
+    18	
+    19	env:
+    20	  PYTHON_VERSION: "3.11"
+    21	  NODE_VERSION: "20"
+    22	  CACHE_VERSION: "v1"
+    23	  FT_SEND_TELEMETRY: "1"
+    24	
+    25	jobs:
+    26	  setup:
+    27	    name: Setup Environment
+    28	    runs-on: ubuntu-latest
+    29	    outputs:
+    30	      python-version: ${{ steps.versions.outputs.python }}
+    31	      node-version: ${{ steps.versions.outputs.node }}
+    32	      cache-key: ${{ steps.cache-key.outputs.key }}
+    33	    steps:
+    34	      # 3. PIN ACTIONS BY SHA (supply-chain security)
+    35	      - uses: actions/checkout@v4
+    36	        with:
+    37	          fetch-depth: 0
+    38	        # v4 pinned by SHA
+    39	
+    40	      - name: Determine versions
+    41	        id: versions
+    42	        run: |
+    43	          echo "python=${{ env.PYTHON_VERSION }}" >> $GITHUB_OUTPUT
+    44	          echo "node=${{ env.NODE_VERSION }}" >> $GITHUB_OUTPUT
+    45	
+    46	      - name: Generate cache key
+    47	        id: cache-key
+    48	        run: |
+    49	          KEY="${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', 'package*.json', 'pyproject.toml') }}"
+    50	          echo "key=$KEY" >> $GITHUB_OUTPUT
+    51	
+    52	  lint:
+    53	    name: Lint - Ruff Python Linter
+    54	    runs-on: ubuntu-latest
+    55	    needs: setup
+    56	    permissions:
+    57	      contents: read
+    58	    steps:
+    59	      - uses: actions/checkout@v4
+    60	        # v4 pinned by SHA
+    61	      
+    62	      - uses: actions/setup-python@v4
+    63	        with:
+    64	          python-version: ${{ needs.setup.outputs.python-version }}
+    65	          cache: "pip"
+    66	        # v5 pinned by SHA
+    67	
+    68	      - name: Install dependencies
+    69	        run: |
+    70	          python -m pip install --upgrade pip
+    71	          pip install ruff
+    72	
+    73	      - name: Run ruff linter
+    74	        run: ruff check src tests --extend-select=E,W,I,UP,RUF
+    75	
+    76	  types:
+    77	    name: Types - MyPy Static Type Checker
+    78	    runs-on: ubuntu-latest
+    79	    needs: setup
+    80	    permissions:
+    81	      contents: read
+    82	    steps:
+    83	      - uses: actions/checkout@v4
+    84	        # v4 pinned by SHA
+    85	      
+    86	      - uses: actions/setup-python@v4
+    87	        with:
+    88	          python-version: ${{ needs.setup.outputs.python-version }}
+    89	          cache: "pip"
+    90	        # v5 pinned by SHA
+    91	
+    92	      - name: Install dependencies
+    93	        run: |
+    94	          python -m pip install --upgrade pip
+    95	          pip install mypy types-all
+    96	
+    97	      - name: Run mypy type checker
+    98	        run: mypy src --strict
+    99	
+   100	  test:
+   101	    name: Test - Pytest Suite
+   102	    runs-on: ubuntu-latest
+   103	    needs: setup
+   104	    permissions:
+   105	      contents: read
+   106	      checks: write
+   107	    strategy:
+   108	      matrix:
+   109	        python: ["3.10", "3.11", "3.12"]
+   110	    steps:
+   111	      - uses: actions/checkout@v4
+   112	        # v4 pinned by SHA
+   113	      
+   114	      - uses: actions/setup-python@v4
+   115	        with:
+   116	          python-version: ${{ matrix.python }}
+   117	          cache: "pip"
+   118	        # v5 pinned by SHA
+   119	
+   120	      - name: Install dependencies
+   121	        run: |
+   122	          python -m pip install --upgrade pip
+   123	          pip install -r requirements-dev.txt
+   124	
+   125	      - name: Run pytest tests
+   126	        run: |
+   127	          pytest tests/ -v --tb=short --cov=src/firsttry --cov-report=term-missing --cov-report=json
+   128	
+   129	      - name: Upload coverage reports
+   130	        uses: codecov/codecov-action@v5
+   131	        with:
+   132	          files: ./coverage.json
+   133	          flags: unittests
+   134	          name: codecov-umbrella
+   135	          fail_ci_if_error: false
+   136	        # v4 pinned by SHA
+   137	
+   138	      - name: Publish test results
+   139	        if: always()
+   140	        uses: EnricoMi/publish-unit-test-result-action@v2
+   141	        with:
+   142	          files: test-results.xml
+   143	          check_name: Test Results (${{ matrix.python }})
+   144	        # v2 pinned by SHA
+   145	
+   146	  integration:
+   147	    name: Integration - E2E Tests
+   148	    runs-on: ubuntu-latest
+   149	    needs: setup
+   150	    permissions:
+   151	      contents: read
+   152	    services:
+   153	      postgres:
+   154	        image: postgres:15-alpine
+   155	        env:
+   156	          POSTGRES_DB: firsttry_test
+   157	          POSTGRES_PASSWORD: testpass
+   158	        options: >-
+   159	          --health-cmd pg_isready
+   160	          --health-interval 10s
+   161	          --health-timeout 5s
+   162	          --health-retries 5
+   163	        ports:
+   164	          - 5432:5432
+   165	    steps:
+   166	      - uses: actions/checkout@v4
+   167	        # v4 pinned by SHA
+   168	      
+   169	      - uses: actions/setup-python@v4
+   170	        with:
+   171	          python-version: ${{ needs.setup.outputs.python-version }}
+   172	          cache: "pip"
+   173	        # v5 pinned by SHA
+   174	
+   175	      - name: Install dependencies
+   176	        run: |
+   177	          python -m pip install --upgrade pip
+   178	          pip install -r requirements-dev.txt
+   179	
+   180	      - name: Run integration tests
+   181	        env:
+   182	          DATABASE_URL: postgresql://postgres:testpass@localhost:5432/firsttry_test
+   183	        run: |
+   184	          pytest tests/integration/ -v --tb=short
+   185	
+   186	  security-scan:
+   187	    name: Security - Bandit Code Scan
+   188	    runs-on: ubuntu-latest
+   189	    needs: setup
+   190	    permissions:
+   191	      contents: read
+   192	      security-events: write
+   193	    steps:
+   194	      - uses: actions/checkout@v4
+   195	        # v4 pinned by SHA
+   196	      
+   197	      - uses: actions/setup-python@v4
+   198	        with:
+   199	          python-version: ${{ needs.setup.outputs.python-version }}
+   200	          cache: "pip"
+   201	        # v5 pinned by SHA
+   202	
+   203	      - name: Install dependencies
+   204	        run: |
+   205	          python -m pip install --upgrade pip
+   206	          pip install bandit
+   207	
+   208	      - name: Run bandit security scan
+   209	        run: |
+   210	          bandit -r src -f json -o bandit-report.json || true
+   211	
+   212	      - name: Upload security scan results
+   213	        uses: github/codeql-action/upload-sarif@v4
+   214	        with:
+   215	          sarif_file: bandit-report.json
+   216	          wait-for-processing: false
+   217	        # v3 pinned by SHA
+   218	
+   219	  ci-self-audit:
+   220	    name: CI Self-Audit
+   221	    runs-on: ubuntu-latest
+   222	    needs: setup
+   223	    permissions:
+   224	      contents: read
+   225	    steps:
+   226	      - uses: actions/checkout@v4
+   227	        # v4 pinned by SHA
+   228	      
+   229	      - uses: actions/setup-python@v4
+   230	        with:
+   231	          python-version: ${{ needs.setup.outputs.python-version }}
+   232	        # v5 pinned by SHA
+   233	
+   234	      - name: Run CI self-audit
+   235	        run: python tools/ci_self_check.py
+   236	
+   237	  status-check:
+   238	    name: CI Status Check
+   239	    runs-on: ubuntu-latest
+   240	    needs: [lint, types, test, integration, security-scan, ci-self-audit]
+   241	    permissions:
+   242	      contents: read
+   243	    if: always()
+   244	    steps:
+   245	      - name: Check CI status
+   246	        run: |
+   247	          if [ "${{ needs.lint.result }}" != "success" ] || \
+   248	             [ "${{ needs.types.result }}" != "success" ] || \
+   249	             [ "${{ needs.test.result }}" != "success" ] || \
+   250	             [ "${{ needs.integration.result }}" != "success" ] || \
+   251	             [ "${{ needs.security-scan.result }}" != "success" ] || \
+   252	             [ "${{ needs.ci-self-audit.result }}" != "success" ]; then
+   253	            echo "❌ CI pipeline failed"
+   254	            exit 1
+   255	          fi
+   256	          echo "✅ CI pipeline succeeded"
+
+===== .github/workflows/ci-parity.yml =====
+     1	# CI Parity Workflow
+     2	# Ensures CI runs exactly what local pre-commit runs (SSOT = single source of truth)
+     3	# If pre-commit passes locally, CI will pass
+     4	name: CI Parity
+     5	
+     6	on:
+     7	  workflow_dispatch:
+     8	
+     9	jobs:
+    10	  precommit-parity:
+    11	    name: FirstTry Pre-commit Parity
+    12	    runs-on: ubuntu-24.04
+    13	    timeout-minutes: 15
+    14	
+    15	    steps:
+    16	      - name: Checkout code
+    17	        uses: actions/checkout@v4
+    18	
+    19	      - name: Setup Python (pin same version as devs)
+    20	        uses: actions/setup-python@v5
+    21	        with:
+    22	          python-version: '3.11'
+    23	          cache: 'pip'
+    24	
+    25	      - name: Install dev tooling (pinned versions)
+    26	        run: |
+    27	          python -m pip install --upgrade pip
+    28	          # Prefer project dev extra if available, else requirements-dev.txt
+    29	          (pip install -e '.[dev]' 2>/dev/null || true)
+    30	          (test -f requirements-dev.txt && pip install -r requirements-dev.txt) || true
+    31	          pip install pre-commit
+    32	
+    33	      - name: Show tool versions (diagnostic)
+    34	        run: |
+    35	          echo "=== Environment ==="
+    36	          python -V
+    37	          pip --version
+    38	          echo ""
+    39	          echo "=== Pre-commit ===" 
+    40	          pre-commit --version || echo "pre-commit not found"
+    41	          echo ""
+    42	          echo "=== Linters/Formatters ==="
+    43	          ruff --version || echo "ruff not found"
+    44	          black --version || echo "black not found"
+    45	          isort --version || echo "isort not found"
+    46	          echo ""
+    47	          echo "=== Type Checking ==="
+    48	          mypy --version || echo "mypy not found"
+    49	          echo ""
+    50	          echo "=== Testing ==="
+    51	          pytest --version || echo "pytest not found"
+    52	          echo ""
+    53	          echo "=== FirstTry CLI ==="
+    54	          firsttry --version 2>&1 || echo "firsttry command not found"
+    55	          ft --version 2>&1 || echo "ft command not found"
+    56	
+    57	      - name: Enforce identical environment to local dev
+    58	        run: |
+    59	          echo "PYTHONHASHSEED=0" >> $GITHUB_ENV
+    60	          echo "LC_ALL=C.UTF-8" >> $GITHUB_ENV
+    61	          echo "LANG=C.UTF-8" >> $GITHUB_ENV
+    62	          echo "PIP_DISABLE_PIP_VERSION_CHECK=1" >> $GITHUB_ENV
+    63	          echo "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" >> $GITHUB_ENV
+    64	          echo "FT_SKIP_TOOL_EXEC=1" >> $GITHUB_ENV
+    65	
+    66	      - name: Ruff explicit check
+    67	        run: |
+    68	          echo "🔍 Running explicit Ruff check"
+    69	          ruff check . --config pyproject.toml
+    70	
+    71	      - name: Pytest (quick, block merges)
+    72	        run: |
+    73	          echo "🧪 Running pytest (quick gate)"
+    74	          FIRSTTRY_SHARED_SECRET='dev-fallback-secret-0123456789012345' pytest -q --maxfail=1 --ignore=tools
+    75	
+    76	      - name: Run FirstTry pre-commit parity (hook contract)
+    77	        env:
+    78	          FIRSTTRY_SHARED_SECRET: 'dev-fallback-secret-0123456789012345'
+    79	          GIT_HOOK: 'pre-push'
+    80	          FT_NO_NETWORK: '1'
+    81	        run: |
+    82	          echo "🔁 Running pre-commit parity via CLI (pre-push contract)"
+    83	          python -m firsttry.cli pre-commit
+    84	
+    85	      - name: Run FirstTry pre-commit parity (CI = local)
+    86	        # This executes ALL hooks including our ft-pre-commit-parity hook
+    87	        # which is the single source of truth for "green means green"
+    88	        env:
+    89	          PRE_COMMIT_COLOR: always
+    90	        run: |
+    91	          # Ensure clean state
+    92	          git reset --hard
+    93	          
+    94	          # Run pre-commit on all files (same as local dev would run)
+    95	          pre-commit run --all-files --show-diff-on-failure --color=always
+    96	
+    97	      - name: Upload parity logs (diagnostic)
+    98	        if: always()
+    99	        uses: actions/upload-artifact@v4
+   100	        with:
+   101	          name: ft-precommit-parity-logs
+   102	          path: |
+   103	            .firsttry/audit_logs/**
+   104	            .firsttry/**/*.log
+   105	            .pytest_cache/**
+   106	            .ruff_cache/**
+   107	            .mypy_cache/**
+   108	          retention-days: 7
+   109	          if-no-files-found: ignore
+
+===== .github/workflows/ci.yml =====
+     1	name: CI - FirstTry Enterprise Pipeline
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	permissions:
+     7	  contents: read
+     8	  actions: read
+     9	  pull-requests: write
+    10	
+    11	concurrency:
+    12	  group: ${{ github.workflow }}-${{ github.ref }}
+    13	  cancel-in-progress: true
+    14	
+    15	env:
+    16	  PYTHON_VERSION: "3.11"
+    17	  NODE_VERSION: "20"
+    18	  CACHE_VERSION: "v1"
+    19	  FT_SEND_TELEMETRY: "1"
+    20	
+    21	jobs:
+    22	  # === Core Infrastructure ===
+    23	  setup:
+    24	    name: Setup Environment
+    25	    runs-on: ubuntu-latest
+    26	    outputs:
+    27	      python-version: ${{ steps.versions.outputs.python }}
+    28	      node-version: ${{ steps.versions.outputs.node }}
+    29	      cache-key: ${{ steps.cache-key.outputs.key }}
+    30	    steps:
+    31	      - uses: actions/checkout@v4
+    32	        with:
+    33	          fetch-depth: 0
+    34	
+    35	      - name: Determine versions
+    36	        id: versions
+    37	        run: |
+    38	          echo "python=${{ env.PYTHON_VERSION }}" >> $GITHUB_OUTPUT
+    39	          echo "node=${{ env.NODE_VERSION }}" >> $GITHUB_OUTPUT
+    40	
+    41	      - name: Generate cache key
+    42	        id: cache-key
+    43	        run: |
+    44	          KEY="${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', 'package*.json', 'pyproject.toml') }}"
+    45	          echo "key=$KEY" >> $GITHUB_OUTPUT
+    46	
+    47	  # === CI Infrastructure Validation ===
+    48	  validate-workflows:
+    49	    name: Validate Workflow YAMLs
+    50	    runs-on: ubuntu-latest
+    51	    steps:
+    52	      - uses: actions/checkout@v4
+    53	      - name: Set up Python
+    54	        uses: actions/setup-python@v4
+    55	        with:
+    56	          python-version: '3.11'
+    57	      - name: Validate workflow YAMLs
+    58	        run: |
+    59	          pip install pyyaml
+    60	          python - <<'PY'
+    61	          import textwrap
+    62	          code = """
+    63	          import yaml, glob
+    64	          for f in glob.glob('.github/workflows/*.yml'):
+    65	            with open(f, encoding='utf-8') as fh:
+    66	              yaml.safe_load(fh)
+    67	            print("✅", f)
+    68	          """
+    69	          exec(textwrap.dedent(code))
+    70	          PY
+    71	
+    72	  # === Code Quality Gates ===
+    73	  lint:
+    74	    name: Lint - Ruff Python Linter
+    75	    runs-on: ubuntu-latest
+    76	    needs: setup
+    77	    steps:
+    78	      - uses: actions/checkout@v4
+    79	      - name: Set up Python
+    80	        uses: actions/setup-python@v4
+    81	        with:
+    82	          python-version: ${{ needs.setup.outputs.python-version }}
+    83	          cache: pip
+    84	      - name: Install dependencies
+    85	        run: |
+    86	          python -m pip install --upgrade pip
+    87	          pip install ruff==0.14.3
+    88	      - name: Run ruff linter
+    89	        run: |
+    90	          echo "🔍 Running Ruff linter on FirstTry codebase..."
+    91	          ruff check src/ tests/ --config pyproject.toml
+    92	          echo "✅ Ruff linting passed"
+    93	      - name: Ruff format check
+    94	        run: |
+    95	          echo "📋 Checking code formatting..."
+    96	          ruff format src/ tests/ --check --config pyproject.toml || true
+    97	
+    98	  type-safety:
+    99	    name: Type Safety - MyPy Strict Mode
+   100	    runs-on: ubuntu-latest
+   101	    needs: setup
+   102	    steps:
+   103	      - uses: actions/checkout@v4
+   104	      - name: Set up Python
+   105	        uses: actions/setup-python@v4
+   106	        with:
+   107	          python-version: ${{ needs.setup.outputs.python-version }}
+   108	          cache: pip
+   109	      - name: Install dependencies
+   110	        run: |
+   111	          python -m pip install --upgrade pip
+   112	          pip install mypy==1.18.2 types-PyYAML types-requests
+   113	      - name: Run MyPy type checker (strict mode)
+   114	        run: |
+   115	          echo "🔐 Running MyPy type safety checks..."
+   116	          python -m mypy src/firsttry/runner/state.py --config-file=mypy.ini
+   117	          python -m mypy src/firsttry/runner/planner.py --config-file=mypy.ini
+   118	          python -m mypy src/firsttry/smart_pytest.py --config-file=mypy.ini
+   119	          python -m mypy src/firsttry/scanner.py --config-file=mypy.ini
+   120	          echo "✅ MyPy type checking passed (zero errors)"
+   121	      - name: Upload type safety report
+   122	        if: ${{ always() }}
+   123	        uses: actions/upload-artifact@v4
+   124	        with:
+   125	          name: mypy-report
+   126	          path: |
+   127	            .mypy_cache/
+   128	            mypy.log
+   129	          retention-days: 30
+   130	
+   131	  # === Core Testing Suite ===
+   132	  tests:
+   133	    name: Tests - Pytest Suite
+   134	    runs-on: ubuntu-latest
+   135	    needs: setup
+   136	    permissions:
+   137	      contents: read
+   138	      pull-requests: write
+   139	    strategy:
+   140	      matrix:
+   141	        test-tier: [lite, pro]
+   142	    steps:
+   143	      - uses: actions/checkout@v4
+   144	      - name: Set up Python
+   145	        uses: actions/setup-python@v4
+   146	        with:
+   147	          python-version: ${{ needs.setup.outputs.python-version }}
+   148	          cache: pip
+   149	      - name: Set up Node.js
+   150	        uses: actions/setup-node@v3
+   151	        with:
+   152	          node-version: ${{ needs.setup.outputs.node-version }}
+   153	          cache: npm
+   154	      - name: Install Python dependencies
+   155	        run: |
+   156	          python -m pip install --upgrade pip
+   157	          pip install -r requirements.txt
+   158	          pip install pytest==8.4.2 pytest-cov==4.1.0 pytest-timeout==2.1.0
+   159	      - name: Install Node dependencies
+   160	        run: |
+   161	          npm install eslint prettier
+   162	      - name: Run Lite tier tests
+   163	        if: matrix.test-tier == 'lite'
+   164	        run: |
+   165	          echo "🧪 Running Lite tier tests (ruff only)..."
+   166	          python -m pytest tests/ -k "not pro and not strict and not promax" \
+   167	            --cov=src/firsttry \
+   168	            --cov-report=term-missing \
+   169	            --cov-report=json \
+   170	            --timeout=30 \
+   171	            -v
+   172	      - name: Run Pro tier tests
+   173	        if: matrix.test-tier == 'pro'
+   174	        env:
+   175	          FIRSTTRY_LICENSE_KEY: ${{ secrets.FIRSTTRY_LICENSE_KEY_TEST }}
+   176	        run: |
+   177	          echo "🧪 Running Pro tier tests (pytest + mypy included)..."
+   178	          python -m pytest tests/ -k "not strict and not promax" \
+   179	            --cov=src/firsttry \
+   180	            --cov-report=term-missing \
+   181	            --cov-report=json \
+   182	            --timeout=30 \
+   183	            -v
+   184	      - name: Gate script unit tests
+   185	        if: always()
+   186	        run: |
+   187	          echo "🔬 Running gate unit tests for check_critical_coverage.py"
+   188	          pytest -q tests/tools/test_check_critical_coverage.py
+   189	      - name: Gate JSON summary unit tests
+   190	        if: always()
+   191	        run: |
+   192	          echo "🔬 Running gate JSON-summary unit tests"
+   193	          pytest -q tests/tools/test_check_critical_coverage_json.py
+   194	      - name: Snapshot CLI help (artifact)
+   195	        if: matrix.test-tier == 'lite'
+   196	        run: |
+   197	          mkdir -p .firsttry
+   198	          PYTHONPATH=src python -m firsttry --help > .firsttry/cli_help.txt
+   199	          PYTHONPATH=src python -m firsttry run --help > .firsttry/cli_run_help.txt
+   200	          PYTHONPATH=src python -m firsttry status --help > .firsttry/cli_status_help.txt
+   201	          PYTHONPATH=src python -m firsttry doctor --help > .firsttry/cli_doctor_help.txt
+   202	          echo "📝 CLI help files generated for drift detection"
+   203	      - name: Upload CLI help
+   204	        if: ${{ matrix.test-tier == 'lite' && always() }}
+   205	        uses: actions/upload-artifact@v4
+   206	        with:
+   207	          name: cli-help
+   208	          path: |
+   209	            .firsttry/cli_help.txt
+   210	            .firsttry/cli_run_help.txt
+   211	            .firsttry/cli_status_help.txt
+   212	            .firsttry/cli_doctor_help.txt
+   213	          retention-days: 30
+   214	      - name: Comment coverage on PR
+   215	        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && always() }}
+   216	        uses: actions/github-script@v7
+   217	        with:
+   218	          script: |
+   219	            const fs = require('fs');
+   220	            const coverage = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
+   221	            const totalCoverage = coverage.totals.percent_covered;
+   222	            const comment = `## Coverage Report - ${process.env.TEST_TIER} Tier
+   223	            
+   224	            - **Overall Coverage:** ${totalCoverage.toFixed(2)}%
+   225	            - **Tier:** ${{ matrix.test-tier }}
+   226	            - **Commit:** ${{ github.sha }}
+   227	            
+   228	            [View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+   229	            
+   230	            github.rest.issues.createComment({
+   231	              issue_number: context.issue.number,
+   232	              owner: context.repo.owner,
+   233	              repo: context.repo.repo,
+   234	              body: comment
+   235	            });
+   236	      - name: Assert FT_CRITICAL_MIN_RATE is set
+   237	        run: |
+   238	          test -n "${FT_CRITICAL_MIN_RATE:-}" || { echo "FT_CRITICAL_MIN_RATE not set"; exit 1; }
+   239	      - name: Enforce critical coverage (per-file gate)
+   240	        env:
+   241	          FT_CRITICAL_MIN_RATE: "60"
+   242	        run: |
+   243	          python tools/check_critical_coverage.py
+   244	      - name: Enforce critical coverage (main stricter)
+   245	        if: ${{ github.ref_name == 'main' }}
+   246	        env:
+   247	          FT_CRITICAL_MIN_RATE: "85"
+   248	          FT_COVERAGE_JSON_OUT: ".firsttry/critical_coverage_summary.json"
+   249	        run: |
+   250	          python tools/check_critical_coverage.py
+   251	      - name: Upload coverage artifacts
+   252	        if: ${{ always() }}
+   253	        uses: actions/upload-artifact@v4
+   254	        with:
+   255	          name: coverage-artifacts
+   256	          path: |
+   257	            coverage.xml
+   258	            coverage.json
+   259	            .firsttry/critical_coverage_summary.json
+   260	          retention-days: 30
+   261	      - name: Comment per-file critical coverage (REST, idempotent)
+   262	        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && always() }}
+   263	        uses: actions/github-script@v7
+   264	        with:
+   265	          script: |
+   266	            const fs = require('fs');
+   267	            const path = '.firsttry/critical_coverage_summary.json';
+   268	            const MARKER = '<!-- FT_CRITICAL_COVERAGE_COMMENT -->';
+   269	            if (!fs.existsSync(path)) {
+   270	              core.info('No critical coverage JSON found; skipping comment.');
+   271	              return;
+   272	            }
+   273	            const j = JSON.parse(fs.readFileSync(path, 'utf8'));
+   274	            const rows = (j.files || []).map(f => [f.path, (typeof f.percent_covered === 'number') ? `${f.percent_covered.toFixed(1)}%` : 'n/a']);
+   275	            const w = rows.reduce((m,[p]) => Math.max(m, p.length), 4);
+   276	            const pad = (s, n) => (s + ' '.repeat(Math.max(0, n - s.length)));
+   277	            const header = `| ${pad('File', w)} | Covered |\n| ${'-'.repeat(w)} | ------- |`;
+   278	            const body = rows.map(([p,c]) => `| ${pad(p, w)} | ${c} |`).join('\n');
+   279	            const missing = (j.missing && j.missing.length) ? `\n**Missing:** ${j.missing.join(', ')}` : '';
+   280	            const avg = (typeof j.avg_percent === 'number') ? `**Average (criticals): ${j.avg_percent.toFixed(2)}%**\n` : '';
+   281	            const doc = `[Coverage doctrine](docs/FIRSTTRY_COVERAGE_DOCTRINE.md)`;
+   282	            const md = `${MARKER}\n### FirstTry critical coverage — **${(j.status || 'pass').toUpperCase()}**\n**Threshold:** ${j.threshold}  \n${avg}\n${header}\n${body}\n${missing}\n\n_${doc}_`;
+   283	
+   284	            const {owner, repo} = context.repo;
+   285	            const issue_number = context.payload.pull_request.number;
+   286	
+   287	            const comments = await github.paginate(
+   288	              github.rest.issues.listComments,
+   289	              {owner, repo, issue_number, per_page: 100}
+   290	            );
+   291	            const existing = comments.find(c => (c.body || '').includes(MARKER));
+   292	
+   293	            if (existing) {
+   294	              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: md });
+   295	              core.info('Updated existing coverage comment.');
+   296	            } else {
+   297	              await github.rest.issues.createComment({ owner, repo, issue_number, body: md });
+   298	              core.info('Created new coverage comment.');
+   299	            }
+   300	
+   301	  # === Enterprise & Security Validation ===
+   302	  enterprise-features:
+   303	    name: Enterprise Features
+   304	    runs-on: ubuntu-latest
+   305	    needs: setup
+   306	    steps:
+   307	      - uses: actions/checkout@v4
+   308	      - name: Set up Python
+   309	        uses: actions/setup-python@v4
+   310	        with:
+   311	          python-version: ${{ needs.setup.outputs.python-version }}
+   312	          cache: pip
+   313	      - name: Install dependencies
+   314	        run: |
+   315	          python -m pip install --upgrade pip
+   316	          pip install -r requirements.txt
+   317	          pip install pytest==8.4.2
+   318	      - name: Run enterprise feature tests
+   319	        run: |
+   320	          echo "🚀 Running enterprise feature validation tests..."
+   321	          python -m pytest tests/enterprise/ \
+   322	            --cov=src/firsttry \
+   323	            -v \
+   324	            --tb=short
+   325	      - name: Upload enterprise test results
+   326	        if: ${{ always() }}
+   327	        uses: actions/upload-artifact@v4
+   328	        with:
+   329	          name: enterprise-tests
+   330	          path: |
+   331	            .pytest_cache/
+   332	            test-results.xml
+   333	          retention-days: 30
+   334	
+   335	  # === Security & Performance Analysis ===
+   336	  security:
+   337	    name: Security Scanning
+   338	    runs-on: ubuntu-latest
+   339	    needs: setup
+   340	    steps:
+   341	      - uses: actions/checkout@v4
+   342	      - name: Set up Python
+   343	        uses: actions/setup-python@v4
+   344	        with:
+   345	          python-version: ${{ needs.setup.outputs.python-version }}
+   346	      - name: Install security tools
+   347	        run: |
+   348	          python -m pip install --upgrade pip
+   349	          pip install bandit==1.7.5 gitleaks
+   350	      - name: Run Bandit security scan
+   351	        run: |
+   352	          echo "🔒 Running Bandit security scanner..."
+   353	          bandit -r src/ -f json -o bandit-report.json || true
+   354	          echo "✅ Bandit scan complete"
+   355	      - name: Check for secrets
+   356	        run: |
+   357	          echo "🔍 Checking for hardcoded secrets..."
+   358	          gitleaks detect --verbose --exit-code 0 || true
+   359	      - name: Upload security reports
+   360	        if: ${{ always() }}
+   361	        uses: actions/upload-artifact@v4
+   362	        with:
+   363	          name: security-reports
+   364	          path: |
+   365	            bandit-report.json
+   366	          retention-days: 30
+   367	
+   368	  performance-benchmark:
+   369	    name: Performance Benchmark
+   370	    runs-on: ubuntu-latest
+   371	    needs: setup
+   372	    continue-on-error: true
+   373	    steps:
+   374	      - uses: actions/checkout@v4
+   375	      - name: Set up Python
+   376	        uses: actions/setup-python@v4
+   377	        with:
+   378	          python-version: ${{ needs.setup.outputs.python-version }}
+   379	          cache: pip
+   380	      - name: Install dependencies
+   381	        run: |
+   382	          python -m pip install --upgrade pip
+   383	          pip install -r requirements.txt
+   384	      - name: Run performance benchmark
+   385	        run: |
+   386	          echo "⚡ Running performance benchmark..."
+   387	          python -c "
+   388	          import time
+   389	          import subprocess
+   390	          import json
+   391	          from pathlib import Path
+   392	          
+   393	          runs = {'cold': [], 'warm': []}
+   394	          cache_dir = Path('.firsttry/taskcache')
+   395	          if cache_dir.exists():
+   396	              import shutil
+   397	              shutil.rmtree(cache_dir)
+   398	          
+   399	          start = time.time()
+   400	          subprocess.run(['python', '-m', 'firsttry', 'run', 'lite'], capture_output=True, timeout=30)
+   401	          cold_time = time.time() - start
+   402	          runs['cold'].append(cold_time)
+   403	          
+   404	          start = time.time()
+   405	          subprocess.run(['python', '-m', 'firsttry', 'run', 'lite'], capture_output=True, timeout=30)
+   406	          warm_time = time.time() - start
+   407	          runs['warm'].append(warm_time)
+   408	          
+   409	          speedup = cold_time / warm_time if warm_time > 0 else 0
+   410	          
+   411	          bench_result = {
+   412	              'cold_run_seconds': cold_time,
+   413	              'warm_run_seconds': warm_time,
+   414	              'speedup_factor': speedup,
+   415	              'timestamp': time.time(),
+   416	              'commit': '${{ github.sha }}'
+   417	          }
+   418	          
+   419	          Path('.firsttry/bench_ci.json').write_text(json.dumps(bench_result, indent=2))
+   420	          
+   421	          print(f'✅ Benchmark complete:')
+   422	          print(f'  Cold run: {cold_time:.2f}s')
+   423	          print(f'  Warm run: {warm_time:.2f}s')
+   424	          print(f'  Speedup: {speedup:.2f}x')
+   425	          "
+   426	      - name: Upload benchmark results
+   427	        if: ${{ always() }}
+   428	        uses: actions/upload-artifact@v4
+   429	        with:
+   430	          name: benchmarks-ci
+   431	          path: .firsttry/bench_ci.json
+   432	          retention-days: 90
+   433	      - name: Check performance SLO
+   434	        run: |
+   435	          echo "📊 Checking performance SLO..."
+   436	          python -c "
+   437	          import json
+   438	          from pathlib import Path
+   439	          
+   440	          bench = json.loads(Path('.firsttry/bench_ci.json').read_text())
+   441	          warm_run = bench['warm_run_seconds']
+   442	          slo_threshold = 0.5
+   443	          
+   444	          if warm_run <= slo_threshold:
+   445	              print(f'✅ SLO passed: {warm_run:.2f}s <= {slo_threshold}s')
+   446	              exit(0)
+   447	          else:
+   448	              print(f'❌ SLO failed: {warm_run:.2f}s > {slo_threshold}s')
+   449	              exit(1)
+   450	          "
+   451	
+   452	  # === Audit & Compliance ===
+   453	  audit-schema:
+   454	    name: Audit Schema & Emission
+   455	    runs-on: ubuntu-latest
+   456	    needs: [lint, type-safety, tests, enterprise-features]
+   457	    if: always()
+   458	    steps:
+   459	      - uses: actions/checkout@v4
+   460	      - name: Set up Python
+   461	        uses: actions/setup-python@v4
+   462	        with:
+   463	          python-version: ${{ needs.setup.outputs.python-version }}
+   464	          cache: pip
+   465	      - name: Install dependencies
+   466	        run: |
+   467	          python -m pip install --upgrade pip
+   468	          pip install jsonschema==4.20.0 -r requirements.txt
+   469	      - name: Compute policy hash
+   470	        id: policy
+   471	        run: |
+   472	          python - << 'PY'
+   473	          import os, pathlib, hashlib, json
+   474	          u = os.environ.get("FT_POLICY_URL", "")
+   475	          h = ""
+   476	          if u and u.startswith("file://"):
+   477	              p = pathlib.Path(u.replace("file://", ""))
+   478	              if p.exists():
+   479	                  h = "sha256:" + hashlib.sha256(p.read_bytes()).hexdigest()
+   480	          out = os.environ.get('GITHUB_OUTPUT')
+   481	          if out:
+   482	            with open(out, 'a') as fo:
+   483	              fo.write(f"url={u}\n")
+   484	              fo.write(f"hash={h}\n")
+   485	          else:
+   486	            print(f"url={u}")
+   487	            print(f"hash={h}")
+   488	          PY
+   489	      - name: Generate audit report
+   490	        env:
+   491	          POLICY_HASH: ${{ steps.policy.outputs.hash }}
+   492	          FT_POLICY_URL: ${{ steps.policy.outputs.url }}
+   493	        run: |
+   494	          echo "📋 Generating enterprise audit report..."
+   495	          python -c "
+   496	          import os
+   497	          import json
+   498	          import sys
+   499	          from pathlib import Path
+   500	          sys.path.insert(0, 'tools')
+   501	          
+   502	          from audit_emit import emit_audit_report, emit_audit_json, emit_audit_summary
+   503	          
+   504	          status = 'pass' if '${{ job.status }}' == 'success' else 'fail'
+   505	          compliance = {
+   506	              'policy_enforced': True,
+   507	              'policy_url': os.environ.get('FT_POLICY_URL',''),
+   508	              'policy_hash': os.environ.get('POLICY_HASH',''),
+   509	              'policy_effects': ['lock:lint=strict','require:typecheck']
+   510	          }
+   511	          
+   512	          report = emit_audit_report(
+   513	              overall_score=92,
+   514	              category_scores={
+   515	                  'architecture': 95,
+   516	                  'security': 98,
+   517	                  'performance': 90,
+   518	                  'test_coverage': 85,
+   519	                  'enforcement': 90,
+   520	                  'ci_parity': 92
+   521	              },
+   522	              gates_executed=[
+   523	                  {'gate': 'ruff', 'status': 'pass', 'duration_ms': 2500},
+   524	                  {'gate': 'mypy', 'status': 'pass', 'duration_ms': 3200},
+   525	                  {'gate': 'pytest', 'status': 'pass', 'duration_ms': 45000},
+   526	                  {'gate': 'bandit', 'status': 'pass', 'duration_ms': 1200},
+   527	              ],
+   528	              repository={
+   529	                  'owner': '${{ github.repository_owner }}',
+   530	                  'name': '${{ github.event.repository.name }}',
+   531	                  'url': '${{ github.server_url }}/${{ github.repository }}'
+   532	              },
+   533	              branch='${{ github.ref_name }}',
+   534	              commit_info={
+   535	                  'sha': '${{ github.sha }}',
+   536	                  'author': '${{ github.actor }}',
+   537	                  'message': 'CI pipeline execution'
+   538	              },
+   539	              tier='pro',
+   540	              compliance=compliance,
+   541	              status=status
+   542	          )
+   543	          
+   544	          output_dir = Path('.firsttry')
+   545	          output_dir.mkdir(exist_ok=True)
+   546	          emit_audit_json(report, output_dir / 'audit.json')
+   547	          emit_audit_summary(report, output_dir / 'audit_summary.txt')
+   548	          print('✅ Audit report generated')
+   549	          "
+   550	      - name: Validate audit schema
+   551	        run: |
+   552	          echo "✔️  Validating audit schema..."
+   553	          python -c "
+   554	          import json
+   555	          import sys
+   556	          from pathlib import Path
+   557	          sys.path.insert(0, 'tools')
+   558	          
+   559	          from audit_emit import load_schema, validate_audit_report
+   560	          
+   561	          audit_file = Path('.firsttry/audit.json')
+   562	          report = json.loads(audit_file.read_text())
+   563	          
+   564	          schema = load_schema()
+   565	          is_valid, errors = validate_audit_report(report)
+   566	          
+   567	          if is_valid:
+   568	              print('✅ Audit report is valid')
+   569	              exit(0)
+   570	          else:
+   571	              print('❌ Audit validation failed:')
+   572	              for error in errors:
+   573	                  print(f'  - {error}')
+   574	              exit(1)
+   575	          "
+   576	      - name: Upload audit artifacts
+   577	        if: always()
+   578	        uses: actions/upload-artifact@v4
+   579	        with:
+   580	          name: audit-reports
+   581	          path: |
+   582	            .firsttry/audit.json
+   583	            .firsttry/audit_summary.txt
+   584	          retention-days: 90
+   585	      - name: Comment audit report on PR
+   586	        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && always() }}
+   587	        uses: actions/github-script@v7
+   588	        with:
+   589	          script: |
+   590	            const fs = require('fs');
+   591	            const summary = fs.readFileSync('.firsttry/audit_summary.txt', 'utf8');
+   592	            github.rest.issues.createComment({
+   593	              issue_number: context.issue.number,
+   594	              owner: context.repo.owner,
+   595	              repo: context.repo.repo,
+   596	              body: `## 🎯 Enterprise Audit Report\n\n\`\`\`\n${summary}\n\`\`\``
+   597	            });
+   598	
+   599	  policy-enforcement:
+   600	    name: Policy Enforcement
+   601	    runs-on: ubuntu-latest
+   602	    needs: [lint, type-safety, tests]
+   603	    if: always()
+   604	    steps:
+   605	      - uses: actions/checkout@v4
+   606	      - name: Check PR policy compliance
+   607	        if: github.event_name == 'pull_request'
+   608	        run: |
+   609	          echo "📋 Checking PR policy compliance..."
+   610	          python -c "
+   611	          import subprocess
+   612	          import json
+   613	          pr_title = '${{ github.event.pull_request.title }}'
+   614	          pr_body = '''${{ github.event.pull_request.body }}'''
+   615	          print(f'PR Title: {pr_title}')
+   616	          conventional_prefixes = ['feat:', 'fix:', 'docs:', 'style:', 'refactor:', 'perf:', 'test:', 'ci:', 'chore:']
+   617	          if not any(pr_title.startswith(p) for p in conventional_prefixes):
+   618	              print('⚠️  Warning: PR title does not follow conventional commits')
+   619	          else:
+   620	              print('✅ PR follows conventional commits format')
+   621	          if 'BREAKING CHANGE' in pr_body:
+   622	              print('ℹ️  Breaking change detected in PR body')
+   623	          print('✅ Policy checks complete')
+   624	          "
+   625	
+   626	  # === Pipeline Status Summary ===
+   627	  final-status:
+   628	    name: Final CI Status
+   629	    runs-on: ubuntu-latest
+   630	    needs: [lint, type-safety, tests, enterprise-features, security, performance-benchmark, audit-schema, policy-enforcement]
+   631	    if: always()
+   632	    steps:
+   633	      - name: Check overall CI status
+   634	        run: |
+   635	          echo "🎯 FirstTry Enterprise CI Pipeline - Final Status"
+   636	          echo "=================================================="
+   637	          echo ""
+   638	          echo "✅ Lint (Ruff):              ${{ needs.lint.result }}"
+   639	          echo "✅ Type Safety (MyPy):       ${{ needs.type-safety.result }}"
+   640	          echo "✅ Tests (Pytest):           ${{ needs.tests.result }}"
+   641	          echo "✅ Enterprise Features:      ${{ needs.enterprise-features.result }}"
+   642	          echo "✅ Security Scanning:        ${{ needs.security.result }}"
+   643	          echo "✅ Performance Benchmark:    ${{ needs.performance-benchmark.result }}"
+   644	          echo "✅ Audit Schema:             ${{ needs.audit-schema.result }}"
+   645	          echo "✅ Policy Enforcement:       ${{ needs.policy-enforcement.result }}"
+   646	          echo ""
+   647	          echo "=================================================="
+   648	          
+   649	          if [[ "${{ needs.lint.result }}" != "success" ]]; then
+   650	            echo "❌ CI FAILED: Lint check failed"
+   651	            exit 1
+   652	          fi
+   653	          
+   654	          if [[ "${{ needs.type-safety.result }}" != "success" ]]; then
+   655	            echo "❌ CI FAILED: Type safety check failed"
+   656	            exit 1
+   657	          fi
+   658	          
+   659	          if [[ "${{ needs.tests.result }}" != "success" ]]; then
+   660	            echo "❌ CI FAILED: Test suite failed"
+   661	            exit 1
+   662	          fi
+   663	          
+   664	          echo "✅ CI PIPELINE PASSED - Ready for deployment"
+   665	
+   666	      - name: Notify Slack (optional)
+   667	        if: always()
+   668	        run: |
+   669	          echo "📢 CI pipeline execution complete"
+   670	          echo "Status: ${{ job.status }}"
+   671	          echo "Commit: ${{ github.sha }}"
+   672	          echo "Branch: ${{ github.ref_name }}"
+   673	
+   674	      - name: Enforce critical coverage (CI self-check)
+   675	        if: always()
+   676	        run: |
+   677	          echo "🔎 Running CI self-check for critical coverage..."
+   678	          python tools/ci_self_check.py || (echo 'CI self-check failed' && exit 1)
+
+===== .github/workflows/codeql.yml =====
+     1	name: Security - CodeQL Analysis
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	permissions:
+     7	  contents: read
+     8	  security-events: write
+     9	  actions: read
+    10	
+    11	concurrency:
+    12	  group: codeql-${{ github.ref }}
+    13	  cancel-in-progress: true
+    14	
+    15	jobs:
+    16	  analyze:
+    17	    name: Analyze Repository
+    18	    runs-on: ubuntu-latest
+    19	    strategy:
+    20	      fail-fast: false
+    21	      matrix:
+    22	        language: ["python"]
+    23	
+    24	    steps:
+    25	      - name: Checkout repository
+    26	        uses: actions/checkout@v4
+    27	        with:
+    28	          fetch-depth: 0
+    29	
+    30	      - name: Initialize CodeQL
+    31	        uses: github/codeql-action/init@v4  # v2
+    32	        with:
+    33	          languages: ${{ matrix.language }}
+    34	          queries: security-and-quality
+    35	          tools: latest
+    36	
+    37	      - name: Set up Python
+    38	        uses: actions/setup-python@v4
+    39	        with:
+    40	          python-version: "3.11"
+    41	          cache: "pip"
+    42	
+    43	      - name: Install dependencies
+    44	        run: |
+    45	          python -m pip install --upgrade pip
+    46	          pip install -e ".[dev]" 2>/dev/null || pip install pytest pytest-cov pytest-xdist
+    47	
+    48	      - name: Perform CodeQL Analysis
+    49	        uses: github/codeql-action/analyze@v4  # v2
+    50	        with:
+    51	          category: "/language:${{ matrix.language }}"
+    52	          upload: true
+    53	          wait-for-processing: false
+    54	
+    55	      - name: Upload SARIF to code scanning
+    56	        uses: github/codeql-action/upload-sarif@v4  # v2
+    57	        if: always()
+    58	        with:
+    59	          sarif_file: "results"
+    60	          category: "codeql-${{ matrix.language }}"
+    61	          wait-for-processing: true
+    62	
+    63	      - name: Report security findings
+    64	        if: always()
+    65	        run: |
+    66	          echo "## CodeQL Security Analysis"
+    67	          echo "- Language: ${{ matrix.language }}"
+    68	          echo "- Queries: security-and-quality"
+    69	          echo "- SARIF Upload: complete"
+    70	          echo "- Review findings in: Settings → Security → Code scanning"
+
+===== .github/workflows/docs-credibility-guardrails.yml =====
+     1	name: Documentation Credibility Guardrails
+     2	
+     3	on:
+     4	  pull_request:
+     5	    branches: [ main ]
+     6	  push:
+     7	    branches: [ main ]
+     8	  workflow_dispatch:
+     9	
+    10	jobs:
+    11	  docs-credibility-guardrails:
+    12	    name: Verify Legal Docs & Claims Consistency
+    13	    runs-on: ubuntu-latest
+    14	    
+    15	    steps:
+    16	      - name: Checkout repository
+    17	        uses: actions/checkout@v4
+    18	      
+    19	      - name: Setup Node.js
+    20	        uses: actions/setup-node@v4
+    21	        with:
+    22	          node-version: '20'
+    23	      
+    24	      - name: Run documentation guardrails
+    25	        run: node scripts/docs_guardrails.js
+    26	      
+    27	      - name: Summary
+    28	        if: always()
+    29	        run: |
+    30	          echo "## Documentation Credibility Check" >> $GITHUB_STEP_SUMMARY
+    31	          echo "" >> $GITHUB_STEP_SUMMARY
+    32	          if [ $? -eq 0 ]; then
+    33	            echo "✅ All documentation checks passed" >> $GITHUB_STEP_SUMMARY
+    34	            echo "" >> $GITHUB_STEP_SUMMARY
+    35	            echo "- Privacy Policy: exists with required sections" >> $GITHUB_STEP_SUMMARY
+    36	            echo "- Terms of Use: exists with required sections" >> $GITHUB_STEP_SUMMARY
+    37	            echo "- Claims Proof Catalog: validated" >> $GITHUB_STEP_SUMMARY
+    38	            echo "- No forbidden overclaims detected" >> $GITHUB_STEP_SUMMARY
+    39	            echo "- External egress claims consistent" >> $GITHUB_STEP_SUMMARY
+    40	          else
+    41	            echo "❌ Documentation checks failed - see logs above" >> $GITHUB_STEP_SUMMARY
+    42	          fi
+
+===== .github/workflows/enterprise-acceptance.yml =====
+     1	name: Enterprise Acceptance Pack
+     2	
+     3	on:
+     4	  push:
+     5	    branches: [main]
+     6	  pull_request:
+     7	    branches: [main]
+     8	  workflow_dispatch:
+     9	
+    10	jobs:
+    11	  enterprise-acceptance:
+    12	    name: Enterprise E2E Acceptance (Simulation Mode)
+    13	    runs-on: ubuntu-latest
+    14	    
+    15	    steps:
+    16	      - name: Checkout repository
+    17	        uses: actions/checkout@v4
+    18	
+    19	      - name: Setup Node.js
+    20	        uses: actions/setup-node@v4
+    21	        with:
+    22	          node-version: '20'
+    23	          cache: 'npm'
+    24	          cache-dependency-path: atlassian/forge-app/package-lock.json
+    25	
+    26	      - name: Install dependencies
+    27	        working-directory: atlassian/forge-app
+    28	        run: npm ci
+    29	
+    30	      - name: Run Enterprise Acceptance Pack (Simulation)
+    31	        env:
+    32	          MODE: SIMULATION
+    33	        run: |
+    34	          bash scripts/enterprise_e2e.sh
+    35	        continue-on-error: false
+    36	
+    37	      - name: Check for forbidden write APIs
+    38	        run: |
+    39	          cd atlassian/forge-app
+    40	          # Fail if any POST/PUT/DELETE/PATCH found with requestJira
+    41	          if grep -r "requestJira.*POST\|requestJira.*PUT\|requestJira.*DELETE\|requestJira.*PATCH" src/; then
+    42	            echo "❌ FAIL: Found forbidden write API calls"
+    43	            exit 1
+    44	          fi
+    45	          echo "✅ PASS: No write API calls found"
+    46	
+    47	      - name: Check docs vs claims consistency
+    48	        run: |
+    49	          cd /home/runner/work/Firstry/Firstry
+    50	          node scripts/docs_guardrails.js || {
+    51	            echo "⚠️  Docs guardrails found violations (expected in historical docs)"
+    52	            echo "Checking production-facing docs only..."
+    53	            
+    54	            # Check that privacy.html and terms.html pass
+    55	            if node scripts/docs_guardrails.js 2>&1 | grep -q "docs/privacy.html.*ERROR\|docs/terms.html.*ERROR"; then
+    56	              echo "❌ FAIL: Production legal docs have violations"
+    57	              exit 1
+    58	            fi
+    59	            
+    60	            echo "✅ PASS: Production legal docs are compliant"
+    61	          }
+    62	
+    63	      - name: Verify determinism (non-timestamp fields)
+    64	        working-directory: atlassian/forge-app
+    65	        run: |
+    66	          # Run credibility determinism test
+    67	          npm run test tests/credibility/gap5_determinism_10_runs.test.ts || {
+    68	            echo "❌ FAIL: Determinism check failed"
+    69	            exit 1
+    70	          }
+    71	          echo "✅ PASS: Determinism verified"
+    72	
+    73	      - name: Upload evidence bundle
+    74	        if: always()
+    75	        uses: actions/upload-artifact@v4
+    76	        with:
+    77	          name: enterprise-acceptance-evidence
+    78	          path: audit_artifacts/enterprise_acceptance/
+    79	          retention-days: 90
+    80	
+    81	      - name: Comment PR with summary (if PR)
+    82	        if: github.event_name == 'pull_request' && always()
+    83	        uses: actions/github-script@v7
+    84	        with:
+    85	          script: |
+    86	            const fs = require('fs');
+    87	            const path = require('path');
+    88	            
+    89	            // Find latest evidence directory
+    90	            const baseDir = 'audit_artifacts/enterprise_acceptance';
+    91	            if (!fs.existsSync(baseDir)) {
+    92	              console.log('No evidence directory found');
+    93	              return;
+    94	            }
+    95	            
+    96	            const dirs = fs.readdirSync(baseDir).filter(d => d.match(/^\d{8}_\d{6}$/)).sort().reverse();
+    97	            if (dirs.length === 0) {
+    98	              console.log('No timestamped evidence directories found');
+    99	              return;
+   100	            }
+   101	            
+   102	            const latestDir = path.join(baseDir, dirs[0]);
+   103	            const summaryPath = path.join(latestDir, 'summary.md');
+   104	            
+   105	            if (!fs.existsSync(summaryPath)) {
+   106	              console.log('No summary.md found');
+   107	              return;
+   108	            }
+   109	            
+   110	            const summary = fs.readFileSync(summaryPath, 'utf-8');
+   111	            
+   112	            const comment = `## 🏢 Enterprise Acceptance Test Results\n\n${summary}\n\n---\n📦 **Evidence Bundle**: Download from workflow artifacts`;
+   113	            
+   114	            github.rest.issues.createComment({
+   115	              issue_number: context.issue.number,
+   116	              owner: context.repo.owner,
+   117	              repo: context.repo.repo,
+   118	              body: comment
+   119	            });
+   120	
+   121	      - name: Fail if any check failed
+   122	        run: |
+   123	          if [ -f audit_artifacts/enterprise_acceptance/latest/evidence_index.json ]; then
+   124	            FAIL_COUNT=$(jq '[.checks[] | select(.status == "FAIL")] | length' audit_artifacts/enterprise_acceptance/latest/evidence_index.json)
+   125	            
+   126	            if [ "$FAIL_COUNT" -gt 0 ]; then
+   127	              echo "❌ Enterprise acceptance pack has $FAIL_COUNT failed checks"
+   128	              exit 1
+   129	            fi
+   130	            
+   131	            echo "✅ All enterprise acceptance checks passed"
+   132	          else
+   133	            echo "❌ Evidence index not found"
+   134	            exit 1
+   135	          fi
+
+===== .github/workflows/enterprise-audit.yml =====
+     1	name: Enterprise Audit
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  enterprise-audit:
+     8	    name: Run enterprise audit
+     9	    runs-on: ubuntu-latest
+    10	    steps:
+    11	      - name: Checkout
+    12	        uses: actions/checkout@v4
+    13	
+    14	      - name: Set up Python
+    15	        uses: actions/setup-python@v4
+    16	        with:
+    17	          python-version: '3.11'
+    18	
+    19	      - name: Install minimal deps
+    20	        run: |
+    21	          python -m pip install --upgrade pip
+    22	          pip install -r requirements-dev.txt || true
+    23	
+    24	      - name: Make audit runner executable
+    25	        run: |
+    26	          chmod +x .firsttry/audit/run_enterprise_audit.sh
+    27	
+    28	      - name: Run enterprise audit (non-strict)
+    29	        id: audit
+    30	        run: |
+    31	          .firsttry/audit/run_enterprise_audit.sh
+    32	
+    33	      - name: Upload audit reports
+    34	        uses: actions/upload-artifact@v4
+    35	        with:
+    36	          name: enterprise-audit-reports
+    37	          path: |
+    38	            .firsttry/audit/**/reports/*.md
+    39	            .firsttry/audit/**/reports/*.json
+    40	          if-no-files-found: warn
+    41	
+    42	      - name: Strict gating (optional)
+    43	        if: ${{ inputs.strict == '1' || github.event.inputs.strict == '1' }}
+    44	        env:
+    45	          FT_AUDIT_STRICT: '1'
+    46	        run: |
+    47	          # Re-run assembler in strict mode against latest run
+    48	          LATEST=$(ls -d .firsttry/audit/enterprise_full_* | sort | tail -n1)
+    49	          python3 .firsttry/audit/assemble_final.py "$LATEST" --strict
+
+===== .github/workflows/firsttry-ci-parity.yml =====
+     1	name: FirstTry CI Parity
+     2	on:
+     3	  workflow_dispatch:
+     4	
+     5	jobs:
+     6	  parity:
+     7	    runs-on: ubuntu-latest
+     8	    steps:
+     9	      - uses: actions/checkout@v4
+    10	      - uses: actions/setup-python@v5
+    11	        with:
+    12	          python-version: "3.11"
+    13	      - run: python -m pip install -e ".[test]" build
+    14	      - name: FirstTry CI-parity (config-aware)
+    15	        run: python -m firsttry.ci_parity.runner ci
+
+===== .github/workflows/firsttry-ci.yml =====
+     1	name: firsttry-ci
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	permissions:
+     7	  contents: read
+     8	
+     9	concurrency:
+    10	  group: firsttry-ci-${{ github.ref }}
+    11	  cancel-in-progress: true
+    12	
+    13	jobs:
+    14	  python-cli:
+    15	    name: firsttry gate (ruff/black/mypy/pytest/coverage + license)
+    16	    runs-on: ubuntu-latest
+    17	    steps:
+    18	      - uses: actions/checkout@v4
+    19	
+    20	      - uses: actions/setup-python@v4
+    21	        with:
+    22	          python-version: '3.11'
+    23	
+    24	      - name: Install deps (CLI + test runners)
+    25	        run: |
+    26	          python -m pip install -U pip
+    27	          pip install ruff black mypy pytest coverage click rich PyYAML
+    28	          pip install -e tools/firsttry
+    29	
+    30	      - name: Install licensing deps
+    31	        run: |
+    32	          pip install fastapi uvicorn pydantic
+    33	
+    34	      - name: Boot licensing server (background)
+    35	        env:
+    36	          FIRSTTRY_KEYS: "ABC123:featX|featY"
+    37	        run: |
+    38	          export PYTHONPATH=licensing
+    39	          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8081 >/tmp/lic.log 2>&1 &
+    40	          for i in $(seq 1 30); do
+    41	            if curl -sf http://127.0.0.1:8081/health >/dev/null; then
+    42	              echo "Licensing API healthy"; break
+    43	            fi
+    44	            sleep 1
+    45	          done
+    46	          echo "Licensing logs (tail):"
+    47	          tail -n 50 /tmp/lic.log || true
+    48	
+    49	      - name: Run firsttry gate with license requirement
+    50	        env:
+    51	          FIRSTTRY_LICENSE_KEY: "ABC123"
+    52	          FIRSTTRY_LICENSE_URL: "http://127.0.0.1:8081"
+    53	        run: |
+    54	          python -m firsttry run --gate pre-commit --require-license
+    55	
+    56	      - name: Upload coverage.xml (from CLI gate)
+    57	        if: always()
+    58	        uses: actions/upload-artifact@v4
+    59	        with:
+    60	          name: firsttry-coverage
+    61	          path: coverage.xml
+    62	          if-no-files-found: warn
+
+===== .github/workflows/firsttry-proof.yml =====
+     1	name: FirstTry Proof
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	permissions:
+     7	  contents: read
+     8	
+     9	jobs:
+    10	  proof:
+    11	    runs-on: ubuntu-latest
+    12	    env:
+    13	      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    14	
+    15	    steps:
+    16	      - name: Checkout
+    17	        uses: actions/checkout@v4
+    18	
+    19	      - name: Show workspace
+    20	        run: |
+    21	          pwd
+    22	          ls -la
+    23	
+    24	      - name: Set up Python
+    25	        uses: actions/setup-python@v4
+    26	        with:
+    27	          python-version: "3.11"
+    28	
+    29	      - name: Install tools
+    30	        run: |
+    31	          python -m pip install -U pip
+    32	          # Install pytest-xdist so -n (parallel) options in pytest.ini don't fail
+    33	          python -m pip install ruff mypy pytest pytest-xdist
+    34	
+    35	      - name: Ensure demo files exist
+    36	        run: |
+    37	          mkdir -p tests src/ft_demo
+    38	          printf "def test_ok():\n    assert True\n" > tests/test_ok.py
+    39	          printf "def add(a:int,b:int)->int:\n    return a+b\n" > src/ft_demo/math.py
+    40	
+    41	      # Cold run may fail (miss-run) → don't fail the job here
+    42	      - name: Cold run (free-fast)
+    43	        run: |
+    44	          PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src \
+    45	          python -m firsttry.cli run --tier free-fast --show-report || true
+    46	
+    47	      - name: Warm run (expect cache hits)
+    48	        run: |
+    49	          PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src \
+    50	          python -m firsttry.cli run --tier free-fast --show-report
+    51	
+    52	      - name: Print report + history
+    53	        run: |
+    54	          echo "== .firsttry contents =="
+    55	          ls -la .firsttry || true
+    56	          echo "== report.json =="
+    57	          test -f .firsttry/report.json && cat .firsttry/report.json || echo "report.json missing"
+    58	          echo "== history tail =="
+    59	          test -f .firsttry/history.jsonl && tail -n 20 .firsttry/history.jsonl || echo "history.jsonl missing"
+    60	
+    61	      - name: Assert at least one cache hit
+    62	        run: |
+    63	          python - <<'PY'
+    64	          import textwrap
+    65	          code = """
+    66	          import json, pathlib, sys
+    67	          p = pathlib.Path('.firsttry/report.json')
+    68	          if not p.exists():
+    69	            print("report.json not found"); sys.exit(1)
+    70	          d = json.loads(p.read_text())
+    71	          hits = sum(1 for r in d.get("checks", {}).values() if r.get("cache_status") in ("hit-local","hit-remote"))
+    72	          print("Cache hits:", hits)
+    73	          sys.exit(0 if hits >= 1 else 1)
+    74	          """
+    75	          exec(textwrap.dedent(code))
+    76	          PY
+    77	
+    78	      - name: Upload artifacts (always)
+    79	        if: always()
+    80	        uses: actions/upload-artifact@v4
+    81	        with:
+    82	          name: firsttry-reports
+    83	          path: .firsttry/
+    84	          if-no-files-found: warn
+
+===== .github/workflows/firsttry-quality.yml =====
+     1	name: firsttry-quality
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  quality:
+     8	    runs-on: ubuntu-latest
+     9	    timeout-minutes: 10
+    10	
+    11	    steps:
+    12	      - name: Checkout
+    13	        uses: actions/checkout@v4
+    14	
+    15	      - name: Set up Python
+    16	        uses: actions/setup-python@v4
+    17	        with:
+    18	          python-version: "3.11"
+    19	          cache: "pip"
+    20	
+    21	      - name: Install dev tools
+    22	        run: |
+    23	          python -m pip install --upgrade pip
+    24	          # Best effort: editable install with dev extras if you defined them
+    25	          python -m pip install -e ".[dev]" || true
+    26	          # If present, install pinned dev tool versions for reproducible CI
+    27	          if [ -f requirements-dev.txt ]; then
+    28	            python -m pip install -r requirements-dev.txt
+    29	          else
+    30	            # Guaranteed baseline tools (match what make check expects)
+    31	            python -m pip install ruff black mypy pytest coverage types-PyYAML click rich PyYAML
+    32	          fi
+    33	
+    34	      - name: Run quality gate (ruff / black / mypy / pytest smoke)
+    35	        run: |
+    36	          ruff check .
+    37	          black --check .
+    38	          mypy .
+    39	          pytest -q
+
+===== .github/workflows/firsttry-smoke.yml =====
+     1	name: firsttry-smoke
+     2	on: [pull_request, push]
+     3	jobs:
+     4	  smoke:
+     5	    runs-on: ubuntu-latest
+     6	    steps:
+     7	      - uses: actions/checkout@v4
+     8	      - uses: actions/setup-python@v5
+     9	        with:
+    10	          python-version: '3.11'
+    11	      - run: pip install -r requirements.txt || true
+    12	      - run: pip install -r requirements-test.txt || true
+    13	      - run: bash scripts/verify_bouncer_and_locks.sh
+    14	      - run: pytest -q tests/test_cache_selection.py
+
+===== .github/workflows/ft-fastpath.yml =====
+     1	name: ft-fastpath-parity
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  ft-fastpath:
+     8	    runs-on: ubuntu-latest
+     9	
+    10	    steps:
+    11	      - name: Checkout repository
+    12	        uses: actions/checkout@v4
+    13	
+    14	      - name: Set up Python
+    15	        uses: actions/setup-python@v5
+    16	        with:
+    17	          python-version: "3.11"
+    18	
+    19	      - name: Set up Rust toolchain
+    20	        uses: dtolnay/rust-toolchain@stable
+    21	        with:
+    22	          toolchain: stable
+    23	
+    24	      - name: Install maturin
+    25	        run: |
+    26	          python -m pip install --upgrade pip
+    27	          pip install maturin
+    28	
+    29	      - name: Build ft_fastpath wheel
+    30	        working-directory: .
+    31	        run: |
+    32	          # Adjust path if your Cargo.toml for ft_fastpath lives elsewhere
+    33	          maturin build --release --locked -m src/firsttry/ft_fastpath/Cargo.toml
+    34	          ls -R target/wheels
+    35	
+    36	      - name: Install ft_fastpath wheel + project
+    37	        run: |
+    38	          python -m venv .venv
+    39	          . .venv/bin/activate
+    40	          pip install --upgrade pip
+    41	          # Install the freshly built wheel
+    42	          pip install target/wheels/*.whl
+    43	          # Install FirstTry itself (editable or normal)
+    44	          pip install -e .
+    45	
+    46	      - name: Run ft_fastpath parity tests
+    47	        run: |
+    48	          . .venv/bin/activate
+    49	          pytest -q tests/firsttry/test_ft_fastpath_parity.py
+    50	name: ft-fastpath
+    51	
+    52	on:
+    53	  push:
+    54	    branches:
+    55	      - main
+    56	  pull_request:
+    57	
+    58	jobs:
+    59	  build-and-test-ft-fastpath:
+    60	    runs-on: ubuntu-latest
+    61	
+    62	    steps:
+    63	      - name: Checkout
+    64	        uses: actions/checkout@v4
+    65	
+    66	      - name: Set up Python
+    67	        uses: actions/setup-python@v5
+    68	        with:
+    69	          python-version: '3.11'
+    70	
+    71	      - name: Install maturin
+    72	        run: |
+    73	          python -m pip install --upgrade pip
+    74	          pip install maturin
+    75	
+    76	      - name: Build ft_fastpath wheel
+    77	        run: |
+    78	          cd src/firsttry/ft_fastpath
+    79	          maturin build --release --no-sdist || true
+    80	
+    81	      - name: Install built wheel
+    82	        run: |
+    83	          WHEEL=$(find src/firsttry/ft_fastpath/target/wheels -name "*.whl" | head -n 1)
+    84	          echo "Wheel: $WHEEL"
+    85	          if [ -n "$WHEEL" ]; then
+    86	            python -m pip install "$WHEEL"
+    87	          fi
+    88	
+    89	      - name: Sanity import and digest check
+    90	        run: |
+    91	          python - << 'PY'
+    92	          from pathlib import Path
+    93	
+    94	          import blake3
+    95	          import firsttry.ft_fastpath as native
+    96	          from firsttry.twin.hashers import hash_file
+    97	
+    98	          tmp = Path("ft_fastpath_test.txt")
+    99	          tmp.write_text("hello ft_fastpath", encoding="utf-8")
+   100	
+   101	          py_digest = hash_file(tmp)
+   102	          native_pairs = native.hash_files_parallel([str(tmp)])
+   103	          native_digest = native_pairs[0][1] if native_pairs else None
+   104	
+   105	          print("py_digest    =", py_digest)
+   106	          print("native_digest=", native_digest)
+   107	
+   108	          if native_digest is None:
+   109	              raise SystemExit("ft_fastpath did not return a digest")
+   110	          if py_digest != native_digest:
+   111	              raise SystemExit("Digest mismatch between Python and native ft_fastpath")
+   112	          PY
+
+===== .github/workflows/gates-safety-suite.yml =====
+     1	# GitHub Actions workflow for gate & CLI regression prevention
+     2	
+     3	name: Fast Gate & CLI Safety Suite
+     4	
+     5	on:
+     6	  workflow_dispatch:
+     7	
+     8	jobs:
+     9	  gates-and-cli-tests:
+    10	    name: Critical Gate & CLI Tests
+    11	    runs-on: ubuntu-latest
+    12	    
+    13	    steps:
+    14	      - name: Checkout code
+    15	        uses: actions/checkout@v4
+    16	      
+    17	      - name: Set up Python
+    18	        uses: actions/setup-python@v4
+    19	        with:
+    20	          python-version: '3.12'
+    21	      
+    22	      - name: Install dependencies
+    23	        run: |
+    24	          python -m pip install --upgrade pip
+    25	          pip install -e .
+    26	          pip install pytest
+    27	      
+    28	      - name: Run critical gate tests
+    29	        run: |
+    30	          pytest \
+    31	            tests/test_gates_core.py \
+    32	            tests/test_gates_comprehensive.py \
+    33	            tests/test_gates_pytest_rich_output.py \
+    34	            tests/test_cli_doctor_and_license.py \
+    35	            tests/test_cli_routing.py \
+    36	            tests/test_cli_install_hooks.py \
+    37	            tests/test_reports_tier_display.py \
+    38	            tests/test_pure_functions.py \
+    39	            tests/test_reporting.py \
+    40	            -v --tb=short
+    41	      
+    42	      - name: Verify gate tests passed
+    43	        if: failure()
+    44	        run: |
+    45	          echo "❌ Critical gate or CLI tests failed!"
+    46	          echo "These tests protect against:"
+    47	          echo "  - Exception handling regressions in gates"
+    48	          echo "  - Loss of rich output parsing (e.g., pytest test counts)"
+    49	          echo "  - CLI argparse compatibility issues"
+    50	          exit 1
+    51	
+    52	# Optional: Add coverage reporting
+    53	  coverage-check:
+    54	    name: Coverage Report
+    55	    runs-on: ubuntu-latest
+    56	    needs: gates-and-cli-tests
+    57	    
+    58	    steps:
+    59	      - name: Checkout code
+    60	        uses: actions/checkout@v4
+    61	      
+    62	      - name: Set up Python
+    63	        uses: actions/setup-python@v4
+    64	        with:
+    65	          python-version: '3.12'
+    66	      
+    67	      - name: Install dependencies with coverage
+    68	        run: |
+    69	          python -m pip install --upgrade pip
+    70	          pip install -e .
+    71	          pip install pytest pytest-cov
+    72	      
+    73	      - name: Run tests with coverage
+    74	        run: |
+    75	          pytest tests \
+    76	            --cov=src/firsttry \
+    77	            --cov-report=term \
+    78	            --cov-report=json:coverage.json \
+    79	            -q
+    80	      
+    81	      - name: Display coverage
+    82	        run: |
+    83	          python -c "import json; d=json.load(open('coverage.json')); print(f\"Coverage: {d['totals']['percent_covered']:.1f}%\")"
+    84	      
+    85	      - name: Check coverage floor
+    86	        run: ./scripts/check_coverage_floor.sh
+    87	      
+    88	      - name: Upload coverage artifact
+    89	        uses: actions/upload-artifact@v4
+    90	        with:
+    91	          name: coverage-report
+    92	          path: coverage.json
+
+===== .github/workflows/hardening-guards.yml =====
+     1	name: Hardening Guards
+     2	on:
+     3	  workflow_dispatch:
+     4	
+     5	permissions:
+     6	  contents: read
+     7	
+     8	jobs:
+     9	  hardening-guards:
+    10	    name: Security & Governance Checks
+    11	    runs-on: ubuntu-latest
+    12	    steps:
+    13	      - uses: actions/checkout@v4
+    14	      
+    15	      - name: Require LICENSE and governance docs
+    16	        run: |
+    17	          echo "Checking required governance files..."
+    18	          MISSING=""
+    19	          for f in LICENSE SECURITY.md CONTRIBUTING.md CODE_OF_CONDUCT.md; do
+    20	            if [ ! -s "$f" ]; then
+    21	              MISSING="$MISSING $f"
+    22	              echo "::error file=$f::Missing required file: $f"
+    23	            else
+    24	              echo "✅ $f present"
+    25	            fi
+    26	          done
+    27	          if [ -n "$MISSING" ]; then
+    28	            echo "::error::Missing required files:$MISSING"
+    29	            exit 1
+    30	          fi
+    31	          echo "All governance files present ✅"
+    32	      
+    33	      - name: Block hardcoded secrets
+    34	        run: |
+    35	          echo "Scanning for hardcoded secrets..."
+    36	          # Search for hardcoded secret patterns (excluding docs, cache, and config files)
+    37	          BAD=$(grep -RIn \
+    38	            --exclude-dir=.git \
+    39	            --exclude-dir=dist \
+    40	            --exclude-dir=build \
+    41	            --exclude-dir=.mypy_cache \
+    42	            --exclude-dir=.pytest_cache \
+    43	            --exclude-dir=.ruff_cache \
+    44	            --exclude-dir=node_modules \
+    45	            --exclude-dir=__pycache__ \
+    46	            --exclude='*.md' \
+    47	            --exclude='*.json' \
+    48	            --exclude='*.lock' \
+    49	            --exclude='*.yaml' \
+    50	            --exclude='*.yml' \
+    51	            -E 'dev-secret-change-me' src/ tests/ || true)
+    52	          
+    53	          if [ -n "$BAD" ]; then
+    54	            echo "::error::Hardcoded secret detected - use environment variables instead"
+    55	            echo "$BAD"
+    56	            exit 1
+    57	          fi
+    58	          echo "No hardcoded secrets found ✅"
+    59	      
+    60	      - name: Verify secret enforcement in code
+    61	        run: |
+    62	          echo "Checking that production requires FIRSTTRY_SHARED_SECRET..."
+    63	          # Ensure the code has the RuntimeError guard
+    64	          if ! grep -q 'raise RuntimeError.*FIRSTTRY_SHARED_SECRET.*required in production' src/firsttry/license.py; then
+    65	            echo "::error file=src/firsttry/license.py::Missing production secret enforcement guard"
+    66	            exit 1
+    67	          fi
+    68	          echo "Secret enforcement guard present ✅"
+
+===== .github/workflows/json-lint.yml =====
+     1	name: JSON lint
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  json-lint:
+     8	    runs-on: ubuntu-latest
+     9	    steps:
+    10	      - name: Checkout
+    11	        uses: actions/checkout@v4
+    12	
+    13	      - name: Set up Python
+    14	        uses: actions/setup-python@v5
+    15	        with:
+    16	          python-version: "3.11"
+    17	
+    18	      - name: Validate JSON files (ci/*.json)
+    19	        run: |
+    20	          python - << 'PY'
+    21	          import json
+    22	          from pathlib import Path
+    23	
+    24	          errors = []
+    25	          for path in Path("ci").glob("*.json"):
+    26	              try:
+    27	                  json.loads(path.read_text(encoding="utf-8"))
+    28	              except Exception as exc:  # noqa: BLE001
+    29	                  errors.append(f"{path}: {exc}")
+    30	
+    31	          if errors:
+    32	              print("Invalid JSON in repo:")
+    33	              for e in errors:
+    34	                  print(" -", e)
+    35	              raise SystemExit(1)
+    36	          else:
+    37	              print("All ci/*.json files are valid.")
+    38	          PY
+
+===== .github/workflows/licensing-ci.yml =====
+     1	name: licensing-ci
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  licensing-tests:
+     8	    runs-on: ubuntu-latest
+     9	    timeout-minutes: 10
+    10	
+    11	    defaults:
+    12	      run:
+    13	        working-directory: licensing
+    14	
+    15	    steps:
+    16	      - name: Checkout
+    17	        uses: actions/checkout@v4
+    18	
+    19	      - name: Set up Python
+    20	        uses: actions/setup-python@v4
+    21	        with:
+    22	          python-version: "3.11"
+    23	          cache: "pip"
+    24	
+    25	      - name: Install licensing service + test deps
+    26	        run: |
+    27	          python -m pip install --upgrade pip
+    28	          # install the licensing package so `from app.main import app` works
+    29	          python -m pip install -e .
+    30	          # test tooling
+    31	          python -m pip install pytest coverage fastapi uvicorn httpx pydantic rich
+    32	
+    33	      - name: Run licensing tests with coverage
+    34	        run: |
+    35	          coverage run -m pytest -q
+    36	          coverage report -m
+
+===== .github/workflows/nightly-stability.yml =====
+     1	name: Nightly - FT run stability
+     2	
+     3	on:
+     4	  schedule:
+     5	    - cron: '0 5 * * *' # daily at 05:00 UTC
+     6	  workflow_dispatch:
+     7	
+     8	jobs:
+     9	  stability-run:
+    10	    name: FT run stability (nightly)
+    11	    runs-on: ubuntu-latest
+    12	    timeout-minutes: 60
+    13	    steps:
+    14	      - name: Checkout
+    15	        uses: actions/checkout@v4
+    16	
+    17	      - name: Setup Python
+    18	        uses: actions/setup-python@v4
+    19	        with:
+    20	          python-version: '3.11'
+    21	
+    22	      - name: Install deps
+    23	        run: |
+    24	          python -m pip install --upgrade pip
+    25	          pip install -r requirements.txt || true
+    26	
+    27	      - name: Make stability script executable
+    28	        run: chmod +x tools/test_ft_run_stability.sh
+    29	
+    30	      - name: Run stability script
+    31	        env:
+    32	          FIRSTTRY_SHARED_SECRET: 'dev-fallback-secret-0123456789012345'
+    33	        run: |
+    34	          echo "Running ft run stability script (this may take a few minutes)"
+    35	          tools/test_ft_run_stability.sh
+    36	
+    37	      - name: Upload logs (always)
+    38	        if: always()
+    39	        uses: actions/upload-artifact@v4
+    40	        with:
+    41	          name: ft-stability-logs
+    42	          path: |
+    43	            .firsttry/**/*.log
+    44	            .firsttry/audit_logs/**
+    45	          retention-days: 7
+
+===== .github/workflows/node-ci.yml =====
+     1	name: node-ci
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  actionlint:
+     8	    runs-on: ubuntu-latest
+     9	    timeout-minutes: 5
+    10	    steps:
+    11	      - name: Checkout
+    12	        uses: actions/checkout@v4
+    13	      - name: Lint GitHub workflows (actionlint)
+    14	        uses: rhysd/actionlint@v1.6.27
+    15	        continue-on-error: true
+    16	
+    17	  dashboard-tests:
+    18	    runs-on: ubuntu-latest
+    19	    timeout-minutes: 10
+    20	    steps:
+    21	      - name: Checkout
+    22	        uses: actions/checkout@v4
+    23	
+    24	      - name: Check if dashboard exists
+    25	        id: dashcheck
+    26	        run: |
+    27	          if [ -d "dashboard" ]; then
+    28	            echo "present=true" >> "$GITHUB_OUTPUT"
+    29	          else
+    30	            echo "present=false" >> "$GITHUB_OUTPUT"
+    31	          fi
+    32	
+    33	      - name: Set up Node.js
+    34	        if: steps.dashcheck.outputs.present == 'true'
+    35	        uses: actions/setup-node@v4
+    36	        with:
+    37	          node-version: "20"
+    38	          cache: "npm"
+    39	          cache-dependency-path: "dashboard/package-lock.json"
+    40	
+    41	      - name: Install deps (dashboard)
+    42	        if: steps.dashcheck.outputs.present == 'true'
+    43	        working-directory: dashboard
+    44	        run: npm ci
+    45	
+    46	      - name: Lint / Test (dashboard)
+    47	        if: steps.dashcheck.outputs.present == 'true'
+    48	        working-directory: dashboard
+    49	        run: |
+    50	          npm run lint || { echo "::error ::dashboard lint failed"; exit 1; }
+    51	          npm run test || {
+    52	            echo "::error ::dashboard tests failed";
+    53	            exit 1;
+    54	          }
+    55	
+    56	      - name: Build (dashboard)
+    57	        if: steps.dashcheck.outputs.present == 'true'
+    58	        working-directory: dashboard
+    59	        run: npm run build
+    60	
+    61	  vscode-tests:
+    62	    runs-on: ubuntu-latest
+    63	    timeout-minutes: 10
+    64	    steps:
+    65	      - name: Checkout
+    66	        uses: actions/checkout@v4
+    67	
+    68	      - name: Check if vscode-extension exists
+    69	        id: vscheck
+    70	        run: |
+    71	          if [ -d "vscode-extension" ]; then
+    72	            echo "present=true" >> "$GITHUB_OUTPUT"
+    73	          else
+    74	            echo "present=false" >> "$GITHUB_OUTPUT"
+    75	          fi
+    76	
+    77	      - name: Set up Node.js
+    78	        if: steps.vscheck.outputs.present == 'true'
+    79	        uses: actions/setup-node@v4
+    80	        with:
+    81	          node-version: "20"
+    82	          cache: "npm"
+    83	          cache-dependency-path: "vscode-extension/package-lock.json"
+    84	
+    85	      - name: Install deps (vscode-extension)
+    86	        if: steps.vscheck.outputs.present == 'true'
+    87	        working-directory: vscode-extension
+    88	        run: npm ci
+    89	
+    90	      - name: Lint / Test (vscode-extension)
+    91	        if: steps.vscheck.outputs.present == 'true'
+    92	        working-directory: vscode-extension
+    93	        run: |
+    94	          npm run lint || { echo "::error ::vscode lint failed"; exit 1; }
+    95	          npm run test || {
+    96	            echo "::error ::vscode tests failed";
+    97	            exit 1;
+    98	          }
+    99	
+   100	      - name: Package VS Code extension
+   101	        if: steps.vscheck.outputs.present == 'true'
+   102	        run: |
+   103	          cd vscode-extension
+   104	          npm ci
+   105	          npm run build
+   106	          npm test
+   107	          npm run package || {
+   108	            echo "::error ::vsce packaging failed";
+   109	            exit 1;
+   110	          }
+   111	
+   112	      - name: Upload VS Code Extension Artifact
+   113	        if: steps.vscheck.outputs.present == 'true'
+   114	        uses: actions/upload-artifact@v4
+   115	        with:
+   116	          name: vscode-extension.vsix
+   117	          path: vscode-extension/*.vsix
+
+===== .github/workflows/policy-gates.yml =====
+     1	name: CI Policy Gates - Documentation & Compliance Verification
+     2	
+     3	on:
+     4	  push:
+     5	    branches: [main, develop]
+     6	    paths:
+     7	      - 'docs/**'
+     8	      - 'audit/**'
+     9	      - 'atlassian/forge-app/tests/**'
+    10	      - '.github/workflows/policy-gates.yml'
+    11	  pull_request:
+    12	    branches: [main, develop]
+    13	    paths:
+    14	      - 'docs/**'
+    15	      - 'audit/**'
+    16	      - 'atlassian/forge-app/tests/**'
+    17	      - '.github/workflows/policy-gates.yml'
+    18	
+    19	jobs:
+    20	  policy-gates:
+    21	    name: Enforce Compliance & Credibility Gates
+    22	    runs-on: ubuntu-latest
+    23	    
+    24	    steps:
+    25	      - name: Checkout repository
+    26	        uses: actions/checkout@v4
+    27	        with:
+    28	          fetch-depth: 0
+    29	
+    30	      - name: Set up Node.js
+    31	        uses: actions/setup-node@v4
+    32	        with:
+    33	          node-version: '18'
+    34	          cache: 'npm'
+    35	          cache-dependency-path: 'atlassian/forge-app/package-lock.json'
+    36	
+    37	      - name: Install dependencies
+    38	        working-directory: atlassian/forge-app
+    39	        run: npm ci
+    40	
+    41	      - name: Run Retention Consistency Tests (MANDATORY)
+    42	        id: retention_test
+    43	        working-directory: atlassian/forge-app
+    44	        run: |
+    45	          echo "🔒 Testing retention policy consistency..."
+    46	          npm test -- tests/docs/retention_consistency.test.ts --reporter=verbose
+    47	          if [ $? -ne 0 ]; then
+    48	            echo "❌ FAILURE: Retention policy contradictions detected"
+    49	            exit 1
+    50	          fi
+    51	          echo "✅ SUCCESS: Retention policy is consistent"
+    52	
+    53	      - name: Run DPA Language Consistency Tests (MANDATORY)
+    54	        id: dpa_test
+    55	        working-directory: atlassian/forge-app
+    56	        run: |
+    57	          echo "🔒 Testing DPA language consistency..."
+    58	          npm test -- tests/docs/dpa_language_consistency.test.ts --reporter=verbose
+    59	          if [ $? -ne 0 ]; then
+    60	            echo "❌ FAILURE: Mixed/contradictory DPA language detected"
+    61	            exit 1
+    62	          fi
+    63	          echo "✅ SUCCESS: DPA language is consistent"
+    64	
+    65	      - name: Run Controller/Processor Consistency Tests (MANDATORY)
+    66	        id: control_test
+    67	        working-directory: atlassian/forge-app
+    68	        run: |
+    69	          echo "🔒 Testing controller/processor role consistency..."
+    70	          npm test -- tests/docs/controller_processor_consistency.test.ts --reporter=verbose
+    71	          if [ $? -ne 0 ]; then
+    72	            echo "❌ FAILURE: Inconsistent or risky controller/processor language"
+    73	            exit 1
+    74	          fi
+    75	          echo "✅ SUCCESS: Controller/processor roles are correctly stated"
+    76	
+    77	      - name: Run Platform Dependency Disclosure Tests (MANDATORY)
+    78	        id: platform_test
+    79	        working-directory: atlassian/forge-app
+    80	        run: |
+    81	          echo "🔒 Testing platform dependency disclosures..."
+    82	          npm test -- tests/docs/platform_dependency_disclosure.test.ts --reporter=verbose
+    83	          if [ $? -ne 0 ]; then
+    84	            echo "❌ FAILURE: Missing or incomplete platform dependency disclaimers"
+    85	            exit 1
+    86	          fi
+    87	          echo "✅ SUCCESS: Platform dependencies are properly disclosed"
+    88	
+    89	      - name: Run Documentation Compliance Tests
+    90	        id: compliance_test
+    91	        working-directory: atlassian/forge-app
+    92	        run: |
+    93	          echo "🔍 Running documentation compliance verification..."
+    94	          npm test -- tests/docs/ --reporter=verbose
+    95	          if [ $? -ne 0 ]; then
+    96	            echo "❌ FAILURE: Documentation compliance violations detected"
+    97	            exit 1
+    98	          fi
+    99	          echo "✅ SUCCESS: All documentation compliance tests passed"
+   100	
+   101	      - name: Verify No Product Code Changes
+   102	        id: product_check
+   103	        run: |
+   104	          echo "🔍 Verifying no product code was modified..."
+   105	          if git diff --name-only HEAD^ HEAD 2>/dev/null | grep -v "^docs/" | grep -v "^audit/" | grep -v "^tests/" | grep -v "^.github/" | grep -v "^atlassian/forge-app/tests/" | grep -qv "^\s*$"; then
+   106	            CHANGED_PRODUCT_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null | grep -v "^docs/" | grep -v "^audit/" | grep -v "^tests/" | grep -v "^.github/" | grep -v "^atlassian/forge-app/tests/")
+   107	            echo "❌ FAILURE: Product code changes detected"
+   108	            echo "Modified files:"
+   109	            echo "$CHANGED_PRODUCT_FILES"
+   110	            exit 1
+   111	          fi
+   112	          echo "✅ SUCCESS: Only docs/audit/tests changed (no product code)"
+   113	
+   114	      - name: Verify Mandatory Files Exist
+   115	        id: mandatory_files
+   116	        run: |
+   117	          echo "📋 Verifying all mandatory documentation files exist..."
+   118	          
+   119	          DOCS=(
+   120	            "docs/PRIVACY.md"
+   121	            "docs/SECURITY.md"
+   122	            "docs/DATA_RETENTION.md"
+   123	            "docs/DATA_INVENTORY.md"
+   124	            "docs/ACCESS_CONTROL.md"
+   125	            "docs/INCIDENT_RESPONSE.md"
+   126	            "docs/SUPPORT.md"
+   127	            "docs/COMPLIANCE.md"
+   128	            "docs/ENTERPRISE_READINESS.md"
+   129	            "docs/TERMS.md"
+   130	            "docs/CHANGELOG_POLICY.md"
+   131	            "docs/SUBPROCESSORS.md"
+   132	            "docs/PLATFORM_DEPENDENCIES.md"
+   133	          )
+   134	          
+   135	          MISSING_DOCS=()
+   136	          for doc in "${DOCS[@]}"; do
+   137	            if [ ! -f "$doc" ]; then
+   138	              MISSING_DOCS+=("$doc")
+   139	            fi
+   140	          done
+   141	          
+   142	          if [ ${#MISSING_DOCS[@]} -gt 0 ]; then
+   143	            echo "❌ FAILURE: Missing documentation files:"
+   144	            for missing in "${MISSING_DOCS[@]}"; do
+   145	              echo "  - $missing"
+   146	            done
+   147	            exit 1
+   148	          fi
+   149	          
+   150	          echo "✅ SUCCESS: All 13 mandatory documentation files present"
+   151	
+   152	      - name: Verify Mandatory Audit Files Exist
+   153	        id: mandatory_audits
+   154	        run: |
+   155	          echo "📋 Verifying all mandatory audit files exist..."
+   156	          
+   157	          AUDITS=(
+   158	            "audit/CLAIMS_PROOF_CATALOG.md"
+   159	            "audit/MARKETPLACE_COMPLIANCE_MATRIX.md"
+   160	            "audit/ENTERPRISE_TRUST_MATRIX.md"
+   161	            "audit/RESIDUAL_RISKS.md"
+   162	            "audit/DOCS_TRUTH_SOURCES.md"
+   163	          )
+   164	          
+   165	          MISSING_AUDITS=()
+   166	          for audit in "${AUDITS[@]}"; do
+   167	            if [ ! -f "$audit" ]; then
+   168	              MISSING_AUDITS+=("$audit")
+   169	            fi
+   170	          done
+   171	          
+   172	          if [ ${#MISSING_AUDITS[@]} -gt 0 ]; then
+   173	            echo "❌ FAILURE: Missing audit files:"
+   174	            for missing in "${MISSING_AUDITS[@]}"; do
+   175	              echo "  - $missing"
+   176	            done
+   177	            exit 1
+   178	          fi
+   179	          
+   180	          echo "✅ SUCCESS: All 5 mandatory audit files present"
+   181	
+   182	      - name: Verify Four Critical Statements (Verbatim Check)
+   183	        id: critical_statements
+   184	        run: |
+   185	          echo "🔍 Verifying four critical compliance statements..."
+   186	          
+   187	          # Check 1: Retention Stance
+   188	          echo "Checking Retention Stance in DATA_RETENTION.md..."
+   189	          if ! grep -q "Data is retained.*indefinitely.*until tenant uninstall" docs/DATA_RETENTION.md || \
+   190	             ! grep -q "FirstTry does not currently enforce time-based TTL deletion" docs/DATA_RETENTION.md; then
+   191	            echo "❌ FAILURE: Retention statement not found or incorrect"
+   192	            exit 1
+   193	          fi
+   194	          echo "✅ Retention statement verified"
+   195	          
+   196	          # Check 2: DPA Stance
+   197	          echo "Checking DPA Stance in COMPLIANCE.md..."
+   198	          if ! grep -q "FirstTry does NOT.*offer.*Data Processing Addendum\|FirstTry does not.*provide.*Data Processing Addendum" docs/COMPLIANCE.md || \
+   199	             ! grep -q "Atlassian Forge\|Atlassian Cloud" docs/COMPLIANCE.md; then
+   200	            echo "❌ FAILURE: DPA statement not found or incorrect"
+   201	            exit 1
+   202	          fi
+   203	          echo "✅ DPA statement verified"
+   204	          
+   205	          # Check 3: Controller/Processor Stance
+   206	          echo "Checking Controller/Processor Stance..."
+   207	          if ! grep -q "Customers remain.*data controllers" docs/COMPLIANCE.md || ! grep -q "Customers remain" docs/PRIVACY.md || \
+   208	             ! grep -q "processor within Atlassian Forge" docs/COMPLIANCE.md; then
+   209	            echo "❌ FAILURE: Controller/Processor statement not found or incorrect"
+   210	            exit 1
+   211	          fi
+   212	          echo "✅ Controller/Processor statement verified"
+   213	          
+   214	          # Check 4: Platform Dependency
+   215	          echo "Checking Platform Dependency Disclaimer..."
+   216	          if ! grep -q "Atlassian Forge.*platform" docs/DATA_RETENTION.md || \
+   217	             ! grep -q "NOT.*controlled.*by FirstTry" docs/DATA_RETENTION.md; then
+   218	            echo "❌ FAILURE: Platform dependency statement not found or incorrect"
+   219	            exit 1
+   220	          fi
+   221	          echo "✅ Platform dependency statement verified"
+   222	          
+   223	          echo "✅ SUCCESS: All four critical statements verified"
+   224	
+   225	      - name: Summary Report
+   226	        if: always()
+   227	        run: |
+   228	          echo "═════════════════════════════════════════════════════════"
+   229	          echo "📊 CI POLICY GATES SUMMARY"
+   230	          echo "═════════════════════════════════════════════════════════"
+   231	          echo ""
+   232	          echo "Test Results:"
+   233	          echo "  Retention Consistency:        $([ '${{ steps.retention_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
+   234	          echo "  DPA Language Consistency:     $([ '${{ steps.dpa_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
+   235	          echo "  Controller/Processor:         $([ '${{ steps.control_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
+   236	          echo "  Platform Dependencies:        $([ '${{ steps.platform_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
+   237	          echo "  Documentation Compliance:     $([ '${{ steps.compliance_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
+   238	          echo "  Mandatory Files:              $([ '${{ steps.mandatory_files.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
+   239	          echo "  Mandatory Audits:             $([ '${{ steps.mandatory_audits.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
+   240	          echo "  Critical Statements:          $([ '${{ steps.critical_statements.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
+   241	          echo ""
+   242	          echo "═════════════════════════════════════════════════════════"
+   243	          
+   244	          if [ '${{ steps.retention_test.outcome }}' = 'failure' ] || \
+   245	             [ '${{ steps.dpa_test.outcome }}' = 'failure' ] || \
+   246	             [ '${{ steps.control_test.outcome }}' = 'failure' ] || \
+   247	             [ '${{ steps.platform_test.outcome }}' = 'failure' ] || \
+   248	             [ '${{ steps.compliance_test.outcome }}' = 'failure' ] || \
+   249	             [ '${{ steps.mandatory_files.outcome }}' = 'failure' ] || \
+   250	             [ '${{ steps.mandatory_audits.outcome }}' = 'failure' ] || \
+   251	             [ '${{ steps.critical_statements.outcome }}' = 'failure' ]; then
+   252	            echo "❌ CI POLICY GATES: FAILED"
+   253	            echo ""
+   254	            echo "One or more policy gates have failed. Please review the"
+   255	            echo "errors above and correct the documentation/audit files."
+   256	            exit 1
+   257	          else
+   258	            echo "✅ CI POLICY GATES: ALL PASSED"
+   259	            echo ""
+   260	            echo "All policy gates passed. PR is ready for review."
+   261	            exit 0
+   262	          fi
+   263	
+   264	      - name: Comment on PR
+   265	        if: always() && github.event_name == 'pull_request'
+   266	        uses: actions/github-script@v7
+   267	        with:
+   268	          script: |
+   269	            const allPassed = '${{ steps.retention_test.outcome }}' === 'success' &&
+   270	                             '${{ steps.dpa_test.outcome }}' === 'success' &&
+   271	                             '${{ steps.control_test.outcome }}' === 'success' &&
+   272	                             '${{ steps.platform_test.outcome }}' === 'success' &&
+   273	                             '${{ steps.compliance_test.outcome }}' === 'success' &&
+   274	                             '${{ steps.mandatory_files.outcome }}' === 'success' &&
+   275	                             '${{ steps.mandatory_audits.outcome }}' === 'success' &&
+   276	                             '${{ steps.critical_statements.outcome }}' === 'success';
+   277	            
+   278	            const status = allPassed ? '✅ PASSED' : '❌ FAILED';
+   279	            const message = `## CI Policy Gates ${status}
+   280	
+   281	| Gate | Status |
+   282	|---|---|
+   283	| Retention Consistency | ${{ steps.retention_test.outcome === 'success' ? '✅' : '❌' }} |
+   284	| DPA Language Consistency | ${{ steps.dpa_test.outcome === 'success' ? '✅' : '❌' }} |
+   285	| Controller/Processor Roles | ${{ steps.control_test.outcome === 'success' ? '✅' : '❌' }} |
+   286	| Platform Dependencies | ${{ steps.platform_test.outcome === 'success' ? '✅' : '❌' }} |
+   287	| Documentation Compliance | ${{ steps.compliance_test.outcome === 'success' ? '✅' : '❌' }} |
+   288	| Mandatory Files | ${{ steps.mandatory_files.outcome === 'success' ? '✅' : '❌' }} |
+   289	| Mandatory Audits | ${{ steps.mandatory_audits.outcome === 'success' ? '✅' : '❌' }} |
+   290	| Critical Statements | ${{ steps.critical_statements.outcome === 'success' ? '✅' : '❌' }} |
+   291	
+   292	${allPassed ? 'All policy gates passed. Documentation is compliant and credible.' : 'Some policy gates failed. Please review the errors in the CI output above.'}`;
+   293	            
+   294	            github.rest.issues.createComment({
+   295	              issue_number: context.issue.number,
+   296	              owner: context.repo.owner,
+   297	              repo: context.repo.repo,
+   298	              body: message
+   299	            });
+   300	
+   301	  notification:
+   302	    name: Notify on Policy Gate Failure
+   303	    needs: policy-gates
+   304	    runs-on: ubuntu-latest
+   305	    if: failure()
+   306	    
+   307	    steps:
+   308	      - name: Post Failure Alert
+   309	        run: |
+   310	          echo "🚨 CI POLICY GATES FAILED"
+   311	          echo ""
+   312	          echo "The following checks must pass before merging:"
+   313	          echo ""
+   314	          echo "1. Retention Policy Consistency"
+   315	          echo "   - DATA_RETENTION.md must state indefinite retention"
+   316	          echo "   - No 90-day claims elsewhere"
+   317	          echo "   - Run: npm test -- tests/docs/retention_consistency.test.ts"
+   318	          echo ""
+   319	          echo "2. DPA Language Consistency"
+   320	          echo "   - COMPLIANCE.md must state 'NOT offered'"
+   321	          echo "   - No 'available on request' language"
+   322	          echo "   - Run: npm test -- tests/docs/dpa_language_consistency.test.ts"
+   323	          echo ""
+   324	          echo "3. Controller/Processor Role Clarity"
+   325	          echo "   - Customer must be controller"
+   326	          echo "   - FirstTry is processor within Atlassian Forge"
+   327	          echo "   - Run: npm test -- tests/docs/controller_processor_consistency.test.ts"
+   328	          echo ""
+   329	          echo "4. Platform Dependency Disclosure"
+   330	          echo "   - All Atlassian-controlled behaviors must be explicitly disclaimed"
+   331	          echo "   - Run: npm test -- tests/docs/platform_dependency_disclosure.test.ts"
+   332	          echo ""
+   333	          echo "For full details, see: audit/CREDIBILITY_HARDENING_REPORT.md"
+   334	          exit 1
+   335	        continue-on-error: false
+   336	
+   337	  enforce-doc-updates:
+   338	    name: Enforce Doc Updates with Code Changes
+   339	    runs-on: ubuntu-latest
+   340	    
+   341	    if: github.event_name == 'pull_request'
+   342	    
+   343	    steps:
+   344	      - name: Checkout code
+   345	        uses: actions/checkout@v4
+   346	        with:
+   347	          fetch-depth: 0
+   348	
+   349	      - name: Check if code was changed
+   350	        id: code-changed
+   351	        run: |
+   352	          git diff --name-only origin/${{ github.base_ref }}... | grep -E '^src/' > /tmp/code_files.txt || true
+   353	          if [ -s /tmp/code_files.txt ]; then
+   354	            echo "code_changed=true" >> $GITHUB_OUTPUT
+   355	          else
+   356	            echo "code_changed=false" >> $GITHUB_OUTPUT
+   357	          fi
+   358	
+   359	      - name: Check if docs were updated
+   360	        id: docs-changed
+   361	        if: steps.code-changed.outputs.code_changed == 'true'
+   362	        run: |
+   363	          git diff --name-only origin/${{ github.base_ref }}... | grep -E '^docs/|^audit/' > /tmp/doc_files.txt || true
+   364	          if [ -s /tmp/doc_files.txt ]; then
+   365	            echo "docs_changed=true" >> $GITHUB_OUTPUT
+   366	          else
+   367	            echo "docs_changed=false" >> $GITHUB_OUTPUT
+   368	          fi
+   369	
+   370	      - name: Enforce doc updates when code changes
+   371	        if: steps.code-changed.outputs.code_changed == 'true' && steps.docs-changed.outputs.docs_changed == 'false'
+   372	        run: |
+   373	          echo "❌ Code was modified but documentation was not updated!"
+   374	          echo ""
+   375	          echo "Modified code files:"
+   376	          cat /tmp/code_files.txt
+   377	          echo ""
+   378	          echo "Please update corresponding documentation:"
+   379	          echo "  - docs/PRIVACY.md (if data handling changed)"
+   380	          echo "  - docs/SECURITY.md (if security model changed)"
+   381	          echo "  - docs/DATA_INVENTORY.md (if data collection changed)"
+   382	          echo "  - docs/DATA_RETENTION.md (if retention changed)"
+   383	          echo "  - docs/ACCESS_CONTROL.md (if auth/scopes changed)"
+   384	          exit 1
+   385	
+   386	  validate-claims:
+   387	    name: Validate Claims in Documentation
+   388	    runs-on: ubuntu-latest
+   389	    
+   390	    steps:
+   391	      - name: Checkout code
+   392	        uses: actions/checkout@v4
+   393	
+   394	      - name: Check for unsubstantiated claims
+   395	        run: |
+   396	          echo "Checking for unsubstantiated claims in documentation..."
+   397	          
+   398	          # Search for claims without evidence
+   399	          SUSPICIOUS_CLAIMS=$(grep -r "guarantee\|promise\|certif" docs/ --include="*.md" 2>/dev/null || true)
+   400	          
+   401	          if [ ! -z "$SUSPICIOUS_CLAIMS" ]; then
+   402	            echo "⚠️  Found potentially unsubstantiated claims:"
+   403	            echo "$SUSPICIOUS_CLAIMS"
+   404	            echo ""
+   405	            echo "Please add evidence or mark as UNKNOWN"
+   406	            echo ""
+   407	            # Don't fail yet - just warn
+   408	          fi
+   409	
+   410	      - name: Validate evidence references
+   411	        run: |
+   412	          echo "Validating evidence references in audit docs..."
+   413	          
+   414	          # Check that CLAIMS_PROOF_CATALOG.md has all status values
+   415	          if [ -f "audit/CLAIMS_PROOF_CATALOG.md" ]; then
+   416	            VERIFIED_COUNT=$(grep -c "✅ VERIFIED" audit/CLAIMS_PROOF_CATALOG.md || echo 0)
+   417	            PARTIAL_COUNT=$(grep -c "⚠️ PARTIAL" audit/CLAIMS_PROOF_CATALOG.md || echo 0)
+   418	            
+   419	            if [ "$VERIFIED_COUNT" -eq 0 ] && [ "$PARTIAL_COUNT" -eq 0 ]; then
+   420	              echo "❌ CLAIMS_PROOF_CATALOG.md has no verified or partial claims!"
+   421	              exit 1
+   422	            fi
+   423	          fi
+   424	
+   425	  prevent-scope-drift:
+   426	    name: Prevent Scope & Egress Drift
+   427	    runs-on: ubuntu-latest
+   428	    
+   429	    if: github.event_name == 'pull_request'
+   430	    
+   431	    steps:
+   432	      - name: Checkout code
+   433	        uses: actions/checkout@v4
+   434	        with:
+   435	          fetch-depth: 0
+   436	
+   437	      - name: Check for manifest scope changes
+   438	        run: |
+   439	          echo "Checking for undocumented manifest scope changes..."
+   440	          
+   441	          # Get scope changes
+   442	          SCOPE_DIFF=$(git diff origin/${{ github.base_ref }}... manifest.yml | grep -E "^\+.*scopes:|^\-.*scopes:" || true)
+   443	          
+   444	          if [ ! -z "$SCOPE_DIFF" ]; then
+   445	            echo "⚠️  Manifest scopes were modified:"
+   446	            echo "$SCOPE_DIFF"
+   447	            echo ""
+   448	            echo "Verify that docs/ACCESS_CONTROL.md documents these changes"
+   449	          fi
+   450	
+   451	      - name: Check for new network calls
+   452	        run: |
+   453	          echo "Checking for new network egress code..."
+   454	          
+   455	          # Look for new fetch, axios, or http patterns
+   456	          NEW_NETWORK=$(git diff origin/${{ github.base_ref }}... -- src/ | grep "^\+.*\(fetch\|axios\|http\|https\)\..*(" || true)
+   457	          
+   458	          if [ ! -z "$NEW_NETWORK" ]; then
+   459	            echo "❌ New network calls detected in src/:"
+   460	            echo "$NEW_NETWORK"
+   461	            echo ""
+   462	            echo "If this is intentional:"
+   463	            echo "1. Update docs/PRIVACY.md with external sharing details"
+   464	            echo "2. Update docs/SUBPROCESSORS.md with new service"
+   465	            echo "3. Ensure call is mocked in tests"
+   466	            exit 1
+   467	          fi
+   468	
+   469	      - name: Check for console statements in src
+   470	        run: |
+   471	          echo "Checking for console.log/error in src/..."
+   472	          
+   473	          CONSOLE_CALLS=$(git diff origin/${{ github.base_ref }}... -- src/ | grep "^\+.*console\.\(log\|error\|warn\)" | grep -v "^\+\s*//" || true)
+   474	          
+   475	          if [ ! -z "$CONSOLE_CALLS" ]; then
+   476	            echo "❌ console.log/error found in src/ (should be tests only):"
+   477	            echo "$CONSOLE_CALLS"
+   478	            echo ""
+   479	            echo "Move logging to tests/ or create a dedicated logging module"
+   480	            exit 1
+   481	          fi
+   482	
+   483	      - name: Check for storage key changes
+   484	        run: |
+   485	          echo "Checking for new storage keys..."
+   486	          
+   487	          NEW_KEYS=$(git diff origin/${{ github.base_ref }}... -- src/ | grep "^\+.*key.*:" | grep -v "^\+\s*//" || true)
+   488	          
+   489	          if [ ! -z "$NEW_KEYS" ]; then
+   490	            echo "ℹ️  New storage keys detected - verify DATA_INVENTORY.md is updated"
+   491	            echo "$NEW_KEYS"
+   492	          fi
+   493	
+   494	  audit-summary:
+   495	    name: Generate Audit Summary
+   496	    runs-on: ubuntu-latest
+   497	    if: always()
+   498	    
+   499	    needs:
+   500	      - policy-gates
+   501	      - enforce-doc-updates
+   502	      - validate-claims
+   503	      - prevent-scope-drift
+   504	    
+   505	    steps:
+   506	      - name: Checkout code
+   507	        uses: actions/checkout@v4
+   508	
+   509	      - name: Generate compliance report
+   510	        run: |
+   511	          echo "## Policy Compliance Status" > /tmp/compliance.md
+   512	          echo "" >> /tmp/compliance.md
+   513	          
+   514	          if [ -f "docs/PRIVACY.md" ]; then
+   515	            echo "✅ Privacy Policy: Documented" >> /tmp/compliance.md
+   516	          fi
+   517	          
+   518	          if [ -f "docs/SECURITY.md" ]; then
+   519	            echo "✅ Security Policy: Documented" >> /tmp/compliance.md
+   520	          fi
+   521	          
+   522	          if [ -f "docs/DATA_RETENTION.md" ]; then
+   523	            echo "✅ Data Retention: Documented" >> /tmp/compliance.md
+   524	          fi
+   525	          
+   526	          if [ -f "audit/MARKETPLACE_COMPLIANCE_MATRIX.md" ]; then
+   527	            echo "✅ Marketplace Matrix: Documented" >> /tmp/compliance.md
+   528	          fi
+   529	          
+   530	          if [ -f "audit/CLAIMS_PROOF_CATALOG.md" ]; then
+   531	            echo "✅ Claims Proof: Documented" >> /tmp/compliance.md
+   532	          fi
+   533	          
+   534	          cat /tmp/compliance.md
+   535	
+   536	      - name: Comment on PR
+   537	        if: github.event_name == 'pull_request'
+   538	        uses: actions/github-script@v7
+   539	        with:
+   540	          script: |
+   541	            const fs = require('fs');
+   542	            const complianceReport = fs.existsSync('/tmp/compliance.md') 
+   543	              ? fs.readFileSync('/tmp/compliance.md', 'utf-8')
+   544	              : '## Compliance Check\nAll gates passed ✅';
+   545	            
+   546	            github.rest.issues.createComment({
+   547	              issue_number: context.issue.number,
+   548	              owner: context.repo.owner,
+   549	              repo: context.repo.repo,
+   550	              body: complianceReport
+   551	            });
+   552	
+   553	  status-check:
+   554	    name: Policy Gates Status
+   555	    runs-on: ubuntu-latest
+   556	    if: always()
+   557	    
+   558	    needs:
+   559	      - policy-gates
+   560	      - enforce-doc-updates
+   561	      - prevent-scope-drift
+   562	    
+   563	    steps:
+   564	      - name: Check policy gates
+   565	        run: |
+   566	          if [ "${{ needs.policy-gates.result }}" == "failure" ]; then
+   567	            echo "❌ Policy gates failed!"
+   568	            exit 1
+   569	          fi
+   570	          
+   571	          if [ "${{ needs.enforce-doc-updates.result }}" == "failure" ]; then
+   572	            echo "❌ Documentation enforcement failed!"
+   573	            exit 1
+   574	          fi
+   575	          
+   576	          if [ "${{ needs.prevent-scope-drift.result }}" == "failure" ]; then
+   577	            echo "❌ Scope/egress drift detection failed!"
+   578	            exit 1
+   579	          fi
+   580	          
+   581	          echo "✅ All policy gates passed!"
+
+===== .github/workflows/publish.yml =====
+     1	name: Publish Python package
+     2	
+     3	on:
+     4	  push:
+     5	    tags:
+     6	      - 'v*'
+     7	
+     8	jobs:
+     9	  publish:
+    10	    name: Publish to PyPI
+    11	    runs-on: ubuntu-latest
+    12	    steps:
+    13	      - uses: actions/checkout@v4
+    14	
+    15	      - name: Set up Python
+    16	        uses: actions/setup-python@v4
+    17	        with:
+    18	          python-version: '3.11'
+    19	
+    20	      - name: Install build tools
+    21	        run: |
+    22	          python -m pip install --upgrade pip
+    23	          pip install build
+    24	
+    25	      - name: Build distributions
+    26	        run: python -m build
+    27	
+    28	      - name: Publish to PyPI
+    29	        uses: pypa/gh-action-pypi-publish@release/v1
+    30	        with:
+    31	          user: __token__
+    32	          password: ${{ secrets.PYPI_API_TOKEN }}
+    33	
+    34	# NOTE: Add a repository secret named PYPI_API_TOKEN with an API token from PyPI.
+    35	# This workflow runs only when a tag like v1.0.0 is pushed.
+
+===== .github/workflows/quality.yml =====
+     1	name: firsttry-quality-gate
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  quality:
+     8	    runs-on: ubuntu-latest
+     9	    timeout-minutes: 10
+    10	
+    11	    steps:
+    12	      - name: Checkout
+    13	        uses: actions/checkout@v4
+    14	
+    15	      - name: Set up Python
+    16	        uses: actions/setup-python@v4
+    17	        with:
+    18	          python-version: "3.11"
+    19	          cache: "pip"
+    20	
+    21	      - name: Ensure deterministic pytest
+    22	        run: echo "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" >> $GITHUB_ENV
+    23	
+    24	      - name: Install dev tools
+    25	        run: |
+    26	          python -m pip install --upgrade pip
+    27	          # install project (editable) + dev extras if you have them
+    28	          if [ -f "pyproject.toml" ]; then
+    29	            python -m pip install -e ".[dev]" || true
+    30	          fi
+    31	          # If present, install pinned dev tool versions for reproducible CI
+    32	          if [ -f requirements-dev.txt ]; then
+    33	            python -m pip install -r requirements-dev.txt
+    34	          else
+    35	            # hard-install core linters/typecheckers/test deps unconditionally
+    36	            python -m pip install ruff black mypy pytest coverage
+    37	          fi
+    38	
+    39	      - name: Run FirstTry lite (must be green before deeper checks)
+    40	        run: |
+    41	          python -m firsttry.cli run --tier lite || {
+    42	            echo "::error ::FirstTry lite failed. Run 'python -m firsttry.cli run --tier lite' locally to reproduce."
+    43	            exit 1
+    44	          }
+
+===== .github/workflows/readonly-audit-example.yml =====
+     1	name: Read-Only Audit
+     2	
+     3	on:
+     4	  pull_request:
+     5	  push:
+     6	    branches: [main]
+     7	  workflow_dispatch:
+     8	
+     9	jobs:
+    10	  readonly-audit:
+    11	    runs-on: ubuntu-24.04
+    12	    timeout-minutes: 15
+    13	    steps:
+    14	      - uses: actions/checkout@v4
+    15	      
+    16	      - uses: actions/setup-python@v5
+    17	        with:
+    18	          python-version: '3.11'
+    19	      
+    20	      - name: Install minimal tooling
+    21	        run: |
+    22	          python -m pip install --upgrade pip
+    23	          pip install -e '.[dev]' || pip install -e .
+    24	          pip install ruff black mypy bandit pytest pytest-cov isort sphinx || true
+    25	      
+    26	      - name: Read-only timed audit
+    27	        run: |
+    28	          bash scripts/ft_audit_readonly.sh || true
+    29	      
+    30	      - name: Upload audit logs (read-only artifacts)
+    31	        if: always()
+    32	        uses: actions/upload-artifact@v4
+    33	        with:
+    34	          name: firsttry-audit-logs
+    35	          path: |
+    36	            .firsttry/audit_logs/**
+    37	            .firsttry/audit*.json
+    38	            .firsttry/audit_summary*.txt
+
+===== .github/workflows/release-vsix.yml =====
+     1	name: release-vsix
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  build-and-publish-vsix:
+     8	    runs-on: ubuntu-latest
+     9	    permissions:
+    10	      contents: write
+    11	    steps:
+    12	      - name: Checkout
+    13	        uses: actions/checkout@v4
+    14	
+    15	      - name: Setup Node for VS Code extension
+    16	        uses: actions/setup-node@v4
+    17	        with:
+    18	          node-version: "20"
+    19	
+    20	      - name: Install deps for extension
+    21	        working-directory: vscode-extension
+    22	        run: |
+    23	          npm install --no-audit --no-fund
+    24	
+    25	      - name: Package VSIX
+    26	        working-directory: vscode-extension
+    27	        run: |
+    28	          npx vsce package --no-yarn --out firsttry-extension.vsix
+    29	
+    30	      - name: Create or update GitHub Release & upload asset
+    31	        uses: softprops/action-gh-release@v2
+    32	        with:
+    33	          tag_name: ${{ github.ref_name }}
+    34	          files: vscode-extension/firsttry-extension.vsix
+    35	        env:
+    36	          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+===== .github/workflows/remote-cache-e2e.yml =====
+     1	name: Remote Cache E2E (LocalStack S3)
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	jobs:
+     7	  remote-cache-e2e:
+     8	    runs-on: ubuntu-latest
+     9	    name: Remote Cache E2E Tests
+    10	
+    11	    services:
+    12	      localstack:
+    13	        image: localstack/localstack:latest
+    14	        env:
+    15	          SERVICES: s3
+    16	          DEBUG: 1
+    17	          DATA_DIR: /tmp/localstack/data
+    18	        ports:
+    19	          - 4566:4566
+    20	        options: >-
+    21	          --health-cmd="awslocal kinesis list-streams"
+    22	          --health-interval=10s
+    23	          --health-timeout=5s
+    24	          --health-retries=5
+    25	
+    26	    steps:
+    27	      - uses: actions/checkout@v4
+    28	
+    29	      - name: Set up Python
+    30	        uses: actions/setup-python@v4
+    31	        with:
+    32	          python-version: "3.11"
+    33	          cache: pip
+    34	
+    35	      - name: Install dependencies
+    36	        run: |
+    37	          python -m pip install --upgrade pip
+    38	          pip install -e .
+    39	          pip install pytest awscli-local boto3
+    40	
+    41	      - name: Wait for LocalStack
+    42	        run: |
+    43	          timeout 60 bash -c 'until curl -s http://localhost:4566/_localstack/health | grep -q "\"services\""; do sleep 1; done'
+    44	
+    45	      - name: Create S3 bucket
+    46	        env:
+    47	          AWS_ACCESS_KEY_ID: test
+    48	          AWS_SECRET_ACCESS_KEY: test
+    49	          AWS_DEFAULT_REGION: us-east-1
+    50	        run: |
+    51	          awslocal s3 mb s3://ft-cache-e2e --endpoint-url http://localhost:4566
+    52	
+    53	      - name: Run remote cache E2E tests
+    54	        env:
+    55	          AWS_ACCESS_KEY_ID: test
+    56	          AWS_SECRET_ACCESS_KEY: test
+    57	          AWS_DEFAULT_REGION: us-east-1
+    58	          FT_S3_ENDPOINT: http://localhost:4566
+    59	          FT_S3_BUCKET: ft-cache-e2e
+    60	          FT_SEND_TELEMETRY: "0"
+    61	        run: |
+    62	          pytest tests/enterprise/test_remote_cache_e2e.py -v --tb=short
+    63	
+    64	      - name: Upload test results
+    65	        if: always()
+    66	        uses: actions/upload-artifact@v4
+    67	        with:
+    68	          name: remote-cache-test-results
+    69	          path: .pytest_cache/
+    70	          retention-days: 7
+    71	
+    72	      - name: Verify S3 cache objects
+    73	        if: always()
+    74	        env:
+    75	          AWS_ACCESS_KEY_ID: test
+    76	          AWS_SECRET_ACCESS_KEY: test
+    77	          AWS_DEFAULT_REGION: us-east-1
+    78	        run: |
+    79	          echo "=== S3 Bucket Contents ===" 
+    80	          awslocal s3 ls s3://ft-cache-e2e/ --recursive --endpoint-url http://localhost:4566 || echo "Bucket empty"
+    81	          awslocal s3 ls s3://ft-cache-e2e/ --endpoint-url http://localhost:4566 || echo "No buckets"
+
+===== .github/workflows/remote-cache-hardened.yml =====
+     1	name: Remote Cache - OIDC AWS Integration (Hardened)
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	# 1. LOCK DOWN PERMISSIONS - OIDC for AWS
+     7	permissions:
+     8	  contents: read
+     9	  id-token: write  # Required for OIDC token request
+    10	
+    11	# 2. CANCEL SUPERSEDED JOBS
+    12	concurrency:
+    13	  group: remote-cache-${{ github.ref }}
+    14	  cancel-in-progress: true
+    15	
+    16	env:
+    17	  AWS_REGION: us-east-1
+    18	  CACHE_BUCKET: ft-cache-prod
+    19	  CACHE_PREFIX: v1
+    20	
+    21	jobs:
+    22	  configure-aws:
+    23	    name: AWS - OIDC Configuration
+    24	    runs-on: ubuntu-latest
+    25	    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    26	    permissions:
+    27	      id-token: write
+    28	      contents: read
+    29	    outputs:
+    30	      aws-role: ${{ steps.role.outputs.role }}
+    31	    steps:
+    32	      - name: Get AWS role ARN
+    33	        id: role
+    34	        run: |
+    35	          # This would be set as an org secret or environment variable
+    36	          # Example: arn:aws:iam::123456789012:role/FirstTryCacheRole
+    37	          echo "role=${{ secrets.AWS_ROLE_ARN }}" >> $GITHUB_OUTPUT
+    38	
+    39	  push-remote-cache:
+    40	    name: Cache - Push to S3
+    41	    runs-on: ubuntu-latest
+    42	    needs: configure-aws
+    43	    permissions:
+    44	      id-token: write
+    45	      contents: read
+    46	    steps:
+    47	      - uses: actions/checkout@v4
+    48	        with:
+    49	          fetch-depth: 0
+    50	        # v4 pinned by SHA
+    51	
+    52	      - uses: actions/setup-python@v4
+    53	        with:
+    54	          python-version: "3.11"
+    55	          cache: "pip"
+    56	        # v5 pinned by SHA
+    57	
+    58	      # 3. OIDC TO AWS (ditch static keys)
+    59	      - name: Configure AWS credentials via OIDC
+    60	        uses: aws-actions/configure-aws-credentials@v5
+    61	        with:
+    62	          role-to-assume: ${{ needs.configure-aws.outputs.aws-role }}
+    63	          aws-region: ${{ env.AWS_REGION }}
+    64	          # Token TTL: 1 hour (default 3600 seconds)
+    65	          role-session-name: firsttry-cache-push-${{ github.run_id }}
+    66	        # v4 pinned by SHA
+    67	
+    68	      - name: Install dependencies
+    69	        run: |
+    70	          python -m pip install --upgrade pip
+    71	          pip install -r requirements-dev.txt
+    72	
+    73	      - name: Build and cache artifacts
+    74	        run: |
+    75	          # Build cache artifacts
+    76	          mkdir -p .firsttry/cache
+    77	          pytest tests/ --tb=no -q > .firsttry/cache/test-results.log 2>&1 || true
+    78	          echo "Cache built at: $(date)" > .firsttry/cache/timestamp
+    79	
+    80	      - name: Upload cache to S3
+    81	        run: |
+    82	          CACHE_KEY="${{ env.CACHE_PREFIX }}-${{ github.sha }}"
+    83	          
+    84	          echo "📦 Uploading cache to S3..."
+    85	          aws s3 sync .firsttry/cache/ \
+    86	            s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ \
+    87	            --sse AES256 \
+    88	            --metadata "commit=${{ github.sha }},branch=${{ github.ref }},workflow=${{ github.workflow }}" \
+    89	            --region ${{ env.AWS_REGION }}
+    90	          
+    91	          # Update latest pointer
+    92	          aws s3 cp \
+    93	            s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/timestamp \
+    94	            s3://${{ env.CACHE_BUCKET }}/latest-timestamp \
+    95	            --metadata "commit=${{ github.sha }}" \
+    96	            --region ${{ env.AWS_REGION }}
+    97	          
+    98	          echo "✅ Cache uploaded successfully"
+    99	
+   100	      - name: Verify S3 upload
+   101	        run: |
+   102	          CACHE_KEY="${{ env.CACHE_PREFIX }}-${{ github.sha }}"
+   103	          
+   104	          echo "🔍 Verifying S3 upload..."
+   105	          aws s3 ls s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ \
+   106	            --region ${{ env.AWS_REGION }} || exit 1
+   107	          echo "✅ Verification passed"
+   108	
+   109	  pull-remote-cache:
+   110	    name: Cache - Pull from S3
+   111	    runs-on: ubuntu-latest
+   112	    needs: configure-aws
+   113	    permissions:
+   114	      id-token: write
+   115	      contents: read
+   116	    steps:
+   117	      - uses: actions/checkout@v4
+   118	        with:
+   119	          fetch-depth: 0
+   120	        # v4 pinned by SHA
+   121	
+   122	      - uses: actions/setup-python@v4
+   123	        with:
+   124	          python-version: "3.11"
+   125	          cache: "pip"
+   126	        # v5 pinned by SHA
+   127	
+   128	      - name: Configure AWS credentials via OIDC
+   129	        uses: aws-actions/configure-aws-credentials@v5
+   130	        with:
+   131	          role-to-assume: ${{ needs.configure-aws.outputs.aws-role }}
+   132	          aws-region: ${{ env.AWS_REGION }}
+   133	          role-session-name: firsttry-cache-pull-${{ github.run_id }}
+   134	        # v4 pinned by SHA
+   135	
+   136	      - name: Download cache from S3
+   137	        run: |
+   138	          CACHE_KEY="${{ env.CACHE_PREFIX }}-${{ github.sha }}"
+   139	          
+   140	          echo "📥 Downloading cache from S3..."
+   141	          mkdir -p .firsttry/cache
+   142	          
+   143	          # Try exact commit cache first
+   144	          if aws s3 ls s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ --region ${{ env.AWS_REGION }} 2>/dev/null; then
+   145	            echo "✅ Found cache for commit: ${{ github.sha }}"
+   146	            aws s3 sync \
+   147	              s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ \
+   148	              .firsttry/cache/ \
+   149	              --region ${{ env.AWS_REGION }}
+   150	            echo "cache_status=hit" >> $GITHUB_ENV
+   151	          else
+   152	            echo "⚠️  No cache found for commit, using latest"
+   153	            aws s3 cp \
+   154	              s3://${{ env.CACHE_BUCKET }}/latest-timestamp \
+   155	              .firsttry/cache/timestamp \
+   156	              --region ${{ env.AWS_REGION }} || true
+   157	            echo "cache_status=miss" >> $GITHUB_ENV
+   158	          fi
+   159	
+   160	      - name: Assert remote cache hits
+   161	        run: |
+   162	          CACHE_STATUS="${{ env.cache_status }}"
+   163	          if [ "$CACHE_STATUS" = "miss" ]; then
+   164	            echo "Note: Cache miss on this run (expected for first push)"
+   165	          else
+   166	            echo "Cache status: $CACHE_STATUS"
+   167	          fi
+   168	
+   169	      - name: Report cache metrics
+   170	        if: always()
+   171	        run: |
+   172	          echo "## Remote Cache Metrics"
+   173	          echo "- Status: ${{ env.cache_status }}"
+   174	          echo "- Commit: ${{ github.sha }}"
+   175	          echo "- Branch: ${{ github.ref }}"
+   176	          echo "- Region: ${{ env.AWS_REGION }}"
+   177	          echo "- Bucket: ${{ env.CACHE_BUCKET }}"
+   178	
+   179	  cache-audit:
+   180	    name: Cache Audit - Verify Integrity
+   181	    runs-on: ubuntu-latest
+   182	    needs: [push-remote-cache, pull-remote-cache]
+   183	    permissions:
+   184	      id-token: write
+   185	      contents: read
+   186	    if: always()
+   187	    steps:
+   188	      - uses: actions/checkout@v4
+   189	        # v4 pinned by SHA
+   190	
+   191	      - uses: actions/setup-python@v4
+   192	        with:
+   193	          python-version: "3.11"
+   194	        # v5 pinned by SHA
+   195	
+   196	      - name: Configure AWS credentials via OIDC
+   197	        uses: aws-actions/configure-aws-credentials@v5
+   198	        with:
+   199	          role-to-assume: ${{ needs.configure-aws.outputs.aws-role }}
+   200	          aws-region: ${{ env.AWS_REGION }}
+   201	          role-session-name: firsttry-cache-audit-${{ github.run_id }}
+   202	        # v4 pinned by SHA
+   203	
+   204	      - name: Audit S3 cache integrity
+   205	        run: |
+   206	          CACHE_KEY="${{ env.CACHE_PREFIX }}-${{ github.sha }}"
+   207	          
+   208	          echo "🔐 Auditing cache integrity..."
+   209	          
+   210	          # List all cache objects
+   211	          aws s3 ls s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ \
+   212	            --recursive \
+   213	            --region ${{ env.AWS_REGION }}
+   214	          
+   215	          # Verify encryption (AES256)
+   216	          aws s3api head-object \
+   217	            --bucket ${{ env.CACHE_BUCKET }} \
+   218	            --key "$CACHE_KEY/timestamp" \
+   219	            --region ${{ env.AWS_REGION }} | grep -q "ServerSideEncryption.*AES256"
+   220	          
+   221	          echo "✅ Cache integrity verified (AES256 encrypted)"
+   222	
+   223	  cache-lifecycle:
+   224	    name: Cache - Lifecycle Management
+   225	    runs-on: ubuntu-latest
+   226	    needs: configure-aws
+   227	    permissions:
+   228	      id-token: write
+   229	      contents: read
+   230	    steps:
+   231	      - uses: actions/checkout@v4
+   232	        # v4 pinned by SHA
+   233	
+   234	      - name: Configure AWS credentials via OIDC
+   235	        uses: aws-actions/configure-aws-credentials@v5
+   236	        with:
+   237	          role-to-assume: ${{ needs.configure-aws.outputs.aws-role }}
+   238	          aws-region: ${{ env.AWS_REGION }}
+   239	          role-session-name: firsttry-cache-lifecycle-${{ github.run_id }}
+   240	        # v4 pinned by SHA
+   241	
+   242	      - name: Clean up old cache entries (30+ days)
+   243	        run: |
+   244	          echo "🧹 Cleaning up cache entries older than 30 days..."
+   245	          
+   246	          # This can be enhanced with more sophisticated logic
+   247	          # For now, note that S3 lifecycle policies should be configured on the bucket
+   248	          echo "Lifecycle management configured via S3 bucket policy"
+   249	          echo "Note: Separate S3 lifecycle rule should delete objects after 30 days"
+
+===== .github/workflows/remote-cache.yml =====
+     1	name: Remote Cache - S3 Integration
+     2	
+     3	on:
+     4	  workflow_dispatch:
+     5	
+     6	permissions:
+     7	  contents: read
+     8	  id-token: write
+     9	
+    10	concurrency:
+    11	  group: ${{ github.workflow }}-${{ github.ref }}
+    12	  cancel-in-progress: true
+    13	
+    14	env:
+    15	  AWS_REGION: us-east-1
+    16	  CACHE_BUCKET_PREFIX: firsttry-cache
+    17	
+    18	jobs:
+    19	  setup-s3-cache:
+    20	    name: Setup S3 Remote Cache
+    21	    runs-on: ubuntu-latest
+    22	    outputs:
+    23	      cache-bucket: ${{ steps.cache-config.outputs.bucket }}
+    24	      cache-prefix: ${{ steps.cache-config.outputs.prefix }}
+    25	    steps:
+    26	      - uses: actions/checkout@v4
+    27	
+    28	      - name: Configure S3 cache bucket
+    29	        id: cache-config
+    30	        run: |
+    31	          # In production, use AWS Secrets Manager or GitHub Secrets
+    32	          BUCKET="${{ env.CACHE_BUCKET_PREFIX }}-${{ github.repository_owner }}"
+    33	          PREFIX="${{ github.repository }}/cache/${{ github.ref_name }}"
+    34	          
+    35	          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+    36	          echo "prefix=$PREFIX" >> $GITHUB_OUTPUT
+    37	          
+    38	          echo "📦 S3 Cache Configuration:"
+    39	          echo "  Bucket: $BUCKET"
+    40	          echo "  Prefix: $PREFIX"
+    41	
+    42	  validate-cache:
+    43	    name: Validate Cache Configuration
+    44	    runs-on: ubuntu-latest
+    45	    needs: setup-s3-cache
+    46	    steps:
+    47	      - uses: actions/checkout@v4
+    48	
+    49	      - name: Set up Python
+    50	        uses: actions/setup-python@v4
+    51	        with:
+    52	          python-version: "3.11"
+    53	
+    54	      - name: Install dependencies
+    55	        run: |
+    56	          python -m pip install --upgrade pip
+    57	          pip install boto3==1.34.0 botocore==1.34.0
+    58	
+    59	      - name: Validate cache bucket access
+    60	        env:
+    61	          AWS_BUCKET: ${{ needs.setup-s3-cache.outputs.cache-bucket }}
+    62	          AWS_PREFIX: ${{ needs.setup-s3-cache.outputs.cache-prefix }}
+    63	        run: |
+    64	          echo "🔍 Validating S3 cache bucket configuration..."
+    65	          
+    66	          # Note: In CI/CD, AWS credentials should be configured via OIDC or GitHub Secrets
+    67	          python -c "
+    68	          import boto3
+    69	          import json
+    70	          from botocore.exceptions import ClientError
+    71	          
+    72	          try:
+    73	              s3_client = boto3.client('s3', region_name='us-east-1')
+    74	              
+    75	              # List buckets to verify access
+    76	              response = s3_client.list_buckets()
+    77	              print(f'✅ S3 access verified')
+    78	              print(f'Available buckets: {len(response[\"Buckets\"])}')
+    79	              
+    80	              # Check cache bucket specifically
+    81	              bucket = '${{ env.CACHE_BUCKET_PREFIX }}-\${{ github.repository_owner }}'
+    82	              try:
+    83	                  s3_client.head_bucket(Bucket=bucket)
+    84	                  print(f'✅ Cache bucket exists: {bucket}')
+    85	              except ClientError as e:
+    86	                  if e.response['Error']['Code'] == '404':
+    87	                      print(f'ℹ️  Cache bucket does not exist (will be created on first use): {bucket}')
+    88	                  else:
+    89	                      print(f'⚠️  Error accessing bucket: {e}')
+    90	          except Exception as e:
+    91	              print(f'ℹ️  S3 access not available in this environment: {e}')
+    92	              print('   (This is expected in non-AWS environments)')
+    93	          "
+    94	
+    95	  sync-cache:
+    96	    name: Sync Local Cache to S3
+    97	    runs-on: ubuntu-latest
+    98	    needs: [setup-s3-cache, validate-cache]
+    99	    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+   100	    steps:
+   101	      - uses: actions/checkout@v4
+   102	
+   103	      - name: Set up Python
+   104	        uses: actions/setup-python@v4
+   105	        with:
+   106	          python-version: "3.11"
+   107	
+   108	      - name: Install dependencies
+   109	        run: |
+   110	          python -m pip install --upgrade pip
+   111	          pip install boto3==1.34.0 tqdm==4.66.1
+   112	
+   113	      - name: Sync task cache to S3
+   114	        env:
+   115	          AWS_BUCKET: ${{ needs.setup-s3-cache.outputs.cache-bucket }}
+   116	          AWS_PREFIX: ${{ needs.setup-s3-cache.outputs.cache-prefix }}
+   117	        run: |
+   118	          echo "📤 Syncing local task cache to S3..."
+   119	          
+   120	          python -c "
+   121	          import os
+   122	          import json
+   123	          import hashlib
+   124	          from pathlib import Path
+   125	          
+   126	          cache_dir = Path('.firsttry/taskcache')
+   127	          
+   128	          if not cache_dir.exists():
+   129	              print('ℹ️  No local cache to sync')
+   130	              exit(0)
+   131	          
+   132	          cache_files = list(cache_dir.glob('*'))
+   133	          total_size = sum(f.stat().st_size for f in cache_files)
+   134	          
+   135	          print(f'✅ Local cache summary:')
+   136	          print(f'  Files: {len(cache_files)}')
+   137	          print(f'  Total size: {total_size / 1024 / 1024:.2f} MB')
+   138	          print(f'  Location: {cache_dir}')
+   139	          
+   140	          # Calculate cache integrity hash
+   141	          all_hashes = []
+   142	          for f in sorted(cache_files):
+   143	              with open(f, 'rb') as file:
+   144	                  hash_obj = hashlib.sha256(file.read())
+   145	                  all_hashes.append(hash_obj.hexdigest())
+   146	          
+   147	          overall_hash = hashlib.sha256(''.join(all_hashes).encode()).hexdigest()
+   148	          
+   149	          print(f'  Integrity hash: {overall_hash[:16]}...')
+   150	          print(f'  Sync target: s3://\$AWS_BUCKET/\$AWS_PREFIX')
+   151	          "
+   152	
+   153	      - name: Verify S3 cache integrity
+   154	        env:
+   155	          AWS_BUCKET: ${{ needs.setup-s3-cache.outputs.cache-bucket }}
+   156	          AWS_PREFIX: ${{ needs.setup-s3-cache.outputs.cache-prefix }}
+   157	        run: |
+   158	          echo "✔️  Verifying cache integrity..."
+   159	          
+   160	          python -c "
+   161	          import json
+   162	          from pathlib import Path
+   163	          
+   164	          cache_dir = Path('.firsttry/taskcache')
+   165	          
+   166	          if cache_dir.exists():
+   167	              cache_files = list(cache_dir.glob('*'))
+   168	              integrity_report = {
+   169	                  'cache_files': len(cache_files),
+   170	                  'synced_to_s3': True,
+   171	                  'sync_timestamp': '$(date -u +%Y-%m-%dT%H:%M:%SZ)',
+   172	                  'branch': '${{ github.ref_name }}',
+   173	                  'commit': '${{ github.sha }}'
+   174	              }
+   175	              
+   176	              output_dir = Path('.firsttry')
+   177	              output_dir.mkdir(exist_ok=True)
+   178	              
+   179	              with open(output_dir / 'cache_sync_report.json', 'w') as f:
+   180	                  json.dump(integrity_report, f, indent=2)
+   181	              
+   182	              print('✅ Cache sync verification complete')
+   183	
+   184	      - name: Upload cache sync report
+   185	        if: always()
+   186	        uses: actions/upload-artifact@v4
+   187	        with:
+   188	          name: cache-sync-report
+   189	          path: .firsttry/cache_sync_report.json
+   190	          retention-days: 30
+   191	
+   192	  test-cache-recovery:
+   193	    name: Test Cache Recovery from S3
+   194	    runs-on: ubuntu-latest
+   195	    needs: [setup-s3-cache, sync-cache]
+   196	    if: success()
+   197	    steps:
+   198	      - uses: actions/checkout@v4
+   199	
+   200	      - name: Set up Python
+   201	        uses: actions/setup-python@v4
+   202	        with:
+   203	          python-version: "3.11"
+   204	
+   205	      - name: Install dependencies
+   206	        run: |
+   207	          python -m pip install --upgrade pip
+   208	          pip install -r requirements.txt
+   209	
+   210	      - name: Clear local cache and recover from S3
+   211	        env:
+   212	          AWS_BUCKET: ${{ needs.setup-s3-cache.outputs.cache-bucket }}
+   213	          AWS_PREFIX: ${{ needs.setup-s3-cache.outputs.cache-prefix }}
+   214	        run: |
+   215	          echo "🔄 Testing cache recovery from S3..."
+   216	          
+   217	          python -c "
+   218	          import shutil
+   219	          from pathlib import Path
+   220	          
+   221	          # Simulate cache miss by clearing local cache
+   222	          cache_dir = Path('.firsttry/taskcache')
+   223	          if cache_dir.exists():
+   224	              print(f'📦 Local cache size before clear: {sum(f.stat().st_size for f in cache_dir.glob(\"*\")) / 1024 / 1024:.2f} MB')
+   225	              shutil.rmtree(cache_dir)
+   226	              print('✅ Local cache cleared')
+   227	          
+   228	          # In production, this would pull from S3
+   229	          print('ℹ️  In production environment:')
+   230	          print('  1. Connect to S3 bucket')
+   231	          print('  2. Download cache files')
+   232	          print('  3. Verify integrity checksums')
+   233	          print('  4. Restore to local cache')
+   234	          print('✅ Cache recovery test passed')
+   235	          "
+   236	
+   237	      - name: Verify fallback to local build
+   238	        run: |
+   239	          echo "⚙️  Verifying fallback to local build if S3 unavailable..."
+   240	          
+   241	          python -c "
+   242	          print('✅ Fallback strategy in place:')
+   243	          print('  1. Try S3 cache first')
+   244	          print('  2. Fall back to local cache')
+   245	          print('  3. Execute fresh build if no cache')
+   246	          print('  4. Store result in both local + S3')
+   247	          "
+   248	
+   249	  cache-status:
+   250	    name: Cache Status Report
+   251	    runs-on: ubuntu-latest
+   252	    needs: [setup-s3-cache, sync-cache, test-cache-recovery]
+   253	    if: always()
+   254	    steps:
+   255	      - uses: actions/checkout@v4
+   256	
+   257	      - name: Generate cache status report
+   258	        run: |
+   259	          echo "📊 Remote Cache Status Report"
+   260	          echo "=============================="
+   261	          echo ""
+   262	          echo "S3 Configuration:"
+   263	          echo "  Bucket: ${{ needs.setup-s3-cache.outputs.cache-bucket }}"
+   264	          echo "  Prefix: ${{ needs.setup-s3-cache.outputs.cache-prefix }}"
+   265	          echo "  Region: us-east-1"
+   266	          echo ""
+   267	          echo "Cache Operations:"
+   268	          echo "  Sync Status: ${{ needs.sync-cache.result }}"
+   269	          echo "  Recovery Test: ${{ needs.test-cache-recovery.result }}"
+   270	          echo ""
+   271	          echo "Workflow Result:"
+   272	          echo "  ✅ ${{ job.status }}"
+   273	
+   274	      - name: Assert remote cache hits
+   275	        run: |
+   276	          python - << 'PY'
+   277	            import json, sys, pathlib
+   278	            p = pathlib.Path('.firsttry/audit/report.json')
+   279	            if not p.exists():
+   280	                print('audit report not found:', p)
+   281	                sys.exit(1)
+   282	            r = json.loads(p.read_text(encoding='utf-8'))
+   283	            tasks = r.get('tasks', [])
+   284	            hits = [t for t in tasks if t.get('cache_status') in ('hit-remote','hit-local')]
+   285	            if not hits:
+   286	                print('No cache hits found in audit report.')
+   287	                sys.exit(1)
+   288	            fast = [t for t in hits if t.get('duration_ms', 9999) <= 5]
+   289	            print(f'Cache hits: {len(hits)} | <=5ms: {len(fast)}')
+   290	          PY
+
+===== .github/workflows/sbom.yml =====
+     1	name: sbom
+     2	
+     3	on:
+     4	  push:
+     5	    branches: [ main ]
+     6	  workflow_dispatch: {}
+     7	
+     8	jobs:
+     9	  generate-sbom:
+    10	    runs-on: ubuntu-latest
+    11	    steps:
+    12	      - uses: actions/checkout@v4
+    13	      - name: Set up Python
+    14	        uses: actions/setup-python@v4
+    15	        with:
+    16	          python-version: "3.11"
+    17	      - name: Install deps
+    18	        run: |
+    19	          python -m pip install --upgrade pip
+    20	          pip install .
+    21	      - name: Placeholder SBOM
+    22	        run: echo "SBOM generation not yet implemented" > sbom.txt
+    23	      - name: Upload SBOM
+    24	        uses: actions/upload-artifact@v4
+    25	        with:
+    26	          name: sbom-placeholder
+    27	          path: sbom.txt
+
+===== .github/workflows/shakedown.yml =====
+     1	name: Shakedown Test Suite
+     2	
+     3	on:
+     4	  push:
+     5	    branches:
+     6	      - main
+     7	      - develop
+     8	  pull_request:
+     9	    branches:
+    10	      - main
+    11	      - develop
+    12	
+    13	jobs:
+    14	  shakedown:
+    15	    name: Run Shakedown Harness
+    16	    runs-on: ubuntu-latest
+    17	    timeout-minutes: 30
+    18	
+    19	    steps:
+    20	      - name: Checkout code
+    21	        uses: actions/checkout@v4
+    22	
+    23	      - name: Setup Node.js
+    24	        uses: actions/setup-node@v4
+    25	        with:
+    26	          node-version: '18'
+    27	          cache: 'npm'
+    28	
+    29	      - name: Install dependencies
+    30	        run: npm ci
+    31	
+    32	      - name: Run shakedown test suite (N=10 runs)
+    33	        id: shakedown
+    34	        run: npm run test:shakedown:full
+    35	        continue-on-error: true
+    36	
+    37	      - name: Check shakedown result
+    38	        if: steps.shakedown.outcome == 'failure'
+    39	        run: |
+    40	          echo "::error::Shakedown test suite failed. See logs and artifacts above."
+    41	          exit 1
+    42	
+    43	      - name: Upload shakedown artifacts on failure
+    44	        if: failure()
+    45	        uses: actions/upload-artifact@v3
+    46	        with:
+    47	          name: shakedown-artifacts
+    48	          path: |
+    49	            audit/shakedown/
+    50	            tests/shakedown/
+    51	          retention-days: 30
+    52	
+    53	      - name: Parse and report determinism
+    54	        if: always()
+    55	        run: |
+    56	          if [ -f "audit/shakedown/SHK_DIGEST.txt" ]; then
+    57	            echo "## Shakedown Determinism Report" >> $GITHUB_STEP_SUMMARY
+    58	            echo "" >> $GITHUB_STEP_SUMMARY
+    59	            cat audit/shakedown/SHK_DIGEST.txt >> $GITHUB_STEP_SUMMARY
+    60	            echo "" >> $GITHUB_STEP_SUMMARY
+    61	          fi
+    62	          if [ -f "audit/shakedown/SHK_REPORT.md" ]; then
+    63	            echo "## Shakedown Scenario Results" >> $GITHUB_STEP_SUMMARY
+    64	            echo "" >> $GITHUB_STEP_SUMMARY
+    65	            head -50 audit/shakedown/SHK_REPORT.md >> $GITHUB_STEP_SUMMARY
+    66	            echo "" >> $GITHUB_STEP_SUMMARY
+    67	          fi
+    68	
+    69	      - name: Fail job if nondeterminism detected
+    70	        if: always() && hashFiles('audit/shakedown/SHK_DIFF.txt') != ''
+    71	        run: |
+    72	          echo "::error::Shakedown nondeterminism detected!"
+    73	          cat audit/shakedown/SHK_DIFF.txt
+    74	          exit 1
+    75	
+    76	      - name: Report success
+    77	        if: success()
+    78	        run: |
+    79	          echo "✓ Shakedown test suite passed"
+    80	          echo "✓ Determinism verified (N=10 runs, all digests identical)"
+    81	          echo "✓ All 32 scenarios completed"
+    82	          echo "✓ No nondeterminism detected"
+    83	
+    84	  docs-compliance:
+    85	    name: Verify Docs Compliance
+    86	    runs-on: ubuntu-latest
+    87	    timeout-minutes: 5
+    88	
+    89	    steps:
+    90	      - name: Checkout code
+    91	        uses: actions/checkout@v4
+    92	
+    93	      - name: Setup Node.js
+    94	        uses: actions/setup-node@v4
+    95	        with:
+    96	          node-version: '18'
+    97	          cache: 'npm'
+    98	
+    99	      - name: Install dependencies
+   100	        run: npm ci
+   101	
+   102	      - name: Run docs compliance validator
+   103	        run: npm run test -- tests/docs/docs_compliance.test.ts
+   104	        continue-on-error: true
+   105	
+   106	      - name: Check compliance result
+   107	        if: failure()
+   108	        run: |
+   109	          echo "::error::Docs compliance check failed."
+   110	          echo "Required files missing or contain forbidden phrases:"
+   111	          echo "- SECURITY.md"
+   112	          echo "- PRIVACY.md"
+   113	          echo "- RELIABILITY.md"
+   114	          echo "- SUPPORT.md"
+   115	          echo "- SHAKEDOWN.md"
+   116	          echo ""
+   117	          echo "Forbidden phrases: 'configure', 'setup', 'enable', 'please <action>'"
+   118	          exit 1
+   119	
+   120	  final-check:
+   121	    name: Final Validation
+   122	    runs-on: ubuntu-latest
+   123	    timeout-minutes: 5
+   124	    needs: [shakedown, docs-compliance]
+   125	    if: always()
+   126	
+   127	    steps:
+   128	      - name: Check results
+   129	        run: |
+   130	          if [ "${{ needs.shakedown.result }}" != "success" ]; then
+   131	            echo "::error::Shakedown job failed"
+   132	            exit 1
+   133	          fi
+   134	          if [ "${{ needs.docs-compliance.result }}" != "success" ]; then
+   135	            echo "::error::Docs compliance job failed"
+   136	            exit 1
+   137	          fi
+   138	          echo "✓ All checks passed"
+
+===== .github/workflows/supply-chain-audit.yml =====
+     1	name: supply-chain-audit
+     2	on:
+     3	  push:
+     4	    branches: [ "main", "release/**" ]
+     5	  pull_request:
+     6	    branches: [ "main", "release/**" ]
+     7	permissions:
+     8	  contents: read
+     9	  actions: read
+    10	  security-events: write
+    11	concurrency:
+    12	  group: supply-chain-${{ github.ref }}
+    13	  cancel-in-progress: true
+    14	jobs:
+    15	  pip-audit:
+    16	    runs-on: ubuntu-latest
+    17	    timeout-minutes: 10
+    18	    steps:
+    19	      - name: Checkout
+    20	        uses: actions/checkout@v4
+    21	
+    22	      - name: Set up Python
+    23	        uses: actions/setup-python@v5
+    24	        with:
+    25	          python-version: "3.11"
+    26	
+    27	      - name: Upgrade pip and install with security constraints
+    28	        run: |
+    29	          python -m pip install -U pip
+    30	          if [ -f constraints/security.txt ]; then
+    31	            python -m pip install -c constraints/security.txt -e ".[dev]" || true
+    32	          else
+    33	            python -m pip install -e ".[dev]" || true
+    34	          fi
+    35	
+    36	      - name: Install pip-audit
+    37	        run: python -m pip install pip-audit
+    38	
+    39	      - name: Run pip-audit (live env)
+    40	        run: pip-audit -l -f json -o audit-live.json
+    41	        continue-on-error: true
+    42	
+    43	      - name: Run pip-audit (declared inputs best-effort)
+    44	        run: |
+    45	          # Prefer explicit requirement files if present; else try pyproject.
+    46	          if ls requirements*.txt >/dev/null 2>&1; then
+    47	            # Merge findings across multiple req files; last run exit code used below.
+    48	            set -e
+    49	            for f in requirements*.txt; do
+    50	              pip-audit -r "$f" -f json -o "audit-$f.json" || export A_HAS_FINDINGS=1
+    51	            done
+    52	          elif [ -f pyproject.toml ]; then
+    53	            pip-audit -f json -o audit-pyproject.json || export A_HAS_FINDINGS=1
+    54	          else
+    55	            echo "No requirements*.txt or pyproject.toml found; skipping declared-inputs audit."
+    56	          fi
+    57	          exit ${A_HAS_FINDINGS:-0}
+    58	        continue-on-error: true
+    59	
+    60	      - name: Upload artifacts
+    61	        uses: actions/upload-artifact@v4
+    62	        with:
+    63	          name: pip-audit-json
+    64	          path: |
+    65	            audit-*.json
+    66	            audit-live.json
+    67	          if-no-files-found: ignore
+    68	
+    69	      - name: Gate on findings (fail if any audit file contains vulns)
+    70	        run: |
+    71	          has_vulns=0
+    72	          for f in audit-*.json audit-live.json; do
+    73	            [ -f "$f" ] || continue
+    74	            # non-empty array => vulnerabilities present
+    75	            if jq -e 'length > 0' "$f" >/dev/null 2>&1; then
+    76	              echo "::error file=$f::pip-audit reported vulnerabilities"
+    77	              has_vulns=1
+    78	            fi
+    79	          done
+    80	          exit $has_vulns
+
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:27:29Z
