@@ -1,3 +1,11 @@
+⚠️ **INTERNAL ENGINEERING DOCUMENT — NOT CUSTOMER-FACING**
+
+This document is an internal engineering index. For customer-facing documentation, refer to the main [README.md](README.md) and the following customer docs:
+- [SECURITY.md](SECURITY.md)
+- [FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md)
+
+---
+
 # Phase P1: Enterprise Safety Baseline - Complete Documentation Index
 
 **Status:** ✅ ALL PHASES DELIVERED & VERIFIED  

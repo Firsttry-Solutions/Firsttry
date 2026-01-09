@@ -223,6 +223,125 @@ This app:
 
 ---
 
+## Evidence Handling, Chain of Custody, and Sharing
+
+### What FirstTry Exports Contain
+
+**PDF Report**:
+- Title page with generation timestamp
+- Executive summary (project counts, issue statistics)
+- Snapshot timeline (Jira metadata over time)
+- Configuration details (workflows, permissions, fields)
+- Appendices (detailed project/issue data)
+
+**JSON Report**:
+- Structured snapshot objects (timestamp, projects, issues, metrics)
+- Metadata (source Jira instance, export date, snapshot ID)
+- Data hash (for integrity verification)
+
+**What is NOT in exports**:
+- Issue descriptions or comments (PII-minimizing design)
+- User email addresses (only metadata)
+- Passwords, API tokens, or secrets
+- Attachments or file content
+
+### Chain of Custody (Recommended Best Practices)
+
+**Storage**:
+- Export PDFs to customer-owned storage (not Atlassian)
+- Recommend: Encrypted USB drive, secure file share, or compliance evidence repository
+- Hash PDF files (SHA256) and store hash separately
+  ```bash
+  sha256sum FirstTry-Evidence-20260301.pdf > FirstTry-Evidence-20260301.pdf.sha256
+  ```
+
+**Access Control**:
+- Restrict PDF/JSON access to authorized personnel (audit team, legal, compliance)
+- Do NOT share on public forums or unencrypted email
+- Document who accessed evidence and when (manual log or system tracking)
+
+**Retention**:
+- Keep PDF exports for duration of audit/compliance requirements
+- After audit closure, follow data retention policy for audit evidence (typically 3-7 years)
+- Destroy evidence after retention period expires
+
+### Redaction Guidance
+
+**If audit requires redaction**:
+- FirstTry does NOT provide automatic redaction tools
+- Manual redaction: Use PDF editor or command-line tools (gs, mutool, pdftk) to redact fields
+- Recommend: Use "black box" redaction (not removal) to preserve evidence integrity
+- **After redaction**: Generate new hash; document redactions applied
+
+**What can typically be redacted** (audit-dependent):
+- Project names (if commercially sensitive)
+- Custom field labels (if internal process sensitive)
+- Specific issue counts (if competitive data sensitive)
+
+**What should NOT be redacted** (evidence integrity):
+- Timestamps (proves when event occurred)
+- Status/workflow data (proves control design)
+- Configuration metadata (proves configuration state)
+
+### Sharing Evidence with Auditors
+
+**Recommended Process**:
+
+1. **Package**:
+   - Export PDF and JSON from FirstTry
+   - Include this doc as context (AUDIT_USAGE_GUIDE.md + REVIEWER_FAQ.md)
+   - Include file hash (SHA256)
+
+2. **Deliver**:
+   - Email: Encrypted/password-protected attachment (if email required)
+   - File share: Secure file link (e.g., Dropbox File Request, Google Drive with expiration)
+   - USB: Physically secure USB drive (if highly sensitive)
+
+3. **Track Delivery**:
+   - Note delivery date and recipient
+   - Auditor acknowledges receipt and hash verification
+   - Document in chain of custody log
+
+4. **Verify Integrity** (Auditor's responsibility):
+   ```bash
+   # Auditor verifies hash matches
+   sha256sum -c FirstTry-Evidence-20260301.pdf.sha256
+   # Expected: "FirstTry-Evidence-20260301.pdf: OK"
+   ```
+
+### What NOT to Share
+
+❌ Do NOT share:
+- Access credentials to Jira or Atlassian account
+- API tokens or authentication keys
+- Internal FirstTry logs (may contain debug info)
+- Raw Forge Storage data (customers cannot access)
+- Unredacted PDFs if sensitive data present
+
+✅ OK to share:
+- PDF/JSON evidence exports
+- FACTS_AND_NONCLAIMS.md (authoritative fact statements)
+- SECURITY.md (security model overview)
+- READ_ONLY_ASSURANCE.md (verification of read-only design)
+
+### Legal Admissibility Note
+
+⚠️ **IMPORTANT**: FirstTry evidence is **NOT inherently "legally admissible"**. Legal admissibility is determined by courts, not tools.
+
+**What FirstTry evidence can support**:
+- Demonstrating governance process (evidence timeline shows what happened when)
+- Supporting compliance control assessment (evidence shows control design)
+- Auditor analysis (data for auditor interpretation)
+
+**What auditor/lawyer must determine**:
+- Whether evidence is admissible in your jurisdiction
+- What procedures were followed (chain of custody, handling, verification)
+- Whether evidence is relevant to dispute/audit in question
+
+**Recommendation**: For critical audits/disputes, engage legal counsel to assess admissibility before relying on evidence.
+
+---
+
 ## Contact
 
 **Security Incidents**: https://github.com/Global-domination/Firstry/security/advisories/new  
