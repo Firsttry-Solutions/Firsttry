@@ -1,0 +1,7 @@
+TIMESTAMP=2026-01-09T11:31:55Z
+Required docs:
+  ✅ docs/PRIVACY.md
+  ✅ docs/TERMS.md
+  ✅ docs/DATA_RETENTION.md
+  ✅ docs/SUPPORT.md
+  ✅ docs/UNINSTALL.md
