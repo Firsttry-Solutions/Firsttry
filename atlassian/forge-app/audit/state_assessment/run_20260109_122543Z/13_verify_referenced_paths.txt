@@ -1,0 +1,44 @@
+TIMESTAMP_START: 2026-01-09T12:27:43Z
+
+COMMAND:
+python3 - << "PY"
+import re, subprocess, os, sys
+refs = subprocess.run(["bash","-lc","grep -RInE '(docs/_tools/|scripts/)[^ \"\\x27)]+' .github/workflows 2>/dev/null || true"], capture_output=True, text=True).stdout
+paths=set()
+for line in refs.splitlines():
+  m=re.findall(r"(docs/_tools/[^ \"\\x27)]+|scripts/[^ \"\\x27)]+)", line)
+  for p in m: paths.add(p)
+print("REFERENCED_PATHS:")
+for p in sorted(paths): print(p)
+print("\nCHECK_RESULTS:")
+missing=[]
+for p in sorted(paths):
+  ok = (subprocess.run(["bash","-lc", f"test -f '{p}'"], capture_output=True).returncode==0)
+  print(f"{'PRESENT' if ok else 'MISSING'} {p}")
+  if not ok: missing.append(p)
+if missing:
+  print("\nFAIL_MISSING_REFERENCED_FILES:")
+  for p in missing: print(p)
+  sys.exit(2)
+PY
+
+OUTPUT:
+REFERENCED_PATHS:
+scripts/check_coverage_floor.sh
+scripts/docs_guardrails.js
+scripts/enterprise_e
+scripts/ft_audit_readonly.sh
+scripts/verify_bouncer_and_locks.sh
+
+CHECK_RESULTS:
+PRESENT scripts/check_coverage_floor.sh
+PRESENT scripts/docs_guardrails.js
+MISSING scripts/enterprise_e
+PRESENT scripts/ft_audit_readonly.sh
+PRESENT scripts/verify_bouncer_and_locks.sh
+
+FAIL_MISSING_REFERENCED_FILES:
+scripts/enterprise_e
+
+EXIT_CODE: 2
+TIMESTAMP_END: 2026-01-09T12:27:43Z

@@ -1,0 +1,48 @@
+TIMESTAMP_START: 2026-01-09T12:27:29Z
+
+COMMAND:
+ls -la .github/workflows 2>/dev/null || echo "NO_WORKFLOWS_DIR"
+
+OUTPUT:
+total 232
+drwxr-xrw-+ 2 vscode vscode  4096 Jan  9 12:27 .
+drwxr-xrw-+ 4 vscode vscode  4096 Jan  9 12:27 ..
+-rw-r--rw-  1 vscode vscode  5410 Jan  9 12:27 audit-hardened.yml
+-rw-r--rw-  1 vscode vscode 15061 Jan  9 12:27 audit.yml
+-rw-r--rw-  1 vscode vscode   502 Jan  9 12:27 ci-dev.yml
+-rw-r--rw-  1 vscode vscode  2457 Jan  9 12:27 ci-gate.yml
+-rw-r--rw-  1 vscode vscode  2473 Jan  9 12:27 ci-golden-cache.yml
+-rw-r--rw-  1 vscode vscode  6897 Jan  9 12:27 ci-hardened.yml
+-rw-r--rw-  1 vscode vscode  3765 Jan  9 12:27 ci-parity.yml
+-rw-r--rw-  1 vscode vscode 25159 Jan  9 12:27 ci.yml
+-rw-r--rw-  1 vscode vscode  1829 Jan  9 12:27 codeql.yml
+-rw-r--rw-  1 vscode vscode  1418 Jan  9 12:27 docs-credibility-guardrails.yml
+-rw-r--rw-  1 vscode vscode  4740 Jan  9 12:27 enterprise-acceptance.yml
+-rw-r--rw-  1 vscode vscode  1379 Jan  9 12:27 enterprise-audit.yml
+-rw-r--rw-  1 vscode vscode   378 Jan  9 12:27 firsttry-ci-parity.yml
+-rw-r--rw-  1 vscode vscode  1098 Jan  9 12:27 firsttry-ci-parity.yml.bak
+-rw-r--rw-  1 vscode vscode  1739 Jan  9 12:27 firsttry-ci.yml
+-rw-r--rw-  1 vscode vscode  2577 Jan  9 12:27 firsttry-proof.yml
+-rw-r--rw-  1 vscode vscode  1097 Jan  9 12:27 firsttry-quality.yml
+-rw-r--rw-  1 vscode vscode   436 Jan  9 12:27 firsttry-smoke.yml
+-rw-r--rw-  1 vscode vscode  3021 Jan  9 12:27 ft-fastpath.yml
+-rw-r--rw-  1 vscode vscode  2648 Jan  9 12:27 gates-safety-suite.yml
+-rw-r--rw-  1 vscode vscode  2343 Jan  9 12:27 hardening-guards.yml
+-rw-r--rw-  1 vscode vscode   924 Jan  9 12:27 json-lint.yml
+-rw-r--rw-  1 vscode vscode   858 Jan  9 12:27 licensing-ci.yml
+-rw-r--rw-  1 vscode vscode  1165 Jan  9 12:27 nightly-stability.yml
+-rw-r--rw-  1 vscode vscode  3277 Jan  9 12:27 node-ci.yml
+-rw-r--rw-  1 vscode vscode 23793 Jan  9 12:27 policy-gates.yml
+-rw-r--rw-  1 vscode vscode   800 Jan  9 12:27 publish.yml
+-rw-r--rw-  1 vscode vscode  1356 Jan  9 12:27 quality.yml
+-rw-r--rw-  1 vscode vscode   961 Jan  9 12:27 readonly-audit-example.yml
+-rw-r--rw-  1 vscode vscode   924 Jan  9 12:27 release-vsix.yml
+-rw-r--rw-  1 vscode vscode  2360 Jan  9 12:27 remote-cache-e2e.yml
+-rw-r--rw-  1 vscode vscode  8153 Jan  9 12:27 remote-cache-hardened.yml
+-rw-r--rw-  1 vscode vscode 10063 Jan  9 12:27 remote-cache.yml
+-rw-r--rw-  1 vscode vscode   629 Jan  9 12:27 sbom.yml
+-rw-r--rw-  1 vscode vscode  3908 Jan  9 12:27 shakedown.yml
+-rw-r--rw-  1 vscode vscode  2543 Jan  9 12:27 supply-chain-audit.yml
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:27:29Z
