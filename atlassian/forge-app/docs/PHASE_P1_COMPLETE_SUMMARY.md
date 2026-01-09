@@ -1,3 +1,12 @@
+⚠️ **INTERNAL ENGINEERING DOCUMENT — NOT CUSTOMER-FACING**
+
+This document describes Phase P1 implementation details. For customer-facing documentation, refer to:
+- [SECURITY.md](SECURITY.md) — Customer security documentation
+- [DATA_RETENTION.md](DATA_RETENTION.md) — Customer data retention policy  
+- [FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md) — Authoritative statement of facts
+
+---
+
 # Phase P1 Enterprise Safety Baseline - Complete Summary
 
 **Status:** ✅ ALL 5 PHASES DELIVERED & VERIFIED
@@ -300,14 +309,17 @@ Policy drift gate runs automatically on:
 
 ---
 
-## Compliance Certifications
+## Compliance Framework (Not Claiming Certification)
 
-Phase P1 addresses requirements for:
-- **GDPR**: Article 17 (Right to be Forgotten) via 90-day auto-deletion
-- **HIPAA**: Audit logs and encryption at rest
-- **SOC 2**: Automated controls and change management
-- **ISO 27001**: Access control and configuration management
-- **Privacy Shield**: Data minimization and retention limits
+⚠️ **IMPORTANT**: FirstTry does NOT claim SOC 2, ISO 27001, HIPAA, or GDPR compliance/certification. See [SECURITY.md](SECURITY.md) for explicit denials.
+
+Phase P1 implementation includes controls relevant to:
+- **GDPR**: Data retention (see [DATA_RETENTION.md](DATA_RETENTION.md)), data minimization  
+- **HIPAA**: Not applicable (FirstTry does not process PHI)
+- **SOC 2**: Automated controls and change management (supports evidence-gathering for SOC 2 evaluations)
+- **ISO 27001**: Access control and configuration management (supports evidence-gathering for ISO evaluations)
+
+**For details on what FirstTry does NOT claim**, see [FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md#explicit-non-claims).
 
 ---
 

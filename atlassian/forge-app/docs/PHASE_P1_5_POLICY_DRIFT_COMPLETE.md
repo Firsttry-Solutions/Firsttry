@@ -1,3 +1,11 @@
+⚠️ **INTERNAL ENGINEERING DOCUMENT — NOT CUSTOMER-FACING**
+
+This document describes Phase P1.5 implementation details. For customer-facing documentation, refer to:
+- [SECURITY.md](SECURITY.md) — Customer security documentation
+- [FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md) — Authoritative statement of facts
+
+---
+
 # Phase P1.5: Policy Drift CI Gates - COMPLETE
 
 **Status:** ✅ DELIVERED & VERIFIED
