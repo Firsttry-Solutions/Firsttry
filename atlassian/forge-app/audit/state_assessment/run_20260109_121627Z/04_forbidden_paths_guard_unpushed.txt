@@ -1,0 +1,10 @@
+TIMESTAMP_START: 2026-01-09T12:17:11Z
+
+COMMAND:
+git diff --name-only origin/main..HEAD | grep -E "^(atlassian/forge-app/src/|atlassian/forge-app/tests/|atlassian/forge-app/manifest\.yml|package(-lock)?\.json|atlassian/forge-app/package(-lock)?\.json)" && echo "FAIL: forbidden paths touched in unpushed commits" && exit 1 || echo "PASS: no forbidden paths in unpushed commits"
+
+OUTPUT:
+PASS: no forbidden paths in unpushed commits
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:17:11Z
