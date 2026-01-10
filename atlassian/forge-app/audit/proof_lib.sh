@@ -6,7 +6,7 @@
 ################################################################################
 write_marker() {
   local marker_file="$1"
-  local content="$2"
+  local content="${2:-}"
   if [[ -z "$content" ]]; then
     date -u '+%Y-%m-%d %H:%M:%S UTC' > "$marker_file"
   else
