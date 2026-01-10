@@ -1,0 +1,240 @@
+PHASE_6_V2_CORRECTIONS_LOG.md:149:- Line 312: JSDoc comment (added scope explanation)
+PHASE_6_V2_CORRECTIONS_LOG.md:195:1. **Updated header comment:**
+PHASE_6_V2_CORRECTIONS_LOG.md:259:- Line 1-7: Header comment
+PHASE_6_V2_CORRECTIONS_LOG.md:260:- Line 23-26: Export handler comment
+P2_DELIVERY_SUMMARY.md:252:1. Update the confidence level assignment logic
+FINAL_TEST_SUITE_GREEN.md:41:   - Updated comment: "no missing_data impact" → "no missing_data scope" (line 505)
+FINAL_TEST_SUITE_GREEN.md:44:   - Updated documentation comment: "what changed, not why or impact" → "what changed, not why or scope" (line 12)
+FINAL_TEST_SUITE_GREEN.md:45:   - Updated comment: "no missing_data impact" → "no missing_data scope" (line 153)
+FINAL_TEST_SUITE_GREEN.md:46:   - Updated comment header: "MISSING DATA IMPACT" → "MISSING DATA SCOPE" (line 157)
+FINAL_TEST_SUITE_GREEN.md:144:- Fixed comment language to be observation-based instead of prescriptive
+FINAL_TEST_SUITE_GREEN.md:146:- Only comments and documentation strings modified
+FINAL_TEST_SUITE_GREEN.md:192:1. ✅ No production logic changed (only comments/documentation)
+PHASE5_STEP4_COMPLETION.md:161:11. ✅ State transitions (AUTO_12H → AUTO_24H) work correctly
+PHASE5_STEP5_ADMIN_UI_DESIGN.md:101:- On click: POST to ?action=generateNow
+PHASE5_STEP5_ADMIN_UI_DESIGN.md:226:POST to admin page handler with ?action=generateNow
+src/admin/language_safety_guard.ts:69:  'transition',
+src/admin/audit_readiness_page.tsx:527:  transition: all 0.2s;
+src/admin/phase5_admin_page.ts:37: * - POST with action=generateNow: Call handleManualTrigger and reload
+src/admin/phase5_admin_page.ts:1044:      transition: background 0.2s;
+src/admin/phase5_admin_page.ts:1076:      transition: all 0.2s;
+src/admin/phase5_admin_page.ts:1137:          method: 'POST',
+src/gadget-ui/src/styles.css:129:    transition: box-shadow 0.2s ease;
+src/gadget-ui/src/styles.css:317:    transition: background 0.15s ease;
+src/gadget-ui/src/styles.css:480:    transition: all 0.2s ease;
+src/phase9_5f/silence_indicator.ts:66: * Silence history entry - tracks state transitions
+src/phase9_5f/silence_indicator.ts:76: * Silence timeline - all state transitions
+src/phase9_5f/silence_indicator.ts:290: * Track silence state transitions over time
+src/phase9_5f/silence_indicator.ts:405:    return `<div class="silence-timeline" style="padding: 16px; color: #626f86;">No state transitions recorded</div>`;
+src/runtime_guards/assert_read_only.ts:7:  const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+src/gadget-ui/index.html:214:                <button class="btn primary" id="copy-summary-btn" onclick="window.copySummary()" style="padding: 8px 16px; border: 1px solid #0052cc; background: #0052cc; color: white; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Copy Summary to Clipboard</button>
+src/gadget-ui/index.html:215:                <button class="btn" id="download-json-btn" onclick="window.downloadJSON()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download JSON</button>
+src/gadget-ui/index.html:216:                <button class="btn" id="download-csv-btn" onclick="window.downloadCSV()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download CSV</button>
+src/entitlements/entitlement_engine.ts:48:  assignedAtISO: string;
+src/entitlements/entitlement_engine.ts:68: * @param planId The plan to assign
+src/entitlements/entitlement_engine.ts:72:  // In production, plan assignment would be via admin-only Forge storage
+src/entitlements/entitlement_engine.ts:77:    assignedAtISO: new Date().toISOString(),
+src/auth/oauth_handler.ts:102:    // 1. POST to https://api.atlassian.com/oauth/token
+src/gadget-ui/src/main.ts:800:                        Object.assign(result, flattened);
+src/gadget-ui/src/main.ts:807:                Object.assign(result, flattened);
+src/phase6/snapshot_capture.ts:215:    const response = await this.callJiraAPI('/rest/api/3/workflows?expand=transitions');
+src/phase6/snapshot_capture.ts:228:    const response = await this.callJiraAPI('/rest/api/3/workflows?expand=transitions');
+src/phase6/snapshot_capture.ts:351:      endpoints.push('/rest/api/3/workflows?expand=transitions');
+src/phase9/procurement_packet.ts:147:        'Issue comments or discussion',
+src/phase5_report_contract.ts:138: * If a sentence answers "so what?" → DELETE IT.
+src/phase5_report_contract.ts:221: * If any of these assignments fail to compile, it means the type contract is working.
+src/phase5_report_contract.ts:234:  T[K] extends { transition?: any } ? 'FORBIDDEN: transition field' :
+src/phase5_report_contract.ts:239:// This assignment will SUCCEED (empty never object means no forbidden keys)
+src/disclosure_hardening_gaps_a_f.ts:516:    'transition_count',
+src/resolvers/config_visibility_resolver.ts:14: * - No POST/PUT/PATCH/DELETE to Jira
+src/ingest.ts:6: * Endpoint: POST /webhook/ingest
+src/resolvers/governance_status.ts:14: * NOTE: Contract version comments are documentation-only.
+src/coverage_matrix.ts:6: * - % issues never transitioned (no status changes)
+src/coverage_matrix.ts:84:  issues_never_transitioned_disclosure: DataQualityIndicator;
+src/coverage_matrix.ts:299:    issues_never_transitioned_disclosure: {
+src/coverage_matrix.ts:311:          ? `${matrix.projectKey}: Workflow analysis shows zero because Phase 4 has only been observing for ${observationWindowDays} day(s). Status transitions will be measured in Phase 5+.`
+src/coverage_matrix.ts:312:          : `${matrix.projectKey}: ${matrix.issuesNeverTransitioned} of ${matrix.issuesTotal} issues (${matrix.issuesNeverTransitionedPercent}%) have never transitioned between statuses.`,
+PHASE_4_GAPS_A_F_ENFORCEMENT.md:506:    'transition_count', 'transition_counts',
+PHASE_4_GAPS_A_F_ENFORCEMENT.md:549:| GAP F.3 | Reject transition_count | ✓ |
+PHASE_4_GAPS_A_F_ENFORCEMENT.md:559:- ❌ Cannot sneak transition_count into metric
+PHASE_4_GAPS_A_F_ENFORCEMENT.md:601:**Prevents:** Missing fields at runtime, invalid state transitions
+audit/state_assessment/run_20260109_113220Z/08_static.txt:2:Searching for POST/PUT/DELETE/PATCH methods in src/...
+audit/state_assessment/run_20260109_113220Z/08_static.txt:9:src/runtime_guards/assert_read_only.ts:7:  const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+audit/state_assessment/run_20260109_113220Z/08_static.txt:25:src/auth/oauth_handler.ts:102:    // 1. POST to https://api.atlassian.com/oauth/token
+audit/state_assessment/run_20260109_113220Z/08_static.txt:46:src/ingest.ts:6: * Endpoint: POST /webhook/ingest
+audit/state_assessment/run_20260109_113220Z/08_static.txt:47:src/admin/phase5_admin_page.ts:37: * - POST with action=generateNow: Call handleManualTrigger and reload
+audit/state_assessment/run_20260109_113220Z/08_static.txt:48:src/admin/phase5_admin_page.ts:1137:          method: 'POST',
+audit/state_assessment/run_20260109_113220Z/08_static.txt:55:src/resolvers/config_visibility_resolver.ts:14: * - No POST/PUT/PATCH/DELETE to Jira
+audit/state_assessment/run_20260109_113220Z/08_static.txt:56:src/phase5_report_contract.ts:138: * If a sentence answers "so what?" → DELETE IT.
+audit/state_assessment/run_20260109_122543Z/16_static_http_method_scan.txt:4:grep -RIn "POST\\|PUT\\|DELETE\\|PATCH" src/ --include="*.ts" --include="*.tsx" || true
+audit/state_assessment/run_20260109_122543Z/16_static_http_method_scan.txt:12:src/runtime_guards/assert_read_only.ts:7:  const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+audit/state_assessment/run_20260109_122543Z/16_static_http_method_scan.txt:28:src/auth/oauth_handler.ts:102:    // 1. POST to https://api.atlassian.com/oauth/token
+audit/state_assessment/run_20260109_122543Z/16_static_http_method_scan.txt:49:src/ingest.ts:6: * Endpoint: POST /webhook/ingest
+audit/state_assessment/run_20260109_122543Z/16_static_http_method_scan.txt:50:src/admin/phase5_admin_page.ts:37: * - POST with action=generateNow: Call handleManualTrigger and reload
+audit/state_assessment/run_20260109_122543Z/16_static_http_method_scan.txt:51:src/admin/phase5_admin_page.ts:1137:          method: 'POST',
+audit/state_assessment/run_20260109_122543Z/16_static_http_method_scan.txt:58:src/resolvers/config_visibility_resolver.ts:14: * - No POST/PUT/PATCH/DELETE to Jira
+audit/state_assessment/run_20260109_122543Z/16_static_http_method_scan.txt:59:src/phase5_report_contract.ts:138: * If a sentence answers "so what?" → DELETE IT.
+PHASE5_STEP5_COMPLETION_REPORT.txt:101:  → POST ?action=generateNow: handleGenerateNowRequest() → handleManualTrigger()
+PHASE5_STEP5_COMPLETION_REPORT.txt:337:POST-DEPLOYMENT VERIFICATION:
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:176:+Searching for POST/PUT/DELETE/PATCH methods in src/...
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:183:+src/runtime_guards/assert_read_only.ts:7:  const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:199:+src/auth/oauth_handler.ts:102:    // 1. POST to https://api.atlassian.com/oauth/token
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:220:+src/ingest.ts:6: * Endpoint: POST /webhook/ingest
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:221:+src/admin/phase5_admin_page.ts:37: * - POST with action=generateNow: Call handleManualTrigger and reload
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:222:+src/admin/phase5_admin_page.ts:1137:          method: 'POST',
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:229:+src/resolvers/config_visibility_resolver.ts:14: * - No POST/PUT/PATCH/DELETE to Jira
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:230:+src/phase5_report_contract.ts:138: * If a sentence answers "so what?" → DELETE IT.
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:339:+| `08_static.txt` | 8 | Static scan for write operations | ✅ No POST/PUT/DELETE/PATCH patterns |
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:435:+**Search**: `grep -RIn "(POST|PUT|DELETE|PATCH)" src/ --include="*.ts" --include="*.tsx"`
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:439:+**Interpretation**: No explicit POST/PUT/DELETE/PATCH method calls detected in source code. Consistent with read-only design claims.
+audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:552:+- [x] Static scan: no POST/PUT/DELETE/PATCH patterns
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:45:audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:2040:    40	          # Fail if any POST/PUT/DELETE/PATCH found with requestJira
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:46:audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:2041:    41	          if grep -r "requestJira.*POST\|requestJira.*PUT\|requestJira.*DELETE\|requestJira.*PATCH" src/; then
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:1:PHASE_6_V2_CORRECTIONS_LOG.md:149:- Line 312: JSDoc comment (added scope explanation)
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:2:PHASE_6_V2_CORRECTIONS_LOG.md:195:1. **Updated header comment:**
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:3:PHASE_6_V2_CORRECTIONS_LOG.md:259:- Line 1-7: Header comment
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:4:PHASE_6_V2_CORRECTIONS_LOG.md:260:- Line 23-26: Export handler comment
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:5:P2_DELIVERY_SUMMARY.md:252:1. Update the confidence level assignment logic
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:6:FINAL_TEST_SUITE_GREEN.md:41:   - Updated comment: "no missing_data impact" → "no missing_data scope" (line 505)
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:7:FINAL_TEST_SUITE_GREEN.md:44:   - Updated documentation comment: "what changed, not why or impact" → "what changed, not why or scope" (line 12)
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:8:FINAL_TEST_SUITE_GREEN.md:45:   - Updated comment: "no missing_data impact" → "no missing_data scope" (line 153)
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:9:FINAL_TEST_SUITE_GREEN.md:46:   - Updated comment header: "MISSING DATA IMPACT" → "MISSING DATA SCOPE" (line 157)
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:10:FINAL_TEST_SUITE_GREEN.md:144:- Fixed comment language to be observation-based instead of prescriptive
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:11:FINAL_TEST_SUITE_GREEN.md:146:- Only comments and documentation strings modified
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:12:FINAL_TEST_SUITE_GREEN.md:192:1. ✅ No production logic changed (only comments/documentation)
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:13:PHASE5_STEP4_COMPLETION.md:161:11. ✅ State transitions (AUTO_12H → AUTO_24H) work correctly
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:14:PHASE5_STEP5_ADMIN_UI_DESIGN.md:101:- On click: POST to ?action=generateNow
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:15:PHASE5_STEP5_ADMIN_UI_DESIGN.md:226:POST to admin page handler with ?action=generateNow
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:16:src/admin/language_safety_guard.ts:69:  'transition',
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:17:src/admin/audit_readiness_page.tsx:527:  transition: all 0.2s;
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:18:src/admin/phase5_admin_page.ts:37: * - POST with action=generateNow: Call handleManualTrigger and reload
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:19:src/admin/phase5_admin_page.ts:1044:      transition: background 0.2s;
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:20:src/admin/phase5_admin_page.ts:1076:      transition: all 0.2s;
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:21:src/admin/phase5_admin_page.ts:1137:          method: 'POST',
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:22:src/gadget-ui/src/styles.css:129:    transition: box-shadow 0.2s ease;
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:23:src/gadget-ui/src/styles.css:317:    transition: background 0.15s ease;
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:24:src/gadget-ui/src/styles.css:480:    transition: all 0.2s ease;
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:25:src/phase9_5f/silence_indicator.ts:66: * Silence history entry - tracks state transitions
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:26:src/phase9_5f/silence_indicator.ts:76: * Silence timeline - all state transitions
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:27:src/phase9_5f/silence_indicator.ts:290: * Track silence state transitions over time
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:28:src/phase9_5f/silence_indicator.ts:405:    return `<div class="silence-timeline" style="padding: 16px; color: #626f86;">No state transitions recorded</div>`;
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:29:src/runtime_guards/assert_read_only.ts:7:  const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:30:src/gadget-ui/index.html:214:                <button class="btn primary" id="copy-summary-btn" onclick="window.copySummary()" style="padding: 8px 16px; border: 1px solid #0052cc; background: #0052cc; color: white; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Copy Summary to Clipboard</button>
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:31:src/gadget-ui/index.html:215:                <button class="btn" id="download-json-btn" onclick="window.downloadJSON()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download JSON</button>
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:32:src/gadget-ui/index.html:216:                <button class="btn" id="download-csv-btn" onclick="window.downloadCSV()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download CSV</button>
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:33:src/entitlements/entitlement_engine.ts:48:  assignedAtISO: string;
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:34:src/entitlements/entitlement_engine.ts:68: * @param planId The plan to assign
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:35:src/entitlements/entitlement_engine.ts:72:  // In production, plan assignment would be via admin-only Forge storage
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:36:src/entitlements/entitlement_engine.ts:77:    assignedAtISO: new Date().toISOString(),
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:37:src/auth/oauth_handler.ts:102:    // 1. POST to https://api.atlassian.com/oauth/token
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:38:src/gadget-ui/src/main.ts:800:                        Object.assign(result, flattened);
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:39:src/gadget-ui/src/main.ts:807:                Object.assign(result, flattened);
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:40:src/phase6/snapshot_capture.ts:215:    const response = await this.callJiraAPI('/rest/api/3/workflows?expand=transitions');
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:41:src/phase6/snapshot_capture.ts:228:    const response = await this.callJiraAPI('/rest/api/3/workflows?expand=transitions');
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:42:src/phase6/snapshot_capture.ts:351:      endpoints.push('/rest/api/3/workflows?expand=transitions');
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:43:src/phase9/procurement_packet.ts:147:        'Issue comments or discussion',
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:44:src/phase5_report_contract.ts:138: * If a sentence answers "so what?" → DELETE IT.
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:45:src/phase5_report_contract.ts:221: * If any of these assignments fail to compile, it means the type contract is working.
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:46:src/phase5_report_contract.ts:234:  T[K] extends { transition?: any } ? 'FORBIDDEN: transition field' :
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:47:src/phase5_report_contract.ts:239:// This assignment will SUCCEED (empty never object means no forbidden keys)
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:48:src/disclosure_hardening_gaps_a_f.ts:516:    'transition_count',
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:49:src/resolvers/config_visibility_resolver.ts:14: * - No POST/PUT/PATCH/DELETE to Jira
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:50:src/ingest.ts:6: * Endpoint: POST /webhook/ingest
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:51:src/resolvers/governance_status.ts:14: * NOTE: Contract version comments are documentation-only.
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:52:src/coverage_matrix.ts:6: * - % issues never transitioned (no status changes)
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:53:src/coverage_matrix.ts:84:  issues_never_transitioned_disclosure: DataQualityIndicator;
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:54:src/coverage_matrix.ts:299:    issues_never_transitioned_disclosure: {
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:55:src/coverage_matrix.ts:311:          ? `${matrix.projectKey}: Workflow analysis shows zero because Phase 4 has only been observing for ${observationWindowDays} day(s). Status transitions will be measured in Phase 5+.`
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:56:src/coverage_matrix.ts:312:          : `${matrix.projectKey}: ${matrix.issuesNeverTransitioned} of ${matrix.issuesTotal} issues (${matrix.issuesNeverTransitionedPercent}%) have never transitioned between statuses.`,
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:57:PHASE_4_GAPS_A_F_ENFORCEMENT.md:506:    'transition_count', 'transition_counts',
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:58:PHASE_4_GAPS_A_F_ENFORCEMENT.md:549:| GAP F.3 | Reject transition_count | ✓ |
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:59:PHASE_4_GAPS_A_F_ENFORCEMENT.md:559:- ❌ Cannot sneak transition_count into metric
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:60:PHASE_4_GAPS_A_F_ENFORCEMENT.md:601:**Prevents:** Missing fields at runtime, invalid state transitions
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:61:audit/state_assessment/run_20260109_113220Z/08_static.txt:2:Searching for POST/PUT/DELETE/PATCH methods in src/...
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:62:audit/state_assessment/run_20260109_113220Z/08_static.txt:9:src/runtime_guards/assert_read_only.ts:7:  const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:63:audit/state_assessment/run_20260109_113220Z/08_static.txt:25:src/auth/oauth_handler.ts:102:    // 1. POST to https://api.atlassian.com/oauth/token
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:64:audit/state_assessment/run_20260109_113220Z/08_static.txt:46:src/ingest.ts:6: * Endpoint: POST /webhook/ingest
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:65:audit/state_assessment/run_20260109_113220Z/08_static.txt:47:src/admin/phase5_admin_page.ts:37: * - POST with action=generateNow: Call handleManualTrigger and reload
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:66:audit/state_assessment/run_20260109_113220Z/08_static.txt:48:src/admin/phase5_admin_page.ts:1137:          method: 'POST',
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:67:audit/state_assessment/run_20260109_113220Z/08_static.txt:55:src/resolvers/config_visibility_resolver.ts:14: * - No POST/PUT/PATCH/DELETE to Jira
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:68:audit/state_assessment/run_20260109_113220Z/08_static.txt:56:src/phase5_report_contract.ts:138: * If a sentence answers "so what?" → DELETE IT.
+audit/proof_runs/run_20260110_121856/code_write_surface_scan.txt:69:audit/state_assessment/run_20260109_122543Z/16_static_http_method_scan.txt:4:grep -RIn "POST\\|PUT\\|DELETE\\|PATCH" src/ --include="*.ts" --include="*.tsx" || true
+scripts/verify_runtime_ingestion.md:94:curl -X POST \
+scripts/verify_runtime_ingestion.md:136:curl -X POST \
+scripts/verify_runtime_ingestion.md:238:### "400 Bad Request" on POST /webhook/ingest
+scripts/verify_runtime_ingestion.sh:176:RESPONSE1=$(curl -s -X POST \
+scripts/verify_runtime_ingestion.sh:204:RESPONSE2=$(curl -s -X POST \
+PHASE_6_V2_RESUBMISSION_SUMMARY.md:54:- Export comment updated
+PHASE_7_UI_INTEGRATION_COMPLETION_SUMMARY.md:144:- [x] JSDoc comments on all functions
+PHASE_7_STATUS.txt:104:  ✅ JSDoc comments on all functions
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:1426:   222	            const comment = `## Coverage Report - ${process.env.TEST_TIER} Tier
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:1438:   234	              body: comment
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:1474:   270	              core.info('No critical coverage JSON found; skipping comment.');
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:1491:   287	            const comments = await github.paginate(
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:1495:   291	            const existing = comments.find(c => (c.body || '').includes(MARKER));
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:1498:   294	              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: md });
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:1499:   295	              core.info('Updated existing coverage comment.');
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:1502:   298	              core.info('Created new coverage comment.');
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:2040:    40	          # Fail if any POST/PUT/DELETE/PATCH found with requestJira
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:2041:    41	          if grep -r "requestJira.*POST\|requestJira.*PUT\|requestJira.*DELETE\|requestJira.*PATCH" src/; then
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:2112:   112	            const comment = `## 🏢 Enterprise Acceptance Test Results\n\n${summary}\n\n---\n📦 **Evidence Bundle**: Download from workflow artifacts`;
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:2118:   118	              body: comment
+PHASE_7_V2_DELIVERY_SUMMARY.md:53:- `detectScopeChanges()` for missing_data visibility transitions
+PHASE_7_V2_DELIVERY_SUMMARY.md:239:✅ **DATA_VISIBILITY_CHANGE** (missing_data transition)  
+PHASE_7_V2_DELIVERY_SUMMARY.md:421:- ✅ All functions documented (JSDoc comments)
+PHASE_6_V2_QUICK_REFERENCE.md:353:- Review source code comments
+package.json:29:  "_comment": "Forge CLI packages (@forge/api, @forge/ui) require authentication to private Atlassian registry. Installed via 'forge create' workflow in production. See docs/ATLASSIAN_DUAL_LAYER_SPEC.md for installation instructions.",
+PHASE_6_V2_FINAL_DELIVERY_REPORT.md:271:curl -X POST http://localhost:3000/rest/api/1/evidence/export
+PHASE_7_COMPLETE_IMPLEMENTATION.md:262:- DATA_VISIBILITY_CHANGE: missing_data transitions
+PHASE_7_COMPLETE_IMPLEMENTATION.md:321:- ✅ JSDoc comments on all functions
+PHASE5_STEP6_COMPLETION_REPORT.txt:221:- [x] Inline code comments
+PHASE5_STEP6_COMPLETION_REPORT.txt:453:- Inline code comments
+PHASE5_STEP4_IMPLEMENTATION_SUMMARY.md:207:11. ✅ State transitions work (AUTO_12H → AUTO_24H)
+PHASE_7_UI_INTEGRATION_GUIDE.md:229:- DATA_VISIBILITY_CHANGE: Visibility transitions
+PHASE_7_UI_INTEGRATION_GUIDE.md:424:- ✅ JSDoc comments on all functions
+docs/CURRENT_STATE_AND_READINESS_REPORT.md:68:| `08_static.txt` | 8 | Static scan for write operations | ✅ No POST/PUT/DELETE/PATCH patterns |
+docs/CURRENT_STATE_AND_READINESS_REPORT.md:164:**Search**: `grep -RIn "(POST|PUT|DELETE|PATCH)" src/ --include="*.ts" --include="*.tsx"`
+docs/CURRENT_STATE_AND_READINESS_REPORT.md:168:**Interpretation**: No explicit POST/PUT/DELETE/PATCH method calls detected in source code. Consistent with read-only design claims.
+docs/CURRENT_STATE_AND_READINESS_REPORT.md:281:- [x] Static scan: no POST/PUT/DELETE/PATCH patterns
+docs/OUTPUT_CONTRACT.md:235:1. **Export Request:** `POST /export?id=snap123&format=json&acknowledge_degradation=true`
+docs/HEARTBEAT_DELIVERY_SUMMARY.md:398:3. Code comments in `src/ops/heartbeat_recorder.ts` and `src/gadget-ui/index.html`
+docs/PROOF_GRADE_STATE_REAUDIT_REPORT.md:52:| 16_static_http_method_scan.txt | Grep: POST/PUT/DELETE/PATCH in src/ |
+docs/SCOPES_JUSTIFICATION.md:15:| `read:jira-work` | Read-only access to Jira project/issue metadata | Required to ingest Jira metadata (project names/keys, issue type definitions, status definitions, field schema definitions, issue created/updated timestamps) for governance evidence generation. Does NOT access issue content, comments, attachments, custom field values, or user personal data. |
+docs/MARKETPLACE_REVIEWER_NO_BACKFORTH_AUDIT.md:77:    2. Explicit "Never Stored" list (issue descriptions/comments, emails, attachments, custom field values, tokens, IPs). [docs/DATA_RETENTION.md section "What Data Is NOT Stored"]
+docs/HEARTBEAT_VERIFICATION.md:377:- [x] `heartbeat_recorder.ts` has doc comments on every function
+docs/HEARTBEAT_VERIFICATION.md:378:- [x] `index.html` gadget has implementation comments
+docs/INCIDENT_RESPONSE.md:79:5. **Communication**: Via GitHub issue comments
+docs/INCIDENT_RESPONSE.md:123:**Channels**: Issue comments, security advisories, release notes  
+docs/INCIDENT_RESPONSE.md:130:**Incident Updates**: GitHub issue comments only  
+docs/INCIDENT_RESPONSE.md:243:- Issue descriptions or comments (PII-minimizing design)
+docs/FORGE_DEPLOYMENT_READINESS_AUDIT.md:194:### === PHASE 7: POST-DEPLOY SMOKE TESTS ===
+docs/FORGE_DEPLOYMENT_READINESS_AUDIT.md:212:grep -RIn "POST|PUT|DELETE|PATCH" src/ --include="*.ts" --include="*.tsx"
+docs/FORGE_DEPLOYMENT_READINESS_AUDIT.md:218:- **HTTP writes**: Zero POST/PUT/DELETE/PATCH operations to Jira detected
+docs/PHASE_P1_5_POLICY_DRIFT_COMPLETE.md:331:- [x] Text files have documented comments
+docs/PHASE_9_5D_SPEC.md:308:- ✅ Reason codes assigned (first_install, first_snapshot, first_evidence)
+docs/RELIABILITY.md:94:**Action**: Create snapshots and exports to populate metrics. Health will transition to HEALTHY/DEGRADED/UNHEALTHY once enough data exists.
+docs/RELIABILITY.md:203:4. **Expected transition**: UNKNOWN → HEALTHY or UNHEALTHY (based on actual SLIs)
+docs/PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md:254:- [x] Comprehensive JSDoc comments
+docs/PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md:338:- [x] Comprehensive JSDoc comments
+docs/ADMIN_GUIDE.md:21:- ❌ Does NOT access issue descriptions, comments, or attachments
+docs/ADMIN_GUIDE.md:266:**Q: Does FirstTry access issue descriptions or comments?**  
+docs/DATA_HANDLING.md:13:- **Issue type definitions**: Field schemas, required fields, transitions
+docs/DATA_HANDLING.md:15:- **Issue metadata**: Issue key, created date, updated date, assignee ID, reporter ID, current status
+docs/DATA_HANDLING.md:20:- ❌ Issue descriptions or comments
+docs/DATA_RETENTION.md:41:- Issue descriptions or comments (actual content)
+docs/PHASE_P1_PROGRESS.md:161:- ✅ **DOC (Code Truth):** Test files document actual behavior; comments explain "why"
+docs/PHASE_7_V2_TESTPLAN.md:118:    ✓ will assign canonical_hash to each event
+docs/PHASE_7_V2_TESTPLAN.md:169:      - Skip: comments explaining the rule
+docs/EXTERNAL_APIS.md:29:- The codebase contains a comment describing the standard OAuth token endpoint (`https://api.atlassian.com/oauth/token`) in [src/auth/oauth_handler.ts](src/auth/oauth_handler.ts#L102), however that POST is currently only documented in comments and the refresh function is a placeholder (no network request is issued). Per the allowlist rules, commented-only destinations are not included as outbound entries.
+docs/EXTERNAL_APIS.md:150:  - This is a **comment only** describing future possibility, not actual code
+docs/EXTERNAL_APIS.md:163:3. Contains comment about `POST to https://api.atlassian.com/oauth/token` but this is:
+docs/REGENERATION_GUARANTEES.md:157:2. Error code assigned (HASH_MISMATCH, MISSING_EVIDENCE, etc.)
+docs/PHASE_9_5B_DELIVERY.md:88:   - ✅ Correct reason code assignment
+docs/PHASE_9_5B_DELIVERY.md:179:✓ TC-9.5-B-4.1 - Reason codes assigned correctly
+docs/PHASE_9_5B_DELIVERY.md:478:- [x] TSDoc comments in blind_spot_map.ts
+docs/PHASE_9_5B_DELIVERY.md:479:- [x] JSDoc comments in blind_spot_page.tsx
+PHASE_4_FINAL_VERIFICATION_CHECKLIST.md:78:  - [x] Reject transition_count
+PHASE_4_FINAL_VERIFICATION_CHECKLIST.md:239:- [x] transition_count / transition_counts
+PHASE_4_FINAL_VERIFICATION_CHECKLIST.md:251:- [x] Cannot sneak transition_count (recursive detector)
+PHASE_4_FINAL_VERIFICATION_CHECKLIST.md:468:- [x] No future TODO comments
+docs/P4_P5_COMPLETE_REFERENCE.md:700:**Issue:** `Type 'X' is not assignable to type 'Y'`  

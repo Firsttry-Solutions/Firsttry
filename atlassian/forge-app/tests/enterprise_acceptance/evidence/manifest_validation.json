@@ -9,8 +9,8 @@
       "phase6-daily-snap-fn",
       "phase6-weekly-snap-fn",
       "token-refresh-job-fn",
-      "config-visibility-scheduler-fn",
-      "perf-signals-scheduler-fn",
+      "config-vis-sched-fn",
+      "perf-signals-sched-fn",
       "phase4-scheduler-fn",
       "status-resolver-fn"
     ],
@@ -21,21 +21,11 @@
         "handler": "scheduled/phase5_scheduler.run"
       },
       {
-        "key": "config-visibility-scheduler-fn",
-        "handler": "scheduled/config_visibility_scheduler.run"
-      },
-      {
-        "key": "perf-signals-scheduler-fn",
-        "handler": "scheduled/perf_signals_scheduler.run"
-      },
-      {
         "key": "phase4-scheduler-fn",
         "handler": "scheduled/phase4_scheduler.runDaily"
       }
     ],
     "handler_path_phase5-scheduler-fn": "scheduled/phase5_scheduler/run.ts",
-    "handler_path_config-visibility-scheduler-fn": "scheduled/config_visibility_scheduler/run.ts",
-    "handler_path_perf-signals-scheduler-fn": "scheduled/perf_signals_scheduler/run.ts",
     "handler_path_phase4-scheduler-fn": "scheduled/phase4_scheduler/runDaily.ts",
     "permissions_scopes": [
       "storage:app",

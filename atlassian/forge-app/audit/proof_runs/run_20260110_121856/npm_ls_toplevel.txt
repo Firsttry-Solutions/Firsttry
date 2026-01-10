@@ -1,0 +1,11 @@
+@firstry/forge-app@2.14.0 /workspaces/Firsttry/atlassian/forge-app
+├── @forge/api@6.4.2
+├── @types/node@20.19.27
+├── @types/react@18.3.27
+├── @vitest/ui@4.0.16
+├── glob@13.0.0
+├── typescript@5.9.3
+├── uuid@13.0.0
+├── vitest@4.0.16
+└── yaml@2.8.2
+
