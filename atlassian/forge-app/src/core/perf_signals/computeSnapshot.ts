@@ -101,14 +101,15 @@ export function computePerfSignalsSnapshot(
   const snapshot: PerfSignalsSnapshot = {
     evaluatedAtISO: nowISO,
 
-    scheduler: schedulerData || {
-      lastRunAtISO: null,
-      lastSuccessAtISO: null,
-      lastDurationMs: null,
+    scheduler: {
+      ...(schedulerData || {}),
+      lastRunAtISO: schedulerData?.lastRunAtISO || null,
+      lastSuccessAtISO: schedulerData?.lastSuccessAtISO || null,
+      lastDurationMs: schedulerData?.lastDurationMs || null,
       successCount7d: null,
       failureCount7d: null,
-      consecutiveSuccessDays: null,
-      lastFailureReason: null,
+      consecutiveSuccessDays: schedulerData?.consecutiveSuccessDays || null,
+      lastFailureReason: schedulerData?.lastFailureReason || null,
     },
 
     jiraApi: {

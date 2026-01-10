@@ -18,8 +18,8 @@ import {
   getSchedulerState,
   updateSchedulerState,
   updateMetricsSnapshot,
-} from './timeline';
-import { Phase4SchedulerResult } from './types';
+} from '../phase4/timeline';
+import { Phase4SchedulerResult } from '../phase4/types';
 
 /**
  * Retrieve current Phase 2 metrics from storage.
