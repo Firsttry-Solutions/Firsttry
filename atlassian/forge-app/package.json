@@ -15,7 +15,8 @@
     "verify:phase4-5": "node scripts/verify_phase4_5.mjs",
     "lint": "echo \"lint: not configured (intentional)\"",
     "build": "npm run build:gadget && echo \"Backend build: not configured (intentional)\"",
-    "reviewer:gate": "bash audit/reviewer_ready_gate.sh"
+    "reviewer:gate": "bash audit/reviewer_ready_gate.sh",
+    "proof:auth": "bash audit/proof_run_authenticated.sh"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
