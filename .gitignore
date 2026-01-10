@@ -158,3 +158,5 @@ audit_reports/**/_final_validation/**/_quarantine/**
 
 # Runtime evidence artifacts (retained separately, not for version control)
 audit_artifacts/
+# FirstTry proof artifacts (never commit)
+atlassian/forge-app/audit/proof_runs/
