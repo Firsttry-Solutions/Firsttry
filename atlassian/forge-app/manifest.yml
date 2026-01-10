@@ -33,9 +33,9 @@ modules:
       handler: scheduled/snapshot_weekly.handle
     - key: token-refresh-job-fn
       handler: scheduled/token_refresh_scheduler.handle
-    - key: config-visibility-scheduler-fn
+    - key: config-vis-sched-fn
       handler: scheduled/config_visibility_scheduler.run
-    - key: perf-signals-scheduler-fn
+    - key: perf-signals-sched-fn
       handler: scheduled/perf_signals_scheduler.run
     - key: phase4-scheduler-fn
       handler: scheduled/phase4_scheduler.runDaily
@@ -65,11 +65,11 @@ modules:
       interval: hour
 
     - key: config-visibility-scheduler
-      function: config-visibility-scheduler-fn
+      function: config-vis-sched-fn
       interval: day
 
     - key: perf-signals-scheduler
-      function: perf-signals-scheduler-fn
+      function: perf-signals-sched-fn
       interval: day
 
     - key: phase4-timeline-scheduler
