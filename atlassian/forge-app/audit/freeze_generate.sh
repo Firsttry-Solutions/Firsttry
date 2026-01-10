@@ -33,7 +33,7 @@ ALL_FILES=$(git ls-files "atlassian/forge-app" 2>/dev/null || echo "")
 #   - node_modules/ (dependencies)
 #   - dist/ (build artifacts)
 
-FILTERED_FILES=$(echo "$ALL_FILES" | grep -v -E "(audit/proof_runs|audit/OV_RESULTS|audit/shakedown|audit/verification_reports|audit/out_runs|audit/.*OUT|audit/state_assessment/run_|FREEZE_LOCK\.json|node_modules/|dist/)" || true)
+FILTERED_FILES=$(echo "$ALL_FILES" | grep -v -E "(audit/proof_runs|OV_RESULTS|SHK_REPORT|audit/verification_reports|audit/out_runs|audit/.*OUT|audit/state_assessment/run_|FREEZE_LOCK\.json|node_modules/|dist/)" || true)
 
 # Step 3: Sort lexicographically
 SORTED_FILES=$(echo "$FILTERED_FILES" | sort)
