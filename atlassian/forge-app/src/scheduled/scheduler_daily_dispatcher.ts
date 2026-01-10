@@ -72,16 +72,23 @@ export async function runDailyDispatch(
     }
   }
 
-  console.log('[DAILY_DISPATCH] END');
-
   // Check if any step failed
   const failures = results.filter((r) => !r.ok);
+  const failureSummary = failures
+    .map((f) => `${f.name}: ${f.error}`)
+    .join('; ');
+
+  // Log result with deterministic token format
+  const resultMsg = `[DAILY_DISPATCH] RESULT failures=${failures.length}/${steps.length} summary=${
+    failureSummary || 'OK'
+  }`;
+
   if (failures.length > 0) {
-    const failureSummary = failures
-      .map((f) => `${f.name}: ${f.error}`)
-      .join('; ');
-    throw new Error(
-      `[DAILY_DISPATCH] ${failures.length} of ${steps.length} steps failed: ${failureSummary}`
-    );
+    console.error(resultMsg);
+  } else {
+    console.log(resultMsg);
   }
+
+  console.log('[DAILY_DISPATCH] END');
+  // Note: Never throw; dispatcher succeeds even if steps fail (fail-safe behavior)
 }
