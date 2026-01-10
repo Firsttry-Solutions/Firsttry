@@ -17,9 +17,9 @@
  */
 
 import { storage } from '@forge/api';
-import { resolveTenantIdentity } from '../tenant_identity';
-import { getRecordedRequests } from './jira_get_wrapper';
-import { computePerfSignalsSnapshot } from './computeSnapshot';
+import { resolveTenantIdentity } from '../core/tenant_identity';
+import { getRecordedRequests } from '../core/perf_signals/jira_get_wrapper';
+import { computePerfSignalsSnapshot } from '../core/perf_signals/computeSnapshot';
 
 const PERF_SNAPSHOT_KEY_PREFIX = 'perf_signals:snapshot';
 const SCHEDULER_DATA_KEY_PREFIX = 'perf_signals:scheduler_data';
