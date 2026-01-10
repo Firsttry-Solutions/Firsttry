@@ -78,28 +78,41 @@ fi
 
 echo -e "${GREEN}✓ Claims ledger verified (no MISSING statuses)${NC}"
 
-# Check 3: Optional Freeze Lock (skip if not required)
+# Check 3: Mandatory Freeze Lock (unless FIRSTTRY_ALLOW_NO_FREEZE=1)
 echo ""
 echo "========================================"
-echo "CHECK 3: Freeze Lock (Optional)"
+echo "CHECK 3: Freeze Lock Verification"
 echo "========================================"
 
 FREEZE_LOCK="$AUDIT_DIR/marketplace_submission/FREEZE_LOCK.json"
 VERIFY_FREEZE="$AUDIT_DIR/verify_freeze_lock.sh"
 
-if [[ -f "$FREEZE_LOCK" ]]; then
-    if [[ ! -f "$VERIFY_FREEZE" ]]; then
-        echo -e "${YELLOW}⚠ Freeze lock present but verifier missing${NC}"
-    else
-        echo -e "${YELLOW}Running freeze verification...${NC}"
-        if ! bash "$VERIFY_FREEZE"; then
-            echo -e "${RED}FAIL: FREEZE_VERIFY_FAIL${NC}"
-            exit 1
-        fi
-        echo -e "${GREEN}✓ Freeze verification passed${NC}"
-    fi
+# Check if override is set
+if [[ "${FIRSTTRY_ALLOW_NO_FREEZE:-0}" == "1" ]]; then
+    echo -e "${YELLOW}⚠ WARN: FREEZE_SKIPPED_BY_OVERRIDE${NC}"
+    echo -e "${YELLOW}Freeze verification skipped due to FIRSTTRY_ALLOW_NO_FREEZE=1${NC}"
 else
-    echo -e "${YELLOW}⚠ Freeze lock not yet created (OK for development)${NC}"
+    # Freeze is MANDATORY - both files must exist
+    if [[ ! -f "$FREEZE_LOCK" ]]; then
+        echo -e "${RED}FAIL: FREEZE_LOCK_MISSING${NC}"
+        echo -e "${RED}Required: audit/marketplace_submission/FREEZE_LOCK.json${NC}"
+        exit 1
+    fi
+    
+    if [[ ! -f "$VERIFY_FREEZE" ]]; then
+        echo -e "${RED}FAIL: FREEZE_VERIFY_MISSING${NC}"
+        echo -e "${RED}Required: audit/verify_freeze_lock.sh${NC}"
+        exit 1
+    fi
+    
+    # Run the verifier
+    echo -e "${YELLOW}Running freeze verification...${NC}"
+    if ! bash "$VERIFY_FREEZE"; then
+        echo -e "${RED}FAIL: FREEZE_VERIFY_FAIL${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✓ Freeze verification passed${NC}"
 fi
 
 # Check 4: Run tests
