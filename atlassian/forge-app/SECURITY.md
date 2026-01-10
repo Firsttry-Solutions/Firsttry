@@ -255,11 +255,13 @@ We will respond within 48 hours and work with you to responsibly disclose the is
 
 ## Compliance
 
-FirstTry Governance complies with:
-- GDPR: 90-day data deletion guarantee
-- HIPAA: Audit trail of all deletions and exports
-- SOC 2: Automated security controls with CI enforcement
-- ISO 27001: Data isolation and access control
+FirstTry Governance is designed to support compliance requirements through:
+- **GDPR-aligned**: Implements 90-day data deletion guarantee (app responsibility for data in Forge Storage)
+- **HIPAA-aligned**: Provides audit trail of all deletions and exports (customer responsible for HIPAA controls at Jira Cloud level)
+- **SOC 2-aligned**: Implements automated security controls with CI enforcement (delegated to Atlassian Forge platform for actual certification)
+- **ISO 27001-aligned**: Ensures data isolation and access control (Atlassian Forge platform carries the actual certification)
+
+**Certification Status**: FirstTry Governance is NOT independently certified. Actual compliance certifications (SOC 2, ISO 27001, HIPAA) are held by Atlassian Forge platform. FirstTry is aligned with these frameworks but does not independently carry certifications.
 
 ---
 
