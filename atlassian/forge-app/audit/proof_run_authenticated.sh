@@ -100,8 +100,14 @@ run_phase() {
   timeout --preserve-status --signal=TERM --kill-after=20s "$timeout_sec" \
     bash -lc "$command_str" > "$log_file" 2>&1 || cmd_exit=$?
   
+  # Detect timeout: 124 (timeout), 137 (killed by signal 9), 143 (killed by signal 15), or any >128 with --preserve-status
+  local is_timeout=0
+  if [[ $cmd_exit -eq 124 ]] || [[ $cmd_exit -eq 137 ]] || [[ $cmd_exit -eq 143 ]] || [[ $cmd_exit -gt 128 ]]; then
+    is_timeout=1
+  fi
+  
   # Always write END marker (with TIMEOUT indicator if applicable)
-  if [[ $cmd_exit -eq 124 ]] || [[ $cmd_exit -eq 137 ]]; then
+  if [[ $is_timeout -eq 1 ]]; then
     echo "TIMEOUT" > "$end_marker"
   else
     write_marker "$end_marker"
@@ -111,8 +117,8 @@ run_phase() {
   echo "EXIT_CODE=$cmd_exit" > "$exit_file"
   
   # Check exit code and handle failures
-  if [[ $cmd_exit -eq 124 ]] || [[ $cmd_exit -eq 137 ]]; then
-    echo "  ✗ TIMEOUT: $phase_name exceeded ${timeout_sec}s" >&2
+  if [[ $is_timeout -eq 1 ]]; then
+    echo "  ✗ TIMEOUT: $phase_name exceeded ${timeout_sec}s (exit code $cmd_exit)" >&2
     
     # Create timeout STOP file
     local stop_file="$PROOF/STOP_TIMEOUT_PHASE_${phase_id}.md"
@@ -122,7 +128,7 @@ run_phase() {
 ## Details
 - Phase: PHASE $phase_id ($phase_name)
 - Timeout: ${timeout_sec}s
-- Exit Code: $cmd_exit
+- Exit Code: $cmd_exit (signal-based termination detected)
 - Command: $command_str
 
 ## Logs
