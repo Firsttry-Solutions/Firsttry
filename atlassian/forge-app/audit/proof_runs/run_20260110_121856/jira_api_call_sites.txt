@@ -1,0 +1,134 @@
+src/ops/handler_wrapper.ts:107:          asApp() { return { requestJira: wrapped }; },
+src/ops/handler_wrapper.ts:108:          asUser() { return { requestJira: wrapped }; },
+src/core/perf_signals/jira_get_wrapper.ts:115: * Wraps a requestJira-like function to instrument and enforce GET-only.
+src/core/perf_signals/jira_get_wrapper.ts:118: *   const wrappedRequestJira = wrapJiraGetForInstrumentation(api.asApp().requestJira);
+src/core/perf_signals/jira_get_wrapper.ts:122:  requestJiraFn: (path: string, options?: any) => Promise<any>
+src/core/perf_signals/jira_get_wrapper.ts:137:      response = await requestJiraFn(path, { ...(options || {}), method: 'GET' });
+src/runtime_guards/index.ts:4: * Wraps a requestJira-like function to enforce read-only at runtime.
+src/runtime_guards/index.ts:8:  requestJiraFn: (req: TReq, ...rest: any[]) => any
+src/runtime_guards/index.ts:12:    // - requestJira(route: string, options?: { method?: string })
+src/runtime_guards/index.ts:13:    // - requestJira({ method, url, ... })
+src/runtime_guards/index.ts:18:      return (requestJiraFn as any)(route, options);
+src/runtime_guards/index.ts:22:    return (requestJiraFn as any)(req, ...rest);
+src/jira_ingest.ts:155:      .requestJira('/rest/api/3/project', {
+src/jira_ingest.ts:218:      .requestJira('/rest/api/3/issuetype', {
+src/jira_ingest.ts:281:      .requestJira('/rest/api/3/status', {
+src/jira_ingest.ts:344:      .requestJira('/rest/api/3/fields', {
+src/jira_ingest.ts:411:      .requestJira('/rest/api/3/search', {
+src/jira_ingest.ts:490:      .requestJira('/rest/api/3/automations', {
+src/phase6/snapshot_capture.ts:275:      const response = await api.asUser().requestJira(endpoint, {
+src/resolvers/config_visibility_resolver.ts:25: * Safe GET-only wrapper for requestJira
+src/resolvers/config_visibility_resolver.ts:39:    .requestJira(path, {
+PHASE5_STEP5_ADMIN_UI_INDEX.md:208:loadAdminPageState() → api.asUser().requestJira()
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:1:src/ops/handler_wrapper.ts:107:          asApp() { return { requestJira: wrapped }; },
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:2:src/ops/handler_wrapper.ts:108:          asUser() { return { requestJira: wrapped }; },
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:3:src/core/perf_signals/jira_get_wrapper.ts:115: * Wraps a requestJira-like function to instrument and enforce GET-only.
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:4:src/core/perf_signals/jira_get_wrapper.ts:118: *   const wrappedRequestJira = wrapJiraGetForInstrumentation(api.asApp().requestJira);
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:5:src/core/perf_signals/jira_get_wrapper.ts:122:  requestJiraFn: (path: string, options?: any) => Promise<any>
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:6:src/core/perf_signals/jira_get_wrapper.ts:137:      response = await requestJiraFn(path, { ...(options || {}), method: 'GET' });
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:7:src/runtime_guards/index.ts:4: * Wraps a requestJira-like function to enforce read-only at runtime.
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:8:src/runtime_guards/index.ts:8:  requestJiraFn: (req: TReq, ...rest: any[]) => any
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:9:src/runtime_guards/index.ts:12:    // - requestJira(route: string, options?: { method?: string })
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:10:src/runtime_guards/index.ts:13:    // - requestJira({ method, url, ... })
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:11:src/runtime_guards/index.ts:18:      return (requestJiraFn as any)(route, options);
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:12:src/runtime_guards/index.ts:22:    return (requestJiraFn as any)(req, ...rest);
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:13:src/jira_ingest.ts:155:      .requestJira('/rest/api/3/project', {
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:14:src/jira_ingest.ts:218:      .requestJira('/rest/api/3/issuetype', {
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:15:src/jira_ingest.ts:281:      .requestJira('/rest/api/3/status', {
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:16:src/jira_ingest.ts:344:      .requestJira('/rest/api/3/fields', {
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:17:src/jira_ingest.ts:411:      .requestJira('/rest/api/3/search', {
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:18:src/jira_ingest.ts:490:      .requestJira('/rest/api/3/automations', {
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:19:src/phase6/snapshot_capture.ts:275:      const response = await api.asUser().requestJira(endpoint, {
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:20:src/resolvers/config_visibility_resolver.ts:25: * Safe GET-only wrapper for requestJira
+audit/proof_runs/run_20260110_121856/jira_api_call_sites.txt:21:src/resolvers/config_visibility_resolver.ts:39:    .requestJira(path, {
+audit/policy_baseline/egress.txt:9:# - api.asUser().requestJira() - Jira Cloud REST API (read-only)
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:2040:    40	          # Fail if any POST/PUT/DELETE/PATCH found with requestJira
+audit/state_assessment/run_20260109_122543Z/11_workflows_full_text.txt:2041:    41	          if grep -r "requestJira.*POST\|requestJira.*PUT\|requestJira.*DELETE\|requestJira.*PATCH" src/; then
+SECURITY.md:143:   - Only Forge-managed APIs allowed (requestStorage, requestJira)
+tests/perf_signals/no_jira_writes_contract.test.ts:217:    it('sets method to GET before calling requestJira', async () => {
+tests/perf_signals/no_jira_writes_contract.test.ts:226:      // Verify requestJira was called with GET
+tests/__mocks__/forge-api.ts:31:    requestJira: createMockRequestJira(),
+tests/__mocks__/forge-api.ts:35:    requestJira: createMockRequestJira(),
+tests/__mocks__/forge-api.ts:38:  requestJira: createMockRequestJira(),
+tests/phase6/snapshot_capture.test.ts:25:  const requestJiraMock = vi.fn();
+tests/phase6/snapshot_capture.test.ts:27:    requestJira: requestJiraMock,
+tests/phase6/snapshot_capture.test.ts:33:        requestJira: requestJiraMock,
+tests/phase6/snapshot_capture.test.ts:38:      requestJira: requestJiraMock,
+tests/phase6/snapshot_capture.test.ts:53:    mockAPI.asUser().requestJira.mockResolvedValue({
+tests/phase6/snapshot_capture.test.ts:105:      mockAPI.asUser().requestJira.mockResolvedValue({
+tests/phase6/snapshot_capture.test.ts:113:      const calls = mockAPI.asUser().requestJira.mock.calls;
+tests/phase6/snapshot_capture.test.ts:129:      const calls = mockAPI.asUser().requestJira.mock.calls;
+tests/phase6/snapshot_capture.test.ts:142:      mockAPI.asUser().requestJira.mockResolvedValue({
+tests/phase6/snapshot_capture.test.ts:153:      mockAPI.asUser().requestJira.mockResolvedValue({
+tests/phase6/snapshot_capture.test.ts:164:      mockAPI.asUser().requestJira.mockRejectedValue(new Error('API Error'));
+tests/phase6/snapshot_capture.test.ts:173:      mockAPI.asUser().requestJira.mockRejectedValue(new Error(errorMsg));
+tests/phase6/snapshot_capture.test.ts:183:      mockAPI.asUser().requestJira.mockResolvedValue({
+tests/phase6/snapshot_capture.test.ts:198:      mockAPI.asUser().requestJira.mockResolvedValueOnce({
+tests/phase6/snapshot_capture.test.ts:218:      mockAPI.asUser().requestJira.mockRejectedValue(new Error('API Error'));
+tests/config_visibility/config_visibility_resolver.test.ts:18:        requestJira: vi.fn(),
+tests/config_visibility/config_visibility_resolver.test.ts:76:        requestJira: mockRequestJira,
+tests/config_visibility/config_visibility_resolver.test.ts:112:        requestJira: mockRequestJira,
+tests/config_visibility/config_visibility_resolver.test.ts:141:        requestJira: mockRequestJira,
+tests/config_visibility/config_visibility_resolver.test.ts:166:        requestJira: mockRequestJira,
+tests/config_visibility/config_visibility_resolver.test.ts:200:        requestJira: mockRequestJira,
+tests/config_visibility/no_jira_writes_contract.test.ts:18:      requestJira: vi.fn(),
+tests/config_visibility/no_jira_writes_contract.test.ts:64:        requestJira: mockRequestJira,
+tests/config_visibility/no_jira_writes_contract.test.ts:92:        requestJira: mockRequestJira,
+tests/config_visibility/no_jira_writes_contract.test.ts:126:        requestJira: mockRequestJira,
+tests/config_visibility/no_jira_writes_contract.test.ts:168:        requestJira: mockRequestJira,
+tests/config_visibility/no_jira_writes_contract.test.ts:198:          op: 'requestJira',
+tests/config_visibility/no_jira_writes_contract.test.ts:214:        requestJira: mockRequestJira,
+tests/phase6/snapshot_scheduler.test.ts:21:  const requestJiraMock = vi.fn();
+tests/phase6/snapshot_scheduler.test.ts:23:    requestJira: requestJiraMock,
+tests/phase6/snapshot_scheduler.test.ts:26:    requestJira: requestJiraMock,
+tests/phase6/snapshot_scheduler.test.ts:34:        requestJira: requestJiraMock,
+tests/phase6/snapshot_scheduler.test.ts:53:      requestJira: requestJiraMock,
+tests/phase6/snapshot_scheduler.test.ts:174:    // When requestJira returns 429, it should be categorized as RATE_LIMIT
+tests/phase6/snapshot_scheduler.test.ts:175:    mockAPI.asUser().requestJira.mockResolvedValue({
+tests/phase6/snapshot_scheduler.test.ts:180:    expect(mockAPI.asUser().requestJira).toBeDefined();
+tests/phase6/snapshot_scheduler.test.ts:187:    mockAPI.asUser().requestJira.mockRejectedValue(new Error(errorMsg));
+tests/phase6/snapshot_scheduler.test.ts:190:    expect(mockAPI.asUser().requestJira).toBeDefined();
+tests/credibility/gap3_egress_static_and_runtime.test.ts:116:      { name: 'api.asUser().requestJira', regex: /api\.asUser\(\)\.requestJira/ },
+tests/p8_runtime_read_only_guard_wiring.test.ts:4:describe("P8 wiring: requestJira wrapper behavior", () => {
+tests/p8_runtime_read_only_guard_wiring.test.ts:5:  it("blocks POST via wrapped requestJira", async () => {
+tests/p8_runtime_read_only_guard_wiring.test.ts:14:  it("allows GET via wrapped requestJira", async () => {
+tests/p8_runtime_read_only_guard_wiring.test.ts:30:    await request.api.asApp().requestJira('/rest/api/3/issue', { method: 'POST' });
+tests/p8_runtime_read_only_guard_wiring.test.ts:38:    const res = await request.api.asUser().requestJira('/rest/api/3/issue/1', { method: 'GET' });
+tests/audit_snapshot/no_jira_calls_contract.test.ts:4: * Verifies that Phase 5 export does NOT call requestJira or any Jira REST API
+tests/audit_snapshot/no_jira_calls_contract.test.ts:25:    it('should not import requestJira in audit_snapshot_export', async () => {
+tests/audit_snapshot/no_jira_calls_contract.test.ts:29:        // Verify file exists and doesn't have requestJira
+tests/audit_snapshot/no_jira_calls_contract.test.ts:33:    it('should not call requestJira in generateTrustSnapshot', async () => {
+tests/audit_snapshot/no_jira_calls_contract.test.ts:41:    it('should not import requestJira in Phase 5 module files', async () => {
+tests/audit_snapshot/no_jira_calls_contract.test.ts:51:            // These should all be importable without requestJira
+tests/audit_snapshot/no_jira_calls_contract.test.ts:64:        // 6. Never call requestJira
+tests/audit_snapshot/no_jira_calls_contract.test.ts:67:        const forbiddenOperations = ['requestJira', 'api.request', 'fetch.*jira'];
+tests/audit_snapshot/no_jira_calls_contract.test.ts:90:            'requestJira',
+tests/enterprise_acceptance/README.md:22: *    - All requestJira calls are GET-equivalent
+tests/enterprise_acceptance/README.md:147: *    - Cannot test authenticated requestJira calls
+tests/enterprise_acceptance/README.md:165: *    - Tests authenticated requestJira calls against live tenant
+tests/enterprise_acceptance/ea2_auth_boundary.test.ts:76:        // Check for requestJira with write methods
+tests/enterprise_acceptance/ea2_auth_boundary.test.ts:78:          if (pattern.forbidden && line.includes('requestJira') && line.includes(`'${pattern.method}'`)) {
+tests/enterprise_acceptance/ea2_auth_boundary.test.ts:90:          const isJiraRequest = lines.slice(Math.max(0, i - 5), i + 1).some(l => l.includes('requestJira'));
+tests/enterprise_acceptance/ea2_auth_boundary.test.ts:118:  it('all requestJira calls are GET-equivalent', () => {
+tests/enterprise_acceptance/ea2_auth_boundary.test.ts:131:        if (line.includes('requestJira')) {
+tests/enterprise_acceptance/ea2_auth_boundary.test.ts:151:    // All should be GET (or no explicit method, which defaults to GET in requestJira)
+vitest.setup.ts:30:      requestJira: createMockRequestJira(),
+vitest.setup.ts:34:      requestJira: createMockRequestJira(),
+vitest.setup.ts:37:    requestJira: createMockRequestJira(),
+docs/PLATFORM_DEPENDENCIES.md:85:**API**: `api.asUser().requestJira()` (Forge-provided wrapper)  
+docs/MARKETPLACE_REVIEWER_NO_BACKFORTH_AUDIT.md:91:    1. Lists outbound network calls observed in code: Atlassian Jira REST API via `requestJira`; api.atlassian.com admin/storage; browser same-origin admin UI. [docs/EXTERNAL_APIS.md top]
+docs/DATA_FLOW.md:8:- Jira Cloud REST API (via Forge `requestJira`): project list, issue type metadata, statuses, fields, search results (timestamps/ids).
+docs/DATA_FLOW.md:25:Jira Cloud (requestJira) --> Scheduled ingest pipelines --> Aggregation/Drift compute --> Forge Storage (tenant-scoped) --> Admin UI (view/export)
+docs/FORGE_DEPLOYMENT_READINESS_AUDIT.md:213:grep -RIn "requestJira|api.asApp|api.asUser|fetch|request" src/
+docs/FORGE_DEPLOYMENT_READINESS_AUDIT.md:220:- **Request patterns**: All Jira calls use GET method with `requestJiraFn(path, { method: 'GET' })`
+docs/EXTERNAL_APIS.md:7:**Atlassian Jira REST API (via Forge `requestJira`)**
+docs/EXTERNAL_APIS.md:8:- **Destination:** Jira Cloud REST API (queried via Forge `requestJira`; resolved by Forge runtime to Atlassian endpoints)
+docs/EXTERNAL_APIS.md:12:- **Code references:** [src/jira_ingest.ts](src/jira_ingest.ts#L157) (projects), [src/jira_ingest.ts](src/jira_ingest.ts#L222) (issuetypes), [src/jira_ingest.ts](src/jira_ingest.ts#L287) (statuses), [src/jira_ingest.ts](src/jira_ingest.ts#L352) (fields), [src/jira_ingest.ts](src/jira_ingest.ts#L421) (search/issues), [src/jira_ingest.ts](src/jira_ingest.ts#L502) (automations), [src/phase6/snapshot_capture.ts](src/phase6/snapshot_capture.ts#L275) (snapshot capture using `api.asUser().requestJira`).
+docs/EXTERNAL_APIS.md:30:- Search methodology: repository scanned for outbound patterns (`fetch`, `requestJira`, explicit `https://` literals) and results were manually inspected; only runtime network calls present in src/ were listed above.
+docs/EXTERNAL_APIS.md:32:If you want, I can (1) include an explicit mapping of which OAuth/storage keys are used for which tenant IDs, (2) add a short runtime note about how Forge resolves `requestJira` to the Atlassian endpoints, or (3) run a final grep/CI check to ensure no other files make outbound calls.
+docs/EXTERNAL_APIS.md:67:| [src/jira_ingest.ts](../src/jira_ingest.ts#L275) | 275 | `api.asUser().requestJira()` | `/rest/api/3/project` | Project list (id, key, name) |
+docs/EXTERNAL_APIS.md:68:| [src/jira_ingest.ts](../src/jira_ingest.ts#L310) | 310 | `api.asUser().requestJira()` | `/rest/api/3/issuetype` | Issue type metadata |
+docs/EXTERNAL_APIS.md:69:| [src/jira_ingest.ts](../src/jira_ingest.ts#L340) | 340 | `api.asUser().requestJira()` | `/rest/api/3/status` | Status metadata |
+docs/EXTERNAL_APIS.md:70:| [src/jira_ingest.ts](../src/jira_ingest.ts#L370) | 370 | `api.asUser().requestJira()` | `/rest/api/3/field` | Field metadata (system + custom) |
+docs/EXTERNAL_APIS.md:71:| [src/jira_ingest.ts](../src/jira_ingest.ts#L420) | 420 | `api.asUser().requestJira()` | `/rest/api/3/search` | Issue events (created, updated timestamps) via JQL |
+docs/EXTERNAL_APIS.md:72:| [src/phase6/snapshot_capture.ts](../src/phase6/snapshot_capture.ts#L275) | 275 | `api.asUser().requestJira()` | `/rest/api/3/project` | Phase 6 snapshot evidence (projects) |
