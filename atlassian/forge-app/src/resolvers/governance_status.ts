@@ -17,9 +17,6 @@
 
 import { storage } from '@forge/api';
 import { resolveTenantIdentity } from '../core/tenant_identity';
-import { getTenantIdentityFromContext } from '../core/health/tenant';
-import { getRunRecord } from '../core/health/storage';
-import { computeHealth } from '../core/health/compute';
 import { getTimeline } from '../phase4/timeline';
 import {
   EXPECTED_SCHEDULE_INTERVAL_MINUTES,
@@ -326,10 +323,6 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
     // Load Phase 4 change timeline (append-only)
     const phase4Timeline = await getTimeline(cloudId);
 
-    // Load run record and compute health
-    const runRecord = await getRunRecord(cloudId);
-    const health = computeHealth(runRecord);
-
     // Calculate staleness
     const lastSuccessAt = snapshot?.lastSuccessAt || metrics?.lastSuccessAt || null;
     const lastCheckAt = snapshot?.lastAttemptAt || metrics?.lastCheckAt || null;
@@ -407,7 +400,7 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
     const failureCount7d = computeFailureCount7d(snapshot, metrics);
     const skippedChecks7d = computeSkippedChecks7d(snapshot);
     const freshness = computeFreshnessStatus(lastSuccessAt);
-    const degradedReason = computeDegradedReason(health, snapshot, metrics, failureCount7d.count);
+    const degradedReason = computeDegradedReason(null, snapshot, metrics, failureCount7d.count);
 
     return {
       // App Identity (Diagnostic)
@@ -474,7 +467,7 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       phase4Timeline: phase4Timeline || null,
 
       // Health Status (minimal, deterministic)
-      health,
+      health: null,
 
       // Boundaries
       boundaries: {
