@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100" width="300" height="100">
+  <!-- Background -->
+  <rect width="300" height="100" fill="#F3F5F7"/>
+  
+  <!-- Border -->
+  <rect width="300" height="100" fill="none" stroke="#0052CC" stroke-width="2"/>
+  
+  <!-- Icon: Shield with checkmark -->
+  <g transform="translate(30, 25)">
+    <path d="M 20 5 L 5 15 L 5 35 Q 5 45 20 50 Q 35 45 35 35 L 35 15 Z" fill="#0052CC"/>
+    <path d="M 14 30 L 18 34 L 26 20" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="80" y="35" font-family="Atlassian Sans, Arial, sans-serif" font-size="20" font-weight="bold" fill="#0052CC">
+    READ-ONLY
+  </text>
+  <text x="80" y="65" font-family="Atlassian Sans, Arial, sans-serif" font-size="14" fill="#172B4D">
+    No Jira Writes
+  </text>
+  
+  <!-- Verification badge -->
+  <circle cx="280" cy="20" r="12" fill="#36B37E"/>
+  <text x="280" y="26" font-family="Atlassian Sans, Arial, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">✓</text>
+</svg>
