@@ -94,29 +94,38 @@ run_phase() {
   # Write START marker (UTC time)
   write_marker "$start_marker"
   
-  # Execute command with hard timeout: TERM (15s) then KILL after total timeout
+  # Execute command with hard timeout: TERM then KILL after specified time
   # NO PIPING — capture exit code before any further processing
   local cmd_exit=0
-  timeout --preserve-status --signal=TERM --kill-after=20s "$timeout_sec" \
-    bash -lc "$command_str" > "$log_file" 2>&1 || cmd_exit=$?
+  timeout --preserve-status --signal=TERM --kill-after=10s "${timeout_sec}s" \
+    -- $command_str > "$log_file" 2>&1 || cmd_exit=$?
   
-  # Detect timeout: 124 (timeout), 137 (killed by signal 9), 143 (killed by signal 15), or any >128 with --preserve-status
+  # Classify the exit code BEFORE writing markers, so we know what we're dealing with
+  # TIMEOUT is ONLY: 124 (timeout occurred), 137 (killed after timeout), or 143 (killed with TERM during timeout)
+  # Other 128+N codes are signal failures, not timeouts
   local is_timeout=0
-  if [[ $cmd_exit -eq 124 ]] || [[ $cmd_exit -eq 137 ]] || [[ $cmd_exit -eq 143 ]] || [[ $cmd_exit -gt 128 ]]; then
+  local is_signal_failure=0
+  
+  if [[ $cmd_exit -eq 124 ]] || [[ $cmd_exit -eq 137 ]]; then
     is_timeout=1
+  elif [[ $cmd_exit -eq 143 ]]; then
+    # 143 = 128 + 15 (SIGTERM). Only treat as timeout if we are running under timeout pressure.
+    # Since we use --signal=TERM, process killed by our TERM signal gets 143.
+    is_timeout=1
+  elif [[ $cmd_exit -ge 128 ]]; then
+    # Any other 128+N (e.g., 139=SIGSEGV, 136=SIGABRT, etc.) is signal failure, not timeout
+    is_signal_failure=1
   fi
   
-  # Always write END marker (with TIMEOUT indicator if applicable)
+  # Always write END marker and EXIT_CODE (mandatory contract)
   if [[ $is_timeout -eq 1 ]]; then
     echo "TIMEOUT" > "$end_marker"
   else
     write_marker "$end_marker"
   fi
-  
-  # Always write EXIT_CODE (mandatory contract)
   echo "EXIT_CODE=$cmd_exit" > "$exit_file"
   
-  # Check exit code and handle failures
+  # Handle TIMEOUT
   if [[ $is_timeout -eq 1 ]]; then
     echo "  ✗ TIMEOUT: $phase_name exceeded ${timeout_sec}s (exit code $cmd_exit)" >&2
     
@@ -128,7 +137,7 @@ run_phase() {
 ## Details
 - Phase: PHASE $phase_id ($phase_name)
 - Timeout: ${timeout_sec}s
-- Exit Code: $cmd_exit (signal-based termination detected)
+- Exit Code: $cmd_exit (timeout-related signal)
 - Command: $command_str
 
 ## Logs
@@ -146,10 +155,41 @@ STOPEOF
     return 1
   fi
   
+  # Handle SIGNAL FAILURE (process killed by non-timeout signal)
+  if [[ $is_signal_failure -eq 1 ]]; then
+    echo "  ✗ SIGNAL_FAILURE: $phase_name killed by signal $(($cmd_exit - 128))" >&2
+    
+    # Create signal failure STOP file
+    local stop_file="$PROOF/STOP_SIGNAL_EXIT_PHASE_${phase_id}.md"
+    cat > "$stop_file" << STOPEOF
+# STOP: SIGNAL_FAILURE in PHASE $phase_id ($phase_name)
+
+## Details
+- Phase: PHASE $phase_id ($phase_name)
+- Exit Code: $cmd_exit (killed by signal $(($cmd_exit - 128)))
+- Command: $command_str
+
+## Log
+See ${phase_id}_${phase_name}.log
+
+## Tail (last 100 lines)
+\`\`\`
+$(tail -n 100 "$log_file" 2>/dev/null || echo "(log not readable)")
+\`\`\`
+
+STOPEOF
+    
+    # Capture watchdog diagnostics for signal failures
+    watchdog_dump "$phase_id" "$phase_name" "$log_file"
+    
+    return 1
+  fi
+  
+  # Handle other non-zero exits
   if [[ $cmd_exit -ne 0 ]]; then
     echo "  ✗ FAIL: $phase_name exited $cmd_exit" >&2
     
-    # Create failure STOP file (without watchdog for non-timeout failures)
+    # Create failure STOP file
     local stop_file="$PROOF/STOP_FAIL_PHASE_${phase_id}.md"
     cat > "$stop_file" << STOPEOF
 # STOP: FAIL in PHASE $phase_id ($phase_name)
