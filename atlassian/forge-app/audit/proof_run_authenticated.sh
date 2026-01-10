@@ -6,6 +6,10 @@
 #
 # Usage:
 #   FIRSTTRY_FORGE_SITE="https://example.atlassian.net" bash audit/proof_run_authenticated.sh
+#
+# Selftest modes:
+#   FIRSTTRY_PROOF_SELFTEST_TIMEOUT=1  — Test timeout handling (forces 2s timeout with sleep 9999)
+#   FIRSTTRY_PROOF_SELFTEST_TIMEOUT=0  — Normal authenticated run (default)
 
 set -euo pipefail
 
@@ -19,6 +23,9 @@ readonly REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 readonly FORGE_APP_DIR="$SCRIPT_DIR/.."
 readonly PROOF_BASE_DIR="$FORGE_APP_DIR/audit/proof_runs"
 
+# Selftest mode (default: off)
+readonly SELFTEST_MODE="${FIRSTTRY_PROOF_SELFTEST_TIMEOUT:-0}"
+
 # Source utility library
 source "$SCRIPT_DIR/proof_lib.sh"
 
@@ -28,101 +35,208 @@ PHASE_NUM=0
 TOTAL_PHASES=12
 
 ################################################################################
-# CONFIG: Timeouts per phase (in seconds)
+# CONFIG: Timeouts per phase (in seconds) — EXPLICIT, NO ASSUMPTIONS
 ################################################################################
 declare -A PHASE_TIMEOUTS=(
-  [0]=30   # Preconditions
-  [1]=30   # Create proof folder
-  [2]=30   # Toolchain capture
-  [3]=30   # Forge whoami
-  [4]=15   # Manifest check
-  [5]=60   # Freeze verify
-  [6]=900  # npm test
-  [7]=900  # npm run reviewer:gate
-  [8]=180  # forge lint
-  [9]=900  # forge deploy -e production
-  [10]=900 # forge install --upgrade
-  [11]=30  # Post-run clean check
+  [0]=30      # Preconditions: git check, env var validation
+  [1]=30      # Create proof folder
+  [2]=60      # Toolchain capture: node, npm, forge version
+  [3]=60      # Forge whoami: auth validation
+  [4]=30      # Manifest check: scheduledTrigger count
+  [5]=120     # Freeze verify: tamper detection via SHA256
+  [6]=1800    # npm test: full test suite
+  [7]=1800    # npm run reviewer:gate: gate validation
+  [8]=600     # forge lint: linting
+  [9]=1800    # forge deploy -e production: deployment
+  [10]=1800   # forge install --upgrade -e production: install
+  [11]=60     # Post-run clean check: final git status
+  [99]=2      # Selftest timeout trigger (intentional hard timeout)
 )
 
 ################################################################################
+# FUNCTION: Execute a phase command with hard timeout and mandatory markers
+#
+# CONTRACT: Outputs to $PROOF:
+#   - ${phase_id}_START.txt (UTC timestamp)
+#   - ${phase_id}_${phase_name}.log (full stdout+stderr)
+#   - ${phase_id}_exit.txt (line: EXIT_CODE=<n>)
+#   - ${phase_id}_END.txt (UTC timestamp or TIMEOUT)
+#   - WATCHDOG_PHASE_${phase_id}.txt (on failure/timeout)
+#   - STOP_TIMEOUT_PHASE_${phase_id}.md (on timeout)
+#
+# Inputs:
+#   $1: phase_id (0-11, 99 for selftest)
+#   $2: phase_name (human readable)
+#   $3: command_string (bash -lc "$3")
+#   $4: timeout_seconds (explicit, no assumptions)
+#
+# Behavior:
+#   - Never pipes command output (preserves exit code integrity)
+#   - Uses: timeout --preserve-status --signal=TERM then kill-after for KILL
+#   - Writes all markers before returning
+#   - On timeout (124, 137): creates STOP + WATCHDOG, returns 1
+#   - On non-zero: creates STOP (no watchdog unless timeout), returns 1
+#   - On success (0): returns 0
+################################################################################
+run_phase() {
+  local phase_id="$1"
+  local phase_name="$2"
+  local command_str="$3"
+  local timeout_sec="$4"
+  
+  local start_marker="$PROOF/${phase_id}_START.txt"
+  local log_file="$PROOF/${phase_id}_${phase_name}.log"
+  local exit_file="$PROOF/${phase_id}_exit.txt"
+  local end_marker="$PROOF/${phase_id}_END.txt"
+  
+  echo "  [PHASE $phase_id] Starting: $phase_name"
+  
+  # Write START marker (UTC time)
+  write_marker "$start_marker"
+  
+  # Execute command with hard timeout: TERM (15s) then KILL after total timeout
+  # NO PIPING — capture exit code before any further processing
+  local cmd_exit=0
+  timeout --preserve-status --signal=TERM --kill-after=20s "$timeout_sec" \
+    bash -lc "$command_str" > "$log_file" 2>&1 || cmd_exit=$?
+  
+  # Always write END marker (with TIMEOUT indicator if applicable)
+  if [[ $cmd_exit -eq 124 ]] || [[ $cmd_exit -eq 137 ]]; then
+    echo "TIMEOUT" > "$end_marker"
+  else
+    write_marker "$end_marker"
+  fi
+  
+  # Always write EXIT_CODE (mandatory contract)
+  echo "EXIT_CODE=$cmd_exit" > "$exit_file"
+  
+  # Check exit code and handle failures
+  if [[ $cmd_exit -eq 124 ]] || [[ $cmd_exit -eq 137 ]]; then
+    echo "  ✗ TIMEOUT: $phase_name exceeded ${timeout_sec}s" >&2
+    
+    # Create timeout STOP file
+    local stop_file="$PROOF/STOP_TIMEOUT_PHASE_${phase_id}.md"
+    cat > "$stop_file" << STOPEOF
+# STOP: TIMEOUT in PHASE $phase_id ($phase_name)
+
+## Details
+- Phase: PHASE $phase_id ($phase_name)
+- Timeout: ${timeout_sec}s
+- Exit Code: $cmd_exit
+- Command: $command_str
+
+## Logs
+- Phase log: ${phase_id}_${phase_name}.log
+- Watchdog: WATCHDOG_PHASE_${phase_id}.txt
+
+## Diagnostics
+See WATCHDOG_PHASE_${phase_id}.txt for process tree, lsof, and log tail.
+
+STOPEOF
+    
+    # Capture watchdog diagnostics
+    watchdog_dump "$phase_id" "$phase_name" "$log_file"
+    
+    return 1
+  fi
+  
+  if [[ $cmd_exit -ne 0 ]]; then
+    echo "  ✗ FAIL: $phase_name exited $cmd_exit" >&2
+    
+    # Create failure STOP file (without watchdog for non-timeout failures)
+    local stop_file="$PROOF/STOP_FAIL_PHASE_${phase_id}.md"
+    cat > "$stop_file" << STOPEOF
+# STOP: FAIL in PHASE $phase_id ($phase_name)
+
+## Details
+- Phase: PHASE $phase_id ($phase_name)
+- Exit Code: $cmd_exit
+- Command: $command_str
+
+## Log
+See ${phase_id}_${phase_name}.log
+
+## Tail (last 100 lines)
+\`\`\`
+$(tail -n 100 "$log_file" 2>/dev/null || echo "(log not readable)")
+\`\`\`
+
+STOPEOF
+    
+    return 1
+  fi
+  
+  echo "  ✓ PHASE $phase_id OK (exit code 0)"
+  return 0
+}
+
+################################################################################
+# FUNCTION: Capture comprehensive watchdog diagnostics on failure/timeout
+################################################################################
+watchdog_dump() {
+  local phase_id="$1"
+  local phase_name="$2"
+  local log_file="$3"
+  
+  local watchdog_file="$PROOF/WATCHDOG_PHASE_${phase_id}.txt"
+  
+  (
+    echo "================================================================================"
+    echo "WATCHDOG DIAGNOSTICS — PHASE $phase_id ($phase_name)"
+    echo "================================================================================"
+    echo ""
+    echo "TIMESTAMP: $(date -u)"
+    echo "WORKING_DIR: $(pwd)"
+    echo ""
+    
+    echo "=== Git Status (prove no mutations) ==="
+    cd "$REPO_ROOT" 2>/dev/null
+    git status --porcelain=v1 || echo "git status failed"
+    echo ""
+    
+    echo "=== Process List (ps auxww) ==="
+    ps auxww 2>/dev/null || echo "ps failed"
+    echo ""
+    
+    echo "=== Process Tree (pstree -ap) ==="
+    pstree -ap 2>/dev/null || echo "pstree not available"
+    echo ""
+    
+    echo "=== Open Files (lsof) ==="
+    lsof 2>/dev/null | head -50 || echo "lsof not available or failed"
+    echo ""
+    
+    echo "=== Phase Log Tail (last 200 lines) ==="
+    if [[ -f "$log_file" ]]; then
+      tail -n 200 "$log_file" || cat "$log_file"
+    else
+      echo "Log file not readable: $log_file"
+    fi
+    echo ""
+    
+  ) > "$watchdog_file" 2>&1
+  
+  echo "  Watchdog diagnostics saved to: $watchdog_file" >&2
+}
+
+################################################################################
 # FUNCTION: Execute a command with hard timeout and watchdog diagnostics
+# (LEGACY: kept for compatibility, uses run_phase internally)
 ################################################################################
 run_cmd() {
   local phase_name="$1"
   local timeout_sec="${2:-60}"
   local command_str="$3"
   local log_file="$4"
-
-  local phase_num=$(echo "$phase_name" | sed 's/PHASE_//')
   
-  echo "=== PHASE $phase_num: $phase_name START ==="
+  # Extract phase number from phase_name (e.g., "PHASE_6" -> "6")
+  local phase_id="${phase_name##*_}"
   
-  # Write START marker
-  write_marker "$PROOF/${phase_num}_START.txt"
-  
-  # Run command under timeout
-  local cmd_exit=0
-  local timeout_exit_code=0
-  
-  timeout --preserve-status --signal=TERM "$timeout_sec" bash -lc "$command_str" >"$log_file" 2>&1 || cmd_exit=$?
-  timeout_exit_code=$cmd_exit
-  
-  # Check for timeout (124 = timeout, 137 = killed by signal 9)
-  if [[ $timeout_exit_code -eq 124 ]] || [[ $timeout_exit_code -eq 137 ]]; then
-    echo "✗ TIMEOUT: $phase_name exceeded ${timeout_sec}s" >&2
-    write_marker "$PROOF/${phase_num}_END.txt" "TIMEOUT"
-    watchdog_dump "$phase_name" "$log_file"
-    create_stop_file "TIMEOUT_$phase_name" "Command timed out after ${timeout_sec}s" "$phase_name" "$log_file"
-    return 1
-  fi
-  
-  # Write END marker and exit code
-  write_marker "$PROOF/${phase_num}_END.txt"
-  echo "EXIT_CODE=$cmd_exit" > "$PROOF/${phase_num}_exit.txt"
-  
-  # Check for non-zero exit on non-timeout
-  if [[ $cmd_exit -ne 0 ]]; then
-    echo "✗ FAIL: $phase_name exited $cmd_exit" >&2
-    create_stop_file "FAIL_$phase_name" "Command exited $cmd_exit" "$phase_name" "$log_file"
-    return 1
-  fi
-  
-  echo "✓ PHASE $phase_num: $phase_name OK"
-  return 0
+  run_phase "$phase_id" "$phase_name" "$command_str" "$timeout_sec"
 }
 
 ################################################################################
-# FUNCTION: Capture diagnostics for hung/failed process
-################################################################################
-watchdog_dump() {
-  local phase_name="$1"
-  local log_file="$2"
-  local watchdog_file="$PROOF/WATCHDOG_${phase_name}.txt"
-  
-  echo "Capturing diagnostics to $watchdog_file" >&2
-  
-  (
-    echo "================================================================================
-WATCHDOG DIAGNOSTICS — $phase_name
-================================================================================"
-    echo ""
-    echo "=== Git Status (to prove no mutations) ==="
-    cd "$REPO_ROOT"
-    git status --porcelain || true
-    echo ""
-    capture_process_tree "$watchdog_file"
-    echo ""
-    capture_log_tail "$log_file" "$watchdog_file"
-    echo ""
-    capture_forge_logs "$watchdog_file"
-  ) > "$watchdog_file" 2>&1
-  
-  echo "Watchdog file written to: $watchdog_file" >&2
-}
-
-################################################################################
-# FUNCTION: Create a STOP file on failure
+# FUNCTION: Create a STOP file on failure (LEGACY)
 ################################################################################
 create_stop_file() {
   local reason="$1"      # e.g., "TIMEOUT_PHASE_6" or "FAIL_PHASE_3"
@@ -245,9 +359,8 @@ phase_2_toolchain() {
   echo "════════════════════════════════════════════════════════════════"
   
   local cmd="node -v && npm -v && forge --version"
-  local log="$PROOF/20_toolchain.log"
   
-  run_cmd "PHASE_2" "${PHASE_TIMEOUTS[2]}" "$cmd" "$log" || return 1
+  run_phase "2" "toolchain" "$cmd" "${PHASE_TIMEOUTS[2]}" || return 1
 }
 
 ################################################################################
@@ -262,9 +375,8 @@ phase_3_forge_auth() {
   cd "$FORGE_APP_DIR"
   
   local cmd="forge whoami"
-  local log="$PROOF/30_forge_whoami.log"
   
-  run_cmd "PHASE_3" "${PHASE_TIMEOUTS[3]}" "$cmd" "$log" || return 1
+  run_phase "3" "forge_auth" "$cmd" "${PHASE_TIMEOUTS[3]}" || return 1
 }
 
 ################################################################################
@@ -289,9 +401,7 @@ assert len(sched) <= 5, f"Expected <=5 triggers, got {len(sched)}"
 print("OK")
 PYEOF'
   
-  local log="$PROOF/40_manifest_check.log"
-  
-  run_cmd "PHASE_4" "${PHASE_TIMEOUTS[4]}" "$cmd" "$log" || return 1
+  run_phase "4" "manifest_check" "$cmd" "${PHASE_TIMEOUTS[4]}" || return 1
 }
 
 ################################################################################
@@ -306,9 +416,8 @@ phase_5_freeze_verify() {
   cd "$FORGE_APP_DIR"
   
   local cmd="bash audit/verify_freeze_lock.sh"
-  local log="$PROOF/50_freeze_verify.log"
   
-  run_cmd "PHASE_5" "${PHASE_TIMEOUTS[5]}" "$cmd" "$log" || return 1
+  run_phase "5" "freeze_verify" "$cmd" "${PHASE_TIMEOUTS[5]}" || return 1
 }
 
 ################################################################################
@@ -323,13 +432,13 @@ phase_6_npm_test() {
   cd "$FORGE_APP_DIR"
   
   local cmd="npm test"
-  local log="$PROOF/60_npm_test.log"
   
-  run_cmd "PHASE_6" "${PHASE_TIMEOUTS[6]}" "$cmd" "$log" || return 1
+  run_phase "6" "npm_test" "$cmd" "${PHASE_TIMEOUTS[6]}" || return 1
 }
 
 ################################################################################
 # PHASE 7: Reviewer gate (npm run reviewer:gate)
+# MANDATORY: After phase execution, search log for GATE_PASS token
 ################################################################################
 phase_7_reviewer_gate() {
   echo ""
@@ -339,20 +448,38 @@ phase_7_reviewer_gate() {
   
   cd "$FORGE_APP_DIR"
   
-  local log="$PROOF/70_reviewer_gate.log"
-  
-  # Run gate command with timeout
   local cmd="npm run reviewer:gate"
-  run_cmd "PHASE_7" "${PHASE_TIMEOUTS[7]}" "$cmd" "$log" || return 1
+  local log_file="$PROOF/7_reviewer_gate.log"
   
-  # After completion, verify GATE_PASS token is present
-  echo "  [7.1] Verifying GATE_PASS token..."
-  if ! grep -q "GATE_PASS" "$log"; then
-    echo "✗ FAIL: GATE_PASS token not found in gate log"
-    create_stop_file "FAIL_PHASE_7_NO_TOKEN" "GATE_PASS token missing from output" "PHASE_7" "$log"
+  # Run phase with full timeout and exit code handling
+  run_phase "7" "reviewer_gate" "$cmd" "${PHASE_TIMEOUTS[7]}" || return 1
+  
+  # POST-EXECUTION CHECK: Verify GATE_PASS token is in the log
+  echo "  [7.1] Verifying GATE_PASS token in log..."
+  if ! grep -q "GATE_PASS" "$log_file"; then
+    echo "  ✗ FAIL: GATE_PASS token not found in gate log" >&2
+    
+    # Create STOP file for missing token
+    local stop_file="$PROOF/STOP_FAIL_PHASE_7_NO_TOKEN.md"
+    cat > "$stop_file" << STOPEOF
+# STOP: GATE_PASS token not found
+
+## Phase
+PHASE 7 (reviewer_gate)
+
+## Issue
+The gate command succeeded (exit 0) but the GATE_PASS token was not present in the output.
+This indicates the gate did not fully verify the proof run.
+
+## Log
+See 7_reviewer_gate.log
+
+STOPEOF
+    
     return 1
   fi
-  echo "  ✓ GATE_PASS token confirmed"
+  echo "  ✓ GATE_PASS token confirmed in log"
+  return 0
 }
 
 ################################################################################
@@ -367,9 +494,8 @@ phase_8_forge_lint() {
   cd "$FORGE_APP_DIR"
   
   local cmd="forge lint"
-  local log="$PROOF/80_forge_lint.log"
   
-  run_cmd "PHASE_8" "${PHASE_TIMEOUTS[8]}" "$cmd" "$log" || return 1
+  run_phase "8" "forge_lint" "$cmd" "${PHASE_TIMEOUTS[8]}" || return 1
 }
 
 ################################################################################
@@ -384,9 +510,8 @@ phase_9_forge_deploy() {
   cd "$FORGE_APP_DIR"
   
   local cmd="forge deploy -e production"
-  local log="$PROOF/90_forge_deploy_prod.log"
   
-  run_cmd "PHASE_9" "${PHASE_TIMEOUTS[9]}" "$cmd" "$log" || return 1
+  run_phase "9" "forge_deploy" "$cmd" "${PHASE_TIMEOUTS[9]}" || return 1
 }
 
 ################################################################################
@@ -402,9 +527,8 @@ phase_10_forge_install() {
   
   local site_url=$(normalize_site_url "$FIRSTTRY_FORGE_SITE")
   local cmd="forge install --upgrade -e production -s \"$site_url\""
-  local log="$PROOF/100_forge_install_prod.log"
   
-  run_cmd "PHASE_10" "${PHASE_TIMEOUTS[10]}" "$cmd" "$log" || return 1
+  run_phase "10" "forge_install" "$cmd" "${PHASE_TIMEOUTS[10]}" || return 1
 }
 
 ################################################################################
@@ -418,26 +542,87 @@ phase_11_post_clean_check() {
   
   cd "$REPO_ROOT"
   
-  echo "  [11.1] Checking git status..."
-  if ! git_status_output=$(git status --porcelain=v1 2>&1); then
-    echo "✗ FAIL: git status command failed after proof run"
-    echo "$git_status_output" > "$PROOF/110_post_git_status.log"
-    create_stop_file "FAIL_PHASE_11_GIT_STATUS" "git status failed" "PHASE_11" "$PROOF/110_post_git_status.log"
-    return 1
-  fi
+  local cmd='git status --porcelain=v1'
+  local log_file="$PROOF/11_post_clean.log"
   
-  echo "$git_status_output" > "$PROOF/110_post_git_status.log"
+  # Write START marker
+  write_marker "$PROOF/11_START.txt"
   
-  if [[ -n "$git_status_output" ]]; then
-    echo "✗ FAIL: Repository dirtied during proof run:"
-    echo "$git_status_output"
-    create_stop_file "FAIL_PHASE_11_TREE_DIRTY" "git status not empty after proof run" "PHASE_11" "$PROOF/110_post_git_status.log"
+  # Check git status and capture to log
+  git status --porcelain=v1 > "$log_file" 2>&1 || true
+  
+  # Write END marker and exit code
+  write_marker "$PROOF/11_END.txt"
+  echo "EXIT_CODE=0" > "$PROOF/11_exit.txt"
+  
+  # Validate tree is clean
+  local status_output=$(cat "$log_file")
+  if [[ -n "$status_output" ]]; then
+    echo "  ✗ FAIL: Repository dirtied during proof run:" >&2
+    echo "$status_output" >&2
+    
+    # Create STOP file
+    local stop_file="$PROOF/STOP_FAIL_PHASE_11_DIRTY_TREE.md"
+    cat > "$stop_file" << STOPEOF
+# STOP: DIRTY TREE after proof run
+
+## Phase
+PHASE 11 (post_clean_check)
+
+## Issue
+Repository contains uncommitted changes after proof run. This indicates tests or gate modified tracked files.
+
+## Git Status
+\`\`\`
+$status_output
+\`\`\`
+
+STOPEOF
+    
     return 1
   fi
   
   echo "  ✓ Tree clean"
   echo "✓ PHASE 11: POST-RUN CLEAN CHECK OK"
   return 0
+}
+
+################################################################################
+# SELFTEST MODE: Forced timeout test (proves timeout handling works)
+################################################################################
+phase_99_selftest_timeout() {
+  echo ""
+  echo "════════════════════════════════════════════════════════════════"
+  echo "SELFTEST: Forced Timeout (sleep 9999 with 2s timeout)"
+  echo "════════════════════════════════════════════════════════════════"
+  echo "  NOTE: This phase MUST TIMEOUT intentionally to prove catch works"
+  echo ""
+  
+  local cmd="sleep 9999"
+  
+  # Run with intentional 2-second timeout
+  run_phase "99" "selftest_timeout" "$cmd" "2" || {
+    local exit_code=$?
+    echo "  ✓ SELFTEST: Timeout correctly detected and handled (expected failure)"
+    
+    # Verify STOP file was created
+    if [[ ! -f "$PROOF/STOP_TIMEOUT_PHASE_99.md" ]]; then
+      echo "  ✗ ERROR: STOP_TIMEOUT_PHASE_99.md not created" >&2
+      return 1
+    fi
+    
+    # Verify WATCHDOG was created
+    if [[ ! -f "$PROOF/WATCHDOG_PHASE_99.txt" ]]; then
+      echo "  ✗ ERROR: WATCHDOG_PHASE_99.txt not created" >&2
+      return 1
+    fi
+    
+    echo "  ✓ STOP file: STOP_TIMEOUT_PHASE_99.md"
+    echo "  ✓ WATCHDOG file: WATCHDOG_PHASE_99.txt"
+    
+    # Return success for selftest (the timeout is expected)
+    return 0
+  }
 }
 
 ################################################################################
@@ -496,6 +681,9 @@ main() {
   echo "╔════════════════════════════════════════════════════════════════╗"
   echo "║        FIRSTTRY AUTHENTICATED MARKETPLACE PROOF RUN            ║"
   echo "║                  (Hang-Proof Harness)                          ║"
+  if [[ "$SELFTEST_MODE" == "1" ]]; then
+    echo "║                [SELFTEST TIMEOUT MODE]                         ║"
+  fi
   echo "╚════════════════════════════════════════════════════════════════╝"
   echo ""
   
@@ -512,6 +700,32 @@ main() {
     echo "✗ PHASE 1 FAILED"
     exit 1
   fi
+  
+  # SELFTEST MODE: Run selftest timeout phase only (exit after)
+  if [[ "$SELFTEST_MODE" == "1" ]]; then
+    echo ""
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║           RUNNING SELFTEST TIMEOUT (intentional failure)       ║"
+    echo "╚════════════════════════════════════════════════════════════════╝"
+    
+    if phase_99_selftest_timeout; then
+      echo ""
+      echo "✓ SELFTEST PASSED: Timeout handling confirmed"
+      echo "  - STOP file created: $PROOF/STOP_TIMEOUT_PHASE_99.md"
+      echo "  - WATCHDOG created: $PROOF/WATCHDOG_PHASE_99.txt"
+      echo "  - Phase log: $PROOF/99_selftest_timeout.log"
+      echo ""
+      exit 0
+    else
+      echo ""
+      echo "✗ SELFTEST FAILED: Timeout handling broken"
+      exit 1
+    fi
+  fi
+  
+  # NORMAL MODE (SELFTEST_MODE=0): Run full authenticated phases
+  echo "Running full authenticated proof (12 phases)..."
+  echo ""
   
   # PHASE 2: Toolchain
   if ! phase_2_toolchain; then
