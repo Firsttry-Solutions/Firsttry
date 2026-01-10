@@ -98,7 +98,7 @@ run_phase() {
   # NO PIPING — capture exit code before any further processing
   local cmd_exit=0
   timeout --preserve-status --signal=TERM --kill-after=10s "${timeout_sec}s" \
-    -- $command_str > "$log_file" 2>&1 || cmd_exit=$?
+    bash -c "$command_str" > "$log_file" 2>&1 || cmd_exit=$?
   
   # Classify the exit code BEFORE writing markers, so we know what we're dealing with
   # TIMEOUT is ONLY: 124 (timeout occurred), 137 (killed after timeout), or 143 (killed with TERM during timeout)
