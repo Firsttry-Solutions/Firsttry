@@ -1,6 +1,6 @@
 {
-  "commitSha": "15955cf8e83e972ec99444e69a3c9be11a181a47",
-  "frozenContentSha": "dd3bdc0e3df53ec51e68cdca4de489864d62e600b332d52c0c1271a8d5e18ef3",
+  "commitSha": "99b4ec61a0d83bb817fa11093bbb34ac44bf4bea",
+  "frozenContentSha": "9f7bbeccb9534867c5f9f1ee54a8aa0edc2d0efb7e030f4e67c272dd58196552",
   "method": "git-tracked-files+sha256-manifest",
-  "frozenAt": "2026-01-10T15:05:40Z"
+  "frozenAt": "2026-01-10T17:32:11Z"
 }
