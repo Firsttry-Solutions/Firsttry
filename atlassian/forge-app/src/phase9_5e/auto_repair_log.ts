@@ -228,8 +228,9 @@ export function buildAutoRepairLog(
  */
 export function computeAutoRepairLogHash(log: Omit<AutoRepairLog, 'canonical_hash'>): string {
   // Build canonical string (simplified version without events array)
+  // NOTE: 'computed_at' is excluded because it changes on every execution
+  // and represents metadata (when hash was computed) not content integrity
   const sortedKeys = [
-    'computed_at',
     'events_by_outcome',
     'repair_type_breakdown',
     'schema_version',
