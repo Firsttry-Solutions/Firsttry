@@ -11,7 +11,7 @@ report + history summary:
 
 ## License
 
-FirstTry is source-available under the FirstTry Source-Available License (FSAL 1.0).
+Firstry is source-available under the Firstry Source-Available License (FSAL 1.0).
 
 You may read, clone, study, and modify the code for personal or internal use.
 
@@ -28,9 +28,9 @@ Once GitHub Pages is enabled, these will be available at:
 - Privacy: `https://global-domination.github.io/Firstry/privacy.html`
 - Terms: `https://global-domination.github.io/Firstry/terms.html`
 
-# FirstTry
+# Firstry - Audit Evidence Snapshot for Jira
 
-FirstTry is a local CI mirror and progressive CI runner that helps developers run CI-style checks (ruff, mypy, pytest, etc.) locally with caching and tiered profiles so you can verify code will pass CI before pushing.
+Firstry is a local CI mirror and progressive CI runner that helps developers run CI-style checks (ruff, mypy, pytest, etc.) locally with caching and tiered profiles so you can verify code will pass CI before pushing.
 
 ## Install
 
@@ -77,11 +77,11 @@ The demo runs a tiny sample and prints a proof report. See `.github/workflows/fi
 
 ## Telemetry
 
-FirstTry includes a small telemetry sender.
+Firstry includes a small telemetry sender.
 See `TELEMETRY.md` for details and how to opt in/out. The CLI also writes local telemetry status to `.firsttry/telemetry_status.json`.
 
 ## License
 
-This project is distributed under the FirstTry Source-Available License (FSAL 1.0). See `LICENSE` for full terms.
+This project is distributed under the Firstry Source-Available License (FSAL 1.0). See `LICENSE` for full terms.
 - **Opt-out**: set `FT_SEND_TELEMETRY=0`
 

@@ -1,5 +1,5 @@
 ---
-# Atlassian Forge App Manifest - FirstTry Governance Dual Layer
+# Atlassian Forge App Manifest - Firstry - Audit Evidence Snapshot for Jira
 # PHASE 1: Event ingestion endpoint with token auth, validation, idempotency, storage
 # PHASE 1.1: Storage proof debug endpoint (admin-only)
 # PHASE 3: Scheduled daily/weekly pipelines, run ledgers, readiness gating
@@ -7,7 +7,7 @@
 
 app:
   id: ari:cloud:ecosystem::app/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc
-  description: FirstTry Governance - Atlassian Dual-Layer Integration
+  description: Firstry - Audit Evidence Snapshot for Jira
   runtime:
     name: nodejs20.x
 
@@ -16,8 +16,8 @@ modules:
   # Dashboard Gadget (Bundled UI via Vite)
   jira:dashboardGadget:
     - key: governance-dashboard-gadget
-      title: FirstTry Governance Status
-      description: FirstTry Governance - real-time status overview
+      title: Firstry - Audit Evidence Snapshot
+      description: Firstry - Audit Evidence Snapshot for Jira - real-time status overview
       resource: govGadget2140
       resolver:
         function: status-resolver-fn
