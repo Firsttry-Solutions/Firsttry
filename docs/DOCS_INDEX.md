@@ -1,5 +1,49 @@
 # FirstTry Documentation Index
 
+## Audience & Scope
+
+**Audience**: All FirstTry stakeholders seeking guidance on enterprise documentation organization, terminology, and document structure.
+
+**Scope**: This index provides a roadmap to all FirstTry enterprise documentation, organized by audience and use case. It defines the standard document structure used across all FirstTry enterprise docs. It does NOT provide implementation procedures or technical details (those are in individual documents).
+
+## Executive Summary
+
+FirstTry enterprise documentation is organized by audience and use case, covering governance, security, operations, and strategic planning. Every document follows a consistent structure with audience scope, executive summary, coverage statements, negative assertions, and proof anchors. This index guides stakeholders to the right documentation for their role.
+
+## What This Covers
+
+- Documentation organization by audience and purpose
+- Standard document structure and sections
+- Quick-start paths for different stakeholder roles
+- Key concept definitions and proof references
+
+## What This Explicitly Does NOT Cover
+
+- Technical implementation details (see individual documents)
+- Deployment procedures (see Change Management)
+- Support procedures (see Support Policy)
+- Roadmap details (see Roadmap)
+- Pricing or cost details (see Pricing Rationale)
+
+## Core Assertions
+
+- **All Enterprise Documents Follow Consistent Structure**: Every FirstTry document includes Audience & Scope, Executive Summary, What This Covers, What This Does NOT Cover, Core Assertions, Negative Assertions, and Proof Anchors.
+  - Proof: Document structure described in this index
+
+- **Documentation is Organized by Stakeholder Role**: Enterprise, security, and operations documentation is separated to serve distinct audiences.
+  - Proof: Documentation Categories section (this document)
+
+- **Each Document Contains ≥3 Negative Assertions**: All documents explicitly state what capabilities or commitments they do NOT include.
+  - Proof: See individual documents' "What This Explicitly Does NOT Cover" sections
+
+## Explicit Negative Assertions
+
+- **This index does NOT provide implementation guidance**: Implementation procedures are documented in individual documents (e.g., Change Management).
+
+- **This index does NOT replace reading individual documents**: This index is a roadmap only; stakeholders should review the full documents relevant to their role.
+
+- **This index does NOT describe product features or capabilities**: Feature descriptions are in Enterprise One-Pager, Roadmap, and other domain documents.
+
 ## Overview
 
 Welcome to FirstTry enterprise documentation. This index provides a roadmap to all FirstTry governance, security, operational, and strategic documentation.
@@ -25,7 +69,7 @@ For security teams, compliance officers, and audit stakeholders:
 
 For IT operations, DevOps engineers, and organizations managing deployments:
 
-- **[Support Policy](SUPPORT_POLICY.md)** — Support levels, response times, escalation procedures, support scope boundaries
+- **[Support Policy](SUPPORT_POLICY.md)** — Support scope, escalation procedures, support boundaries
 - **[Roadmap](ROADMAP.md)** — Phase-by-phase planned capabilities, target timeframes, dependencies, adoption path
 
 ## Document Structure

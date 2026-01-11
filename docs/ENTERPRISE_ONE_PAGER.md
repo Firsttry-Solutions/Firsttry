@@ -95,7 +95,7 @@ FirstTry is a read-only Jira governance application that provides real-time visi
 
 ## Support Model
 
-Technical support is provided through [atlassian/forge-app/legal/SUPPORT_POLICY.md](../atlassian/forge-app/legal/SUPPORT_POLICY.md). Operational issues, integration questions, and governance configuration inquiries are addressed according to defined support levels and response times.
+Technical support is provided through [SUPPORT_POLICY.md](SUPPORT_POLICY.md). FirstTry support covers troubleshooting, configuration guidance, and operational questions. Support scope is defined in the support policy document. No contractual SLAs or response-time commitments are defined in this repository.
 
 ## Contact & Resources
 
