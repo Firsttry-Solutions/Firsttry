@@ -1,0 +1,16 @@
+src/core/audit_snapshot/exportPdf.ts(38,33): error TS2307: Cannot find module 'pdfkit' or its corresponding type declarations.
+src/core/audit_snapshot/exportPdf.ts(47,39): error TS2307: Cannot find module 'pdfkit' or its corresponding type declarations.
+src/core/audit_snapshot/generateTrustSnapshot.ts(14,29): error TS2307: Cannot find module '../phase4/timeline' or its corresponding type declarations.
+src/resolvers/audit_snapshot_export.ts(10,19): error TS2614: Module '"@forge/api"' has no exported member 'resolver'. Did you mean to use 'import resolver from "@forge/api"' instead?
+src/resolvers/governance_status.ts(443,5): error TS2322: Type '{ key: SubsystemKey; badge: { color: string; label: StatusLabel; }; reasonCode: ReasonCode; message: string; impact: string; recommendedAction: string; lastSuccessAt: any; }[]' is not assignable to type 'SubsystemStatus[]'.
+  Type '{ key: SubsystemKey; badge: { color: string; label: StatusLabel; }; reasonCode: ReasonCode; message: string; impact: string; recommendedAction: string; lastSuccessAt: any; }' is not assignable to type 'SubsystemStatus'.
+    The types of 'badge.color' are incompatible between these types.
+      Type 'string' is not assignable to type 'StatusColor'.
+src/resolvers/governance_status.ts(444,5): error TS2322: Type '{ key: string; label: string; value: any; badge: { color: string; label: StatusLabel; }; }[]' is not assignable to type 'KpiTile[]'.
+  Type '{ key: string; label: string; value: any; badge: { color: string; label: StatusLabel; }; }' is not assignable to type 'KpiTile'.
+    The types of 'badge.color' are incompatible between these types.
+      Type 'string' is not assignable to type 'StatusColor'.
+src/resolvers/governance_status.ts(445,5): error TS2322: Type '{ key: string; label: string; status: string; message: string; }[]' is not assignable to type 'PhaseItem[]'.
+  Type '{ key: string; label: string; status: string; message: string; }' is not assignable to type 'PhaseItem'.
+    Types of property 'status' are incompatible.
+      Type 'string' is not assignable to type 'StatusColor'.

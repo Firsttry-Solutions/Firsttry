@@ -1,0 +1,15 @@
+4d9ed6c5 chore: freeze payload (lock commit)
+a09f9fb3 chore: bind freeze lock to payload commit (HEAD~1 model)
+fb3feabc docs: MEGA-PROMPT v4 hardening completion summary
+3a49dcbb chore: final freeze lock signature (ba20c1d2)
+ba20c1d2 chore: seal hardened release (ae50bffe)
+ae50bffe chore: update lock commit sha (398d6ba7)
+398d6ba7 chore: finalize freeze+gate hardening (aa101feb)
+159f0333 chore: lock integrity hash (0599c166)
+0599c166 chore: finalize freeze lock (non-bypassable)
+07e85468 chore: final freeze lock with all hardening complete (ce41dc3)
+ce41dc3c docs: add freeze + gate hardening completion report
+dda625c9 chore: update freeze lock with hardened verification (3b8d4c6)
+3b8d4c62 chore: harden freeze + reviewer gate (non-gameable integrity)
+3dcf7108 chore: update freeze lock to match current repository state (a486b44a)
+a486b44a fix: correct timeout vs signal exit classification in proof harness

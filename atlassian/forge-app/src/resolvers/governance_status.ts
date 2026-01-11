@@ -26,6 +26,18 @@ import {
   APP_VERSION,
   APP_ENVIRONMENT,
 } from '../core/constants';
+import {
+  UnifiedGovernanceStatus,
+  ReasonCode,
+  StatusLabel,
+  StatusColor,
+  SubsystemKey,
+  SubsystemStatus,
+  KpiTile,
+  PhaseItem,
+  computeOverallBadge,
+  getReasonCodeLabel,
+} from '../core/unified_status_model';
 
 // Storage key prefixes
 const SNAPSHOT_KEY_PREFIX = 'governance:status:snapshot';
@@ -301,6 +313,154 @@ function createErrorSnapshot(errorMessage: string) {
 }
 
 /**
+ * Build unified status model from legacy payload data
+ * (Backward-compatible addition; does not modify existing fields)
+ */
+function buildUnifiedStatus(legacyPayload: any): UnifiedGovernanceStatus {
+  const {
+    failureCount7d,
+    skippedChecksCount7d,
+    freshnessStatus,
+    degradedReason,
+    lastSuccessAt,
+    systemStatus,
+    isStale,
+    snapshotAgeMinutes,
+  } = legacyPayload;
+
+  // Determine overall badge color and reason code
+  let overallColor: "green" | "yellow" | "red" | "gray" = "gray";
+  let overallReasonCode = ReasonCode.INITIALIZING_NO_DATA;
+  let overallMessage = "System initializing";
+
+  if (systemStatus === "DEGRADED" || isStale) {
+    if (freshnessStatus === "STALE") {
+      overallColor = "red";
+      overallReasonCode = ReasonCode.SCHEDULER_DELAYED;
+      overallMessage = `No successful data collection for ${snapshotAgeMinutes} minutes`;
+    } else if (failureCount7d > 0 || skippedChecksCount7d > 0) {
+      overallColor = "yellow";
+      overallReasonCode = ReasonCode.SCHEDULER_DELAYED;
+      overallMessage = `System degraded: ${failureCount7d} failures, ${skippedChecksCount7d} skipped in 7d`;
+    } else {
+      overallColor = "yellow";
+      overallReasonCode = ReasonCode.EXPORT_PENDING;
+      overallMessage = "System recovering";
+    }
+  } else if (systemStatus === "RUNNING") {
+    if (freshnessStatus === "FRESH") {
+      overallColor = "green";
+      overallReasonCode = ReasonCode.OK;
+      overallMessage = "All systems operational";
+    } else if (freshnessStatus === "AGING") {
+      overallColor = "yellow";
+      overallReasonCode = ReasonCode.SCHEDULER_DELAYED;
+      overallMessage = "Data aging (next refresh expected soon)";
+    } else {
+      overallColor = "gray";
+      overallReasonCode = ReasonCode.INITIALIZING_NO_DATA;
+      overallMessage = "Waiting for first data collection";
+    }
+  }
+
+  // Build subsystems array from individual signal subsystems
+  const subsystems: SubsystemStatus[] = [
+    {
+      key: SubsystemKey.scheduler,
+      badge: {
+        color: (isStale ? "red" : failureCount7d > 0 ? "yellow" : "green") as StatusColor,
+        label: isStale ? StatusLabel.FAILING : failureCount7d > 0 ? StatusLabel.DEGRADED : StatusLabel.HEALTHY,
+      },
+      reasonCode: isStale ? ReasonCode.SCHEDULER_NOT_FIRING : failureCount7d > 0 ? ReasonCode.SCHEDULER_DELAYED : ReasonCode.OK,
+      message: isStale ? "Scheduler not firing or stale data" : failureCount7d > 0 ? `${failureCount7d} failures in 7d` : "Scheduler running normally",
+      impact: isStale ? "Critical: Data not refreshing" : failureCount7d > 0 ? "Moderate: Some checks failing" : "None",
+      recommendedAction: isStale ? "Check scheduler configuration and error logs" : failureCount7d > 0 ? "Investigate failing checks" : "None",
+      lastSuccessAt: lastSuccessAt || undefined,
+    },
+    {
+      key: SubsystemKey.export,
+      badge: {
+        color: "green" as StatusColor,
+        label: StatusLabel.HEALTHY,
+      },
+      reasonCode: ReasonCode.EXPORT_READY,
+      message: "Manual export always available",
+      impact: "None",
+      recommendedAction: "None",
+      lastSuccessAt: lastSuccessAt || undefined,
+    },
+  ];
+
+  // Build KPIs
+  const kpis: KpiTile[] = [
+    {
+      key: "failures_7d",
+      label: "Failures (7d)",
+      value: failureCount7d,
+      badge: {
+        color: (failureCount7d === 0 ? "green" : failureCount7d < 5 ? "yellow" : "red") as StatusColor,
+        label: failureCount7d === 0 ? StatusLabel.HEALTHY : failureCount7d < 5 ? StatusLabel.DEGRADED : StatusLabel.FAILING,
+      },
+    },
+    {
+      key: "skipped_checks_7d",
+      label: "Skipped Checks (7d)",
+      value: skippedChecksCount7d,
+      badge: {
+        color: (skippedChecksCount7d === 0 ? "green" : "yellow") as StatusColor,
+        label: skippedChecksCount7d === 0 ? StatusLabel.HEALTHY : StatusLabel.DEGRADED,
+      },
+    },
+  ];
+
+  // Build phases array
+  const phases: PhaseItem[] = [
+    {
+      key: "phase4_evidence",
+      label: "Phase 4: Evidence Collection",
+      status: (freshnessStatus === "FRESH" ? "green" : freshnessStatus === "AGING" ? "yellow" : "gray") as StatusColor,
+      message: freshnessStatus === "FRESH" ? "Evidence collected recently" : freshnessStatus === "AGING" ? "Evidence aging" : "Waiting for first collection",
+    },
+    {
+      key: "phase5_report",
+      label: "Phase 5: Trust Report",
+      status: (freshnessStatus === "FRESH" ? "green" : freshnessStatus === "AGING" ? "yellow" : "gray") as StatusColor,
+      message: freshnessStatus === "FRESH" ? "Report generated" : freshnessStatus === "AGING" ? "Report aging" : "Waiting for evidence",
+    },
+  ];
+
+  return {
+    schemaVersion: "unified_status_v1",
+    generatedAt: new Date().toISOString(),
+    overall: {
+      key: SubsystemKey.overall,
+      badge: {
+        color: overallColor,
+        label: overallColor === "green" ? StatusLabel.HEALTHY : overallColor === "yellow" ? StatusLabel.DEGRADED : overallColor === "red" ? StatusLabel.FAILING : StatusLabel.INITIALIZING,
+      },
+      reasonCode: overallReasonCode,
+      message: overallMessage,
+      impact: overallColor === "red" ? "Critical" : overallColor === "yellow" ? "Moderate" : "None",
+      recommendedAction: overallColor === "red" ? "Investigate immediately" : overallColor === "yellow" ? "Monitor situation" : "None",
+      lastSuccessAt: lastSuccessAt || undefined,
+    },
+    subsystems,
+    kpis,
+    phases,
+    export: {
+      badge: {
+        color: "green",
+        label: StatusLabel.HEALTHY,
+      },
+      reasonCode: ReasonCode.EXPORT_READY,
+      message: "Manual copy always available",
+      isReady: true,
+      manualCopyAlwaysAvailable: true,
+    },
+  };
+}
+
+/**
  * Build comprehensive resolver payload per v2.14.0 spec
  */
 async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
@@ -402,7 +562,7 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
     const freshness = computeFreshnessStatus(lastSuccessAt);
     const degradedReason = computeDegradedReason(null, snapshot, metrics, failureCount7d.count);
 
-    return {
+    const payload = {
       // App Identity (Diagnostic)
       appId: process.env.FORGE_APP_ID || 'UNKNOWN',
       environment: APP_ENVIRONMENT,
@@ -495,9 +655,14 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       // - No recommendations
       // Version/environment fields are informational only.
     };
+    // Add unified status (backward-compatible)
+    return {
+      ...payload,
+      unifiedStatus: buildUnifiedStatus(payload),
+    };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
+    const legacyPayload = {
       // App Identity (Diagnostic)
       appId: process.env.FORGE_APP_ID || 'UNKNOWN',
       environment: APP_ENVIRONMENT,
@@ -566,6 +731,11 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
       // - No recommendations
       // Version/environment fields are informational only.
     };
+    // Add unified status (backward-compatible)
+    return {
+      ...legacyPayload,
+      unifiedStatus: buildUnifiedStatus(legacyPayload),
+    };
   }
 }
 
@@ -573,7 +743,7 @@ async function buildPayload(cloudId: string): Promise<Record<string, unknown>> {
  * Handle missing tenant identity
  */
 function createDegradedPayload(reasonCode: string): Record<string, unknown> {
-  return {
+  const payload = {
     // App Identity (Diagnostic)
     appId: process.env.FORGE_APP_ID || 'UNKNOWN',
     environment: APP_ENVIRONMENT,
@@ -638,6 +808,10 @@ function createDegradedPayload(reasonCode: string): Record<string, unknown> {
     // - No enforcement
     // - No recommendations
     // Version/environment fields are informational only.
+  };
+  return {
+    ...payload,
+    unifiedStatus: buildUnifiedStatus(payload),
   };
 }
 

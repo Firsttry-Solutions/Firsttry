@@ -1,0 +1,100 @@
+
+> @firstry/forge-app@2.14.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90m/workspaces/Firsttry/atlassian/forge-app[39m
+
+ [32m✓[39m tests/p1_policy_drift.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 746[2mms[22m[39m
+[90mstdout[2m | tests/operator_verification/ov_runner.test.ts[2m > [22m[2mOperator Verification SOP: 5-Level Comprehensive Verification[2m > [22m[2mshould execute 10+ verification runs with identical digests
+[22m[39m✅ Operator Verification: 10 runs with identical digests
+
+ [32m✓[39m tests/operator_verification/ov_runner.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 451[2mms[22m[39m
+     [33m[2m✓[22m[39m should execute 10+ verification runs with identical digests [33m 448[2mms[22m[39m
+[90mstdout[2m | tests/shakedown/scenarios/shk_test_only_drift_guard.test.ts[2m > [22m[2mSHK-096: Test-Only Drift Guard[2m > [22m[2mshould verify src/ exists and is scannable
+[22m[39m[SHK-096] Found 114 TypeScript files in src/
+
+[90mstdout[2m | tests/shakedown/scenarios/shk_test_only_drift_guard.test.ts[2m > [22m[2mSHK-096: Test-Only Drift Guard[2m > [22m[2mshould allow test-only keywords ONLY in tests/** directory
+[22m[39m[SHK-096] Found 1 test-only keywords in tests/ (allowed)
+
+[90mstdout[2m | tests/shakedown/scenarios/shk_test_only_drift_guard.test.ts[2m > [22m[2mSHK-096: Test-Only Drift Guard[2m > [22m[2mshould verify storage.ts has NO test-only conditionals
+[22m[39m[SHK-096] storage.ts analysis: CLEAN
+
+[90mstdout[2m | tests/shakedown/scenarios/shk_test_only_drift_guard.test.ts[2m > [22m[2mSHK-096: Test-Only Drift Guard[2m > [22m[2mshould audit drift guard verdicts
+[22m[39m[SHK-096] Test-Only Drift Guard Result: {
+  "claim": "Production code has zero test-only semantic branches",
+  "testScope": "114 TypeScript files in src/",
+  "findings": "No test-only drift detected",
+  "verdict": "PASS: 0 files with test-only branches found",
+  "timestamp": "2026-01-11T11:44:24.462Z"
+}
+
+[90mstdout[2m | tests/shakedown/scenarios/shk_test_only_drift_guard.test.ts[2m > [22m[2mSHK-096: Test-Only Drift Guard[2m > [22m[2mshould document allowed vs forbidden keywords
+[22m[39m[SHK-096] Keyword Policy: {
+  "forbidden_in_src": [
+    "IS_TEST",
+    "TEST_MODE",
+    "TESTING",
+    "MOCK_MODE",
+    "DEBUG_MODE",
+    "IS_MOCK",
+    "FAKE_MODE"
+  ],
+  "allowed_in_tests": [
+    "All of the above"
+  ],
+  "contexts_where_allowed_in_src": [
+    "Comments only",
+    "String literals only",
+    "Type/interface names only"
+  ],
+  "contexts_forbidden_in_src": [
+    "if conditionals",
+    "switch statements",
+    "Ternary operators",
+    "Logical gates (&&, ||, !)"
+  ]
+}
+
+ [32m✓[39m tests/shakedown/scenarios/shk_test_only_drift_guard.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 208[2mms[22m[39m
+ [32m✓[39m tests/credibility/gap3_egress_static_and_runtime.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 144[2mms[22m[39m
+ [32m✓[39m tests/phase7/drift_scale.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+[90mstderr[2m | tests/credibility/gap1_pii_logging.test.ts[2m > [22m[2mGAP-1: PII Logging Safety[2m > [22m[2mGAP1_STATIC_LOGGING_SCAN: Scan src/ for logging statements
+[22m[39m=== LOGGING STATEMENTS FOUND (REQUIRE REVIEW) ===
+  admin/admin_page_loader.ts:99 [console.error] console.error('[AdminPageLoader] Report validation failed:', e);
+  admin/admin_page_loader.ts:107 [console.error] console.error('[AdminPageLoader] Phase-5 signal rejection:', e);
+  admin/admin_page_loader.ts:113 [console.error] console.error('[AdminPageLoader] Error loading latest report:', error);
+  admin/admin_page_loader.ts:165 [console.error] console.error('[AdminPageLoader] Error loading scheduler state:', error);
+  admin/admin_page_loader.ts:208 [console.error] console.error('[AdminPageLoader] Unexpected error loading admin page state:', error);
+  admin/admin_page_loader.ts:234 [console.error] console.error('[AdminPageLoader] Error saving report:', error);
+  admin/phase5_admin_page.ts:77 [console.error] console.error('[AdminPageHandler] Unexpected error:', error);
+  admin/phase5_admin_page.ts:126 [console.error] console.error('[AdminPageHandler] Error handling JSON export:', error);
+  admin/phase5_admin_page.ts:173 [console.error] console.error('[AdminPageHandler] Error handling PDF export:', error);
+  admin/phase5_admin_page.ts:201 [console.error] console.error('[AdminPageHandler] Error saving generated report:', error);
+  ... and 250 more
+
+[90mstdout[2m | tests/credibility/gap1_pii_logging.test.ts[2m > [22m[2mGAP-1: PII Logging Safety[2m > [22m[2mGAP1_ERROR_INJECTION_EMAIL: Inject errors with email PII, verify no leakage
+[22m[39mGAP1_ERROR_INJECTION_EMAIL: FAIL - Email PII leaked in logs: sensitive.user@company.com
+
+[90mstderr[2m | tests/credibility/gap1_pii_logging.test.ts[2m > [22m[2mGAP-1: PII Logging Safety[2m > [22m[2mGAP1_ERROR_INJECTION_EMAIL: Inject errors with email PII, verify no leakage
+[22m[39mError during authentication: Authentication failed for sensitive.user@company.com
+
+[90mstdout[2m | tests/credibility/gap1_pii_logging.test.ts[2m > [22m[2mGAP-1: PII Logging Safety[2m > [22m[2mGAP1_ERROR_INJECTION_ACCOUNTID: Inject errors with accountId PII, verify no leakage
+[22m[39mGAP1_ERROR_INJECTION_ACCOUNTID: FAIL - AccountId PII leaked: 5b10ac8d82e05b22cc7d4ef5
+
+[90mstderr[2m | tests/credibility/gap1_pii_logging.test.ts[2m > [22m[2mGAP-1: PII Logging Safety[2m > [22m[2mGAP1_ERROR_INJECTION_ACCOUNTID: Inject errors with accountId PII, verify no leakage
+[22m[39mError fetching user: User 5b10ac8d82e05b22cc7d4ef5 not found
+
+[90mstdout[2m | tests/credibility/gap1_pii_logging.test.ts[2m > [22m[2mGAP-1: PII Logging Safety[2m > [22m[2mGAP1_ERROR_INJECTION_JWT: Inject errors with JWT-like tokens, verify no leakage
+[22m[39mGAP1_ERROR_INJECTION_JWT: FAIL - JWT token leaked: found 1 JWT-like patterns
+
+[90mstderr[2m | tests/credibility/gap1_pii_logging.test.ts[2m > [22m[2mGAP-1: PII Logging Safety[2m > [22m[2mGAP1_ERROR_INJECTION_JWT: Inject errors with JWT-like tokens, verify no leakage
+[22m[39mAuthentication error: Invalid token: JWT_REMOVED_SYNTHETIC
+
+[90mstdout[2m | tests/credibility/gap1_pii_logging.test.ts[2m > [22m[2mGAP-1: PII Logging Safety[2m > [22m[2mGAP1_ERROR_INJECTION_SECRET: Inject errors with long secrets, verify no leakage
+[22m[39mGAP1_ERROR_INJECTION_SECRET: PASS - No long secrets detected in logs
+
+[90mstderr[2m | tests/credibility/gap1_pii_logging.test.ts[2m > [22m[2mGAP-1: PII Logging Safety[2m > [22m[2mGAP1_ERROR_INJECTION_SECRET: Inject errors with long secrets, verify no leakage
+[22m[39mAPI error: API key validation failed: SYNTHETIC_TEST_REMOVED
+
+ [32m✓[39m tests/credibility/gap1_pii_logging.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 95[2mms[22m[39m

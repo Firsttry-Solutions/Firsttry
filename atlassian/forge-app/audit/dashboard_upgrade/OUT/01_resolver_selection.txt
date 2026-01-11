@@ -1,0 +1,26 @@
+CANDIDATES:
+src/admin/metrics_page.ts
+src/config/constants.ts
+src/core/audit_snapshot/generateTrustSnapshot.ts
+src/drift/drift_state.ts
+src/gadget-ui/src/main.ts
+src/index.ts
+src/ingest.ts
+src/output/output_contract.ts
+src/phase8/metrics_compute.test.ts
+src/phase8/metrics_compute.ts
+src/phase8/metrics_export.ts
+src/phase8/metrics_model.ts
+src/phase9/procurement_packet.ts
+src/phase9_5a/counterfactual_ledger.test.ts
+src/phase9_5a/counterfactual_ledger.ts
+src/phase9_5b/blind_spot_map.ts
+src/phase9_5c/snapshot_reliability.ts
+src/phase9_5d/audit_readiness.ts
+src/procurement/export_bundle.ts
+src/resolvers/audit_snapshot_export.ts
+src/resolvers/governance_status.ts
+src/retention/retention_policy.ts
+src/scheduled/phase5_scheduler.ts
+src/storage_debug.ts
+COUNT: 24

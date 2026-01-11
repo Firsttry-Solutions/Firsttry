@@ -1,0 +1,201 @@
+=== UI_APP (lines 1-200) ===
+/**
+ * FirstTry Governance Dashboard Gadget - Main Entrypoint
+ * 
+ * This module is bundled by Vite and served in the Forge gadget iframe.
+ * @forge/bridge is bundled with the gadget and provides invoke() for resolver calls.
+ */
+
+// Import invoke from @forge/bridge (now bundled, not injected as global)
+import { invoke } from '@forge/bridge';
+import './styles.css';
+
+// ============================================================================
+// BUILD & PROOF MARKERS
+// ============================================================================
+const UI_BUILD_VERSION = "UI_v2.14.0";
+const UI_BUILD_PROOF = "591f91ce__2026-01-04T165752Z";
+const UI_RESOURCE_KEY = "govGadget2140";
+const BRIDGE_MODE = "BUNDLED";
+const INVOKE_AVAILABLE = true;
+
+// Track last payload for export functions
+let lastPayload: any = null;
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+function setText(id: string, value: string): boolean {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    el.textContent = value;
+    return true;
+}
+
+function setHTML(id: string, value: string): boolean {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    el.innerHTML = value;
+    return true;
+}
+
+function formatTimestampDisplay(iso?: string): string {
+    if (!iso) return 'Not available yet';
+    try {
+        const date = new Date(iso);
+        return new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZoneName: 'short'
+        }).format(date);
+    } catch {
+        return iso;
+    }
+}
+
+function formatTimestampExport(iso?: string): string {
+    if (!iso) return 'Pending…';
+    try {
+        const date = new Date(iso);
+        return new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZoneName: 'short'
+        }).format(date);
+    } catch {
+        return iso;
+    }
+}
+
+// ============================================================================
+// CSS CANARY FAIL-FAST CHECK
+// ============================================================================
+
+function checkCSSCanary(): boolean {
+    const cssCanary = document.getElementById('ui-css-canary');
+    if (!cssCanary) return false;
+
+    const s = window.getComputedStyle(cssCanary);
+
+    // Multi-signal test: fail only if MOST signals indicate "unstyled"
+    const borderOk = s.borderRadius && s.borderRadius !== '0px';
+    const displayOk = (s.display === 'inline-flex' || s.display === 'flex' || s.display === 'inline-block');
+    const paddingOk = (parseFloat(s.paddingLeft || '0') > 0) && (parseFloat(s.paddingRight || '0') > 0);
+    const bgOk = s.backgroundColor && s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent';
+    const fontOk = s.fontWeight && parseInt(s.fontWeight, 10) >= 500;
+
+    // Count signals
+    const okCount = [borderOk, displayOk, paddingOk, bgOk, fontOk].filter(Boolean).length;
+
+    // PASS if at least 3/5 style signals are present
+    return okCount >= 3;
+}
+
+// ============================================================================
+// MAIN LOAD FUNCTION
+// ============================================================================
+
+async function loadStatus() {
+    try {
+        // Mark JS as running
+        setText('ui-js-boot', 'RAN');
+
+        // STEP 0: Report Bridge mode and invoke availability (both always available now)
+        setText('ui-selftest-bridge-mode', BRIDGE_MODE);
+        setText('ui-selftest-invoke-available', INVOKE_AVAILABLE ? 'YES' : 'NO');
+
+        // STEP 0.5: Report export capability
+        setText('ui-selftest-export-mode', EXPORT_MODE);
+        setText('ui-selftest-clipboard', CLIPBOARD_API_AVAILABLE ? 'YES' : 'NO');
+
+        // If invoke is not available, show error and stop
+        if (!INVOKE_AVAILABLE) {
+            const errorHtml = `
+                <div class="error-panel" style="background: #fff7d6; border: 1px solid #f5cd47; border-radius: 8px; padding: 16px; color: #7f5f01;">
+                    <div style="font-weight: 600; font-size: 14px;">CRITICAL: invoke() Not Available</div>
+                    <div style="margin-top: 8px; font-size: 12px;">
+                        The @forge/bridge invoke function could not be loaded or is not available.
+                        This is a critical issue with the gadget setup.
+                    </div>
+                </div>
+            `;
+            setHTML('operational-status', errorHtml);
+            setText('ui-selftest-invoke', 'FAIL (invoke not available)');
+            return;
+        }
+
+        // Step 1: CSS canary check
+        if (!checkCSSCanary()) {
+            const details = 'CSS canary check failed - CSS not applied or stripped';
+            document.body.innerHTML =
+                '<div class="error-panel">' +
+                '<strong>FATAL:</strong> UI CSS not applied (or stripped).<br/>' +
+                'This gadget is running without required styles.<br/><br/>' +
+                '<div class="muted">Diagnostics: ' + details + '</div><br/>' +
+                'Fix: Remove and re-add the gadget, hard refresh, or redeploy/upgrade.' +
+                '</div>';
+            throw new Error('CSS_NOT_APPLIED: ' + details);
+        }
+
+        // Step 2: Run self-tests BEFORE invoke
+        setText('ui-selftest-marker', 'FOUND (static HTML marker present)');
+        
+        // Check if CSS is applied
+        const proof = document.getElementById('ui-style-proof');
+        let cssOk = false;
+        if (proof) {
+            const computed = getComputedStyle(proof);
+            cssOk = computed.borderRadius !== '0px' && computed.backgroundColor !== '';
+        }
+        setText('ui-selftest-css', cssOk ? 'OK (CSS applied)' : 'FAIL (CSS missing/stripped)');
+        
+        // JS is running if we got here
+        setText('ui-selftest-js', 'OK (JS executed)');
+
+        // Step 3: Invoke resolver with try/catch for error handling
+        let data: any = null;
+        let invokeError: string | null = null;
+
+        try {
+            // @ts-ignore - invoke is checked above
+            data = await invoke('get', {});
+        } catch (e) {
+            invokeError = e instanceof Error ? e.message : String(e);
+            console.error('Bridge.invoke failed:', invokeError);
+        }
+
+        if (!data || invokeError) {
+            const errorMsg = invokeError || 'No data returned from resolver';
+            const errorHtml = `
+                <div class="error-panel" style="background: #ffeceb; border: 1px solid #f87462; border-radius: 8px; padding: 16px; color: #5d1f1a;">
+                    <div style="font-weight: 600; font-size: 14px;">Resolver Invocation Failed</div>
+                    <div style="margin-top: 8px; font-size: 12px;">
+                        <div><strong>Error:</strong> ${errorMsg}</div>
+                        <div style="margin-top: 8px;">The backend resolver did not respond successfully. Check that the status-resolver-fn is deployed and functioning.</div>
+                    </div>
+                </div>
+            `;
+            setHTML('operational-status', errorHtml);
+            setText('ui-selftest-invoke', `FAIL (error: ${errorMsg})`);
+            return;
+        }
+
+        lastPayload = data;
+        setText('ui-selftest-invoke', 'OK (resolver responded)');
+
+        // Step 4: Update SERVE_PROOF banner dynamically
+        const banner = document.getElementById('ui-serve-proof-banner');
+        if (banner) {
+            const match = data.uiExpectedBuild === UI_BUILD_VERSION ? 'MATCH' : 'MISMATCH';
+            banner.textContent = `SERVE_PROOF: ${UI_BUILD_PROOF} | resource:${UI_RESOURCE_KEY} | uiVersion:${UI_BUILD_VERSION} | resolverOK:${match}`;
+        }
+

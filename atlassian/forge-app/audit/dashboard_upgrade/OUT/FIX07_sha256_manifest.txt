@@ -1,0 +1,10 @@
+1f198fdf92f0917ba59e413781c7f522288f77fca221c5b67c0f1228af8fdd22    3558  src/gadget-ui/src/enterprise/status.ts
+a0ecb28e3d5991b635061beccbad93a97867a6abb106cf9b935ed0ea5afc1c08    6711  src/gadget-ui/src/enterprise/renderKpiTiles.ts
+f5b128e3c42db2dc0c31206f7129568f2630f052e4247b726a44bba72f765b44    4211  src/gadget-ui/src/enterprise/renderStatusBanner.ts
+08a7429c1036e90b5647cc5a096f3052f9fdd7b4f9cf98b69ea4a0352364a823    5480  src/gadget-ui/src/enterprise/renderProgressTracker.ts
+a8ffbda8f2e8414b7c3a24b028032d21d9ae5ab11e0bf796fa0d39791a32f0d6    5147  src/gadget-ui/src/enterprise/applyExportPolicy.ts
+9a31b95e74d0157436895a23cb28e0835c91803c399d67fb70af1d545c8e5de6    7168  src/gadget-ui/src/enterprise/enterprise.css
+2e2fbd83cc48a77bede4e4473513aa31485c23aa8e67e52a7b75be2582b64752   57011  src/gadget-ui/src/main.ts
+cc016bae64bb823c0df1f1daa470084a43f3126a4b7a0dd3474653dac30d00ed   26527  src/gadget-ui/index.html
+91d0729d23af3fd6b818fda916d60514f95ae62f0271925f55c021902366e59f   28038  src/resolvers/governance_status.ts
+d1675570abbf1a3d88b4e784c96f39f5376730e7b6c948ea673a0d39252fb68a     540  tsconfig.json

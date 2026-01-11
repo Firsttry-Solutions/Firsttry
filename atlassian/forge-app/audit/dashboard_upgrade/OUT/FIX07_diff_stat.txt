@@ -1,0 +1,5 @@
+ atlassian/forge-app/src/gadget-ui/index.html       |   6 +
+ atlassian/forge-app/src/gadget-ui/src/main.ts      |  43 +++++
+ .../forge-app/src/resolvers/governance_status.ts   | 176 ++++++++++++++++++++-
+ atlassian/forge-app/tsconfig.json                  |   2 +-
+ 4 files changed, 223 insertions(+), 4 deletions(-)

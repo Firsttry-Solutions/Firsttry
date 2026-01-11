@@ -1,0 +1,14 @@
+Warning: Your version of Forge CLI is out of date. We recommend you update to the latest version to get the latest features and bug fixes.
+Run npm install -g @forge/cli@latest to update from version 12.12.0 to 12.13.0.
+
+The linter checks the app code for known errors. Warnings are issues you should fix, but they won't stop the app code from building.
+Press Ctrl+C to cancel.
+
+Warning: Could not perform some linting actions for PermissionLinter due to unhandled error "Unknown product".
+
+Warning: Could not perform some linting actions for DeprecatedCspPermissionsManifestLinter due to unhandled error "ENOENT: no such file or directory, lstat '/workspaces/Firsttry/atlassian/forge-app/src/gadget-ui/dist'".
+
+Warning: Could not perform some linting actions for FullManifestLinter due to unhandled error "ENOENT: no such file or directory, lstat '/workspaces/Firsttry/atlassian/forge-app/src/gadget-ui/dist'".
+
+No issues found.
+

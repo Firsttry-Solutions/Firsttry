@@ -1,0 +1,2 @@
+src/gadget-ui/dist/index.html
+src/gadget-ui/index.html

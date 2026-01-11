@@ -1,0 +1,17 @@
+./src/gadget-ui/index.html:6:    <title>FirstTry Governance Status</title>
+./src/gadget-ui/index.html:23:        <h1>FirstTry Governance Status</h1>
+./audit/submission_bundle/run_20260111_072601/manifest.yml:19:      title: FirstTry Governance Status
+./audit/state_assessment/run_20260109_121627Z/05_unpushed_full_diff.txt:99:+      title: FirstTry Governance Status
+./audit/state_assessment/run_20260109_122543Z/15_manifest_excerpt.txt:25:    19	      title: FirstTry Governance Status
+./audit/state_assessment/run_20260109_113220Z/07_manifest.txt:19:      title: FirstTry Governance Status
+./audit/dashboard_upgrade/OUT/01_manifest_contents.txt:19:      title: FirstTry Governance Status
+./audit/FINAL_MARKETPLACE_READINESS_REPORT.md:12:FirstTry – Governance Status is **READY FOR MARKETPLACE SUBMISSION**. All local validation gates pass, demonstrating:
+./audit/FINAL_MARKETPLACE_READINESS_REPORT.md:120:- `forge deploy -e production`: EXIT=0, "Deployed FirstTry – Governance Status to the production environment"
+./audit/FINAL_MARKETPLACE_READINESS_REPORT.md:160:**App Name**: FirstTry – Governance Status  
+./audit/FINAL_MARKETPLACE_READINESS_REPORT.md:197:**FirstTry – Governance Status meets all local validation criteria and is ready for marketplace submission.**
+./manifest.yml:19:      title: FirstTry Governance Status
+./tests/shakedown/SHK_COMMAND_OUTPUTS.txt:106:      title: FirstTry Governance Status
+./marketplace/SCREENSHOT_PLAN.md:12:- Governance Status widget
+./docs/USER_GUIDE.md:30:### Governance Status Widget
+./docs/OPERATIONAL_BEHAVIOR.md:12:FirstTry Governance Status Dashboard is a **read-only, evidence-gathering application**. It does not modify Jira configuration, enforce policies, or mutate user data. This document clarifies operational semantics to prevent misinterpretation of log messages.
+./docs/HEARTBEAT_DELIVERABLES_INDEX.md:245:   View "FirstTry Governance Status" gadget

@@ -1,0 +1,10 @@
+DECLARED_FUNCTIONS:
+  phase5-scheduler-fn            => scheduled/phase5_scheduler.run
+  phase6-weekly-snap-fn          => scheduled/snapshot_weekly.handle
+  token-refresh-job-fn           => scheduled/token_refresh_scheduler.handle
+  daily-dispatcher-fn            => scheduled/scheduler_daily_dispatcher.runDailyDispatch
+  status-resolver-fn             => resolvers/governance_status.get
+
+TARGET_KEY: status-resolver-fn
+HANDLER: resolvers/governance_status.get
+DERIVED_PATH: resolvers/governance_status.ts

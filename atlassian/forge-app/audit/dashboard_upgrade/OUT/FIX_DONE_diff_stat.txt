@@ -1,0 +1,9 @@
+ atlassian/forge-app/package-lock.json              | 176 +++++++++++++++++++-
+ atlassian/forge-app/package.json                   |   4 +-
+ .../core/audit_snapshot/generateTrustSnapshot.ts   |   2 +-
+ atlassian/forge-app/src/gadget-ui/index.html       |   6 +
+ atlassian/forge-app/src/gadget-ui/src/main.ts      |  43 +++++
+ .../src/resolvers/audit_snapshot_export.ts         |   5 +-
+ .../forge-app/src/resolvers/governance_status.ts   | 180 ++++++++++++++++++++-
+ atlassian/forge-app/tsconfig.json                  |   2 +-
+ 8 files changed, 405 insertions(+), 13 deletions(-)

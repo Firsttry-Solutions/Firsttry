@@ -1,0 +1,3 @@
+RESOLVER_PATH=src/resolvers/governance_status.ts
+UI_ENTRY_PATH=src/gadget-ui/index.html
+UI_KIND=custom_ui

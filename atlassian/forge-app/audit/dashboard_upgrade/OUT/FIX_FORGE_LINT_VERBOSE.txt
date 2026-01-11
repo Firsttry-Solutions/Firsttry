@@ -1,0 +1,18 @@
+Error: ESLint was configured to run on `<tsconfigRootDir>/src/gadget-ui/dist/assets/index.CCCh6l46.js` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://typescript-eslint.io/linting/troubleshooting#i-get-errors-telling-me-eslint-was-configured-to-run--however-that-tsconfig-does-not--none-of-those-tsconfigs-include-this-file
+
+Error: ESLint was configured to run on `<tsconfigRootDir>/src/gadget-ui/dist/assets/index.CCCh6l46.js` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://typescript-eslint.io/linting/troubleshooting#i-get-errors-telling-me-eslint-was-configured-to-run--however-that-tsconfig-does-not--none-of-those-tsconfigs-include-this-file
+    at lint (/usr/local/share/nvm/versions/node/v20.19.6/lib/node_modules/@forge/cli/node_modules/@forge/lint/out/lint/lint.js:127:15)
+    at async LintService.run (/usr/local/share/nvm/versions/node/v20.19.6/lib/node_modules/@forge/cli/out/service/lint-service.js:30:29)
+    at async LintController.run (/usr/local/share/nvm/versions/node/v20.19.6/lib/node_modules/@forge/cli/out/command-line/controller/lint-controller.js:13:27)
+    at async /usr/local/share/nvm/versions/node/v20.19.6/lib/node_modules/@forge/cli/out/command-line/register-lint-command.js:13:9
+    at async Command.actionProcessor (/usr/local/share/nvm/versions/node/v20.19.6/lib/node_modules/@forge/cli/out/command-line/command.js:280:28)

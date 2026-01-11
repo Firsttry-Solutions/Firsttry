@@ -1,0 +1,40 @@
+✓ GAP 2.1: Automation visibility disclosure helper creates correct structure
+✓ GAP 2.2: Automation rule coverage shows "execution not measurable" banner
+✓ GAP 3.1: Forecast template has mandatory ESTIMATED label
+✓ GAP 3.2: Forecast template has mandatory time window
+✓ GAP 3.3: Forecast template has mandatory confidence level
+✓ GAP 3.4: Forecast template has mandatory disclaimer
+✓ GAP 4.1: Scope transparency disclosure exists and is complete
+✓ GAP 4.2: Scope transparency explains why metadata-first approach
+✓ GAP 4.3: Scope transparency is versioned
+✓ GAP 5.1: DataQualityIndicator includes all required confidence fields
+✓ GAP 5.2: Confidence levels work for all metrics types
+✓ GAP 5.3: Observation window is always included in disclosure
+✓ INTEGRATION: No zero metric lacks explanation
+✓ INTEGRATION: Automation rules show visibility AND execution disclosure
+✓ INTEGRATION: All disclosure types export correctly
+
+================================================================================
+PHASE 4 DISCLOSURE HARDENING TEST RESULTS
+================================================================================
+
+Tests Passed: 19/19
+
+================================================================================
+GAP CLOSURE SUMMARY
+================================================================================
+GAP 1: Zero-Value Misinterpretation: ✓ CLOSED
+GAP 2: Automation Visibility Illusion: ✓ CLOSED
+GAP 3: Forecast Trust Leakage: ✓ CLOSED
+GAP 4: Marketplace Reviewer Trap: ✓ CLOSED
+GAP 5: Confidence Signal Absence: ✓ CLOSED
+
+================================================================================
+
+ [32m✓[39m tests/test_disclosure_hardening.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m108 passed[39m[22m[90m (108)[39m
+[2m      Tests [22m [1m[32m1270 passed[39m[22m[90m (1270)[39m
+[2m   Start at [22m 12:38:08
+[2m   Duration [22m 19.26s[2m (transform 1.36s, setup 876ms, import 2.31s, tests 3.11s, environment 15ms)[22m
+

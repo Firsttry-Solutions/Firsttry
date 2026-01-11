@@ -9,6 +9,13 @@
 import { invoke } from '@forge/bridge';
 import './styles.css';
 
+// Import enterprise UI renderers (vanilla DOM, accessibility-safe)
+import { renderKpiTiles } from './enterprise/renderKpiTiles';
+import { renderStatusBanner } from './enterprise/renderStatusBanner';
+import { renderProgressTracker } from './enterprise/renderProgressTracker';
+import { applyExportPolicy } from './enterprise/applyExportPolicy';
+import './enterprise/enterprise.css';
+
 // ============================================================================
 // BUILD & PROOF MARKERS
 // ============================================================================
@@ -190,6 +197,42 @@ async function loadStatus() {
 
         lastPayload = data;
         setText('ui-selftest-invoke', 'OK (resolver responded)');
+
+        // ===== ENTERPRISE UI RENDERING (KPI Tiles, Status Banner, Progress Tracker) =====
+        // These are vanilla DOM renderers that integrate with existing UI
+        // They use unifiedStatus field from payload if available, fall back to legacy data
+        try {
+            const unifiedStatus = data.unifiedStatus || null;
+            
+            // Render KPI tiles (8-tile grid at the top)
+            renderKpiTiles({
+                containerId: 'kpi-tiles-section',
+                legacyData: data,
+                unifiedStatus
+            });
+            
+            // Render status banner (alert only if degraded/error)
+            renderStatusBanner({
+                containerId: 'status-banner-section',
+                legacyData: data
+            });
+            
+            // Render progress tracker (timeline)
+            renderProgressTracker({
+                containerId: 'progress-tracker-section',
+                legacyData: data
+            });
+            
+            // Apply export policy (gate buttons, show messages)
+            applyExportPolicy({
+                legacyData: data,
+                unifiedStatus
+            });
+        } catch (enterpriseError) {
+            console.warn('[Enterprise UI] Rendering error:', enterpriseError);
+            // Non-fatal: continue with legacy UI
+        }
+        // ===== END ENTERPRISE UI RENDERING =====
 
         // Step 4: Update SERVE_PROOF banner dynamically
         const banner = document.getElementById('ui-serve-proof-banner');

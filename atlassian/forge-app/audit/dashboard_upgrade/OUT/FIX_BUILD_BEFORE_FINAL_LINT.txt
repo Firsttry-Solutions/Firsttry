@@ -1,0 +1,20 @@
+up to date, audited 18 packages in 654ms
+
+5 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+> @firstry/gadget-ui@2.14.0 build
+> vite build
+
+vite v7.3.0 building client environment for production...
+transforming...
+✓ 72 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                 26.62 kB │ gzip:  3.73 kB
+dist/assets/index.CdME5doC.css  14.66 kB │ gzip:  3.31 kB
+dist/assets/index.CCCh6l46.js   66.80 kB │ gzip: 19.06 kB
+✓ built in 383ms
+Backend build: not configured (intentional)
