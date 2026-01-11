@@ -31,122 +31,74 @@ FirstTry is licensed through Atlassian Forge on a usage-based billing model. Cos
 
 ### Base Product Licensing (Atlassian Forge)
 
-FirstTry is deployed on Atlassian Forge. The cost structure is:
+FirstTry is deployed on Atlassian Forge. The cost structure derives from Forge platform billing, which charges for app storage consumption (evidence ledgers, snapshots) and scheduled task execution (daily/weekly governance pipelines).
 
-| Component | Driver | Cost Model |
-|-----------|--------|-----------|
-| **App Storage** | Evidence ledgers, governance snapshots | GB/month usage |
-| **Scheduled Tasks** | Daily/weekly pipeline execution | Per invocation + compute time |
-| **Runtime Execution** | Function runtime for status resolver | Per-request + execution time |
-| **API Calls** | Jira API read operations | Per API call (1000s included free tier) |
+**Cost Components**:
+- App Storage: Evidence ledgers and governance snapshots
+- Scheduled Tasks: Daily/weekly pipeline execution
+- Runtime Execution: Function execution for status resolution
+- API Calls: Jira API read operations (free tier includes 1000s per month)
 
-**Cost Formula**:
+**Cost Formula** (NOT EVIDENCED IN REPO; refer to [Atlassian Forge Billing](https://developer.atlassian.com/platform/forge/billing/)):
 ```
 Total Monthly Cost = (App Storage × Rate) + (Task Invocations × Rate) + (Runtime Execution × Rate)
 ```
 
-**Example Scenarios** (illustrative, not guaranteed):
-- **Small Deployment** (daily snapshots, light dashboard usage): $50-150/month
-- **Medium Deployment** (daily + weekly snapshots, moderate dashboard load): $150-500/month
-- **Large Deployment** (multi-daily snapshots, high-frequency dashboard access): $500-2000/month
+Actual costs depend on Forge platform rates and are managed through the Atlassian Forge billing dashboard.
 
-### Optional Services
+## Implementation & Support Services
 
-Support and implementation services are billed separately:
+**Implementation Assistance**: Dashboard gadget configuration, scheduled pipeline tuning, and evidence ledger initialization are negotiated separately based on organizational needs.
 
-| Service | Description | Cost Model |
-|---------|-------------|-----------|
-| **Implementation Assistance** | Dashboard gadget setup, pipeline tuning | Fixed hourly rate or project fee |
-| **Standard Support** | Email/ticket-based support, 24-hour response | Annual subscription fee |
-| **Premium Support** | Phone/chat support, 4-hour response | Annual subscription fee |
-| **Custom Integration** | Integration with external governance systems | Consulting engagement |
-
-## Cost Justification: Why Usage-Based Model?
-
-1. **Fairness**: Organizations using FirstTry lightly pay proportionally less than organizations running high-frequency governance pipelines. This aligns cost with value consumed.
-
-2. **Transparency**: Costs scale predictably with usage. Organizations can forecast costs based on deployment scale and snapshot frequency.
-
-3. **Flexibility**: No upfront license fees or multi-year commitments. Organizations can scale up or down based on governance needs.
-
-4. **Incentive Alignment**: Usage-based model incentivizes FirstTry product efficiency (low storage footprint, fast execution), benefiting all customers.
-
-## What Is Included in Base Product
-
-- ✅ Real-time governance status dashboard gadget
-- ✅ Deterministic freeze-lock verification capability
-- ✅ Daily and weekly governance snapshot pipelines
-- ✅ Evidence storage and ledger management (within Forge app storage quota)
-- ✅ Forge manifest validation and reviewer readiness gate
-- ✅ NPM dependency audit integration
-- ✅ Read-only Jira API access (scopes: `storage:app`, `read:jira-work`)
-
-## What Is NOT Included in Base Product
-
-- ❌ Consulting on governance policy definition
-- ❌ Compliance interpretation or audit preparation services
-- ❌ Custom report formats or export integrations
-- ❌ Integration with external governance or risk platforms
-- ❌ Training or organizational change management
-- ❌ Feature-tier licensing or entitlement enforcement
-- ❌ Data backup or recovery services beyond Forge platform
+**Support Services**: Support is provided according to [SUPPORT_POLICY.md](SUPPORT_POLICY.md). Support engagement terms are negotiated separately and not documented in repository.
 
 ## Cost Predictability & Budgeting
 
-### Factors Affecting Costs
+Organizations can monitor FirstTry usage and costs via:
+- Atlassian Forge billing dashboard (app storage, task invocations, runtime execution)
+- FirstTry evidence ledger (snapshot frequency and retention)
+- Jira API usage logs (read operation count and rate limits)
 
-**Variable Factors** (impact cost):
-- Number and frequency of governance snapshots (daily/weekly/custom)
-- Dashboard gadget usage frequency
-- Evidence ledger retention period
-- Jira instance API rate (read operations)
-- Concurrent dashboard users
-
-**Fixed Factors** (do not affect cost):
-- Number of Jira projects or issues
-- User count or team size
-- Organization size or deployment scale
-- Feature tier or licensing model (none exists)
-- Support level (optional, negotiated separately)
-
-### Cost Predictability & Budgeting
-
-### Factors Affecting Costs
-
-**Variable Factors** (impact cost):
-- Number and frequency of governance snapshots (daily/weekly/custom)
-- Dashboard gadget usage frequency
-- Evidence ledger retention period
-- Jira instance API rate (read operations)
-- Concurrent dashboard users
-
-**Fixed Factors** (do not affect cost):
-- Number of Jira projects or issues
-- User count or team size
-- Organization size or deployment scale
-- Feature tier or licensing model (none exists)
-- Support level (optional, negotiated separately)
+Costs scale with deployment scale and snapshot frequency. Organizations should consult Atlassian Forge documentation and their Forge billing dashboard for current rates and cost estimates.
 
 ## Core Assertions
 
-- **FirstTry Uses Uniform Usage-Based Billing**: All customers pay identical per-unit rates for Forge resources (storage, tasks, execution). No feature-tier or customer-segment pricing exists.
-  - Proof: [manifest.yml](../atlassian/forge-app/manifest.yml) (no tier logic)
+- **FirstTry Costs Derive from Forge Usage**: Billing is based on Atlassian Forge platform rates for app storage, scheduled task execution, and runtime execution. No feature-tier or customer-segment pricing exists.
+  - Proof: [manifest.yml](../atlassian/forge-app/manifest.yml) (no tier or licensing logic)
 
-- **Costs Are Predictable and Transparent**: Organizations can forecast costs based on snapshot frequency and storage consumption using published Forge rate cards.
-  - Proof: NOT EVIDENCED IN REPO; refer to [Atlassian Forge Pricing](https://developer.atlassian.com/platform/forge/billing/)
+- **No Per-User or Per-Instance Fees**: FirstTry costs derive only from Forge usage metrics (storage, task execution, runtime). Team size and instance count do not impact licensing costs.
+  - Proof: [manifest.yml:L46-L63](../atlassian/forge-app/manifest.yml#L46-L63) (no user-facing or instance-specific logic)
 
-- **No Per-User or Per-Instance Fees**: FirstTry costs derive only from Forge usage metrics (storage, task execution). Team size and instance count do not impact licensing costs.
-  - Proof: [manifest.yml:L46-L63](../atlassian/forge-app/manifest.yml#L46-L63) (scopes and scheduled tasks, no user-facing logic)
+- **Costs Depend on Deployment Scale and Usage**: Organizations with higher snapshot frequency or larger evidence ledgers will incur proportionally higher Forge resource costs. Costs scale with operational governance needs.
+  - Proof: Forge platform resource consumption (storage, task invocations, runtime execution)
 
-- **Pricing Model Aligns Incentives**: Usage-based pricing incentivizes product efficiency, benefiting all customers through lower costs for the same functionality.
-  - Proof: ROI calculation framework (audit automation cost reduction)
+- **Actual Cost Rates Are External to Repository**: FirstTry documentation does not define Forge pricing rates or cost structures. Organizations must consult Atlassian Forge pricing documentation and their Forge billing dashboard for current costs.
+  - Proof: NOT EVIDENCED IN REPO; refer to [Atlassian Forge Billing](https://developer.atlassian.com/platform/forge/billing/)
 
-## Cost Monitoring
+## Explicit Negative Assertions
 
-Organizations can monitor FirstTry costs via:
-- Atlassian Forge billing dashboard (app storage, task invocations)
-- FirstTry evidence ledger (snapshot frequency and size)
-- Jira API usage logs (read operation count)
+- **This document does NOT define Forge billing rates or pricing formulas**: Actual Forge costs are determined by Atlassian and are not part of FirstTry documentation. FirstTry documentation does not contain pricing guarantees or cost predictions.
+
+- **This document does NOT include support tier pricing or differentiated support costs**: Support engagement terms are negotiated separately outside repository documentation. See [SUPPORT_POLICY.md](SUPPORT_POLICY.md).
+
+- **This pricing rationale does NOT include consulting services or custom integrations**: FirstTry provides governance visibility and evidence automation only. Consulting, custom development, and external integrations require separate negotiated engagements.
+
+- **This document does NOT suggest feature-tier licensing or entitlement models**: All FirstTry capabilities are available to all customers. No "pro," "premium," or "enterprise" feature tiers exist.
+
+- **This document does NOT predict future pricing changes or cost trends**: This rationale describes the current model only. Future Forge platform pricing changes or FirstTry model changes are external to repository documentation.
+
+## Proof Anchors
+
+| Claim | Location |
+|-------|----------|
+| Forge scheduling and task execution | [atlassian/forge-app/manifest.yml:L46-L57](../atlassian/forge-app/manifest.yml#L46-L57) |
+| Read-only API scopes (no write operations) | [atlassian/forge-app/manifest.yml:L23-L27](../atlassian/forge-app/manifest.yml#L23-L27) |
+| Actual Forge pricing rates | NOT EVIDENCED IN REPO; refer to [Atlassian Forge Billing](https://developer.atlassian.com/platform/forge/billing/) |
+| Support engagement terms | [SUPPORT_POLICY.md](SUPPORT_POLICY.md) |
+
+---
+
+**Document Version**: 2.0 | **Updated**: 2026-01-11 | **Status**: Enterprise-Grade | **Compliance**: No numeric cost guarantees
 
 ## Explicit Negative Assertions
 
