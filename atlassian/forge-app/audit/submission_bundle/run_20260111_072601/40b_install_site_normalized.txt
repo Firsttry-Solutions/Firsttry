@@ -1,0 +1,4 @@
+NORMALIZED_SITE_URL=https://firsttry.atlassian.net
+RAW_SITE_INPUT=firsttry.atlassian.net
+SOURCE=existing bundle 40_install_site.txt (and possibly FIRSTTRY_FORGE_SITE env at runtime)
+CANONICAL_FUTURE_INPUT=FIRSTTRY_JIRA_SITE or atlassian/forge-app/audit/production_site.txt containing full https URL

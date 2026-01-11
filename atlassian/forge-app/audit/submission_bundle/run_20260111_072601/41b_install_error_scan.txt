@@ -1,0 +1,6 @@
+Install error scan (strict patterns).
+Log: /workspaces/Firsttry/atlassian/forge-app/audit/submission_bundle/run_20260111_072601/41_forge_install_production.log
+
+Matches:
+55:Error: Installation error: App is already installed.
+60:Error: Failed to install into the following Atlassian apps: Jira. Run forge install again to reattempt this installation.
