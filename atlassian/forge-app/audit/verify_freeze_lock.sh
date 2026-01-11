@@ -3,6 +3,8 @@
 # Uses the FROZEN_CONTENT_SHA algorithm
 
 set -euo pipefail
+export LC_ALL=C
+export LANG=C
 
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 AUDIT_DIR="$(dirname "$0")"
@@ -21,6 +23,30 @@ if [[ -z "$LOCKED_SHA" ]]; then
     exit 1
 fi
 
+# Enforce commitSha == HEAD
+LOCKED_COMMIT=$(jq -r '.commitSha' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
+if [[ -z "$LOCKED_COMMIT" ]]; then
+    echo "FAIL: FREEZE_COMMIT_MISSING"
+    exit 1
+fi
+
+CURRENT_COMMIT=$(git rev-parse HEAD)
+if [[ "$LOCKED_COMMIT" != "$CURRENT_COMMIT" ]]; then
+    echo "FAIL: FREEZE_COMMIT_MISMATCH"
+    echo "  Locked:  $LOCKED_COMMIT"
+    echo "  Current: $CURRENT_COMMIT"
+    exit 1
+fi
+
+# Enforce algorithm immutability
+LOCKED_METHOD=$(jq -r '.method' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
+if [[ "$LOCKED_METHOD" != "git-tracked-files+sha256-manifest" ]]; then
+    echo "FAIL: FREEZE_METHOD_MISMATCH"
+    echo "  Expected: git-tracked-files+sha256-manifest"
+    echo "  Got:      $LOCKED_METHOD"
+    exit 1
+fi
+
 cd "$REPO_ROOT"
 
 # Step 1: Get all git-tracked files under atlassian/forge-app/
@@ -29,8 +55,8 @@ ALL_FILES=$(git ls-files "atlassian/forge-app" 2>/dev/null || echo "")
 # Step 2: Filter out excluded patterns
 FILTERED_FILES=$(echo "$ALL_FILES" | grep -v -E "(audit/proof_runs|OV_RESULTS|SHK_REPORT|audit/verification_reports|audit/out_runs|audit/.*OUT|audit/state_assessment/run_|FREEZE_LOCK\.json|node_modules/|dist/)" || true)
 
-# Step 3: Sort lexicographically
-SORTED_FILES=$(echo "$FILTERED_FILES" | sort)
+# Step 3: Sort lexicographically with locale stability
+SORTED_FILES=$(echo "$FILTERED_FILES" | LC_ALL=C sort)
 
 # Step 4: Build canonical manifest with sha256 for each file
 MANIFEST=$(mktemp)
@@ -44,10 +70,14 @@ echo "$SORTED_FILES" | while read -r file; do
         file_sha=$(sha256sum "$REPO_ROOT/$file" | awk '{print $1}')
         echo "$file_sha  $file"
     fi
-done | sort > "$MANIFEST"
+done | LC_ALL=C sort > "$MANIFEST"
 
 # Step 5: Hash the manifest to get current FROZEN_CONTENT_SHA
 CURRENT_SHA=$(sha256sum "$MANIFEST" | awk '{print $1}')
+
+# Emit machine-readable proof output
+echo "COMPUTED_FROZEN_SHA=$CURRENT_SHA"
+echo "LOCKED_FROZEN_SHA=$LOCKED_SHA"
 
 # Compare
 if [[ "$CURRENT_SHA" == "$LOCKED_SHA" ]]; then
