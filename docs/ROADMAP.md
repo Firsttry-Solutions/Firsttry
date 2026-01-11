@@ -31,7 +31,7 @@ FirstTry is evolving through planned phases that extend governance visibility, e
 
 ### Phase 1: Event Ingestion & Tokenized Access
 
-**Status**: ✅ Production-Ready
+**Status**: Production-Ready
 
 **Capabilities**:
 - Event ingestion endpoint with token-based authentication
@@ -45,7 +45,7 @@ FirstTry is evolving through planned phases that extend governance visibility, e
 
 ### Phase 2: Configuration Visibility
 
-**Status**: ✅ Production-Ready
+**Status**: Production-Ready
 
 **Capabilities**:
 - Daily snapshot of project governance configuration
@@ -59,7 +59,7 @@ FirstTry is evolving through planned phases that extend governance visibility, e
 
 ### Phase 3: Scheduled Pipelines & Readiness Gating
 
-**Status**: ✅ Production-Ready
+**Status**: Production-Ready
 
 **Capabilities**:
 - Daily and weekly governance pipeline execution

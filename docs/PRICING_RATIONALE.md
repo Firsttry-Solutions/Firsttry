@@ -93,7 +93,7 @@ Costs scale with deployment scale and snapshot frequency. Organizations should c
 |-------|----------|
 | Forge scheduling and task execution | [atlassian/forge-app/manifest.yml:L46-L57](../atlassian/forge-app/manifest.yml#L46-L57) |
 | Read-only API scopes (no write operations) | [atlassian/forge-app/manifest.yml:L23-L27](../atlassian/forge-app/manifest.yml#L23-L27) |
-| Actual Forge pricing rates | NOT EVIDENCED IN REPO; refer to [Atlassian Forge Billing](https://developer.atlassian.com/platform/forge/billing/) |
+| Actual Forge pricing rates | NOT EVIDENCED IN REPO |
 | Support engagement terms | [SUPPORT_POLICY.md](SUPPORT_POLICY.md) |
 
 ---
@@ -119,7 +119,7 @@ Costs scale with deployment scale and snapshot frequency. Organizations should c
 | Forge manifest scopes (read-only, no special rates) | [atlassian/forge-app/manifest.yml:L58-L61](../atlassian/forge-app/manifest.yml#L58-L61) |
 | Scheduled pipelines (daily/weekly frequency) | [atlassian/forge-app/manifest.yml:L46-L57](../atlassian/forge-app/manifest.yml#L46-L57) |
 | Evidence storage mechanism (app storage) | [atlassian/forge-app/manifest.yml:L62-L63](../atlassian/forge-app/manifest.yml#L62-L63) |
-| Forge billing documentation | NOT EVIDENCED IN REPO AS OF HEAD; refer to [Atlassian Forge Pricing](https://developer.atlassian.com/platform/forge/billing/) |
+| Forge billing documentation | NOT EVIDENCED IN REPO AS OF HEAD |
 | Support service definitions | [atlassian/forge-app/legal/SUPPORT_POLICY.md](../atlassian/forge-app/legal/SUPPORT_POLICY.md) |
 
 ---

@@ -87,7 +87,7 @@ Issues determined to be Forge platform or Jira Cloud responsibility will be esca
 |-------|----------|
 | FirstTry support scope | [Support Policy — Support Channels](#support-channels) (this document) |
 | Escalation to Atlassian | [Support Policy — Escalation](#escalation) (this document) |
-| Forge platform responsibility | NOT EVIDENCED IN REPO; refer to [Atlassian Forge Support](https://developer.atlassian.com/platform/forge/support/) |
+| Forge platform responsibility | NOT EVIDENCED IN REPO |
 | Evidence storage mechanism | [atlassian/forge-app/manifest.yml:L62-L63](../atlassian/forge-app/manifest.yml#L62-L63) |
 
 ---
