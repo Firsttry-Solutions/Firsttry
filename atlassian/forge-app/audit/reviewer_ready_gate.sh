@@ -3,6 +3,8 @@
 # Non-bypassable checks to ensure marketplace compliance
 
 set -e  # Exit on first error
+export LC_ALL=C
+export LANG=C
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -68,7 +70,7 @@ if [[ ! -f "$CLAIMS_LEDGER" ]]; then
     exit 1
 fi
 
-MISSING_CLAIMS=$(grep -n "MISSING" "$CLAIMS_LEDGER" || true)
+MISSING_CLAIMS=$(grep -E "\|\s*MISSING\s*\|" "$CLAIMS_LEDGER" || true)
 if [[ -n "$MISSING_CLAIMS" ]]; then
     echo -e "${RED}Claims with MISSING status found:${NC}"
     echo "$MISSING_CLAIMS"
@@ -86,6 +88,14 @@ echo "========================================"
 
 FREEZE_LOCK="$AUDIT_DIR/marketplace_submission/FREEZE_LOCK.json"
 VERIFY_FREEZE="$AUDIT_DIR/verify_freeze_lock.sh"
+GENERATE_FREEZE="$AUDIT_DIR/generate_freeze_lock.sh"
+
+# Enforce freeze generator presence
+if [[ ! -f "$GENERATE_FREEZE" ]] || [[ ! -x "$GENERATE_FREEZE" ]]; then
+    echo -e "${RED}FAIL: FREEZE_GENERATOR_MISSING${NC}"
+    echo -e "${RED}Required: audit/generate_freeze_lock.sh (executable)${NC}"
+    exit 1
+fi
 
 # Check if override is set
 if [[ "${FIRSTTRY_ALLOW_NO_FREEZE:-0}" == "1" ]]; then
@@ -107,13 +117,60 @@ else
     
     # Run the verifier
     echo -e "${YELLOW}Running freeze verification...${NC}"
-    if ! bash "$VERIFY_FREEZE"; then
+    VERIFY_OUTPUT=$(bash "$VERIFY_FREEZE" 2>&1) || {
         echo -e "${RED}FAIL: FREEZE_VERIFY_FAIL${NC}"
+        exit 1
+    }
+    
+    # Validate machine-readable proof output
+    if ! echo "$VERIFY_OUTPUT" | grep -q "COMPUTED_FROZEN_SHA="; then
+        echo -e "${RED}FAIL: FREEZE_PROOF_MISSING_COMPUTED${NC}"
+        exit 1
+    fi
+    if ! echo "$VERIFY_OUTPUT" | grep -q "LOCKED_FROZEN_SHA="; then
+        echo -e "${RED}FAIL: FREEZE_PROOF_MISSING_LOCKED${NC}"
         exit 1
     fi
     
+    echo "$VERIFY_OUTPUT"
     echo -e "${GREEN}✓ Freeze verification passed${NC}"
 fi
+
+# Check 3B: Manifest write-scope ban
+echo ""
+echo "========================================"
+echo "CHECK 3B: Write-Scope Ban"
+echo "========================================"
+
+MANIFEST_FILE="$REPO_ROOT/manifest.yml"
+if [[ -f "$MANIFEST_FILE" ]]; then
+    WRITE_SCOPES=$(grep -E "^\s+(write|manage|admin|delete|update|transition):" "$MANIFEST_FILE" 2>/dev/null || true)
+    if [[ -n "$WRITE_SCOPES" ]]; then
+        echo -e "${RED}FAIL: WRITE_SCOPE_DETECTED${NC}"
+        echo "Forbidden scopes found in manifest.yml:"
+        echo "$WRITE_SCOPES"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ No write/manage/admin/delete/update/transition scopes${NC}"
+else
+    echo -e "${RED}FAIL: MANIFEST_NOT_FOUND${NC}"
+    exit 1
+fi
+
+# Check 3C: Write-surface ban
+echo ""
+echo "========================================"
+echo "CHECK 3C: Write-Surface Ban"
+echo "========================================"
+
+WRITE_PATTERNS=$(find "$REPO_ROOT" -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) ! -path "*/tests/*" ! -path "*/__tests__/*" ! -path "*/node_modules/*" ! -path "*/dist/*" -exec grep -l "requestJira.*POST\|requestJira.*PUT\|requestJira.*PATCH\|requestJira.*DELETE\|createIssue\|updateIssue\|deleteIssue" {} \; 2>/dev/null || true)
+if [[ -n "$WRITE_PATTERNS" ]]; then
+    echo -e "${RED}FAIL: WRITE_SURFACE_DETECTED${NC}"
+    echo "Files with write APIs found:"
+    echo "$WRITE_PATTERNS"
+    exit 1
+fi
+echo -e "${GREEN}✓ No write APIs detected outside tests${NC}"
 
 # Check 4: Run tests
 echo ""
@@ -148,10 +205,12 @@ echo "CHECK 5: NPM Audit"
 echo "========================================"
 
 AUDIT_JSON=$(npm audit --json 2>/dev/null || echo "{}")
-HIGH_COUNT=$(echo "$AUDIT_JSON" | grep -o '"severity":"high"' | wc -l || echo 0)
-CRITICAL_COUNT=$(echo "$AUDIT_JSON" | grep -o '"severity":"critical"' | wc -l || echo 0)
 
-if [[ $HIGH_COUNT -gt 0 ]] || [[ $CRITICAL_COUNT -gt 0 ]]; then
+# Structural jq-based parsing
+HIGH_COUNT=$(echo "$AUDIT_JSON" | jq '[.. | objects | select(.severity? == "high")] | length' 2>/dev/null || echo 0)
+CRITICAL_COUNT=$(echo "$AUDIT_JSON" | jq '[.. | objects | select(.severity? == "critical")] | length' 2>/dev/null || echo 0)
+
+if [[ $((HIGH_COUNT + CRITICAL_COUNT)) -gt 0 ]]; then
     WAIVER="$AUDIT_DIR/NPM_AUDIT_WAIVER.md"
     if [[ ! -f "$WAIVER" ]]; then
         echo -e "${RED}FAIL: AUDIT_FAIL_NEEDS_WAIVER${NC}"
