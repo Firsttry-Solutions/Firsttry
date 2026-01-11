@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-FirstTry reduces governance operational overhead by providing deterministic, auditable project readiness snapshots without requiring manual state verification. Organizations deploying FirstTry eliminate manual governance polling, reduce audit preparation time, and gain cryptographically verifiable evidence artifacts for compliance reviews. The primary ROI driver is audit automation: governance readiness proofs that previously required 2-4 hours of manual verification per release cycle now execute deterministically in <5 minutes.
+FirstTry reduces governance operational overhead by providing deterministic, auditable project readiness snapshots without requiring manual state verification. Organizations deploying FirstTry eliminate manual governance polling, reduce audit preparation time, and gain cryptographically verifiable evidence artifacts for compliance reviews. The primary ROI driver is audit automation: governance readiness proofs that previously required several hours of manual verification per release cycle now execute deterministically in minutes.
 
 ## What This Covers
 
@@ -73,13 +73,9 @@ FirstTry eliminates operational risk in governance reporting through:
 
 **Licensing**: FirstTry is deployed via Atlassian Forge. Costs are determined by Forge billing model (based on app storage, scheduled task execution, and runtime resources).
 
-**Support**: Support services are provided according to defined support levels [atlassian/forge-app/legal/SUPPORT_POLICY.md](../atlassian/forge-app/legal/SUPPORT_POLICY.md). Support costs are negotiated separately.
+**Support**: Support services are provided according to [SUPPORT_POLICY.md](SUPPORT_POLICY.md). Support costs are negotiated separately.
 
-**Implementation**: Deployment requires Forge CLI and Jira Cloud admin access. Implementation typically involves:
-- Dashboard gadget configuration: <1 hour
-- Scheduled pipeline tuning: <2 hours
-- Evidence ledger initialization: <1 hour
-- Total implementation: <4 hours
+**Implementation**: Deployment requires Forge CLI and Jira Cloud admin access. Implementation typically involves initial configuration and setup activities that vary by organizational needs. Consult support team for deployment timeline estimates.
 
 ## Explicit Negative Assertions
 
@@ -100,7 +96,7 @@ FirstTry eliminates operational risk in governance reporting through:
 | Deterministic freeze-lock mechanism | [atlassian/forge-app/audit/verify_freeze_lock.sh](../atlassian/forge-app/audit/verify_freeze_lock.sh) |
 | Non-bypassable reviewer readiness gate | [atlassian/forge-app/audit/reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L1-L230) |
 | Evidence storage and snapshot generation | [atlassian/forge-app/manifest.yml:L46-L52](../atlassian/forge-app/manifest.yml#L46-L52) |
-| Support policy and response times | [atlassian/forge-app/legal/SUPPORT_POLICY.md](../atlassian/forge-app/legal/SUPPORT_POLICY.md) |
+| Support policy and engagement | [atlassian/forge-app/legal/SUPPORT_POLICY.md](../atlassian/forge-app/legal/SUPPORT_POLICY.md) |
 | Read-only API surface (no write cost overhead) | [atlassian/forge-app/audit/reviewer_ready_gate.sh:L182-L192](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L182-L192) |
 
 ---

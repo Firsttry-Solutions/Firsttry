@@ -13,6 +13,7 @@ ENTERPRISE_DOCS=(
   "docs/SUPPORT_POLICY.md"
   "docs/CHANGE_MANAGEMENT.md"
   "docs/ROADMAP.md"
+  "docs/DOCS_INDEX.md"
 )
 
 REQUIRED_HEADINGS=(
@@ -129,6 +130,118 @@ for doc in "${ENTERPRISE_DOCS[@]}"; do
   fi
 done
 echo "✓ Proof Anchors format checked"
+echo ""
+
+# Phase G: Forbidden terms enforcement (across ENTERPRISE_DOCS only)
+echo "PHASE G: Forbidden Term Enforcement"
+FORBIDDEN_TERMS=(
+  "tier"
+  "tiers"
+  "entitlement"
+  "license"
+  "licence"
+  "paid feature"
+  "SLA"
+  "response time"
+  "guarantee"
+  "guaranteed"
+  "24/7"
+)
+
+# Compile regex patterns
+FORBIDDEN_PATTERN=$(IFS='|'; echo "${FORBIDDEN_TERMS[*]}")
+
+for doc in "${ENTERPRISE_DOCS[@]}"; do
+  [ ! -f "$doc" ] && continue
+  
+  doc_name=$(basename "$doc")
+  
+  # Check for forbidden terms (case-insensitive)
+  if grep -qi "$FORBIDDEN_PATTERN" "$doc"; then
+    # Secondary check: ensure they're not in "does NOT" context or explanatory text
+    # Allow forbidden terms ONLY in sections that explicitly negate them
+    violations=$(grep -in "$FORBIDDEN_PATTERN" "$doc" | grep -v "does NOT" | grep -v "NOT include" | grep -v "NOT provide" | grep -v "NOT support" | grep -v "NOT define" || true)
+    
+    if [[ -n "$violations" ]]; then
+      echo "✗ FAIL: $doc_name contains forbidden terms outside negation context"
+      echo "  Violations: $(echo "$violations" | head -3)"
+      fail=1
+    fi
+  fi
+done
+
+if [ "$fail" -eq 0 ]; then
+  echo "✓ No forbidden terms in enterprise docs (outside negation)"
+fi
+echo ""
+
+# Phase H: ROI strict numeric locality
+echo "PHASE H: ROI Numeric Claims Strictness"
+if [ -f "docs/ROI_JUSTIFICATION.md" ]; then
+  example_count=$(grep -c "EXAMPLE ONLY" docs/ROI_JUSTIFICATION.md || true)
+  
+  if [ "$example_count" -eq 1 ]; then
+    echo "✓ ROI numeric claims properly scoped to EXAMPLE block"
+  else
+    echo "✗ FAIL: ROI numeric claims not properly scoped ($example_count EXAMPLE blocks found)"
+    fail=1
+  fi
+else
+  echo "✓ ROI_JUSTIFICATION.md check skipped"
+fi
+echo ""
+
+# Phase I: Proof anchors strictness
+echo "PHASE I: Proof Anchors Strictness"
+FORBIDDEN_ANCHOR_PHRASES=(
+  "refer to"
+  "see manifest"
+  "see repo"
+  "as documented"
+  "as outlined above"
+  "above"
+)
+
+ANCHOR_PATTERN=$(IFS='|'; echo "${FORBIDDEN_ANCHOR_PHRASES[*]}")
+
+for doc in "${ENTERPRISE_DOCS[@]}"; do
+  [ ! -f "$doc" ] && continue
+  
+  doc_name=$(basename "$doc")
+  
+  if grep -q "^## Proof Anchor" "$doc"; then
+    # Extract ONLY the Proof Anchors section
+    anchor_section=$(sed -n '/^## Proof Anchor/,/^## [^[:space:]]/p' "$doc" | head -n -1)
+    
+    if echo "$anchor_section" | grep -qi "$ANCHOR_PATTERN"; then
+      echo "✗ FAIL: $doc_name Proof Anchors contains forbidden phrase"
+      fail=1
+    fi
+    
+    # Verify format: lines should be "- Claim: Location" format
+    # Allow patterns like:
+    #   - Claim: [link](url)
+    #   - Claim: NOT EVIDENCED IN REPO
+    #   - Claim: [link]:lines
+    anchor_lines=$(echo "$anchor_section" | grep "^- " || true)
+    if [[ -n "$anchor_lines" ]]; then
+      # Validate each line matches expected patterns
+      while IFS= read -r line; do
+        if ! echo "$line" | grep -qE "^- [^:]+: (\[|NOT EVIDENCED)"; then
+          # Allow some flexibility, but ensure no "refer to" or "see" patterns
+          if echo "$line" | grep -qi "refer to\|see \|as documented\|as outlined"; then
+            echo "✗ FAIL: $doc_name Proof Anchor line format invalid: $line"
+            fail=1
+          fi
+        fi
+      done <<< "$anchor_lines"
+    fi
+  fi
+done
+
+if [ "$fail" -eq 0 ]; then
+  echo "✓ Proof Anchors format verified (strict)"
+fi
 echo ""
 
 # Summary

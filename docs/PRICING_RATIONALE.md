@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-FirstTry is licensed through Atlassian Forge on a usage-based billing model. Costs derive from app storage consumption (evidence ledgers, snapshots), scheduled task execution (daily/weekly governance pipelines), and Forge runtime resource allocation. There are no per-user fees, per-instance charges, or feature-tier licensing models. All FirstTry customers pay identical base costs; differentiation in support level and implementation services is optional.
+FirstTry is licensed through Atlassian Forge on a usage-based billing model. Costs derive from app storage consumption (evidence ledgers, snapshots), scheduled task execution (daily/weekly governance pipelines), and Forge runtime resource allocation. There are no per-user fees, per-instance charges, or feature-tier licensing models. All FirstTry customers pay identical base costs. Commercial support engagement terms may be negotiated separately outside repository documentation.
 
 ## What This Covers
 
