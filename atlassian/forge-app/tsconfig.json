@@ -19,5 +19,5 @@
     "checkJs": false
   },
   "include": ["src/**/*", "src/gadget-ui/dist/**/*.js"],
-  "exclude": ["node_modules", "**/*.test.ts", "src/gadget-ui/src/**/*"]
+  "exclude": ["node_modules", "**/*.test.ts", "src/gadget-ui/src/**/*", "src/gadget-ui/vite.config.ts"]
 }
