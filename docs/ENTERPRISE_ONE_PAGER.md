@@ -62,11 +62,11 @@ FirstTry is a read-only Jira governance application that provides real-time visi
 
 ## Security Posture
 
-- ✅ **Scope-Restricted**: No write, manage, admin, or delete scopes declared in manifest
-- ✅ **Read-Only API Surface**: Zero write-surface APIs outside test code
-- ✅ **Deterministic Verification**: Freeze-lock enables reproducible state verification
-- ✅ **Change Control**: All changes bound to cryptographically verified freeze commits
-- ✅ **Dependency Audited**: Mandatory NPM vulnerability scanning with waiver enforcement
+- **Scope-Restricted**: No write, manage, admin, or delete scopes declared in manifest
+- **Read-Only API Surface**: Zero write-surface APIs outside test code
+- **Deterministic Verification**: Freeze-lock enables reproducible state verification
+- **Change Control**: All changes bound to cryptographically verified freeze commits
+- **Dependency Audited**: Mandatory NPM vulnerability scanning with waiver enforcement
 
 ## Operational Model
 
@@ -77,11 +77,11 @@ FirstTry is a read-only Jira governance application that provides real-time visi
 
 ## What FirstTry Does NOT Include
 
-- ❌ Write operations on Jira data
-- ❌ Feature-tier gating or entitlement enforcement
-- ❌ Conditional security based on subscription level
-- ❌ Custom authentication or authorization logic
-- ❌ Cloud infrastructure security (AWS responsibility)
+- Write operations on Jira data
+- Feature-tier gating or entitlement enforcement
+- Conditional security based on subscription level
+- Custom authentication or authorization logic
+- Cloud infrastructure security (AWS responsibility)
 
 ## Compliance & Governance
 
