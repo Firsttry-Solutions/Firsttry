@@ -1,6 +1,9 @@
 #!/bin/bash
 # Generate FREEZE_LOCK.json using exact deterministic algorithm
 # This is the ONLY authorized way to create or update FREEZE_LOCK.json
+#
+# NOTE: FREEZE_LOCK.json is committed in a follow-up commit.
+# Therefore, verification binds FREEZE_LOCK.commitSha to payload commit HEAD~1.
 
 set -euo pipefail
 export LC_ALL=C

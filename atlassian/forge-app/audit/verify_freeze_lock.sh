@@ -23,18 +23,19 @@ if [[ -z "$LOCKED_SHA" ]]; then
     exit 1
 fi
 
-# Enforce commitSha == HEAD
+# Enforce commitSha == HEAD~1 (payload commit, not lock commit)
 LOCKED_COMMIT=$(jq -r '.commitSha' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
 if [[ -z "$LOCKED_COMMIT" ]]; then
     echo "FAIL: FREEZE_COMMIT_MISSING"
     exit 1
 fi
 
-CURRENT_COMMIT=$(git rev-parse HEAD)
+CURRENT_COMMIT=$(git rev-parse HEAD~1)
 if [[ "$LOCKED_COMMIT" != "$CURRENT_COMMIT" ]]; then
-    echo "FAIL: FREEZE_COMMIT_MISMATCH"
+    echo "FAIL: FREEZE_COMMIT_MISMATCH (expected payload commit HEAD~1)"
     echo "  Locked:  $LOCKED_COMMIT"
-    echo "  Current: $CURRENT_COMMIT"
+    echo "  Payload: $CURRENT_COMMIT"
+    echo "  Head:    $(git rev-parse HEAD)"
     exit 1
 fi
 
