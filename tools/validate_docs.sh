@@ -178,13 +178,66 @@ echo ""
 # Phase H: ROI strict numeric locality
 echo "PHASE H: ROI Numeric Claims Strictness"
 if [ -f "docs/ROI_JUSTIFICATION.md" ]; then
+  # Verify exactly ONE "EXAMPLE ONLY" marker exists
   example_count=$(grep -c "EXAMPLE ONLY" docs/ROI_JUSTIFICATION.md || true)
   
-  if [ "$example_count" -eq 1 ]; then
-    echo "✓ ROI numeric claims properly scoped to EXAMPLE block"
-  else
-    echo "✗ FAIL: ROI numeric claims not properly scoped ($example_count EXAMPLE blocks found)"
+  if [ "$example_count" -ne 1 ]; then
+    echo "✗ FAIL: ROI_JUSTIFICATION.md has $example_count 'EXAMPLE ONLY' markers (need exactly 1)"
     fail=1
+  else
+    # Use awk to enforce numeric locality: no digits [0-9] outside the EXAMPLE block
+    # EXAMPLE block = from marker line to next blank line (or EOF)
+    
+    violations=$(awk '
+    BEGIN {
+      example_start = -1
+      example_end = -1
+      outside_violations = ""
+    }
+    {
+      line_num = NR
+      
+      # Find the EXAMPLE ONLY marker line
+      if (example_start == -1 && /EXAMPLE ONLY/) {
+        example_start = line_num
+        # Set default end to EOF; will be updated if blank line found
+        example_end = 999999
+      }
+      
+      # Find the next blank line after marker (defines end of example block)
+      if (example_start != -1 && example_end == 999999 && /^$/) {
+        if (line_num > example_start) {
+          example_end = line_num - 1
+        }
+      }
+      
+      # Check for digits outside the example block
+      if (/[0-9]/) {
+        if (example_start == -1) {
+          # Digit before marker: violation
+          outside_violations = outside_violations "Line " line_num ": digit before EXAMPLE block: " $0 "\n"
+        } else if (line_num < example_start || line_num > example_end) {
+          # Digit after marker but outside block: violation
+          outside_violations = outside_violations "Line " line_num ": digit outside EXAMPLE block: " $0 "\n"
+        }
+      }
+    }
+    END {
+      if (outside_violations != "") {
+        print outside_violations
+        exit 1
+      }
+      exit 0
+    }
+    ' docs/ROI_JUSTIFICATION.md) || {
+      echo "✗ FAIL: ROI_JUSTIFICATION.md has numerics outside EXAMPLE ONLY block:"
+      echo "$violations"
+      fail=1
+    }
+    
+    if [ "$fail" -eq 0 ]; then
+      echo "✓ ROI numeric claims strictly confined to EXAMPLE block"
+    fi
   fi
 else
   echo "✓ ROI_JUSTIFICATION.md check skipped"
