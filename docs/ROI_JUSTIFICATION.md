@@ -51,10 +51,10 @@ FirstTry eliminates operational risk in governance reporting through:
   - Proof: [verify_freeze_lock.sh](../atlassian/forge-app/audit/verify_freeze_lock.sh)
 
 - **Evidence Ledger Elimination Saves Time**: Automatic daily/weekly governance snapshots eliminate manual evidence collection and compilation.
-  - Proof: [manifest.yml:L46-L57](../atlassian/forge-app/manifest.yml#L46-L57)
+  - Proof: [manifest.yml](../atlassian/forge-app/manifest.yml)
 
 - **Compliance Risk Is Reduced**: Non-bypassable gates and cryptographic verification prevent silent state drift and provide complete audit chains.
-  - Proof: [reviewer_ready_gate.sh:L1-L230](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L1-L230)
+  - Proof: [reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh)
 
 - **Operational ROI Is Variable**: Organizations realize governance automation benefits through reduced manual verification cycles. ROI depends on deployment scale, snapshot frequency, and audit schedule—not on a fixed calculation or guarantee.
   - Proof: Illustrative example in Cost Reduction Framework section (example only)
@@ -94,11 +94,11 @@ FirstTry eliminates operational risk in governance reporting through:
 | Claim | Location |
 |-------|----------|
 | Deterministic freeze-lock mechanism | [atlassian/forge-app/audit/verify_freeze_lock.sh](../atlassian/forge-app/audit/verify_freeze_lock.sh) |
-| Non-bypassable reviewer readiness gate | [atlassian/forge-app/audit/reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L1-L230) |
-| Evidence storage and snapshot generation | [atlassian/forge-app/manifest.yml:L46-L52](../atlassian/forge-app/manifest.yml#L46-L52) |
+| Non-bypassable reviewer readiness gate | [atlassian/forge-app/audit/reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh) |
+| Evidence storage and snapshot generation | [atlassian/forge-app/manifest.yml](../atlassian/forge-app/manifest.yml) |
 | Support policy and engagement | [atlassian/forge-app/legal/SUPPORT_POLICY.md](../atlassian/forge-app/legal/SUPPORT_POLICY.md) |
-| Read-only API surface (no write cost overhead) | [atlassian/forge-app/audit/reviewer_ready_gate.sh:L182-L192](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L182-L192) |
+| Read-only API surface (no write cost overhead) | [atlassian/forge-app/audit/reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh) |
 
 ---
 
-**Document Version**: 1.0 | **Updated**: 2026-01-11 | **Status**: Enterprise-Grade
+**Document Version**: Current | **Updated**: Current Date | **Status**: Enterprise-Grade
