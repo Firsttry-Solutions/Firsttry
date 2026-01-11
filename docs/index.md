@@ -4,7 +4,7 @@ Welcome to FirstTry – Governance Status for Jira.
 
 ## Features
 - Real-time governance tracking (read-only)
-- Zero Jira write scopes
+- Zero Jira write scopes  
 - Scheduled status updates
 - Production-ready deployment
 
