@@ -1,0 +1,20 @@
+ M atlassian/forge-app/src/resolvers/governance_status.ts
+?? atlassian/forge-app/audit/dashboard_upgrade/
+?? atlassian/forge-app/audit/proof/STOP_FORGE_AUTH.md
+?? atlassian/forge-app/audit/proof/STOP_V7_2_SECRETS_DETECTED.md
+?? atlassian/forge-app/audit/proof/STOP_V7_FORGE_AUTH_REQUIRED.md
+?? atlassian/forge-app/audit/submission_bundle/Reviewer_Evidence_Pack_20260111_072601_4d9ed6c5.zip
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/00_BUNDLE_PATH.txt
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/01_REPO_IDENTITY.txt
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/02_GIT_LOG.txt
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/03_GIT_STATUS.txt
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/04_HEAD_STAT.txt
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/40_install_site.txt
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/FREEZE_LOCK.json
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/manifest.yml
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/reviewer_ready_gate.sh
+?? atlassian/forge-app/audit/submission_bundle/run_20260111_072601/verify_freeze_lock.sh
+?? atlassian/forge-app/src/core/unified_status_model.ts
+?? atlassian/forge-app/src/gadget-ui/src/components/
+?? atlassian/forge-app/tests/unit/
+?? audit/dashboard_upgrade/

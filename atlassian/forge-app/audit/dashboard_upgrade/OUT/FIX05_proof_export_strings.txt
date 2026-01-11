@@ -1,0 +1,7 @@
+src/gadget-ui/src/main.ts:972:            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
+src/gadget-ui/src/main.ts:997:            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
+src/gadget-ui/src/main.ts:1040:            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
+src/gadget-ui/src/main.ts:1099:            statusEl.textContent = 'Export unavailable';
+src/gadget-ui/src/main.ts:1131:        statusEl.textContent = 'Export unavailable';
+src/gadget-ui/src/enterprise/applyExportPolicy.ts:133:    // Remove any hardcoded "Export unavailable" text
+src/gadget-ui/src/enterprise/applyExportPolicy.ts:137:        if (el.textContent?.includes("Export unavailable") && el.id !== "export-status") {

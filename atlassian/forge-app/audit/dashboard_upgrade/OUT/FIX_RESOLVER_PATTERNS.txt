@@ -1,0 +1,11 @@
+src/resolvers/config_visibility_resolver.ts:19:import api from '@forge/api';
+src/resolvers/config_visibility_resolver.ts-20-import { resolveTenantIdentity } from '../core/tenant_identity';
+src/resolvers/config_visibility_resolver.ts-21-import { ConfigMetrics, ConfigRiskSnapshot, MetricIssue } from '../core/config_visibility/types';
+--
+src/resolvers/audit_snapshot_export.ts:10:import { storage, resolver } from '@forge/api';
+src/resolvers/audit_snapshot_export.ts-11-import { generateTrustSnapshot } from '../core/audit_snapshot/generateTrustSnapshot';
+src/resolvers/audit_snapshot_export.ts-12-import { toCanonicalJson } from '../core/audit_snapshot/canonicalJson';
+--
+src/resolvers/governance_status.ts:18:import { storage } from '@forge/api';
+src/resolvers/governance_status.ts-19-import { resolveTenantIdentity } from '../core/tenant_identity';
+src/resolvers/governance_status.ts-20-import { getTimeline } from '../phase4/timeline';

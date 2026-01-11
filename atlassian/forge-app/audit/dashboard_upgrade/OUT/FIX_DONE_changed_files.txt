@@ -1,0 +1,8 @@
+atlassian/forge-app/package-lock.json
+atlassian/forge-app/package.json
+atlassian/forge-app/src/core/audit_snapshot/generateTrustSnapshot.ts
+atlassian/forge-app/src/gadget-ui/index.html
+atlassian/forge-app/src/gadget-ui/src/main.ts
+atlassian/forge-app/src/resolvers/audit_snapshot_export.ts
+atlassian/forge-app/src/resolvers/governance_status.ts
+atlassian/forge-app/tsconfig.json

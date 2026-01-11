@@ -1,0 +1,10 @@
+src/scheduled/phase5_scheduler.ts:67: * Write governance status snapshot (tenant-scoped)
+src/gadget-ui/index.html:9:    <!-- UI SERVE_PROOF MARKER (Always visible for deployment verification) -->
+src/gadget-ui/index.html:11:        SERVE_PROOF: 591f91ce__2026-01-04T165752Z__resource:govGadget2140 | UI_v2.14.0
+src/gadget-ui/index.html:212:            <p style="font-size: 14px; color: #44546f; margin-bottom: 12px;">Download or copy governance status data for external review or records.</p>
+src/gadget-ui/src/main.ts:182:                        <div style="margin-top: 8px;">The backend resolver did not respond successfully. Check that the status-resolver-fn is deployed and functioning.</div>
+src/gadget-ui/src/main.ts:194:        // Step 4: Update SERVE_PROOF banner dynamically
+src/gadget-ui/src/main.ts:198:            banner.textContent = `SERVE_PROOF: ${UI_BUILD_PROOF} | resource:${UI_RESOURCE_KEY} | uiVersion:${UI_BUILD_VERSION} | resolverOK:${match}`;
+src/resolvers/audit_snapshot_export.ts:40:  // Guard: verify tenant identity (same as governance_status resolver)
+src/resolvers/governance_status.ts:646: * Invoked by dashboard gadget to display comprehensive governance status
+tests/enterprise_acceptance/evidence/manifest_validation.json:12:      "status-resolver-fn"

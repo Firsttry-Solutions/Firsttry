@@ -1,0 +1,359 @@
+/**
+ * Enterprise UI Components Stylesheet
+ * 
+ * Styles for:
+ * - KPI tiles (2x4 responsive grid)
+ * - Status banner (alert/warning)
+ * - Progress tracker (timeline)
+ * - Status lozenges (badges)
+ * - Accessibility enhancements
+ */
+
+/* ============================================================================
+   STATUS COLORS & LOZENGES
+   ============================================================================ */
+
+.status-green {
+    --status-color: #216e4e;
+    --status-bg: #dffcf0;
+    --status-border: #4bce97;
+}
+
+.status-yellow {
+    --status-color: #7f5f01;
+    --status-bg: #fff7d6;
+    --status-border: #f5cd47;
+}
+
+.status-red {
+    --status-color: #5d1f1a;
+    --status-bg: #ffeceb;
+    --status-border: #f87462;
+}
+
+.status-gray {
+    --status-color: #626f86;
+    --status-bg: #eaeef2;
+    --status-border: #b6c2cf;
+}
+
+.status-lozenge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--status-border);
+    background-color: var(--status-bg);
+    color: var(--status-color);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.status-lozenge .status-icon {
+    font-size: 16px;
+    display: inline-block;
+}
+
+.status-lozenge .status-label {
+    display: inline-block;
+}
+
+.status-lozenge .status-message {
+    width: 100%;
+    font-size: 12px;
+    margin-top: 4px;
+    font-weight: normal;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--status-border);
+    background-color: var(--status-bg);
+    color: var(--status-color);
+    font-weight: 500;
+    font-size: 12px;
+}
+
+/* ============================================================================
+   KPI TILES GRID
+   ============================================================================ */
+
+.kpi-tiles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+    padding: 16px 0;
+    border-bottom: 1px solid #dfe1e6;
+}
+
+@media (max-width: 768px) {
+    .kpi-tiles-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .kpi-tiles-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
+.kpi-tile {
+    padding: 16px;
+    border: 1px solid #dfe1e6;
+    border-radius: 8px;
+    background-color: #fff;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.kpi-tile:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-color: #b6c2cf;
+}
+
+.kpi-tile:focus-within {
+    outline: 2px solid #0052cc;
+    outline-offset: 2px;
+}
+
+.kpi-tile .kpi-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #626f86;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.kpi-tile .kpi-status-container {
+    margin-bottom: 8px;
+}
+
+.kpi-tile .kpi-value {
+    font-size: 13px;
+    color: #161b22;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============================================================================
+   STATUS BANNER (ALERT)
+   ============================================================================ */
+
+.status-banner {
+    margin: 16px 0;
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid var(--status-border);
+    background-color: var(--status-bg);
+    color: var(--status-color);
+}
+
+.status-banner[role="status"] {
+    position: relative;
+}
+
+.status-banner-content {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.status-banner-badge {
+    flex-shrink: 0;
+}
+
+.status-banner-details {
+    flex: 1;
+}
+
+.status-banner-message {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.status-banner-impact,
+.status-banner-action {
+    font-size: 13px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.status-banner-impact strong,
+.status-banner-action strong {
+    font-weight: 600;
+}
+
+/* ============================================================================
+   PROGRESS TRACKER (TIMELINE)
+   ============================================================================ */
+
+.progress-tracker {
+    margin: 24px 0;
+    padding: 16px 0;
+}
+
+.progress-timeline {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+}
+
+/* Vertical connector line */
+.progress-timeline::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    top: 30px;
+    bottom: 0;
+    width: 2px;
+    background-color: #dfe1e6;
+}
+
+.progress-step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.progress-step-marker {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.progress-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--status-border);
+    background-color: var(--status-bg);
+    color: var(--status-color);
+    font-weight: 600;
+    font-size: 16px;
+    transition: transform 0.2s ease;
+}
+
+.progress-step:hover .progress-badge {
+    transform: scale(1.1);
+}
+
+.progress-step.complete .progress-badge {
+    background-color: var(--status-color);
+    color: #fff;
+}
+
+.progress-content {
+    flex: 1;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.progress-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #161b22;
+    margin-bottom: 6px;
+}
+
+.progress-status {
+    margin-bottom: 4px;
+}
+
+.progress-timestamp {
+    font-size: 12px;
+    color: #626f86;
+    font-style: italic;
+}
+
+.progress-summary {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #dfe1e6;
+    font-size: 13px;
+    color: #626f86;
+    font-weight: 500;
+}
+
+/* ============================================================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================================================ */
+
+/* Focus indicators */
+.status-badge:focus,
+.status-lozenge:focus,
+button:focus,
+a:focus {
+    outline: 2px solid #0052cc;
+    outline-offset: 2px;
+}
+
+/* Ensure sufficient contrast */
+@media (prefers-contrast: more) {
+    .status-lozenge,
+    .status-badge,
+    .status-banner {
+        border-width: 2px;
+    }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    .status-badge,
+    .kpi-tile,
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-color-scheme: dark) {
+    .kpi-tile {
+        background-color: #1c2128;
+        border-color: #444c56;
+    }
+
+    .kpi-tile:hover {
+        border-color: #6e7681;
+    }
+
+    .status-green {
+        --status-color: #3fb950;
+        --status-bg: #0d3922;
+        --status-border: #347d39;
+    }
+
+    .status-yellow {
+        --status-color: #d29922;
+        --status-bg: #3d2601;
+        --status-border: #6b5d0f;
+    }
+
+    .status-red {
+        --status-color: #f85149;
+        --status-bg: #3d1f1a;
+        --status-border: #8b2c2c;
+    }
+
+    .status-gray {
+        --status-color: #8b949e;
+        --status-bg: #161b22;
+        --status-border: #30363d;
+    }
+}

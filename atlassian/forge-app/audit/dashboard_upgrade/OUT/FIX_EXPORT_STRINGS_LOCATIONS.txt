@@ -1,0 +1,5 @@
+972:            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
+997:            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
+1040:            showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
+1099:            statusEl.textContent = 'Export unavailable';
+1131:        statusEl.textContent = 'Export unavailable';

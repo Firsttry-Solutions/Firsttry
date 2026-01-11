@@ -1,0 +1,261 @@
+=== RESOLVER (lines 1-260) ===
+/**
+ * GOVERNANCE STATUS RESOLVER
+ * 
+ * Provides comprehensive governance monitoring status to the dashboard gadget.
+ * 
+ * Contract (v2.14.0):
+ * - Always returns a complete payload (never null)
+ * - Tenant-scoped (storage key includes cloudId)
+ * - Returns all required fields per spec
+ * - Fields with missing data are null; completeness status reflects truth
+ * - All timestamps ISO 8601 UTC
+ * - Returns DEGRADED if tenant identity unavailable
+ * 
+ * NOTE: Contract version comments are documentation-only.
+ * They do not affect runtime behavior, exports, UI rendering, or version reporting.
+ */
+
+import { storage } from '@forge/api';
+import { resolveTenantIdentity } from '../core/tenant_identity';
+import { getTimeline } from '../phase4/timeline';
+import {
+  EXPECTED_SCHEDULE_INTERVAL_MINUTES,
+  STALENESS_MULTIPLIER,
+  RETENTION_MAX_SNAPSHOTS,
+  RETENTION_MAX_DAYS,
+  APP_VERSION,
+  APP_ENVIRONMENT,
+} from '../core/constants';
+
+// Storage key prefixes
+const SNAPSHOT_KEY_PREFIX = 'governance:status:snapshot';
+const METRICS_KEY_PREFIX = 'governance:metrics';
+
+function getSnapshotKey(cloudId: string): string {
+  if (!cloudId || cloudId.trim() === '') {
+    return '';
+  }
+  return `${SNAPSHOT_KEY_PREFIX}:${cloudId}`;
+}
+
+function getMetricsKey(cloudId: string): string {
+  if (!cloudId || cloudId.trim() === '') {
+    return '';
+  }
+  return `${METRICS_KEY_PREFIX}:${cloudId}`;
+}
+
+/**
+ * PHASE 1 LOCK-IN: Compute 7-day failure aggregates
+ * Uses only structured signals from existing telemetry.
+ */
+function computeFailureCount7d(snapshot: any, metrics: any): { count: number; buckets: Record<string, number> } {
+  // Initialize buckets
+  const buckets: Record<string, number> = {
+    IDENTITY: 0,
+    PERMISSION: 0,
+    SCHEDULER: 0,
+    API: 0,
+    UNKNOWN: 0,
+  };
+
+  // Rolling window: last 7 days in seconds
+  const now = Date.now();
+  const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
+
+  // Parse failures from snapshot checks (if available)
+  if (snapshot?.checks && Array.isArray(snapshot.checks)) {
+    snapshot.checks.forEach((check: any) => {
+      // Only count failures
+      if (check.status !== 'FAIL') return;
+
+      // Check timestamp
+      const checkTime = check.lastAttemptAt ? new Date(check.lastAttemptAt).getTime() : 0;
+      if (checkTime < sevenDaysAgoMs) return; // Outside window
+
+      // Categorize by reasonCode
+      const code = check.reasonCode || 'UNKNOWN';
+      if (code.includes('IDENTITY')) {
+        buckets['IDENTITY']++;
+      } else if (code.includes('PERMISSION')) {
+        buckets['PERMISSION']++;
+      } else if (code.includes('SCHEDULER')) {
+        buckets['SCHEDULER']++;
+      } else if (code.includes('API') || code.includes('THROTTL')) {
+        buckets['API']++;
+      } else {
+        buckets['UNKNOWN']++;
+      }
+    });
+  }
+
+  const count = Object.values(buckets).reduce((a, b) => a + b, 0);
+  return { count, buckets };
+}
+
+/**
+ * PHASE 1 LOCK-IN: Compute degraded reason (single sentence, priority-based)
+ * Only returns a reason if state is DEGRADED; otherwise null.
+ */
+function computeDegradedReason(
+  health: any,
+  snapshot: any,
+  metrics: any,
+  failureCount7d: number
+): string | null {
+  // Only set if state is DEGRADED
+  if (health?.state !== 'DEGRADED') {
+    return null;
+  }
+
+  // Priority 1: Identity missing/invalid (fail-closed)
+  if (!health?.cloudId || health.cloudId === 'unknown') {
+    return 'Tenant identity is unavailable or invalid.';
+  }
+
+  // Priority 2: Scheduler missed run / scheduler error
+  if (health?.reasons?.some((r: any) => r.code === 'SCHEDULER')) {
+    return 'Scheduler failed to execute the last check.';
+  }
+
+  // Priority 3: Partial check failures
+  if (failureCount7d > 0) {
+    return `${failureCount7d} check(s) failed in the last 7 days.`;
+  }
+
+  // Priority 4: Dependency unavailable
+  if (health?.reasons?.some((r: any) => r.code?.includes('DEPENDENCY'))) {
+    return 'A required dependency is unavailable.';
+  }
+
+  // Priority 5: Unknown system error
+  if (health?.reasons?.some((r: any) => r.code === 'RUNTIME_EXCEPTION')) {
+    return 'An unexpected system error occurred.';
+  }
+
+  // Fallback (should rarely reach here)
+  return 'System is degraded; see operational status for details.';
+}
+
+/**
+ * PHASE 1 LOCK-IN: Compute skipped checks count and primary reason
+ * Only counts checks explicitly marked as SKIPPED in snapshot.
+ */
+function computeSkippedChecks7d(snapshot: any): { count: number; primaryReason: string } {
+  const now = Date.now();
+  const sevenDaysAgoMs = now - 7 * 24 * 60 * 60 * 1000;
+
+  let count = 0;
+  const reasonCodes: Map<string, number> = new Map();
+
+  // Parse skipped checks from snapshot
+  if (snapshot?.checks && Array.isArray(snapshot.checks)) {
+    snapshot.checks.forEach((check: any) => {
+      if (check.status !== 'SKIPPED') return;
+
+      const checkTime = check.lastAttemptAt ? new Date(check.lastAttemptAt).getTime() : 0;
+      if (checkTime < sevenDaysAgoMs) return;
+
+      count++;
+
+      // Track reason codes
+      const reason = check.reasonCode || 'UNKNOWN';
+      reasonCodes.set(reason, (reasonCodes.get(reason) || 0) + 1);
+    });
+  }
+
+  // Determine primary reason (most frequent)
+  let primaryReason = 'NOT_AVAILABLE';
+  if (count > 0) {
+    const mostFrequent = Array.from(reasonCodes.entries()).sort((a, b) => b[1] - a[1])[0];
+    const code = mostFrequent[0];
+
+    if (code.includes('PERMISSION')) {
+      primaryReason = 'PERMISSION_UNAVAILABLE';
+    } else if (code.includes('IDENTITY')) {
+      primaryReason = 'IDENTITY_UNAVAILABLE';
+    } else if (code.includes('THROTTL')) {
+      primaryReason = 'API_THROTTLED';
+    } else if (code.includes('DEPENDENCY')) {
+      primaryReason = 'DEPENDENCY_UNAVAILABLE';
+    } else if (code.includes('SAFETY')) {
+      primaryReason = 'SAFETY_BLOCK';
+    } else {
+      primaryReason = 'NOT_AVAILABLE';
+    }
+  }
+
+  return { count, primaryReason };
+}
+
+/**
+ * PHASE 1 LOCK-IN: Compute data freshness status label
+ * Based on time since lastSuccessAt.
+ */
+function computeFreshnessStatus(lastSuccessAt: string | null): {
+  status: 'FRESH' | 'AGING' | 'STALE' | 'NOT_AVAILABLE';
+  ageSeconds: number | null;
+} {
+  if (!lastSuccessAt) {
+    return { status: 'NOT_AVAILABLE', ageSeconds: null };
+  }
+
+  const lastSuccessMs = new Date(lastSuccessAt).getTime();
+  const nowMs = Date.now();
+  const ageSeconds = Math.floor((nowMs - lastSuccessMs) / 1000);
+
+  const hours24 = 24 * 60 * 60;
+  const hours72 = 72 * 60 * 60;
+
+  let status: 'FRESH' | 'AGING' | 'STALE';
+  if (ageSeconds < hours24) {
+    status = 'FRESH';
+  } else if (ageSeconds <= hours72) {
+    status = 'AGING';
+  } else {
+    status = 'STALE';
+  }
+
+  return { status, ageSeconds };
+}
+
+/**
+ * Initialize status snapshot with defaults
+ */
+function createInitializingSnapshot() {
+  return {
+    appName: 'FirstTry',
+    version: null,
+    environment: null,
+    mode: 'Scheduled monitoring (read-only)',
+    boundaries: {
+      monitoringActive: true,
+      readOnlyMode: true,
+      noJiraWrites: true,
+      noConfigChanges: true,
+      noEnforcement: true,
+    },
+    lastAttemptAt: null,
+    lastSuccessAt: null,
+    lastFailureAt: null,
+    lastFailureReason: null,
+    checks: [
+      {
+        id: 'phase4-evidence',
+        name: 'Phase-4 Evidence Collection',
+        source: 'Scheduled Phase-4 snapshot (daily)',
+        status: 'PENDING',
+        lastAttemptAt: null,
+        lastSuccessAt: null,
+        reasonCode: 'NO_SNAPSHOT_YET',
+        reasonMessage: 'Monitoring active. First snapshot will appear after the next scheduled run.',
+      },
+      {
+        id: 'phase5-report',
+        name: 'Phase-5 Trust Report Generation',
+        source: 'Scheduled Phase-5 trigger (every 5 minutes)',
+        status: 'PENDING',
+        lastAttemptAt: null,
+        lastSuccessAt: null,
+        reasonCode: 'NO_SNAPSHOT_YET',

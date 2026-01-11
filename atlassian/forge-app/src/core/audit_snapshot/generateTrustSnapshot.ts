@@ -11,7 +11,7 @@
 import { storage } from '@forge/api';
 import { TrustSnapshot } from './types';
 import { APP_VERSION, APP_ENVIRONMENT } from '../constants';
-import { getTimeline } from '../phase4/timeline';
+import { getTimeline } from '../../phase4/timeline';
 
 interface Phase1Snapshot {
   lastSuccessAt?: string;

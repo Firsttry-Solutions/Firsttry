@@ -1,0 +1,339 @@
+/**
+ * PROGRESS TRACKER STYLESHEET
+ * 
+ * Vertical timeline for Phase 4 & Phase 5 progress
+ * Replaces old phase table with interactive visualization
+ * Accessible: keyboard navigation, screen reader support
+ * Color-coded: green (complete), yellow (in progress), gray (pending)
+ */
+
+.progress-tracker {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+
+  &.progress-tracker--loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+.progress-tracker__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+.progress-tracker__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  /* Add padding for connector space */
+  padding-left: 3rem;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+
+  &:not(:last-child) {
+    padding-bottom: 2rem;
+  }
+
+  /* First step */
+  &:first-child {
+    padding-top: 0;
+  }
+
+  /* Last step */
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.progress-tracker__connector {
+  position: absolute;
+  left: 0.75rem; /* Center of badge */
+  top: 3.5rem; /* Height from badge bottom to next badge start */
+  width: 2px;
+  bottom: 0;
+  background: #e0e0e0;
+  transition: background 0.3s ease;
+
+  &.progress-tracker__connector--complete {
+    background: #36b37e;
+  }
+
+  &.progress-tracker__connector--pending {
+    background: #bdbdbd;
+  }
+}
+
+.progress-tracker__badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+
+  /* Accessibility */
+  &:focus-visible {
+    outline: 3px solid #0052cc;
+    outline-offset: 2px;
+  }
+
+  &:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Color variants */
+  &.progress-tracker__badge--green {
+    background: #36b37e;
+    color: #ffffff;
+
+    &::before {
+      content: "✓";
+    }
+  }
+
+  &.progress-tracker__badge--yellow {
+    background: #f5cd47;
+    color: #172b4d;
+
+    &::before {
+      content: "⚠";
+    }
+  }
+
+  &.progress-tracker__badge--gray {
+    background: #bdbdbd;
+    color: #ffffff;
+
+    &::before {
+      content: "◉";
+    }
+  }
+
+  &[aria-current="step"] {
+    box-shadow: 0 0 0 4px rgba(0, 82, 204, 0.2);
+  }
+}
+
+.progress-tracker__icon {
+  display: inline;
+}
+
+.sr-only {
+  /* Screen reader only */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.progress-tracker__details {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  transform-origin: top;
+
+  &.progress-tracker__details--expanded {
+    opacity: 1;
+    max-height: 500px;
+    overflow: visible;
+  }
+}
+
+.progress-tracker__title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #172b4d;
+  line-height: 1.3;
+}
+
+.progress-tracker__status {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.progress-tracker__status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &.progress-tracker__status-badge--green {
+    background: #dffcf0;
+    color: #216e4e;
+  }
+
+  &.progress-tracker__status-badge--yellow {
+    background: #fffae6;
+    color: #533f04;
+  }
+
+  &.progress-tracker__status-badge--gray {
+    background: #eef0f4;
+    color: #44546f;
+  }
+}
+
+.progress-tracker__message {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  color: #626f86;
+  line-height: 1.5;
+}
+
+.progress-tracker__timestamp {
+  margin: 0.75rem 0;
+  font-size: 0.8rem;
+  color: #999;
+  font-style: italic;
+}
+
+.progress-tracker__help {
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+  border-radius: 4px;
+  background: rgba(0, 82, 204, 0.05);
+  border-left: 3px solid #0052cc;
+  font-size: 0.875rem;
+
+  &.progress-tracker__help--warning {
+    background: rgba(245, 205, 71, 0.1);
+    border-left-color: #f5cd47;
+  }
+
+  p {
+    margin: 0;
+    color: #626f86;
+  }
+
+  em {
+    color: #172b4d;
+    font-style: italic;
+  }
+
+  strong {
+    color: #172b4d;
+    font-weight: 600;
+  }
+}
+
+/* Skeleton Loading */
+.progress-tracker-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.progress-tracker-step-skeleton {
+  height: 80px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    #f5f6f7 25%,
+    #e6e9ed 50%,
+    #f5f6f7 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Empty State */
+.progress-tracker-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #626f86;
+  font-style: italic;
+  background: #f5f6f7;
+  border-radius: 8px;
+}
+
+/* Progress Summary */
+.progress-tracker__summary {
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+  margin-top: auto;
+  font-size: 0.95rem;
+  color: #626f86;
+  text-align: right;
+
+  p {
+    margin: 0;
+  }
+
+  strong {
+    color: #172b4d;
+  }
+}
+
+/* Responsive: Adjust layout for smaller screens */
+@media (max-width: 640px) {
+  .progress-tracker {
+    padding: 1rem;
+  }
+
+  .progress-tracker__step {
+    padding-left: 2.5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+
+    &:not(:last-child) {
+      padding-bottom: 1.5rem;
+    }
+  }
+
+  .progress-tracker__badge {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .progress-tracker__title {
+    font-size: 1rem;
+  }
+
+  .progress-tracker__summary {
+    text-align: left;
+  }
+}

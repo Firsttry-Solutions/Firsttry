@@ -1,0 +1,11 @@
+MANIFEST manifest.yml
+
+RESOURCES:
+{'key': 'govGadget2140', 'path': 'src/gadget-ui/dist'}
+
+FUNCTIONS:
+
+MODULES_KEYS: ['jira:dashboardGadget', 'function', 'scheduledTrigger']
+
+MODULES (relevant):
+jira:dashboardGadget : [{'key': 'governance-dashboard-gadget', 'title': 'FirstTry Governance Status', 'description': 'FirstTry Governance - real-time status overview', 'resource': 'govGadget2140', 'resolver': {'function': 'status-resolver-fn'}, 'thumbnail': 'https://www.atlassian.com/favicon.ico'}]

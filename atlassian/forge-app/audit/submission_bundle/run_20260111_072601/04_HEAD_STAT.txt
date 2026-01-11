@@ -1,0 +1,3 @@
+4d9ed6c5 chore: freeze payload (lock commit)
+ atlassian/forge-app/audit/marketplace_submission/FREEZE_LOCK.json | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)

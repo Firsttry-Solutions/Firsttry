@@ -1,0 +1,4 @@
+atlassian/forge-app/src/gadget-ui/index.html
+atlassian/forge-app/src/gadget-ui/src/main.ts
+atlassian/forge-app/src/resolvers/governance_status.ts
+atlassian/forge-app/tsconfig.json

@@ -7,7 +7,7 @@
  * Response shape is sealed and exact.
  */
 
-import { storage, resolver } from '@forge/api';
+import { storage } from '@forge/api';
 import { generateTrustSnapshot } from '../core/audit_snapshot/generateTrustSnapshot';
 import { toCanonicalJson } from '../core/audit_snapshot/canonicalJson';
 import { sha256Hex } from '../core/audit_snapshot/hash';
@@ -91,6 +91,3 @@ export async function exportTrustSnapshot(
     throw new Error(`Export failed: ${errorMessage}`);
   }
 }
-
-// Register resolver
-resolver.define('exportTrustSnapshot', exportTrustSnapshot);
