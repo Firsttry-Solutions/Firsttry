@@ -1,0 +1,77 @@
+name: Marketplace Proof Artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - salvage/docs_only
+      - "chore/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-prove:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "atlassian/forge-app/package-lock.json"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install OS deps (ripgrep, jq)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ripgrep jq
+
+      - name: Install Forge CLI (pinned)
+        run: |
+          set -euo pipefail
+          npm i -g @forge/cli@12.13.0
+          forge --version
+
+      - name: Generate evidence (single source of truth)
+        run: |
+          set -euo pipefail
+          RUN_ID="ci-${{ github.run_id }}"
+          bash tools/generate_ci_evidence.sh "$RUN_ID"
+
+      - name: Verify marketplace report defensibility
+        run: |
+          set -euo pipefail
+          bash tools/verify_marketplace_report.sh
+
+      - name: Assert evidence directory exists + list contents
+        run: |
+          set -euo pipefail
+          RUN_ID="ci-${{ github.run_id }}"
+          DIR="audit/proof_runs/marketplace-proof-${RUN_ID}"
+          test -d "$DIR"
+          echo "=== Evidence directory ==="
+          echo "$DIR"
+          echo "=== Evidence files ==="
+          ls -la "$DIR"
+          echo "=== Count ==="
+          ls -1 "$DIR" | wc -l
+
+      - name: Upload proof artifact (MUST exist)
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketplace-proof-${{ github.run_id }}
+          path: audit/proof_runs/marketplace-proof-ci-${{ github.run_id }}/
+          retention-days: 30
+          if-no-files-found: error
