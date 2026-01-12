@@ -30,19 +30,19 @@ FirstTry is a read-only Jira governance application built on Atlassian Forge. Th
 ## Core Assertions
 
 - **Manifest Scope Restriction**: The application declares only `storage:app` and `read:jira-work` scopes in `atlassian/forge-app/manifest.yml:lines 58-61`. No write, manage, admin, delete, or transition scopes are declared.
-  - Proof: [atlassian/forge-app/manifest.yml](atlassian/forge-app/manifest.yml#L58-L61)
+  - Proof: [../atlassian/forge-app/manifest.yml](../atlassian/forge-app/manifest.yml#L58-L61)
 
 - **Read-Only API Surface**: All Jira API calls are restricted to read operations. No `POST`, `PUT`, `PATCH`, or `DELETE` methods are used against Jira endpoints in production code.
-  - Proof: Validated by `atlassian/forge-app/audit/reviewer_ready_gate.sh` Check 3C (write-surface ban) [atlassian/forge-app/audit/reviewer_ready_gate.sh](atlassian/forge-app/audit/reviewer_ready_gate.sh#L182-L192)
+  - Proof: Validated by `atlassian/forge-app/audit/reviewer_ready_gate.sh` Check 3C (write-surface ban) [../atlassian/forge-app/audit/reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L182-L192)
 
 - **Deterministic Verification**: A freeze-lock mechanism enables reproducible verification of application state at any commit. The `audit/generate_freeze_lock.sh` and `audit/verify_freeze_lock.sh` scripts provide non-bypassable proof of artifact integrity.
-  - Proof: [atlassian/forge-app/audit/generate_freeze_lock.sh](atlassian/forge-app/audit/generate_freeze_lock.sh) and [atlassian/forge-app/audit/verify_freeze_lock.sh](atlassian/forge-app/audit/verify_freeze_lock.sh)
+  - Proof: [../atlassian/forge-app/audit/generate_freeze_lock.sh](../atlassian/forge-app/audit/generate_freeze_lock.sh) and [../atlassian/forge-app/audit/verify_freeze_lock.sh](../atlassian/forge-app/audit/verify_freeze_lock.sh)
 
 - **Evidence Utility Integration**: All security claims are locked into a reviewer readiness gate (`reviewer_ready_gate.sh`) that enforces manifest validation, write-surface scanning, and freeze verification non-bypassably.
-  - Proof: [atlassian/forge-app/audit/reviewer_ready_gate.sh](atlassian/forge-app/audit/reviewer_ready_gate.sh#L1-L230)
+  - Proof: [../atlassian/forge-app/audit/reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L1-L230)
 
 - **Dependency Audit Integration**: NPM vulnerability scanning is enforced as a mandatory gate. High and critical vulnerabilities require an explicit waiver file before release.
-  - Proof: [atlassian/forge-app/audit/reviewer_ready_gate.sh](atlassian/forge-app/audit/reviewer_ready_gate.sh#L165-L178)
+  - Proof: [../atlassian/forge-app/audit/reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L165-L178)
 
 ## Operational / Security Implications
 
@@ -70,11 +70,11 @@ FirstTry is a read-only Jira governance application built on Atlassian Forge. Th
 
 | Claim | Location |
 |-------|----------|
-| Manifest restricts scopes to read-only | [atlassian/forge-app/manifest.yml:L58-L61](atlassian/forge-app/manifest.yml#L58-L61) |
-| No write-surface APIs in production code | [atlassian/forge-app/audit/reviewer_ready_gate.sh:L182-L192](atlassian/forge-app/audit/reviewer_ready_gate.sh#L182-L192) |
-| Freeze-lock mechanism for deterministic verification | [atlassian/forge-app/audit/verify_freeze_lock.sh](atlassian/forge-app/audit/verify_freeze_lock.sh) |
-| Mandatory NPM audit gate | [atlassian/forge-app/audit/reviewer_ready_gate.sh:L165-L178](atlassian/forge-app/audit/reviewer_ready_gate.sh#L165-L178) |
-| Non-bypassable reviewer readiness gate | [atlassian/forge-app/audit/reviewer_ready_gate.sh:L1-L230](atlassian/forge-app/audit/reviewer_ready_gate.sh#L1-L230) |
+| Manifest restricts scopes to read-only | [../atlassian/forge-app/manifest.yml:L58-L61](../atlassian/forge-app/manifest.yml#L58-L61) |
+| No write-surface APIs in production code | [../atlassian/forge-app/audit/reviewer_ready_gate.sh:L182-L192](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L182-L192) |
+| Freeze-lock mechanism for deterministic verification | [../atlassian/forge-app/audit/verify_freeze_lock.sh](../atlassian/forge-app/audit/verify_freeze_lock.sh) |
+| Mandatory NPM audit gate | [../atlassian/forge-app/audit/reviewer_ready_gate.sh:L165-L178](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L165-L178) |
+| Non-bypassable reviewer readiness gate | [../atlassian/forge-app/audit/reviewer_ready_gate.sh:L1-L230](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L1-L230) |
 
 ---
 

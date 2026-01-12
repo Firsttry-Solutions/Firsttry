@@ -148,7 +148,7 @@ metadata: {
 - What happens if tenant context is missing - throw or fail closed?
 - Should validation be sync or async?
 
-**Current code:** [src/phase7/drift_compute.ts](../../src/phase7/drift_compute.ts) line 42 extracts tenantId from context, but no explicit validation.
+**Current code:** `src/phase7/drift_compute.ts` line 42 extracts tenantId from context, but no explicit validation.
 
 **Impact:** Wrong placement means adversarial tests will pass incorrectly or fail incorrectly.
 
