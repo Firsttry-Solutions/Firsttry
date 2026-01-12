@@ -167,3 +167,6 @@ audit/credibility_reports/
 
 # FirstTry proof artifacts (never commit)
 atlassian/forge-app/audit/proof_runs/
+
+# Gate proof outputs (generated locally)
+audit/marketplace_submission/
