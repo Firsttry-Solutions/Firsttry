@@ -10,9 +10,12 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const DOCS_ROOT = path.join(__dirname, '../../../../docs'); // Go up 4 levels to reach /workspaces/Firstry/docs
-const REPO_ROOT = path.join(__dirname, '../../../..');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DOCS_ROOT = path.resolve(__dirname, '../../../../docs');
+const REPO_ROOT = path.resolve(__dirname, '../../../..');
 
 /**
  * Required documentation files and their required sections

@@ -1,0 +1,48 @@
+name: Release (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g., 1.2.3)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build + Test (No Deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "atlassian/forge-app/package-lock.json"
+
+      - name: Install dependencies (forge-app)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Run tests (forge-app)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          npm test
+
+      - name: Release note (no deploy)
+        run: |
+          set -euo pipefail
+          echo "Prepared release version: ${{ inputs.version }}"
+          echo "This workflow intentionally does NOT deploy/publish."

@@ -17,6 +17,11 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const appRoot = path.resolve(__dirname, '../../..');
 
 describe('SHK-091: Source Code Setup-Free Proof', () => {
   function scanDirectory(dirPath: string): string[] {
@@ -64,7 +69,7 @@ describe('SHK-091: Source Code Setup-Free Proof', () => {
   }
 
   it('should scan src/ directory for TypeScript files', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
+    const srcRoot = path.resolve(appRoot, 'src');
     const files = scanDirectory(srcRoot);
 
     console.log('[SHK-091] Found', files.length, 'TypeScript files in src/');
@@ -73,7 +78,7 @@ describe('SHK-091: Source Code Setup-Free Proof', () => {
   });
 
   it('should verify NO "setup" patterns in production code critical paths', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
+    const srcRoot = path.resolve(appRoot, 'src');
     const files = scanDirectory(srcRoot);
 
     const filesWithSetup = files.filter((f) => {
@@ -87,7 +92,7 @@ describe('SHK-091: Source Code Setup-Free Proof', () => {
   });
 
   it('should verify NO "configure" patterns in production code critical paths', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
+    const srcRoot = path.resolve(appRoot, 'src');
     const files = scanDirectory(srcRoot);
 
     const filesWithConfigure = files.filter((f) => {
@@ -101,7 +106,7 @@ describe('SHK-091: Source Code Setup-Free Proof', () => {
   });
 
   it('should verify NO "isConfigured" or "setupComplete" guards', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
+    const srcRoot = path.resolve(appRoot, 'src');
     const files = scanDirectory(srcRoot);
 
     let matchCount = 0;
@@ -119,7 +124,7 @@ describe('SHK-091: Source Code Setup-Free Proof', () => {
   });
 
   it('should verify NO "onboarding" or "wizard" patterns in production code', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
+    const srcRoot = path.resolve(appRoot, 'src');
     const files = scanDirectory(srcRoot);
 
     const filesWithOnboarding = files.filter((f) => {
@@ -133,7 +138,7 @@ describe('SHK-091: Source Code Setup-Free Proof', () => {
   });
 
   it('should verify storage.ts key builders do NOT have setup guards', () => {
-    const storagePath = '/workspaces/Firstry/atlassian/forge-app/src/storage.ts';
+    const storagePath = path.resolve(appRoot, 'src/storage.ts');
 
     if (!fs.existsSync(storagePath)) {
       console.log('[SHK-091] storage.ts not found, skipping');
@@ -150,7 +155,7 @@ describe('SHK-091: Source Code Setup-Free Proof', () => {
   });
 
   it('should produce audit entry with scan results', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
+    const srcRoot = path.resolve(appRoot, 'src');
     const files = scanDirectory(srcRoot);
 
     const auditEntry = {
