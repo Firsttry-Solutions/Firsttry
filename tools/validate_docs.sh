@@ -67,3 +67,11 @@ echo "✅ All required headings present"
 
 echo ""
 echo "✅ VALIDATE_DOCS: PASSED"
+
+# SOFT_PLACEHOLDER_BANS_BEGIN
+# Reject "soft placeholders" that aren't caught by REPLACE_WITH_/TODO/TBD.
+if rg -n "add feature justification|add code reference|must be documented|you MUST list|Auto-populated" docs -S >/dev/null; then
+  rg -n "add feature justification|add code reference|must be documented|you MUST list|Auto-populated" docs -S || true
+  fail "soft placeholders found in docs (replace with real content)"
+fi
+# SOFT_PLACEHOLDER_BANS_END
