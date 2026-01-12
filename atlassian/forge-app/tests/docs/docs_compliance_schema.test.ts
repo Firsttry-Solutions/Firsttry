@@ -23,7 +23,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const appRoot = path.resolve(__dirname, '../../..');
+const appRoot = path.resolve(__dirname, '../..');
 
 describe('SHK-097: Docs Compliance Schema Validator', () => {
   interface ComplianceSchema {
@@ -68,7 +68,7 @@ describe('SHK-097: Docs Compliance Schema Validator', () => {
    * Read file content
    */
   function readDoc(filePath: string): string {
-    const basePath = '/workspaces/Firstry';
+    const basePath = appRoot;
     const fullPath = path.join(basePath, filePath);
     if (!fs.existsSync(fullPath)) {
       throw new Error(`File not found: ${fullPath}`);
@@ -113,12 +113,13 @@ describe('SHK-097: Docs Compliance Schema Validator', () => {
   /**
    * Scan source code for numeric constant patterns
    */
-  function findCodeConstant(pattern: string, srcRoot: string = '/workspaces/Firstry/atlassian/forge-app/src'): boolean {
+  function findCodeConstant(pattern: string, srcRoot: string = ''): boolean {
     try {
-      const files = fs.readdirSync(srcRoot, { recursive: true });
+      const root = srcRoot || path.join(appRoot, 'src');
+      const files = fs.readdirSync(root, { recursive: true });
 
       for (const file of files) {
-        const filePath = path.join(srcRoot, file as string);
+        const filePath = path.join(root, file as string);
 
         if (typeof file === 'string' && (file.endsWith('.ts') || file.endsWith('.js'))) {
           try {

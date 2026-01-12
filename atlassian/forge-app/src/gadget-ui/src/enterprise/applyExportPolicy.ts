@@ -144,10 +144,10 @@ export function applyExportPolicy(options: ExportPolicyOptions = {}): void {
 }
 
 /**
- * Setup export policy updater
+ * Initialize export policy updater
  * Call this after loading data, and whenever unifiedStatus changes
  */
-export function setupExportPolicyObserver(
+export function initializeExportPolicyObserver(
     legacyData: any,
     unifiedStatus?: any
 ): void {
