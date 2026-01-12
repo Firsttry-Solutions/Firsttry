@@ -11,16 +11,17 @@
  * 2. Verify allowed modules are present (dashboardGadget, adminPage, etc.)
  * 3. Verify no per-workspace configuration requirements
  *
- * Evidence: manifest.yml at /workspaces/Firstry/atlassian/forge-app/manifest.yml
+ * Evidence: manifest.yml (portable path, computed at runtime)
  */
 
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
+import { manifestPath } from '../../_helpers/paths';
 
 describe('SHK-090: Manifest Zero-Setup Proof', () => {
   it('should load manifest.yml from filesystem', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const exists = fs.existsSync(manifestPath);
+    const mPath = manifestPath();
+    const exists = fs.existsSync(mPath);
 
     console.log('[SHK-090] manifest.yml path check:', exists ? 'FOUND' : 'MISSING');
 
@@ -28,8 +29,8 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
   });
 
   it('should verify manifest content is valid', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+    const mPath = manifestPath();
+    const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
     // Simple validation: check for expected YAML structure
     expect(manifestContent).toContain('modules:');
@@ -37,8 +38,8 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
   });
 
   it('should verify NO webTrigger modules in manifest', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+    const mPath = manifestPath();
+    const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
     const hasWebTrigger = manifestContent.includes('jira:webTrigger') || manifestContent.includes('webTrigger');
 
@@ -48,8 +49,8 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
   });
 
   it('should verify NO customUI modules in manifest', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+    const mPath = manifestPath();
+    const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
     const hasCustomUI = manifestContent.includes('jira:customUI') || manifestContent.includes('customUI');
 
@@ -59,8 +60,8 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
   });
 
   it('should verify NO appPage modules in manifest', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+    const mPath = manifestPath();
+    const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
     const hasAppPage = manifestContent.includes('jira:appPage') || manifestContent.includes('appPage');
 
@@ -70,8 +71,8 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
   });
 
   it('should verify allowed modules exist in manifest', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+    const mPath = manifestPath();
+    const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
     // Verify at least one allowed module type exists
     const allowed = ['dashboardGadget', 'adminPage', 'functions', 'scheduledTrigger'];
@@ -89,8 +90,8 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
   });
 
   it('should verify dashboardGadget is present (read-only status display)', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+    const mPath = manifestPath();
+    const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
     const hasDashboard = manifestContent.includes('dashboardGadget');
 
@@ -100,8 +101,8 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
   });
 
   it('should verify adminPage is present (report viewing, not configuration)', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+    const mPath = manifestPath();
+    const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
     const hasAdmin = manifestContent.includes('adminPage');
 
@@ -111,8 +112,8 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
   });
 
   it('should verify NO modules require per-workspace configuration', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+    const mPath = manifestPath();
+    const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
     // Check for config-related keywords
     const configKeywords = ['requiresConfig', 'needsSetup', 'configRequired', 'setupRequired'];
@@ -130,8 +131,8 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
   });
 
   it('should produce audit entry with manifest inspection results', () => {
-    const manifestPath = '/workspaces/Firstry/atlassian/forge-app/manifest.yml';
-    const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+    const mPath = manifestPath();
+    const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
     const auditEntry = {
       claim: 'Manifest contains NO setup-related modules; zero-touch verified',

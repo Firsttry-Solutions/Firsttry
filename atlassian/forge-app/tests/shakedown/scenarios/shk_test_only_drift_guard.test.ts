@@ -18,6 +18,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
+import { srcRoot, testsRoot } from '../../_helpers/paths';
 import * as path from 'path';
 
 describe('SHK-096: Test-Only Drift Guard', () => {
@@ -133,17 +134,17 @@ describe('SHK-096: Test-Only Drift Guard', () => {
   }
 
   it('should verify src/ exists and is scannable', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
-    expect(fs.existsSync(srcRoot)).toBe(true);
+    const srcRootPath = srcRoot();
+    expect(fs.existsSync(srcRootPath)).toBe(true);
 
-    const files = scanDirectory(srcRoot);
+    const files = scanDirectory(srcRootPath);
     expect(files.length).toBeGreaterThan(0);
     console.log(`[SHK-096] Found ${files.length} TypeScript files in src/`);
   });
 
   it('should find ZERO IS_TEST references in production logic', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
-    const files = scanDirectory(srcRoot);
+    const srcRootPath = srcRoot();
+    const files = scanDirectory(srcRootPath);
 
     const testOnlyMatches: Array<{ file: string; matches: any[] }> = [];
 
@@ -151,7 +152,7 @@ describe('SHK-096: Test-Only Drift Guard', () => {
       const matches = findTestOnlyKeywords(file);
       if (matches.length > 0) {
         testOnlyMatches.push({
-          file: path.relative(srcRoot, file),
+          file: path.relative(srcRootPath, file),
           matches,
         });
       }
@@ -172,8 +173,8 @@ describe('SHK-096: Test-Only Drift Guard', () => {
   });
 
   it('should allow test-only keywords ONLY in tests/** directory', () => {
-    const testsRoot = '/workspaces/Firstry/atlassian/forge-app/tests';
-    const files = scanDirectory(testsRoot);
+    const testsRootPath = testsRoot();
+    const files = scanDirectory(testsRootPath);
 
     const testOnlyMatches: Array<{ file: string; matches: any[] }> = [];
 
@@ -181,7 +182,7 @@ describe('SHK-096: Test-Only Drift Guard', () => {
       const matches = findTestOnlyKeywords(file);
       if (matches.length > 0) {
         testOnlyMatches.push({
-          file: path.relative(testsRoot, file),
+          file: path.relative(testsRootPath, file),
           matches,
         });
       }
@@ -193,7 +194,7 @@ describe('SHK-096: Test-Only Drift Guard', () => {
   });
 
   it('should verify storage.ts has NO test-only conditionals', () => {
-    const storagePath = '/workspaces/Firstry/atlassian/forge-app/src/storage.ts';
+    const storagePath = path.join(srcRoot(), 'storage.ts');
 
     if (fs.existsSync(storagePath)) {
       const matches = findTestOnlyKeywords(storagePath);
@@ -203,8 +204,8 @@ describe('SHK-096: Test-Only Drift Guard', () => {
   });
 
   it('should audit drift guard verdicts', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
-    const files = scanDirectory(srcRoot);
+    const srcRootPath = srcRoot();
+    const files = scanDirectory(srcRootPath);
 
     let totalFiles = files.length;
     let filesWithDrift = 0;
@@ -216,7 +217,7 @@ describe('SHK-096: Test-Only Drift Guard', () => {
       if (matches.length > 0) {
         filesWithDrift++;
         findings.push({
-          file: path.relative(srcRoot, file),
+          file: path.relative(srcRootPath, file),
           driftCount: matches.length,
           driftItems: matches,
         });
