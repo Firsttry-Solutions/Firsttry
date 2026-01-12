@@ -19,6 +19,11 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const appRoot = path.resolve(__dirname, '../../..');
 
 describe('SHK-097: Docs Compliance Schema Validator', () => {
   interface ComplianceSchema {
@@ -38,7 +43,7 @@ describe('SHK-097: Docs Compliance Schema Validator', () => {
    * Load and parse schema
    */
   function loadSchema(): ComplianceSchema {
-    const schemaPath = '/workspaces/Firstry/atlassian/forge-app/tests/docs/docs_compliance_schema.json';
+    const schemaPath = path.resolve(appRoot, 'tests/docs/docs_compliance_schema.json');
     const schemaContent = fs.readFileSync(schemaPath, 'utf-8');
     const schemaJson = JSON.parse(schemaContent);
 
@@ -54,7 +59,7 @@ describe('SHK-097: Docs Compliance Schema Validator', () => {
    * Check if file exists
    */
   function fileExists(filePath: string): boolean {
-    const basePath = '/workspaces/Firstry';
+    const basePath = appRoot;
     const fullPath = path.join(basePath, filePath);
     return fs.existsSync(fullPath);
   }
