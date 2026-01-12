@@ -1,0 +1,29 @@
+name: Workflow Sanity (Parser Safety)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - ".github/workflows/**"
+      - ".github/scripts/**"
+  push:
+    paths:
+      - ".github/workflows/**"
+      - ".github/scripts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sanity-check:
+    name: Validate Workflow Structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate active workflows
+        run: python3 .github/scripts/validate_workflows.py

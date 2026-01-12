@@ -25,23 +25,28 @@ const createMockFetch = () => vi.fn().mockResolvedValue({
 
 const createMockStorageFn = () => vi.fn().mockResolvedValue(undefined);
 
+// Create mock storage object
+const createMockStorage = () => ({
+  get: createMockStorageFn(),
+  set: createMockStorageFn(),
+  delete: createMockStorageFn(),
+});
+
 // Create the api object with chainable methods
 export const api = {
   asUser: vi.fn(() => ({
     requestJira: createMockRequestJira(),
     fetch: createMockFetch(),
+    requestStorage: vi.fn((callback) => callback(createMockStorage())),
   })),
   asApp: vi.fn(() => ({
     requestJira: createMockRequestJira(),
     fetch: createMockFetch(),
+    requestStorage: vi.fn((callback) => callback(createMockStorage())),
   })),
   requestJira: createMockRequestJira(),
   fetch: createMockFetch(),
-  storage: {
-    get: createMockStorageFn(),
-    set: createMockStorageFn(),
-    delete: createMockStorageFn(),
-  },
+  storage: createMockStorage(),
 };
 
 // Create the scheduled object for scheduled handlers
