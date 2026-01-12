@@ -1,0 +1,22 @@
+name: Workflow Sanity (Parser Safety)
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  sanity-check:
+    name: Validate Workflow Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Validate all workflows
+        run: python .github/scripts/validate_workflows.py
