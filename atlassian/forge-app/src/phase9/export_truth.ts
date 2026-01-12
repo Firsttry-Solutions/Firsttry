@@ -30,8 +30,6 @@
  * }
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-
 /**
  * Export schema version
  * Increment when making breaking changes to export format

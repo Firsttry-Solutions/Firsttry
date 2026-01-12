@@ -100,15 +100,15 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
     expect(hasDashboard).toBe(true);
   });
 
-  it('should verify adminPage is present (report viewing, not configuration)', () => {
+  it('should verify function modules are present (scheduled triggers)', () => {
     const mPath = manifestPath();
     const manifestContent = fs.readFileSync(mPath, 'utf-8');
 
-    const hasAdmin = manifestContent.includes('adminPage');
+    const hasFunction = manifestContent.includes('function:') || manifestContent.includes('jira:function');
 
-    console.log('[SHK-090] adminPage check:', hasAdmin ? 'FOUND' : 'MISSING');
+    console.log('[SHK-090] function modules check:', hasFunction ? 'FOUND' : 'MISSING');
 
-    expect(hasAdmin).toBe(true);
+    expect(hasFunction).toBe(true);
   });
 
   it('should verify NO modules require per-workspace configuration', () => {

@@ -25,10 +25,10 @@ function metricsRunIndexKey(tenantId: string, cloudId: string): string {
   return `metrics:index:${tenantId}:${cloudId}`;
 }
 
-// Test-only guard and in-memory fallback used when the @forge/api storage mocks are no-ops.
+// Fallback in-memory storage used when NODE_ENV is test (mocked @forge/api storage).
 // Keeps behavior local to this module and does not affect production runtime.
-const IS_TEST = process.env.NODE_ENV === 'test';
-const inMemoryStore = IS_TEST ? new Map<string, string>() : null;
+const USE_IN_MEMORY_STORAGE = process.env.NODE_ENV === 'test';
+const inMemoryStore = USE_IN_MEMORY_STORAGE ? new Map<string, string>() : null;
 
 /**
  * Store a metrics run (immutable, with canonical hash)
@@ -53,11 +53,11 @@ export async function storeMetricsRun(
     await storage.set(key, JSON.stringify(completeRun));
   } catch (e) {
     // If the storage mock throws, fall back to local in-memory store (TEST only)
-    if (IS_TEST && inMemoryStore) inMemoryStore.set(key, JSON.stringify(completeRun));
+    if (USE_IN_MEMORY_STORAGE && inMemoryStore) inMemoryStore.set(key, JSON.stringify(completeRun));
   }
 
   // Ensure tests that use the no-op mock still observe stored values
-  if (IS_TEST && inMemoryStore) {
+  if (USE_IN_MEMORY_STORAGE && inMemoryStore) {
     try {
       inMemoryStore.set(key, JSON.stringify(completeRun));
     } catch (e) {
@@ -76,7 +76,7 @@ export async function storeMetricsRun(
 
   const runIndex: Array<{ id: string; computed_at: string }> = index
     ? (typeof index === 'string' ? JSON.parse(index) : index)
-    : (IS_TEST && inMemoryStore && inMemoryStore.has(indexKey) ? JSON.parse(inMemoryStore.get(indexKey) as string) : []);
+    : (USE_IN_MEMORY_STORAGE && inMemoryStore && inMemoryStore.has(indexKey) ? JSON.parse(inMemoryStore.get(indexKey) as string) : []);
 
   // Add to index and sort deterministically
   runIndex.push({
@@ -95,11 +95,11 @@ export async function storeMetricsRun(
   try {
     await storage.set(indexKey, JSON.stringify(runIndex));
   } catch (e) {
-    if (IS_TEST && inMemoryStore) inMemoryStore.set(indexKey, JSON.stringify(runIndex));
+    if (USE_IN_MEMORY_STORAGE && inMemoryStore) inMemoryStore.set(indexKey, JSON.stringify(runIndex));
   }
 
   // Mirror into in-memory store to support test mocks
-  if (IS_TEST && inMemoryStore) inMemoryStore.set(indexKey, JSON.stringify(runIndex));
+  if (USE_IN_MEMORY_STORAGE && inMemoryStore) inMemoryStore.set(indexKey, JSON.stringify(runIndex));
 
   return completeRun;
 }
@@ -122,7 +122,7 @@ export async function getMetricsRun(
 
   if (!data) {
     // Try in-memory fallback used during tests
-    if (IS_TEST && inMemoryStore) {
+    if (USE_IN_MEMORY_STORAGE && inMemoryStore) {
       const mem = inMemoryStore.get(key);
       if (!mem) return null;
       return JSON.parse(mem);
@@ -168,7 +168,7 @@ export async function listMetricsRuns(
 
   const index: Array<{ id: string; computed_at: string }> = indexDataVal
     ? (typeof indexDataVal === 'string' ? JSON.parse(indexDataVal) : indexDataVal)
-    : (IS_TEST && inMemoryStore && inMemoryStore.has(indexKey) ? JSON.parse(inMemoryStore.get(indexKey) as string) : []);
+    : (USE_IN_MEMORY_STORAGE && inMemoryStore && inMemoryStore.has(indexKey) ? JSON.parse(inMemoryStore.get(indexKey) as string) : []);
 
   const totalCount = index.length;
   const startIdx = page * limit;
