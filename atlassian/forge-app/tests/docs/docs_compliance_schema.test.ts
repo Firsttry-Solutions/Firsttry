@@ -141,7 +141,7 @@ describe('SHK-097: Docs Compliance Schema Validator', () => {
   }
 
   it('should load and validate schema file exists', () => {
-    const schemaPath = '/workspaces/Firstry/atlassian/forge-app/tests/docs/docs_compliance_schema.json';
+    const schemaPath = path.resolve(appRoot, 'tests/docs/docs_compliance_schema.json');
     expect(fs.existsSync(schemaPath)).toBe(true);
 
     const schema = loadSchema();
