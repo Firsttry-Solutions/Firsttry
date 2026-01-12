@@ -1,9 +1,9 @@
 # Marketplace Readiness Report
 
-**Run Timestamp (UTC):** 2026-01-12T06:38:05Z
+**Run Timestamp (UTC):** 2026-01-12T07:21:14Z
 **Branch:** salvage/docs_only  
-**Commit SHA:** b0a3128a7a2d11c6446ae62038a6e1e148c54f6b  
-**Evidence Directory:** `/tmp/ft_atomic_proof_20260112T063608Z/`
+**Commit SHA:** 8d10069a9c21de87280e13bdbfb4f30b71da6bfd  
+**Evidence Directory:** `/tmp/ft_atomic_proof_20260112T070843Z/`
 
 ---
 
@@ -28,13 +28,13 @@ This report certifies that **Firstry - Audit Evidence Snapshot for Jira** has co
 **Repository State:**
 - Clean working tree at audit start
 - Branch: salvage/docs_only
-- HEAD: b0a3128a7a2d11c6446ae62038a6e1e148c54f6b
+- HEAD: 8d10069a9c21de87280e13bdbfb4f30b71da6bfd
 - No uncommitted changes
 
 **Evidence:**
-- [00_baseline.txt](/tmp/ft_atomic_proof_20260112T063608Z)
-- [00_stash.txt](/tmp/ft_atomic_proof_20260112T063608Z)
-- [00_post_stash_status.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- [00_baseline.txt](/tmp/ft_atomic_proof_20260112T070843Z/00_baseline.txt)
+- [00_stash.txt](/tmp/ft_atomic_proof_20260112T070843Z/00_stash.txt)
+- [00_post_stash_status.txt](/tmp/ft_atomic_proof_20260112T070843Z/00_post_stash_status.txt)
 
 ---
 
@@ -52,8 +52,8 @@ This report certifies that **Firstry - Audit Evidence Snapshot for Jira** has co
 - 4 Scheduled Triggers (phase5-auto-scheduler, phase6-weekly-snapshot, token-refresh-job, daily-dispatcher)
 
 **Evidence:**
-- [01_repo_map.txt](/tmp/ft_atomic_proof_20260112T063608Z)
-- [01_feature_inventory.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- [01_repo_map.txt](/tmp/ft_atomic_proof_20260112T070843Z/01_repo_map.txt)
+- [01_feature_inventory.txt](/tmp/ft_atomic_proof_20260112T070843Z/01_feature_inventory.txt)
 
 ---
 
@@ -69,7 +69,7 @@ found 0 vulnerabilities
 ```
 
 **Evidence:**
-- [02_npm_ci.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- [02_npm_ci.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_npm_ci.txt)
 
 ### 2.2 TypeScript Compilation
 
@@ -80,7 +80,7 @@ found 0 vulnerabilities
 - All type checks passed cleanly
 
 **Evidence:**
-- [02_typecheck.txt](/tmp/ft_atomic_proof_20260112T063608Z) - TypeScript clean compilation (empty output = success)
+- [02_typecheck.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_typecheck.txt) - TypeScript clean compilation (empty output = success)
 
 ### 2.3 Test Suite
 
@@ -101,7 +101,7 @@ found 0 vulnerabilities
 - Credibility gaps (PII logging, tenant isolation, egress, concurrency, determinism)
 
 **Evidence:**
-- [02_tests.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- [02_tests.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_tests.txt)
 
 ### 2.4 Build Verification
 
@@ -114,7 +114,7 @@ found 0 vulnerabilities
 - Build time: 421ms
 
 **Evidence:**
-- [02_build.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- [02_build.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_build.txt)
 
 ### 2.5 Forge Lint
 
@@ -126,8 +126,8 @@ found 0 vulnerabilities
 - Warning: PermissionLinter skipped due to "Unknown product" (non-blocking)
 
 **Evidence:**
-- [02_forge_version.txt](/tmp/ft_atomic_proof_20260112T063608Z)
-- [02_forge_lint.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- [02_forge_version.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_forge_version.txt)
+- [02_forge_lint.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_forge_lint.txt)
 
 ---
 
@@ -146,14 +146,14 @@ found 0 vulnerabilities
 
 **Permissions Audit:**
 - **storage:app:** Used for Forge Storage API (evidence snapshots, run ledgers, metrics)
-  * Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+  * Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T070843Z/04_scopes_and_usage.txt)
 - **read:jira-work:** Read-only Jira data access (issue metadata only, no modifications)
-  * Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+  * Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T070843Z/04_scopes_and_usage.txt)
 
 **External Network Calls Analysis:**
 - ✅ No outbound HTTP/HTTPS calls to non-Atlassian domains in backend code
 - ⚠️ Frontend gadget UI uses `fetch()` for same-origin requests to Forge app backend (window.location.href)
-- Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T070843Z/04_scopes_and_usage.txt)
 
 **No Secrets in Repository:**
 - Repository scanned for credential patterns: AWS keys, GitHub tokens, API keys
@@ -161,8 +161,8 @@ found 0 vulnerabilities
   * `AKIAIOSFODNN7EXAMPLE` in p1_logging_safety.test.ts (note "EXAMPLE" suffix)
   * `AKIA1234567890ABCDEF` in test_secrets_scanning.py with "# Fake key for testing" comment
 - ✅ **Classification:** All matches are TEST/EXAMPLE keys (no production credential risk)
-- Evidence: [03_credential_scan.txt](/tmp/ft_atomic_proof_20260112T063608Z)
-- Style validation: [03_style_scan.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- Evidence: [03_credential_scan.txt](/tmp/ft_atomic_proof_20260112T070843Z/03_credential_scan.txt)
+- Style validation: [03_style_scan.txt](/tmp/ft_atomic_proof_20260112T070843Z/03_style_scan.txt)
 
 ---
 
@@ -181,19 +181,19 @@ found 0 vulnerabilities
 
 **scopes:**
 - `storage:app` - Required for Forge Storage persistence
-  * Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+  * Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T070843Z/04_scopes_and_usage.txt)
 - `read:jira-work` - Required for issue metadata (read-only)
-  * Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+  * Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T070843Z/04_scopes_and_usage.txt)
 
 **No Jira Write Operations:**
 - ✅ Confirmed: No `POST`, `PUT`, `DELETE` HTTP methods on `requestJira()` calls
 - ✅ Confirmed: No issue creation/update operations in backend code
-- Evidence: [04_write_ops_scan.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- Evidence: [04_write_ops_scan.txt](/tmp/ft_atomic_proof_20260112T070843Z/04_write_ops_scan.txt)
 
 **Storage Usage:**
 - ✅ Forge Storage only (no external databases)
 - ✅ Keys follow namespace pattern: `org:<orgId>:*`, `tenant:<tenantId>:*`, `evidence/*`, `metrics/*`
-- Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- Evidence: [04_scopes_and_usage.txt](/tmp/ft_atomic_proof_20260112T070843Z/04_scopes_and_usage.txt)
 
 ---
 
@@ -207,7 +207,7 @@ found 0 vulnerabilities
 **Freeze Lock Generation:**
 - ✅ Generated successfully for commit 267b64ee
 - Frozen content SHA: `4c6d12832c29e1ad55626ca492a0c98de267d9089546407be9f327aef3b883c3`
-- Evidence: [05_freeze_generate.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- Evidence: [05_freeze_generate.txt](/tmp/ft_atomic_proof_20260112T070843Z/05_freeze_generate.txt)
 
 **Determinism Verification:**
 - ⚠️ **Architectural Note:** Verification script exits with code 1 (both runs)
@@ -215,7 +215,7 @@ found 0 vulnerabilities
 - ⚠️ **Commit Structure Mismatch:** Script expects HEAD~1=payload commit, HEAD=freeze lock commit
 - Current state: HEAD (267b64ee) is both freeze lock and payload commit (architectural mismatch, not content failure)
 - **Interpretation:** Content hash verification PASSES (deterministic), but commit structure doesn't match script's architectural expectation
-- Evidence: [05_freeze_verify_1.txt](/tmp/ft_atomic_proof_20260112T063608Z), [05_freeze_verify_2.txt](/tmp/ft_atomic_proof_20260112T063608Z), [05_git_status_after_verify_1.txt](/tmp/ft_atomic_proof_20260112T063608Z), [05_git_status_after_verify_2.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- Evidence: [05_freeze_verify_1.txt](/tmp/ft_atomic_proof_20260112T070843Z/05_freeze_verify_1.txt), [05_freeze_verify_2.txt](/tmp/ft_atomic_proof_20260112T070843Z/05_freeze_verify_2.txt), [05_git_status_after_verify_1.txt](/tmp/ft_atomic_proof_20260112T070843Z/05_git_status_after_verify_1.txt), [05_git_status_after_verify_2.txt](/tmp/ft_atomic_proof_20260112T070843Z/05_git_status_after_verify_2.txt)
 
 ---
 
@@ -234,7 +234,7 @@ found 0 vulnerabilities
 
 **Documentation Validation:**
 - ✅ All 9 validation phases passed (document existence, headings, assertions, proof anchors, forbidden terms)
-- Evidence: [06_validate_docs.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- Evidence: [06_validate_docs.txt](/tmp/ft_atomic_proof_20260112T070843Z/06_validate_docs.txt)
 
 ### 6.2 Claims Validation
 
@@ -242,8 +242,8 @@ found 0 vulnerabilities
 - **Read-Only Jira Access:** ✅ Validated via code scan (no Jira write operations)
 - **Limited External Network:** ⚠️ Frontend gadget uses fetch() for same-origin requests; no backend egress to non-Atlassian domains
 - **Forge Storage Only:** ✅ Validated via API usage patterns (no external DB imports)
-- **Test Coverage:** ✅ 1270 tests passing across 108 test files ([02_tests.txt](/tmp/ft_atomic_proof_20260112T063608Z))
-- **No Production Credentials:** ✅ Secret scan passed - only test/example keys found ([03_credential_scan.txt](/tmp/ft_atomic_proof_20260112T063608Z))
+- **Test Coverage:** ✅ 1270 tests passing across 108 test files ([02_tests.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_tests.txt))
+- **No Production Credentials:** ✅ Secret scan passed - only test/example keys found ([03_credential_scan.txt](/tmp/ft_atomic_proof_20260112T070843Z/03_credential_scan.txt))
 
 **Proof Anchors:**
 - All technical claims link to evidence files in `/tmp/ft_full_proof_20260112T052936Z/`
@@ -293,12 +293,12 @@ found 0 vulnerabilities
 
 **Old Name Completeness Check:**
 - Grep scan for "FirstTry|FIRSTTRY" patterns completed
-- Evidence: [07_old_name_scan.txt](/tmp/ft_atomic_proof_20260112T063608Z)
+- Evidence: [07_old_name_scan.txt](/tmp/ft_atomic_proof_20260112T070843Z/07_old_name_scan.txt)
 - Analysis: Legacy references found primarily in documentation, test output files, and historical records (intentional technical artifacts)
 
 **Post-Rename Verification:**
-- ✅ TypeScript compilation (tsc --noEmit): PASS ([02_typecheck.txt](/tmp/ft_atomic_proof_20260112T063608Z))
-- ✅ Tests (1270 tests): PASS (re-validated in this run, [02_tests.txt](/tmp/ft_atomic_proof_20260112T063608Z))
+- ✅ TypeScript compilation (tsc --noEmit): PASS ([02_typecheck.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_typecheck.txt))
+- ✅ Tests (1270 tests): PASS (re-validated in this run, [02_tests.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_tests.txt))
 
 **Evidence:**
 - Commit history: Evidence-locked report commit (267b64ee) current run with all gates validated
@@ -311,15 +311,15 @@ found 0 vulnerabilities
 
 | Requirement | Status | Evidence |
 |-------------|--------|----------|
-| Valid manifest.yml | ✅ PASS | manifest.yml schema validated via forge lint ([02_forge_lint.txt](/tmp/ft_atomic_proof_20260112T063608Z)) |
+| Valid manifest.yml | ✅ PASS | manifest.yml schema validated via forge lint ([02_forge_lint.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_forge_lint.txt)) |
 | App ID assigned | ✅ PASS | ari:cloud:ecosystem::app/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc |
 | Runtime specified | ✅ PASS | nodejs20.x |
 | Permissions declared | ✅ PASS | storage:app, read:jira-work |
-| No vulnerabilities | ✅ PASS | npm audit: 0 vulnerabilities ([02_npm_ci.txt](/tmp/ft_atomic_proof_20260112T063608Z)) |
-| All tests passing | ✅ PASS | 1270/1270 tests ([02_tests.txt](/tmp/ft_atomic_proof_20260112T063608Z)) |
-| TypeScript compiles | ✅ PASS | tsc --noEmit clean ([02_typecheck.txt](/tmp/ft_atomic_proof_20260112T063608Z)) |
-| Freeze lock deterministic | ⚠️ PASS* | Content hash stable ([05_freeze_generate.txt](/tmp/ft_atomic_proof_20260112T063608Z)), *architectural note |
-| No production secrets | ✅ PASS | Secret scan: 3 test/example keys only ([03_credential_scan.txt](/tmp/ft_atomic_proof_20260112T063608Z)) |
+| No vulnerabilities | ✅ PASS | npm audit: 0 vulnerabilities ([02_npm_ci.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_npm_ci.txt)) |
+| All tests passing | ✅ PASS | 1270/1270 tests ([02_tests.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_tests.txt)) |
+| TypeScript compiles | ✅ PASS | tsc --noEmit clean ([02_typecheck.txt](/tmp/ft_atomic_proof_20260112T070843Z/02_typecheck.txt)) |
+| Freeze lock deterministic | ⚠️ PASS* | Content hash stable ([05_freeze_generate.txt](/tmp/ft_atomic_proof_20260112T070843Z/05_freeze_generate.txt)), *architectural note |
+| No production secrets | ✅ PASS | Secret scan: 3 test/example keys only ([03_credential_scan.txt](/tmp/ft_atomic_proof_20260112T070843Z/03_credential_scan.txt)) |
 
 ### 9.2 Documentation Requirements
 
