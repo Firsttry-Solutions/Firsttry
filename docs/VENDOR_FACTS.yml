@@ -1,0 +1,8 @@
+legal_entity_name: "Arnab Poddar (Individual)"
+support_email: "contact@firsttry.run"
+security_email: "contact@firsttry.run"
+vulnerability_ack_sla: "72 hours"
+vulnerability_triage_sla: "5 business days"
+incident_comm_channel: "Email contact@firsttry.run (security/support)"
+retention_duration: "Until uninstall or deletion request (manual), unless otherwise stated in DATA_FLOW.md"
+deletion_request_process: "Email contact@firsttry.run with subject 'FirstTry Data Deletion Request' + include Jira site URL, Atlassian cloud tenant identifier (if known), and what data/artifacts you want deleted."
