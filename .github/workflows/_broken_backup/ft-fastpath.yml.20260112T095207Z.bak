@@ -1,0 +1,49 @@
+name: ft-fastpath-parity
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ft-fastpath:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Install maturin
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin
+
+      - name: Build ft_fastpath wheel
+        working-directory: .
+        run: |
+          # Adjust path if your Cargo.toml for ft_fastpath lives elsewhere
+          maturin build --release --locked -m src/firsttry/ft_fastpath/Cargo.toml
+          ls -R target/wheels
+
+      - name: Install ft_fastpath wheel + project
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip
+          # Install the freshly built wheel
+          pip install target/wheels/*.whl
+          # Install FirstTry itself (editable or normal)
+          pip install -e .
+
+      - name: Run ft_fastpath parity tests
+        run: |
+          . .venv/bin/activate
+          pytest -q tests/firsttry/test_ft_fastpath_parity.py
