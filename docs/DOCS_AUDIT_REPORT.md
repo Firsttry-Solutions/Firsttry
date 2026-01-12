@@ -233,17 +233,17 @@ Results: 17/17 passed ✅
 
 ### For Marketplace Reviewers
 
-1. Review [docs/MARKETPLACE_LEGAL_IMPLEMENTATION.md](docs/MARKETPLACE_LEGAL_IMPLEMENTATION.md) checklist
-2. Verify scopes in [docs/SCOPES.md](docs/SCOPES.md) match [atlassian/forge-app/manifest.yml](atlassian/forge-app/manifest.yml)
-3. Check claims against proofs in [docs/claims_proof_catalog.md](docs/claims_proof_catalog.md)
+1. Review [MARKETPLACE_LEGAL_IMPLEMENTATION.md](MARKETPLACE_LEGAL_IMPLEMENTATION.md) checklist
+2. Verify scopes in [SCOPES.md](SCOPES.md) match [../atlassian/forge-app/manifest.yml](../atlassian/forge-app/manifest.yml)
+3. Check claims against proofs in [claims_proof_catalog.md](claims_proof_catalog.md)
 4. Confirm no false promises in support, compliance, or performance docs
 
 ### For Enterprise Procurement
 
-1. Start with [docs/README.md](docs/README.md) → "For Enterprise Security & Procurement Teams" section
-2. Review [docs/COMPLIANCE.md](docs/COMPLIANCE.md) for certification status
-3. Review [docs/SECURITY_SUMMARY.md](docs/SECURITY_SUMMARY.md) for security model
-4. Contact via [docs/SUPPORT_POLICY.md](docs/SUPPORT_POLICY.md) for enterprise agreements
+1. Start with [README.md](README.md) → "For Enterprise Security & Procurement Teams" section
+2. Review [COMPLIANCE.md](COMPLIANCE.md) for certification status
+3. Review [SECURITY_SUMMARY.md](SECURITY_SUMMARY.md) for security model
+4. Contact via [SUPPORT_POLICY.md](SUPPORT_POLICY.md) for enterprise agreements
 
 ### For Internal Teams
 
@@ -285,4 +285,4 @@ All audit logs and intermediate outputs preserved in:
 
 **Report Generated**: 2026-01-12 | **Status**: ✅ **PASSED** | **Exit Code**: 0
 
-For questions or issues, see [docs/SUPPORT_POLICY.md](docs/SUPPORT_POLICY.md).
+For questions or issues, see [SUPPORT_POLICY.md](SUPPORT_POLICY.md).
