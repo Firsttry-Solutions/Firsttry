@@ -38,7 +38,7 @@ bash tools/validate_docs.sh
 ### What It Validates
 - All 14 required Gate 1+2 docs exist
 - No hard placeholders (REPLACE_WITH_, TODO, TBD)
-- No soft placeholders (add feature justification, add code reference, etc.)
+- No incomplete instruction text (e.g., phrases indicating content still needs to be filled in)
 - All required section headings present with exact line matching
 
 ## Reproducing Gate 2: Non-Bypassable Reviewer Gates
@@ -176,7 +176,7 @@ The non-bypassable CI workflow is defined in:
 
 ### Placeholder Detection
 - **Hard placeholders**: `REPLACE_WITH_`, `TODO`, `TBD` — always rejected
-- **Soft placeholders**: `add feature justification`, `add code reference`, `must be documented`, `you MUST list`, `Auto-populated` — rejected
+- **Incomplete instructions**: Phrases indicating content still needs to be written — rejected
 - Detection is case-insensitive and searches entire docs/ directory for Gate 1+2 docs only
 
 ## Debugging
@@ -204,8 +204,8 @@ grep -n "^## " docs/PRIVACY_POLICY.md
 # Check for hard placeholders
 rg -n "REPLACE_WITH_|TODO|TBD" docs/PRIVACY_POLICY.md docs/TERMS_OF_SERVICE.md
 
-# Check for soft placeholders
-rg -n "add feature justification|add code reference" docs/ -S
+# Check for incomplete instruction text patterns
+rg -n "must be documented|you MUST list|Auto-populated" docs/ -S
 ```
 
 ## References
