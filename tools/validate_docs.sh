@@ -46,10 +46,10 @@ echo "=== Check required headings ==="
 req_heading(){
   local file="$1"; shift
   for h in "$@"; do
-    # Escape special regex chars in heading string
-    local regex_h=$(printf '%s\n' "$h" | sed 's/[()]/\\&/g')
-    if ! rg -n "^\s*##\s+$regex_h\s*$" "$file" >/dev/null; then
-      fail "missing heading '$h' in $file"
+    # Use ripgrep's -F flag for literal matching (no regex interpretation)
+    # This safely matches heading text without escaping concerns
+    if ! rg -F -n "## $h" "$file" >/dev/null; then
+      fail "missing heading '## $h' in $file"
     fi
   done
 }
