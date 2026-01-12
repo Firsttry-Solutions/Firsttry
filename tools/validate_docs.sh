@@ -2,309 +2,106 @@
 set -euo pipefail
 export LC_ALL=C
 
-# FINAL-FINAL ENFORCEMENT VALIDATOR
-# Non-bypassable compliance check for enterprise documentation
+fail(){ echo "FAIL: $*" >&2; exit 1; }
 
-ENTERPRISE_DOCS=(
-  "docs/SECURITY_SUMMARY.md"
-  "docs/ENTERPRISE_ONE_PAGER.md"
-  "docs/ROI_JUSTIFICATION.md"
-  "docs/PRICING_RATIONALE.md"
+for c in rg git bash sed python3; do command -v "$c" >/dev/null || fail "missing cmd: $c"; done
+
+echo "=== VALIDATE_DOCS: Check required files ==="
+
+REQ=(
+  "docs/VENDOR_FACTS.yml"
+  "docs/PRIVACY_POLICY.md"
+  "docs/TERMS_OF_SERVICE.md"
+  "docs/DATA_FLOW.md"
+  "docs/PERMISSIONS_AND_SCOPES.md"
+  "docs/SECURITY_CONTACT.md"
+  "docs/VULNERABILITY_MANAGEMENT.md"
+  "docs/INCIDENT_RESPONSE.md"
+  "docs/SUBPROCESSORS.md"
+  "docs/DATA_RETENTION_AND_DELETION.md"
+  "docs/ENTERPRISE_SECURITY_PACKET.md"
   "docs/SUPPORT_POLICY.md"
   "docs/CHANGE_MANAGEMENT.md"
   "docs/ROADMAP.md"
-  "docs/DOCS_INDEX.md"
 )
 
-REQUIRED_HEADINGS=(
-  "Audience & Scope"
-  "Executive Summary"
-  "What This Covers"
-  "What This Explicitly Does NOT Cover"
-  "Core Assertions"
-  "Explicit Negative Assertions"
-  "Proof Anchors"
-)
-
-fail=0
-
-echo "=========================================="
-echo "FINAL-FINAL ENFORCEMENT VALIDATOR"
-echo "=========================================="
-echo ""
-
-# Phase A: Check required docs exist
-echo "PHASE A: Document Existence"
-for doc in "${ENTERPRISE_DOCS[@]}"; do
-  if [ ! -f "$doc" ]; then
-    echo "✗ FAIL: $doc does not exist"
-    fail=1
-  else
-    echo "✓ $doc exists"
+for f in "${REQ[@]}"; do 
+  if [ ! -f "$f" ]; then
+    fail "missing required doc: $f"
   fi
 done
-echo ""
+echo "✅ All required docs present"
 
-# Phase B: Check required headings in each doc
-echo "PHASE B: Required Headings"
-for doc in "${ENTERPRISE_DOCS[@]}"; do
-  [ ! -f "$doc" ] && continue
-  
-  doc_name=$(basename "$doc")
-  for heading in "${REQUIRED_HEADINGS[@]}"; do
-    if ! grep -q "^## $heading" "$doc"; then
-      echo "✗ FAIL: $doc_name missing heading: $heading"
-      fail=1
+echo ""
+echo "=== Check for placeholders ==="
+if rg -n "REPLACE_WITH_|TODO|TBD" docs -S >/dev/null; then
+  rg -n "REPLACE_WITH_|TODO|TBD" docs -S || true
+  fail "placeholders found in docs/"
+fi
+echo "✅ No placeholders"
+
+echo ""
+echo "=== Check required headings ==="
+
+req_heading(){
+  local file="$1"; shift
+  for h in "$@"; do
+    if ! rg -n "^\s*##\s+$h\s*$" "$file" >/dev/null; then
+      fail "missing heading '$h' in $file"
     fi
   done
-done
-echo "✓ All required headings present"
-echo ""
+}
 
-# Phase C: Check "does NOT" appears ≥3 times per doc
-echo "PHASE C: Negative Assertions (≥3 per doc)"
-for doc in "${ENTERPRISE_DOCS[@]}"; do
-  [ ! -f "$doc" ] && continue
-  
-  doc_name=$(basename "$doc")
-  count=$(grep -c "does NOT" "$doc" || true)
-  
-  if [ "$count" -lt 3 ]; then
-    echo "✗ FAIL: $doc_name has $count negative assertions (need ≥3)"
-    fail=1
-  fi
-done
-echo "✓ Negative assertions sufficient (≥3 per doc)"
-echo ""
+req_heading docs/PRIVACY_POLICY.md \
+  "Who We Are" "Data We Access" "Data We Collect" "Data We Store" "Data Sharing" "Data Retention & Deletion" "Security" "User Rights & Requests" "Changes"
 
-# Phase D: ROI enforcement - exactly ONE "EXAMPLE ONLY" marker
-echo "PHASE D: ROI Numeric Claims"
-if [ -f "docs/ROI_JUSTIFICATION.md" ]; then
-  example_count=$(grep -c "EXAMPLE ONLY" docs/ROI_JUSTIFICATION.md || true)
-  
-  if [ "$example_count" -ne 1 ]; then
-    echo "✗ FAIL: ROI_JUSTIFICATION.md has $example_count 'EXAMPLE ONLY' markers (need exactly 1)"
-    fail=1
-  else
-    echo "✓ ROI has exactly 1 EXAMPLE ONLY block"
-  fi
+req_heading docs/PERMISSIONS_AND_SCOPES.md \
+  "Forge Manifest" "Declared Scopes (List EXACT)" "Least Privilege Rationale"
+
+req_heading docs/ENTERPRISE_SECURITY_PACKET.md \
+  "1) Product Summary" "2) Access & Permissions" "3) Data Handling" "4) Security Operations" "5) Subprocessors" "6) Support & Change Management" "7) Evidence Pack"
+
+echo "✅ All required headings present"
+
+echo ""
+echo "=== Manifest consistency checks ==="
+
+MANIFESTS="$(find . -maxdepth 8 -name manifest.yml -print 2>/dev/null | sort || true)"
+if echo "$MANIFESTS" | rg -q "^\./atlassian/forge-app/manifest\.yml$"; then
+  MANIFEST="./atlassian/forge-app/manifest.yml"
 else
-  echo "✓ ROI_JUSTIFICATION.md check skipped"
-fi
-echo ""
-
-# Phase E: Pricing enforcement - Proof Anchors must mark external Forge claims
-echo "PHASE E: Pricing External Claims"
-if [ -f "docs/PRICING_RATIONALE.md" ]; then
-  # Check that Proof Anchors table has NOT EVIDENCED for external Forge claims
-  if grep -q "^| Actual Forge pricing rates" docs/PRICING_RATIONALE.md; then
-    if grep "^| Actual Forge pricing rates" docs/PRICING_RATIONALE.md | grep -q "NOT EVIDENCED IN REPO"; then
-      echo "✓ Forge pricing rates marked NOT EVIDENCED"
-    else
-      echo "✗ FAIL: Forge pricing rates must be marked NOT EVIDENCED IN REPO"
-      fail=1
-    fi
+  COUNT="$(echo "$MANIFESTS" | sed '/^\s*$/d' | wc -l | tr -d ' ')"
+  if [ "$COUNT" -ne 1 ]; then
+    fail "expected 1 manifest.yml or canonical ./atlassian/forge-app/manifest.yml; found $COUNT"
   fi
-  
-  echo "✓ Pricing claims verified"
-else
-  echo "✓ PRICING_RATIONALE.md check skipped"
+  MANIFEST="$(echo "$MANIFESTS" | head -1)"
 fi
-echo ""
+FORGE_ROOT="$(dirname "$MANIFEST")"
+echo "Using manifest: $MANIFEST"
 
-# Phase F: Proof Anchors - check for "refer to" (forbidden pattern) - but ONLY in Proof Anchors table
-echo "PHASE F: Proof Anchors Strictness"
-for doc in "${ENTERPRISE_DOCS[@]}"; do
-  [ ! -f "$doc" ] && continue
-  
-  doc_name=$(basename "$doc")
-  
-  if grep -q "^## Proof Anchor" "$doc"; then
-    # Extract ONLY the Proof Anchors section (from heading to next heading or end)
-    anchor_section=$(sed -n '/^## Proof Anchor/,/^## [^[:space:]]/p' "$doc" | head -n -1)
-    
-    if echo "$anchor_section" | grep -qi "refer to"; then
-      echo "✗ FAIL: $doc_name Proof Anchors table has 'refer to' (use direct format only)"
-      fail=1
-    fi
-  fi
-done
-echo "✓ Proof Anchors format checked"
-echo ""
+STORAGE_HITS="$(rg -n "storage\.(get|set|delete|query)|from '@forge/api'|@forge/api" "$FORGE_ROOT" -S 2>/dev/null || true)"
+NETWORK_HITS="$(rg -n "fetch\(|axios|node-fetch|request\(|https\.request|http\.request" "$FORGE_ROOT" -S 2>/dev/null || true)"
 
-# Phase G: Forbidden terms enforcement (across ENTERPRISE_DOCS only)
-echo "PHASE G: Forbidden Term Enforcement"
-FORBIDDEN_TERMS=(
-  "tier"
-  "tiers"
-  "entitlement"
-  "license"
-  "licence"
-  "paid feature"
-  "SLA"
-  "response time"
-  "guarantee"
-  "guaranteed"
-  "24/7"
-)
-
-# Compile regex patterns
-FORBIDDEN_PATTERN=$(IFS='|'; echo "${FORBIDDEN_TERMS[*]}")
-
-for doc in "${ENTERPRISE_DOCS[@]}"; do
-  [ ! -f "$doc" ] && continue
-  
-  doc_name=$(basename "$doc")
-  
-  # Check for forbidden terms (case-insensitive)
-  if grep -qi "$FORBIDDEN_PATTERN" "$doc"; then
-    # Secondary check: ensure they're not in "does NOT" context or explanatory text
-    # Allow forbidden terms ONLY in sections that explicitly negate them
-    violations=$(grep -in "$FORBIDDEN_PATTERN" "$doc" | grep -v "does NOT" | grep -v "NOT include" | grep -v "NOT provide" | grep -v "NOT support" | grep -v "NOT define" || true)
-    
-    if [[ -n "$violations" ]]; then
-      echo "✗ FAIL: $doc_name contains forbidden terms outside negation context"
-      echo "  Violations: $(echo "$violations" | head -3)"
-      fail=1
-    fi
-  fi
-done
-
-if [ "$fail" -eq 0 ]; then
-  echo "✓ No forbidden terms in enterprise docs (outside negation)"
+# Check for contradictions
+PRIV_NO_STORE="$(rg -n "store no|do not store|no customer data stored|we do not store" docs/PRIVACY_POLICY.md -S 2>/dev/null || true)"
+if [[ -n "$PRIV_NO_STORE" && -n "$STORAGE_HITS" ]]; then
+  echo "--- PRIVACY CLAIM (no storage) ---"
+  echo "$PRIV_NO_STORE"
+  echo "--- STORAGE HITS (actual code) ---"
+  echo "$STORAGE_HITS"
+  fail "contradiction: privacy claims no storage but code indicates storage usage"
 fi
-echo ""
 
-# Phase H: ROI strict numeric locality
-echo "PHASE H: ROI Numeric Claims Strictness"
-if [ -f "docs/ROI_JUSTIFICATION.md" ]; then
-  # Verify exactly ONE "EXAMPLE ONLY" marker exists
-  example_count=$(grep -c "EXAMPLE ONLY" docs/ROI_JUSTIFICATION.md || true)
-  
-  if [ "$example_count" -ne 1 ]; then
-    echo "✗ FAIL: ROI_JUSTIFICATION.md has $example_count 'EXAMPLE ONLY' markers (need exactly 1)"
-    fail=1
-  else
-    # Use awk to enforce numeric locality: no digits [0-9] outside the EXAMPLE block
-    # EXAMPLE block = from marker line to next blank line (or EOF)
-    
-    violations=$(awk '
-    BEGIN {
-      example_start = -1
-      example_end = -1
-      outside_violations = ""
-    }
-    {
-      line_num = NR
-      
-      # Find the EXAMPLE ONLY marker line
-      if (example_start == -1 && /EXAMPLE ONLY/) {
-        example_start = line_num
-        # Set default end to EOF; will be updated if blank line found
-        example_end = 999999
-      }
-      
-      # Find the next blank line after marker (defines end of example block)
-      if (example_start != -1 && example_end == 999999 && /^$/) {
-        if (line_num > example_start) {
-          example_end = line_num - 1
-        }
-      }
-      
-      # Check for digits outside the example block
-      if (/[0-9]/) {
-        if (example_start == -1) {
-          # Digit before marker: violation
-          outside_violations = outside_violations "Line " line_num ": digit before EXAMPLE block: " $0 "\n"
-        } else if (line_num < example_start || line_num > example_end) {
-          # Digit after marker but outside block: violation
-          outside_violations = outside_violations "Line " line_num ": digit outside EXAMPLE block: " $0 "\n"
-        }
-      }
-    }
-    END {
-      if (outside_violations != "") {
-        print outside_violations
-        exit 1
-      }
-      exit 0
-    }
-    ' docs/ROI_JUSTIFICATION.md) || {
-      echo "✗ FAIL: ROI_JUSTIFICATION.md has numerics outside EXAMPLE ONLY block:"
-      echo "$violations"
-      fail=1
-    }
-    
-    if [ "$fail" -eq 0 ]; then
-      echo "✓ ROI numeric claims strictly confined to EXAMPLE block"
-    fi
-  fi
-else
-  echo "✓ ROI_JUSTIFICATION.md check skipped"
+SUBP_NONE="$(rg -n "^\s*##\s*Current Subprocessors\s$|-\s*None\s*$|Subprocessors:\s*None" docs/SUBPROCESSORS.md -S 2>/dev/null || true)"
+DATAFLOW_EGRESS="$(rg -n "Outbound|Egress|External|Network|fetch|Third-Party" docs/DATA_FLOW.md -S 2>/dev/null || true)"
+if [[ -n "$SUBP_NONE" && -n "$NETWORK_HITS" && -z "$DATAFLOW_EGRESS" ]]; then
+  echo "--- SUBPROCESSORS (claims none) ---"
+  echo "$SUBP_NONE"
+  echo "--- NETWORK HITS (actual code) ---"
+  echo "$NETWORK_HITS"
+  fail "contradiction: subprocessors says none, but code indicates network calls and DATA_FLOW does not describe egress"
 fi
+
+echo "✅ No contradictions"
 echo ""
-
-# Phase I: Proof anchors strictness
-echo "PHASE I: Proof Anchors Strictness"
-FORBIDDEN_ANCHOR_PHRASES=(
-  "refer to"
-  "see manifest"
-  "see repo"
-  "as documented"
-  "as outlined above"
-  "above"
-)
-
-ANCHOR_PATTERN=$(IFS='|'; echo "${FORBIDDEN_ANCHOR_PHRASES[*]}")
-
-for doc in "${ENTERPRISE_DOCS[@]}"; do
-  [ ! -f "$doc" ] && continue
-  
-  doc_name=$(basename "$doc")
-  
-  if grep -q "^## Proof Anchor" "$doc"; then
-    # Extract ONLY the Proof Anchors section
-    anchor_section=$(sed -n '/^## Proof Anchor/,/^## [^[:space:]]/p' "$doc" | head -n -1)
-    
-    if echo "$anchor_section" | grep -qi "$ANCHOR_PATTERN"; then
-      echo "✗ FAIL: $doc_name Proof Anchors contains forbidden phrase"
-      fail=1
-    fi
-    
-    # Verify format: lines should be "- Claim: Location" format
-    # Allow patterns like:
-    #   - Claim: [link](url)
-    #   - Claim: NOT EVIDENCED IN REPO
-    #   - Claim: [link]:lines
-    anchor_lines=$(echo "$anchor_section" | grep "^- " || true)
-    if [[ -n "$anchor_lines" ]]; then
-      # Validate each line matches expected patterns
-      while IFS= read -r line; do
-        if ! echo "$line" | grep -qE "^- [^:]+: (\[|NOT EVIDENCED)"; then
-          # Allow some flexibility, but ensure no "refer to" or "see" patterns
-          if echo "$line" | grep -qi "refer to\|see \|as documented\|as outlined"; then
-            echo "✗ FAIL: $doc_name Proof Anchor line format invalid: $line"
-            fail=1
-          fi
-        fi
-      done <<< "$anchor_lines"
-    fi
-  fi
-done
-
-if [ "$fail" -eq 0 ]; then
-  echo "✓ Proof Anchors format verified (strict)"
-fi
-echo ""
-
-# Summary
-echo "=========================================="
-if [ "$fail" -eq 0 ]; then
-  echo "✓ FINAL-FINAL VALIDATION PASS"
-  echo "=========================================="
-  exit 0
-else
-  echo "✗ FINAL-FINAL VALIDATION FAIL"
-  echo "=========================================="
-  exit 1
-fi
+echo "✅ VALIDATE_DOCS: PASSED"
