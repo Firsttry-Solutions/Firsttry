@@ -46,11 +46,8 @@ echo "=== Check required headings ==="
 req_heading(){
   local file="$1"; shift
   for h in "$@"; do
-    # Use ripgrep's -F flag for literal matching (no regex interpretation)
-    # This safely matches heading text without escaping concerns
-    if ! rg -F -n "## $h" "$file" >/dev/null; then
-      fail "missing heading '## $h' in $file"
-    fi
+    # Exact line matching: grep -F (literal) -x (whole line) ensures no substring false positives
+    grep -nFx "## $h" "$file" >/dev/null || fail "missing heading '## $h' in $file"
   done
 }
 
