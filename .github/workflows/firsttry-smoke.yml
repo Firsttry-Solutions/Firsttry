@@ -1,5 +1,9 @@
 name: firsttry-smoke
-on: [pull_request, push]
+
+on:
+  push:
+  pull_request:
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
