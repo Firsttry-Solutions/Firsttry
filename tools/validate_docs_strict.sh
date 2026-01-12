@@ -228,16 +228,24 @@ if test -f "$SCOPES_FILE"; then
                 fi
             done
             
-            # Check for overclaims: scopes in docs but not in manifest
-            DOCS_SCOPE_PATTERNS=$(grep -o '[a-z][a-z]*:[a-z0-9_-]*' "$SCOPES_FILE" | sort -u 2>/dev/null || echo "")
-            for doc_scope in $DOCS_SCOPE_PATTERNS; do
-                if ! echo "$MANIFEST_SCOPES_UNION" | grep -q "^${doc_scope}$"; then
-                    # Skip markdown/YAML syntax patterns (not real scopes)
-                    if ! echo "$doc_scope" | grep -qE '^(scopes|permissions|modules|resources|app|metadata|key|handler|function|resolver|interval|trigger)'; then
-                        echo -e "${YELLOW}⚠️${NC} SCOPES.md mentions '$doc_scope' but not in any manifest"
+            # Check for overclaims: scopes in "Declared Scopes" section but not in manifest (STRICT - must FAIL)
+            # Extract only the "Declared Scopes" section (between "## Declared Scopes" and "## What FirstTry NEVER")
+            DECLARED_SECTION=$(sed -n '/## Declared Scopes/,/## What FirstTry NEVER/p' "$SCOPES_FILE" | head -n -1)
+            
+            if test -n "$DECLARED_SECTION"; then
+                DOCS_SCOPE_PATTERNS=$(echo "$DECLARED_SECTION" | grep -o '[a-z][a-z]*:[a-z0-9_-]*' | sort -u 2>/dev/null || echo "")
+                OVERCLAIM_COUNT=0
+                for doc_scope in $DOCS_SCOPE_PATTERNS; do
+                    if ! echo "$MANIFEST_SCOPES_UNION" | grep -q "^${doc_scope}$"; then
+                        # Skip markdown/YAML syntax patterns (not real scopes)
+                        if ! echo "$doc_scope" | grep -qE '^(scopes|permissions|modules|resources|app|metadata|key|handler|function|resolver|interval|trigger)'; then
+                            echo -e "${RED}❌${NC} 'Declared Scopes' section mentions '$doc_scope' but not in any manifest (overclaim)"
+                            ((OVERCLAIM_COUNT++))
+                            ((FAILED++))
+                        fi
                     fi
-                fi
-            done
+                done
+            fi
             
             if test "$SCOPE_DRIFT" -eq 0; then
                 echo -e "${GREEN}✅${NC} No scope drift detected (manifest ↔ docs aligned)"
