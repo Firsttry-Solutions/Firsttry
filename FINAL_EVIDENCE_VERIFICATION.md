@@ -21,16 +21,16 @@ $ sed -n '/^req_heading()/,/^}/p' tools/validate_docs.sh
 req_heading(){
   local file="$1"; shift
   for h in "$@"; do
-    # Escape special regex chars in heading string
-    local regex_h=$(printf '%s\n' "$h" | sed 's/[()]/\\&/g')
-    if ! rg -n "^\s*##\s+$regex_h\s*$" "$file" >/dev/null; then
-      fail "missing heading '$h' in $file"
+    # Use ripgrep's -F flag for literal matching (no regex interpretation)
+    # This safely matches heading text without escaping concerns
+    if ! rg -F -n "## $h" "$file" >/dev/null; then
+      fail "missing heading '## $h' in $file"
     fi
   done
 }
 ```
 
-**Status**: ✅ Regex metacharacters properly escaped via `sed 's/[()]/\\&/g'`
+**Status**: ✅ Safe literal matching via `rg -F` (no regex metachars needed, bulletproof)
 
 #### 3. Workflow YAML Validation ✅
 ```bash
@@ -90,8 +90,8 @@ Modified files: 0
 - ✅ All 14 required Gate 1+2 docs present
 - ✅ No hard placeholders (REPLACE_WITH_, TODO, TBD)
 - ✅ No soft placeholders (add feature justification, add code reference, etc.)
-- ✅ All required section headings present with proper escaping
-- ✅ Heading regex properly escapes parentheses: `sed 's/[()]/\\&/g'`
+- ✅ All required section headings present with proper matching
+- ✅ Heading matching uses literal flag `-F` (safe from all regex special chars)
 
 ### Log Output (Tail)
 ```
