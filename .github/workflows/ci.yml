@@ -1,6 +1,10 @@
 name: CI - FirstTry Enterprise Pipeline
 
 on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
   workflow_dispatch:
 
 permissions:
@@ -170,7 +174,7 @@ jobs:
             --timeout=30 \
             -v
       - name: Run Pro tier tests
-        if: matrix.test-tier == 'pro'
+        if: (matrix.test-tier == 'pro') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
           FIRSTTRY_LICENSE_KEY: ${{ secrets.FIRSTTRY_LICENSE_KEY_TEST }}
         run: |
