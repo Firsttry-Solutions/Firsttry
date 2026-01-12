@@ -1,0 +1,55 @@
+name: Marketplace Proof Artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - salvage/docs_only
+      - chore/**
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-and-prove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Generate evidence (single source of truth)
+        run: |
+          set -euo pipefail
+          RUN_ID="ci-${{ github.run_id }}"
+          bash tools/generate_ci_evidence.sh "$RUN_ID"
+
+      - name: Verify freeze lock determinism (both runs must pass)
+        run: |
+          cd atlassian/forge-app
+          echo "=== Freeze verify run 1 ==="
+          bash audit/verify_freeze_lock.sh
+          echo "=== Freeze verify run 2 ==="
+          bash audit/verify_freeze_lock.sh
+
+      - name: Verify marketplace report defensibility
+        run: |
+          bash tools/verify_marketplace_report.sh
+
+      - name: Upload proof artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketplace-proof-${{ github.run_id }}
+          path: atlassian/forge-app/audit/proof_runs/marketplace-proof-ci-${{ github.run_id }}/
+          retention-days: 30
+          if-no-files-found: warn
