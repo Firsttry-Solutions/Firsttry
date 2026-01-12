@@ -28,4 +28,4 @@ jobs:
       - name: Validate active workflows
         run: python3 .github/scripts/validate_workflows.py
       - name: Lint workflows with actionlint
-        uses: rhysd/actionlint@v1
+        uses: rhysd/actionlint@latest
