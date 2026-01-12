@@ -261,42 +261,15 @@ jobs:
             exit 0
           fi
 
-      - name: Comment on PR
+      - name: Comment on PR Summary
         if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const allPassed = '${{ steps.retention_test.outcome }}' === 'success' &&
-                             '${{ steps.dpa_test.outcome }}' === 'success' &&
-                             '${{ steps.control_test.outcome }}' === 'success' &&
-                             '${{ steps.platform_test.outcome }}' === 'success' &&
-                             '${{ steps.compliance_test.outcome }}' === 'success' &&
-                             '${{ steps.mandatory_files.outcome }}' === 'success' &&
-                             '${{ steps.mandatory_audits.outcome }}' === 'success' &&
-                             '${{ steps.critical_statements.outcome }}' === 'success';
-            
-            const status = allPassed ? '✅ PASSED' : '❌ FAILED';
-            const message = `## CI Policy Gates ${status}
-
-| Gate | Status |
-|---|---|
-| Retention Consistency | ${{ steps.retention_test.outcome === 'success' ? '✅' : '❌' }} |
-| DPA Language Consistency | ${{ steps.dpa_test.outcome === 'success' ? '✅' : '❌' }} |
-| Controller/Processor Roles | ${{ steps.control_test.outcome === 'success' ? '✅' : '❌' }} |
-| Platform Dependencies | ${{ steps.platform_test.outcome === 'success' ? '✅' : '❌' }} |
-| Documentation Compliance | ${{ steps.compliance_test.outcome === 'success' ? '✅' : '❌' }} |
-| Mandatory Files | ${{ steps.mandatory_files.outcome === 'success' ? '✅' : '❌' }} |
-| Mandatory Audits | ${{ steps.mandatory_audits.outcome === 'success' ? '✅' : '❌' }} |
-| Critical Statements | ${{ steps.critical_statements.outcome === 'success' ? '✅' : '❌' }} |
-
-${allPassed ? 'All policy gates passed. Documentation is compliant and credible.' : 'Some policy gates failed. Please review the errors in the CI output above.'}`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            });
+        run: |
+          echo "Policy gate checks completed"
+          if [ "${{ steps.policy-gates.outcome }}" == "success" ]; then
+            echo "✅ All policy gates PASSED"
+          else
+            echo "❌ Some policy gates FAILED"
+          fi
 
   notification:
     name: Notify on Policy Gate Failure
