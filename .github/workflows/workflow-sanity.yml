@@ -7,10 +7,10 @@ on:
       - ".github/workflows/**"
       - ".github/scripts/**"
   push:
-    branches: [main, develop]
     paths:
       - ".github/workflows/**"
       - ".github/scripts/**"
+  workflow_dispatch:
 
 permissions:
   contents: read

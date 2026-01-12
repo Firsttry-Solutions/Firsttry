@@ -10,13 +10,13 @@ on:
       - ".github/workflows/**"
       - ".github/scripts/**"
   push:
-    branches: [main, develop]
     paths:
       - "atlassian/forge-app/**"
       - "tools/**"
       - "docs/**"
       - ".github/workflows/**"
       - ".github/scripts/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
