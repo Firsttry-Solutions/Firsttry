@@ -30,7 +30,7 @@ jobs:
           echo "## Documentation Credibility Check" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ $? -eq 0 ]; then
-            echo "✅ All documentation checks passed" >> $GITHUB_STEP_SUMMARY
+            echo " All documentation checks passed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "- Privacy Policy: exists with required sections" >> $GITHUB_STEP_SUMMARY
             echo "- Terms of Use: exists with required sections" >> $GITHUB_STEP_SUMMARY
@@ -38,5 +38,5 @@ jobs:
             echo "- No forbidden overclaims detected" >> $GITHUB_STEP_SUMMARY
             echo "- External egress claims consistent" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Documentation checks failed - see logs above" >> $GITHUB_STEP_SUMMARY
+            echo " Documentation checks failed - see logs above" >> $GITHUB_STEP_SUMMARY
           fi

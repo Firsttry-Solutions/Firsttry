@@ -34,11 +34,11 @@ jobs:
               except Exception as e:
                   bad.append((f, str(e)))
           if bad:
-              print('❌ YAML errors:')
+              print(' YAML errors:')
               for f, e in bad:
                   print(f'- {f}: {e}')
               sys.exit(1)
-          print('✅ Workflows parse correctly')
+          print(' Workflows parse correctly')
           """
           exec(textwrap.dedent(code))
           PY
@@ -48,10 +48,10 @@ jobs:
           # build the literal safely (avoid embedding the raw pattern in this workflow file)
           PAT=$(printf '\x3a\x3aset-output')
           if grep -R "$PAT" .github/workflows >/dev/null 2>&1; then
-            echo "❌ Deprecated set-output detected. Use \$GITHUB_OUTPUT."
+            echo " Deprecated set-output detected. Use \$GITHUB_OUTPUT."
             exit 1
           fi
-          echo "✅ No deprecated set-output usage"
+          echo " No deprecated set-output usage"
 
   policy-validation:
     name: Policy Validation
@@ -64,13 +64,13 @@ jobs:
       - name: Validate license enforcement
         id: policy-check
         run: |
-          echo "🔐 Validating policy enforcement..."
+          echo " Validating policy enforcement..."
           
           # Check 1: License guard exists
           if [ -f "src/firsttry/license_guard.py" ]; then
-              echo "✅ License guard module found"
+              echo " License guard module found"
           else
-              echo "❌ License guard module missing"
+              echo " License guard module missing"
               echo "status=fail" >> $GITHUB_OUTPUT
               exit 1
           fi
@@ -78,9 +78,9 @@ jobs:
           # Check 2: Tier gating implemented
           GATE_COUNT=$(grep -r "ensure_license_for_current_tier" src/ | wc -l)
           if [ "$GATE_COUNT" -gt 0 ]; then
-              echo "✅ License tier gating implemented ($GATE_COUNT locations)"
+              echo " License tier gating implemented ($GATE_COUNT locations)"
           else
-              echo "❌ License tier gating not found"
+              echo " License tier gating not found"
               echo "status=fail" >> $GITHUB_OUTPUT
               exit 1
           fi
@@ -89,18 +89,18 @@ jobs:
             # legitimate usage/messages may appear). Only scan non-source
             # areas for accidental hardcoded keys.
             if grep -R --include="*.py" "FIRSTTRY_LICENSE_KEY=" . --exclude-dir=src --exclude-dir=tests >/dev/null 2>&1; then
-              echo "❌ Hardcoded license keys found!"
+              echo " Hardcoded license keys found!"
               echo "status=fail" >> $GITHUB_OUTPUT
               exit 1
             else
-              echo "✅ No hardcoded license keys found"
+              echo " No hardcoded license keys found"
             fi
           
           # Check 4: Policy lock pattern
           if grep -r "policy.lock\|tier_lock" src/ | grep -q "."; then
-              echo "✅ Policy lock mechanism found"
+              echo " Policy lock mechanism found"
           else
-              echo "⚠️  Policy lock mechanism not found (optional)"
+              echo "  Policy lock mechanism not found (optional)"
           fi
           
           echo "status=pass" >> $GITHUB_OUTPUT
@@ -132,7 +132,7 @@ jobs:
 
       - name: Generate Python SBOM (CycloneDX)
         run: |
-          echo "📦 Generating Python SBOM (CycloneDX format)..."
+          echo " Generating Python SBOM (CycloneDX format)..."
           
           python -c "
           import json
@@ -186,15 +186,15 @@ jobs:
           with open(output_dir / 'sbom.json', 'w') as f:
               json.dump(sbom, f, indent=2)
           
-          print(f'✅ SBOM generated with {len(sbom[\"components\"])} components')
+          print(f' SBOM generated with {len(sbom[\"components\"])} components')
           "
 
       - name: Generate Node SBOM (if applicable)
         if: hashFiles('package.json') != ''
         run: |
-          echo "📦 Generating Node.js SBOM..."
+          echo " Generating Node.js SBOM..."
           npm list --depth=0 --json > .firsttry/npm_components.json 2>/dev/null || true
-          echo "✅ Node SBOM generated"
+          echo " Node SBOM generated"
 
       - name: Upload SBOM artifacts
         if: always()
@@ -214,33 +214,33 @@ jobs:
 
       - name: Check compliance requirements
         run: |
-          echo "✓ Verifying compliance requirements..."
+          echo " Verifying compliance requirements..."
           echo ""
-          echo "1️⃣  Security & Access Control"
+          echo "1  Security & Access Control"
           if grep -r "subprocess.run" src/ --include="*.py" > /dev/null; then
-              echo "   ✅ Subprocess calls use safe patterns (args list, not string)"
+              echo "    Subprocess calls use safe patterns (args list, not string)"
           fi
           
           echo ""
-          echo "2️⃣  Telemetry & Privacy"
+          echo "2  Telemetry & Privacy"
           if grep -r "FT_SEND_TELEMETRY" src/ --include="*.py" > /dev/null; then
-              echo "   ✅ Telemetry is opt-in (default disabled)"
+              echo "    Telemetry is opt-in (default disabled)"
           fi
           
           echo ""
-          echo "3️⃣  License Enforcement"
+          echo "3  License Enforcement"
           if grep -r "ensure_license_for_current_tier\|license_guard" src/ --include="*.py" > /dev/null; then
-              echo "   ✅ License tier gating implemented"
+              echo "    License tier gating implemented"
           fi
           
           echo ""
-          echo "4️⃣  Code Quality Standards"
+          echo "4  Code Quality Standards"
           echo "   - Test Coverage: 27.6% (acceptable for orchestration)"
           echo "   - Type Safety: Zero errors in critical modules"
           echo "   - Security: No unsafe patterns detected"
           
           echo ""
-          echo "✅ All compliance checks passed"
+          echo " All compliance checks passed"
 
       - name: Generate compliance report
         run: |
@@ -292,7 +292,7 @@ jobs:
           with open(output_dir / 'compliance_report.json', 'w') as f:
               json.dump(compliance, f, indent=2)
           
-          print('✅ Compliance report generated')
+          print(' Compliance report generated')
           "
       
       
@@ -348,7 +348,7 @@ jobs:
           assert comp.get('policy_enforced') is True, 'policy_enforced missing/false'
           assert comp.get('policy_hash','').startswith('sha256:'), 'policy_hash missing'
           assert comp.get('policy_url','') != '', 'policy_url missing'
-          print('Policy proof present ✅')
+          print('Policy proof present ')
           PY
 
       - name: Embed coverage into audit (if available)
@@ -388,23 +388,23 @@ jobs:
 
       - name: Verify release requirements
         run: |
-          echo "🚀 Release Readiness Assessment"
+          echo " Release Readiness Assessment"
           echo "================================"
           echo ""
           echo "Criteria:"
-          echo "  ✅ Policy Validation: ${{ needs.policy-validation.result }}"
-          echo "  ✅ Dependency Audit: N/A"
-          echo "  ✅ SBOM Generated: ${{ needs.sbom-generation.result }}"
-          echo "  ✅ Compliance Checks: ${{ needs.compliance-checks.result }}"
+          echo "   Policy Validation: ${{ needs.policy-validation.result }}"
+          echo "   Dependency Audit: N/A"
+          echo "   SBOM Generated: ${{ needs.sbom-generation.result }}"
+          echo "   Compliance Checks: ${{ needs.compliance-checks.result }}"
             echo ""
 
             if [[ "${{ needs.policy-validation.result }}" == "success" ]] && \
               [[ "${{ needs.sbom-generation.result }}" == "success" ]] && \
               [[ "${{ needs.compliance-checks.result }}" == "success" ]]; then
-              echo "✅ RELEASE READY - All criteria met"
+              echo " RELEASE READY - All criteria met"
               exit 0
             else
-              echo "❌ RELEASE BLOCKED - Some criteria not met"
+              echo " RELEASE BLOCKED - Some criteria not met"
               exit 1
             fi
 
@@ -416,7 +416,7 @@ jobs:
     steps:
       - name: Generate audit summary
         run: |
-          echo "📋 Compliance Audit Summary"
+          echo " Compliance Audit Summary"
           echo "=============================="
           echo ""
           echo "Workflow Results:"
@@ -427,11 +427,11 @@ jobs:
           echo "  Release Readiness:   ${{ needs.release-readiness.result }}"
           echo ""
           echo "Enterprise Audit Score: 92-95/100"
-          echo "  - Core Architecture: 95/100 ✅"
-          echo "  - Security: 98/100 ✅"
-          echo "  - Performance: 90/100 ✅"
-          echo "  - Test Coverage: 85/100 ✅"
-          echo "  - Enforcement: 90/100 ✅"
-          echo "  - CI-Parity: 92/100 ✅"
+          echo "  - Core Architecture: 95/100 "
+          echo "  - Security: 98/100 "
+          echo "  - Performance: 90/100 "
+          echo "  - Test Coverage: 85/100 "
+          echo "  - Enforcement: 90/100 "
+          echo "  - CI-Parity: 92/100 "
           echo ""
-          echo "Status: 🟢 PRODUCTION READY"
+          echo "Status:  PRODUCTION READY"

@@ -65,12 +65,12 @@ jobs:
 
       - name: Ruff explicit check
         run: |
-          echo "🔍 Running explicit Ruff check"
+          echo " Running explicit Ruff check"
           ruff check . --config pyproject.toml
 
       - name: Pytest (quick, block merges)
         run: |
-          echo "🧪 Running pytest (quick gate)"
+          echo " Running pytest (quick gate)"
           FIRSTTRY_SHARED_SECRET='dev-fallback-secret-0123456789012345' pytest -q --maxfail=1 --ignore=tools
 
       - name: Run FirstTry pre-commit parity (hook contract)
@@ -79,7 +79,7 @@ jobs:
           GIT_HOOK: 'pre-push'
           FT_NO_NETWORK: '1'
         run: |
-          echo "🔁 Running pre-commit parity via CLI (pre-push contract)"
+          echo " Running pre-commit parity via CLI (pre-push contract)"
           python -m firsttry.cli pre-commit
 
       - name: Run FirstTry pre-commit parity (CI = local)

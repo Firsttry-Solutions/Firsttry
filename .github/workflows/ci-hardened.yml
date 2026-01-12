@@ -250,7 +250,7 @@ jobs:
              [ "${{ needs.integration.result }}" != "success" ] || \
              [ "${{ needs.security-scan.result }}" != "success" ] || \
              [ "${{ needs.ci-self-audit.result }}" != "success" ]; then
-            echo "❌ CI pipeline failed"
+            echo " CI pipeline failed"
             exit 1
           fi
-          echo "✅ CI pipeline succeeded"
+          echo " CI pipeline succeeded"

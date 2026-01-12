@@ -21,14 +21,14 @@ jobs:
               MISSING="$MISSING $f"
               echo "::error file=$f::Missing required file: $f"
             else
-              echo "✅ $f present"
+              echo " $f present"
             fi
           done
           if [ -n "$MISSING" ]; then
             echo "::error::Missing required files:$MISSING"
             exit 1
           fi
-          echo "All governance files present ✅"
+          echo "All governance files present "
       
       - name: Block hardcoded secrets
         run: |
@@ -55,7 +55,7 @@ jobs:
             echo "$BAD"
             exit 1
           fi
-          echo "No hardcoded secrets found ✅"
+          echo "No hardcoded secrets found "
       
       - name: Verify secret enforcement in code
         run: |
@@ -65,4 +65,4 @@ jobs:
             echo "::error file=src/firsttry/license.py::Missing production secret enforcement guard"
             exit 1
           fi
-          echo "Secret enforcement guard present ✅"
+          echo "Secret enforcement guard present "

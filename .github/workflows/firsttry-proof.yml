@@ -38,7 +38,7 @@ jobs:
           printf "def test_ok():\n    assert True\n" > tests/test_ok.py
           printf "def add(a:int,b:int)->int:\n    return a+b\n" > src/ft_demo/math.py
 
-      # Cold run may fail (miss-run) → don't fail the job here
+      # Cold run may fail (miss-run)  don't fail the job here
       - name: Cold run (free-fast)
         run: |
           PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src \

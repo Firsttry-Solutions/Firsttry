@@ -35,7 +35,7 @@ jobs:
           echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
           echo "prefix=$PREFIX" >> $GITHUB_OUTPUT
           
-          echo "📦 S3 Cache Configuration:"
+          echo " S3 Cache Configuration:"
           echo "  Bucket: $BUCKET"
           echo "  Prefix: $PREFIX"
 
@@ -61,7 +61,7 @@ jobs:
           AWS_BUCKET: ${{ needs.setup-s3-cache.outputs.cache-bucket }}
           AWS_PREFIX: ${{ needs.setup-s3-cache.outputs.cache-prefix }}
         run: |
-          echo "🔍 Validating S3 cache bucket configuration..."
+          echo " Validating S3 cache bucket configuration..."
           
           # Note: In CI/CD, AWS credentials should be configured via OIDC or GitHub Secrets
           python -c "
@@ -74,21 +74,21 @@ jobs:
               
               # List buckets to verify access
               response = s3_client.list_buckets()
-              print(f'✅ S3 access verified')
+              print(f' S3 access verified')
               print(f'Available buckets: {len(response[\"Buckets\"])}')
               
               # Check cache bucket specifically
               bucket = '${{ env.CACHE_BUCKET_PREFIX }}-\${{ github.repository_owner }}'
               try:
                   s3_client.head_bucket(Bucket=bucket)
-                  print(f'✅ Cache bucket exists: {bucket}')
+                  print(f' Cache bucket exists: {bucket}')
               except ClientError as e:
                   if e.response['Error']['Code'] == '404':
-                      print(f'ℹ️  Cache bucket does not exist (will be created on first use): {bucket}')
+                      print(f'  Cache bucket does not exist (will be created on first use): {bucket}')
                   else:
-                      print(f'⚠️  Error accessing bucket: {e}')
+                      print(f'  Error accessing bucket: {e}')
           except Exception as e:
-              print(f'ℹ️  S3 access not available in this environment: {e}')
+              print(f'  S3 access not available in this environment: {e}')
               print('   (This is expected in non-AWS environments)')
           "
 
@@ -115,7 +115,7 @@ jobs:
           AWS_BUCKET: ${{ needs.setup-s3-cache.outputs.cache-bucket }}
           AWS_PREFIX: ${{ needs.setup-s3-cache.outputs.cache-prefix }}
         run: |
-          echo "📤 Syncing local task cache to S3..."
+          echo " Syncing local task cache to S3..."
           
           python -c "
           import os
@@ -126,13 +126,13 @@ jobs:
           cache_dir = Path('.firsttry/taskcache')
           
           if not cache_dir.exists():
-              print('ℹ️  No local cache to sync')
+              print('  No local cache to sync')
               exit(0)
           
           cache_files = list(cache_dir.glob('*'))
           total_size = sum(f.stat().st_size for f in cache_files)
           
-          print(f'✅ Local cache summary:')
+          print(f' Local cache summary:')
           print(f'  Files: {len(cache_files)}')
           print(f'  Total size: {total_size / 1024 / 1024:.2f} MB')
           print(f'  Location: {cache_dir}')
@@ -155,7 +155,7 @@ jobs:
           AWS_BUCKET: ${{ needs.setup-s3-cache.outputs.cache-bucket }}
           AWS_PREFIX: ${{ needs.setup-s3-cache.outputs.cache-prefix }}
         run: |
-          echo "✔️  Verifying cache integrity..."
+          echo "  Verifying cache integrity..."
           
           python -c "
           import json
@@ -179,7 +179,7 @@ jobs:
               with open(output_dir / 'cache_sync_report.json', 'w') as f:
                   json.dump(integrity_report, f, indent=2)
               
-              print('✅ Cache sync verification complete')
+              print(' Cache sync verification complete')
 
       - name: Upload cache sync report
         if: always()
@@ -212,7 +212,7 @@ jobs:
           AWS_BUCKET: ${{ needs.setup-s3-cache.outputs.cache-bucket }}
           AWS_PREFIX: ${{ needs.setup-s3-cache.outputs.cache-prefix }}
         run: |
-          echo "🔄 Testing cache recovery from S3..."
+          echo " Testing cache recovery from S3..."
           
           python -c "
           import shutil
@@ -221,25 +221,25 @@ jobs:
           # Simulate cache miss by clearing local cache
           cache_dir = Path('.firsttry/taskcache')
           if cache_dir.exists():
-              print(f'📦 Local cache size before clear: {sum(f.stat().st_size for f in cache_dir.glob(\"*\")) / 1024 / 1024:.2f} MB')
+              print(f' Local cache size before clear: {sum(f.stat().st_size for f in cache_dir.glob(\"*\")) / 1024 / 1024:.2f} MB')
               shutil.rmtree(cache_dir)
-              print('✅ Local cache cleared')
+              print(' Local cache cleared')
           
           # In production, this would pull from S3
-          print('ℹ️  In production environment:')
+          print('  In production environment:')
           print('  1. Connect to S3 bucket')
           print('  2. Download cache files')
           print('  3. Verify integrity checksums')
           print('  4. Restore to local cache')
-          print('✅ Cache recovery test passed')
+          print(' Cache recovery test passed')
           "
 
       - name: Verify fallback to local build
         run: |
-          echo "⚙️  Verifying fallback to local build if S3 unavailable..."
+          echo "  Verifying fallback to local build if S3 unavailable..."
           
           python -c "
-          print('✅ Fallback strategy in place:')
+          print(' Fallback strategy in place:')
           print('  1. Try S3 cache first')
           print('  2. Fall back to local cache')
           print('  3. Execute fresh build if no cache')
@@ -256,7 +256,7 @@ jobs:
 
       - name: Generate cache status report
         run: |
-          echo "📊 Remote Cache Status Report"
+          echo " Remote Cache Status Report"
           echo "=============================="
           echo ""
           echo "S3 Configuration:"
@@ -269,7 +269,7 @@ jobs:
           echo "  Recovery Test: ${{ needs.test-cache-recovery.result }}"
           echo ""
           echo "Workflow Result:"
-          echo "  ✅ ${{ job.status }}"
+          echo "   ${{ job.status }}"
 
       - name: Assert remote cache hits
         run: |

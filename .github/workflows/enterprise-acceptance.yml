@@ -39,25 +39,25 @@ jobs:
           cd atlassian/forge-app
           # Fail if any POST/PUT/DELETE/PATCH found with requestJira
           if grep -r "requestJira.*POST\|requestJira.*PUT\|requestJira.*DELETE\|requestJira.*PATCH" src/; then
-            echo "❌ FAIL: Found forbidden write API calls"
+            echo " FAIL: Found forbidden write API calls"
             exit 1
           fi
-          echo "✅ PASS: No write API calls found"
+          echo " PASS: No write API calls found"
 
       - name: Check docs vs claims consistency
         run: |
           cd /home/runner/work/Firstry/Firstry
           node scripts/docs_guardrails.js || {
-            echo "⚠️  Docs guardrails found violations (expected in historical docs)"
+            echo "  Docs guardrails found violations (expected in historical docs)"
             echo "Checking production-facing docs only..."
             
             # Check that privacy.html and terms.html pass
             if node scripts/docs_guardrails.js 2>&1 | grep -q "docs/privacy.html.*ERROR\|docs/terms.html.*ERROR"; then
-              echo "❌ FAIL: Production legal docs have violations"
+              echo " FAIL: Production legal docs have violations"
               exit 1
             fi
             
-            echo "✅ PASS: Production legal docs are compliant"
+            echo " PASS: Production legal docs are compliant"
           }
 
       - name: Verify determinism (non-timestamp fields)
@@ -65,10 +65,10 @@ jobs:
         run: |
           # Run credibility determinism test
           npm run test tests/credibility/gap5_determinism_10_runs.test.ts || {
-            echo "❌ FAIL: Determinism check failed"
+            echo " FAIL: Determinism check failed"
             exit 1
           }
-          echo "✅ PASS: Determinism verified"
+          echo " PASS: Determinism verified"
 
       - name: Upload evidence bundle
         if: always()
@@ -109,7 +109,7 @@ jobs:
             
             const summary = fs.readFileSync(summaryPath, 'utf-8');
             
-            const comment = `## 🏢 Enterprise Acceptance Test Results\n\n${summary}\n\n---\n📦 **Evidence Bundle**: Download from workflow artifacts`;
+            const comment = `##  Enterprise Acceptance Test Results\n\n${summary}\n\n---\n **Evidence Bundle**: Download from workflow artifacts`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -124,12 +124,12 @@ jobs:
             FAIL_COUNT=$(jq '[.checks[] | select(.status == "FAIL")] | length' audit_artifacts/enterprise_acceptance/latest/evidence_index.json)
             
             if [ "$FAIL_COUNT" -gt 0 ]; then
-              echo "❌ Enterprise acceptance pack has $FAIL_COUNT failed checks"
+              echo " Enterprise acceptance pack has $FAIL_COUNT failed checks"
               exit 1
             fi
             
-            echo "✅ All enterprise acceptance checks passed"
+            echo " All enterprise acceptance checks passed"
           else
-            echo "❌ Evidence index not found"
+            echo " Evidence index not found"
             exit 1
           fi

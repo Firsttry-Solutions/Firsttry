@@ -64,7 +64,7 @@ jobs:
           for f in glob.glob('.github/workflows/*.yml'):
             with open(f, encoding='utf-8') as fh:
               yaml.safe_load(fh)
-            print("✅", f)
+            print("", f)
           """
           exec(textwrap.dedent(code))
           PY
@@ -87,12 +87,12 @@ jobs:
           pip install ruff==0.14.3
       - name: Run ruff linter
         run: |
-          echo "🔍 Running Ruff linter on FirstTry codebase..."
+          echo " Running Ruff linter on FirstTry codebase..."
           ruff check src/ tests/ --config pyproject.toml
-          echo "✅ Ruff linting passed"
+          echo " Ruff linting passed"
       - name: Ruff format check
         run: |
-          echo "📋 Checking code formatting..."
+          echo " Checking code formatting..."
           ruff format src/ tests/ --check --config pyproject.toml || true
 
   type-safety:
@@ -112,12 +112,12 @@ jobs:
           pip install mypy==1.18.2 types-PyYAML types-requests
       - name: Run MyPy type checker (strict mode)
         run: |
-          echo "🔐 Running MyPy type safety checks..."
+          echo " Running MyPy type safety checks..."
           python -m mypy src/firsttry/runner/state.py --config-file=mypy.ini
           python -m mypy src/firsttry/runner/planner.py --config-file=mypy.ini
           python -m mypy src/firsttry/smart_pytest.py --config-file=mypy.ini
           python -m mypy src/firsttry/scanner.py --config-file=mypy.ini
-          echo "✅ MyPy type checking passed (zero errors)"
+          echo " MyPy type checking passed (zero errors)"
       - name: Upload type safety report
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -162,7 +162,7 @@ jobs:
       - name: Run Lite tier tests
         if: matrix.test-tier == 'lite'
         run: |
-          echo "🧪 Running Lite tier tests (ruff only)..."
+          echo " Running Lite tier tests (ruff only)..."
           python -m pytest tests/ -k "not pro and not strict and not promax" \
             --cov=src/firsttry \
             --cov-report=term-missing \
@@ -174,7 +174,7 @@ jobs:
         env:
           FIRSTTRY_LICENSE_KEY: ${{ secrets.FIRSTTRY_LICENSE_KEY_TEST }}
         run: |
-          echo "🧪 Running Pro tier tests (pytest + mypy included)..."
+          echo " Running Pro tier tests (pytest + mypy included)..."
           python -m pytest tests/ -k "not strict and not promax" \
             --cov=src/firsttry \
             --cov-report=term-missing \
@@ -184,12 +184,12 @@ jobs:
       - name: Gate script unit tests
         if: always()
         run: |
-          echo "🔬 Running gate unit tests for check_critical_coverage.py"
+          echo " Running gate unit tests for check_critical_coverage.py"
           pytest -q tests/tools/test_check_critical_coverage.py
       - name: Gate JSON summary unit tests
         if: always()
         run: |
-          echo "🔬 Running gate JSON-summary unit tests"
+          echo " Running gate JSON-summary unit tests"
           pytest -q tests/tools/test_check_critical_coverage_json.py
       - name: Snapshot CLI help (artifact)
         if: matrix.test-tier == 'lite'
@@ -199,7 +199,7 @@ jobs:
           PYTHONPATH=src python -m firsttry run --help > .firsttry/cli_run_help.txt
           PYTHONPATH=src python -m firsttry status --help > .firsttry/cli_status_help.txt
           PYTHONPATH=src python -m firsttry doctor --help > .firsttry/cli_doctor_help.txt
-          echo "📝 CLI help files generated for drift detection"
+          echo " CLI help files generated for drift detection"
       - name: Upload CLI help
         if: ${{ matrix.test-tier == 'lite' && always() }}
         uses: actions/upload-artifact@v4
@@ -279,7 +279,7 @@ jobs:
             const missing = (j.missing && j.missing.length) ? `\n**Missing:** ${j.missing.join(', ')}` : '';
             const avg = (typeof j.avg_percent === 'number') ? `**Average (criticals): ${j.avg_percent.toFixed(2)}%**\n` : '';
             const doc = `[Coverage doctrine](docs/FIRSTTRY_COVERAGE_DOCTRINE.md)`;
-            const md = `${MARKER}\n### FirstTry critical coverage — **${(j.status || 'pass').toUpperCase()}**\n**Threshold:** ${j.threshold}  \n${avg}\n${header}\n${body}\n${missing}\n\n_${doc}_`;
+            const md = `${MARKER}\n### FirstTry critical coverage  **${(j.status || 'pass').toUpperCase()}**\n**Threshold:** ${j.threshold}  \n${avg}\n${header}\n${body}\n${missing}\n\n_${doc}_`;
 
             const {owner, repo} = context.repo;
             const issue_number = context.payload.pull_request.number;
@@ -317,7 +317,7 @@ jobs:
           pip install pytest==8.4.2
       - name: Run enterprise feature tests
         run: |
-          echo "🚀 Running enterprise feature validation tests..."
+          echo " Running enterprise feature validation tests..."
           python -m pytest tests/enterprise/ \
             --cov=src/firsttry \
             -v \
@@ -349,12 +349,12 @@ jobs:
           pip install bandit==1.7.5 gitleaks
       - name: Run Bandit security scan
         run: |
-          echo "🔒 Running Bandit security scanner..."
+          echo " Running Bandit security scanner..."
           bandit -r src/ -f json -o bandit-report.json || true
-          echo "✅ Bandit scan complete"
+          echo " Bandit scan complete"
       - name: Check for secrets
         run: |
-          echo "🔍 Checking for hardcoded secrets..."
+          echo " Checking for hardcoded secrets..."
           gitleaks detect --verbose --exit-code 0 || true
       - name: Upload security reports
         if: ${{ always() }}
@@ -383,7 +383,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run performance benchmark
         run: |
-          echo "⚡ Running performance benchmark..."
+          echo " Running performance benchmark..."
           python -c "
           import time
           import subprocess
@@ -418,7 +418,7 @@ jobs:
           
           Path('.firsttry/bench_ci.json').write_text(json.dumps(bench_result, indent=2))
           
-          print(f'✅ Benchmark complete:')
+          print(f' Benchmark complete:')
           print(f'  Cold run: {cold_time:.2f}s')
           print(f'  Warm run: {warm_time:.2f}s')
           print(f'  Speedup: {speedup:.2f}x')
@@ -432,7 +432,7 @@ jobs:
           retention-days: 90
       - name: Check performance SLO
         run: |
-          echo "📊 Checking performance SLO..."
+          echo " Checking performance SLO..."
           python -c "
           import json
           from pathlib import Path
@@ -442,10 +442,10 @@ jobs:
           slo_threshold = 0.5
           
           if warm_run <= slo_threshold:
-              print(f'✅ SLO passed: {warm_run:.2f}s <= {slo_threshold}s')
+              print(f' SLO passed: {warm_run:.2f}s <= {slo_threshold}s')
               exit(0)
           else:
-              print(f'❌ SLO failed: {warm_run:.2f}s > {slo_threshold}s')
+              print(f' SLO failed: {warm_run:.2f}s > {slo_threshold}s')
               exit(1)
           "
 
@@ -491,7 +491,7 @@ jobs:
           POLICY_HASH: ${{ steps.policy.outputs.hash }}
           FT_POLICY_URL: ${{ steps.policy.outputs.url }}
         run: |
-          echo "📋 Generating enterprise audit report..."
+          echo " Generating enterprise audit report..."
           python -c "
           import os
           import json
@@ -545,11 +545,11 @@ jobs:
           output_dir.mkdir(exist_ok=True)
           emit_audit_json(report, output_dir / 'audit.json')
           emit_audit_summary(report, output_dir / 'audit_summary.txt')
-          print('✅ Audit report generated')
+          print(' Audit report generated')
           "
       - name: Validate audit schema
         run: |
-          echo "✔️  Validating audit schema..."
+          echo "  Validating audit schema..."
           python -c "
           import json
           import sys
@@ -565,10 +565,10 @@ jobs:
           is_valid, errors = validate_audit_report(report)
           
           if is_valid:
-              print('✅ Audit report is valid')
+              print(' Audit report is valid')
               exit(0)
           else:
-              print('❌ Audit validation failed:')
+              print(' Audit validation failed:')
               for error in errors:
                   print(f'  - {error}')
               exit(1)
@@ -593,7 +593,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🎯 Enterprise Audit Report\n\n\`\`\`\n${summary}\n\`\`\``
+              body: `##  Enterprise Audit Report\n\n\`\`\`\n${summary}\n\`\`\``
             });
 
   policy-enforcement:
@@ -606,7 +606,7 @@ jobs:
       - name: Check PR policy compliance
         if: github.event_name == 'pull_request'
         run: |
-          echo "📋 Checking PR policy compliance..."
+          echo " Checking PR policy compliance..."
           python -c "
           import subprocess
           import json
@@ -615,12 +615,12 @@ jobs:
           print(f'PR Title: {pr_title}')
           conventional_prefixes = ['feat:', 'fix:', 'docs:', 'style:', 'refactor:', 'perf:', 'test:', 'ci:', 'chore:']
           if not any(pr_title.startswith(p) for p in conventional_prefixes):
-              print('⚠️  Warning: PR title does not follow conventional commits')
+              print('  Warning: PR title does not follow conventional commits')
           else:
-              print('✅ PR follows conventional commits format')
+              print(' PR follows conventional commits format')
           if 'BREAKING CHANGE' in pr_body:
-              print('ℹ️  Breaking change detected in PR body')
-          print('✅ Policy checks complete')
+              print('  Breaking change detected in PR body')
+          print(' Policy checks complete')
           "
 
   # === Pipeline Status Summary ===
@@ -632,41 +632,41 @@ jobs:
     steps:
       - name: Check overall CI status
         run: |
-          echo "🎯 FirstTry Enterprise CI Pipeline - Final Status"
+          echo " FirstTry Enterprise CI Pipeline - Final Status"
           echo "=================================================="
           echo ""
-          echo "✅ Lint (Ruff):              ${{ needs.lint.result }}"
-          echo "✅ Type Safety (MyPy):       ${{ needs.type-safety.result }}"
-          echo "✅ Tests (Pytest):           ${{ needs.tests.result }}"
-          echo "✅ Enterprise Features:      ${{ needs.enterprise-features.result }}"
-          echo "✅ Security Scanning:        ${{ needs.security.result }}"
-          echo "✅ Performance Benchmark:    ${{ needs.performance-benchmark.result }}"
-          echo "✅ Audit Schema:             ${{ needs.audit-schema.result }}"
-          echo "✅ Policy Enforcement:       ${{ needs.policy-enforcement.result }}"
+          echo " Lint (Ruff):              ${{ needs.lint.result }}"
+          echo " Type Safety (MyPy):       ${{ needs.type-safety.result }}"
+          echo " Tests (Pytest):           ${{ needs.tests.result }}"
+          echo " Enterprise Features:      ${{ needs.enterprise-features.result }}"
+          echo " Security Scanning:        ${{ needs.security.result }}"
+          echo " Performance Benchmark:    ${{ needs.performance-benchmark.result }}"
+          echo " Audit Schema:             ${{ needs.audit-schema.result }}"
+          echo " Policy Enforcement:       ${{ needs.policy-enforcement.result }}"
           echo ""
           echo "=================================================="
           
           if [[ "${{ needs.lint.result }}" != "success" ]]; then
-            echo "❌ CI FAILED: Lint check failed"
+            echo " CI FAILED: Lint check failed"
             exit 1
           fi
           
           if [[ "${{ needs.type-safety.result }}" != "success" ]]; then
-            echo "❌ CI FAILED: Type safety check failed"
+            echo " CI FAILED: Type safety check failed"
             exit 1
           fi
           
           if [[ "${{ needs.tests.result }}" != "success" ]]; then
-            echo "❌ CI FAILED: Test suite failed"
+            echo " CI FAILED: Test suite failed"
             exit 1
           fi
           
-          echo "✅ CI PIPELINE PASSED - Ready for deployment"
+          echo " CI PIPELINE PASSED - Ready for deployment"
 
       - name: Notify Slack (optional)
         if: always()
         run: |
-          echo "📢 CI pipeline execution complete"
+          echo " CI pipeline execution complete"
           echo "Status: ${{ job.status }}"
           echo "Commit: ${{ github.sha }}"
           echo "Branch: ${{ github.ref_name }}"
@@ -674,5 +674,5 @@ jobs:
       - name: Enforce critical coverage (CI self-check)
         if: always()
         run: |
-          echo "🔎 Running CI self-check for critical coverage..."
+          echo " Running CI self-check for critical coverage..."
           python tools/ci_self_check.py || (echo 'CI self-check failed' && exit 1)

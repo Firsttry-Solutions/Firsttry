@@ -81,7 +81,7 @@ jobs:
         run: |
           CACHE_KEY="${{ env.CACHE_PREFIX }}-${{ github.sha }}"
           
-          echo "📦 Uploading cache to S3..."
+          echo " Uploading cache to S3..."
           aws s3 sync .firsttry/cache/ \
             s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ \
             --sse AES256 \
@@ -95,16 +95,16 @@ jobs:
             --metadata "commit=${{ github.sha }}" \
             --region ${{ env.AWS_REGION }}
           
-          echo "✅ Cache uploaded successfully"
+          echo " Cache uploaded successfully"
 
       - name: Verify S3 upload
         run: |
           CACHE_KEY="${{ env.CACHE_PREFIX }}-${{ github.sha }}"
           
-          echo "🔍 Verifying S3 upload..."
+          echo " Verifying S3 upload..."
           aws s3 ls s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ \
             --region ${{ env.AWS_REGION }} || exit 1
-          echo "✅ Verification passed"
+          echo " Verification passed"
 
   pull-remote-cache:
     name: Cache - Pull from S3
@@ -137,19 +137,19 @@ jobs:
         run: |
           CACHE_KEY="${{ env.CACHE_PREFIX }}-${{ github.sha }}"
           
-          echo "📥 Downloading cache from S3..."
+          echo " Downloading cache from S3..."
           mkdir -p .firsttry/cache
           
           # Try exact commit cache first
           if aws s3 ls s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ --region ${{ env.AWS_REGION }} 2>/dev/null; then
-            echo "✅ Found cache for commit: ${{ github.sha }}"
+            echo " Found cache for commit: ${{ github.sha }}"
             aws s3 sync \
               s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ \
               .firsttry/cache/ \
               --region ${{ env.AWS_REGION }}
             echo "cache_status=hit" >> $GITHUB_ENV
           else
-            echo "⚠️  No cache found for commit, using latest"
+            echo "  No cache found for commit, using latest"
             aws s3 cp \
               s3://${{ env.CACHE_BUCKET }}/latest-timestamp \
               .firsttry/cache/timestamp \
@@ -205,7 +205,7 @@ jobs:
         run: |
           CACHE_KEY="${{ env.CACHE_PREFIX }}-${{ github.sha }}"
           
-          echo "🔐 Auditing cache integrity..."
+          echo " Auditing cache integrity..."
           
           # List all cache objects
           aws s3 ls s3://${{ env.CACHE_BUCKET }}/$CACHE_KEY/ \
@@ -218,7 +218,7 @@ jobs:
             --key "$CACHE_KEY/timestamp" \
             --region ${{ env.AWS_REGION }} | grep -q "ServerSideEncryption.*AES256"
           
-          echo "✅ Cache integrity verified (AES256 encrypted)"
+          echo " Cache integrity verified (AES256 encrypted)"
 
   cache-lifecycle:
     name: Cache - Lifecycle Management
@@ -241,7 +241,7 @@ jobs:
 
       - name: Clean up old cache entries (30+ days)
         run: |
-          echo "🧹 Cleaning up cache entries older than 30 days..."
+          echo " Cleaning up cache entries older than 30 days..."
           
           # This can be enhanced with more sophisticated logic
           # For now, note that S3 lifecycle policies should be configured on the bucket

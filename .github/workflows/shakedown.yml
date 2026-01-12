@@ -76,10 +76,10 @@ jobs:
       - name: Report success
         if: success()
         run: |
-          echo "✓ Shakedown test suite passed"
-          echo "✓ Determinism verified (N=10 runs, all digests identical)"
-          echo "✓ All 32 scenarios completed"
-          echo "✓ No nondeterminism detected"
+          echo " Shakedown test suite passed"
+          echo " Determinism verified (N=10 runs, all digests identical)"
+          echo " All 32 scenarios completed"
+          echo " No nondeterminism detected"
 
   docs-compliance:
     name: Verify Docs Compliance
@@ -135,4 +135,4 @@ jobs:
             echo "::error::Docs compliance job failed"
             exit 1
           fi
-          echo "✓ All checks passed"
+          echo " All checks passed"

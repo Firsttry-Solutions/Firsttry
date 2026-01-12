@@ -42,79 +42,79 @@ jobs:
         id: retention_test
         working-directory: atlassian/forge-app
         run: |
-          echo "🔒 Testing retention policy consistency..."
+          echo " Testing retention policy consistency..."
           npm test -- tests/docs/retention_consistency.test.ts --reporter=verbose
           if [ $? -ne 0 ]; then
-            echo "❌ FAILURE: Retention policy contradictions detected"
+            echo " FAILURE: Retention policy contradictions detected"
             exit 1
           fi
-          echo "✅ SUCCESS: Retention policy is consistent"
+          echo " SUCCESS: Retention policy is consistent"
 
       - name: Run DPA Language Consistency Tests (MANDATORY)
         id: dpa_test
         working-directory: atlassian/forge-app
         run: |
-          echo "🔒 Testing DPA language consistency..."
+          echo " Testing DPA language consistency..."
           npm test -- tests/docs/dpa_language_consistency.test.ts --reporter=verbose
           if [ $? -ne 0 ]; then
-            echo "❌ FAILURE: Mixed/contradictory DPA language detected"
+            echo " FAILURE: Mixed/contradictory DPA language detected"
             exit 1
           fi
-          echo "✅ SUCCESS: DPA language is consistent"
+          echo " SUCCESS: DPA language is consistent"
 
       - name: Run Controller/Processor Consistency Tests (MANDATORY)
         id: control_test
         working-directory: atlassian/forge-app
         run: |
-          echo "🔒 Testing controller/processor role consistency..."
+          echo " Testing controller/processor role consistency..."
           npm test -- tests/docs/controller_processor_consistency.test.ts --reporter=verbose
           if [ $? -ne 0 ]; then
-            echo "❌ FAILURE: Inconsistent or risky controller/processor language"
+            echo " FAILURE: Inconsistent or risky controller/processor language"
             exit 1
           fi
-          echo "✅ SUCCESS: Controller/processor roles are correctly stated"
+          echo " SUCCESS: Controller/processor roles are correctly stated"
 
       - name: Run Platform Dependency Disclosure Tests (MANDATORY)
         id: platform_test
         working-directory: atlassian/forge-app
         run: |
-          echo "🔒 Testing platform dependency disclosures..."
+          echo " Testing platform dependency disclosures..."
           npm test -- tests/docs/platform_dependency_disclosure.test.ts --reporter=verbose
           if [ $? -ne 0 ]; then
-            echo "❌ FAILURE: Missing or incomplete platform dependency disclaimers"
+            echo " FAILURE: Missing or incomplete platform dependency disclaimers"
             exit 1
           fi
-          echo "✅ SUCCESS: Platform dependencies are properly disclosed"
+          echo " SUCCESS: Platform dependencies are properly disclosed"
 
       - name: Run Documentation Compliance Tests
         id: compliance_test
         working-directory: atlassian/forge-app
         run: |
-          echo "🔍 Running documentation compliance verification..."
+          echo " Running documentation compliance verification..."
           npm test -- tests/docs/ --reporter=verbose
           if [ $? -ne 0 ]; then
-            echo "❌ FAILURE: Documentation compliance violations detected"
+            echo " FAILURE: Documentation compliance violations detected"
             exit 1
           fi
-          echo "✅ SUCCESS: All documentation compliance tests passed"
+          echo " SUCCESS: All documentation compliance tests passed"
 
       - name: Verify No Product Code Changes
         id: product_check
         run: |
-          echo "🔍 Verifying no product code was modified..."
+          echo " Verifying no product code was modified..."
           if git diff --name-only HEAD^ HEAD 2>/dev/null | grep -v "^docs/" | grep -v "^audit/" | grep -v "^tests/" | grep -v "^.github/" | grep -v "^atlassian/forge-app/tests/" | grep -qv "^\s*$"; then
             CHANGED_PRODUCT_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null | grep -v "^docs/" | grep -v "^audit/" | grep -v "^tests/" | grep -v "^.github/" | grep -v "^atlassian/forge-app/tests/")
-            echo "❌ FAILURE: Product code changes detected"
+            echo " FAILURE: Product code changes detected"
             echo "Modified files:"
             echo "$CHANGED_PRODUCT_FILES"
             exit 1
           fi
-          echo "✅ SUCCESS: Only docs/audit/tests changed (no product code)"
+          echo " SUCCESS: Only docs/audit/tests changed (no product code)"
 
       - name: Verify Mandatory Files Exist
         id: mandatory_files
         run: |
-          echo "📋 Verifying all mandatory documentation files exist..."
+          echo " Verifying all mandatory documentation files exist..."
           
           DOCS=(
             "docs/PRIVACY.md"
@@ -140,19 +140,19 @@ jobs:
           done
           
           if [ ${#MISSING_DOCS[@]} -gt 0 ]; then
-            echo "❌ FAILURE: Missing documentation files:"
+            echo " FAILURE: Missing documentation files:"
             for missing in "${MISSING_DOCS[@]}"; do
               echo "  - $missing"
             done
             exit 1
           fi
           
-          echo "✅ SUCCESS: All 13 mandatory documentation files present"
+          echo " SUCCESS: All 13 mandatory documentation files present"
 
       - name: Verify Mandatory Audit Files Exist
         id: mandatory_audits
         run: |
-          echo "📋 Verifying all mandatory audit files exist..."
+          echo " Verifying all mandatory audit files exist..."
           
           AUDITS=(
             "audit/CLAIMS_PROOF_CATALOG.md"
@@ -170,76 +170,76 @@ jobs:
           done
           
           if [ ${#MISSING_AUDITS[@]} -gt 0 ]; then
-            echo "❌ FAILURE: Missing audit files:"
+            echo " FAILURE: Missing audit files:"
             for missing in "${MISSING_AUDITS[@]}"; do
               echo "  - $missing"
             done
             exit 1
           fi
           
-          echo "✅ SUCCESS: All 5 mandatory audit files present"
+          echo " SUCCESS: All 5 mandatory audit files present"
 
       - name: Verify Four Critical Statements (Verbatim Check)
         id: critical_statements
         run: |
-          echo "🔍 Verifying four critical compliance statements..."
+          echo " Verifying four critical compliance statements..."
           
           # Check 1: Retention Stance
           echo "Checking Retention Stance in DATA_RETENTION.md..."
           if ! grep -q "Data is retained.*indefinitely.*until tenant uninstall" docs/DATA_RETENTION.md || \
              ! grep -q "FirstTry does not currently enforce time-based TTL deletion" docs/DATA_RETENTION.md; then
-            echo "❌ FAILURE: Retention statement not found or incorrect"
+            echo " FAILURE: Retention statement not found or incorrect"
             exit 1
           fi
-          echo "✅ Retention statement verified"
+          echo " Retention statement verified"
           
           # Check 2: DPA Stance
           echo "Checking DPA Stance in COMPLIANCE.md..."
           if ! grep -q "FirstTry does NOT.*offer.*Data Processing Addendum\|FirstTry does not.*provide.*Data Processing Addendum" docs/COMPLIANCE.md || \
              ! grep -q "Atlassian Forge\|Atlassian Cloud" docs/COMPLIANCE.md; then
-            echo "❌ FAILURE: DPA statement not found or incorrect"
+            echo " FAILURE: DPA statement not found or incorrect"
             exit 1
           fi
-          echo "✅ DPA statement verified"
+          echo " DPA statement verified"
           
           # Check 3: Controller/Processor Stance
           echo "Checking Controller/Processor Stance..."
           if ! grep -q "Customers remain.*data controllers" docs/COMPLIANCE.md || ! grep -q "Customers remain" docs/PRIVACY.md || \
              ! grep -q "processor within Atlassian Forge" docs/COMPLIANCE.md; then
-            echo "❌ FAILURE: Controller/Processor statement not found or incorrect"
+            echo " FAILURE: Controller/Processor statement not found or incorrect"
             exit 1
           fi
-          echo "✅ Controller/Processor statement verified"
+          echo " Controller/Processor statement verified"
           
           # Check 4: Platform Dependency
           echo "Checking Platform Dependency Disclaimer..."
           if ! grep -q "Atlassian Forge.*platform" docs/DATA_RETENTION.md || \
              ! grep -q "NOT.*controlled.*by FirstTry" docs/DATA_RETENTION.md; then
-            echo "❌ FAILURE: Platform dependency statement not found or incorrect"
+            echo " FAILURE: Platform dependency statement not found or incorrect"
             exit 1
           fi
-          echo "✅ Platform dependency statement verified"
+          echo " Platform dependency statement verified"
           
-          echo "✅ SUCCESS: All four critical statements verified"
+          echo " SUCCESS: All four critical statements verified"
 
       - name: Summary Report
         if: always()
         run: |
-          echo "═════════════════════════════════════════════════════════"
-          echo "📊 CI POLICY GATES SUMMARY"
-          echo "═════════════════════════════════════════════════════════"
+          echo ""
+          echo " CI POLICY GATES SUMMARY"
+          echo ""
           echo ""
           echo "Test Results:"
-          echo "  Retention Consistency:        $([ '${{ steps.retention_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
-          echo "  DPA Language Consistency:     $([ '${{ steps.dpa_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
-          echo "  Controller/Processor:         $([ '${{ steps.control_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
-          echo "  Platform Dependencies:        $([ '${{ steps.platform_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
-          echo "  Documentation Compliance:     $([ '${{ steps.compliance_test.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
-          echo "  Mandatory Files:              $([ '${{ steps.mandatory_files.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
-          echo "  Mandatory Audits:             $([ '${{ steps.mandatory_audits.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
-          echo "  Critical Statements:          $([ '${{ steps.critical_statements.outcome }}' = 'success' ] && echo '✅ PASS' || echo '❌ FAIL')"
+          echo "  Retention Consistency:        $([ '${{ steps.retention_test.outcome }}' = 'success' ] && echo ' PASS' || echo ' FAIL')"
+          echo "  DPA Language Consistency:     $([ '${{ steps.dpa_test.outcome }}' = 'success' ] && echo ' PASS' || echo ' FAIL')"
+          echo "  Controller/Processor:         $([ '${{ steps.control_test.outcome }}' = 'success' ] && echo ' PASS' || echo ' FAIL')"
+          echo "  Platform Dependencies:        $([ '${{ steps.platform_test.outcome }}' = 'success' ] && echo ' PASS' || echo ' FAIL')"
+          echo "  Documentation Compliance:     $([ '${{ steps.compliance_test.outcome }}' = 'success' ] && echo ' PASS' || echo ' FAIL')"
+          echo "  Mandatory Files:              $([ '${{ steps.mandatory_files.outcome }}' = 'success' ] && echo ' PASS' || echo ' FAIL')"
+          echo "  Mandatory Audits:             $([ '${{ steps.mandatory_audits.outcome }}' = 'success' ] && echo ' PASS' || echo ' FAIL')"
+          echo "  Critical Statements:          $([ '${{ steps.critical_statements.outcome }}' = 'success' ] && echo ' PASS' || echo ' FAIL')"
           echo ""
-          echo "═════════════════════════════════════════════════════════"
+          echo ""
           
           if [ '${{ steps.retention_test.outcome }}' = 'failure' ] || \
              [ '${{ steps.dpa_test.outcome }}' = 'failure' ] || \
@@ -249,13 +249,13 @@ jobs:
              [ '${{ steps.mandatory_files.outcome }}' = 'failure' ] || \
              [ '${{ steps.mandatory_audits.outcome }}' = 'failure' ] || \
              [ '${{ steps.critical_statements.outcome }}' = 'failure' ]; then
-            echo "❌ CI POLICY GATES: FAILED"
+            echo " CI POLICY GATES: FAILED"
             echo ""
             echo "One or more policy gates have failed. Please review the"
             echo "errors above and correct the documentation/audit files."
             exit 1
           else
-            echo "✅ CI POLICY GATES: ALL PASSED"
+            echo " CI POLICY GATES: ALL PASSED"
             echo ""
             echo "All policy gates passed. PR is ready for review."
             exit 0
@@ -275,19 +275,19 @@ jobs:
                              '${{ steps.mandatory_audits.outcome }}' === 'success' &&
                              '${{ steps.critical_statements.outcome }}' === 'success';
             
-            const status = allPassed ? '✅ PASSED' : '❌ FAILED';
+            const status = allPassed ? ' PASSED' : ' FAILED';
             const message = `## CI Policy Gates ${status}
 
 | Gate | Status |
 |---|---|
-| Retention Consistency | ${{ steps.retention_test.outcome === 'success' ? '✅' : '❌' }} |
-| DPA Language Consistency | ${{ steps.dpa_test.outcome === 'success' ? '✅' : '❌' }} |
-| Controller/Processor Roles | ${{ steps.control_test.outcome === 'success' ? '✅' : '❌' }} |
-| Platform Dependencies | ${{ steps.platform_test.outcome === 'success' ? '✅' : '❌' }} |
-| Documentation Compliance | ${{ steps.compliance_test.outcome === 'success' ? '✅' : '❌' }} |
-| Mandatory Files | ${{ steps.mandatory_files.outcome === 'success' ? '✅' : '❌' }} |
-| Mandatory Audits | ${{ steps.mandatory_audits.outcome === 'success' ? '✅' : '❌' }} |
-| Critical Statements | ${{ steps.critical_statements.outcome === 'success' ? '✅' : '❌' }} |
+| Retention Consistency | ${{ steps.retention_test.outcome === 'success' ? '' : '' }} |
+| DPA Language Consistency | ${{ steps.dpa_test.outcome === 'success' ? '' : '' }} |
+| Controller/Processor Roles | ${{ steps.control_test.outcome === 'success' ? '' : '' }} |
+| Platform Dependencies | ${{ steps.platform_test.outcome === 'success' ? '' : '' }} |
+| Documentation Compliance | ${{ steps.compliance_test.outcome === 'success' ? '' : '' }} |
+| Mandatory Files | ${{ steps.mandatory_files.outcome === 'success' ? '' : '' }} |
+| Mandatory Audits | ${{ steps.mandatory_audits.outcome === 'success' ? '' : '' }} |
+| Critical Statements | ${{ steps.critical_statements.outcome === 'success' ? '' : '' }} |
 
 ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.' : 'Some policy gates failed. Please review the errors in the CI output above.'}`;
             
@@ -307,7 +307,7 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
     steps:
       - name: Post Failure Alert
         run: |
-          echo "🚨 CI POLICY GATES FAILED"
+          echo " CI POLICY GATES FAILED"
           echo ""
           echo "The following checks must pass before merging:"
           echo ""
@@ -370,7 +370,7 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
       - name: Enforce doc updates when code changes
         if: steps.code-changed.outputs.code_changed == 'true' && steps.docs-changed.outputs.docs_changed == 'false'
         run: |
-          echo "❌ Code was modified but documentation was not updated!"
+          echo " Code was modified but documentation was not updated!"
           echo ""
           echo "Modified code files:"
           cat /tmp/code_files.txt
@@ -399,7 +399,7 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
           SUSPICIOUS_CLAIMS=$(grep -r "guarantee\|promise\|certif" docs/ --include="*.md" 2>/dev/null || true)
           
           if [ ! -z "$SUSPICIOUS_CLAIMS" ]; then
-            echo "⚠️  Found potentially unsubstantiated claims:"
+            echo "  Found potentially unsubstantiated claims:"
             echo "$SUSPICIOUS_CLAIMS"
             echo ""
             echo "Please add evidence or mark as UNKNOWN"
@@ -413,11 +413,11 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
           
           # Check that CLAIMS_PROOF_CATALOG.md has all status values
           if [ -f "audit/CLAIMS_PROOF_CATALOG.md" ]; then
-            VERIFIED_COUNT=$(grep -c "✅ VERIFIED" audit/CLAIMS_PROOF_CATALOG.md || echo 0)
-            PARTIAL_COUNT=$(grep -c "⚠️ PARTIAL" audit/CLAIMS_PROOF_CATALOG.md || echo 0)
+            VERIFIED_COUNT=$(grep -c " VERIFIED" audit/CLAIMS_PROOF_CATALOG.md || echo 0)
+            PARTIAL_COUNT=$(grep -c " PARTIAL" audit/CLAIMS_PROOF_CATALOG.md || echo 0)
             
             if [ "$VERIFIED_COUNT" -eq 0 ] && [ "$PARTIAL_COUNT" -eq 0 ]; then
-              echo "❌ CLAIMS_PROOF_CATALOG.md has no verified or partial claims!"
+              echo " CLAIMS_PROOF_CATALOG.md has no verified or partial claims!"
               exit 1
             fi
           fi
@@ -442,7 +442,7 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
           SCOPE_DIFF=$(git diff origin/${{ github.base_ref }}... manifest.yml | grep -E "^\+.*scopes:|^\-.*scopes:" || true)
           
           if [ ! -z "$SCOPE_DIFF" ]; then
-            echo "⚠️  Manifest scopes were modified:"
+            echo "  Manifest scopes were modified:"
             echo "$SCOPE_DIFF"
             echo ""
             echo "Verify that docs/ACCESS_CONTROL.md documents these changes"
@@ -456,7 +456,7 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
           NEW_NETWORK=$(git diff origin/${{ github.base_ref }}... -- src/ | grep "^\+.*\(fetch\|axios\|http\|https\)\..*(" || true)
           
           if [ ! -z "$NEW_NETWORK" ]; then
-            echo "❌ New network calls detected in src/:"
+            echo " New network calls detected in src/:"
             echo "$NEW_NETWORK"
             echo ""
             echo "If this is intentional:"
@@ -473,7 +473,7 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
           CONSOLE_CALLS=$(git diff origin/${{ github.base_ref }}... -- src/ | grep "^\+.*console\.\(log\|error\|warn\)" | grep -v "^\+\s*//" || true)
           
           if [ ! -z "$CONSOLE_CALLS" ]; then
-            echo "❌ console.log/error found in src/ (should be tests only):"
+            echo " console.log/error found in src/ (should be tests only):"
             echo "$CONSOLE_CALLS"
             echo ""
             echo "Move logging to tests/ or create a dedicated logging module"
@@ -487,7 +487,7 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
           NEW_KEYS=$(git diff origin/${{ github.base_ref }}... -- src/ | grep "^\+.*key.*:" | grep -v "^\+\s*//" || true)
           
           if [ ! -z "$NEW_KEYS" ]; then
-            echo "ℹ️  New storage keys detected - verify DATA_INVENTORY.md is updated"
+            echo "  New storage keys detected - verify DATA_INVENTORY.md is updated"
             echo "$NEW_KEYS"
           fi
 
@@ -512,23 +512,23 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
           echo "" >> /tmp/compliance.md
           
           if [ -f "docs/PRIVACY.md" ]; then
-            echo "✅ Privacy Policy: Documented" >> /tmp/compliance.md
+            echo " Privacy Policy: Documented" >> /tmp/compliance.md
           fi
           
           if [ -f "docs/SECURITY.md" ]; then
-            echo "✅ Security Policy: Documented" >> /tmp/compliance.md
+            echo " Security Policy: Documented" >> /tmp/compliance.md
           fi
           
           if [ -f "docs/DATA_RETENTION.md" ]; then
-            echo "✅ Data Retention: Documented" >> /tmp/compliance.md
+            echo " Data Retention: Documented" >> /tmp/compliance.md
           fi
           
           if [ -f "audit/MARKETPLACE_COMPLIANCE_MATRIX.md" ]; then
-            echo "✅ Marketplace Matrix: Documented" >> /tmp/compliance.md
+            echo " Marketplace Matrix: Documented" >> /tmp/compliance.md
           fi
           
           if [ -f "audit/CLAIMS_PROOF_CATALOG.md" ]; then
-            echo "✅ Claims Proof: Documented" >> /tmp/compliance.md
+            echo " Claims Proof: Documented" >> /tmp/compliance.md
           fi
           
           cat /tmp/compliance.md
@@ -541,7 +541,7 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
             const fs = require('fs');
             const complianceReport = fs.existsSync('/tmp/compliance.md') 
               ? fs.readFileSync('/tmp/compliance.md', 'utf-8')
-              : '## Compliance Check\nAll gates passed ✅';
+              : '## Compliance Check\nAll gates passed ';
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -564,18 +564,18 @@ ${allPassed ? 'All policy gates passed. Documentation is compliant and credible.
       - name: Check policy gates
         run: |
           if [ "${{ needs.policy-gates.result }}" == "failure" ]; then
-            echo "❌ Policy gates failed!"
+            echo " Policy gates failed!"
             exit 1
           fi
           
           if [ "${{ needs.enforce-doc-updates.result }}" == "failure" ]; then
-            echo "❌ Documentation enforcement failed!"
+            echo " Documentation enforcement failed!"
             exit 1
           fi
           
           if [ "${{ needs.prevent-scope-drift.result }}" == "failure" ]; then
-            echo "❌ Scope/egress drift detection failed!"
+            echo " Scope/egress drift detection failed!"
             exit 1
           fi
           
-          echo "✅ All policy gates passed!"
+          echo " All policy gates passed!"

@@ -67,4 +67,4 @@ jobs:
           echo "- Language: ${{ matrix.language }}"
           echo "- Queries: security-and-quality"
           echo "- SARIF Upload: complete"
-          echo "- Review findings in: Settings → Security → Code scanning"
+          echo "- Review findings in: Settings  Security  Code scanning"

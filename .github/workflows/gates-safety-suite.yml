@@ -42,7 +42,7 @@ jobs:
       - name: Verify gate tests passed
         if: failure()
         run: |
-          echo "❌ Critical gate or CLI tests failed!"
+          echo " Critical gate or CLI tests failed!"
           echo "These tests protect against:"
           echo "  - Exception handling regressions in gates"
           echo "  - Loss of rich output parsing (e.g., pytest test counts)"
