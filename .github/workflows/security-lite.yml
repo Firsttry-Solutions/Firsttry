@@ -1,0 +1,52 @@
+name: Security Lite (Secrets + Dependency Audit)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  security-lite:
+    name: Secret Scan + Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies (forge-app)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: npm audit (forge-app)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          npm audit --audit-level=high
+
+      - name: Secret scan (repo)
+        run: |
+          set -euo pipefail
+          if [ -f tools/secret_scan.sh ]; then
+            bash tools/secret_scan.sh
+          elif [ -f src/firsttry/security/secret_scan.py ]; then
+            python3 -m src.firsttry.security.secret_scan
+          else
+            echo "ERROR: No secret scanner found."
+            echo "Create tools/secret_scan.sh OR ensure src/firsttry/security/secret_scan.py exists and is runnable."
+            exit 1
+          fi

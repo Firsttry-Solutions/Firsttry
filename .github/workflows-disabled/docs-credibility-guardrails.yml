@@ -1,0 +1,42 @@
+name: Documentation Credibility Guardrails
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  docs-credibility-guardrails:
+    name: Verify Legal Docs & Claims Consistency
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Run documentation guardrails
+        run: node scripts/docs_guardrails.js
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Documentation Credibility Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ $? -eq 0 ]; then
+            echo "✅ All documentation checks passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- Privacy Policy: exists with required sections" >> $GITHUB_STEP_SUMMARY
+            echo "- Terms of Use: exists with required sections" >> $GITHUB_STEP_SUMMARY
+            echo "- Claims Proof Catalog: validated" >> $GITHUB_STEP_SUMMARY
+            echo "- No forbidden overclaims detected" >> $GITHUB_STEP_SUMMARY
+            echo "- External egress claims consistent" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Documentation checks failed - see logs above" >> $GITHUB_STEP_SUMMARY
+          fi

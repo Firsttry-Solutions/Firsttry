@@ -1,0 +1,44 @@
+name: firsttry-quality-gate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Ensure deterministic pytest
+        run: echo "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" >> $GITHUB_ENV
+
+      - name: Install dev tools
+        run: |
+          python -m pip install --upgrade pip
+          # install project (editable) + dev extras if you have them
+          if [ -f "pyproject.toml" ]; then
+            python -m pip install -e ".[dev]" || true
+          fi
+          # If present, install pinned dev tool versions for reproducible CI
+          if [ -f requirements-dev.txt ]; then
+            python -m pip install -r requirements-dev.txt
+          else
+            # hard-install core linters/typecheckers/test deps unconditionally
+            python -m pip install ruff black mypy pytest coverage
+          fi
+
+      - name: Run FirstTry lite (must be green before deeper checks)
+        run: |
+          python -m firsttry.cli run --tier lite || {
+            echo "::error ::FirstTry lite failed. Run 'python -m firsttry.cli run --tier lite' locally to reproduce."
+            exit 1
+          }
