@@ -19,6 +19,11 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const appRoot = path.resolve(__dirname, '../../..');
 
 describe('SHK-096: Test-Only Drift Guard', () => {
   /**
@@ -133,7 +138,7 @@ describe('SHK-096: Test-Only Drift Guard', () => {
   }
 
   it('should verify src/ exists and is scannable', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
+    const srcRoot = path.resolve(appRoot, 'src');
     expect(fs.existsSync(srcRoot)).toBe(true);
 
     const files = scanDirectory(srcRoot);
@@ -142,7 +147,7 @@ describe('SHK-096: Test-Only Drift Guard', () => {
   });
 
   it('should find ZERO IS_TEST references in production logic', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
+    const srcRoot = path.resolve(appRoot, 'src');
     const files = scanDirectory(srcRoot);
 
     const testOnlyMatches: Array<{ file: string; matches: any[] }> = [];
@@ -172,7 +177,7 @@ describe('SHK-096: Test-Only Drift Guard', () => {
   });
 
   it('should allow test-only keywords ONLY in tests/** directory', () => {
-    const testsRoot = '/workspaces/Firstry/atlassian/forge-app/tests';
+    const testsRoot = path.resolve(appRoot, 'tests');
     const files = scanDirectory(testsRoot);
 
     const testOnlyMatches: Array<{ file: string; matches: any[] }> = [];
@@ -193,7 +198,7 @@ describe('SHK-096: Test-Only Drift Guard', () => {
   });
 
   it('should verify storage.ts has NO test-only conditionals', () => {
-    const storagePath = '/workspaces/Firstry/atlassian/forge-app/src/storage.ts';
+    const storagePath = path.resolve(appRoot, 'src', 'storage.ts');
 
     if (fs.existsSync(storagePath)) {
       const matches = findTestOnlyKeywords(storagePath);
@@ -203,7 +208,7 @@ describe('SHK-096: Test-Only Drift Guard', () => {
   });
 
   it('should audit drift guard verdicts', () => {
-    const srcRoot = '/workspaces/Firstry/atlassian/forge-app/src';
+    const srcRoot = path.resolve(appRoot, 'src');
     const files = scanDirectory(srcRoot);
 
     let totalFiles = files.length;
