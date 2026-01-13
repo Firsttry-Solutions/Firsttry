@@ -1,4 +1,4 @@
-# FirstTry Governance - Atlassian Dual-Layer Specification
+# FirstTry - Audit Evidence Snapshot for Jira – Atlassian Dual-Layer Specification
 
 **Version:** 0.1.0 (PHASE 0)  
 **Status:** Scaffold & Spec Only  

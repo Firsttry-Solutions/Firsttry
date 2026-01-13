@@ -1,6 +1,6 @@
-# FirstTry Forge App Documentation
+# FirstTry - Audit Evidence Snapshot for Jira – Documentation
 
-Welcome to FirstTry – Governance Status for Jira.
+Welcome to **FirstTry - Audit Evidence Snapshot for Jira**, the canonical product documentation.
 
 ## Features
 - Real-time governance tracking (read-only)
