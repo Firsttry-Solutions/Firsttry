@@ -4,17 +4,37 @@
 
 This document explicitly lists all Atlassian Forge API scopes and permissions required by FirstTry - Audit Evidence Snapshot for Jira, the rationale for each, and what FirstTry **does NOT** access.
 
-**Status**: Enterprise-Grade | **Last Updated**: 2026-01-12 | **Review**: [docs/SECURITY_SUMMARY.md](SECURITY_SUMMARY.md), [docs/PRIVACY.md](PRIVACY.md)
+**Status**: Enterprise-Grade | **Last Updated**: 2026-01-13 | **Review**: [docs/SECURITY_SUMMARY.md](SECURITY_SUMMARY.md), [docs/PRIVACY.md](PRIVACY.md)
 
 ---
 
-## Declared Scopes (Manifest)
+## Declared Scopes (Manifest) — Proof Anchors
 
-FirstTry - Audit Evidence Snapshot for Jira declares exactly **two (2) scopes** in `atlassian/forge-app/manifest.yml`:
+FirstTry - Audit Evidence Snapshot for Jira declares exactly **two (2) scopes** in:
+
+**Manifest location**: `atlassian/forge-app/manifest.yml` (lines 61-65)
+
+```yaml
+permissions:
+  scopes:
+    - storage:app
+    - read:jira-work
+```
+
+**Proof**: [atlassian/forge-app/manifest.yml#L61-L65](../atlassian/forge-app/manifest.yml)
+
+---
 
 ### 1. `storage:app` — Forge App Storage (Read/Write)
 
+**Declared in**: `atlassian/forge-app/manifest.yml` line 64
+
 **Purpose**: Store governance evidence (snapshots, metrics, event ledgers, policy freeze-locks) within Atlassian Forge's isolated, tenant-specific storage.
+
+**Least-privilege justification**:
+- ✅ Scope is **necessary**: FirstTry must persist evidence across scheduled runs (immutable ledgers)
+- ✅ Scope is **minimal**: Only `storage:app` (not `storage:cloud` or external APIs)
+- ✅ Scope is **isolated**: Forge platform enforces per-tenant data isolation; FirstTry cannot access other tenants' storage
 
 **What it enables**:
 - Creating and updating governance evidence documents (immutable ledgers, timestamped snapshots)
@@ -30,11 +50,20 @@ FirstTry - Audit Evidence Snapshot for Jira declares exactly **two (2) scopes** 
 
 **Access pattern**: Async writes during scheduled triggers (Phase 5 scheduler, Phase 6 weekly snapshots, Phase 7 daily dispatchers).
 
+**Code proof**: [atlassian/forge-app/src/scheduled/phase5_scheduler.ts](../atlassian/forge-app/src/scheduled/phase5_scheduler.ts) — Uses `storage.app.get()` and `storage.app.set()` only.
+
 ---
 
 ### 2. `read:jira-work` — Jira Issue & Configuration Read-Only Access
 
+**Declared in**: `atlassian/forge-app/manifest.yml` line 65
+
 **Purpose**: Query Jira issue metadata, field definitions, automation rule configurations, and project settings to detect configuration drift.
+
+**Least-privilege justification**:
+- ✅ Scope is **necessary**: FirstTry computes governance metrics based on Jira configuration metadata
+- ✅ Scope is **read-only**: No `write:jira-work` or `manage:jira-configuration` requested
+- ✅ Scope is **limited**: Only reads schema/config, not issue content or user data
 
 **What it reads**:
 - Issue field definitions (`GET /rest/api/3/field`)
@@ -57,19 +86,22 @@ FirstTry - Audit Evidence Snapshot for Jira declares exactly **two (2) scopes** 
 
 **Access pattern**: Synchronous queries during metric computation (Phase 2-8) and scheduled snapshots (Phase 5-6).
 
+**Code proof**: [atlassian/forge-app/src/core/jira_query.ts](../atlassian/forge-app/src/core/jira_query.ts) — Uses `requestJira()` with `GET` only, `asApp()` call pattern.
+
 ---
 
 ## What FirstTry NEVER Accesses
 
-### Forbidden Scopes (Not Requested)
+### Explicitly NOT Requested Scopes (Write/Mutation)
 
-| Scope | Reason |
-|-------|--------|
-| `write:jira-work` | FirstTry is read-only; never modifies Jira |
-| `manage:jira-configuration` | No config changes; drift is detected, not enforced |
-| `read:jira-user` | No user tracking; personal data never collected |
-| `read:app-install` | Not required for governance |
-| External API calls | Manifest lacks external fetch permission; Forge blocks outbound |
+| Scope | Status | Reason |
+|-------|--------|--------|
+| `write:jira-work` | ❌ NOT REQUESTED | FirstTry is read-only; never modifies Jira issues, statuses, or automations |
+| `manage:jira-configuration` | ❌ NOT REQUESTED | Configuration drift is detected, never enforced; no writes to schemes/settings |
+| `read:jira-user` | ❌ NOT REQUESTED | No user tracking; governance evidence is about Jira configuration, not user activity |
+| `read:app-install` | ❌ NOT REQUESTED | Not required for governance; FirstTry operates on single-tenant basis |
+| `admin:jira-migration` | ❌ NOT REQUESTED | FirstTry is not a migration tool |
+| External HTTP (webhooks, fetch) | ❌ BLOCKED BY MANIFEST | Manifest lacks `external:fetch` permission; Forge platform blocks all outbound |
 
 ### No Third-Party Integrations
 
@@ -77,27 +109,62 @@ FirstTry - Audit Evidence Snapshot for Jira declares exactly **two (2) scopes** 
 - ❌ No data exports to cloud storage (S3, GCS, Azure)
 - ❌ No integration with analytics platforms (Segment, Mixpanel)
 - ❌ No credential forwarding to third-party audit systems
+- ❌ All evidence is stored exclusively in Forge `storage:app` (tenant-isolated)
 
 ---
 
-## Scope Validation
+## Scope Validation & Verification
 
-### How to Verify
+### How to Verify (Commands)
 
-1. **Check manifest**:
+1. **Check manifest declaration** (exact scopes):
    ```bash
-   cat atlassian/forge-app/manifest.yml | grep -A 5 "scopes:"
+   grep -A 3 "scopes:" atlassian/forge-app/manifest.yml
    ```
    Expected output:
-   ```yaml
+   ```
    scopes:
      - storage:app
      - read:jira-work
    ```
 
-2. **Verify no mutations**:
+2. **Verify no write scopes in code**:
    ```bash
-   # Search for POST/PUT/DELETE in Forge app code
+   grep -r "write:jira-work\|manage:jira\|requestJira.*POST\|requestJira.*PUT\|requestJira.*DELETE" \
+     atlassian/forge-app/src --include="*.ts" || echo "✅ No write mutations found"
+   ```
+
+3. **Verify asApp() (no impersonation)**:
+   ```bash
+   grep -r "asUser\|impersonate\|userToken" atlassian/forge-app/src --include="*.ts" || \
+     echo "✅ No user impersonation found"
+   ```
+
+4. **Verify no external fetch**:
+   ```bash
+   grep -r "external:fetch\|fetch(" atlassian/forge-app/manifest.yml atlassian/forge-app/src --include="*.ts" || \
+     echo "✅ No external fetch configured"
+   ```
+
+### Scope Consistency Test
+
+| Aspect | Status | Proof |
+|--------|--------|-------|
+| Manifest declares exactly 2 scopes | ✅ | [manifest.yml#L61-L65](../atlassian/forge-app/manifest.yml) |
+| No `write:` scopes present | ✅ | Manifest line 63-65 shows read-only + storage |
+| No user/personal data scopes | ✅ | No `read:jira-user` in manifest |
+| No external fetch permission | ✅ | Manifest lines 1-71 lack `external:fetch` |
+| docs/SCOPES.md matches manifest | ✅ | This document (sections 1-2) |
+
+---
+
+## Related Documentation
+
+- **Security Model**: [docs/SECURITY.md](SECURITY.md)
+- **Privacy & Data Retention**: [docs/PRIVACY.md](PRIVACY.md)
+- **Compliance**: [docs/COMPLIANCE.md](COMPLIANCE.md)
+- **Least-Privilege Design**: See audit evidence in `audit/marketplace_volvo_grade/`
+
    grep -r "POST\|PUT\|DELETE\|asUser\|mutation" atlassian/forge-app/src --include="*.ts" --include="*.js"
    ```
    Expected: Only comments in type definitions; no actual mutation calls.
