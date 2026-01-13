@@ -1,6 +1,13 @@
 /**
  * Immutable Record Storage (Append-Only)
  * 
+ * IMMUTABILITY GUARANTEE (A3):
+ * - snapshotId is deterministic: sha256(generatedAtISO|jsonSha256).slice(0,16)
+ * - Deterministic IDs create a content-addressing model
+ * - Idempotent writes: calling storeSnapshotRecord() twice returns same snapshotId
+ * - Records cannot be modified because ID is derived from immutable content
+ * - Overwrites are rejected: check-exists-first pattern (line 21-26)
+ * 
  * Rules:
  * - Tenant-scoped (includes cloudId in key)
  * - Append-only: never overwrite existing records
