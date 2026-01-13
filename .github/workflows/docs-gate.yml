@@ -1,0 +1,44 @@
+name: Documentation Gate
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'tools/validate_docs_strict.sh'
+      - '.github/workflows/docs-gate.yml'
+      - '**/manifest.yml'
+      - '**/manifest.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'tools/validate_docs_strict.sh'
+      - '**/manifest.yml'
+      - '**/manifest.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  docs-gate:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run DOCS_GATE validator
+        run: bash tools/validate_docs_strict.sh
+        shell: bash
+
+      - name: Report validation status
+        if: failure()
+        run: |
+          echo "❌ Documentation validation failed"
+          echo "Please ensure:"
+          echo "  - All required docs exist in docs/ directory"
+          echo "  - Internal links are valid (no broken paths)"
+          echo "  - API scopes match between manifest and SCOPES.md"
+          echo "  - No placeholder terms (TBD, TODO, Lorem ipsum)"
+          exit 1
