@@ -17,9 +17,12 @@ on:
 jobs:
   evidence-guard:
     name: Evidence & Security Guard
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set CI evidence dir
+        run: echo "CI_EVIDENCE_DIR=/tmp/ci_evidence_check" >> $GITHUB_ENV
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

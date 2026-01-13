@@ -92,17 +92,26 @@ function main() {
   if (!manifestTxt.includes("storage:app")) fail("Manifest missing required scope: storage:app");
   ok("Manifest includes expected scopes: read:jira-work, storage:app");
 
-  // TEST 5: Network surface scanner output (optional but fail-closed if referenced by CI)
-  console.log("\nTEST 5: Network surface scanner summary (if present)");
-  // CI runs scanner to /tmp/ci_evidence_check; verify pass when file exists.
-  const summaryPath = "/tmp/ci_evidence_check/32_network_surface_summary.json";
-  if (fs.existsSync(summaryPath)) {
+  // TEST 5: Network surface scanner output (CI-required)
+  console.log("\nTEST 5: Network surface scanner summary (CI-required when CI=true)");
+  const evidenceDir = process.env.CI_EVIDENCE_DIR || "/tmp/ci_evidence_check";
+  const summaryPath = `${evidenceDir}/32_network_surface_summary.json`;
+
+  if (process.env.CI) {
+    if (!fs.existsSync(summaryPath)) {
+      fail(`CI requires network surface summary, but file not found: ${summaryPath}`);
+    }
     const j = JSON.parse(readFileOrFail(summaryPath));
     if (!j || j.pass !== true) fail("Network surface scanner summary indicates FAIL");
-    ok("Network surface scanner summary indicates PASS (no external egress detected by scanner)");
+    ok("CI network surface scanner summary indicates PASS");
   } else {
-    // Not present locally; do not "assume pass". Just inform.
-    ok("No scanner summary found at /tmp/ci_evidence_check (skipping). CI must provide it.");
+    if (fs.existsSync(summaryPath)) {
+      const j = JSON.parse(readFileOrFail(summaryPath));
+      if (!j || j.pass !== true) fail("Network surface scanner summary indicates FAIL");
+      ok("Local scanner summary indicates PASS");
+    } else {
+      ok("No scanner summary found locally (skipping). CI will require it.");
+    }
   }
 
   console.log("\n" + "=".repeat(80));
