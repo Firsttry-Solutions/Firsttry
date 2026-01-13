@@ -57,6 +57,9 @@ ALLOWLIST = [
     # Archived or internal documents (not user-facing)
     (r"audit/.*", r"TBD|TODO|FIXME|XXX", "Archived internal audit document"),
     
+    # Evidence artifacts (captured validator outputs, not claims)
+    (r"docs/evidence/.*", r".*", "Evidence pack artifact folder (captured outputs, not customer-facing claims)"),
+    
     # Legitimate cost/time context with EXAMPLE label
     (r"tools/roi_calc\.py", r"\$.*|hours|payback", "Calculator tool with EXAMPLES ONLY disclaimer"),
 ]

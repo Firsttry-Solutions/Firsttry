@@ -16,8 +16,9 @@ def main():
     # Find all doc files
     doc_files = list(Path('docs').glob('**/*.md'))
     
-    # Pattern: reference to docs/evidence/<path>
-    evidence_ref_pattern = r'docs/evidence/[^\s\)"\'\]>]+'
+    # Pattern: reference to docs/evidence/ followed by actual path (not just /)
+    # Must match: docs/evidence/20260113T131842Z_6ca63141/
+    evidence_ref_pattern = r'docs/evidence/[a-zA-Z0-9_\-]+/[^\s\)"\'\]>]*'
     
     for doc_file in doc_files:
         try:
@@ -25,11 +26,18 @@ def main():
         except:
             continue
         
+        # Remove code blocks (```...```) to avoid false positives on templates
+        content_no_code = re.sub(r'```[^`]*```', '', content, flags=re.DOTALL)
+        
         # Find all evidence references
-        refs = re.findall(evidence_ref_pattern, content)
+        refs = re.findall(evidence_ref_pattern, content_no_code)
         
         for ref in refs:
-            # Check if file exists
+            # Skip template patterns
+            if '{' in ref or '}' in ref:
+                continue
+            
+            # Check if file/dir exists
             ref_path = Path(ref)
             if not ref_path.exists():
                 errors.append(f"{doc_file}: References non-existent {ref}")

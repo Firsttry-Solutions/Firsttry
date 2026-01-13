@@ -1,0 +1,82 @@
+name: Evidence Guard
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "tools/**"
+      - "atlassian/forge-app/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "tools/**"
+      - "atlassian/forge-app/**"
+
+jobs:
+  evidence-guard:
+    name: Evidence & Security Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+
+      - name: Run placeholder validator
+        run: |
+          python3 tools/validate_placeholders.py
+          echo "✅ Placeholder validator passed"
+
+      - name: Run evidence anchor validator
+        run: |
+          python3 tools/validate_evidence_anchors.py
+          echo "✅ Evidence anchor validator passed"
+
+      - name: Run network surface scanner
+        run: |
+          mkdir -p /tmp/ci_evidence_check
+          python3 tools/scan_network_surface.py --repo . --out /tmp/ci_evidence_check
+          echo "✅ Network surface scan passed"
+
+      - name: Run tenant isolation proof test
+        run: |
+          node atlassian/forge-app/tests/tenant_isolation_proof.js
+          echo "✅ Tenant isolation test passed"
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "========================================"
+          echo "✅ ALL EVIDENCE GUARDS PASSED"
+          echo "========================================"
+          echo ""
+          echo "Checks:"
+          echo "  ✅ Placeholders: No fabricated claims"
+          echo "  ✅ Evidence anchors: All references valid"
+          echo "  ✅ Network surface: No external egress"
+          echo "  ✅ Tenant isolation: Proven by tests"
+          echo ""
+          echo "Ready for Marketplace submission."
+
+      - name: Failure report
+        if: failure()
+        run: |
+          echo "❌ EVIDENCE GUARD FAILED"
+          echo "Please review:"
+          echo "  - Placeholder validator output"
+          echo "  - Network surface scan results"
+          echo "  - Tenant isolation test output"
+          exit 1
