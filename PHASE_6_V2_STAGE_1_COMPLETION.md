@@ -27,7 +27,7 @@
   - RetentionPolicyStorage (get/set with defaults)
   - RetentionEnforcer (FIFO auto-delete by age + count)
   - TTL enforcement (90 days via Forge requestStorage)
-  - Tenant isolation verified in all methods
+  - Tenant isolation guard passed (code-level) in all methods
 
 - ✅ `src/phase6/snapshot_capture.ts` (332 lines)
   - SnapshotCapturer class for Jira API querying
@@ -181,7 +181,7 @@
 ### ✅ Testing Coverage
 - **117 unit tests** across 6 test files
 - **Determinism tested extensively** (30+ cases)
-- **Tenant isolation verified** in storage + scheduler tests
+- **Tenant isolation guard passed (code-level)** in storage + scheduler tests
 - **READ-ONLY enforcement tested** explicitly
 - **Error handling scenarios** covered (rate limit, permission, timeout)
 
@@ -286,7 +286,7 @@ Stage 2 will add (5 files, 2-3 days):
 
 ✅ **All 14 success criteria met:**
 1. ✅ All 5 test files pass (117 test cases)
-2. ✅ Tenant isolation verified (storage keys verified)
+2. ✅ Tenant isolation guard passed (code-level) (storage keys verified)
 3. ✅ Determinism verified (same state → same hash tested)
 4. ✅ No write endpoints called (verified in tests)
 5. ✅ Idempotency working (same window → single snapshot)

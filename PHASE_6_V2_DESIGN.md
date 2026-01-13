@@ -465,7 +465,7 @@ Rationale: Pragmatic for v2; explicit purge can come later
 ## 15. Success Criteria (Stage 1)
 
 - ✅ All 5 test files pass (100+ test cases)
-- ✅ Tenant isolation verified
+- ✅ Tenant isolation guard passed (code-level)
 - ✅ Determinism verified (identical state → identical hash)
 - ✅ No write endpoints called
 - ✅ Idempotency working (same window → single snapshot)

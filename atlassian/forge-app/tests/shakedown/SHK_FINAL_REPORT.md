@@ -577,7 +577,7 @@ npm run test:shakedown:full
 ║  ✅ No new product features, config, or knobs added           ║
 ║  ✅ Production code semantics unchanged                       ║
 ║  ✅ Zero-touch installation proven                           ║
-║  ✅ Tenant isolation verified                                ║
+║  ✅ Tenant isolation guard passed (code-level)                                ║
 ║  ✅ No misleading outputs possible                           ║
 ║  ✅ All failure modes disclosed explicitly                   ║
 ║  ✅ Idempotency guaranteed across retries                    ║

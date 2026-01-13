@@ -46,7 +46,7 @@ Ready to deploy (pending 3 SEV-2 quick fixes) ⚡
 - Tenant isolation: DOUBLE enforced ✅
 - Storage: Forge (SaaS, encrypted) ✅
 - Retention: 90-180 days + TTL ✅
-- No cross-tenant access possible ✅
+- Code-level guard checks for obvious cross-tenant risks ✅
 
 ### For Performance Team
 **→ Read:** [PERFORMANCE_SCALE_REVIEW.md](PERFORMANCE_SCALE_REVIEW.md)

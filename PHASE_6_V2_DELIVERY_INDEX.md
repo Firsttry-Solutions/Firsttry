@@ -278,7 +278,7 @@ All 3 architectural decisions confirmed by user:
 ✅ **14 of 14 success criteria met:**
 
 1. ✅ All 5 test files pass (117 test cases)
-2. ✅ Tenant isolation verified (storage keys)
+2. ✅ Tenant isolation guard passed (code-level) (storage keys)
 3. ✅ Determinism verified (same state → same hash)
 4. ✅ No write endpoints called (tests verify)
 5. ✅ Idempotency working (same window → single snapshot)
