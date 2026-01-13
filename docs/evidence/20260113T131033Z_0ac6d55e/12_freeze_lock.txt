@@ -1,0 +1,5 @@
+=== FREEZE LOCK VERIFY ===
+FAIL: FREEZE_COMMIT_MISMATCH (expected payload commit HEAD~1)
+  Locked:  abf1c5bec92db810e256bd6dac8baf41e22ffc75
+  Payload: 81fcbf904706129be1a2d577d4ff645a5f84a023
+  Head:    0ac6d55e0ca7699e619dc4b126b5c8316ea3e9fb

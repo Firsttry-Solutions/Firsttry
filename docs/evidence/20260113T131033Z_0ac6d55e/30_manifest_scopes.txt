@@ -1,0 +1,40 @@
+=== MANIFEST FILES ===
+./audit_artifacts/full_audit/20260102_070054/02_manifest_scopes/manifest.yml
+./audit_artifacts/full_audit_runtime/20260102_073042/02_manifest_scopes/manifest.yml
+./audit_artifacts/full_audit_runtime_backed/20260102_075909/02_manifest/manifest.yml
+./atlassian/forge-app/manifest.yml
+./atlassian/forge-app/audit/submission_bundle/run_20260111_072601/manifest.yml
+
+=== SCOPES EXTRACTION ===
+Found 5 manifest file(s)
+
+
+--- atlassian/forge-app/audit/submission_bundle/run_20260111_072601/manifest.yml ---
+Scopes (2):
+  - read:jira-work
+  - storage:app
+
+--- atlassian/forge-app/manifest.yml ---
+Scopes (2):
+  - read:jira-work
+  - storage:app
+
+--- audit_artifacts/full_audit/20260102_070054/02_manifest_scopes/manifest.yml ---
+Scopes (1):
+  - storage:app
+
+--- audit_artifacts/full_audit_runtime/20260102_073042/02_manifest_scopes/manifest.yml ---
+Scopes (1):
+  - storage:app
+
+--- audit_artifacts/full_audit_runtime_backed/20260102_075909/02_manifest/manifest.yml ---
+Scopes (1):
+  - storage:app
+
+
+=== SUMMARY ===
+Total unique scopes: 2
+  read:jira-work
+  storage:app
+
+Total unique external URLs: 0
