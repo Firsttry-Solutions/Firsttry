@@ -57,6 +57,9 @@ def main() -> int:
         # Skip empty or malformed filenames
         if not f or f.startswith('"') or f.startswith("'"):
             continue
+        # Always exclude this validator itself (it contains forbidden phrases as examples)
+        if f == "tools/validate_forbidden_phrases.py":
+            continue
         if not allow_legacy:
             if any(f.startswith(pref) for pref in DEFAULT_EXCLUDE_PREFIXES):
                 continue
