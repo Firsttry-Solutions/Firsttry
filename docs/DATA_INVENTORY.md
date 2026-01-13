@@ -90,7 +90,7 @@ Event records capture changes to issues over time, enabling drift detection.
 |-------|--------|--------|
 | `issue.created` | Jira Webhook | issueKey, project, timestamp |
 | `issue.updated` | Jira Webhook | issueKey, changedFields, timestamp |
-| (others) | Future expansion | TBD |
+| (others) | Future expansion | [Documented as future roadmap items](ROADMAP.md) |
 
 ### 2.3 Storage Location
 
@@ -286,13 +286,13 @@ All data is scoped to `{orgKey}`:
 
 ```
 Example:
-  Workspace "ACME Corp" (orgKey=acme-corp)
-    └─ snapshots/... (only ACME data)
-    └─ events/...    (only ACME events)
-    └─ reports/...   (only ACME reports)
+  Workspace "Example Corp" (orgKey=example-corp)
+    └─ snapshots/... (only Example Corp data)
+    └─ events/...    (only Example Corp events)
+    └─ reports/...   (only Example Corp reports)
 
-  Workspace "TechCorp" (orgKey=tech-corp)
-    └─ snapshots/... (NEVER mixed with ACME)
+  Workspace "Another Customer" (orgKey=another-customer)
+    └─ snapshots/... (NEVER mixed with Example Corp)
     └─ events/...
     └─ reports/...
 ```
