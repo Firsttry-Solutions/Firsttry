@@ -1,7 +1,6 @@
 # Atlassian Marketplace Privacy & Data Questionnaire — Answer Key
 
-**⚠️ DO NOT DEVIATE FROM THIS ANSWER KEY**  
-This document defines the canonical, deterministic responses for all Atlassian Marketplace privacy, data handling, and security questionnaires. Any deviation from these answers must be approved by security@firstry.io and documented in a change request. **All answers are grounded in proof anchors to docs/SECURITY_SUMMARY.md and docs/PRIVACY.md.**
+This document defines the approved responses for Atlassian Marketplace privacy, data handling, and security questionnaires. Any change must be documented via a change request and approved by the security owner. Each answer must cite proof anchors in docs/SECURITY_SUMMARY.md and docs/PRIVACY.md.
 
 ---
 
