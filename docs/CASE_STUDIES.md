@@ -614,51 +614,72 @@ Before starting, you need:
 
 ---
 
-## 6. Example Case Study Skeleton (Placeholder)
+## 6. Case Study Program Status
 
-**DO NOT USE THESE VALUES — This is a template only. Replace with real data from an actual deployment.**
+**⚠️ NO FABRICATED CASE STUDIES — REAL DATA ONLY**
+
+As of this document, FirstTry has NOT been deployed to production customers yet. Therefore:
+
+- ❌ NO fabricated customer stories
+- ❌ NO invented metrics or ROI figures  
+- ❌ NO hypothetical deployment timelines
+- ✅ Case studies will be published ONLY after real customer deployments with verified data
+
+### When Case Studies Will Be Available
+
+Case studies require:
+1. **Real customer deployment** of FirstTry in production Jira
+2. **Measurable governance impact** (audit logs, policy snapshots, evidence exports)
+3. **Customer consent** for anonymized documentation
+4. **Verification** of metrics (time savings, error reduction, risk mitigation)
+
+### Example Structure (For Future Reference)
+
+When we publish case studies, they will follow this structure:
 
 ```markdown
-# Case Study: [ANONYMIZED COMPANY] — Automated Policy Enforcement
+# Case Study: [ANONYMIZED CUSTOMER] — Governance Automation
 
-**Date Completed**: [TBD — awaiting first real deployment]  
-**Environment**: Jira Cloud, [team size] users  
-**Privacy Level**: Anonymized  
-**Evidence Checklist**: ☐ TBD  
+**Date Completed**: [Real deployment date]
+**Evidence**: [Link to actual FirstTry policy logs and exports]
+**Metrics Verified**: [By FirstTry audit trail, customer-approved]
 
----
+## Environment & Challenge
+[Real details from customer deployment]
 
-## 1. Context & Environment
+## Quantified Impact
+- **Before**: Time per governance cycle (actual measurement)
+- **After**: Time per cycle with FirstTry automation (actual data)
+- **Error Reduction**: Policies missed → Actual catch rate with evidence
+- **Business Outcome**: Risk mitigation, audit readiness, team efficiency
 
-### Organization Profile
+## Implementation Details
+[Real timeline, customer's governance model, actual policy complexity]
 
-- **Size**: [X developers / Y users] — *awaiting first customer*
-- **Jira Instance**: Jira Cloud, version [X.Y.Z]
-- **Policy Complexity**: [Simple / Moderate / Complex]
-
-### Existing Process (Before FirstTry)
-
-- **Policy Definition**: [Manual review, checklist, script, etc.]
-- **Frequency**: Per release / sprint / month
-- **Enforcement Gap**: [What was the problem?]
-
----
-
-## 2. Problem Statement
-
-### The Challenge
-
-[One paragraph describing the problem — awaiting real deployment]
-
-### Quantified Impact (Before)
-
-- **Time Investment**: [X hours per release] — *TBD*
-- **Error Rate**: [X%] of policies missed — *TBD*
-- **Business Impact**: [Revenue delay / Audit risk / Other] — *TBD*
+## Lessons Learned
+[Genuine insights from deployment]
+```
 
 ---
 
-## 3. Solution & Setup
+## 7. How to Contribute a Case Study
+
+If you deploy FirstTry and would like to share your experience:
+
+1. **Contact us** at [support email] with interest
+2. **Provide anonymization approach** (company name, team size anonymity level)
+3. **Share FirstTry exports** (policy evaluation logs, snapshot data, audit trails)
+4. **Review and approve** before publication
+
+We will help you:
+- ✅ Anonymize sensitive details
+- ✅ Extract verified metrics from FirstTry logs
+- ✅ Draft the story with your insights
+- ✅ Ensure accuracy and compliance
+
+---
+
+## OLD: Placeholder Case Study Template
 
 [Describe FirstTry configuration — awaiting real deployment]
 
