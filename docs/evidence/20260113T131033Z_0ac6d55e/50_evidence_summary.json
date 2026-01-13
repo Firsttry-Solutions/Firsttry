@@ -1,0 +1,32 @@
+{
+  "timestamp": "20260113T130927Z",
+  "repository": {
+    "branch": "main",
+    "head_commit": "0ac6d55e",
+    "head_full": "0ac6d55e0ca7699e619dc4b126b5c8316ea3e9fb"
+  },
+  "validators": {
+    "placeholders": {
+      "status": "PASS",
+      "artifact": "10_placeholders.txt"
+    },
+    "docs_gate": {
+      "status": "UNKNOWN",
+      "artifact": "11_docs_gate.txt"
+    }
+  },
+  "manifest": {
+    "scopes": [
+      "read:jira-work",
+      "storage:app"
+    ],
+    "external_egress": [],
+    "artifact": "30_manifest_scopes.txt"
+  },
+  "data_handling": {
+    "storage_usage": true,
+    "jira_read_only": true,
+    "external_apis": "See 31_data_scan.txt",
+    "artifact": "31_data_scan.txt"
+  }
+}

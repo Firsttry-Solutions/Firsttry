@@ -494,6 +494,20 @@ ROI is harder to measure when:
 
 ---
 
+## 10. Evidence Pack
+
+To verify the technical claims underlying FirstTry's architecture (which the ROI model assumes), consult:
+
+- **Evidence Pack**: [docs/evidence/20260113T131033Z_0ac6d55e/](../evidence/20260113T131033Z_0ac6d55e/)
+- **Placeholder Validation**: [10_placeholders.txt](../evidence/20260113T131033Z_0ac6d55e/10_placeholders.txt) ✅ PASS — No fabricated claims in docs
+- **Docs Quality Gate**: [11_docs_gate.txt](../evidence/20260113T131033Z_0ac6d55e/11_docs_gate.txt) ✅ PASS — Docs meet content standards
+- **Manifest Scopes**: [30_manifest_scopes.txt](../evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt) — Jira scopes: `read:jira-work`, `storage:app` (verified from source)
+- **Data Handling**: [31_data_scan.txt](../evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt) — Code audit: Forge-managed storage, no external APIs
+
+See [docs/EVIDENCE_REFERENCE.md](EVIDENCE_REFERENCE.md) for detailed explanation of what's proven vs. customer-measured.
+
+---
+
 ## 11. Disclaimer
 
 **Important**: All ROI calculations are estimates based on your inputs. FirstTry makes **no claims** about actual ROI in your environment. 

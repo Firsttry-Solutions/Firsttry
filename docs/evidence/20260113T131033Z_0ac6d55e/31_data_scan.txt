@@ -1,0 +1,123 @@
+=== DATA HANDLING CODE SCAN ===
+docs/SCOPES.md:21:    - read:jira-work
+docs/SCOPES.md:32:**Purpose**: Store governance evidence (snapshots, metrics, event ledgers, policy freeze-locks) within Atlassian Forge's isolated, tenant-specific storage.
+docs/SCOPES.md:53:**Code proof**: [atlassian/forge-app/src/scheduled/phase5_scheduler.ts](../atlassian/forge-app/src/scheduled/phase5_scheduler.ts) — Uses `storage.app.get()` and `storage.app.set()` only.
+docs/SCOPES.md:57:### 2. `read:jira-work` — Jira Issue & Configuration Read-Only Access
+docs/SCOPES.md:65:- ✅ Scope is **read-only**: No `write:jira-work` or `manage:jira-configuration` requested
+docs/SCOPES.md:84:- ✅ **No impersonation**: FirstTry always calls `asApp()`, never `asUser()`
+docs/SCOPES.md:89:**Code proof**: [atlassian/forge-app/src/core/jira_query.ts](../atlassian/forge-app/src/core/jira_query.ts) — Uses `requestJira()` with `GET` only, `asApp()` call pattern.
+docs/SCOPES.md:99:| `write:jira-work` | ❌ NOT REQUESTED | FirstTry is read-only; never modifies Jira issues, statuses, or automations |
+docs/SCOPES.md:100:| `manage:jira-configuration` | ❌ NOT REQUESTED | Configuration drift is detected, never enforced; no writes to schemes/settings |
+docs/SCOPES.md:101:| `read:jira-user` | ❌ NOT REQUESTED | No user tracking; governance evidence is about Jira configuration, not user activity |
+docs/SCOPES.md:103:| `admin:jira-migration` | ❌ NOT REQUESTED | FirstTry is not a migration tool |
+docs/SCOPES.md:128:     - read:jira-work
+docs/SCOPES.md:133:   grep -r "write:jira-work\|manage:jira\|requestJira.*POST\|requestJira.*PUT\|requestJira.*DELETE" \
+docs/SCOPES.md:137:3. **Verify asApp() (no impersonation)**:
+docs/SCOPES.md:145:   grep -r "external:fetch\|fetch(" atlassian/forge-app/manifest.yml atlassian/forge-app/src --include="*.ts" || \
+docs/SCOPES.md:155:| No user/personal data scopes | ✅ | No `read:jira-user` in manifest |
+docs/SCOPES.md:185:- ✅ No implied scopes (e.g., "admin" inferred from read:jira-work)
+docs/SCOPES.md:205:1. **"Can FirstTry modify my Jira data?"** → No. Scope `read:jira-work` is read-only; code is tested for zero mutations.
+atlassian/forge-app/PHASE_6_V2_STAGE_2_TEST_PLAN.md:227:  await storage.store(captured);
+atlassian/forge-app/PHASE_6_V2_STAGE_2_TEST_PLAN.md:228:  const retrieved = await storage.get(captured.snapshot_id);
+atlassian/forge-app/PHASE_6_V2_STAGE_2_TEST_PLAN.md:375:   - Tests mock @forge/api storage
+atlassian/forge-app/PHASE_6_V2_STAGE_2_TEST_PLAN.md:425:jest.mock('@forge/api', () => ({
+atlassian/forge-app/PHASE_7_COMPLETE_IMPLEMENTATION.md:14:- 3 core modules (drift_model.ts, drift_compute.ts, drift_storage.ts)
+atlassian/forge-app/PHASE_7_COMPLETE_IMPLEMENTATION.md:50:3. **src/phase7/drift_storage.ts** (220 lines)
+atlassian/forge-app/PHASE_7_COMPLETE_IMPLEMENTATION.md:200:   └── drift_storage.ts            (220 lines)  Storage wrapper
+atlassian/forge-app/SCHEDULER_HARDENING_SUMMARY.md:31:  - ✅ @ts-expect-error annotation for @forge/api
+atlassian/forge-app/SCHEDULER_HARDENING_SUMMARY.md:159:  const installationEvidence = await api.asApp().requestStorage(async (storage) => {
+atlassian/forge-app/SCHEDULER_HARDENING_SUMMARY.md:160:    return await storage.get(`phase4:evidence:installation:${cloudId}`);
+atlassian/forge-app/SCHEDULER_HARDENING_SUMMARY.md:238:- **Mocking:** vi.mock() for @forge/api, scheduler_state, phase5_report_generator
+atlassian/forge-app/SCHEDULER_HARDENING_SUMMARY.md:300:- **Phase-4 Evidence:** `src/phase4/evidence_storage.ts`
+atlassian/forge-app/PHASE_4_DISCLOSURE_HARDENING.md:28:- `src/jira_ingest.ts` (561 lines) - Unchanged
+atlassian/forge-app/PHASE_4_DISCLOSURE_HARDENING.md:29:- `src/evidence_storage.ts` (278 lines) - Unchanged
+atlassian/forge-app/PHASE_4_DISCLOSURE_HARDENING.md:289:- `src/jira_ingest.ts` - No changes
+atlassian/forge-app/PHASE_4_DISCLOSURE_HARDENING.md:290:- `src/evidence_storage.ts` - No changes
+atlassian/forge-app/PHASE_7_STATUS.txt:17:  ✅ drift_storage.ts            (220 lines) - Storage wrapper with pagination
+atlassian/forge-app/PHASE_7_STATUS.txt:292:  💻 Drift Storage:       src/phase7/drift_storage.ts
+atlassian/forge-app/PHASE_9_5D_INDEX.md:297:  console.log('✅ Data is authentic');
+atlassian/forge-app/PHASE_9_5D_INDEX.md:299:  console.log('⚠️  DATA MODIFIED - ALERT');
+atlassian/forge-app/PHASE_6_V2_STAGE_2_COMPLETION_SUMMARY.md:100:│  ├── snapshot_storage.ts          → Core storage ops       │
+atlassian/forge-app/PHASE_6_V2_STAGE_2_COMPLETION_SUMMARY.md:109:│  └── [Embedded in storage.ts]     → FIFO/Age deletion      │
+atlassian/forge-app/PHASE_6_V2_STAGE_2_COMPLETION_SUMMARY.md:122:│  └── Connected to: snapshot_storage.ts                      │
+atlassian/forge-app/PHASE_6_V2_STAGE_2_COMPLETION_SUMMARY.md:132:│  └── Connected to: snapshot_storage.ts, canonicalization.ts│
+atlassian/forge-app/PHASE_6_V2_STAGE_2_COMPLETION_SUMMARY.md:153:[snapshot_storage.ts] ← Storage module
+atlassian/forge-app/PHASE_6_V2_STAGE_2_COMPLETION_SUMMARY.md:161:    ├─ Retention: enforcer in storage.ts
+atlassian/forge-app/PHASE_6_V2_STAGE_2_COMPLETION_SUMMARY.md:191:| snapshot_storage.ts | 420 | 28 | 92% |
+atlassian/forge-app/PHASE_6_V2_STAGE_2_COMPLETION_SUMMARY.md:353:2. **snapshot_storage.ts** → `snapshot_export.ts`
+atlassian/forge-app/PHASE_7_V2_VERIFICATION.md:16:✅ src/phase7/drift_storage.ts      220 lines    DriftEventStorage, pagination
+atlassian/forge-app/PHASE_7_V2_VERIFICATION.md:275:- [x] No console.log() in production code
+atlassian/forge-app/PHASE_7_V2_VERIFICATION.md:303:     └── drift_storage.ts
+atlassian/forge-app/PHASE_9_5C_IMPLEMENTATION_SUMMARY.md:112:- jira_permission_error            ✗ Not FirstTry
+atlassian/forge-app/PHASE_9_5C_IMPLEMENTATION_SUMMARY.md:113:- jira_rate_limit_hit              ✗ Jira issue
+atlassian/forge-app/PHASE_9_5C_IMPLEMENTATION_SUMMARY.md:190:    name: 'jira_permission_error',  // INVALID!
+atlassian/forge-app/MEGA_PROMPT_V3_COMPLETION_SUMMARY.md:57:   - ✅ 2 scopes (read:jira-work, storage:app) verified
+atlassian/forge-app/MEGA_PROMPT_V3_COMPLETION_SUMMARY.md:66:   - `jira_api_call_sites.txt`: All Jira requestJira() calls mapped (GET-only)
+atlassian/forge-app/MEGA_PROMPT_V3_COMPLETION_SUMMARY.md:278:| jira_api_call_sites.txt | Text | 50KB | All Jira API callsites |
+atlassian/forge-app/debug_hash.js:11:console.log('Hash 1:', hash1);
+atlassian/forge-app/debug_hash.js:12:console.log('Hash 2:', hash2);
+atlassian/forge-app/debug_hash.js:13:console.log('Equal:', hash1 === hash2);
+atlassian/forge-app/P2_README.md:188:  console.log(truth.warnings);   // What's wrong
+atlassian/forge-app/P2_README.md:189:  console.log(truth.reasons);    // Why it's wrong
+atlassian/forge-app/PHASE_6_V2_DELIVERY_COMPLETE.md:64:src/phase6/snapshot_storage.ts              ← Core storage operations
+atlassian/forge-app/PHASE_6_V2_DELIVERY_COMPLETE.md:71:#### Policies & Integrity (embedded in storage.ts)
+atlassian/forge-app/PHASE_6_V2_DELIVERY_COMPLETE.md:120:tests/phase6/snapshot_storage.test.ts       ← Storage ops (25 tests)
+atlassian/forge-app/PHASE_6_V2_DELIVERY_COMPLETE.md:141:✅ Source: snapshot_model.ts, snapshot_storage.ts, canonicalization.ts,
+atlassian/forge-app/PHASE_6_V2_DELIVERY_COMPLETE.md:236:snapshot_storage.ts (with embedded ledger, policies, checker)
+atlassian/forge-app/PHASE_6_V2_DELIVERY_COMPLETE.md:304:| snapshot_storage.ts | 420 | 28 | 92% |
+atlassian/forge-app/PHASE_6_V2_DELIVERY_COMPLETE.md:376:snapshot_storage.ts (contains: ledger, policy, checker)
+atlassian/forge-app/P2_DELIVERY_SUMMARY.md:196:  console.log(meta.warnings);
+atlassian/forge-app/P2_DELIVERY_SUMMARY.md:197:  console.log(meta.reasons);
+atlassian/forge-app/PHASE5_STEP5_ADMIN_UI_DESIGN.md:24:jira:adminPage:
+atlassian/forge-app/PHASE5_STEP4_COMPLETION.md:270:**Production:** Replace `loadInstallationTimestamp()` to read from Phase-4 evidence storage.
+atlassian/forge-app/PHASE5_STEP4_COMPLETION.md:274:Currently uses fixture cloudId: `ari:cloud:jira:org:FIXTURE-ORG-123`
+atlassian/forge-app/audit_reports/production_proof/v2.10.0-production-verification.md:61:[Phase5Scheduler] Starting for tenantKey: ari:cloud:jira::site/c5b189a5-7cea-4038-9941-d30d5b6c3071 
+atlassian/forge-app/audit_reports/production_proof/v2.10.0-production-verification.md:76:TypeError: api_1.default.asApp(...).requestStorage is not a function
+atlassian/forge-app/audit_reports/production_proof/v2.10.0-production-verification.md:79:**Why this matters:** v2.8.0 primary hotfix replaced `api.asApp().requestStorage()` pattern with direct Forge Storage import. This check confirms the fix holds in v2.10.0.
+atlassian/forge-app/audit_reports/production_proof/v2.10.0-production-verification.md:145:- Replaced broken `api.asApp().requestStorage()` pattern
+atlassian/forge-app/audit_reports/production_proof/v2.10.0-production-verification.md:146:- Added direct import: `import { storage } from '@forge/api'`
+atlassian/forge-app/enterprise/SECURITY_WHITEPAPER.md:72:| `read:jira-work` | Read project, issue, workflow metadata | Minimum required for governance evidence collection |
+atlassian/forge-app/enterprise/SECURITY_WHITEPAPER.md:93:1. **Static**: No `write:jira` or `manage:jira` scopes declared
+atlassian/forge-app/enterprise/SECURITY_WHITEPAPER.md:95:3. **Test**: `tests/perf_signals/no_jira_writes_contract.test.ts` (blocks POST/PUT/DELETE)
+atlassian/forge-app/enterprise/SECURITY_WHITEPAPER.md:113:- Code review: `jira_api_call_sites.txt` (all calls are to `/project`, `/issue`, `/field`, NOT `/user`)
+atlassian/forge-app/enterprise/SECURITY_WHITEPAPER.md:120:**Risk**: App sends data to external APIs, analytics services, or cloud storage.
+atlassian/forge-app/enterprise/SECURITY_WHITEPAPER.md:124:2. **Code**: No `fetch()`, `axios()`, or HTTP calls to external domains
+atlassian/forge-app/PHASE_9_5B_INDEX.md:77:  console.log('Data is valid');
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:50:6. [src/phase7/drift_storage.ts](src/phase7/drift_storage.ts)
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:78:**Objective:** Fix failing Phase 3 daily_pipeline_no_data test by adding proper @forge/api mock
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:82:   - Added Vitest `vi.mock('@forge/api')` to mock the API module before importing dependent modules
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:89:// Mock @forge/api module BEFORE importing the modules that use it
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:90:vi.mock('@forge/api', () => ({
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:94:// NOW import the modules that depend on @forge/api
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:102:**Status:** Tests now run without @forge/api import errors
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:124:**Key Finding:** All 351 executable tests pass consistently. The "14 failed" test files fail at import/initialization time (missing dependencies like `uuid`, `@forge/api`, or syntax errors), not due to failing tests. These files contribute 0 tests to the passing count.
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:150:- Added proper Vitest mock setup for @forge/api
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:237:- [src/phase7/drift_storage.ts](src/phase7/drift_storage.ts)
+atlassian/forge-app/FINAL_TEST_SUITE_GREEN.md:250:- ✅ PART B: Phase 3 daily pipeline test fixed (@forge/api mock working)
+atlassian/forge-app/README.md:40:| `read:jira-work` | read | Read project/issue metadata |
+atlassian/forge-app/SCHEDULER_HARDENING_DESIGN.md:55:    const installationEvidence = await api.asApp().requestStorage(async (storage) => {
+atlassian/forge-app/SCHEDULER_HARDENING_DESIGN.md:56:      return await storage.get(`phase4:evidence:installation:${cloudId}`);
+atlassian/forge-app/SCHEDULER_HARDENING_DESIGN.md:401:- Phase-4 Evidence Storage: `src/phase4/evidence_storage.ts`
+atlassian/forge-app/PHASE_4_GAPS_A_F_ENFORCEMENT.md:680:| `src/jira_ingest.ts` | Phase 4 core (frozen) | 561 | ✓ Unchanged |
+
+=== EXTERNAL API PATTERNS ===
+atlassian/forge-app/node_modules/@types/pdfkit/index.d.ts:    // Text option opentype features as listed at https://docs.microsoft.com/en-us/typography/opentype/spec/featurelist
+atlassian/forge-app/node_modules/@types/pdfkit/index.d.ts:        // See https://opensource.adobe.com/dc-acrobat-sdk-docs/library/pdfmark/pdfmark_Actions.html#view-destinations.
+atlassian/forge-app/node_modules/@types/react/index.d.ts: * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/crossorigin MDN}
+atlassian/forge-app/node_modules/@types/react/index.d.ts: * @see {@link https://react.dev/reference/react/useEffect React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:             * @see {@link https://legacy.reactjs.org/docs/legacy-context.html#referencing-context-in-stateless-function-components React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:             * @see {@link https://legacy.reactjs.org/docs/legacy-context.html#referencing-context-in-lifecycle-methods React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react.dev/reference/react-dom/components/common#ref-callback React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react.dev/reference/react/Component#refs React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:         * @see {@link https://react.dev/learn/referencing-values-with-refs#refs-and-the-dom React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react-typescript-cheatsheet.netlify.app/docs/react-types/reactnode/ React TypeScript Cheatsheet}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:         * @see {@link https://legacy.reactjs.org/docs/react-component.html#displayname Legacy React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react.dev/reference/react/createContext#provider React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react.dev/reference/react/createContext#consumer React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react.dev/learn/passing-data-deeply-with-context React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/context/ React TypeScript Cheatsheet}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:         * @see {@link https://legacy.reactjs.org/docs/react-component.html#displayname Legacy React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react.dev/reference/react/createContext#reference React Docs}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:     * @see {@link https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/context/ React TypeScript Cheatsheet}
+atlassian/forge-app/node_modules/@types/react/index.d.ts:        // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/24509#issuecomment-382213106
