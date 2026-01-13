@@ -44,6 +44,13 @@ FirstTry is a read-only Jira governance application built on Atlassian Forge. Th
 - **Dependency Audit Integration**: NPM vulnerability scanning is enforced as a mandatory gate. High and critical vulnerabilities require an explicit waiver file before release.
   - Proof: [../atlassian/forge-app/audit/reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L165-L178)
 
+- **Tenant Isolation Enforcement**: Storage API enforces tenant isolation using cloudId-based key prefixing. All calls to Forge storage API are wrapped with `tenantStorageGet()`, `tenantStorageSet()`, `tenantStorageDelete()` functions that enforce tenant-scoped keys. Cross-tenant access is cryptographically prevented by key namespace separation.
+  - Proof: 
+    - Tenant context derivation: [../atlassian/forge-app/src/security/tenant_context.ts:L36-L52](../atlassian/forge-app/src/security/tenant_context.ts#L36-L52) (fail-closed on invalid input)
+    - Tenant storage wrapper: [../atlassian/forge-app/src/security/tenant_storage.ts:L56-L91](../atlassian/forge-app/src/security/tenant_storage.ts#L56-L91) (tenant-prefixed key generation)
+    - Isolation test suite: [../atlassian/forge-app/tests/p1_tenant_isolation.test.ts:L1-L50](../atlassian/forge-app/tests/p1_tenant_isolation.test.ts#L1-L50) (24 tests, all passing)
+    - Test verification: `npm test -- p1_tenant_isolation.test.ts` → 24 passed, 0 failed, 344ms
+
 ## Operational / Security Implications
 
 1. **Audit Trail**: Every build invokes the reviewer readiness gate, which generates deterministic proof artifacts. These proofs are stored in the evidence bundle and can be externally verified.
@@ -75,6 +82,9 @@ FirstTry is a read-only Jira governance application built on Atlassian Forge. Th
 | Freeze-lock mechanism for deterministic verification | [../atlassian/forge-app/audit/verify_freeze_lock.sh](../atlassian/forge-app/audit/verify_freeze_lock.sh) |
 | Mandatory NPM audit gate | [../atlassian/forge-app/audit/reviewer_ready_gate.sh:L165-L178](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L165-L178) |
 | Non-bypassable reviewer readiness gate | [../atlassian/forge-app/audit/reviewer_ready_gate.sh:L1-L230](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L1-L230) |
+| Tenant isolation context derivation | [../atlassian/forge-app/src/security/tenant_context.ts:L36-L52](../atlassian/forge-app/src/security/tenant_context.ts#L36-L52) |
+| Tenant-prefixed storage key generation | [../atlassian/forge-app/src/security/tenant_storage.ts:L56-L91](../atlassian/forge-app/src/security/tenant_storage.ts#L56-L91) |
+| Tenant isolation unit tests (24 passing) | [../atlassian/forge-app/tests/p1_tenant_isolation.test.ts](../atlassian/forge-app/tests/p1_tenant_isolation.test.ts) |
 
 ---
 
