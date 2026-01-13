@@ -517,7 +517,7 @@ Jobs:
 - Compliance statements (GDPR, CCPA, HIPAA)
 - Data retention policy (90 days metrics, 1 year audit)
 - Fail-closed design principle
-- Tenant isolation verified
+- Tenant isolation guard passed (code-level)
 - Audit trail immutable
 
 ### Artifact Generation

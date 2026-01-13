@@ -180,7 +180,7 @@ Fix 5 high-risk gaps that block Marketplace approval:
 
 **Success Criteria:**
 - All adversarial tests pass
-- Tenant isolation verified
+- Tenant isolation guard passed (code-level)
 - Permission boundaries validated
 
 ---

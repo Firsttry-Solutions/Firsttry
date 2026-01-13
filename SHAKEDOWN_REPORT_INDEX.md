@@ -362,7 +362,7 @@ Determinism: GUARANTEED
 - [x] All 9 domains covered
 - [x] Zero-touch installation proven
 - [x] Fail-closed design validated
-- [x] Tenant isolation verified
+- [x] Tenant isolation guard passed (code-level)
 - [x] Error disclosure confirmed
 - [x] Data retention enforced
 - [x] Documentation complete

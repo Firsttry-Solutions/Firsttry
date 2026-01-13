@@ -135,7 +135,7 @@ assertImmutable(prior, current)  // Throws IMMUTABILITY_VIOLATION ✅
 - Ledger contains `tenant_id` in canonicalization input
 
 **Tests:**
-- TC-9.5-3.1: Tenant isolation verified
+- TC-9.5-3.1: Tenant isolation guard passed (code-level)
 - TC-9.5-3.2: Cross-tenant mixing detected (different hashes)
 - TC-9.5-3.3: Tenant validation in updates
 
