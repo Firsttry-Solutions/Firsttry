@@ -106,7 +106,7 @@ Every policy evaluation creates an immutable audit entry:
 - **Correlation ID**: Links to entitlement/usage event
 - **Tenant ID**: For forensic separation
 
-Audit entries are written to Forge storage with append-only semantics (no overwrites).
+**Immutability Mechanism (A3)**: Audit entries are append-only by design. Each event is assigned a cryptographically random UUID key at creation time. Storage keys follow the format `{tenantId}:audit:{eventId}`. Since UUID collision is cryptographically impossible, each audit event is written exactly once and cannot be overwritten or modified. Proof: [../atlassian/forge-app/src/audit/audit_events.ts:L211-L214](../atlassian/forge-app/src/audit/audit_events.ts#L211-L214) (UUID generation) and [../atlassian/forge-app/src/audit/audit_events.ts:L216-L219](../atlassian/forge-app/src/audit/audit_events.ts#L216-L219) (tenant-scoped key format).
 
 ## Compliance
 
