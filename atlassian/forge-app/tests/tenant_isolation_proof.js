@@ -1,170 +1,114 @@
 #!/usr/bin/env node
 /**
- * Tenant Isolation Proof Test
+ * Tenant Isolation Guard Test (FAIL-CLOSED)
  *
- * Verifies that FirstTry's storage operations are tenant-partitioned.
+ * Purpose:
+ *  - Regression guard to prevent introducing obvious cross-tenant bugs.
  *
- * What this proves:
- *  - Storage keys are constructed using tenant context
- *  - No global cache mixes tenant data
- *  - Each tenant's data is isolated from others
+ * What this DOES prove:
+ *  - Repo uses Forge SDK (@forge/api) for storage access (static check)
+ *  - No obvious unkeyed global caches in Forge backend source paths (static heuristic)
+ *  - Manifest includes expected Jira scopes (static check)
+ *  - Network surface scanner reports no external egress (if scanner output provided)
+ *
+ * What this DOES NOT prove:
+ *  - Runtime tenant isolation across two Atlassian tenants (requires integration test)
+ *  - Atlassian platform guarantees (vendor docs are the source of truth, not this test)
+ *
+ * Fail-closed rules:
+ *  - If required tools/files are missing, FAIL (exit 1).
  */
 
+const { spawnSync } = require("child_process");
 const fs = require("fs");
-const path = require("path");
 
-async function runTenantIsolationTest() {
-  console.log("=".repeat(80));
-  console.log("TENANT ISOLATION PROOF TEST");
-  console.log("=".repeat(80));
-  console.log();
+function fail(msg) {
+  console.error(`❌ FAIL: ${msg}`);
+  process.exit(1);
+}
 
-  let passed = 0;
-  let failed = 0;
+function ok(msg) {
+  console.log(`✅ ${msg}`);
+}
 
-  // TEST 1: Verify Forge API usage for storage
-  console.log("TEST 1: Forge Storage API Usage");
-  console.log("-".repeat(40));
+function requireTool(cmd) {
+  const r = spawnSync("bash", ["-lc", `command -v ${cmd}`], { encoding: "utf-8" });
+  if (r.status !== 0) fail(`Required tool not found in PATH: ${cmd}`);
+}
+
+function rgList(pattern, path) {
+  const r = spawnSync("rg", ["-n", "--no-heading", "-S", pattern, path], { encoding: "utf-8" });
+  if (r.status === 2) fail(`ripgrep error running pattern=${pattern} path=${path}: ${r.stderr || ""}`);
+  // status 0 means matches, 1 means no matches
+  return { status: r.status, stdout: r.stdout || "" };
+}
+
+function readFileOrFail(p) {
   try {
-    // Check for @forge/api usage in codebase
-    const rg = require("child_process").spawnSync("rg", [
-      "-l",
-      "--glob", "!node_modules",
-      "@forge/api",
-      "atlassian/forge-app/src",
-    ]);
-
-    const hasForgeAPI = rg.status === 0;
-    if (hasForgeAPI) {
-      console.log("  ✓ Code uses @forge/api (Atlassian Forge SDK)\n");
-      console.log("✅ PASS: Using Forge storage (tenant-isolated by Atlassian)\n");
-      passed++;
-    } else {
-      console.log("  ℹ @forge/api check skipped (ripgrep not available)\n");
-      console.log("✅ PASS: (Assuming Forge API usage)\n");
-      passed++;
-    }
+    return fs.readFileSync(p, "utf-8");
   } catch (e) {
-    console.log(`  ℹ Cannot verify @forge/api, assuming pass\n`);
-    console.log("✅ PASS: (Manual verification recommended)\n");
-    passed++;
-  }
-
-  // TEST 2: Verify no global cache without tenant keys
-  console.log("TEST 2: Global Cache Tenant Isolation");
-  console.log("-".repeat(40));
-  try {
-    const cachePatterns = [
-      /const\s+\w+Cache\s*=\s*\{/,  // const cache = {
-      /let\s+\w+Cache\s*=\s*\{/,    // let cache = {
-    ];
-
-    // For Forge apps, global caches should be keyed by tenant
-    // This is a structural check; Forge isolation is server-side
-    console.log("  ℹ Forge apps use server-side tenant isolation");
-    console.log("  ℹ No client-side global cache is needed for tenant separation\n");
-    console.log("✅ PASS: Forge architecture provides server-side tenant isolation\n");
-    passed++;
-  } catch (e) {
-    console.log(`❌ FAIL: ${e.message}\n`);
-    failed++;
-  }
-
-  // TEST 3: Verify Atlassian Forge storage.app API usage
-  console.log("TEST 3: Atlassian Forge Storage.app API");
-  console.log("-".repeat(40));
-  try {
-    // Verify code uses @forge/api storage
-    let content = fs.readFileSync(
-      "atlassian/forge-app/src/phase7/drift_storage.ts",
-      "utf-8"
-    );
-
-    if (content.includes("@forge/api") && content.includes("storage")) {
-      console.log("  ✓ Uses @forge/api for storage");
-    }
-
-    // Key fact: storage.app is server-managed and tenant-isolated by Atlassian
-    console.log("  ✓ Forge storage.app is managed by Atlassian");
-    console.log("  ✓ Each tenant's data is isolated at server level");
-    console.log("  ✓ No cross-tenant access possible through Forge APIs\n");
-
-    console.log("✅ PASS: Code uses Forge storage.app (Atlassian-managed tenant isolation)\n");
-    passed++;
-  } catch (e) {
-    console.log(`❌ FAIL: ${e.message}\n`);
-    failed++;
-  }
-
-  // TEST 4: Verify no external egress (verified by network scanner)
-  console.log("TEST 4: No External Egress");
-  console.log("-".repeat(40));
-  try {
-    // External egress is verified by tools/scan_network_surface.py
-    // which ran cleanly with no external HTTP clients detected
-    console.log("  ✓ Network surface scan: No external HTTP clients (fetch, axios, etc.)");
-    console.log("  ✓ Manifest scopes: No external permissions\n");
-    console.log("✅ PASS: No external egress vectors\n");
-    passed++;
-  } catch (e) {
-    console.log(`❌ FAIL: ${e.message}\n`);
-    failed++;
-  }
-
-  // TEST 5: Verify Forge manifest has single tenant scope
-  console.log("TEST 5: Manifest Scopes (Tenant Context)");
-  console.log("-".repeat(40));
-  try {
-    const yaml = require("yaml");
-    const manifest = yaml.parse(
-      fs.readFileSync("atlassian/forge-app/manifest.yml", "utf-8")
-    );
-
-    if (manifest.permissions && manifest.permissions.scopes) {
-      const scopes = manifest.permissions.scopes;
-      console.log(`  ✓ Manifest scopes: ${scopes.join(", ")}`);
-      console.log("  ✓ Scopes provide tenant context via Jira API\n");
-      console.log("✅ PASS: Manifest specifies tenant-aware scopes\n");
-      passed++;
-    } else {
-      console.log("❌ FAIL: Manifest missing scope declarations\n");
-      failed++;
-    }
-  } catch (e) {
-    console.log(`⚠ WARN: ${e.message}`);
-    console.log("  (Assuming manifest is correct)\n");
-    console.log("✅ PASS: (Manual verification needed)\n");
-    passed++;
-  }
-
-  // SUMMARY
-  console.log("=".repeat(80));
-  console.log("SUMMARY");
-  console.log("=".repeat(80));
-  console.log(`Passed: ${passed}`);
-  console.log(`Failed: ${failed}`);
-  console.log();
-
-  if (failed === 0) {
-    console.log("✅ TENANT ISOLATION VERIFIED");
-    console.log();
-    console.log("Evidence:");
-    console.log("  - Code uses @forge/api storage (Atlassian-managed)");;
-    console.log("  - Storage keys include tenant context");
-    console.log("  - Forge server enforces tenant partitioning");
-    console.log("  - No external API calls (verified by network scan)");
-    console.log("  - Manifest specifies read:jira-work scope (tenant-aware)");
-    console.log();
-    process.exit(0);
-  } else {
-    console.log("❌ TENANT ISOLATION TEST FAILED");
-    console.log();
-    process.exit(1);
+    fail(`Cannot read required file: ${p} (${e.message})`);
   }
 }
 
-// Run test
-runTenantIsolationTest().catch((e) => {
-  console.error("Test error:", e);
-  process.exit(1);
-});
+function main() {
+  console.log("=".repeat(80));
+  console.log("TENANT ISOLATION GUARD TEST (CODE-LEVEL)");
+  console.log("=".repeat(80));
+
+  // Require tools
+  requireTool("rg");
+
+  // TEST 1: Forge SDK usage exists in backend source
+  console.log("\nTEST 1: Forge SDK usage (@forge/api)");
+  const t1 = rgList("@forge/api", "atlassian/forge-app/src");
+  if (t1.status !== 0) fail("No @forge/api usage found in atlassian/forge-app/src (expected Forge SDK usage)");
+  ok("Found @forge/api usage in Forge app source");
+
+  // TEST 2: Storage usage references exist (informational)
+  console.log("\nTEST 2: Forge storage usage patterns (informational)");
+  const t2get = rgList("storage\\.(app|user)\\.get", "atlassian/forge-app/src");
+  const t2set = rgList("storage\\.(app|user)\\.set", "atlassian/forge-app/src");
+  ok(`storage.*.get present: ${t2get.status === 0 ? "YES" : "NO"}`);
+  ok(`storage.*.set present: ${t2set.status === 0 ? "YES" : "NO"}`);
+
+  // TEST 3: Obvious global cache risks (heuristic)
+  console.log("\nTEST 3: Global cache risk heuristic (fail on obvious unkeyed caches)");
+  // Look for top-level maps/objects named *cache* in backend src. This is conservative.
+  // If matches exist, we FAIL and require a reviewer to ensure tenant-keying.
+  const cacheHit = rgList("^(const|let)\\s+\\w*cache\\w*\\s*=\\s*(new Map\\(|\\{)", "atlassian/forge-app/src");
+  if (cacheHit.status === 0) {
+    console.error(cacheHit.stdout.split("\n").slice(0, 10).join("\n"));
+    fail("Potential global cache detected in backend source. Must prove tenant-keying or remove.");
+  }
+  ok("No obvious global cache definitions detected in backend source");
+
+  // TEST 4: Manifest scopes check (fail-closed, no YAML dep)
+  console.log("\nTEST 4: Manifest scopes (static check)");
+  const manifestPath = "atlassian/forge-app/manifest.yml";
+  const manifestTxt = readFileOrFail(manifestPath);
+  // Require the scope string to exist literally in manifest file.
+  if (!manifestTxt.includes("read:jira-work")) fail("Manifest missing required scope: read:jira-work");
+  if (!manifestTxt.includes("storage:app")) fail("Manifest missing required scope: storage:app");
+  ok("Manifest includes expected scopes: read:jira-work, storage:app");
+
+  // TEST 5: Network surface scanner output (optional but fail-closed if referenced by CI)
+  console.log("\nTEST 5: Network surface scanner summary (if present)");
+  // CI runs scanner to /tmp/ci_evidence_check; verify pass when file exists.
+  const summaryPath = "/tmp/ci_evidence_check/32_network_surface_summary.json";
+  if (fs.existsSync(summaryPath)) {
+    const j = JSON.parse(readFileOrFail(summaryPath));
+    if (!j || j.pass !== true) fail("Network surface scanner summary indicates FAIL");
+    ok("Network surface scanner summary indicates PASS (no external egress detected by scanner)");
+  } else {
+    // Not present locally; do not "assume pass". Just inform.
+    ok("No scanner summary found at /tmp/ci_evidence_check (skipping). CI must provide it.");
+  }
+
+  console.log("\n" + "=".repeat(80));
+  console.log("✅ TENANT ISOLATION GUARD PASSED (code-level)");
+  console.log("=".repeat(80));
+  process.exit(0);
+}
+
+main();

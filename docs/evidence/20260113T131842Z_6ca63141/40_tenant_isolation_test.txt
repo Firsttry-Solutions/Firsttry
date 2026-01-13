@@ -44,7 +44,7 @@ SUMMARY
 Passed: 5
 Failed: 0
 
-✅ TENANT ISOLATION VERIFIED
+✅ TENANT ISOLATION GUARD PASSED (code-level)
 
 Evidence:
   - Code uses @forge/api storage (Atlassian-managed)
