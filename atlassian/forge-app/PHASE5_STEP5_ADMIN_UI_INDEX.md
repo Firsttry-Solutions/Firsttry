@@ -165,7 +165,7 @@ atlassian/forge-app/
 - [ ] Deploy: `forge deploy`
 
 ### Post-Deployment (Staging)
-- [ ] Navigate to Jira Settings → Apps → FirstTry Governance → Proof-of-Life Report
+- [ ] Navigate to Jira Settings → Apps → FirstTry - Audit Evidence Snapshot for Jira → Proof-of-Life Report
 - [ ] Verify page loads without errors
 - [ ] Verify "No report yet" message OR report with sections A-D
 - [ ] Click "Generate Now" button

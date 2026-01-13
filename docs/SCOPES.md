@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explicitly lists all Atlassian Forge API scopes and permissions required by FirstTry Governance, the rationale for each, and what FirstTry **does NOT** access.
+This document explicitly lists all Atlassian Forge API scopes and permissions required by FirstTry - Audit Evidence Snapshot for Jira, the rationale for each, and what FirstTry **does NOT** access.
 
 **Status**: Enterprise-Grade | **Last Updated**: 2026-01-12 | **Review**: [docs/SECURITY_SUMMARY.md](SECURITY_SUMMARY.md), [docs/PRIVACY.md](PRIVACY.md)
 
@@ -10,7 +10,7 @@ This document explicitly lists all Atlassian Forge API scopes and permissions re
 
 ## Declared Scopes (Manifest)
 
-FirstTry Governance declares exactly **two (2) scopes** in `atlassian/forge-app/manifest.yml`:
+FirstTry - Audit Evidence Snapshot for Jira declares exactly **two (2) scopes** in `atlassian/forge-app/manifest.yml`:
 
 ### 1. `storage:app` — Forge App Storage (Read/Write)
 

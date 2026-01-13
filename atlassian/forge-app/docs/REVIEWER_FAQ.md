@@ -2,7 +2,7 @@
 
 **For**: Atlassian Marketplace Review Team  
 **Updated**: 2026-01-10  
-**App**: FirstTry Governance
+**App**: FirstTry - Audit Evidence Snapshot for Jira
 
 ---
 
@@ -93,7 +93,7 @@ Evidence: `docs/EXTERNAL_APIS.md` (documents the zero external APIs)
 
 ## Q9: Who owns FirstTry?
 
-**A**: FirstTry Governance is developed by Arnab Poddar (contact@firsttry.run).
+**A**: FirstTry - Audit Evidence Snapshot for Jira is developed by Arnab Poddar (contact@firsttry.run).
 
 ---
 

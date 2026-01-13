@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-FirstTry Governance is a **read-only** Jira Cloud app designed for collecting governance evidence while maintaining strict data privacy and platform integrity guarantees. This whitepaper documents the security architecture, threat models, and verification practices.
+FirstTry - Audit Evidence Snapshot for Jira is a **read-only** Jira Cloud app designed for collecting governance evidence while maintaining strict data privacy and platform integrity guarantees. This whitepaper documents the security architecture, threat models, and verification practices.
 
 **Key Claim**: FirstTry cannot write to Jira, access PII, or send data externally.  
 **Verification Method**: Automated code scans, deterministic tests, manifest validation.
@@ -29,7 +29,7 @@ FirstTry Governance is a **read-only** Jira Cloud app designed for collecting go
        │ GET /rest/api/3/workflow
        ▼
 ┌──────────────────────────────────┐
-│  FirstTry Governance App          │
+│  FirstTry - Audit Evidence Snapshot for Jira App          │
 │  (Forge Runtime Sandbox)          │
 │                                  │
 │ ┌────────────────────────────┐  │

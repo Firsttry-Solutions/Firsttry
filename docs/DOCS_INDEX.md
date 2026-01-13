@@ -46,7 +46,7 @@ FirstTry enterprise documentation is organized by audience and use case, coverin
 
 ## Overview
 
-Welcome to FirstTry enterprise documentation. This index provides a roadmap to all FirstTry governance, security, operational, and strategic documentation.
+Welcome to FirstTry enterprise documentation. This index provides a roadmap to all FirstTry - Audit Evidence Snapshot for Jira, security, operational, and strategic documentation.
 
 ## Documentation Categories
 

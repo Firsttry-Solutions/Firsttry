@@ -14,7 +14,7 @@
 - Latest evidence timestamp
 - Export buttons (JSON, CSV)
 
-**Copy**: "FirstTry Governance Dashboard - Real-time compliance status and metrics"
+**Copy**: "FirstTry - Audit Evidence Snapshot for Jira Dashboard - Real-time compliance status and metrics"
 
 ---
 
@@ -59,7 +59,7 @@
 4. ✅ No external data egress
 5. ✅ 90-day data retention
 
-**Call-to-Action**: "Get it free - Install FirstTry Governance today"
+**Call-to-Action**: "Get it free - Install FirstTry - Audit Evidence Snapshot for Jira today"
 
 ---
 
@@ -73,7 +73,7 @@
 
 ## Testimonial (Optional)
 
-> "FirstTry Governance provides clear, evidence-backed compliance metrics. Essential for Jira admins serious about governance."
+> "FirstTry - Audit Evidence Snapshot for Jira provides clear, evidence-backed compliance metrics. Essential for Jira admins serious about governance."
 >
 > — Marketplace Reviewer, 2026
 

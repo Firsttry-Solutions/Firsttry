@@ -1,10 +1,10 @@
-# ROI Justification: FirstTry Governance
+# ROI Justification: FirstTry - Audit Evidence Snapshot for Jira
 
 ## Audience & Scope
 
 **Audience**: Finance leaders, procurement managers, and operations stakeholders evaluating governance tooling investment.
 
-**Scope**: This document provides a framework for quantifying the operational value of FirstTry governance capabilities. It covers tangible efficiency gains, audit automation cost reduction, and operational risk mitigation. It does NOT predict future capabilities, make forecasts beyond the current roadmap, or offer financial projections for multi-year deployments.
+**Scope**: This document provides a framework for quantifying the operational value of FirstTry - Audit Evidence Snapshot for Jira capabilities. It covers tangible efficiency gains, audit automation cost reduction, and operational risk mitigation. It does NOT predict future capabilities, make forecasts beyond the current roadmap, or offer financial projections for multi-year deployments.
 
 ## Executive Summary
 

@@ -2,7 +2,7 @@
 
 **Effective Date**: 2026-01-10  
 **Classification**: Public (Marketplace Review)  
-**Scope**: FirstTry Governance App for Jira Cloud
+**Scope**: FirstTry - Audit Evidence Snapshot for Jira App for Jira Cloud
 
 ---
 

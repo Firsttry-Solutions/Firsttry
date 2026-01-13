@@ -5,7 +5,7 @@
 
 ## Summary
 
-GitHub Pages was showing outdated site title "**Firsttry Governance for Jira – Documentation**" instead of the current product name "**FirstTry Governance**". 
+GitHub Pages was showing outdated site title "**FirstTry - Audit Evidence Snapshot for Jira – Documentation**" instead of the current product name "**FirstTry - Audit Evidence Snapshot for Jira**". 
 
 The root cause was identified in the static HTML file serving as Pages entry point, and the fix has been verified live.
 
@@ -49,8 +49,8 @@ The root cause was identified in the static HTML file serving as Pages entry poi
 **Fetched**: `https://firsttry-solutions.github.io/Firsttry/`  
 **Content Before Fix**:
 ```html
-<title>Firsttry Governance for Jira – Documentation</title>
-<h1>Firsttry Governance for Jira – Documentation</h1>
+<title>FirstTry - Audit Evidence Snapshot for Jira – Documentation</title>
+<h1>FirstTry - Audit Evidence Snapshot for Jira – Documentation</h1>
 <p>Public legal and support pages for Atlassian Marketplace review.</p>
 ```
 
@@ -63,7 +63,7 @@ The root cause was identified in the static HTML file serving as Pages entry poi
 ### File Inventory
 - **Entry Point**: `docs/index.html` ← **Static file served directly**
 - **Fallback**: `docs/index.md` (not rendered in legacy mode)
-- **Config**: `docs/README.md` ← Correct identity: "FirstTry Governance"
+- **Config**: `docs/README.md` ← Correct identity: "FirstTry - Audit Evidence Snapshot for Jira"
 
 ### Vendor Facts
 ```yaml
@@ -82,18 +82,18 @@ security_email: "contact@firsttry.run"
 - **Changes**:
 
 ```diff
-- <title>Firsttry Governance for Jira – Documentation</title>
-+ <title>FirstTry Governance – Documentation</title>
+- <title>FirstTry - Audit Evidence Snapshot for Jira – Documentation</title>
++ <title>FirstTry - Audit Evidence Snapshot for Jira – Documentation</title>
 
-- <h1>Firsttry Governance for Jira – Documentation</h1>
+- <h1>FirstTry - Audit Evidence Snapshot for Jira – Documentation</h1>
 - <p>Public legal and support pages for Atlassian Marketplace review.</p>
-+ <h1>FirstTry Governance – Documentation</h1>
-+ <p>Comprehensive documentation for FirstTry Governance status tracking, including legal compliance, support, and security information for Atlassian Marketplace.</p>
++ <h1>FirstTry - Audit Evidence Snapshot for Jira – Documentation</h1>
++ <p>Comprehensive documentation for FirstTry - Audit Evidence Snapshot for Jira status tracking, including legal compliance, support, and security information for Atlassian Marketplace.</p>
 ```
 
 ### Commit Details
 - **SHA**: `1a58fcdd283f482328344a95819cb0916614ca9d`
-- **Message**: `docs(site): update GitHub Pages title to 'FirstTry Governance' (from 'Firsttry Governance for Jira')`
+- **Message**: `docs(site): update GitHub Pages title to 'FirstTry - Audit Evidence Snapshot for Jira' (from 'FirstTry - Audit Evidence Snapshot for Jira')`
 - **Branch**: `main`
 
 ---
@@ -128,16 +128,16 @@ PASS: reviewer_gate complete
 ### Pre-Deployment State
 ```
 fetch time: T+0 minutes (immediately after push)
-live site title: Firsttry Governance for Jira – Documentation
+live site title: FirstTry - Audit Evidence Snapshot for Jira – Documentation
 status: ❌ OLD (cache not yet refreshed)
 ```
 
 ### Post-Deployment State
 ```
 fetch time: T+25 minutes (after Pages rebuild)
-live site title: FirstTry Governance – Documentation
-h1 text: FirstTry Governance – Documentation
-description: Comprehensive documentation for FirstTry Governance status tracking...
+live site title: FirstTry - Audit Evidence Snapshot for Jira – Documentation
+h1 text: FirstTry - Audit Evidence Snapshot for Jira – Documentation
+description: Comprehensive documentation for FirstTry - Audit Evidence Snapshot for Jira status tracking...
 status: ✅ NEW (verified live)
 ```
 
@@ -147,11 +147,11 @@ status: ✅ NEW (verified live)
 <html>
   <head>
     <meta charset="utf-8">
-    <title>FirstTry Governance – Documentation</title>
+    <title>FirstTry - Audit Evidence Snapshot for Jira – Documentation</title>
   </head>
   <body>
-    <h1>FirstTry Governance – Documentation</h1>
-    <p>Comprehensive documentation for FirstTry Governance status tracking, 
+    <h1>FirstTry - Audit Evidence Snapshot for Jira – Documentation</h1>
+    <p>Comprehensive documentation for FirstTry - Audit Evidence Snapshot for Jira status tracking, 
        including legal compliance, support, and security information for 
        Atlassian Marketplace.</p>
     ...
@@ -161,9 +161,9 @@ status: ✅ NEW (verified live)
 ```
 
 **Verification Hits**:
-- ✅ Title updated: "FirstTry Governance – Documentation"
-- ✅ H1 updated: "FirstTry Governance – Documentation"
-- ✅ Description updated: mentions "FirstTry Governance" and "Atlassian Marketplace"
+- ✅ Title updated: "FirstTry - Audit Evidence Snapshot for Jira – Documentation"
+- ✅ H1 updated: "FirstTry - Audit Evidence Snapshot for Jira – Documentation"
+- ✅ Description updated: mentions "FirstTry - Audit Evidence Snapshot for Jira" and "Atlassian Marketplace"
 - ✅ Contact email present: contact@firsttry.run
 
 ---
@@ -207,15 +207,15 @@ All supporting evidence saved to `/tmp/ft_pages_audit/`:
 | Deployed content proven updated | ✅ | curl of live site shows new title |
 | Repo clean | ✅ | `git status` shows no changes |
 | Commit message clear | ✅ | `docs(site): update GitHub Pages title...` |
-| Live site verification | ✅ | "FirstTry Governance" now visible on https://firsttry-solutions.github.io/Firsttry/ |
+| Live site verification | ✅ | "FirstTry - Audit Evidence Snapshot for Jira" now visible on https://firsttry-solutions.github.io/Firsttry/ |
 
 ---
 
 ## Conclusion
 
 ✅ **GitHub Pages now correctly displays**:
-- **Title**: "FirstTry Governance – Documentation"
-- **Heading**: "FirstTry Governance – Documentation"
+- **Title**: "FirstTry - Audit Evidence Snapshot for Jira – Documentation"
+- **Heading**: "FirstTry - Audit Evidence Snapshot for Jira – Documentation"
 - **Description**: Updated to reflect current product positioning
 - **Contact**: contact@firsttry.run
 

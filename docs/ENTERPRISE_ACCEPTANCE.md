@@ -2,13 +2,13 @@
 
 **Version**: 1.0.0  
 **Last Updated**: 2025-12-22  
-**Purpose**: Enterprise-grade acceptance testing runbook for FirstTry Governance after Marketplace installation
+**Purpose**: Enterprise-grade acceptance testing runbook for FirstTry - Audit Evidence Snapshot for Jira after Marketplace installation
 
 ---
 
 ## Overview
 
-This runbook provides step-by-step instructions for enterprise administrators and security reviewers to verify FirstTry Governance is operating correctly in their Jira Cloud tenant after installation from the Atlassian Marketplace.
+This runbook provides step-by-step instructions for enterprise administrators and security reviewers to verify FirstTry - Audit Evidence Snapshot for Jira is operating correctly in their Jira Cloud tenant after installation from the Atlassian Marketplace.
 
 **What this validates**:
 - ✅ App installs correctly with minimal read-only permissions
@@ -24,7 +24,7 @@ This runbook provides step-by-step instructions for enterprise administrators an
 
 ### Required Access
 1. **Jira Cloud Site**: Active Jira Cloud instance with administrator privileges
-2. **Marketplace Install**: FirstTry Governance installed from Atlassian Marketplace
+2. **Marketplace Install**: FirstTry - Audit Evidence Snapshot for Jira installed from Atlassian Marketplace
 3. **Permissions Review**: App permissions accepted during installation (storage:app scope only)
 
 ### Required Tools

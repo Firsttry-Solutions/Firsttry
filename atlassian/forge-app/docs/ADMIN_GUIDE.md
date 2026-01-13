@@ -29,7 +29,7 @@ FirstTry is a **read-only governance and evidence collection app** for Jira Clou
 ### Dashboard & UI Location
 
 FirstTry appears in Jira Cloud as:
-- **Apps → FirstTry Governance** (main entry point)
+- **Apps → FirstTry - Audit Evidence Snapshot for Jira** (main entry point)
 - **Governance Dashboard**: View current snapshots and drift status
 - **Evidence Reports**: Access historical governance data
 - **Status & Health**: Proof-of-life indicators and last-run timestamps
@@ -58,7 +58,7 @@ FirstTry appears in Jira Cloud as:
 ### Step-by-Step Installation
 
 1. **Go to Jira Cloud** → ⚙️ Settings → **Apps & Integrations** → **Find new apps**
-2. **Search** for "FirstTry Governance" in the Atlassian Marketplace
+2. **Search** for "FirstTry - Audit Evidence Snapshot for Jira" in the Atlassian Marketplace
 3. **Click Install** on the FirstTry app (published version)
 4. **Review the scopes** that FirstTry requests:
    - `storage:app` — Store governance evidence in Forge Storage
@@ -89,7 +89,7 @@ FirstTry appears in Jira Cloud as:
 ### Step-by-Step Uninstall
 
 1. **Go to Jira Cloud** → ⚙️ Settings → **Apps & Integrations** → **Manage apps**
-2. **Find FirstTry Governance** in the "Installed apps" list
+2. **Find FirstTry - Audit Evidence Snapshot for Jira** in the "Installed apps" list
 3. **Click the ⋯ (three-dot menu)** next to FirstTry
 4. **Select Uninstall**
 5. **Confirm** when prompted (no further confirmation email)

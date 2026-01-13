@@ -6,7 +6,7 @@
 
 ## App Name
 
-**FirstTry Governance** - Evidence Collection for Jira Cloud Compliance
+**FirstTry - Audit Evidence Snapshot for Jira** - Evidence Collection for Jira Cloud Compliance
 
 ---
 
@@ -20,7 +20,7 @@ Read-only governance evidence collection for Jira Cloud - helping teams understa
 
 ### What It Does
 
-FirstTry Governance is a lightweight, read-only Jira Cloud app that automatically collects governance evidence about your Jira instance. It creates a daily snapshot of governance metrics to help you:
+FirstTry - Audit Evidence Snapshot for Jira is a lightweight, read-only Jira Cloud app that automatically collects governance evidence about your Jira instance. It creates a daily snapshot of governance metrics to help you:
 
 - ✅ **Understand Governance**: See what metadata is being used (projects, issue types, workflows)
 - ✅ **Track Compliance**: Monitor policy adherence over time
@@ -67,7 +67,7 @@ FirstTry tracks:
 
 ### Installation
 
-1. Find "FirstTry Governance" in Atlassian Marketplace
+1. Find "FirstTry - Audit Evidence Snapshot for Jira" in Atlassian Marketplace
 2. Click "Get it free"
 3. Authorize requested scopes
 4. Governance dashboard appears in Jira admin panel

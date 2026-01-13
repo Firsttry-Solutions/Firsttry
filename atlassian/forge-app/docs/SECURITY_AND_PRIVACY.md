@@ -6,7 +6,7 @@
 
 ## Overview
 
-FirstTry Governance is a **read-only** Jira Cloud app that provides governance and compliance evidence collection. This document covers security architecture, data handling, permissions, and privacy practices.
+FirstTry - Audit Evidence Snapshot for Jira is a **read-only** Jira Cloud app that provides governance and compliance evidence collection. This document covers security architecture, data handling, permissions, and privacy practices.
 
 ---
 

@@ -62,7 +62,7 @@ The export records only what was observed during snapshot generation.
 
 ### Generating a Snapshot
 
-1. Open the FirstTry Governance dashboard gadget
+1. Open the FirstTry - Audit Evidence Snapshot for Jira dashboard gadget
 2. Scroll to the "Audit Evidence Export" section
 3. Click "Export Trust Snapshot"
 4. Two files will download automatically:

@@ -218,7 +218,7 @@ app:
 modules:
   jira:dashboardGadget:
     - key: firstry-governance-gadget
-      title: FirstTry Governance
+      title: FirstTry - Audit Evidence Snapshot for Jira
       description: Phase 0 placeholder gadget
       resource: gadget-ui
       viewportSize: medium

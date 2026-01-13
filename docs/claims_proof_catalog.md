@@ -37,7 +37,7 @@
 - **Claim**: App does not share data with any external third-party services
 - **Proof**:
   - `atlassian/forge-app/docs/EXTERNAL_APIS.md:11-13`: "This Forge app has **ZERO outbound egress to external services**"
-  - `/docs/privacy.html`: "Third-Party Data Sharing: None. FirstTry Governance has zero external egress."
+  - `/docs/privacy.html`: "Third-Party Data Sharing: None. FirstTry - Audit Evidence Snapshot for Jira has zero external egress."
   - `atlassian/forge-app/tests/credibility/gap3_egress_static_and_runtime.test.ts`: GAP3_STATIC_EGRESS_SCAN test verifies no external network libraries (axios, node-fetch, http.request)
 - **Verification**: Static code scan confirms no external API calls; documentation states zero egress; runtime tests enforce network traps
 - **Status**: PASS

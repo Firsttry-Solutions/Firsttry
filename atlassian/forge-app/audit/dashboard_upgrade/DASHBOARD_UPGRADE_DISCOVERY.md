@@ -1,7 +1,7 @@
 # Dashboard Upgrade — Discovery Phase Complete
 
 ## Project Scope
-Upgrade FirstTry governance dashboard to premium enterprise UX with:
+Upgrade FirstTry - Audit Evidence Snapshot for Jira dashboard to premium enterprise UX with:
 - Unified status model (backend-owned) with reason_code enums
 - KPI tile layout (2x4) above the fold
 - reason_code-driven banner (yellow/red only)
@@ -38,7 +38,7 @@ Upgrade FirstTry governance dashboard to premium enterprise UX with:
 | Item | Path | Confidence |
 |------|------|-----------|
 | **Resolver** | `src/resolvers/governance_status.ts` (666 lines) | HIGHEST (named in manifest as `status-resolver-fn`, governance status comment at line 646) |
-| **UI Entry** | `src/gadget-ui/index.html` | HIGHEST (score 29; contains heading "FirstTry Governance Status") |
+| **UI Entry** | `src/gadget-ui/index.html` | HIGHEST (score 29; contains heading "FirstTry - Audit Evidence Snapshot for Jira Status") |
 | **UI Main Logic** | `src/gadget-ui/src/main.ts` (250+ lines) | HIGH (React/TypeScript, invokes resolver, renders status) |
 
 ### UI Stack Discovery

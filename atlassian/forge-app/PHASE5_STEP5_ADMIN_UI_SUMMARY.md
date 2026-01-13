@@ -172,7 +172,7 @@ phase5SchedulerHandler(request)
    ```
 
 5. **Test in Jira**
-   - Navigate to Settings → Apps → FirstTry Governance → Proof-of-Life Report
+   - Navigate to Settings → Apps → FirstTry - Audit Evidence Snapshot for Jira → Proof-of-Life Report
    - Verify report loads (or "No report yet" if first run)
    - Click "Generate Now" and observe progress
    - Verify new report appears on success

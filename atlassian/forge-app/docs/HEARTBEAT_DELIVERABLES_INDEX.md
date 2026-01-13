@@ -242,7 +242,7 @@ atlassian/forge-app/docs/HEARTBEAT_DELIVERABLES_INDEX.md (this file)
 
 4. **Test** – Add gadget to a Jira Cloud dashboard
    ```
-   View "FirstTry Governance Status" gadget
+   View "FirstTry - Audit Evidence Snapshot for Jira Status" gadget
    Verify metrics display (or INITIALIZING)
    ```
 

@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-FirstTry Governance is **evidence-backed and marketplace-ready** for Atlassian Cloud review and listing. All critical functionality has been verified through automated testing, code scanning, and deterministic proof execution.
+FirstTry - Audit Evidence Snapshot for Jira is **evidence-backed and marketplace-ready** for Atlassian Cloud review and listing. All critical functionality has been verified through automated testing, code scanning, and deterministic proof execution.
 
 **Key Achievement**: Every factual claim in documentation is linked to automated proof artifacts (code scans, test results, manifest validation).
 

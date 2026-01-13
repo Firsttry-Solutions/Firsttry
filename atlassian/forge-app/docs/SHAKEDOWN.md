@@ -2,7 +2,7 @@
 
 ## Overview
 
-Shakedown tests verify that the FirstTry Governance app meets critical operational and compliance requirements without requiring configuration or manual intervention.
+Shakedown tests verify that the FirstTry - Audit Evidence Snapshot for Jira app meets critical operational and compliance requirements without requiring configuration or manual intervention.
 
 ## Test Coverage
 

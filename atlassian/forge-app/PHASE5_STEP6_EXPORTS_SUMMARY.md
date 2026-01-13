@@ -171,7 +171,7 @@ forge deploy                # Deploy to Forge
 ```
 
 ### Post-Deployment Validation
-1. Navigate to Jira Settings → Apps → FirstTry Governance → Proof-of-Life Report
+1. Navigate to Jira Settings → Apps → FirstTry - Audit Evidence Snapshot for Jira → Proof-of-Life Report
 2. Generate a report via "Generate Now"
 3. Download as JSON → Verify valid JSON with 4 sections
 4. Download as PDF → Verify all section headers present
