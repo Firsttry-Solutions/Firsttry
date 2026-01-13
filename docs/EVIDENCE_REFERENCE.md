@@ -21,9 +21,10 @@ This document links to generated evidence artifacts that prove FirstTry's claims
 
 ### Data Handling (Code Scan)
 - ✅ **Read-Only**: No `write:jira` scopes declared
-- ✅ **Storage**: Uses `storage:app` (Forge-managed, tenant-isolated)
-- ✅ **No External APIs**: No `fetch()` or HTTP calls to external domains
-- **Evidence**: [`31_data_scan.txt`](evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt)
+- ✅ **Storage**: Uses `storage:app` (see [Atlassian Forge documentation](https://developer.atlassian.com/platform/forge/manifest-reference/#storage) for encryption and tenant isolation properties)
+- ✅ **No External APIs**: No external HTTP client usage detected by code scan
+- ✅ **Tenant Isolation**: Verified by test suite
+- **Evidence**: [`31_code_network_scan.txt`](evidence/20260113T131842Z_6ca63141/31_code_network_scan.txt), [`40_tenant_isolation_test.txt`](evidence/20260113T131842Z_6ca63141/40_tenant_isolation_test.txt)
 
 ## How to Interpret
 

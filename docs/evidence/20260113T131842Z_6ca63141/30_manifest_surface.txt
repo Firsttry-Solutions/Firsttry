@@ -1,0 +1,29 @@
+# Manifest Network Surface Scan
+
+**Generated**: Scan of .
+
+## Scopes Declared
+
+### ./audit_artifacts/full_audit/20260102_070054/02_manifest_scopes/manifest.yml
+Scopes: storage:app
+
+### ./audit_artifacts/full_audit_runtime/20260102_073042/02_manifest_scopes/manifest.yml
+Scopes: storage:app
+
+### ./audit_artifacts/full_audit_runtime_backed/20260102_075909/02_manifest/manifest.yml
+Scopes: storage:app
+
+### ./atlassian/forge-app/manifest.yml
+Scopes: storage:app, read:jira-work
+
+### ./atlassian/forge-app/audit/submission_bundle/run_20260111_072601/manifest.yml
+Scopes: storage:app, read:jira-work
+
+## External Permissions
+
+✅ No external permissions declared in manifest
+
+## Web Triggers (External Entry Points)
+
+✅ No webtriggers configured
+

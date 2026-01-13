@@ -1,34 +1,40 @@
 # Evidence Pack Quick Reference
 
-**Generated**: 2026-01-13 13:11 UTC  
-**Commit**: [b497b5c8](https://github.com/atlassian/firsttry/commit/b497b5c8)  
-**Timestamp**: 20260113T130927Z  
+**Latest Evidence Pack**: See [docs/evidence/](evidence/) for most recent  
+**Full Guide**: [EVIDENCE_REFERENCE.md](EVIDENCE_REFERENCE.md)  
 
-## 📦 Location
+## 📦 Latest Pack Location
+
+Evidence packs are generated with timestamps in the format:
 
 ```
-docs/evidence/20260113T131033Z_0ac6d55e/
+docs/evidence/{YYYYMMDDTHHMMSSZ}_{GIT_HASH}/
 ```
 
-8 artifacts (all git-tracked, verifiable):
+Check [docs/evidence/](evidence/) for the most recent pack.
 
-| File | Size | Purpose |
-|------|------|---------|
-| `00_state.txt` | 112 B | Repository state snapshot (branch, HEAD, status) |
-| `10_placeholders.txt` | 85 B | Placeholder validator: ✅ PASS |
-| `11_docs_gate.txt` | 291 B | Docs quality validator: ✅ PASS |
-| `12_freeze_lock.txt` | 245 B | Freeze lock check (expected) |
-| `30_manifest_scopes.txt` | 1.1 KB | Manifest scopes: `read:jira-work`, `storage:app` |
-| `31_data_scan.txt` | 15.3 KB | Code audit: Forge storage only, zero external APIs |
-| `50_EVIDENCE_SUMMARY.md` | 739 B | Human-readable summary |
-| `50_evidence_summary.json` | 695 B | Machine-readable summary |
+## 📋 Artifact Contents
+
+Each evidence pack includes:
+
+| File | Purpose |
+|------|---------|
+| `README.md` | Explanation of all artifacts and how to reproduce |
+| `10_placeholders.txt` | Placeholder validator output (PASS/FAIL) |
+| `11_docs_gate.txt` | Docs quality validator output |
+| `12_freeze_lock.txt` | Freeze lock check output |
+| `30_manifest_surface.txt` | Manifest scopes and external permissions |
+| `31_code_network_scan.txt` | Code audit for external HTTP clients |
+| `40_tenant_isolation_test.txt` | Tenant isolation proof test output |
+| `32_network_surface_summary.json` | Machine-readable summary |
 
 ## 🎯 Key Facts (Verified)
 
 ✅ **Scopes**: `read:jira-work` (read-only), `storage:app` (Forge)  
-✅ **Storage**: Atlassian Forge (encrypted, tenant-isolated)  
-✅ **External APIs**: None configured  
+✅ **Storage**: Atlassian Forge app storage (see [Atlassian Forge documentation](https://developer.atlassian.com/platform/forge/manifest-reference/#storage) for encryption and tenant isolation)  
+✅ **External APIs**: None configured (verified by code scan)  
 ✅ **Validators**: All passing (placeholders, docs)  
+✅ **Tenant Isolation**: Proven by test suite  
 
 ## ❌ Customer-Measured Inputs
 
@@ -36,7 +42,7 @@ The following remain framework examples (customer validates):
 - Setup time (e.g., "8 hours")
 - ROI percentages (e.g., "12,092%")
 - Audit time savings (e.g., "60% faster")
-- Compliance certifications (SOC2/GDPR/ISO — status TBD)
+- Compliance: see Atlassian Trust Center for certification details
 
 ## 🔗 References
 
@@ -47,9 +53,9 @@ The following remain framework examples (customer validates):
 
 ## 📋 Marketplace Use
 
-Reference commit `b497b5c8` in your submission:
+Reference the latest evidence pack in your submission:
 
-> "Our technical claims are backed by verifiable evidence. See commit b497b5c8, evidence pack: `docs/evidence/20260113T131033Z_0ac6d55e/`. Full guide in `docs/EVIDENCE_REFERENCE.md`."
+> "Our technical claims are backed by verifiable evidence. See `docs/evidence/` (most recent pack) for complete proof. Full guide in `docs/EVIDENCE_REFERENCE.md`."
 
 ---
 
