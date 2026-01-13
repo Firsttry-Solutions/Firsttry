@@ -58,7 +58,7 @@ docs/evidence/20260113T131842Z_6ca63141/
 - Code: 0 external HTTP clients detected (fetch, axios, https.request, etc.)
 - Evidence: `31_code_network_scan.txt` (FULL, non-truncated output)
 
-✅ **Tenant Isolation Verified**
+✅ **Tenant Isolation Guard Passed (Code-Level)**
 - Test 1: Forge Storage API usage ✅
 - Test 2: Server-side isolation ✅
 - Test 3: storage.app (Atlassian) ✅

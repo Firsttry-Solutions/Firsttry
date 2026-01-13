@@ -112,7 +112,7 @@ Location: `docs/evidence/20260113T131842Z_6ca63141/`
 
 ### Tenant Isolation
 ```
-✅ Tenant isolation verified by test suite (5/5 PASS)
+✅ Tenant isolation code-level guard passed (5/5 tests; static checks only)
    TEST 1: @forge/api storage usage → ✅ PASS
    TEST 2: Server-side tenant isolation → ✅ PASS
    TEST 3: storage.app (Atlassian Forge) → ✅ PASS
@@ -225,7 +225,7 @@ SUMMARY: Passed: 5, Failed: 0
 > "Data is encrypted and tenant-isolated" (no citation)
 
 **After**:
-> "Data storage uses Atlassian Forge app storage (see [Atlassian Forge documentation](https://developer.atlassian.com/platform/forge/) for encryption/isolation details). Tenant isolation verified by test suite (docs/evidence/.../40_tenant_isolation_test.txt)."
+> "Data storage uses Atlassian Forge app storage (see [Atlassian Forge documentation](https://developer.atlassian.com/platform/forge/) for encryption/isolation details). Code-level tenant isolation guard passed (static checks; for vendor platform details see Atlassian documentation)."
 
 ---
 
