@@ -2,7 +2,7 @@
 
 Timestamp: 20260113T131842Z
 Run commit (validators executed from): 6ca63141da20391fa8537329a92c34d09848b2c7
-Evidence committed-at: <filled-by-git-after-commit>
+Evidence committed-at: 676ddb50ecc119775bd6e1a822782848553b39f8
 Branch: main
 
 ## Notes (legacy)
