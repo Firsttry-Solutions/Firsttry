@@ -53,6 +53,11 @@ jobs:
           python3 tools/validate_evidence_anchors.py
           echo "✅ Evidence anchor validator passed"
 
+      - name: Run forbidden phrase guard
+        run: |
+          python3 tools/validate_forbidden_phrases.py
+          echo "✅ Forbidden phrase guard passed"
+
       - name: Run network surface scanner
         run: |
           mkdir -p /tmp/ci_evidence_check
@@ -74,6 +79,7 @@ jobs:
           echo "Checks:"
           echo "  ✅ Placeholders: No fabricated claims"
           echo "  ✅ Evidence anchors: All references valid"
+          echo "  ✅ Forbidden phrases: No unsafe claims"
           echo "  ✅ Network surface: No external egress"
           echo "  ✅ Tenant isolation: Proven by tests"
           echo ""
