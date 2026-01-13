@@ -1,3 +1,12 @@
+# Evidence Pack Proof Logs
+
+Timestamp: 20260113T131842Z
+Run commit (validators executed from): 6ca63141da20391fa8537329a92c34d09848b2c7
+Evidence committed-at: <filled-by-git-after-commit>
+Branch: main
+
+## Notes (legacy)
+
 # Evidence Pack (20260113T131842Z_6ca63141)
 
 **Timestamp**: 20260113T131842Z (locked for determinism)  
@@ -99,4 +108,3 @@ cat docs/evidence/20260113T131842Z_6ca63141/40_tenant_isolation_test.txt
 - Keep: Last 5 evidence packs
 - Archive: Older packs (see tools/prune_evidence_packs.py)
 - This pack: Kept if less than 5 total
-

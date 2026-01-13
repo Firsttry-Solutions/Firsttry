@@ -1,7 +1,8 @@
 # Evidence Pack Proof Logs
 
 Timestamp: 20260113T151014Z
-Commit: 37fe192dce6023c7e0f27ddf4a3a945424177f6d
+Run commit (validators executed from): bf7661c28cdae9d05ce8ce57ad253d3f6a317bc8
+Evidence committed-at: <filled-by-git-after-commit>
 Branch: main
 
 ## Contents
