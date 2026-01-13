@@ -64,6 +64,8 @@ FirstTry is a read-only Jira governance application that provides real-time visi
 
 - **Scope-Restricted**: No write, manage, admin, or delete scopes declared in manifest
 - **Read-Only API Surface**: Zero write-surface APIs outside test code
+- **Tenant-Isolated Storage**: All storage calls enforced through tenant-keyed wrapper functions. Cross-tenant access cryptographically prevented by namespace isolation.
+  - Proof: [tenant_context.ts:L36-L52](../atlassian/forge-app/src/security/tenant_context.ts#L36-L52), [tenant_storage.ts:L56-L91](../atlassian/forge-app/src/security/tenant_storage.ts#L56-L91), [p1_tenant_isolation.test.ts](../atlassian/forge-app/tests/p1_tenant_isolation.test.ts) (24 tests, all passing)
 - **Deterministic Verification**: Freeze-lock enables reproducible state verification
 - **Change Control**: All changes bound to cryptographically verified freeze commits
 - **Dependency Audited**: Mandatory NPM vulnerability scanning with waiver enforcement
@@ -121,6 +123,9 @@ Technical support is provided through [SUPPORT_POLICY.md](SUPPORT_POLICY.md). Fi
 | Non-bypassable reviewer readiness gate | [reviewer_ready_gate.sh:L1-L230](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L1-L230) |
 | Manifest with no tier logic | [manifest.yml](../atlassian/forge-app/manifest.yml) |
 | Evidence storage mechanism | [manifest.yml:L62-L63](../atlassian/forge-app/manifest.yml#L62-L63) |
+| Tenant isolation context derivation | [tenant_context.ts:L36-L52](../atlassian/forge-app/src/security/tenant_context.ts#L36-L52) |
+| Tenant-prefixed storage key generation | [tenant_storage.ts:L56-L91](../atlassian/forge-app/src/security/tenant_storage.ts#L56-L91) |
+| Tenant isolation unit tests (24 passing) | [p1_tenant_isolation.test.ts](../atlassian/forge-app/tests/p1_tenant_isolation.test.ts) |
 
 ---
 
