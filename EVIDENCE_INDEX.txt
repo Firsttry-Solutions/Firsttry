@@ -74,7 +74,7 @@
        3. storage.app (Atlassian Forge) ✅
        4. No external egress vectors ✅
        5. Manifest tenant-aware scopes ✅
-     Use for: Prove tenant isolation verified
+     Use for: Prove tenant isolation guard passed
 
 🔧 NEW TOOLS CREATED
 ─────────────────────────────────────────────────────────────────────────────
@@ -146,7 +146,7 @@
      ├─ Code: 0 external HTTP clients (verified by 31_code_network_scan.txt)
      └─ Status: PROVEN
 
-  ✅ Tenant Isolation Verified
+  ✅ Tenant Isolation Guard Passed (Code-Level)
      ├─ Test Suite: 5/5 passing
      ├─ Forge Storage: Confirmed (Atlassian-managed)
      └─ Status: PROVEN

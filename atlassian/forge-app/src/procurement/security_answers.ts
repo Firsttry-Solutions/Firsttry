@@ -122,7 +122,7 @@ export function getSecurityAnswers(): QuestionnaireAnswerSet {
     {
       question: 'Is evidence tenant-isolated?',
       answer: 'YES',
-      justification: 'Storage keys prefixed with tenant ID. EvidenceStore scoped by tenantKey. No cross-tenant access possible.',
+      justification: 'Storage keys prefixed with tenant ID. EvidenceStore scoped by tenantKey. Code-level guard verified no obvious cross-tenant access patterns.',
       evidenceReference: 'src/evidence/evidence_store.ts (constructor tenantKey, storage key format: p4:evidence:{tenant}:{id})',
     },
 
