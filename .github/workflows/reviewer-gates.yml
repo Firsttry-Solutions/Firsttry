@@ -1,0 +1,40 @@
+name: Reviewer Gates (Gate 1 + Gate 2)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Validate docs (non-bypassable)
+        run: bash tools/validate_docs.sh
+
+      - name: Run reviewer gate and write proof bundle to /tmp
+        run: |
+          export FT_GATE_OUT_DIR="/tmp/firsttry_gate_proofs"
+          bash tools/reviewer_gate.sh
+          ls -la "$FT_GATE_OUT_DIR" || true
+          ls -la "$FT_GATE_OUT_DIR/proofs" || true
+
+      - name: Upload proof bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: firsttry-gate-proofs
+          path: /tmp/firsttry_gate_proofs
+
+      - name: Ensure worktree clean (scripts must not write tracked/untracked files)
+        run: |
+          test -z "$(git status --porcelain=v1)" || (echo "FAIL: scripts dirtied repo"; git status --porcelain=v1; exit 1)
