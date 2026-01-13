@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Network Surface Scanner: Strict external egress audit
+Network Surface Scanner: Strict external egress audit (FAIL-CLOSED)
 
 Scans manifest files and code for:
   1. External permissions in manifest (permissions.external, webtriggers, invokeRemote)
@@ -8,8 +8,13 @@ Scans manifest files and code for:
   3. Tenant isolation patterns in storage code
 
 Exit codes:
-  0: No external egress detected
-  1: External egress found (or error)
+  0: No external egress detected AND no errors
+  1: External egress found OR error occurred (fail-closed)
+
+Fail-closed rules:
+  - If ripgrep (rg) missing → FAIL (exit 1)
+  - If manifest parsing errors → record error AND FAIL
+  - If subprocess errors → record error AND FAIL
 """
 
 import argparse
@@ -18,10 +23,24 @@ import os
 import re
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
+from shutil import which
 from typing import Dict, List, Set, Tuple
 
 import yaml
+
+
+def _utc_ts():
+    """Return current UTC timestamp in ISO 8601 format."""
+    return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+
+
+def _require_rg():
+    """Fail-closed: ripgrep must be in PATH."""
+    if which("rg") is None:
+        return False
+    return True
 
 
 class NetworkSurfaceScanner:
@@ -90,7 +109,8 @@ class NetworkSurfaceScanner:
                             found_external = True
 
             except Exception as e:
-                self.findings["errors"].append(f"Error parsing {manifest_path}: {e}")
+                self.findings["errors"].append(f"FATAL: Error parsing {manifest_path}: {e}")
+                found_external = True  # Fail-closed on parse errors
 
         return not found_external
 
@@ -294,7 +314,7 @@ class NetworkSurfaceScanner:
 
             f.write("\n## Allowed (Atlassian Forge SDK)\n\n")
             f.write("- `@forge/api` — Atlassian Forge API (internal)\n")
-            f.write("- `storage.app` — Forge app storage (tenant-managed by Atlassian)\n")
+            f.write("- `storage.app` — Forge app storage (platform-managed, vendor-documented)\n")
             f.write("- `@forge/resolver` — Forge resolver (internal)\n")
             f.write("- `api.asUser()` — User-scoped Jira API (internal, requires Jira scope)\n")
 
@@ -328,28 +348,69 @@ class NetworkSurfaceScanner:
         return summary
 
     def run(self, manifest_only=False, code_scan_only=False) -> int:
-        """Run all scans. Returns 0 if pass, 1 if fail."""
+        """Run scans. Returns 0 if pass, 1 if fail. FAIL-CLOSED on errors."""
         print(f"🔍 Scanning {self.repo_root} for network surface...")
 
-        if not manifest_only:
-            print("  - Checking code for external HTTP clients...")
+        # Fail if conflicting flags
+        if manifest_only and code_scan_only:
+            self.findings["errors"].append("FATAL: Cannot use --manifest-only and --code-scan-only together")
+            self._finalize_reports()
+            print("\n❌ Network surface scan FAILED (invalid flags)")
+            return 1
+
+        # Require ripgrep (fail-closed)
+        if not _require_rg():
+            self.findings["errors"].append("FATAL: ripgrep (rg) not found in PATH")
+            self._finalize_reports()
+            print("\n❌ Network surface scan FAILED (rg missing)")
+            return 1
+
+        manifest_ok = True
+        code_ok = True
+
+        # Manifest scan
+        if not code_scan_only:
+            print("  - Checking manifest for external permissions / entrypoints...")
             manifest_ok = self.scan_manifests()
         else:
-            manifest_ok = True
+            print("  - Skipping manifest scan (--code-scan-only)")
 
-        if not code_scan_only:
-            print("  - Checking manifest for external permissions...")
+        # Code scan
+        if not manifest_only:
+            print("  - Checking code for external HTTP clients...")
             code_ok = self.scan_code_network_patterns()
         else:
-            code_ok = True
+            print("  - Skipping code scan (--manifest-only)")
 
-        print("  - Scanning for tenant isolation patterns...")
+        print("  - Scanning for internal storage patterns (informational)...")
         self.scan_tenant_isolation_patterns()
 
-        # Write reports
-        manifest_out = os.path.join(
-            self.output_dir, "30_manifest_surface.txt"
-        )
+        # Determine pass/fail
+        hard_fail = (not manifest_ok) or (not code_ok) or bool(self.findings["errors"])
+        # Persist reports
+        self._finalize_reports()
+
+        if not hard_fail:
+            print("\n✅ Network surface scan PASSED (no external egress detected by scanner; no errors)")
+            return 0
+
+        print("\n❌ Network surface scan FAILED")
+        if self.findings["errors"]:
+            print("   - Errors:")
+            for e in self.findings["errors"]:
+                print(f"     * {e}")
+        if self.findings["manifest_external_urls"]:
+            print("   - External permissions in manifest")
+        if self.findings["manifest_webtriggers"]:
+            print("   - Webtriggers configured")
+        if self.findings["code_http_clients"]:
+            print("   - External HTTP client usage in code")
+        return 1
+
+    def _finalize_reports(self):
+        """Write all report artifacts to output_dir. Always writes even on failure."""
+        os.makedirs(self.output_dir, exist_ok=True)
+        manifest_out = os.path.join(self.output_dir, "30_manifest_surface.txt")
         code_out = os.path.join(self.output_dir, "31_code_network_scan.txt")
         summary_out = os.path.join(self.output_dir, "32_network_surface_summary.json")
 
@@ -357,41 +418,25 @@ class NetworkSurfaceScanner:
         self.write_code_scan(code_out)
         summary = self.write_summary(summary_out)
 
+        # Print concise results
         print(f"\n✅ Results:")
-        print(f"  Manifest scopes: {len(self.findings['manifest_scopes'])} files")
-        print(
-            f"  External manifest perms: {len(self.findings['manifest_external_urls'])}"
-        )
+        print(f"  Manifest scopes files: {len(self.findings['manifest_scopes'])}")
+        print(f"  External manifest perms: {len(self.findings['manifest_external_urls'])}")
         print(f"  Webtriggers: {len(self.findings['manifest_webtriggers'])}")
-        print(
-            f"  HTTP clients detected: {len(self.findings['code_http_clients'])}"
-        )
+        print(f"  HTTP client findings: {len(self.findings['code_http_clients'])}")
+        print(f"  Errors: {len(self.findings['errors'])}")
+
         print(f"\n📊 Summary: {summary_out}")
         print(f"📄 Manifest: {manifest_out}")
         print(f"📄 Code: {code_out}")
 
-        if summary["pass"]:
-            print("\n✅ Network surface scan PASSED (no external egress)")
-            return 0
-        else:
-            print(
-                "\n❌ Network surface scan FAILED (external egress detected)"
-            )
-            if self.findings["manifest_external_urls"]:
-                print("   - External permissions in manifest")
-            if self.findings["manifest_webtriggers"]:
-                print("   - Webtriggers configured")
-            if self.findings["code_http_clients"]:
-                print("   - External HTTP client usage in code")
-            return 1
-
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Scan network surface for external egress"
+        description="Scan network surface for external egress (FAIL-CLOSED)"
     )
     parser.add_argument("--repo", required=True, help="Repository root path")
-    parser.add_argument("--out", required=True, help="Output directory for artifacts")
+    parser.add_argument("--out", required=False, default=None, help="Output directory for artifacts (default: /tmp/network_surface_<UTC_TS>)")
     parser.add_argument(
         "--manifest-only",
         action="store_true",
@@ -404,6 +449,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if args.out is None:
+        args.out = f"/tmp/network_surface_{_utc_ts()}"
 
     os.makedirs(args.out, exist_ok=True)
 

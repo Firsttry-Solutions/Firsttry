@@ -177,7 +177,7 @@ $ python3 tools/scan_network_surface.py --repo .
 ```bash
 $ node atlassian/forge-app/tests/tenant_isolation_proof.js
 SUMMARY: Passed: 5, Failed: 0
-✅ TENANT ISOLATION VERIFIED
+✅ TENANT ISOLATION GUARD PASSED (code-level)
 ```
 - All 5 tests passing
 - Forge storage + API usage confirmed
