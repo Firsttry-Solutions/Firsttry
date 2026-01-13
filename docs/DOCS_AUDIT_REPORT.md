@@ -1,4 +1,4 @@
-# Docs Audit Report - FirstTry Governance
+# Docs Audit Report - FirstTry - Audit Evidence Snapshot for Jira
 
 **Audit Date**: 2026-01-12  
 **Scope**: /docs + repo documentation  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-FirstTry Governance documentation has been audited for Atlassian Marketplace and enterprise reviewer compliance. **All critical requirements passed**. Documentation is now:
+FirstTry - Audit Evidence Snapshot for Jira documentation has been audited for Atlassian Marketplace and enterprise reviewer compliance. **All critical requirements passed**. Documentation is now:
 
 - ✅ **Marketplace-Ready**: Scopes, security, privacy, support all documented
 - ✅ **Enterprise-Grade**: Comprehensive compliance, data handling, and evidence guides

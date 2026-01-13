@@ -443,7 +443,7 @@ forge deploy
 ```
 
 ### Post-Deployment (Staging)
-1. Navigate to: Jira Settings → Apps → FirstTry Governance → Proof-of-Life Report
+1. Navigate to: Jira Settings → Apps → FirstTry - Audit Evidence Snapshot for Jira → Proof-of-Life Report
 2. Generate a report via "Generate Now"
 3. Click "Export as JSON"
    - Verify file downloads as `phase5-proof-of-life.json`

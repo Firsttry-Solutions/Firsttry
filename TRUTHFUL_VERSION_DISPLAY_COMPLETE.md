@@ -268,7 +268,7 @@ Your app in the production environment is at the latest in Jira on firsttry.atla
 
 1. **Remove the gadget:**
    - Edit dashboard
-   - Click X to remove "FirstTry Governance Status" gadget
+   - Click X to remove "FirstTry - Audit Evidence Snapshot for Jira Status" gadget
    - Save
 
 2. **Hard refresh browser:**
@@ -277,7 +277,7 @@ Your app in the production environment is at the latest in Jira on firsttry.atla
 
 3. **Re-add gadget:**
    - Edit dashboard
-   - Add "FirstTry Governance Status" gadget
+   - Add "FirstTry - Audit Evidence Snapshot for Jira Status" gadget
    - Save
 
 4. **Verify display:**

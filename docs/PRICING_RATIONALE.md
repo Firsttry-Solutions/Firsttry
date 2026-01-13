@@ -1,4 +1,4 @@
-# Pricing Rationale: FirstTry Governance
+# Pricing Rationale: FirstTry - Audit Evidence Snapshot for Jira
 
 ## Audience & Scope
 

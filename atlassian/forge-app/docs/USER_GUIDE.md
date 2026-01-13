@@ -10,7 +10,7 @@
 
 ### Installation
 
-1. **Marketplace**: Search for "FirstTry Governance" in Atlassian Marketplace
+1. **Marketplace**: Search for "FirstTry - Audit Evidence Snapshot for Jira" in Atlassian Marketplace
 2. **Install**: Click "Get it free" and authorize the requested scopes
 3. **Permissions**: Admin permission required
 4. **Next**: Navigate to Jira > Governance dashboard to view evidence
@@ -131,7 +131,7 @@ GitHub: https://github.com/Firsttry-Solutions/Firsttry
 ## Uninstalling
 
 1. Go to Jira Settings > Apps > Manage Apps
-2. Find "FirstTry Governance"
+2. Find "FirstTry - Audit Evidence Snapshot for Jira"
 3. Click "Uninstall"
 4. Confirm
 

@@ -50,7 +50,7 @@ The manifest.yml needs to declare these scopes:
 
 ```yaml
 ---
-# Atlassian Forge App Manifest - FirstTry Governance Dual Layer
+# Atlassian Forge App Manifest - FirstTry - Audit Evidence Snapshot for Jira Dual Layer
 # PHASE 4: Read-only Jira data ingestion with immutable evidence storage
 
 app:

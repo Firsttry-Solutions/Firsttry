@@ -9,7 +9,7 @@
 ### Step 1: Access Jira Settings
 
 1. Go to **Jira Settings** > **Apps** > **Manage Apps**
-2. Search for "FirstTry Governance"
+2. Search for "FirstTry - Audit Evidence Snapshot for Jira"
 3. Click **Uninstall**
 4. Confirm uninstall
 

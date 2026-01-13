@@ -1,6 +1,6 @@
 # Steps A & B — FINAL DELIVERY REPORT
 
-**Project:** FirstTry Governance Phase-5 Step-6  
+**Project:** FirstTry - Audit Evidence Snapshot for Jira Phase-5 Step-6  
 **Implementation:** Heading Constants & Parity Tests  
 **Status:** ✅ COMPLETE & VERIFIED  
 **Date:** December 20, 2025  

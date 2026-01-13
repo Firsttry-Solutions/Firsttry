@@ -1,11 +1,11 @@
 # Security Policy
 
 ---
-**COMPLIANCE DISCLAIMER**: Any references to SOC 2, ISO 27001, HIPAA, GDPR, or Cloud Fortified in this document refer to Atlassian's platform-level certifications, NOT independent app-level certifications. FirstTry Governance inherits security posture from the Atlassian Forge platform. See [docs/SECURITY.md](../atlassian/forge-app/docs/SECURITY.md) for explicit disclaimers.
+**COMPLIANCE DISCLAIMER**: Any references to SOC 2, ISO 27001, HIPAA, GDPR, or Cloud Fortified in this document refer to Atlassian's platform-level certifications, NOT independent app-level certifications. FirstTry - Audit Evidence Snapshot for Jira inherits security posture from the Atlassian Forge platform. See [docs/SECURITY.md](../atlassian/forge-app/docs/SECURITY.md) for explicit disclaimers.
 ---
 
 
-FirstTry Governance is committed to the highest standards of security and data protection. This document details the security guarantees built into the application.
+FirstTry - Audit Evidence Snapshot for Jira is committed to the highest standards of security and data protection. This document details the security guarantees built into the application.
 
 ## Phase P1: Enterprise Safety Baseline
 
@@ -255,13 +255,13 @@ We will respond within 48 hours and work with you to responsibly disclose the is
 
 ## Compliance
 
-FirstTry Governance is designed to support compliance requirements through:
+FirstTry - Audit Evidence Snapshot for Jira is designed to support compliance requirements through:
 - **GDPR-aligned**: Implements 90-day data deletion guarantee (app responsibility for data in Forge Storage)
 - **HIPAA-aligned**: Provides audit trail of all deletions and exports (customer responsible for HIPAA controls at Jira Cloud level)
 - **SOC 2-aligned**: Implements automated security controls with CI enforcement (delegated to Atlassian Forge platform for actual certification)
 - **ISO 27001-aligned**: Ensures data isolation and access control (Atlassian Forge platform carries the actual certification)
 
-**Certification Status**: FirstTry Governance is NOT independently certified. Actual compliance certifications (SOC 2, ISO 27001, HIPAA) are held by Atlassian Forge platform. FirstTry is aligned with these frameworks but does not independently carry certifications.
+**Certification Status**: FirstTry - Audit Evidence Snapshot for Jira is NOT independently certified. Actual compliance certifications (SOC 2, ISO 27001, HIPAA) are held by Atlassian Forge platform. FirstTry is aligned with these frameworks but does not independently carry certifications.
 
 ---
 

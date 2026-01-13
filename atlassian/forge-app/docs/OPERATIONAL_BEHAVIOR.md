@@ -9,7 +9,7 @@
 
 ## Overview
 
-FirstTry Governance Status Dashboard is a **read-only, evidence-gathering application**. It does not modify Jira configuration, enforce policies, or mutate user data. This document clarifies operational semantics to prevent misinterpretation of log messages.
+FirstTry - Audit Evidence Snapshot for Jira Status Dashboard is a **read-only, evidence-gathering application**. It does not modify Jira configuration, enforce policies, or mutate user data. This document clarifies operational semantics to prevent misinterpretation of log messages.
 
 ---
 

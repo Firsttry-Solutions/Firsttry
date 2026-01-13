@@ -9,7 +9,7 @@
 
 ## Overview
 
-Upgraded the FirstTry Governance Status dashboard from functional layout to professional, marketplace-grade presentation. **No backend logic changes, no data changes, no resolver changes.**
+Upgraded the FirstTry - Audit Evidence Snapshot for Jira Status dashboard from functional layout to professional, marketplace-grade presentation. **No backend logic changes, no data changes, no resolver changes.**
 
 ---
 

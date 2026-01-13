@@ -1,6 +1,6 @@
-# FirstTry Governance Documentation
+# FirstTry - Audit Evidence Snapshot for Jira Documentation
 
-Welcome to FirstTry Governance documentation. This directory contains comprehensive guides for users, enterprise reviewers, security teams, and developers.
+Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This directory contains comprehensive guides for users, enterprise reviewers, security teams, and developers.
 
 ---
 

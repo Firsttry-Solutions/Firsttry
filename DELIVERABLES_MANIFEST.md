@@ -2,7 +2,7 @@
 
 ## Jira Cloud Marketplace Volvo-Grade Security Audit - Complete Deliverables
 
-**Project:** FirstTry Governance Drift Detection App (Jira Cloud Forge)  
+**Project:** FirstTry - Audit Evidence Snapshot for Jira Drift Detection App (Jira Cloud Forge)  
 **Audit Type:** Pre-Marketplace Security & Compliance Assessment  
 **Audit Status:** ✅ **COMPLETE**  
 **Delivery Date:** January 2025
