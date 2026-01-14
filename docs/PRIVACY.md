@@ -1,3 +1,7 @@
+Version: v1.0.0
+Effective Date: 2026-01-14
+Changelog: docs/CHANGELOG_PRIVACY.md
+
 # FirstTry Privacy Policy
 
 ---
