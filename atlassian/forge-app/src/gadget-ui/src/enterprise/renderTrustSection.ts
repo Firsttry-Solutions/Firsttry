@@ -51,10 +51,10 @@ export function renderTrustSection(): HTMLElement {
   content.style.lineHeight = '1.6';
 
   content.innerHTML = `
-    <p style="margin: 0 0 12px 0;"><strong>Data Accessed:</strong> Jira metadata required for the dashboard (read-only via Jira API scopes).</p>
-    <p style="margin: 0 0 12px 0;"><strong>Data Stored:</strong> Governance snapshots and evidence ledgers are retained according to your retention policy.</p>
-    <p style="margin: 0 0 12px 0;"><strong>Data Egress:</strong> No data is sent to external services. All processing is local to your Atlassian instance.</p>
-    <p style="margin: 0;"><strong>Uninstall:</strong> Removing this app from your Jira instance revokes all access and removes stored evidence (subject to Jira's native retention settings).</p>
+    <p style="margin: 0 0 12px 0;"><strong>Data Accessed:</strong> This dashboard reads Jira configuration and workflow metadata via the Forge platform's read:jira-work scope as declared in the manifest.</p>
+    <p style="margin: 0 0 12px 0;"><strong>Data Stored:</strong> Governance snapshots and audit evidence are persisted using the Forge app storage scope (storage:app). Data retention policies are documented in docs/PRIVACY.md.</p>
+    <p style="margin: 0 0 12px 0;"><strong>Data Egress:</strong> This dashboard does not initiate external network requests based on our repository network-surface scan. All processing occurs within your Jira Cloud instance via the Forge platform.</p>
+    <p style="margin: 0;"><strong>Uninstall:</strong> Uninstalling this app removes access to Jira data and stops all background processes. Stored data is managed according to Forge platform policies (see docs/PRIVACY.md).</p>
   `;
   details.appendChild(content);
   section.appendChild(details);
