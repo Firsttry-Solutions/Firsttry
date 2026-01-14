@@ -1,0 +1,12 @@
+=== GH AUTH STATUS ===
+github.com
+  ✓ Logged in to github.com as arnab-netizen (GITHUB_TOKEN)
+  ✓ Git operations for github.com configured to use https protocol.
+  ✓ Token: ghu_************************************
+
+=== CREATE PR release -> main ===
+Warning: 1 uncommitted change
+https://github.com/Firsttry-Solutions/Firsttry/pull/12
+
+=== PR LIST (to capture URL) ===
+{"baseRefName":"main","headRefName":"release/marketplace-ready-20260113","number":12,"state":"OPEN","title":"Marketplace readiness: evidence guard + proof packs (release)","url":"https://github.com/Firsttry-Solutions/Firsttry/pull/12"}

@@ -1,0 +1,194 @@
+=== SCOPE REFERENCES IN DOCS ===
+TRUTHFUL_VERSION_DISPLAY_COMPLETE.md:348:| **Permissions** | ✅ Unchanged | read:jira-work scope unchanged |
+SEV2_SUMMARY.md:60:- Read-only scopes only: "read:jira-work" + "read:jira-configuration"
+SEV2_IMPLEMENTATION_COMPLETE.md:164:- ✅ Read-only Jira (only read scopes: "read:jira-work" "read:jira-configuration")
+SEV2_IMPLEMENTATION_COMPLETE.md:326:   - Confirm only "read:jira-work" and "read:jira-configuration" in oauth_handler.ts
+SEV2_FINAL_VERIFICATION.md:202:  - "read:jira-work" (GET projects, issues)
+SEV2_DEPLOYMENT_GUIDE.md:134:  'read:jira-work',           // GET projects, issues, etc.
+SEV2_DEPLOYMENT_GUIDE.md:296:# Expected: Only read:jira-work and read:jira-configuration
+PHASE_6_V2_STAGE_1_COMPLETION.md:178:- **Scope Requirements:** read:jira-work + read:jira-user only
+PHASE_6_V2_DELIVERY_INDEX.md:357:- ✅ Scopes: read:jira-work, read:jira-user
+PHASE_6_V2_DESIGN.md:309:- `read:jira-work` (projects, issues, fields, workflows)
+PHASE_6_V2_DESIGN.md:487:- **Scope:** Jira API permission level (e.g., read:jira-work)
+MARKETPLACE_READINESS.md:49:- Added `read:jira-work` scope
+HARDENING_COMPLETE.md:108:   - Scopes: read:jira-work, storage:app (internal only)
+HARDENING_COMPLETE.md:131:   - Access: Read-only Jira scope (read:jira-work)
+HARDENING_COMPLETE.md:239:- ✅ Scopes: Manifest extraction (read:jira-work, storage:app)
+EVIDENCE_PACK_SUMMARY.md:119:| Read-only Jira | Manifest scope (read:jira-work) | ✅ Evidence artifact |
+DOCUMENTATION_AUDIT_REPORT.md:112:| `storage:app` | Present | ✅ App-scoped storage (no cross-app/cross-workspace access) |
+DOCUMENTATION_AUDIT_REPORT.md:113:| `read:jira-work` | Present | ✅ Read-only Jira metadata access |
+DOCUMENTATION_CLAIMS_VERIFICATION.md:21:  - `atlassian/forge-app/manifest.yml` line 63 — `read:jira-work` only
+DOCUMENTATION_CLAIMS_VERIFICATION.md:38:  - Manifest: Storage scope `storage:app` (per-workspace isolation)
+DASHBOARD_UI_IMPROVEMENTS_COMPLETE.md:212:  Requires read:jira-work scope only.
+COMPLIANCE_AUDIT_FINAL_SUMMARY.md:99:- Scopes: `storage:app` + `read:jira-work` (read-only)
+COMPLIANCE_AUDIT_FINAL_SUMMARY.md:120:- Manifest: Only `read:jira-work` scope (no write scopes)
+A1_A2_COMPLETION_SUMMARY.md:14:    - `storage:app` (line 64 of manifest) — for per-tenant evidence persistence
+A1_A2_COMPLETION_SUMMARY.md:15:    - `read:jira-work` (line 65 of manifest) — for governance metrics (read-only, no user data)
+docs/DOCS_AUDIT_REPORT.md:58:- ✅ Scopes declared: `storage:app`, `read:jira-work` (exactly 2; minimal and justified)
+docs/DOCS_AUDIT_REPORT.md:90:- ✅ Docs claim `storage:app` used → Code search confirms: Storage imports present
+docs/DOCS_AUDIT_REPORT.md:92:- ✅ Docs claim "read:jira-work only" → Manifest confirms: Exactly as documented
+docs/DOCS_AUDIT_REPORT.md:106:- Declared scopes: `storage:app`, `read:jira-work` with full rationale
+docs/DOCS_AUDIT_REPORT.md:265:✅ **Manifest scopes (storage:app, read:jira-work) explicitly documented**  
+docs/claims_proof_catalog.md:17:| Tenant-isolated storage (Forge storage only) | `atlassian/forge-app/manifest.yml:77-80` (storage:app scope)<br>`atlassian/forge-app/docs/DATA_RETENTION.md:11-48`<br>`atlassian/forge-app/docs/SECURITY.md` (Platform Sandboxing section)<br>`/docs/privacy.html` (Where Data is Processed and Stored section) | code+doc | PASS |
+docs/claims_proof_catalog.md:49:  - `atlassian/forge-app/manifest.yml:77-80`: No `external.fetch` permission declared (only `storage:app`)
+docs/claims_proof_catalog.md:60:  - `atlassian/forge-app/manifest.yml:77-80`: Only `storage:app` scope declared (tenant-isolated by Forge platform)
+docs/claims_proof_catalog.md:64:- **Verification**: Manifest declares storage:app scope; documentation confirms tenant isolation; Forge platform enforces isolation
+docs/claims_proof_catalog.md:111:   grep -A2 "permissions:" atlassian/forge-app/manifest.yml | grep -q "storage:app" && echo "PASS" || echo "FAIL"
+docs/ENTERPRISE_ACCEPTANCE_IMPLEMENTATION.md:50:   - Checks permissions are minimal (storage:app only)
+docs/DOCS_INDEX.md:92:FirstTry is fundamentally read-only. All Forge manifest scopes are restricted to `storage:app` (internal evidence storage) and `read:jira-work` (Jira data observation). No write, delete, manage, admin, or state-modification operations are supported.
+docs/security/security-controls.md:106:| **Jira API communication only** | FirstTry + Atlassian | Manifest limits scope to read:jira-work | ✅ IMPLEMENTED |
+docs/security/secure-by-design.md:46:- **Scope Constraint**: FirstTry declares ONLY `read:jira-work` scope (read-only)
+docs/security/secure-by-design.md:57:- Manifest: `atlassian/forge-app/manifest.yml` — `read:jira-work` scope ONLY
+docs/security/secure-by-design.md:67:- **Storage Isolation**: `storage:app` scope provides tenant-scoped key-value storage
+docs/RUNTIME_PROOF.md:136:- FirstTry manifest declares only `storage:app` and `read:jira-work`
+docs/MARKETPLACE_LISTING.md:44:| **`storage:app`** (Read/Write) | Store governance evidence, metrics, and audit trails in Forge storage | Necessary for persistence; minimal (not storage:cloud); tenant-isolated by Forge |
+docs/MARKETPLACE_LISTING.md:45:| **`read:jira-work`** (Read-Only) | Read policy configurations and compute governance metrics | Read-only; no write/delete operations; no access to user data or issues |
+docs/MARKETPLACE_LISTING.md:211:- ✅ **Manifest scope restriction**: Only `storage:app` + `read:jira-work` (no write/delete)
+docs/MARKETPLACE_LISTING.md:231:2. **Grant permissions** (Jira admin only): `storage:app` + `read:jira-work` (see [docs/SCOPES.md](SCOPES.md))
+docs/CONTROL_MAPPING.md:70:| **CC4.1**: The organization selects, develops, and deploys control activities over technology to achieve organizational objectives and address related risks | Manifest scope restriction | [manifest.yml#L58-L61](../atlassian/forge-app/manifest.yml#L58-L61) | IMPLEMENTED | Forge manifest restricts scopes to `storage:app` and `read:jira-work` only; write/admin scopes absent. |
+docs/ENTERPRISE_ONE_PAGER.md:33:- **FirstTry is Read-Only**: All Forge manifest scopes are restricted to `storage:app` and `read:jira-work`. No write, delete, or state-modification operations are supported.
+docs/ENTERPRISE_ONE_PAGER.md:59:- **Manifest Scopes**: `storage:app`, `read:jira-work` only
+docs/SECURITY.md:94:- **Jira admin scopes**: `read:jira-work`, `read:account`, `write:jira-work` (required by Manifest)
+docs/PHASE_9_V2_DELIVERY.md:144:- Jira API scopes used (read:jira-work, read:configuration:jira, read:webhook:jira)
+docs/PHASE_6_V2_SCOPE_EXPANSION_REQUIRED.md:52:- [ ] What scopes are declared in `app/manifest.yml`? (read:jira-work, read:jira-user, etc.)
+docs/PHASE_9_V2_SPEC.md:243:assert(packet.data_handling.jira_scopes_used.includes('read:jira-work'));
+docs/SCOPES.md:20:    - storage:app
+docs/SCOPES.md:21:    - read:jira-work
+docs/SCOPES.md:28:### 1. `storage:app` — Forge App Storage (Read/Write)
+docs/SCOPES.md:36:- ✅ Scope is **minimal**: Only `storage:app` (not `storage:cloud` or external APIs)
+docs/SCOPES.md:57:### 2. `read:jira-work` — Jira Issue & Configuration Read-Only Access
+docs/SCOPES.md:112:- ❌ All evidence is stored exclusively in Forge `storage:app` (tenant-isolated)
+docs/SCOPES.md:127:     - storage:app
+docs/SCOPES.md:128:     - read:jira-work
+docs/SCOPES.md:185:- ✅ No implied scopes (e.g., "admin" inferred from read:jira-work)
+docs/SCOPES.md:205:1. **"Can FirstTry modify my Jira data?"** → No. Scope `read:jira-work` is read-only; code is tested for zero mutations.
+docs/MARKETPLACE_FORM_ANSWERS.md:31:| **4** | Does your app modify or delete Jira data? | **NO** | FirstTry operates exclusively with read-only Jira API scopes (`read:jira-work`); no write, delete, or state-modification operations are possible. | [SECURITY_SUMMARY.md:L31-L36](SECURITY_SUMMARY.md#L31-L36) |
+docs/MARKETPLACE_FORM_ANSWERS.md:41:| **14** | Does your app enforce scope restrictions at the manifest level? | **YES** | FirstTry declares only two scopes in Forge manifest: `storage:app` and `read:jira-work`; no write, admin, or user-access scopes are declared. | [SECURITY_SUMMARY.md:L22-L26](SECURITY_SUMMARY.md#L22-L26) |
+docs/MARKETPLACE_FORM_ANSWERS.md:99:**Proof**: Manifest restricts scopes to `storage:app` and `read:jira-work` (no write scopes declared). Validated by `reviewer_ready_gate.sh` Check 3C (write-surface ban). [SECURITY_SUMMARY.md:L31-L36](SECURITY_SUMMARY.md#L31-L36)
+docs/SUPPORT.md:114:4. Required scopes: `read:jira-work`, `write:jira-work`, `read:account`
+docs/ROI_MODEL.md:504:- **Manifest Scopes**: [30_manifest_scopes.txt](../evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt) — Jira scopes: `read:jira-work`, `storage:app` (verified from source)
+docs/EVIDENCE_REFERENCE.md:18:- **Declared Scopes**: read:jira-work, storage:app
+docs/EVIDENCE_REFERENCE.md:24:- ✅ **Storage**: Uses `storage:app` (see [Atlassian Forge documentation](https://developer.atlassian.com/platform/forge/manifest-reference/#storage) for encryption and tenant isolation properties)
+docs/EVIDENCE_PACK_QUICK_REF.md:33:✅ **Scopes**: `read:jira-work` (read-only), `storage:app` (Forge)  
+docs/SECURITY_SUMMARY.md:32:- **Manifest Scope Restriction**: The application declares only `storage:app` and `read:jira-work` scopes in `atlassian/forge-app/manifest.yml:lines 58-61`. No write, manage, admin, delete, or transition scopes are declared.
+docs/SECURITY_SUMMARY.md:66:- **This system does NOT perform write operations on Jira data**: The manifest restricts scopes to `storage:app` and `read:jira-work`. No write, delete, or state-modification scopes are declared.
+docs/ENTERPRISE_ACCEPTANCE.md:28:3. **Permissions Review**: App permissions accepted during installation (storage:app scope only)
+docs/ENTERPRISE_ACCEPTANCE.md:211:- **Scope**: Only `storage:app` permission used (read/write to own storage)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:2:TRUTHFUL_VERSION_DISPLAY_COMPLETE.md:348:| **Permissions** | ✅ Unchanged | read:jira-work scope unchanged |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:3:SEV2_SUMMARY.md:60:- Read-only scopes only: "read:jira-work" + "read:jira-configuration"
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:4:SEV2_IMPLEMENTATION_COMPLETE.md:164:- ✅ Read-only Jira (only read scopes: "read:jira-work" "read:jira-configuration")
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:5:SEV2_IMPLEMENTATION_COMPLETE.md:326:   - Confirm only "read:jira-work" and "read:jira-configuration" in oauth_handler.ts
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:6:SEV2_FINAL_VERIFICATION.md:202:  - "read:jira-work" (GET projects, issues)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:7:SEV2_DEPLOYMENT_GUIDE.md:134:  'read:jira-work',           // GET projects, issues, etc.
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:8:SEV2_DEPLOYMENT_GUIDE.md:296:# Expected: Only read:jira-work and read:jira-configuration
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:9:PHASE_6_V2_STAGE_1_COMPLETION.md:178:- **Scope Requirements:** read:jira-work + read:jira-user only
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:10:PHASE_6_V2_DELIVERY_INDEX.md:357:- ✅ Scopes: read:jira-work, read:jira-user
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:11:PHASE_6_V2_DESIGN.md:309:- `read:jira-work` (projects, issues, fields, workflows)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:12:PHASE_6_V2_DESIGN.md:487:- **Scope:** Jira API permission level (e.g., read:jira-work)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:13:MARKETPLACE_READINESS.md:49:- Added `read:jira-work` scope
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:14:HARDENING_COMPLETE.md:108:   - Scopes: read:jira-work, storage:app (internal only)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:15:HARDENING_COMPLETE.md:131:   - Access: Read-only Jira scope (read:jira-work)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:16:HARDENING_COMPLETE.md:239:- ✅ Scopes: Manifest extraction (read:jira-work, storage:app)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:17:EVIDENCE_PACK_SUMMARY.md:119:| Read-only Jira | Manifest scope (read:jira-work) | ✅ Evidence artifact |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:18:DOCUMENTATION_AUDIT_REPORT.md:112:| `storage:app` | Present | ✅ App-scoped storage (no cross-app/cross-workspace access) |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:19:DOCUMENTATION_AUDIT_REPORT.md:113:| `read:jira-work` | Present | ✅ Read-only Jira metadata access |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:20:DOCUMENTATION_CLAIMS_VERIFICATION.md:21:  - `atlassian/forge-app/manifest.yml` line 63 — `read:jira-work` only
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:21:DOCUMENTATION_CLAIMS_VERIFICATION.md:38:  - Manifest: Storage scope `storage:app` (per-workspace isolation)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:22:DASHBOARD_UI_IMPROVEMENTS_COMPLETE.md:212:  Requires read:jira-work scope only.
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:23:COMPLIANCE_AUDIT_FINAL_SUMMARY.md:99:- Scopes: `storage:app` + `read:jira-work` (read-only)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:24:COMPLIANCE_AUDIT_FINAL_SUMMARY.md:120:- Manifest: Only `read:jira-work` scope (no write scopes)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:25:A1_A2_COMPLETION_SUMMARY.md:14:    - `storage:app` (line 64 of manifest) — for per-tenant evidence persistence
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:26:A1_A2_COMPLETION_SUMMARY.md:15:    - `read:jira-work` (line 65 of manifest) — for governance metrics (read-only, no user data)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:27:docs/DOCS_AUDIT_REPORT.md:58:- ✅ Scopes declared: `storage:app`, `read:jira-work` (exactly 2; minimal and justified)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:28:docs/DOCS_AUDIT_REPORT.md:90:- ✅ Docs claim `storage:app` used → Code search confirms: Storage imports present
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:29:docs/DOCS_AUDIT_REPORT.md:92:- ✅ Docs claim "read:jira-work only" → Manifest confirms: Exactly as documented
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:30:docs/DOCS_AUDIT_REPORT.md:106:- Declared scopes: `storage:app`, `read:jira-work` with full rationale
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:31:docs/DOCS_AUDIT_REPORT.md:265:✅ **Manifest scopes (storage:app, read:jira-work) explicitly documented**  
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:32:docs/claims_proof_catalog.md:17:| Tenant-isolated storage (Forge storage only) | `atlassian/forge-app/manifest.yml:77-80` (storage:app scope)<br>`atlassian/forge-app/docs/DATA_RETENTION.md:11-48`<br>`atlassian/forge-app/docs/SECURITY.md` (Platform Sandboxing section)<br>`/docs/privacy.html` (Where Data is Processed and Stored section) | code+doc | PASS |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:33:docs/claims_proof_catalog.md:49:  - `atlassian/forge-app/manifest.yml:77-80`: No `external.fetch` permission declared (only `storage:app`)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:34:docs/claims_proof_catalog.md:60:  - `atlassian/forge-app/manifest.yml:77-80`: Only `storage:app` scope declared (tenant-isolated by Forge platform)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:35:docs/claims_proof_catalog.md:64:- **Verification**: Manifest declares storage:app scope; documentation confirms tenant isolation; Forge platform enforces isolation
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:36:docs/claims_proof_catalog.md:111:   grep -A2 "permissions:" atlassian/forge-app/manifest.yml | grep -q "storage:app" && echo "PASS" || echo "FAIL"
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:37:docs/ENTERPRISE_ACCEPTANCE_IMPLEMENTATION.md:50:   - Checks permissions are minimal (storage:app only)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:38:docs/DOCS_INDEX.md:92:FirstTry is fundamentally read-only. All Forge manifest scopes are restricted to `storage:app` (internal evidence storage) and `read:jira-work` (Jira data observation). No write, delete, manage, admin, or state-modification operations are supported.
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:39:docs/security/security-controls.md:106:| **Jira API communication only** | FirstTry + Atlassian | Manifest limits scope to read:jira-work | ✅ IMPLEMENTED |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:40:docs/security/secure-by-design.md:46:- **Scope Constraint**: FirstTry declares ONLY `read:jira-work` scope (read-only)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:41:docs/security/secure-by-design.md:57:- Manifest: `atlassian/forge-app/manifest.yml` — `read:jira-work` scope ONLY
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:42:docs/security/secure-by-design.md:67:- **Storage Isolation**: `storage:app` scope provides tenant-scoped key-value storage
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:43:docs/RUNTIME_PROOF.md:136:- FirstTry manifest declares only `storage:app` and `read:jira-work`
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:44:docs/MARKETPLACE_LISTING.md:44:| **`storage:app`** (Read/Write) | Store governance evidence, metrics, and audit trails in Forge storage | Necessary for persistence; minimal (not storage:cloud); tenant-isolated by Forge |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:45:docs/MARKETPLACE_LISTING.md:45:| **`read:jira-work`** (Read-Only) | Read policy configurations and compute governance metrics | Read-only; no write/delete operations; no access to user data or issues |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:46:docs/MARKETPLACE_LISTING.md:211:- ✅ **Manifest scope restriction**: Only `storage:app` + `read:jira-work` (no write/delete)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:47:docs/MARKETPLACE_LISTING.md:231:2. **Grant permissions** (Jira admin only): `storage:app` + `read:jira-work` (see [docs/SCOPES.md](SCOPES.md))
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:48:docs/CONTROL_MAPPING.md:70:| **CC4.1**: The organization selects, develops, and deploys control activities over technology to achieve organizational objectives and address related risks | Manifest scope restriction | [manifest.yml#L58-L61](../atlassian/forge-app/manifest.yml#L58-L61) | IMPLEMENTED | Forge manifest restricts scopes to `storage:app` and `read:jira-work` only; write/admin scopes absent. |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:49:docs/ENTERPRISE_ONE_PAGER.md:33:- **FirstTry is Read-Only**: All Forge manifest scopes are restricted to `storage:app` and `read:jira-work`. No write, delete, or state-modification operations are supported.
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:50:docs/ENTERPRISE_ONE_PAGER.md:59:- **Manifest Scopes**: `storage:app`, `read:jira-work` only
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:51:docs/SECURITY.md:94:- **Jira admin scopes**: `read:jira-work`, `read:account`, `write:jira-work` (required by Manifest)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:52:docs/PHASE_9_V2_DELIVERY.md:144:- Jira API scopes used (read:jira-work, read:configuration:jira, read:webhook:jira)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:53:docs/PHASE_6_V2_SCOPE_EXPANSION_REQUIRED.md:52:- [ ] What scopes are declared in `app/manifest.yml`? (read:jira-work, read:jira-user, etc.)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:54:docs/PHASE_9_V2_SPEC.md:243:assert(packet.data_handling.jira_scopes_used.includes('read:jira-work'));
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:55:docs/SCOPES.md:20:    - storage:app
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:56:docs/SCOPES.md:21:    - read:jira-work
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:57:docs/SCOPES.md:28:### 1. `storage:app` — Forge App Storage (Read/Write)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:58:docs/SCOPES.md:36:- ✅ Scope is **minimal**: Only `storage:app` (not `storage:cloud` or external APIs)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:59:docs/SCOPES.md:57:### 2. `read:jira-work` — Jira Issue & Configuration Read-Only Access
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:60:docs/SCOPES.md:112:- ❌ All evidence is stored exclusively in Forge `storage:app` (tenant-isolated)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:61:docs/SCOPES.md:127:     - storage:app
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:62:docs/SCOPES.md:128:     - read:jira-work
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:63:docs/SCOPES.md:185:- ✅ No implied scopes (e.g., "admin" inferred from read:jira-work)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:64:docs/SCOPES.md:205:1. **"Can FirstTry modify my Jira data?"** → No. Scope `read:jira-work` is read-only; code is tested for zero mutations.
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:65:docs/MARKETPLACE_FORM_ANSWERS.md:31:| **4** | Does your app modify or delete Jira data? | **NO** | FirstTry operates exclusively with read-only Jira API scopes (`read:jira-work`); no write, delete, or state-modification operations are possible. | [SECURITY_SUMMARY.md:L31-L36](SECURITY_SUMMARY.md#L31-L36) |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:66:docs/MARKETPLACE_FORM_ANSWERS.md:41:| **14** | Does your app enforce scope restrictions at the manifest level? | **YES** | FirstTry declares only two scopes in Forge manifest: `storage:app` and `read:jira-work`; no write, admin, or user-access scopes are declared. | [SECURITY_SUMMARY.md:L22-L26](SECURITY_SUMMARY.md#L22-L26) |
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:67:docs/MARKETPLACE_FORM_ANSWERS.md:99:**Proof**: Manifest restricts scopes to `storage:app` and `read:jira-work` (no write scopes declared). Validated by `reviewer_ready_gate.sh` Check 3C (write-surface ban). [SECURITY_SUMMARY.md:L31-L36](SECURITY_SUMMARY.md#L31-L36)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:68:docs/SUPPORT.md:114:4. Required scopes: `read:jira-work`, `write:jira-work`, `read:account`
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:69:docs/ROI_MODEL.md:504:- **Manifest Scopes**: [30_manifest_scopes.txt](../evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt) — Jira scopes: `read:jira-work`, `storage:app` (verified from source)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:70:docs/EVIDENCE_REFERENCE.md:18:- **Declared Scopes**: read:jira-work, storage:app
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:71:docs/EVIDENCE_REFERENCE.md:24:- ✅ **Storage**: Uses `storage:app` (see [Atlassian Forge documentation](https://developer.atlassian.com/platform/forge/manifest-reference/#storage) for encryption and tenant isolation properties)
+docs/evidence/20260113T163456Z_24b1cfb6/71_claims_scan.txt:72:docs/EVIDENCE_PACK_QUICK_REF.md:33:✅ **Scopes**: `read:jira-work` (read-only), `storage:app` (Forge)  
+docs/evidence/20260113T131033Z_0ac6d55e/50_evidence_summary.json:20:      "read:jira-work",
+docs/evidence/20260113T131033Z_0ac6d55e/50_evidence_summary.json:21:      "storage:app"
+docs/evidence/20260113T131842Z_6ca63141/30_manifest_surface.txt:8:Scopes: storage:app
+docs/evidence/20260113T131842Z_6ca63141/30_manifest_surface.txt:11:Scopes: storage:app
+docs/evidence/20260113T131842Z_6ca63141/30_manifest_surface.txt:14:Scopes: storage:app
+docs/evidence/20260113T131842Z_6ca63141/30_manifest_surface.txt:17:Scopes: storage:app, read:jira-work
+docs/evidence/20260113T131842Z_6ca63141/30_manifest_surface.txt:20:Scopes: storage:app, read:jira-work
+docs/evidence/20260113T163456Z_24b1cfb6/70_manifest.txt:65:    - storage:app
+docs/evidence/20260113T163456Z_24b1cfb6/70_manifest.txt:66:    - read:jira-work
+docs/evidence/20260113T131842Z_6ca63141/40_tenant_isolation_test.txt:36:  ✓ Manifest scopes: storage:app, read:jira-work
+docs/evidence/20260113T131842Z_6ca63141/40_tenant_isolation_test.txt:54:  - Manifest specifies read:jira-work scope (tenant-aware)
+docs/evidence/20260113T131842Z_6ca63141/32_network_surface_summary.json:9:      "storage:app"
+docs/evidence/20260113T131842Z_6ca63141/32_network_surface_summary.json:12:      "storage:app"
+docs/evidence/20260113T131842Z_6ca63141/32_network_surface_summary.json:15:      "storage:app"
+docs/evidence/20260113T131842Z_6ca63141/32_network_surface_summary.json:18:      "storage:app",
+docs/evidence/20260113T131842Z_6ca63141/32_network_surface_summary.json:19:      "read:jira-work"
+docs/evidence/20260113T131842Z_6ca63141/32_network_surface_summary.json:22:      "storage:app",
+docs/evidence/20260113T131842Z_6ca63141/32_network_surface_summary.json:23:      "read:jira-work"
+docs/IMPLEMENTATION_VALIDATION.md:119:| Tenant-isolated storage | ✅ YES | manifest.yml storage:app only | PASS |
+docs/evidence/20260113T151014Z_bf7661c2/32_network_surface_summary.json:9:      "storage:app"
+docs/evidence/20260113T151014Z_bf7661c2/32_network_surface_summary.json:12:      "storage:app"
+docs/evidence/20260113T151014Z_bf7661c2/32_network_surface_summary.json:15:      "storage:app"
+docs/evidence/20260113T151014Z_bf7661c2/32_network_surface_summary.json:18:      "storage:app",
+docs/evidence/20260113T151014Z_bf7661c2/32_network_surface_summary.json:19:      "read:jira-work"
+docs/evidence/20260113T151014Z_bf7661c2/32_network_surface_summary.json:22:      "storage:app",
+docs/evidence/20260113T151014Z_bf7661c2/32_network_surface_summary.json:23:      "read:jira-work"
+docs/evidence/20260113T131033Z_0ac6d55e/50_EVIDENCE_SUMMARY.md:14:- `read:jira-work`
+docs/evidence/20260113T131033Z_0ac6d55e/50_EVIDENCE_SUMMARY.md:15:- `storage:app`
+docs/evidence/20260113T131033Z_0ac6d55e/50_EVIDENCE_SUMMARY.md:21:- **Storage**: ✅ Uses storage:app
+docs/evidence/20260113T131033Z_0ac6d55e/50_EVIDENCE_SUMMARY.md:22:- **Jira Access**: ✅ Read-only (read:jira-work)
+docs/evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt:2:docs/SCOPES.md:21:    - read:jira-work
+docs/evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt:5:docs/SCOPES.md:57:### 2. `read:jira-work` — Jira Issue & Configuration Read-Only Access
+docs/evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt:13:docs/SCOPES.md:128:     - read:jira-work
+docs/evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt:18:docs/SCOPES.md:185:- ✅ No implied scopes (e.g., "admin" inferred from read:jira-work)
+docs/evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt:19:docs/SCOPES.md:205:1. **"Can FirstTry modify my Jira data?"** → No. Scope `read:jira-work` is read-only; code is tested for zero mutations.
+docs/evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt:54:atlassian/forge-app/MEGA_PROMPT_V3_COMPLETION_SUMMARY.md:57:   - ✅ 2 scopes (read:jira-work, storage:app) verified
+docs/evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt:79:atlassian/forge-app/enterprise/SECURITY_WHITEPAPER.md:72:| `read:jira-work` | Read project, issue, workflow metadata | Minimum required for governance evidence collection |
+docs/evidence/20260113T131033Z_0ac6d55e/31_data_scan.txt:97:atlassian/forge-app/README.md:40:| `read:jira-work` | read | Read project/issue metadata |
+docs/evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt:14:  - read:jira-work
+docs/evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt:15:  - storage:app
+docs/evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt:19:  - read:jira-work
+docs/evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt:20:  - storage:app
+docs/evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt:24:  - storage:app
+docs/evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt:28:  - storage:app
+docs/evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt:32:  - storage:app
+docs/evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt:37:  read:jira-work
+docs/evidence/20260113T131033Z_0ac6d55e/30_manifest_scopes.txt:38:  storage:app

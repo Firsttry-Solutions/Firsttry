@@ -177,7 +177,8 @@ async function loadStatus() {
 
         try {
             // @ts-ignore - invoke is checked above
-            data = await invoke('get', {});
+            // Call the new getStatusSnapshot resolver (live dashboard)
+            data = await invoke('getStatusSnapshot', {});
         } catch (e) {
             invokeError = e instanceof Error ? e.message : String(e);
             console.error('Bridge.invoke failed:', invokeError);
@@ -956,6 +957,63 @@ function toJSONText(payload: any): string {
 }
 
 /**
+ * Refresh Now handler: Manually trigger snapshot update
+ */
+// @ts-ignore - Expose globally for button onclick handlers
+window.refreshNow = async function() {
+    try {
+        const btn = document.getElementById('refresh-now-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Refreshing...';
+        }
+
+        // @ts-ignore - invoke is checked in loadStatus
+        const newSnapshot = await invoke('refreshNow', {});
+        
+        // Update lastPayload and re-render UI
+        lastPayload = newSnapshot;
+        
+        // Update "Last refreshed" timestamp
+        const refreshedEl = document.getElementById('last-refreshed-time');
+        if (refreshedEl && newSnapshot.generatedAtIso) {
+            refreshedEl.textContent = formatTimestampDisplay(newSnapshot.generatedAtIso);
+        }
+
+        showExportToast('ok', '✓ Refreshed successfully');
+        
+        // Re-render enterprise UI components
+        try {
+            const unifiedStatus = newSnapshot || null;
+            renderKpiTiles({
+                containerId: 'kpi-tiles-section',
+                legacyData: newSnapshot,
+                unifiedStatus
+            });
+            renderStatusBanner({
+                containerId: 'status-banner-section',
+                legacyData: newSnapshot
+            });
+            renderProgressTracker({
+                containerId: 'progress-tracker-section',
+                legacyData: newSnapshot
+            });
+        } catch (renderErr) {
+            console.warn('[Refresh] UI re-render error:', renderErr);
+        }
+    } catch (err) {
+        console.error('[Refresh] Error:', err);
+        showExportToast('err', `Refresh failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+        const btn = document.getElementById('refresh-now-btn');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Refresh now';
+        }
+    }
+};
+
+/**
  * Convert payload to CSV string (deterministic, with proper escaping)
  */
 function toCSVText(payload: any): string {
@@ -1157,11 +1215,15 @@ async function handleExportTrustSnapshot() {
  */
 function wireExportButtons() {
     try {
+        const refreshBtn = document.getElementById('refresh-now-btn');
         const copyBtn = document.getElementById('copy-summary-btn');
         const jsonBtn = document.getElementById('download-json-btn');
         const csvBtn = document.getElementById('download-csv-btn');
         const exportSnapshotBtn = document.getElementById('export-trust-snapshot-btn');
 
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => window.refreshNow());
+        }
         if (copyBtn) {
             copyBtn.addEventListener('click', () => window.copySummary());
         }
@@ -1176,8 +1238,8 @@ function wireExportButtons() {
         }
 
         // Verify all buttons are present
-        if (!copyBtn || !jsonBtn || !csvBtn) {
-            showExportToast('err', 'Export UI misconfigured: missing button element.');
+        if (!refreshBtn || !copyBtn || !jsonBtn || !csvBtn) {
+            showExportToast('err', 'UI misconfigured: missing button element.');
         }
     } catch (e) {
         // Silent catch
