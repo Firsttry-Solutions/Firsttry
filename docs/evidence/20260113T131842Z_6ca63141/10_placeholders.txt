@@ -1,0 +1,20 @@
+======================================================================
+❌ PLACEHOLDER VALIDATOR FAILED
+======================================================================
+
+Found 2 critical placeholder(s):
+
+  docs/EVIDENCE_PACK_QUICK_REF.md:39
+    Type: explicit_placeholder
+    Text: - Compliance certifications (SOC2/GDPR/ISO — status TBD)
+
+  docs/evidence/20260113T131842Z_6ca63141/README.md:94
+    Type: explicit_placeholder
+    Text: - ❌ SOC2/GDPR compliance (status TBD, never claimed)
+
+Action Required:
+  1. Remove placeholder (replace with real value or delete)
+  2. OR move to archived/test context
+  3. OR label explicitly (e.g., '[PLACEHOLDER: real value]' → 'Real Value')
+  4. Then commit
+

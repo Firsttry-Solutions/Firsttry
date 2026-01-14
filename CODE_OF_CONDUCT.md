@@ -30,8 +30,8 @@ All participants are expected to:
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting:
-- **Email:** conduct@firsttry.dev
-- **Alternate:** arnab.conduct@gmail.com
+- **Email:** contact@firsttry.run
+- **Alternate:** contact@firsttry.run
 
 All complaints will be reviewed and investigated promptly and fairly.
 

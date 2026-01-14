@@ -67,7 +67,7 @@ manifest.yml                      (ADD: scheduledTrigger + function entries)
 - All 15 files created and tested
 - All snapshot captures working (daily + weekly)
 - All tests passing (model, storage, capture, scheduler, determinism)
-- Tenant isolation verified
+- Tenant isolation guard passed (code-level)
 - No Jira write endpoints used
 - Retention policy enforced automatically
 

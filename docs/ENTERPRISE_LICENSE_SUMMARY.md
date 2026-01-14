@@ -24,4 +24,4 @@ FirstTry Enterprise License grants:
 
 - Dedicated account manager
 
-Contact: enterprise@firsttry.dev
+Contact: contact@firsttry.run

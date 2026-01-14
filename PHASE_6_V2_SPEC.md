@@ -616,7 +616,7 @@ const isValid = verifyCanonicalHash(payload, snapshot.canonical_hash);
 - All storage keys include `tenant_id`
 - Constructor requires `tenant_id`
 - All CRUD operations validate tenant match
-- No cross-tenant access possible
+- Code-level guard checks for obvious cross-tenant risks
 
 ### 13.2 Example
 

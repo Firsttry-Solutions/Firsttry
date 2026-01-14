@@ -1,0 +1,17 @@
+🔍 Scanning . for network surface...
+  - Checking code for external HTTP clients...
+  - Checking manifest for external permissions...
+  - Scanning for tenant isolation patterns...
+
+✅ Results:
+  Manifest scopes: 5 files
+  External manifest perms: 0
+  Webtriggers: 0
+  HTTP clients detected: 32
+
+📊 Summary: docs/evidence/20260113T131842Z_6ca63141/32_network_surface_summary.json
+📄 Manifest: docs/evidence/20260113T131842Z_6ca63141/30_manifest_surface.txt
+📄 Code: docs/evidence/20260113T131842Z_6ca63141/31_code_network_scan.txt
+
+❌ Network surface scan FAILED (external egress detected)
+   - External HTTP client usage in code

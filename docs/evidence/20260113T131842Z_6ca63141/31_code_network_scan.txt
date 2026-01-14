@@ -1,0 +1,21 @@
+# Code Network Surface Scan
+
+**Generated**: Scan of .
+
+## HTTP Client Usage (External Egress)
+
+✅ No external HTTP client usage detected
+
+## Forge Storage Patterns (Internal)
+
+Expected internal patterns:
+
+- Forge storage.app.get: ./docs/SCOPES.md:1 matches
+- Forge storage.app.set: ./docs/SCOPES.md:1 matches
+
+## Allowed (Atlassian Forge SDK)
+
+- `@forge/api` — Atlassian Forge API (internal)
+- `storage.app` — Forge app storage (tenant-managed by Atlassian)
+- `@forge/resolver` — Forge resolver (internal)
+- `api.asUser()` — User-scoped Jira API (internal, requires Jira scope)

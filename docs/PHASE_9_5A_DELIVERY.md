@@ -181,7 +181,7 @@ Pre-install Gap:
 - Cross-tenant access throws `TENANT_ISOLATION_VIOLATION`
 
 **Test Coverage:**
-- TC-9.5-3.1: Tenant isolation verified
+- TC-9.5-3.1: Tenant isolation guard passed (code-level)
 - TC-9.5-3.2: Cross-tenant mixing detected
 - TC-9.5-3.3: Tenant validation in updates
 

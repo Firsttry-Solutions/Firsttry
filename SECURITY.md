@@ -5,7 +5,7 @@ Security patches apply to the latest public release of FirstTry.
 
 ## Reporting a Vulnerability
 Send security reports to:
-security@firsttry.dev
+contact@firsttry.run
 
 We will acknowledge receipt within 24 hours and provide updates within 72 hours.
 
@@ -28,8 +28,8 @@ Only the latest released version of FirstTry receives security updates.
 If you discover a security issue, **please do not open a public GitHub issue.**
 
 Instead, email us directly at:
-- **security@firsttry.dev** (preferred)
-- **arnab.security@gmail.com** (alternate)
+- **contact@firsttry.run** (preferred)
+- **contact@firsttry.run** (alternate)
 
 ### What to Include
 

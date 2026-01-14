@@ -1,3 +1,7 @@
+Version: v1.0.0
+Effective Date: 2026-01-14
+Changelog: docs/CHANGELOG_PRIVACY.md
+
 # FirstTry Privacy Policy
 
 ---
@@ -148,7 +152,7 @@ FirstTry is NOT a HIPAA-compliant system. If you handle PHI (Protected Health In
 ## Privacy Shield / Data Transfers
 
 FirstTry uses Atlassian Forge, which is based in the US. By using FirstTry, you agree to US data processing. If you are in the EU and require EU-only processing:
-- Contact us: privacy@firstry.io (if available)
+- Contact us: contact@firsttry.run (if available)
 - Consider using Jira Cloud EU instead (Atlassian offers EU servers)
 
 ## Subprocessors
@@ -161,7 +165,7 @@ Atlassian is a certified SOC2/ISO27001 provider.
 ## Contact Information
 
 For privacy questions or data subject requests:
-- **Privacy Officer**: privacy@firstry.io (if available; see README for contact details)
+- **Privacy Officer**: contact@firsttry.run (if available; see README for contact details)
 - **Response time**: 30 days (GDPR requirement)
 - **Escalation**: Contact Atlassian if FirstTry does not respond
 

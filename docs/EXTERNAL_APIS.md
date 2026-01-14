@@ -65,7 +65,7 @@
 
 ### Connection Details
 - **Service**: [Service name]
-- **URL Pattern**: [https://example.com/path]
+- **URL Pattern**: [Your API endpoint URL]
 - **HTTP Method**: [GET, POST, etc.]
 - **Authentication**: [Bearer token, API key, OAuth, None]
 - **Timeout**: [X seconds]

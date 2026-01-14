@@ -330,7 +330,7 @@ TODO/FIXME/XXX/HACK comments: 3
 
 **DO NOT** open public issues for security vulnerabilities.
 
-Email: security@firsttry.dev (or your contact)
+Email: contact@firsttry.run (or your contact)
 Expected response: 48 hours
 ```
 

@@ -1,0 +1,111 @@
+# FirstTry Placeholder Allowlist
+# 
+# This file documents placeholders, examples, and test fixtures that are
+# explicitly ALLOWED in the codebase because they are:
+# - Code examples showing what to avoid
+# - Test fixtures with fake data
+# - Labeled placeholders with instructions
+# - Archived/internal documents (not user-facing)
+# - Legitimate cost/time examples with "EXAMPLE" context
+#
+# RULE: Every entry must have a documented reason. Blank permission = blocked.
+#
+# Format:
+#   path_regex:
+#     reason: "Why this is allowed"
+#     files:
+#       - "specific file"
+#       - "or pattern"
+
+code_examples_and_enforcement:
+  reason: "Code snippets inside documentation showing what validators will check for"
+  rationale: "These are META examples of bad patterns, not actual bad patterns"
+  files:
+    - "docs/COPILOT_ENFORCEMENT_PROMPT.md"  # Shows grep patterns for TODO/TBD checking
+    - "tools/validate_docs.sh"               # Shows validation logic
+    - ".github/workflows/*.yml"              # CI checks themselves reference keywords
+
+test_fixtures:
+  reason: "Test files with intentional fake data for testing"
+  rationale: "These are non-user-facing test helpers, not customer docs"
+  examples:
+    - "atlassian/forge-app/tests/**"
+    - "tests/**/*.ts"
+    - "tests/**/*.py"
+  allowed_patterns:
+    - "example@example.com"
+    - "admin@example.com"
+    - "test@test.com"
+    - "SHK-XXX"
+    - "orgKey=example-corp"
+
+labeled_placeholders:
+  reason: "Placeholders that are EXPLICITLY LABELED with instructions"
+  rationale: "These guide implementers to replace with real values. Contrast with hidden TBD/TODO"
+  files:
+    - "docs/IMPLEMENTATION_VALIDATION.md"
+    - "docs/MARKETPLACE_LEGAL_IMPLEMENTATION.md"
+  pattern: "[PLACEHOLDER: ___] → Your actual [value]"
+  status: "DEPRECATED — no new labeled placeholders after Phase E3 audit"
+
+archived_internal_docs:
+  reason: "Development logs, audit reports, and internal tracking — NOT customer-facing"
+  rationale: "These document the build process and are behind the docs/ folder but marked 'not for external use'"
+  files:
+    - "audit/**"
+    - "patches-perf-40pc/**"
+  status: "Allowed but should be moved to 'internal/' or .gitignore eventually"
+
+cost_time_examples:
+  reason: "Cost/time calculations with explicit 'EXAMPLE' context and disclaimers"
+  rationale: "Calculation tool (roi_calc.py) and ROI model have prominent disclaimers that outputs are EXAMPLES only"
+  files:
+    - "tools/roi_calc.py"
+    - "docs/ROI_MODEL.md"
+  disclaimer: "⚠️ These are EXAMPLES ONLY. Your actual ROI depends on your deployment configuration."
+  verification: "Both files include prominent disclaimer in first 10 lines"
+
+# ==================================================
+# DENIED / MUST FIX
+# ==================================================
+
+must_fix:
+  reason: "Placeholders that WILL cause marketplace review failure"
+  items:
+    - category: "Hard placeholders in docs"
+      severity: "CRITICAL"
+      examples:
+        - "TBD in docs/SUPPORT.md"
+        - "TODO in docs/PRIVACY.md"
+        - "FIXME in docs/SECURITY.md"
+      fix: "Replace with real content or move to FAQ/Future section"
+
+    - category: "Fake identities without context"
+      severity: "HIGH"
+      examples:
+        - "ACME Corp (not in a test or example)"
+        - "example.com in customer-facing docs"
+      fix: "Replace with generic reference like 'Example Customer' or remove"
+
+    - category: "Unverified claims"
+      severity: "HIGH"
+      examples:
+        - "SOC2 compliant (without proof anchor)"
+        - "Zero trust architecture (without implementation)"
+      fix: "Add [proof anchor](file.md#section) or reword as 'designed for'"
+
+---
+
+# Audit Date
+audit_date: "20260113T125008Z"
+audit_tool: "FirstTry Placeholder Audit (Phase E3)"
+total_placeholders_found: 384
+total_allowlisted: 150
+must_fix_count: 34
+
+# Next Steps
+next_phase:
+  - "Add CI workflow to enforce validator on every commit"
+  - "Fix remaining SEV-0/1/2 items in active docs"
+  - "Move archived docs to internal/ folder (future improvement)"
+  - "Update CONTRIBUTING.md with placeholder policy"

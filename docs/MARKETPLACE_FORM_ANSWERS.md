@@ -1,7 +1,6 @@
 # Atlassian Marketplace Privacy & Data Questionnaire — Answer Key
 
-**⚠️ DO NOT DEVIATE FROM THIS ANSWER KEY**  
-This document defines the canonical, deterministic responses for all Atlassian Marketplace privacy, data handling, and security questionnaires. Any deviation from these answers must be approved by security@firstry.io and documented in a change request. **All answers are grounded in proof anchors to docs/SECURITY_SUMMARY.md and docs/PRIVACY.md.**
+This document defines the approved responses for Atlassian Marketplace privacy, data handling, and security questionnaires. Changes require a change request and security owner approval. Each answer cites proof anchors in docs/SECURITY_SUMMARY.md and docs/PRIVACY.md.
 
 ---
 
@@ -41,7 +40,7 @@ This document provides a single source of truth for all data handling and privac
 | **13** | Does your app allow users to modify their data? | **YES** | Users can modify policies directly using `firstry policy update <policy-id>`; modification timestamps are audited for compliance. | [PRIVACY.md:L94-L102](PRIVACY.md#L94-L102) |
 | **14** | Does your app enforce scope restrictions at the manifest level? | **YES** | FirstTry declares only two scopes in Forge manifest: `storage:app` and `read:jira-work`; no write, admin, or user-access scopes are declared. | [SECURITY_SUMMARY.md:L22-L26](SECURITY_SUMMARY.md#L22-L26) |
 | **15** | Does your app support tenant isolation (multi-workspace safety)? | **YES** | Forge storage enforces workspace-scoped isolation using cloudId-based key prefixing; cross-tenant data access is cryptographically prevented. | [SECURITY_SUMMARY.md:L47-L51](SECURITY_SUMMARY.md#L47-L51) |
-| **16** | Does your app have customer support / security contact? | **YES** | Support is community-basis via repository GitHub issues; security issues can be reported to security@firstry.io (if available); response time: 30 days (GDPR requirement). | [PRIVACY.md:L139-L149](PRIVACY.md#L139-L149) |
+| **16** | Does your app have customer support / security contact? | **YES** | Support is community-basis via repository GitHub issues; security issues can be reported to contact@firsttry.run (if available); response time: 30 days (GDPR requirement). | [PRIVACY.md:L139-L149](PRIVACY.md#L139-L149) |
 | **17** | Does your app support GDPR compliance (right to access, rectification, deletion, restriction, portability)? | **YES** | All five GDPR user rights are implemented: access (`firstry export`), rectification (`policy update`), deletion (`policy delete`), restriction (`policy disable`), portability (`JSON export`). | [PRIVACY.md:L81-L115](PRIVACY.md#L81-L115) |
 | **18** | Does your app support CCPA compliance (right to know, right to delete, right to opt-out)? | **YES** | CCPA rights are supported: right to know (`firstry export`), right to delete (`firstry policy delete`), right to opt-out (N/A; no advertising). | [PRIVACY.md:L119-L128](PRIVACY.md#L119-L128) |
 | **19** | Does your app claim HIPAA compliance? | **NO** | FirstTry is NOT a HIPAA-compliant system; customers handling PHI (Protected Health Information) should not use FirstTry for regulated workflows. | [PRIVACY.md:L130-L138](PRIVACY.md#L130-L138) |
@@ -162,12 +161,12 @@ This document provides a single source of truth for all data handling and privac
 **Response Time**: Best effort (no guaranteed SLA)  
 
 ### Security Issues
-**Reporting**: security@firstry.io (if available; check README for current contact)  
+**Reporting**: contact@firsttry.run (if available; check README for current contact)  
 **Response Time**: 30 days (GDPR requirement for data breach notification)  
 **Escalation**: Contact Atlassian if FirstTry does not respond  
 
 ### Privacy Requests
-**Data Subject Requests** (GDPR): email privacy@firstry.io  
+**Data Subject Requests** (GDPR): email contact@firsttry.run  
 **Response Time**: 30 days  
 **Scope**: Right to access, rectification, deletion, restriction, portability  
 
@@ -186,7 +185,7 @@ This answer key represents the **single source of truth** for all Marketplace qu
 | **Status** | Canonical, Deterministic, Non-Deviable |
 | **Last Updated** | 2026-01-13 |
 | **Review Date** | Q1 2026 |
-| **Change Control** | All deviations require security@firstry.io approval + change request |
+| **Change Control** | All deviations require contact@firsttry.run approval + change request |
 | **Consistency Verified** | YES (against SECURITY_SUMMARY.md, PRIVACY.md, MARKETPLACE_LISTING.md) |
 
 ### How to Use This Document
@@ -195,7 +194,7 @@ This answer key represents the **single source of truth** for all Marketplace qu
 2. **For Security Audits**: Reference proof anchors to validate each claim against source documentation.
 3. **For Updates**: If SECURITY_SUMMARY.md or PRIVACY.md changes, re-verify all answers and update proof anchors.
 4. **For Deviations**: Any change to an answer must be:
-   - Approved by security@firstry.io
+   - Approved by contact@firsttry.run
    - Documented in a change request (commit message)
    - Updated in this file with new proof anchors
    - Validated by `bash tools/validate_docs.sh`
@@ -204,7 +203,7 @@ This answer key represents the **single source of truth** for all Marketplace qu
 
 **END OF ANSWER KEY**
 
-**Questions?** Contact security@firstry.io or review the source documentation:
+**Questions?** Contact contact@firsttry.run or review the source documentation:
 - [docs/SECURITY_SUMMARY.md](SECURITY_SUMMARY.md)
 - [docs/PRIVACY.md](PRIVACY.md)
 - [docs/MARKETPLACE_LISTING.md](MARKETPLACE_LISTING.md)

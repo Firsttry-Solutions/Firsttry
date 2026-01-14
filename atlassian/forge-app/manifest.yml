@@ -16,11 +16,11 @@ modules:
   # Dashboard Gadget (Bundled UI via Vite)
   jira:dashboardGadget:
     - key: governance-dashboard-gadget
-      title: FirstTry Governance Status
+      title: FirstTry – Audit Evidence Snapshot for Jira
       description: FirstTry Governance - real-time status overview
       resource: govGadget2140
       resolver:
-        function: status-resolver-fn
+        function: get-status-snapshot-fn
       thumbnail: https://www.atlassian.com/favicon.ico
 
   # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
@@ -35,6 +35,10 @@ modules:
       handler: scheduled/scheduler_daily_dispatcher.runDailyDispatch
     - key: status-resolver-fn
       handler: resolvers/governance_status.get
+    - key: get-status-snapshot-fn
+      handler: resolvers/getStatusSnapshot.getStatusSnapshot_resolver
+    - key: refresh-now-fn
+      handler: resolvers/refreshNow.refreshNow_resolver
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)

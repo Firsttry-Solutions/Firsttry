@@ -21,7 +21,7 @@ Three critical security vulnerabilities (SEV-2-001, SEV-2-002, SEV-2-003) have b
 - Implemented `DistributedLock` class using Forge Storage with lock keys: `snapshot_lock:{tenant_id}:{snapshot_type}:{window_start}`
 - 90-second TTL prevents deadlock scenarios
 - Automatic lock release via `execute()` method
-- Tenant isolation verified through different key prefixes
+- Tenant isolation guard passed (code-level) through different key prefixes
 - Window-specific locking prevents unnecessary blocking across different time periods
 
 **Key Features**:

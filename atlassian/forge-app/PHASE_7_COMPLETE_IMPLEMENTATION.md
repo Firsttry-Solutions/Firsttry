@@ -522,7 +522,7 @@ For questions or issues:
 ✅ **100+ tests written and passing**  
 ✅ **Full TypeScript typing**  
 ✅ **Read-only constraints verified**  
-✅ **Tenant isolation verified**  
+✅ **Tenant isolation guard passed (code-level)**  
 ✅ **Forbidden language blocking enforced**  
 ✅ **Determinism proven at scale**  
 
