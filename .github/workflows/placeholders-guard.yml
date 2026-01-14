@@ -1,0 +1,54 @@
+name: Placeholder Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate-placeholders:
+    runs-on: ubuntu-latest
+    name: Validate placeholders (SEV-0/1/2 blocking)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
+
+      - name: Run placeholder validator
+        run: |
+          python3 tools/validate_placeholders.py
+        continue-on-error: false
+
+      - name: Generate audit report (on failure)
+        if: failure()
+        run: |
+          echo "## ❌ Placeholder Validation Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Your PR contains critical placeholders (SEV-0/1/2)." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Required Actions:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Run: \`python3 tools/validate_placeholders.py\`" >> $GITHUB_STEP_SUMMARY
+          echo "2. Fix issues (replace TBD, remove ACME Corp examples, etc.)" >> $GITHUB_STEP_SUMMARY
+          echo "3. See [docs/PLACEHOLDERS_POLICY.md](docs/PLACEHOLDERS_POLICY.md) for guidance" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Reference:** [Placeholder Audit Results](https://github.com/${{ github.repository }}/blob/main/docs/PLACEHOLDERS_POLICY.md)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "✅ Placeholder validation passed — no critical issues found" >> $GITHUB_STEP_SUMMARY

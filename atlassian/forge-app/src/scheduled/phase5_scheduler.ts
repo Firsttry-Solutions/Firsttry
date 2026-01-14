@@ -44,6 +44,7 @@ import {
   RETENTION_MAX_SNAPSHOTS,
   RETENTION_MAX_DAYS,
 } from '../core/constants';
+import { runCollection } from '../status/runCollection';
 
 // ============================================================================
 // HELPERS
@@ -319,6 +320,10 @@ export async function phase5SchedulerHandler(
 ): Promise<{ statusCode: number; body: string }> {
   const startTime = new Date().toISOString();
 
+  // Heartbeat logging for production monitoring
+  const BUILD_SHA = '8e0e4e8'; // Git HEAD7 from release/marketplace-ready-20260113
+  console.log(`HEARTBEAT OK build=${BUILD_SHA} ts=${startTime} env=production fn=phase5-scheduler-fn`);
+
   try {
     // ====================================================================
     // 1. Get Tenant Context - FAIL CLOSED
@@ -360,6 +365,23 @@ export async function phase5SchedulerHandler(
       `[Phase5Scheduler] Starting for tenantKey: ${tenantKey} (source: ${tenantId.source}) at ${startTime}` +
       (cloudId ? ` [cloudId: ${cloudId}]` : ' [no cloudId available]')
     );
+
+    // LIVE DASHBOARD: Call runCollection to write canonical snapshot + heartbeat
+    try {
+      const statusSnapshot = await runCollection({
+        tenantKey,
+        mode: "scheduled",
+      });
+      console.info(
+        `[Phase5Scheduler] StatusSnapshot written: snapshotId=${statusSnapshot.snapshotId}, health=${statusSnapshot.computed.health}`
+      );
+    } catch (statusErr) {
+      console.error(
+        `[Phase5Scheduler] Failed to write StatusSnapshot (will continue): ${
+          statusErr instanceof Error ? statusErr.message : String(statusErr)
+        }`
+      );
+    }
 
     // Write status snapshot at start (for dashboard transparency)
     await writeStatusSnapshot(cloudId, startTime);

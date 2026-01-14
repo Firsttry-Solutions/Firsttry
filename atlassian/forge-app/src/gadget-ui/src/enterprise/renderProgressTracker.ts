@@ -1,7 +1,8 @@
 /**
- * Progress Tracker Renderer
+ * Progress Tracker Renderer (Enterprise v2 - Roadmap View)
  * 
- * Renders a timeline of phases showing progress through the governance pipeline.
+ * Renders a collapsed roadmap timeline showing planned capabilities.
+ * Emphasizes that these are planned items, not active phases.
  * Replaces the old phase table with an accessible, semantic timeline.
  */
 
@@ -20,7 +21,7 @@ function getPhaseStatus(
     phaseIndex: number
 ): { color: StatusColor; label: string; complete: boolean } {
     if (!legacyData) {
-        return { color: "gray", label: "Pending", complete: false };
+        return { color: "gray", label: "Planned", complete: false };
     }
 
     // Phase indices: 0=Phase1, 1=Phase2, 2=Phase3, 3=Phase4, 4=Phase5, 5=Phase6
@@ -31,9 +32,9 @@ function getPhaseStatus(
         return { color: "green", label: "Complete", complete: true };
     }
 
-    // If system is degraded/error, phases may be blocked
+    // If system is degraded/error, phases are not active
     if (legacyData.systemStatus === "DEGRADED" || legacyData.systemStatus === "ERROR") {
-        return { color: "yellow", label: "Delayed", complete: false };
+        return { color: "gray", label: "Not active", complete: false };
     }
 
     // Check if this is the current phase (from unifiedStatus or fallback logic)
@@ -42,7 +43,7 @@ function getPhaseStatus(
         return { color: "yellow", label: "In Progress", complete: false };
     }
 
-    return { color: "gray", label: "Pending", complete: false };
+    return { color: "gray", label: "Not active", complete: false };
 }
 
 /**
@@ -50,14 +51,14 @@ function getPhaseStatus(
  */
 function getPhaseDescription(phaseIndex: number): string {
     const descriptions = [
-        "Phase 1: Event ingestion endpoint with token auth, validation, idempotency, storage",
-        "Phase 2: Scheduled daily/weekly pipelines, run ledgers, readiness gating",
-        "Phase 3: Compliance snapshot capture and evidence ledger",
-        "Phase 4: Dashboard gadget integration and real-time visibility",
-        "Phase 5: Automated scheduler and threshold-based alerting",
-        "Phase 6: Trust snapshot export with PDF audit trail"
+        "Event ingestion with authentication & validation",
+        "Scheduled pipelines & run ledgers",
+        "Compliance snapshots & audit trail",
+        "Dashboard integration & visibility",
+        "Automated scheduling & alerting",
+        "Trust export with PDF audit"
     ];
-    return descriptions[phaseIndex] || `Phase ${phaseIndex + 1}`;
+    return descriptions[phaseIndex] || `Capability ${phaseIndex + 1}`;
 }
 
 /**
@@ -73,7 +74,7 @@ function createPhaseStep(
     if (status.complete) step.classList.add("complete");
 
     step.setAttribute("role", "listitem");
-    step.setAttribute("aria-label", `Phase ${phaseIndex + 1}: ${status.label}`);
+    step.setAttribute("aria-label", `Capability ${phaseIndex + 1}: ${status.label}`);
 
     // Step marker
     const marker = document.createElement("div");
@@ -133,11 +134,44 @@ export function renderProgressTracker(options: ProgressTrackerOptions = {}): HTM
     }
 
     container.innerHTML = "";
-    container.className = "progress-tracker";
-    container.setAttribute("role", "region");
-    container.setAttribute("aria-label", "Governance Pipeline Progress");
 
     const legacyData = options.legacyData || {};
+
+    // Wrap in details/summary for collapsed state
+    const details = document.createElement("details");
+    details.style.marginBottom = "16px";
+    details.style.background = "#ffffff";
+    details.style.border = "1px solid #dfe1e6";
+    details.style.borderRadius = "8px";
+    details.style.padding = "16px";
+    details.style.boxShadow = "0 1px 1px rgba(9, 30, 66, 0.13)";
+    
+    const summary = document.createElement("summary");
+    summary.style.cursor = "pointer";
+    summary.style.fontSize = "16px";
+    summary.style.fontWeight = "600";
+    summary.style.color = "#0052cc";
+    summary.style.marginBottom = "12px";
+    summary.style.listStyle = "none";
+    summary.innerHTML = "📋 Planned Capabilities (Roadmap)";
+    
+    // Add disclosure triangle manually
+    const triangle = document.createElement("span");
+    triangle.style.marginRight = "8px";
+    triangle.style.display = "inline-block";
+    summary.insertBefore(triangle, summary.firstChild);
+    
+    details.appendChild(summary);
+    
+    // Add roadmap disclaimer
+    const disclaimer = document.createElement("p");
+    disclaimer.style.fontSize = "13px";
+    disclaimer.style.color = "#8590a2";
+    disclaimer.style.marginBottom = "16px";
+    disclaimer.style.marginTop = "12px";
+    disclaimer.style.lineHeight = "1.5";
+    disclaimer.textContent = "These capabilities are planned for future releases and are not active in the current edition.";
+    details.appendChild(disclaimer);
 
     // Create timeline list
     const timeline = document.createElement("ol");
@@ -152,16 +186,20 @@ export function renderProgressTracker(options: ProgressTrackerOptions = {}): HTM
         timeline.appendChild(step);
     }
 
-    container.appendChild(timeline);
+    details.appendChild(timeline);
 
     // Add summary text below timeline
     const phasesCompleted = legacyData.phasesCompleted?.length || 0;
-    const summary = document.createElement("div");
-    summary.className = "progress-summary";
-    summary.setAttribute("role", "status");
-    summary.textContent = `${phasesCompleted} of 6 phases complete`;
+    const progressSummary = document.createElement("div");
+    progressSummary.className = "progress-summary";
+    progressSummary.setAttribute("role", "status");
+    progressSummary.style.marginTop = "12px";
+    progressSummary.style.fontSize = "13px";
+    progressSummary.style.color = "#8590a2";
+    progressSummary.textContent = `${phasesCompleted} of 6 capabilities active`;
 
-    container.appendChild(summary);
+    details.appendChild(progressSummary);
 
+    container.appendChild(details);
     return container;
 }

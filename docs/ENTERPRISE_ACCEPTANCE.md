@@ -314,7 +314,7 @@ audit_artifacts/enterprise_acceptance/<YYYYMMDD_HHMMSS>/
 ## Support
 
 - **GitHub Issues**: https://github.com/Firsttry-Solutions/Firstry/issues
-- **Security Contact**: security@firsttry.run
+- **Security Contact**: contact@firsttry.run
 - **Documentation**: https://github.com/Firsttry-Solutions/Firstry/tree/main/docs
 
 ---

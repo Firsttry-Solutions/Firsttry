@@ -369,3 +369,6 @@ parity-matrix:  ## Run parity across Python version matrix
 		exit 1; \
 	fi
 
+
+marketplace-proof:
+	bash tools/proof_run.sh

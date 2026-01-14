@@ -1,0 +1,56 @@
+=== FINAL LOCAL SUBMISSION GATES ===
+
+1️⃣ Placeholder validator...
+✓ Placeholder validator passed (no critical issues)
+
+2️⃣ Evidence anchor validator...
+✅ All evidence references are valid
+
+3️⃣ Forbidden phrase validator...
+PASS: no forbidden tenant-isolation phrases found in tracked files.
+
+4️⃣ Network surface scanner...
+🔍 Scanning . for network surface...
+  - Checking manifest for external permissions / entrypoints...
+  - Checking code for external HTTP clients...
+  - Scanning for internal storage patterns (informational)...
+
+✅ Results:
+  Manifest scopes files: 5
+  External manifest perms: 0
+  Webtriggers: 0
+  HTTP client findings: 0
+  Errors: 0
+
+📊 Summary: /tmp/ci_submit/32_network_surface_summary.json
+📄 Manifest: /tmp/ci_submit/30_manifest_surface.txt
+📄 Code: /tmp/ci_submit/31_code_network_scan.txt
+
+✅ Network surface scan PASSED (no external egress detected by scanner; no errors)
+
+5️⃣ Tenant isolation proof...
+================================================================================
+TENANT ISOLATION GUARD TEST (CODE-LEVEL)
+================================================================================
+
+TEST 1: Forge SDK usage (@forge/api)
+✅ Found @forge/api usage in Forge app source
+
+TEST 2: Forge storage usage patterns (informational)
+✅ storage.*.get present: NO
+✅ storage.*.set present: NO
+
+TEST 3: Global cache risk heuristic (fail on obvious unkeyed caches)
+✅ No obvious global cache definitions detected in backend source
+
+TEST 4: Manifest scopes (static check)
+✅ Manifest includes expected scopes: read:jira-work, storage:app
+
+TEST 5: Network surface scanner summary (CI-required when CI=true)
+✅ CI network surface scanner summary indicates PASS
+
+================================================================================
+✅ TENANT ISOLATION GUARD PASSED (code-level)
+================================================================================
+
+✅ ALL SUBMISSION GATES: PASS

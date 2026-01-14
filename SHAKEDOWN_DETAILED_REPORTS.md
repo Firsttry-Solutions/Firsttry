@@ -695,7 +695,7 @@ expect(dataB.data).toBe('tenant-b-data');
 - ✅ Tenant B storage isolated
 - ✅ Same key name produces different results per tenant
 - ✅ Storage scoped by tenantId prefix
-- ✅ No cross-tenant access possible
+- ✅ Code-level guard checks for obvious cross-tenant risks
 
 ---
 

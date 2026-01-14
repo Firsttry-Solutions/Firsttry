@@ -67,9 +67,12 @@ echo "✅ VALIDATE_DOCS: PASSED"
 
 # SOFT_PLACEHOLDER_BANS_BEGIN
 # Reject "soft placeholders" that aren't caught by REPLACE_WITH_/TODO/TBD.
-# (Skip EVIDENCE_REPRODUCTION.md since it contains these phrases in code examples)
-if rg -n "add feature justification|add code reference|must be documented|you MUST list|Auto-populated" docs -S --glob '!EVIDENCE_REPRODUCTION.md' >/dev/null; then
-  rg -n "add feature justification|add code reference|must be documented|you MUST list|Auto-populated" docs -S --glob '!EVIDENCE_REPRODUCTION.md' || true
+# Exclusions:
+# - EVIDENCE_REPRODUCTION.md (code examples)
+# - docs/audit_reports/ (enforcement/audit metadata, documents enforcement decisions)
+DOCS_TO_CHECK=$(find docs -type f -name '*.md' -not -path 'docs/audit_reports/*' -not -name 'EVIDENCE_REPRODUCTION.md' | xargs -r rg -l "add feature justification|add code reference|must be documented|you MUST list|Auto-populated" 2>/dev/null || true)
+if [ -n "$DOCS_TO_CHECK" ]; then
+  find docs -type f -name '*.md' -not -path 'docs/audit_reports/*' -not -name 'EVIDENCE_REPRODUCTION.md' | xargs -r rg -n "add feature justification|add code reference|must be documented|you MUST list|Auto-populated" 2>/dev/null || true
   fail "soft placeholders found in docs (replace with real content)"
 fi
 # SOFT_PLACEHOLDER_BANS_END

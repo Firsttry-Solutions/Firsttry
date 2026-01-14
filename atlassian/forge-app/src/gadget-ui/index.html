@@ -3,28 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FirstTry - Audit Evidence Snapshot for Jira Status</title>
+    <title>FirstTry – Audit Evidence Snapshot for Jira</title>
 </head>
 <body>
-    <!-- UI SERVE_PROOF MARKER (Always visible for deployment verification) -->
-    <div id="ui-serve-proof-banner" style="background: #f5f6f7; border-bottom: 1px solid #dfe1e6; padding: 8px 16px; font-size: 11px; color: #626f86; font-family: monospace; overflow-x: auto; white-space: nowrap;">
-        SERVE_PROOF: 591f91ce__2026-01-04T165752Z__resource:govGadget2140 | UI_v2.14.0
-    </div>
-
-    <!-- JS_BOOT marker (updated by main.ts) -->
-    <div id="ui-js-boot" style="display:none;">JS_BOOT: NOT RUN</div>
-
-    <!-- CSS Canary (Fail-Fast Verification) -->
-    <div id="ui-css-canary" class="status-pill running" style="margin: 8px 16px 0 16px; white-space: nowrap; display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; background: #dffbf0 !important; color: #216e4e !important;">
-        CSS_CANARY_OK
-    </div>
+    <!-- Diagnostics markers (hidden by default, shown in debug panel) -->
+    <div id="ui-serve-proof-banner" style="display: none;"></div>
+    <div id="ui-js-boot" style="display:none;">JS_BOOT: RUNNING</div>
+    <div id="ui-css-canary" class="status-pill running" style="display: none;"></div>
 
     <div class="container">
-        <h1>FirstTry - Audit Evidence Snapshot for Jira Status</h1>
-        <p class="title-description">Read-only operational visibility surface. Real-time monitoring status and data quality metrics.</p>
+        <h1>FirstTry – Governance Dashboard</h1>
+        <p class="title-description">Real-time operational visibility. Read-only monitoring of platform configuration and data quality.</p>
         <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
-            <div class="build-marker" id="build-marker" style="flex: 1;">UI BUILD: 591f91ce (2026-01-04T16:57:52Z)</div>
-            <span class="status-pill running" id="ui-style-proof" style="white-space: nowrap; display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; background: #dffbf0 !important; color: #216e4e !important;">CSS_LOADED</span>
+            <div class="build-marker" id="build-marker" style="flex: 1; display: none;"></div>
+            <button id="refresh-now-btn" style="padding: 6px 14px; background: #0052cc; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;">Refresh now</button>
+            <span style="font-size: 12px; color: #626f86;">Last: <span id="last-refreshed-time">—</span></span>
+            <span class="status-pill running" id="ui-style-proof" style="display: none;"></span>
         </div>
 
         <!-- ENTERPRISE UI SECTIONS (KPI Tiles, Status Banner, Progress Tracker) -->
@@ -33,29 +27,30 @@
         <div id="kpi-tiles-section"></div>
         <div id="progress-tracker-section"></div>
         
-        <!-- UI Self-Test (Diagnostic) -->
-        <div class="section" id="ui-selftest-section" style="border: 1px dashed #0052cc; background: #ffffff; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">UI Self-Test (Diagnostic)</div>
-            <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Bridge Mode</div>
-                    <div class="metric-value" id="ui-selftest-bridge-mode" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Invoke Available</div>
-                    <div class="metric-value" id="ui-selftest-invoke-available" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">HTML Marker</div>
-                    <div class="metric-value" id="ui-selftest-marker" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">CSS Applied</div>
-                    <div class="metric-value" id="ui-selftest-css" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">JS Running</div>
-                    <div class="metric-value" id="ui-selftest-js" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+        <!-- Diagnostics (Collapsed by default) -->
+        <details style="margin-bottom: 16px;">
+            <summary style="cursor: pointer; font-size: 13px; font-weight: 600; color: #0052cc; margin-bottom: 12px;">🔧 Diagnostics (UI Self-Test)</summary>
+            <div class="section" id="ui-selftest-section" style="border: 1px solid #dfe1e6; background: #f1f2f4; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13); margin-top: 12px;">
+                <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Bridge Mode</div>
+                        <div class="metric-value" id="ui-selftest-bridge-mode" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    </div>
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Invoke Available</div>
+                        <div class="metric-value" id="ui-selftest-invoke-available" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    </div>
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">HTML Marker</div>
+                        <div class="metric-value" id="ui-selftest-marker" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    </div>
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">CSS Applied</div>
+                        <div class="metric-value" id="ui-selftest-css" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    </div>
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">JS Running</div>
+                        <div class="metric-value" id="ui-selftest-js" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
                 </div>
                 <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
                     <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Resolver Invoke</div>
@@ -70,7 +65,8 @@
                     <div class="metric-value" id="ui-selftest-clipboard" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
                 </div>
             </div>
-        </div>
+            </div>
+        </details>
         
         <!-- System Overview -->
         <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
@@ -232,6 +228,9 @@
             <div class="truth-statement" style="font-size: 12px; color: #8590a2; margin-top: 12px; padding: 8px 12px; border-top: 1px solid #dfe1e6; line-height: 1.5;">Exports always produce a result: download (if allowed) or manual copy panel.</div>
         </div>
 
+        <!-- Trust & Data Handling (Enterprise v2) -->
+        <div id="trust-section"></div>
+
         <!-- Footer -->
         <div class="footer" style="border-top: 1px solid #dfe1e6; margin-top: 32px; padding-top: 16px; font-size: 14px; color: #44546f; line-height: 1.6; font-weight: 400;">
             <p>This dashboard is a read-only operational visibility surface. It exists to provide transparency into app activity and data quality.</p>
@@ -239,6 +238,7 @@
                 <div><strong>Note:</strong> This gadget does not trigger background jobs. All checks run via scheduled triggers.</div>
                 <div style="margin-top: 8px;"><strong>Cache Refresh:</strong> If this dashboard does not reflect the latest version shown above, remove and re-add the gadget to force a UI cache refresh.</div>
             </div>
+            <div id="build-footer" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #dfe1e6; font-size: 0.75em; color: #626f86; font-family: 'Monaco', 'Courier New', monospace; letter-spacing: 0.2px;"><!-- Build info will be inserted here --></div>
         </div>
     </div>
 

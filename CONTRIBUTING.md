@@ -149,7 +149,7 @@ For significant changes:
 
 - **General Questions:** Open a [discussion](https://github.com/arnab19111987-ops/Firstry/discussions)
 - **Bug Reports:** Open an [issue](https://github.com/arnab19111987-ops/Firstry/issues)
-- **Security Issues:** Email security@firsttry.dev (see [SECURITY.md](SECURITY.md))
+- **Security Issues:** Email contact@firsttry.run (see [SECURITY.md](SECURITY.md))
 
 ## License
 

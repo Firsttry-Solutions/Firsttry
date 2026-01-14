@@ -179,7 +179,7 @@ FirstTry is a **read-only data analysis app** that runs entirely on **Atlassian 
 
 If your organization requires a feature that FirstTry cannot provide due to Forge limitations:
 
-1. **Contact**: security@atlassian.com
+1. **Contact**: contact@firsttry.run
 2. **Request**: "FirstTry is missing [feature] due to Forge limitations. Can Atlassian provide [workaround]?"
 3. **Provide**: Your Jira Cloud organization ID
 4. **Examples**:

@@ -60,7 +60,7 @@ FirstTry operates as a **processor within Atlassian Forge** and processes data s
 
 FirstTry does NOT currently offer a standalone Data Processing Addendum (DPA). Customers rely on Atlassian's Forge platform terms for data processing assurances. 
 
-**If you require a DPA**: Contact security@atlassian.com to discuss data processing terms with Atlassian.
+**If you require a DPA**: Contact contact@firsttry.run to discuss data processing terms with Atlassian.
 
 ---
 
@@ -142,7 +142,7 @@ FirstTry does not process payment cards.
 | **No SOC 2** | Enterprise procurement may require | Contact Atlassian for SOC 2 inquiry | Atlassian |
 | **No HIPAA** | Healthcare orgs can't use | Educate market; mark HIPAA-unsuitable | FirstTry |
 | **No FedRAMP** | US government can't use | Unlikely to pursue (niche) | FirstTry + Atlassian |
-| **No DPA** | GDPR compliance unclear | Rely on Atlassian's DPA terms; contact security@atlassian.com | Atlassian |
+| **No DPA** | GDPR compliance unclear | Rely on Atlassian's DPA terms; contact contact@firsttry.run | Atlassian |
 
 ---
 
@@ -150,7 +150,7 @@ FirstTry does not process payment cards.
 
 If you discover compliance gaps or security issues:
 
-1. **Email**: security@atlassian.com
+1. **Email**: contact@firsttry.run
 2. **Include**: Specific concern, regulatory reference, risk assessment
 3. **Timeline**: 3-5 business day triage
 
@@ -159,7 +159,7 @@ If you discover compliance gaps or security issues:
 ## Compliance Contact
 
 **For compliance questions or assessments**:
-- **Email**: security@atlassian.com
+- **Email**: contact@firsttry.run
 - **Subject**: "FirstTry Compliance Question"
 - **Response Target**: 5 business days
 

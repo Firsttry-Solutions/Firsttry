@@ -1,0 +1,27 @@
+=== PR CHECKS (requires PR context) ===
+PR_NUMBER=12
+
+=== WORKFLOW RUNS FOR PR ===
+completed	success	Marketplace readiness: evidence guard + proof packs (release)	Evidence Guard	release/marketplace-ready-20260113	pull_request	20964595963	37s	0m
+completed	success	Marketplace readiness: evidence guard + proof packs (release)	Placeholder Guard	release/marketplace-ready-20260113	pull_request	20964595954	30s	0m
+completed	failure	Marketplace readiness: evidence guard + proof packs (release)	Reviewer Gates (Gate 1 + Gate 2)	release/marketplace-ready-20260113	pull_request	20964595939	30s	0m
+completed	failure	Marketplace readiness: evidence guard + proof packs (release)	Workflow Sanity (Parser Safety)	release/marketplace-ready-20260113	pull_request	20964595913	9s	0m
+completed	failure	Marketplace readiness: evidence guard + proof packs (release)	Documentation Gate	release/marketplace-ready-20260113	pull_request	20964595910	11s	0m
+completed	failure	Marketplace readiness: evidence guard + proof packs (release)	CI Core - Forge App Tests	release/marketplace-ready-20260113	pull_request	20964595903	44s	0m
+completed	success	Marketplace readiness: evidence guard + proof packs (release)	Pages Branding Gate	release/marketplace-ready-20260113	pull_request	20964595887	23s	0m
+completed	failure	chore(evidence): fill evidence committed-at SHA in proof pack READMEs…	CI Core - Forge App Tests	release/marketplace-ready-20260113	push	20964588975	42s	1m
+completed	failure	chore(evidence): fill evidence committed-at SHA in proof pack READMEs…	Workflow Sanity (Parser Safety)	release/marketplace-ready-20260113	push	20964588950	11s	1m
+completed	failure	docs(dev): add authoritative Copilot enforcement prompt to prevent co…	CI Core - Forge App Tests	main	push	20957235376	41s	3h
+completed	success	docs(dev): add authoritative Copilot enforcement prompt to prevent co…	Pages Branding Gate	main	push	20957235369	22s	3h
+completed	success	docs(dev): add authoritative Copilot enforcement prompt to prevent co…	Reviewer Gates (Gate 1 + Gate 2)	main	push	20957235353	31s	3h
+completed	failure	docs(dev): add authoritative Copilot enforcement prompt to prevent co…	Documentation Gate	main	push	20957235351	9s	3h
+completed	success	pages build and deployment	pages-build-deployment	main	dynamic	20957234871	42s	3h
+completed	failure	chore(gate): add non-bypassable master readiness gate script (E1)	CI Core - Forge App Tests	main	push	20956967662	57s	3h
+completed	success	chore(gate): add non-bypassable master readiness gate script (E1)	Reviewer Gates (Gate 1 + Gate 2)	main	push	20956967655	29s	3h
+completed	success	pages build and deployment	pages-build-deployment	main	dynamic	20956967007	1m2s	3h
+completed	failure	docs(roi): add non-fabricated ROI model and optional calculator	CI Core - Forge App Tests	main	push	20956709981	44s	4h
+completed	success	docs(roi): add non-fabricated ROI model and optional calculator	Reviewer Gates (Gate 1 + Gate 2)	main	push	20956709933	28s	4h
+completed	failure	docs(roi): add non-fabricated ROI model and optional calculator	Documentation Gate	main	push	20956709917	10s	4h
+
+=== FILTER: evidence-guard workflow runs ===
+completed	success	Marketplace readiness: evidence guard + proof packs (release)	Evidence Guard	release/marketplace-ready-20260113	pull_request	20964595963	37s	0m

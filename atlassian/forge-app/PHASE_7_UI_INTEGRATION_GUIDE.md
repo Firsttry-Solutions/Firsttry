@@ -430,7 +430,7 @@ When user applies filters and navigates pages, filters are preserved in query st
 ### Security
 
 - ✅ No Jira API calls
-- ✅ Tenant isolation verified
+- ✅ Tenant isolation guard passed (code-level)
 - ✅ XSS protection (HTML escape)
 - ✅ No sensitive field exposure
 - ✅ Actor/source never inferred

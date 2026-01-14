@@ -174,7 +174,7 @@ Coverage: 91% (statements: 95%, branches: 88%, lines: 93%)
 - [ ] Coverage report shows >90% overall (measured: 91%)
 - [ ] No forbidden language violations (build would fail if any exist)
 - [ ] Determinism verified (run twice, identical output)
-- [ ] Tenant isolation verified (cross-tenant read blocked)
+- [ ] Tenant isolation guard passed (code-level) (cross-tenant read blocked)
 
 ### During Deployment
 

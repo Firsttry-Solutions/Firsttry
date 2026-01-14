@@ -1,0 +1,36 @@
+{
+  "timestamp": "20260113T151047Z",
+  "repo": ".",
+  "has_external_manifest_permissions": false,
+  "has_webtriggers": false,
+  "has_external_http_clients": false,
+  "manifest_scopes": {
+    "./audit_artifacts/full_audit/20260102_070054/02_manifest_scopes/manifest.yml": [
+      "storage:app"
+    ],
+    "./audit_artifacts/full_audit_runtime/20260102_073042/02_manifest_scopes/manifest.yml": [
+      "storage:app"
+    ],
+    "./audit_artifacts/full_audit_runtime_backed/20260102_075909/02_manifest/manifest.yml": [
+      "storage:app"
+    ],
+    "./atlassian/forge-app/manifest.yml": [
+      "storage:app",
+      "read:jira-work"
+    ],
+    "./atlassian/forge-app/audit/submission_bundle/run_20260111_072601/manifest.yml": [
+      "storage:app",
+      "read:jira-work"
+    ]
+  },
+  "external_findings": {
+    "manifest_urls": [],
+    "webtriggers": [],
+    "http_clients": []
+  },
+  "internal_storage_patterns": {
+    "Forge storage.app.get": "./docs/SCOPES.md:1",
+    "Forge storage.app.set": "./docs/SCOPES.md:1"
+  },
+  "pass": true
+}
