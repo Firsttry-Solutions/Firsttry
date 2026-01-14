@@ -254,7 +254,7 @@ a631617af321bab12c7f5f97d3d43c2d57fdb0d3 refs/heads/perf/optimizations-40pc
 ## 🔐 Security Notes
 
 - ✅ Bundle verified with SHA256 + MD5 checksums
-- ✅ All commits signed by author: `arnab19111987-ops <arnab19111987@gmail.com>`
+- ✅ All commits signed by author: `arnab19111987-ops <contact@firsttry.run>`
 - ✅ No sensitive data in commits (config cache uses hashing)
 - ✅ `.venv-parity/` now properly ignored
 
@@ -263,7 +263,7 @@ a631617af321bab12c7f5f97d3d43c2d57fdb0d3 refs/heads/perf/optimizations-40pc
 ## 📞 Support
 
 **Author**: arnab19111987-ops  
-**Email**: arnab19111987@gmail.com  
+**Email**: contact@firsttry.run  
 **Repository**: https://github.com/arnab19111987-ops/Firstry
 
 **Questions?**

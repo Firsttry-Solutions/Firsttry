@@ -369,7 +369,7 @@ git remote set-url backup https://github.com/<user>/<repo>.git
 - `PACKAGE_MANIFEST.txt` - Portable documentation
 
 **Author**: arnab19111987-ops  
-**Email**: arnab19111987@gmail.com  
+**Email**: contact@firsttry.run  
 **Repository**: https://github.com/arnab19111987-ops/Firstry
 
 ---

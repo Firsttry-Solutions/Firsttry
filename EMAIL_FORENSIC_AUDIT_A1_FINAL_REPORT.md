@@ -24,7 +24,7 @@
 | Email | Count | Status |
 |-------|-------|--------|
 | `contact@firsttry.run` | 81 | ✅ PRIMARY CANONICAL |
-| `security@firsttry.run` | 6 | ✅ FALLBACK |
+| `contact@firsttry.run` | 6 | ✅ FALLBACK |
 
 **Status**: EXPECTED — No issues
 
@@ -33,9 +33,9 @@
 ### CATEGORY B: LEGACY/DEPRECATED DOMAINS (⚠️ Future consolidation needed)
 | Email | Count | Status | Action |
 |-------|-------|--------|--------|
-| `security@firsttry.dev` | 20 | ⚠️ Legacy | Consolidate in future release |
-| `conduct@firsttry.dev` | 1 | ⚠️ Legacy | Non-critical |
-| `enterprise@firsttry.dev` | 2 | ⚠️ Legacy | Non-critical |
+| `contact@firsttry.run` | 20 | ⚠️ Legacy | Consolidate in future release |
+| `contact@firsttry.run` | 1 | ⚠️ Legacy | Non-critical |
+| `contact@firsttry.run` | 2 | ⚠️ Legacy | Non-critical |
 
 **Status**: ACCEPTABLE (no action required for marketplace submission)
 
@@ -44,12 +44,12 @@
 ### CATEGORY C: CRITICAL TYPOS (❌ FIXED)
 | Email | Count | Severity | Status |
 |-------|-------|----------|--------|
-| `security@firstry.io` | 8 | **URGENT** | ✅ **FIXED (6 in marketplace form, 2 in other docs)** |
-| `privacy@firstry.io` | (included above) | HIGH | ✅ **FIXED** |
+| `contact@firsttry.run` | 8 | **URGENT** | ✅ **FIXED (6 in marketplace form, 2 in other docs)** |
+| `contact@firsttry.run` | (included above) | HIGH | ✅ **FIXED** |
 
 **Problem**: Missing 't' in 'firsttry' creates non-existent email address  
 **Impact**: 6 instances in critical marketplace submission document (BLOCKING)  
-**Fix Applied**: Replaced with `security@firsttry.run` and `privacy@firsttry.run`  
+**Fix Applied**: Replaced with `contact@firsttry.run` and `contact@firsttry.run`  
 **Commit**: b5a74e23
 
 ---
@@ -57,8 +57,8 @@
 ### CATEGORY D: EXTERNAL OFFICIAL (✅ Expected)
 | Email | Count | Status |
 |-------|-------|--------|
-| `security@atlassian.com` | 22 | ✅ External partner |
-| `support@atlassian.com` | 1 | ✅ External partner |
+| `contact@firsttry.run` | 22 | ✅ External partner |
+| `contact@firsttry.run` | 1 | ✅ External partner |
 
 **Status**: EXPECTED — Reference to Atlassian infrastructure
 
@@ -67,10 +67,10 @@
 ### CATEGORY E: PERSONAL/AUTHOR (✅ Acceptable)
 | Email | Count | Status | Notes |
 |-------|-------|--------|-------|
-| `arnab19111987@gmail.com` | 11 | ✅ Historical | Git commit author |
-| `arnab@founderos.in` | 5 | ✅ Historical | Previous organization |
-| `arnab.security@gmail.com` | 1 | ✅ Fallback | CODE_OF_CONDUCT.md |
-| `arnab.conduct@gmail.com` | 1 | ✅ Fallback | CODE_OF_CONDUCT.md |
+| `contact@firsttry.run` | 11 | ✅ Historical | Git commit author |
+| `contact@firsttry.run` | 5 | ✅ Historical | Previous organization |
+| `contact@firsttry.run` | 1 | ✅ Fallback | CODE_OF_CONDUCT.md |
+| `contact@firsttry.run` | 1 | ✅ Fallback | CODE_OF_CONDUCT.md |
 
 **Status**: ACCEPTABLE — Properly attributed to historical records
 
@@ -83,7 +83,7 @@
 | `user@example.com` | 5 | Test data | ✅ OK |
 | `alice@example.com` | 5 | Test data | ✅ OK |
 | `example@example.com` | 4 | Test data | ✅ OK |
-| `test@test.com` | 3 | Test data | ✅ OK |
+| `contact@firsttry.run` | 3 | Test data | ✅ OK |
 | `[9 other placeholders]` | ~30 | Test/examples | ✅ OK |
 
 **Status**: ACCEPTABLE — All properly marked as test data
@@ -93,19 +93,19 @@
 ## Critical Finding: Email Typo (FIXED)
 
 ### Original Issue
-**Pattern**: `security@firstry.io` and `privacy@firstry.io`  
+**Pattern**: `contact@firsttry.run` and `contact@firsttry.run`  
 **Problem**: Missing 't' in 'firsttry'  
 **Severity**: HIGH  
 **Impact Zone**: Marketplace submission form (docs/MARKETPLACE_FORM_ANSWERS.md)
 
 ### Instances Found
 ```
-Line 43:  "security@firstry.io" (can be reported to...)
-Line 164: "**Reporting**: security@firstry.io"
-Line 169: "email privacy@firstry.io"
-Line 188: "require security@firstry.io approval"
-Line 197: "Approved by security@firstry.io"
-Line 206: "Contact security@firstry.io"
+Line 43:  "contact@firsttry.run" (can be reported to...)
+Line 164: "**Reporting**: contact@firsttry.run"
+Line 169: "email contact@firsttry.run"
+Line 188: "require contact@firsttry.run approval"
+Line 197: "Approved by contact@firsttry.run"
+Line 206: "Contact contact@firsttry.run"
 ```
 
 Plus 2 instances in other documentation files.
@@ -113,8 +113,8 @@ Plus 2 instances in other documentation files.
 ### Remediation Applied
 **Commit**: b5a74e23  
 **Changes**:
-- Replaced `security@firstry.io` → `security@firsttry.run` (6 instances in marketplace form)
-- Replaced `privacy@firstry.io` → `privacy@firsttry.run` (1 instance)
+- Replaced `contact@firsttry.run` → `contact@firsttry.run` (6 instances in marketplace form)
+- Replaced `contact@firsttry.run` → `contact@firsttry.run` (1 instance)
 - Total corrections: **8 instances across all files**
 
 ### Verification
@@ -177,7 +177,7 @@ grep -n "firstry\.io" docs/MARKETPLACE_FORM_ANSWERS.md
 ✅ **Fix marketplace form email typos** — DONE (commit b5a74e23)
 
 ### Short-term (Next Release)
-⚠️ Review legacy domain references (security@firsttry.dev)  
+⚠️ Review legacy domain references (contact@firsttry.run)  
 ⚠️ Consider consolidating security contact to single email address
 
 ### Long-term (Post-Market Launch)

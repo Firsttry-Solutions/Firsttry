@@ -249,7 +249,7 @@ python -c "from firsttry.ci_parity import runner; import sys; sys.exit(runner.ma
 ## 📞 Support & Contact
 
 **Author**: arnab19111987-ops  
-**Email**: arnab19111987@gmail.com  
+**Email**: contact@firsttry.run  
 **Repository**: https://github.com/arnab19111987-ops/Firstry  
 **Branch**: `perf/optimizations-40pc`
 

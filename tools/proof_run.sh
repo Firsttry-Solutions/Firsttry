@@ -18,6 +18,7 @@ must() { step "$1"; shift; "$@"; }
 
 # Scripts are required; placeholders must exit 2 (not success).
 must "validate_docs" bash tools/validate_docs.sh
+must "validate_docs_email_identity" bash tools/validate_docs_email_identity.sh
 [ -f tools/style_scan.sh ] && must "style_scan" bash tools/style_scan.sh || echo "SKIP: tools/style_scan.sh missing"
 [ -f tools/brand_scan.sh ] && must "brand_scan" bash tools/brand_scan.sh || echo "SKIP: tools/brand_scan.sh missing"
 must "validate_manifest_scopes" bash tools/validate_manifest_scopes.sh
