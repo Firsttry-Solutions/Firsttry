@@ -92,7 +92,7 @@ function getKpiValue(legacyData: any, field: string): string {
         case "freshness": return legacyData.freshnessStatus || "—";
         case "scheduler": return legacyData.lastCheckAt ? new Date(legacyData.lastCheckAt).toLocaleTimeString() : "—";
         case "snapshot": return legacyData.lastSuccessAt ? new Date(legacyData.lastSuccessAt).toLocaleString() : "Never";
-        case "readOnly": return "Read-only guarantee";
+        case "readOnly": return "Read-only posture (code-level guard passed)";
         case "egress": return "Data egress policy";
         case "storage": return "Storage isolation";
         case "export": return `${legacyData.snapshotsRetainedCount || 0} snapshots`;

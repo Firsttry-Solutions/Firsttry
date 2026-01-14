@@ -33,7 +33,7 @@ function getPhaseStatus(
 
     // If system is degraded/error, phases may be blocked
     if (legacyData.systemStatus === "DEGRADED" || legacyData.systemStatus === "ERROR") {
-        return { color: "yellow", label: "Delayed", complete: false };
+        return { color: "yellow", label: "Pending", complete: false };
     }
 
     // Check if this is the current phase (from unifiedStatus or fallback logic)
