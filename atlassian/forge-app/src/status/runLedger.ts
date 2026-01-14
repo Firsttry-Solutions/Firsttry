@@ -4,6 +4,7 @@
  */
 
 import { storage } from "@forge/api";
+import { sanitizeKey } from "../utils/sanitizeKey";
 
 export type RunLedgerEntry = {
   startedIso: string;
@@ -16,7 +17,7 @@ export type RunLedgerEntry = {
   snapshotId?: string;
 };
 
-const RUN_LEDGER_PREFIX = (tenantKey: string) => `runLedger:${tenantKey}`;
+const RUN_LEDGER_PREFIX = (tenantKey: string) => `runLedger:${sanitizeKey(tenantKey)}`;
 
 /**
  * Append a run entry to the ledger (keyed by startedIso for determinism)
@@ -48,16 +49,7 @@ export async function getFailuresLast7d(tenantKey: string): Promise<number> {
     );
     return 0;
   } catch (err) {
-    console.error(`[runLedger] Error getting 7d failures for ${tenantKey}:`, err);
-    throw err;
+    console.error(`[runLedger] Error in getFailuresLast7d for ${tenantKey}:`, err);
+    return 0;
   }
-}
-
-/**
- * Helper: Enumerate all keys with a prefix (requires Forge storage enumeration support).
- * Placeholder for future implementation.
- */
-export async function listRunEntriesLast7d(tenantKey: string): Promise<RunLedgerEntry[]> {
-  // Placeholder
-  return [];
 }
