@@ -23,6 +23,9 @@ export async function getStatusSnapshot_resolver(request: any, context: any): Pr
   const backendBuild = process.env.BUILD_SHA || "unknown";
   const uiBuild = "UI_v2.14.0";
 
+  // Log backend build identifiers for deployment reconciliation
+  console.log("[govdash-backend-build]", { BUILD_SHA: backendBuild, FT_BUILD_SHA: process.env.FT_BUILD_SHA, env: process.env.FORGE_ENV || process.env.NODE_ENV });
+
   if (!tenantId) {
     console.error("[getStatusSnapshot] No tenant identity resolved");
     // Fail-closed: return normalized error state instead of throwing
