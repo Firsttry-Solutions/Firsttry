@@ -61,14 +61,14 @@ function main() {
 
   // TEST 1: Forge SDK usage exists in backend source
   console.log("\nTEST 1: Forge SDK usage (@forge/api)");
-  const t1 = rgList("@forge/api", "atlassian/forge-app/src");
-  if (t1.status !== 0) fail("No @forge/api usage found in atlassian/forge-app/src (expected Forge SDK usage)");
+  const t1 = rgList("@forge/api", "src");
+  if (t1.status !== 0) fail("No @forge/api usage found in src (expected Forge SDK usage)");
   ok("Found @forge/api usage in Forge app source");
 
   // TEST 2: Storage usage references exist (informational)
   console.log("\nTEST 2: Forge storage usage patterns (informational)");
-  const t2get = rgList("storage\\.(app|user)\\.get", "atlassian/forge-app/src");
-  const t2set = rgList("storage\\.(app|user)\\.set", "atlassian/forge-app/src");
+  const t2get = rgList("storage\\.(app|user)\\.get", "src");
+  const t2set = rgList("storage\\.(app|user)\\.set", "src");
   ok(`storage.*.get present: ${t2get.status === 0 ? "YES" : "NO"}`);
   ok(`storage.*.set present: ${t2set.status === 0 ? "YES" : "NO"}`);
 
@@ -76,7 +76,7 @@ function main() {
   console.log("\nTEST 3: Global cache risk heuristic (fail on obvious unkeyed caches)");
   // Look for top-level maps/objects named *cache* in backend src. This is conservative.
   // If matches exist, we FAIL and require a reviewer to ensure tenant-keying.
-  const cacheHit = rgList("^(const|let)\\s+\\w*cache\\w*\\s*=\\s*(new Map\\(|\\{)", "atlassian/forge-app/src");
+  const cacheHit = rgList("^(const|let)\\s+\\w*cache\\w*\\s*=\\s*(new Map\\(|\\{)", "src");
   if (cacheHit.status === 0) {
     console.error(cacheHit.stdout.split("\n").slice(0, 10).join("\n"));
     fail("Potential global cache detected in backend source. Must prove tenant-keying or remove.");
@@ -85,7 +85,7 @@ function main() {
 
   // TEST 4: Manifest scopes check (fail-closed, no YAML dep)
   console.log("\nTEST 4: Manifest scopes (static check)");
-  const manifestPath = "atlassian/forge-app/manifest.yml";
+  const manifestPath = "manifest.yml";
   const manifestTxt = readFileOrFail(manifestPath);
   // Require the scope string to exist literally in manifest file.
   if (!manifestTxt.includes("read:jira-work")) fail("Manifest missing required scope: read:jira-work");
