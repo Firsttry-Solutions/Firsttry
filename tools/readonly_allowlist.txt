@@ -1,0 +1,3 @@
+# One exact tracked path per line. Empty by default.
+# Note: storage.set/delete are approved Forge Storage APIs (tenant-isolated by platform).
+# Validator catches uncontrolled mutations to external systems (Jira, secrets, HTTP POST/PUT/DELETE).
