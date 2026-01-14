@@ -320,6 +320,10 @@ export async function phase5SchedulerHandler(
 ): Promise<{ statusCode: number; body: string }> {
   const startTime = new Date().toISOString();
 
+  // Heartbeat logging for production monitoring
+  const BUILD_SHA = '62867e4'; // Git HEAD7 from release/marketplace-ready-20260113
+  console.log(`HEARTBEAT OK build=${BUILD_SHA} ts=${startTime} env=production fn=phase5-scheduler-fn`);
+
   try {
     // ====================================================================
     // 1. Get Tenant Context - FAIL CLOSED

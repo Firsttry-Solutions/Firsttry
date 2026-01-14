@@ -5,10 +5,11 @@
 
 import { storage } from "@forge/api";
 import { StatusSnapshot, generateSnapshotId } from "./statusSnapshot";
+import { sanitizeKey } from "../utils/sanitizeKey";
 
-const STATUS_SNAPSHOT_KEY = (tenantKey: string) => `statusSnapshot:${tenantKey}`;
-const EVIDENCE_SNAPSHOT_PREFIX = (tenantKey: string) => `evidenceSnapshot:${tenantKey}`;
-const RUN_LEDGER_PREFIX = (tenantKey: string) => `runLedger:${tenantKey}`;
+const STATUS_SNAPSHOT_KEY = (tenantKey: string) => `statusSnapshot:${sanitizeKey(tenantKey)}`;
+const EVIDENCE_SNAPSHOT_PREFIX = (tenantKey: string) => `evidenceSnapshot:${sanitizeKey(tenantKey)}`;
+const RUN_LEDGER_PREFIX = (tenantKey: string) => `runLedger:${sanitizeKey(tenantKey)}`;
 
 /**
  * Retrieve the current status snapshot for a tenant.
