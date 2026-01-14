@@ -33,7 +33,7 @@ export async function getStatusSnapshot_resolver(request: any, context: any): Pr
   }
 
   const tenantKey = tenantId.tenantKey;
-  const tenantAri = tenantId.ari || tenantKey;
+  const tenantAri = tenantKey;
   console.info(`[getStatusSnapshot] Resolving snapshot for ${tenantKey}`);
 
   try {
