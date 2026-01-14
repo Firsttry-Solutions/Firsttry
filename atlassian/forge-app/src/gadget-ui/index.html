@@ -12,8 +12,8 @@
     <div id="ui-css-canary" class="status-pill running" style="display: none;"></div>
 
     <div class="container">
-        <h1>FirstTry – Audit Evidence Snapshot for Jira</h1>
-        <p class="title-description">Read-only operational visibility surface. Real-time monitoring status and data quality metrics.</p>
+        <h1>FirstTry – Governance Dashboard</h1>
+        <p class="title-description">Real-time operational visibility. Read-only monitoring of platform configuration and data quality.</p>
         <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
             <div class="build-marker" id="build-marker" style="flex: 1; display: none;"></div>
             <span class="status-pill running" id="ui-style-proof" style="display: none;"></span>
@@ -25,29 +25,30 @@
         <div id="kpi-tiles-section"></div>
         <div id="progress-tracker-section"></div>
         
-        <!-- UI Self-Test (Diagnostic) -->
-        <div class="section" id="ui-selftest-section" style="border: 1px dashed #0052cc; background: #ffffff; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">UI Self-Test (Diagnostic)</div>
-            <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Bridge Mode</div>
-                    <div class="metric-value" id="ui-selftest-bridge-mode" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Invoke Available</div>
-                    <div class="metric-value" id="ui-selftest-invoke-available" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">HTML Marker</div>
-                    <div class="metric-value" id="ui-selftest-marker" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">CSS Applied</div>
-                    <div class="metric-value" id="ui-selftest-css" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">JS Running</div>
-                    <div class="metric-value" id="ui-selftest-js" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+        <!-- Diagnostics (Collapsed by default) -->
+        <details style="margin-bottom: 16px;">
+            <summary style="cursor: pointer; font-size: 13px; font-weight: 600; color: #0052cc; margin-bottom: 12px;">🔧 Diagnostics (UI Self-Test)</summary>
+            <div class="section" id="ui-selftest-section" style="border: 1px solid #dfe1e6; background: #f1f2f4; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13); margin-top: 12px;">
+                <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Bridge Mode</div>
+                        <div class="metric-value" id="ui-selftest-bridge-mode" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    </div>
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Invoke Available</div>
+                        <div class="metric-value" id="ui-selftest-invoke-available" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    </div>
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">HTML Marker</div>
+                        <div class="metric-value" id="ui-selftest-marker" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    </div>
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">CSS Applied</div>
+                        <div class="metric-value" id="ui-selftest-css" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    </div>
+                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">JS Running</div>
+                        <div class="metric-value" id="ui-selftest-js" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
                 </div>
                 <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
                     <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Resolver Invoke</div>
@@ -62,7 +63,8 @@
                     <div class="metric-value" id="ui-selftest-clipboard" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
                 </div>
             </div>
-        </div>
+            </div>
+        </details>
         
         <!-- System Overview -->
         <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
@@ -223,6 +225,9 @@
             </details>
             <div class="truth-statement" style="font-size: 12px; color: #8590a2; margin-top: 12px; padding: 8px 12px; border-top: 1px solid #dfe1e6; line-height: 1.5;">Exports always produce a result: download (if allowed) or manual copy panel.</div>
         </div>
+
+        <!-- Trust & Data Handling (Enterprise v2) -->
+        <div id="trust-section"></div>
 
         <!-- Footer -->
         <div class="footer" style="border-top: 1px solid #dfe1e6; margin-top: 32px; padding-top: 16px; font-size: 14px; color: #44546f; line-height: 1.6; font-weight: 400;">
