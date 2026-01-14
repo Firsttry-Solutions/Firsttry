@@ -9,6 +9,9 @@
 import { invoke } from '@forge/bridge';
 import './styles.css';
 
+// Import build info (injected by Vite)
+import { getBuildIdentifier } from './buildInfo';
+
 // Import enterprise UI renderers (vanilla DOM, accessibility-safe)
 import { renderKpiTiles } from './enterprise/renderKpiTiles';
 import { renderStatusBanner } from './enterprise/renderStatusBanner';
@@ -1181,6 +1184,13 @@ function wireExportButtons() {
 // Wire buttons on DOM ready
 function onDOMReady() {
     wireExportButtons();
+    
+    // Add build info footer
+    const buildFooter = document.getElementById('build-footer');
+    if (buildFooter) {
+        buildFooter.textContent = getBuildIdentifier();
+    }
+    
     loadStatus();
 }
 
