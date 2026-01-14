@@ -1,9 +1,8 @@
 # Security Contact
 
-Email: contact@firsttry.run
+- Security email: security@firsttry.io
+- Purpose: vulnerability reports, security questions from customers/procurement, incident coordination.
+- Expected response: acknowledge within 2 business days (or update to your real SLA).
+- If you cannot meet this SLA, change this document to match reality.
 
-Include: Jira site URL, reproduction steps, evidence
-
-Response targets:
-- Acknowledgement: 72 hours
-- Triage: 5 business days
+This document must remain consistent with `docs/SUPPORT_POLICY.md`.
