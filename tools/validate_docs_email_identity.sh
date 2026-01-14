@@ -3,9 +3,10 @@ set -euo pipefail
 export LC_ALL=C
 
 # Validator: enforce contact@firsttry.run as sole non-example email in docs
+# (Excludes audit reports which document historical/example emails for reference)
 REQ="contact@firsttry.run"
 
-DOC_FILES=$(git ls-files | grep -E '^(docs/.*\.md|[^/]+\.md)$' | grep -vE '^docs/STOP_' || true)
+DOC_FILES=$(git ls-files | grep -E '^(docs/.*\.md|[^/]+\.md)$' | grep -vE '^docs/STOP_|AUDIT|ENFORCEMENT' || true)
 
 if [ -z "$DOC_FILES" ]; then
   echo "✅ VALIDATE_DOCS_EMAIL_IDENTITY: no doc files to check"
