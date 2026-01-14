@@ -321,7 +321,7 @@ export async function phase5SchedulerHandler(
   const startTime = new Date().toISOString();
 
   // Heartbeat logging for production monitoring
-  const BUILD_SHA = '62867e4'; // Git HEAD7 from release/marketplace-ready-20260113
+  const BUILD_SHA = '8e0e4e8'; // Git HEAD7 from release/marketplace-ready-20260113
   console.log(`HEARTBEAT OK build=${BUILD_SHA} ts=${startTime} env=production fn=phase5-scheduler-fn`);
 
   try {
