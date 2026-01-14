@@ -1,0 +1,43 @@
+name: gates
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  gate_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/validate_docs.sh
+
+  gate_scopes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/validate_manifest_scopes.sh
+
+  gate_no_egress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/validate_no_egress.sh
+
+  gate_readonly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/validate_readonly_guard.sh
+
+  gate_tenant:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/validate_tenant_isolation.sh
+
+  proof_runner:
+    runs-on: ubuntu-latest
+    needs: [gate_docs, gate_scopes, gate_no_egress, gate_readonly, gate_tenant]
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/proof_run.sh
