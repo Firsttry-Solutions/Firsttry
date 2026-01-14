@@ -1,0 +1,77 @@
+=== FORGE VERSION ===
+12.13.0
+
+=== FORGE SETTINGS LIST ===
+┌─────────────────────┬──────────────────────────────────────────────────────────────────┬─────────────┐
+│ Setting             │ Description                                                      │ Value       │
+├─────────────────────┼──────────────────────────────────────────────────────────────────┼─────────────┤
+│ usage-analytics     │ Allow Forge to collect CLI usage and error reporting information │ true        │
+├─────────────────────┼──────────────────────────────────────────────────────────────────┼─────────────┤
+│ default-environment │ Change your default development environment                      │ development │
+├─────────────────────┼──────────────────────────────────────────────────────────────────┼─────────────┤
+│ seasonal-effects    │ Enable seasonal themes                                           │ true        │
+├─────────────────────┼──────────────────────────────────────────────────────────────────┼─────────────┤
+│ proxy               │ Configure proxy for all Forge CLI network requests               │ Not set     │
+└─────────────────────┴──────────────────────────────────────────────────────────────────┴─────────────┘
+
+=== FORGE ENVIRONMENTS LIST ===
+Showing all environments of the app:
+Press Ctrl+C to cancel.
+
+Fetching environments...
+✔ Environments fetched
+┌──────────────────────────────────────┬─────────────┬─────────────┬──────────────────────────┐
+│ Environment ID                       │ Type        │ Name        │ Last deployed at         │
+├──────────────────────────────────────┼─────────────┼─────────────┼──────────────────────────┤
+│ 136e862e-e5be-4815-b5f5-386a2ead851f │ PRODUCTION  │ production  │ 2026-01-11T07:42:43.851Z │
+├──────────────────────────────────────┼─────────────┼─────────────┼──────────────────────────┤
+│ 84a4fd46-1d6f-4df2-8e15-7fb9529974a0 │ STAGING     │ staging     │ 2026-01-02T16:20:07.173Z │
+├──────────────────────────────────────┼─────────────┼─────────────┼──────────────────────────┤
+│ 00542913-f1f2-4c78-b3fd-3f4ce74c1af4 │ DEVELOPMENT │ development │ 2026-01-10T06:26:00.560Z │
+└──────────────────────────────────────┴─────────────┴─────────────┴──────────────────────────┘
+
+=== FORGE DEPLOY (production) ===
+Deploying your app to the production environment.
+Press Ctrl+C to cancel.
+
+Running forge lint...
+Warning: Could not perform some linting actions for PermissionLinter due to unhandled error "Unknown product".
+
+No issues found.
+
+Deploying FirstTry – Governance Status to production...
+
+ℹ Packaging app files
+ℹ Uploading app
+ℹ Validating manifest
+ℹ Deploying to environment
+
+✔ Deployed
+
+Deployed FirstTry – Governance Status to the production environment.
+
+ℹ The version of your app [2.42.0] that was just deployed to [production] is eligible for the Runs on Atlassian program.
+
+To know more about Runs on Atlassian, go to https://go.atlassian.com/runs-on-atlassian.
+
+=== FORGE INSTALL/UPGRADE (production) ===
+To upgrade your app to use the latest code and scopes, select it from the list.
+Press Ctrl+C to cancel.
+? Select the site or workspace to upgrade:  (Use the Enter key to select)
+┌──────────────┬────────────────────────┬────────────────┬───────────────┐
+│ Environment  │ Site                   │ Atlassian apps │ Major Version │
+├──────────────┼────────────────────────┼────────────────┼───────────────┤
+│ ❯ production │ firsttry.atlassian.net │ Jira           │ 2 (Latest)    │
+└──────────────┴────────────────────────┴────────────────┴───────────────┘
+[6A[0D[73C[6B[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[GTo upgrade your app to use the latest code and scopes, select it from the list.
+Press Ctrl+C to cancel.
+? Select the site or workspace to upgrade: firsttry.atlassian.net[65D[65C
+
+Upgrading your app on the Atlassian site.
+
+? Do you want to continue? (y/N) [33D[33C[2K[G? Do you want to continue? (y/N) y[34D[34C[2K[G? Do you want to continue? Yes[30D[30C
+
+Upgrading your app in production...
+✔ Site is already at the latest version
+
+Your app in the production environment is at the latest in Jira on firsttry.atlassian.net.
