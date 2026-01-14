@@ -1,0 +1,3 @@
+# One exact tracked path per line. Empty by default.
+# Allowlisted files have fetch() calls verified as same-origin (window.location.href + query params)
+atlassian/forge-app/src/admin/phase5_admin_page.ts
