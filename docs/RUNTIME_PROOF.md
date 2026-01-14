@@ -357,7 +357,7 @@ If the content structure or proof values differ, investigate:
 
 **Any intentional change to the artifact structure requires**:
 
-1. **Security review**: security@firstry.io approval
+1. **Security review**: contact@firsttry.run approval
 2. **Code change documentation**: Commit message explaining why
 3. **Test coverage**: New tests for the changed behavior
 4. **Proof anchor update**: Update this document with new proof references
@@ -429,4 +429,4 @@ git commit -m "ci(proof): regenerate runtime proof artifact" || true
 | **Status** | Canonical, Reproducible |
 | **Review Frequency** | Annually or on code changes |
 
-**Contact**: security@firstry.io for questions about this proof.
+**Contact**: contact@firsttry.run for questions about this proof.

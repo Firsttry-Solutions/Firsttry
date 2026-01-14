@@ -23,7 +23,7 @@ FirstTry is a read-only, workspace-scoped Atlassian Forge app with:
 
 ### 1.1 Reporting Security Issues
 
-**Email**: security@atlassian.com (Atlassian security team)  
+**Email**: contact@firsttry.run (Atlassian security team)  
 **Subject**: Include "FirstTry Security Vulnerability"
 
 ### 1.2 Disclosure Timeline
@@ -126,7 +126,7 @@ Every policy evaluation creates an immutable audit entry:
 
 Vulnerabilities should be reported privately via:
 
-**Email**: security@firstry.io (if available; contact maintainers for actual contact)
+**Email**: contact@firsttry.run (if available; contact maintainers for actual contact)
 
 Response time target: 48 hours for critical issues, 2 weeks for moderate.
 

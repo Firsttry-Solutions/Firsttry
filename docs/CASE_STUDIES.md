@@ -285,7 +285,7 @@ Before publishing, redact:
 - ❌ Customer logo → Remove or ask permission
 - ❌ Real Jira issue keys → Use "[ISSUE-123]"
 - ❌ API keys / tokens → Replace with [REDACTED]
-- ❌ Internal email addresses → Replace with [user@company.redacted]
+- ❌ Internal email addresses → Replace with [contact@firsttry.run]
 - ❌ Specific financial data → Use percentages or ranges
 - ❌ Personal identifiable info → Anonymize or remove
 
@@ -425,8 +425,8 @@ DATE | ARTIFACT | DESCRIPTION | LOCATION | NOTES
 | Customer company name | Use "[ANONYMIZED COMPANY]" | "[ANONYMIZED COMPANY], a [industry] with [size] users" |
 | Customer logo | Remove or request permission | (Screenshot with logo: ask customer) |
 | Real issue keys | Replace with [ISSUE-123] or [ISSUE-456] | Before: `PROJ-5432` → After: `[ISSUE-5432]` |
-| User names | Use "[User A]" or role-based | Before: `alice@company.com` → After: `[Senior Engineer]` |
-| Email addresses | Replace with [user@company.redacted] | Before: `bob@customer.com` → After: `[customer support lead]` |
+| User names | Use "[User A]" or role-based | Before: `contact@firsttry.run` → After: `[Senior Engineer]` |
+| Email addresses | Replace with [contact@firsttry.run] | Before: `contact@firsttry.run` → After: `[customer support lead]` |
 | Jira instance URLs | Use [jira.company.redacted] | Before: `https://acme-corp.atlassian.net` → After: `[internal Jira instance]` |
 | API keys / tokens | Replace with [REDACTED] | Before: `token_abc123def456` → After: `[REDACTED]` |
 | Financial data | Use ranges or percentages | Before: "$50,000 in revenue saved" → After: "tens of thousands in cost savings" |

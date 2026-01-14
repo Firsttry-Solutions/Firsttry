@@ -74,7 +74,7 @@
 | **Terms of Service** | ✅ | [TERMS.md](TERMS.md) |
 | **Subprocessors** | ✅ | [SUBPROCESSORS.md](SUBPROCESSORS.md) |
 | **Changelog Policy** | ✅ | [CHANGELOG_POLICY.md](CHANGELOG_POLICY.md) |
-| **DPA (NOT offered by FirstTry)** | ℹ️ | Rely on Atlassian terms; contact security@atlassian.com |
+| **DPA (NOT offered by FirstTry)** | ℹ️ | Rely on Atlassian terms; contact contact@firsttry.run |
 
 ---
 
@@ -153,7 +153,7 @@ FirstTry has no per-user limits:
 - ✅ Incident Response Plan
 - ✅ Shakedown Test Report (technical verification)
 
-**To Request**: Email security@atlassian.com with "FirstTry Enterprise Documentation Request"
+**To Request**: Email contact@firsttry.run with "FirstTry Enterprise Documentation Request"
 
 ### Assessment Support
 
@@ -168,7 +168,7 @@ FirstTry has no per-user limits:
 1. **Review** [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md), [COMPLIANCE.md](COMPLIANCE.md)
 2. **Test** in non-production workspace first
 3. **Review** [DATA_INVENTORY.md](DATA_INVENTORY.md) against your sensitivity classification
-4. **Contact** Atlassian (security@atlassian.com) if you require a DPA
+4. **Contact** Atlassian (contact@firsttry.run) if you require a DPA
 5. **Assess** against your compliance requirements (HIPAA, SOC 2, etc.)
 6. **Deploy** to production with confidence
 
@@ -176,7 +176,7 @@ FirstTry has no per-user limits:
 
 ## Emergency Contacts
 
-**For urgent security issues**: security@atlassian.com  
+**For urgent security issues**: contact@firsttry.run  
 **For procurement questions**: Your Atlassian account manager  
 **For technical escalation**: Atlassian support (via Marketplace)
 

@@ -25,7 +25,7 @@ A placeholder is any text that is NOT intended for customers to read as-is:
 ### Hard Placeholders (Always Rejected)
 - Explicit: `TBD`, `TODO`, `FIXME`, `XXX`, `REPLACE_ME`, `CHANGEME`, `PLACEHOLDER`
 - Bracket blanks: `[___]`, `[TBD]`, `<YOUR_VALUE>`
-- Fake identities: `ACME Corp`, `ExampleCorp`, `example.com`, `test@test.com` (without context)
+- Fake identities: `ACME Corp`, `ExampleCorp`, `example.com`, `contact@firsttry.run` (without context)
 - Missing artifacts: `[insert diagram]`, `[link here]`, `add description`
 
 ### Soft Placeholders (Context-Dependent)
@@ -198,7 +198,7 @@ Admin contact: [your admin email]
 
 **OR AFTER** (Option B: real email):
 ```markdown
-Admin contact: support@firsttry.dev
+Admin contact: contact@firsttry.run
 ```
 
 ---
@@ -269,7 +269,7 @@ When adding documentation:
 
 - **Reporting placeholders** — Open an issue with tag `placeholder`
 - **Requesting allowlist exception** — Create PR to [tools/placeholder_allowlist.yml](tools/placeholder_allowlist.yml) with rationale
-- **Reporting audit discrepancy** — Contact security@firsttry.dev
+- **Reporting audit discrepancy** — Contact contact@firsttry.run
 
 ---
 
