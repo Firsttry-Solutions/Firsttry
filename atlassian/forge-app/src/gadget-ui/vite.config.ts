@@ -4,6 +4,11 @@ import path from 'path';
 export default defineConfig({
   base: './',
   root: __dirname,
+  define: {
+    // Inject build metadata at compile time (from env or defaults)
+    '__FT_BUILD_SHA__': JSON.stringify(process.env.FT_BUILD_SHA || 'dev'),
+    '__FT_BUILD_TIME_UTC__': JSON.stringify(process.env.FT_BUILD_TIME_UTC || 'dev'),
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
