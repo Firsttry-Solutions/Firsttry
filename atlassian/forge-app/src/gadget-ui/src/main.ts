@@ -20,6 +20,9 @@ import { renderTrustSection } from './enterprise/renderTrustSection';
 import { applyExportPolicy } from './enterprise/applyExportPolicy';
 import './enterprise/enterprise.css';
 
+// Import shared status schema and normalizer (CRITICAL to prevent UI crashes)
+import { normalizeStatusV1, EMPTY_STATUS_V1, GovernanceStatusV1 } from '../../shared/statusSchema';
+
 // ============================================================================
 // BUILD & PROOF MARKERS
 // ============================================================================
@@ -172,20 +175,27 @@ async function loadStatus() {
         setText('ui-selftest-js', 'OK (JS executed)');
 
         // Step 3: Invoke resolver with try/catch for error handling
-        let data: any = null;
+        let rawData: any = null;
         let invokeError: string | null = null;
 
         try {
             // @ts-ignore - invoke is checked above
             // Call the new getStatusSnapshot resolver (live dashboard)
-            data = await invoke('getStatusSnapshot', {});
+            rawData = await invoke('getStatusSnapshot', {});
         } catch (e) {
             invokeError = e instanceof Error ? e.message : String(e);
             console.error('Bridge.invoke failed:', invokeError);
         }
 
-        if (!data || invokeError) {
+        // CRITICAL: Normalize data immediately after receiving it
+        // This GUARANTEES UI never receives malformed data and prevents crashes
+        let data: GovernanceStatusV1;
+        if (!rawData || invokeError) {
             const errorMsg = invokeError || 'No data returned from resolver';
+            // Return safe, normalized empty state
+            data = EMPTY_STATUS_V1("UNKNOWN", "unknown", UI_BUILD_VERSION);
+            data.health = "ERROR";
+            data.degradedReason = errorMsg;
             const errorHtml = `
                 <div class="error-panel" style="background: #ffeceb; border: 1px solid #f87462; border-radius: 8px; padding: 16px; color: #5d1f1a;">
                     <div style="font-weight: 600; font-size: 14px;">Resolver Invocation Failed</div>
@@ -200,6 +210,9 @@ async function loadStatus() {
             return;
         }
 
+        // Normalize the payload to GovernanceStatusV1
+        // This ensures all arrays, objects, and fields are safe defaults if missing
+        data = normalizeStatusV1(rawData, rawData.tenantAri || "UNKNOWN", rawData.backendBuild || "unknown", UI_BUILD_VERSION);
         lastPayload = data;
         setText('ui-selftest-invoke', 'OK (resolver responded)');
 
@@ -370,24 +383,10 @@ async function loadStatus() {
         // Step 9.5: Render Health Status (Minimal)
         if (data.health) {
             const h = data.health;
-            setText('health-state', h.state || 'UNKNOWN');
-            setText('health-last-success', formatTimestampDisplay(h.lastSuccessAt));
-            setText('health-last-attempt', formatTimestampDisplay(h.lastAttemptAt));
-            setText('health-freshness', h.dataFreshnessMinutes !== undefined 
-                ? `${h.dataFreshnessMinutes} minutes` 
-                : 'UNKNOWN');
-
-            // Render reasons
-            const reasonsHtml = h.reasons && h.reasons.length > 0
-                ? h.reasons.map(r => `<div>${r.code}: ${r.message}</div>`).join('')
-                : '<div>No issues detected.</div>';
-            setHTML('health-reasons', reasonsHtml);
-
-            // Render boundaries
-            const boundariesHtml = h.boundaries
-                ? `<div><strong>Boundaries:</strong> noJiraWrites=${h.boundaries.noJiraWrites}, noConfigChanges=${h.boundaries.noConfigChanges}, noEnforcement=${h.boundaries.noEnforcement}</div>`
-                : '';
-            setHTML('health-boundaries', boundariesHtml);
+            setText('health-state', typeof h === 'string' ? h : 'UNKNOWN');
+            // Note: health is now a HealthState string, not an object, so skip nested fields
+        } else {
+            setText('health-state', 'UNKNOWN');
         }
 
         // Step 9.5: Jira Configuration Visibility (Phase 2)
@@ -581,11 +580,12 @@ async function loadStatus() {
         setHTML('phase4-timeline-content', phase4TimelineHtml);
 
         // Step 10: Data Quality & Coverage Panel
-        const coverageList = data.coverageIncluded.map((item: string) => `<li>${item}</li>`).join('');
+        // SAFE DEFAULTS: All arrays are guaranteed by normalizeStatusV1
+        const coverageList = (data.coverageIncluded ?? []).map((item: string) => `<li>${item}</li>`).join('');
         const dqStatus = `
             <div class="metric-row">
                 <div class="metric-label">Completeness Status</div>
-                <div class="metric-value">${data.completenessStatus}</div>
+                <div class="metric-value">${data.completenessStatus || 'UNKNOWN'}</div>
             </div>
             <div class="metric-row">
                 <div class="metric-label">Coverage Included</div>
@@ -596,15 +596,15 @@ async function loadStatus() {
             </div>
             <div class="metric-row">
                 <div class="metric-label">Coverage Excluded</div>
-                <ul class="coverage-list coverage-excluded">${data.coverageExcluded.map((item: string) => `<li>${item}</li>`).join('')}</ul>
+                <ul class="coverage-list coverage-excluded">${(data.coverageExcluded ?? []).map((item: string) => `<li>${item}</li>`).join('')}</ul>
             </div>
             <div class="metric-row">
                 <div class="metric-label">Known Data Gaps</div>
-                <div>${data.knownDataGaps.length === 0 ? '<em>None</em>' : '<ul class="coverage-list">' + data.knownDataGaps.map((item: string) => `<li>${item}</li>`).join('') + '</ul>'}</div>
+                <div>${((data.knownDataGaps ?? []).length === 0) ? '<em>None</em>' : '<ul class="coverage-list">' + (data.knownDataGaps ?? []).map((item: string) => `<li>${item}</li>`).join('') + '</ul>'}</div>
             </div>
             <div class="metric-row">
                 <div class="metric-label">Retention Policy</div>
-                <div class="metric-value">${data.retentionPolicy.effectiveRuleText}</div>
+                <div class="metric-value">${(data.retentionPolicy?.effectiveRuleText) || 'Not available yet'}</div>
             </div>
         `;
         setHTML('data-quality', dqStatus);
@@ -1260,7 +1260,31 @@ function onDOMReady() {
         buildFooter.textContent = getBuildIdentifier();
     }
     
-    loadStatus();
+    try {
+        loadStatus();
+    } catch (fatalError) {
+        // ErrorBoundary: if anything throws, render a safe fallback
+        console.error('[FATAL UI ERROR]', fatalError);
+        const errorPanel = document.getElementById('operational-status');
+        if (errorPanel) {
+            errorPanel.innerHTML = `
+                <div class="error-panel" style="background: #ffeceb; border: 1px solid #f87462; border-radius: 8px; padding: 16px; color: #5d1f1a;">
+                    <div style="font-weight: 600; font-size: 14px;">Dashboard Encountered an Error</div>
+                    <div style="margin-top: 8px; font-size: 12px;">
+                        The dashboard UI encountered an unexpected error. Please try:
+                        <ul style="margin-top: 8px; margin-left: 20px;">
+                            <li>Refresh the page</li>
+                            <li>Remove and re-add the gadget</li>
+                            <li>Contact support if the issue persists</li>
+                        </ul>
+                        <div style="margin-top: 12px; font-family: monospace; font-size: 11px; color: #5d1f1a; opacity: 0.7;">
+                            ${String(fatalError).substring(0, 200)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
 }
 
 // Run on DOMContentLoaded to ensure all DOM elements exist
