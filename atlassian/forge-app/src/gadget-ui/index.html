@@ -6,25 +6,17 @@
     <title>FirstTry – Audit Evidence Snapshot for Jira</title>
 </head>
 <body>
-    <!-- UI SERVE_PROOF MARKER (Always visible for deployment verification) -->
-    <div id="ui-serve-proof-banner" style="background: #f5f6f7; border-bottom: 1px solid #dfe1e6; padding: 8px 16px; font-size: 11px; color: #626f86; font-family: monospace; overflow-x: auto; white-space: nowrap;">
-        SERVE_PROOF: 591f91ce__2026-01-04T165752Z__resource:govGadget2140 | UI_v2.14.0
-    </div>
-
-    <!-- JS_BOOT marker (updated by main.ts) -->
-    <div id="ui-js-boot" style="display:none;">JS_BOOT: NOT RUN</div>
-
-    <!-- CSS Canary (Fail-Fast Verification) -->
-    <div id="ui-css-canary" class="status-pill running" style="margin: 8px 16px 0 16px; white-space: nowrap; display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; background: #dffbf0 !important; color: #216e4e !important;">
-        CSS_CANARY_OK
-    </div>
+    <!-- Diagnostics markers (hidden by default, shown in debug panel) -->
+    <div id="ui-serve-proof-banner" style="display: none;"></div>
+    <div id="ui-js-boot" style="display:none;">JS_BOOT: RUNNING</div>
+    <div id="ui-css-canary" class="status-pill running" style="display: none;"></div>
 
     <div class="container">
         <h1>FirstTry – Audit Evidence Snapshot for Jira</h1>
         <p class="title-description">Read-only operational visibility surface. Real-time monitoring status and data quality metrics.</p>
         <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
-            <div class="build-marker" id="build-marker" style="flex: 1;">UI BUILD: 591f91ce (2026-01-04T16:57:52Z)</div>
-            <span class="status-pill running" id="ui-style-proof" style="white-space: nowrap; display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; background: #dffbf0 !important; color: #216e4e !important;">CSS_LOADED</span>
+            <div class="build-marker" id="build-marker" style="flex: 1; display: none;"></div>
+            <span class="status-pill running" id="ui-style-proof" style="display: none;"></span>
         </div>
 
         <!-- ENTERPRISE UI SECTIONS (KPI Tiles, Status Banner, Progress Tracker) -->

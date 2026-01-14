@@ -234,11 +234,12 @@ async function loadStatus() {
         }
         // ===== END ENTERPRISE UI RENDERING =====
 
-        // Step 4: Update SERVE_PROOF banner dynamically
+        // Step 4: Update SERVE_PROOF banner (hidden; for diagnostics only)
         const banner = document.getElementById('ui-serve-proof-banner');
         if (banner) {
             const match = data.uiExpectedBuild === UI_BUILD_VERSION ? 'MATCH' : 'MISMATCH';
-            banner.textContent = `SERVE_PROOF: ${UI_BUILD_PROOF} | resource:${UI_RESOURCE_KEY} | uiVersion:${UI_BUILD_VERSION} | resolverOK:${match}`;
+            // Store in data attribute for diagnostics, do not display
+            banner.setAttribute('data-serve-proof', `${UI_BUILD_PROOF} | resource:${UI_RESOURCE_KEY} | uiVersion:${UI_BUILD_VERSION} | resolverOK:${match}`);
         }
 
         // Step 5: Verify version match (CRITICAL)
@@ -258,8 +259,11 @@ async function loadStatus() {
             return;
         }
 
-        // Step 6: Display UI version
-        setText('build-marker', `UI BUILD: ${UI_BUILD_PROOF} | Version: ${UI_BUILD_VERSION}`);
+        // Step 6: Display UI version (hidden; for diagnostics only)
+        const buildMarker = document.getElementById('build-marker');
+        if (buildMarker) {
+            buildMarker.setAttribute('data-build-info', `UI BUILD: ${UI_BUILD_PROOF} | Version: ${UI_BUILD_VERSION}`);
+        }
 
         // Step 7: Render app identity fields
         setText('app-server-build', data.serverBuildStamp || '—');
