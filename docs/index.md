@@ -26,3 +26,6 @@ For deployment and API documentation, see [ATLASSIAN_DUAL_LAYER_SPEC.md](ATLASSI
 - **[API & Scope Details](SCOPES.md)** — What FirstTry accesses and why
 - **[Support Policy](SUPPORT_POLICY.md)** — How to get help
 - **[Complete Index](DOCS_INDEX.md)** — Full documentation map
+
+---
+PAGES_BUILD_MARKER: sha=6a348a7 utc=2026-01-14T16:41:30Z
