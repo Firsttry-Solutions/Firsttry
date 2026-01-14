@@ -1,6 +1,6 @@
 # Atlassian Marketplace Privacy & Data Questionnaire — Answer Key
 
-This document defines the approved responses for Atlassian Marketplace privacy, data handling, and security questionnaires. Any change must be documented via a change request and approved by the security owner. Each answer must cite proof anchors in docs/SECURITY_SUMMARY.md and docs/PRIVACY.md.
+This document defines the approved responses for Atlassian Marketplace privacy, data handling, and security questionnaires. Changes require a change request and security owner approval. Each answer cites proof anchors in docs/SECURITY_SUMMARY.md and docs/PRIVACY.md.
 
 ---
 
