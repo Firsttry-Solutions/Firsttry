@@ -16,6 +16,7 @@ import { getBuildIdentifier } from './buildInfo';
 import { renderKpiTiles } from './enterprise/renderKpiTiles';
 import { renderStatusBanner } from './enterprise/renderStatusBanner';
 import { renderProgressTracker } from './enterprise/renderProgressTracker';
+import { renderTrustSection } from './enterprise/renderTrustSection';
 import { applyExportPolicy } from './enterprise/applyExportPolicy';
 import './enterprise/enterprise.css';
 
@@ -220,11 +221,17 @@ async function loadStatus() {
                 legacyData: data
             });
             
-            // Render progress tracker (timeline)
+            // Render progress tracker (timeline - collapsed roadmap)
             renderProgressTracker({
                 containerId: 'progress-tracker-section',
                 legacyData: data
             });
+            
+            // Render trust & data handling section
+            const trustSection = document.getElementById('trust-section');
+            if (trustSection) {
+                trustSection.appendChild(renderTrustSection());
+            }
             
             // Apply export policy (gate buttons, show messages)
             applyExportPolicy({

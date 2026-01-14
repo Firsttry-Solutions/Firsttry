@@ -1,11 +1,13 @@
 /**
- * KPI Tiles Renderer
+ * KPI Tiles Renderer (Enterprise v2)
  * 
  * Renders 8 KPI tiles in a 2x4 responsive grid at the top of the dashboard.
- * Each tile shows a key metric with status badge.
+ * Each tile shows a key metric with normalized status badge.
+ * Uses the statusModel for consistent severity mapping.
  */
 
 import { createStatusBadge, StatusColor } from "./status";
+import { normalizeStatus } from "./statusModel";
 
 export interface KpiTilesOptions {
     containerId?: string;
@@ -14,71 +16,32 @@ export interface KpiTilesOptions {
 }
 
 /**
- * Determine KPI tile status from legacy data
+ * Determine KPI tile status from legacy data using normalized status model
  */
 function determineKpiStatus(
     legacyData: any,
     field: string
 ): { color: StatusColor; text: string; reasonCode?: string } {
-    const defaultGray = { color: "gray" as const, text: "Initializing", reasonCode: "INITIALIZING_NO_DATA" };
+    const defaultGray = { color: "gray" as const, text: "Awaiting data", reasonCode: "INITIALIZING_NO_DATA" };
 
     if (!legacyData) return defaultGray;
 
-    switch (field) {
-        case "overall":
-            if (legacyData.systemStatus === "RUNNING") return { color: "green", text: "Healthy" };
-            if (legacyData.systemStatus === "DEGRADED") return { color: "yellow", text: "Degraded", reasonCode: legacyData.degradedReason || "DEGRADED" };
-            if (legacyData.systemStatus === "ERROR") return { color: "red", text: "Failing", reasonCode: "ERROR" };
-            return defaultGray;
+    const normalized = normalizeStatus(legacyData, field);
+    
+    // Map normalized severity to color
+    const severityToColor: Record<string, StatusColor> = {
+        OK: "green",
+        WARNING: "yellow",
+        DEGRADED: "yellow",
+        ERROR: "red",
+        UNKNOWN: "gray",
+    };
 
-        case "freshness":
-            if (legacyData.freshnessStatus === "FRESH") return { color: "green", text: "Fresh" };
-            if (legacyData.freshnessStatus === "AGING") return { color: "yellow", text: "Aging", reasonCode: "AGING" };
-            if (legacyData.freshnessStatus === "STALE") return { color: "red", text: "Stale", reasonCode: "STALE" };
-            return defaultGray;
-
-        case "scheduler":
-            // If last check is recent, scheduler is working
-            if (legacyData.lastCheckAt) {
-                const lastCheckDate = new Date(legacyData.lastCheckAt).getTime();
-                const now = Date.now();
-                const ageMinutes = (now - lastCheckDate) / 60000;
-                if (ageMinutes < 10) return { color: "green", text: "Firing" };
-                if (ageMinutes < 30) return { color: "yellow", text: "Delayed", reasonCode: "SCHEDULER_DELAYED" };
-                return { color: "red", text: "Not Firing", reasonCode: "SCHEDULER_NOT_FIRING" };
-            }
-            return defaultGray;
-
-        case "snapshot":
-            if (legacyData.lastSuccessAt) return { color: "green", text: "Available" };
-            return { color: "yellow", text: "Pending", reasonCode: "INITIALIZING_NO_DATA" };
-
-        case "readOnly":
-            // Assume healthy if system is not degraded
-            if (legacyData.systemStatus !== "DEGRADED" && legacyData.systemStatus !== "ERROR") {
-                return { color: "green", text: "Enforced" };
-            }
-            return { color: "yellow", text: "Unverified" };
-
-        case "egress":
-            // Assume healthy if system is running
-            if (legacyData.systemStatus === "RUNNING") return { color: "green", text: "Restricted" };
-            return defaultGray;
-
-        case "storage":
-            // Assume healthy if system is running
-            if (legacyData.systemStatus === "RUNNING") return { color: "green", text: "Isolated" };
-            return defaultGray;
-
-        case "export":
-            // Check if export is available
-            const exportReady = legacyData.exportReady !== false && legacyData.systemStatus === "RUNNING";
-            if (exportReady) return { color: "green", text: "Ready" };
-            return { color: "yellow", text: "Unavailable", reasonCode: "EXPORT_NOT_READY" };
-
-        default:
-            return defaultGray;
-    }
+    return {
+        color: severityToColor[normalized.severity] as StatusColor,
+        text: normalized.label,
+        reasonCode: normalized.reasonCode,
+    };
 }
 
 /**
