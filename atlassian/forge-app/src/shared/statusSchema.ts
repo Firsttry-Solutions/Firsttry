@@ -93,6 +93,38 @@ export interface GovernanceStatusV1 {
   staleIfAgeMinutesGreaterThan?: number;
   snapshotAgeMinutes?: number;
   isStale?: boolean;
+
+  // Operational metrics (UI contract: used by export payloads)
+  // null = unknown/not available, not coerced to 0/false
+  operationalMetrics?: {
+    checksCompletedLifetime: number | null;
+    snapshotsRetainedCount: number | null;
+    daysContinuousOperation: number | null;
+    failureCount7d?: number | null;
+    skippedChecksCount7d?: number | null;
+  };
+
+  // Boundaries (UI contract: used by export payloads)
+  // null = unknown/not available, not coerced to false
+  boundaries?: {
+    noJiraWrites: boolean | null;
+    noConfigChanges: boolean | null;
+    noEnforcement: boolean | null;
+    noRecommendations?: boolean | null;
+    observationalOnly?: boolean | null;
+  };
+
+  // Legacy field names used by old export code (deprecated, use operationalMetrics instead)
+  checksCompletedLifetime?: number | null;
+  snapshotsRetainedCount?: number | null;
+  daysContinuousOperation?: number | null;
+  version?: string | null;
+  environment?: string | null;
+  mode?: string | null;
+  lastSuccessAt?: string | null;
+  lastCheckAt?: string | null;
+  generatedAt?: string | null;
+  dataFreshness?: string | null;
 }
 
 /**
@@ -141,6 +173,22 @@ export function EMPTY_STATUS_V1(
     staleIfAgeMinutesGreaterThan: 120,
     snapshotAgeMinutes: undefined,
     isStale: undefined,
+    // Operational metrics (all unknown)
+    operationalMetrics: {
+      checksCompletedLifetime: null,
+      snapshotsRetainedCount: null,
+      daysContinuousOperation: null,
+      failureCount7d: null,
+      skippedChecksCount7d: null,
+    },
+    // Boundaries (all unknown)
+    boundaries: {
+      noJiraWrites: null,
+      noConfigChanges: null,
+      noEnforcement: null,
+      noRecommendations: null,
+      observationalOnly: null,
+    },
   };
 }
 
@@ -217,6 +265,32 @@ export function normalizeStatusV1(
     staleIfAgeMinutesGreaterThan: typeof obj.staleIfAgeMinutesGreaterThan === "number" ? obj.staleIfAgeMinutesGreaterThan : 120,
     snapshotAgeMinutes: typeof obj.snapshotAgeMinutes === "number" ? obj.snapshotAgeMinutes : undefined,
     isStale: typeof obj.isStale === "boolean" ? obj.isStale : undefined,
+    // Operational metrics: preserve from input or use nulls
+    operationalMetrics: {
+      checksCompletedLifetime: typeof obj.operationalMetrics?.checksCompletedLifetime === "number" ? obj.operationalMetrics.checksCompletedLifetime : (typeof obj.checksCompletedLifetime === "number" ? obj.checksCompletedLifetime : null),
+      snapshotsRetainedCount: typeof obj.operationalMetrics?.snapshotsRetainedCount === "number" ? obj.operationalMetrics.snapshotsRetainedCount : (typeof obj.snapshotsRetainedCount === "number" ? obj.snapshotsRetainedCount : null),
+      daysContinuousOperation: typeof obj.operationalMetrics?.daysContinuousOperation === "number" ? obj.operationalMetrics.daysContinuousOperation : (typeof obj.daysContinuousOperation === "number" ? obj.daysContinuousOperation : null),
+      failureCount7d: typeof obj.operationalMetrics?.failureCount7d === "number" ? obj.operationalMetrics.failureCount7d : (typeof obj.failureCount7d === "number" ? obj.failureCount7d : null),
+      skippedChecksCount7d: typeof obj.operationalMetrics?.skippedChecksCount7d === "number" ? obj.operationalMetrics.skippedChecksCount7d : (typeof obj.skippedChecksCount7d === "number" ? obj.skippedChecksCount7d : null),
+    },
+    // Boundaries: preserve from input or use nulls
+    boundaries: {
+      noJiraWrites: typeof obj.boundaries?.noJiraWrites === "boolean" ? obj.boundaries.noJiraWrites : null,
+      noConfigChanges: typeof obj.boundaries?.noConfigChanges === "boolean" ? obj.boundaries.noConfigChanges : null,
+      noEnforcement: typeof obj.boundaries?.noEnforcement === "boolean" ? obj.boundaries.noEnforcement : null,
+      noRecommendations: typeof obj.boundaries?.noRecommendations === "boolean" ? obj.boundaries.noRecommendations : null,
+      observationalOnly: typeof obj.boundaries?.observationalOnly === "boolean" ? obj.boundaries.observationalOnly : null,
+    },
+    // Legacy field names (supported for backward compat, prefer operationalMetrics/boundaries)
+    checksCompletedLifetime: typeof obj.checksCompletedLifetime === "number" ? obj.checksCompletedLifetime : null,
+    snapshotsRetainedCount: typeof obj.snapshotsRetainedCount === "number" ? obj.snapshotsRetainedCount : null,
+    daysContinuousOperation: typeof obj.daysContinuousOperation === "number" ? obj.daysContinuousOperation : null,
+    version: typeof obj.version === "string" ? obj.version : null,
+    environment: typeof obj.environment === "string" ? obj.environment : null,
+    mode: typeof obj.mode === "string" ? obj.mode : null,
+    lastSuccessAt: typeof obj.lastSuccessAt === "string" ? obj.lastSuccessAt : null,
+    lastCheckAt: typeof obj.lastCheckAt === "string" ? obj.lastCheckAt : null,
+    dataFreshness: typeof obj.dataFreshness === "string" ? obj.dataFreshness : null,
   };
 
   return normalized;

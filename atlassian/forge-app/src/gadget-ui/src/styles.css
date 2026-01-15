@@ -440,6 +440,11 @@ h1 {
     color: var(--color-status-error-text);
 }
 
+.signal-unknown {
+    background: var(--color-status-degraded);
+    color: var(--color-status-degraded-text);
+}
+
 .signal-fresh {
     background: var(--color-status-running);
     color: var(--color-status-running-text);
