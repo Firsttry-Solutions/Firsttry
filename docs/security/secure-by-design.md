@@ -77,7 +77,7 @@ Isolation is structural (enforced by Forge runtime), not policy-based:
 ### Evidence
 - Manifest: `atlassian/forge-app/manifest.yml` declares single-workspace scope
 - Code: `src/resolvers/governance_status.ts` uses tenant-scoped storage keys
-- Platform guarantee: Forge API documentation (external, Atlassian-maintained)
+- Platform capability: Forge API documentation (external, Atlassian-maintained)
 
 ---
 

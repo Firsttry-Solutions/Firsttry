@@ -96,8 +96,8 @@ Do NOT commit screenshots to the Git repository unless they are generic demo ima
 
 ## Compliance Note
 
-Screenshots are for demonstration purposes only and do not constitute guarantees of functionality, performance, or compliance outcomes.
+Screenshots are for demonstration purposes only and do not constitute commitments or enforceable promises regarding functionality, performance, or compliance outcomes.
 
 ---
 
-**Reminder**: All screenshots must be manually reviewed by a human before uploading to the Marketplace listing. Automated tools cannot guarantee complete redaction of sensitive data.
+**Reminder**: All screenshots must be manually reviewed by a human before uploading to the Marketplace listing. Automated tools cannot verify complete redaction of sensitive data.

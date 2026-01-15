@@ -281,7 +281,7 @@ FirstTry's security controls are implemented as described in this document as of
 
 Security control details are updated when:
 - FirstTry adds new scopes or functionality
-- Atlassian changes Forge platform security guarantees
+- Atlassian changes Forge platform security characteristics or capabilities
 - Vulnerabilities are discovered and fixed
 
 Last reviewed: January 5, 2026

@@ -41,7 +41,7 @@
 
 ## Escalation
 
-For urgent issues not resolved within SLA:
+For urgent issues not resolved within our internal target timeframes (non-binding, best-effort):
 1. Email: contact@firsttry.run (mark as URGENT)
 2. Include: App version, error logs, steps to reproduce
 
