@@ -96,19 +96,30 @@ log "Working dir: $(pwd)"
 
 header "STEP 2.5: AUTH GATE (FORGE WHOAMI)"
 
-log "Verifying Forge CLI authentication..."
+log "Verifying Forge CLI authentication (timeout 20s)..."
 
-if ! forge whoami 2>&1 | tee "$RUN_DIR/25_forge_whoami.txt"; then
-  test ${PIPESTATUS[0]} -eq 0 || {
-    echo "FAIL: Forge CLI is not authenticated in this shell." > "$RUN_DIR/ERR.txt"
-    echo "Fix: run 'forge login' interactively once, then re-run this script" >> "$RUN_DIR/ERR.txt"
-    echo "Proof: see $RUN_DIR/25_forge_whoami.txt" >> "$RUN_DIR/ERR.txt"
-    fail "Forge CLI not authenticated. Run 'forge login' interactively, then re-run this script.\nProof: $RUN_DIR/25_forge_whoami.txt"
-  }
+set +e
+timeout 20 forge whoami > "$RUN_DIR/25_forge_whoami.txt" 2>&1
+WHOAMI_RC=$?
+set -e
+
+if [ $WHOAMI_RC -ne 0 ]; then
+  {
+    echo "FAIL: Forge CLI is not authenticated (or whoami timed out)."
+    echo "Fix (one-time, manual):"
+    echo "  cd /workspaces/Firsttry/atlassian/forge-app"
+    echo "  forge login"
+    echo "  forge whoami"
+    echo "Then re-run: bash tools/prod_buildinfo_proof_loop.sh"
+    echo ""
+    echo "Proof: $RUN_DIR/25_forge_whoami.txt"
+    echo "ExitCode: $WHOAMI_RC (124 means timeout)"
+  } > "$RUN_DIR/ERR.txt"
+  fail "Forge auth missing (or whoami timeout). See $RUN_DIR/ERR.txt"
 fi
 
 pass "Forge CLI authenticated"
-grep -E "User|Email|Account" "$RUN_DIR/25_forge_whoami.txt" | head -3 | while read -r line; do log "  $line"; done
+log "Proof saved: $RUN_DIR/25_forge_whoami.txt"
 
 header "STEP 3: FORCE BACKEND REDEPLOY"
 
