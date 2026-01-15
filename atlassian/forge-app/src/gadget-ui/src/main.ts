@@ -648,28 +648,100 @@ async function loadStatus() {
         `;
         setHTML('boundaries', boundariesHtml);
 
-        // Step 13: Availability Signals
+        // Step 13: Availability Signals (DEFENSIVE: Safe reads with fallbacks)
+        // Safe read 1: tenantIdentity.available
+        const tenantAvailable = data?.tenantIdentity?.available;
+        let tenantBadgeClass: string;
+        let tenantLabel: string;
+        let tenantImpact: string;
+        if (tenantAvailable === true) {
+            tenantBadgeClass = 'signal-available';
+            tenantLabel = 'AVAILABLE';
+            tenantImpact = 'Monitoring operational';
+        } else if (tenantAvailable === false) {
+            tenantBadgeClass = 'signal-unavailable';
+            tenantLabel = 'UNAVAILABLE';
+            tenantImpact = 'Monitoring paused';
+        } else {
+            tenantBadgeClass = 'signal-unknown';
+            tenantLabel = 'UNKNOWN';
+            tenantImpact = 'Identity status unclear; monitoring may be paused';
+        }
+
+        // Safe read 2: permissionVisibility.determined
+        const permDetermined = data?.permissionVisibility?.determined;
+        let permBadgeClass: string;
+        let permLabel: string;
+        let permImpact: string;
+        if (permDetermined === true) {
+            permBadgeClass = 'signal-available';
+            permLabel = 'DETERMINED';
+            permImpact = 'All visible data accessible';
+        } else if (permDetermined === false) {
+            permBadgeClass = 'signal-unavailable';
+            permLabel = 'NOT_DETERMINED';
+            permImpact = 'Some data may be restricted';
+        } else {
+            permBadgeClass = 'signal-unknown';
+            permLabel = 'UNKNOWN';
+            permImpact = 'Permission visibility unclear';
+        }
+
+        // Safe read 3: isStale (already defensive, but keep it)
+        const isStale = data?.isStale;
+        let staleBadgeClass: string;
+        let staleLabel: string;
+        let staleImpact: string;
+        if (isStale === false) {
+            staleBadgeClass = 'signal-fresh';
+            staleLabel = 'FRESH';
+            staleImpact = 'Operational visibility is current';
+        } else if (isStale === true) {
+            staleBadgeClass = 'signal-stale';
+            staleLabel = 'STALE';
+            staleImpact = 'Operational visibility may be outdated';
+        } else {
+            staleBadgeClass = 'signal-unknown';
+            staleLabel = 'UNKNOWN';
+            staleImpact = 'Data freshness unknown; first run pending';
+        }
+
+        // Safe read 4: snapshotAgeMinutes
+        const snapshotAge = data?.snapshotAgeMinutes;
+        let storageBadgeClass: string;
+        let storageLabel: string;
+        let storageImpact: string;
+        if (snapshotAge !== null && snapshotAge !== undefined) {
+            storageBadgeClass = 'signal-available';
+            storageLabel = 'HAS_DATA';
+            storageImpact = 'Full metrics available';
+        } else {
+            storageBadgeClass = 'signal-unavailable';
+            storageLabel = 'EMPTY';
+            storageImpact = 'First run pending';
+        }
+
         const signalsHtml = `
             <div class="signal-item">
                 <span class="signal-label">Tenant Identity</span>
-                <span class="signal-badge ${data.tenantIdentity.available ? 'signal-available' : 'signal-unavailable'}">${data.tenantIdentity.available ? 'AVAILABLE' : 'UNAVAILABLE'}</span>
+                <span class="signal-badge ${tenantBadgeClass}">${tenantLabel}</span>
             </div>
-            <div class="signal-impact">Impact: ${data.tenantIdentity.available ? 'Monitoring operational' : 'Monitoring paused'}</div>
+            <div class="signal-impact">Impact: ${tenantImpact}</div>
             <div class="signal-item">
                 <span class="signal-label">Viewer Permission Visibility</span>
-                <span class="signal-badge ${data.permissionVisibility.determined ? 'signal-available' : 'signal-unavailable'}">${data.permissionVisibility.determined ? 'DETERMINED' : 'NOT_DETERMINED'}</span>
+                <span class="signal-badge ${permBadgeClass}">${permLabel}</span>
             </div>
-            <div class="signal-impact">Impact: ${data.permissionVisibility.determined ? 'All visible data accessible' : 'Some data may be restricted'}</div>
+            <div class="signal-impact">Impact: ${permImpact}</div>
             <div class="signal-item">
                 <span class="signal-label">Data Freshness</span>
-                <span class="signal-badge ${data.isStale === false ? 'signal-fresh' : 'signal-stale'}">${data.isStale === null ? 'UNKNOWN' : data.isStale ? 'STALE' : 'FRESH'}</span>
+                <span class="signal-badge ${staleBadgeClass}">${staleLabel}</span>
             </div>
-            <div class="signal-impact">Impact: ${data.isStale ? 'Operational visibility may be outdated' : 'Operational visibility is current'}</div>
+            <div class="signal-impact">Impact: ${staleImpact}</div>
             <div class="signal-item">
                 <span class="signal-label">Storage State</span>
-                <span class="signal-badge ${data.snapshotAgeMinutes !== null ? 'signal-available' : 'signal-unavailable'}">${data.snapshotAgeMinutes !== null ? 'HAS_DATA' : 'EMPTY'}</span>
+                <span class="signal-badge ${storageBadgeClass}">${storageLabel}</span>
             </div>
-            <div class="signal-impact">Impact: ${data.snapshotAgeMinutes !== null ? 'Full metrics available' : 'First run pending'}</div>
+            <div class="signal-impact">Impact: ${storageImpact}</div>
         `;
         setHTML('availability-signals', signalsHtml);
 
@@ -799,6 +871,17 @@ function buildExportPayload() {
         return null;
     }
 
+    // Helper: explicitly mark unknown values instead of coercing to 0/false
+    const unknownMetrics: string[] = [];
+    if (lastPayload.operationalMetrics?.checksCompletedLifetime === null) unknownMetrics.push('checksCompletedLifetime');
+    if (lastPayload.operationalMetrics?.snapshotsRetainedCount === null) unknownMetrics.push('snapshotsRetainedCount');
+    if (lastPayload.operationalMetrics?.daysContinuousOperation === null) unknownMetrics.push('daysContinuousOperation');
+
+    const unknownBoundaries: string[] = [];
+    if (lastPayload.boundaries?.noJiraWrites === null) unknownBoundaries.push('noJiraWrites');
+    if (lastPayload.boundaries?.noConfigChanges === null) unknownBoundaries.push('noConfigChanges');
+    if (lastPayload.boundaries?.noEnforcement === null) unknownBoundaries.push('noEnforcement');
+
     return {
         timestamp: new Date().toISOString(),
         source: 'dashboard-gadget-ui',
@@ -809,21 +892,25 @@ function buildExportPayload() {
         snapshotAgeMinutes: lastPayload.snapshotAgeMinutes || null,
         dataFreshness: lastPayload.isStale === null ? 'UNKNOWN' : (lastPayload.isStale ? 'STALE' : 'FRESH'),
         operationalMetrics: {
-            checksCompletedLifetime: lastPayload.checksCompletedLifetime || 0,
-            snapshotCountRetained: lastPayload.snapshotsRetainedCount || 0,
-            daysContinuousOperation: lastPayload.daysContinuousOperation || 0,
-            failureCount7d: lastPayload.failureCount7d || 0,
-            skippedChecksCount7d: lastPayload.skippedChecksCount7d || 0,
+            checksCompletedLifetime: lastPayload.operationalMetrics?.checksCompletedLifetime ?? null,
+            snapshotCountRetained: lastPayload.operationalMetrics?.snapshotsRetainedCount ?? null,
+            daysContinuousOperation: lastPayload.operationalMetrics?.daysContinuousOperation ?? null,
+            failureCount7d: lastPayload.operationalMetrics?.failureCount7d ?? (lastPayload.failureCount7d ?? null),
+            skippedChecksCount7d: lastPayload.operationalMetrics?.skippedChecksCount7d ?? (lastPayload.skippedChecksCount7d ?? null),
         },
+        // Mark which metrics are unknown/unavailable (prevents silent data loss)
+        unknownMetrics: unknownMetrics.length > 0 ? unknownMetrics : undefined,
         availabilitySignals: {
             tenantIdentityAvailable: lastPayload.tenantIdentity?.available !== false,
             permissionVisibilityDetermined: lastPayload.permissionVisibility?.determined !== false,
         },
         boundaries: {
-            noJiraWrites: lastPayload.boundaries?.noJiraWrites || false,
-            noConfigChanges: lastPayload.boundaries?.noConfigChanges || false,
-            noEnforcement: lastPayload.boundaries?.noEnforcement || false,
+            noJiraWrites: lastPayload.boundaries?.noJiraWrites ?? null,
+            noConfigChanges: lastPayload.boundaries?.noConfigChanges ?? null,
+            noEnforcement: lastPayload.boundaries?.noEnforcement ?? null,
         },
+        // Mark which boundaries are unknown/unavailable (prevents silent data loss)
+        unknownBoundaries: unknownBoundaries.length > 0 ? unknownBoundaries : undefined,
         completenessStatus: lastPayload.completenessStatus || 'UNKNOWN',
         retentionPolicy: lastPayload.retentionPolicy?.effectiveRuleText || null,
         checks: (lastPayload.checks || []).map((c: any) => ({
