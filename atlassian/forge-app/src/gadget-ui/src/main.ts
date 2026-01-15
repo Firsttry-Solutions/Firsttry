@@ -37,6 +37,8 @@ const BRIDGE_MODE = "BUNDLED";
 const INVOKE_AVAILABLE = true;
 // UI_DIST_STAMP: Git HEAD SHA + build timestamp. Proves which dist was deployed.
 const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
+// UI_REQ_ID: Unique per page load. Used to correlate UI invoke calls with resolver logs.
+const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).substring(0, 8)}`;
 
 // Track last payload for export functions
 let lastPayload: any = null;
@@ -1327,7 +1329,10 @@ function onDOMReady() {
         // Try to fetch backend build info via resolver for cache-bust proof
         (async () => {
             try {
-                const backendBuild = await invoke('getBuildInfo');
+                // Pass UI request ID for correlation with backend logs
+                console.log(`[UI_BUILDINFO_INVOKE_START] uiReqId=${FT_UI_REQ_ID}`);
+                const backendBuild = await invoke('getBuildInfo', { uiReqId: FT_UI_REQ_ID });
+                console.log(`[UI_BUILDINFO_INVOKE_SUCCESS] uiReqId=${FT_UI_REQ_ID} echo=${backendBuild?.uiReqIdEcho}`);
                 // Unmissable logging: proof of resolver invocation and build info display
                 console.log('[UI_BUILDINFO_DISPLAY] Backend:', backendBuild);
                 console.log(`UI_BUILD_PROOF FT_BUILD_SHA=${backendBuild.FT_BUILD_SHA} FT_BUILD_TIME_UTC=${backendBuild.FT_BUILD_TIME_UTC} resolvedAt=${backendBuild.resolvedAt}`);
@@ -1349,19 +1354,20 @@ function onDOMReady() {
                 proofMarker.textContent = `[✓ BUILD PROOF] UI+Backend versions verified in real-time`;
                 buildFooter.appendChild(proofMarker);
                 
-                // Add SERVE_PROOF DOM element (non-negotiable proof that this dist was served)
+                // Add SERVE_PROOF DOM element with request ID correlation
                 const resolverOK = Boolean(backendBuild && backendBuild.FT_BUILD_SHA && backendBuild.FT_BUILD_TIME_UTC);
+                const echoMatch = backendBuild?.uiReqIdEcho === FT_UI_REQ_ID ? "MATCH" : "MISMATCH";
                 const proofEl = ftEnsureServeProofEl();
-                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
+                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | ECHO:${backendBuild?.uiReqIdEcho || '(none)'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
                 buildFooter.appendChild(proofEl);
             } catch (err) {
-                console.log('[UI] Backend build info unavailable (expected if resolver not registered yet)', err);
+                console.log(`[UI_BUILDINFO_INVOKE_ERROR] uiReqId=${FT_UI_REQ_ID} error=${String(err).substring(0, 60)}`, err);
                 // Keep UI-only build info if backend not available
                 buildFooter.textContent = `UI: ${uiBuild}`;
                 // Still add serve-proof even on error (proves dist was served)
                 try {
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | (resolver_error:${String(err).substring(0, 40)})`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | (resolver_invoke_error:${String(err).substring(0, 40)})`;
                     buildFooter.appendChild(proofEl);
                 } catch (e) {
                     console.error('[UI] Failed to render serve-proof element', e);
