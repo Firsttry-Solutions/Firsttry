@@ -35,6 +35,8 @@ const UI_BUILD_PROOF = "591f91ce__2026-01-04T165752Z";
 const UI_RESOURCE_KEY = "govGadget2140";
 const BRIDGE_MODE = "BUNDLED";
 const INVOKE_AVAILABLE = true;
+// UI_DIST_STAMP: Git HEAD SHA + build timestamp. Proves which dist was deployed.
+const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
 
 // Track last payload for export functions
 let lastPayload: any = null;
@@ -42,6 +44,24 @@ let lastPayload: any = null;
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
+
+function ftEnsureServeProofEl(): HTMLElement {
+    const id = "ft-serve-proof";
+    let el = document.getElementById(id);
+    if (!el) {
+        el = document.createElement("div");
+        el.id = id;
+        el.style.fontFamily = "monospace";
+        el.style.fontSize = "11px";
+        el.style.marginTop = "8px";
+        el.style.padding = "4px";
+        el.style.backgroundColor = "#f1f2f4";
+        el.style.border = "1px solid #626f86";
+        el.style.borderRadius = "3px";
+        el.style.opacity = "0.95";
+    }
+    return el as HTMLElement;
+}
 
 function setText(id: string, value: string): boolean {
     const el = document.getElementById(id);
@@ -1313,7 +1333,9 @@ function onDOMReady() {
                 console.log(`UI_BUILD_PROOF FT_BUILD_SHA=${backendBuild.FT_BUILD_SHA} FT_BUILD_TIME_UTC=${backendBuild.FT_BUILD_TIME_UTC} resolvedAt=${backendBuild.resolvedAt}`);
                 
                 // Update footer with both UI and backend versions
-                const backendDisplay = `${backendBuild.FT_BUILD_SHA} @ ${backendBuild.FT_BUILD_TIME_UTC}`;
+                const backendDisplay = (backendBuild && backendBuild.FT_BUILD_SHA && backendBuild.FT_BUILD_TIME_UTC) 
+                    ? `${backendBuild.FT_BUILD_SHA} @ ${backendBuild.FT_BUILD_TIME_UTC}`
+                    : `(missing_backend_build_meta)`;
                 buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                 buildFooter.style.color = '#0052cc';
                 buildFooter.style.fontWeight = '500';
@@ -1326,10 +1348,24 @@ function onDOMReady() {
                 proofMarker.style.fontFamily = 'monospace';
                 proofMarker.textContent = `[✓ BUILD PROOF] UI+Backend versions verified in real-time`;
                 buildFooter.appendChild(proofMarker);
+                
+                // Add SERVE_PROOF DOM element (non-negotiable proof that this dist was served)
+                const resolverOK = Boolean(backendBuild && backendBuild.FT_BUILD_SHA && backendBuild.FT_BUILD_TIME_UTC);
+                const proofEl = ftEnsureServeProofEl();
+                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
+                buildFooter.appendChild(proofEl);
             } catch (err) {
                 console.log('[UI] Backend build info unavailable (expected if resolver not registered yet)', err);
                 // Keep UI-only build info if backend not available
                 buildFooter.textContent = `UI: ${uiBuild}`;
+                // Still add serve-proof even on error (proves dist was served)
+                try {
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | (resolver_error:${String(err).substring(0, 40)})`;
+                    buildFooter.appendChild(proofEl);
+                } catch (e) {
+                    console.error('[UI] Failed to render serve-proof element', e);
+                }
             }
         })();
     }
