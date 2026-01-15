@@ -24,6 +24,8 @@ export async function getBuildInfo_resolver(request: any, context: any): Promise
     resolvedAt,
   };
 
-  console.log("[getBuildInfo] RESOLVER CALLED", buildInfo);
+  // Unmissable logging: proof of resolver invocation in production
+  console.log("[BUILDINFO_CALLED]", buildInfo);
+  console.log(`BUILDINFO_PROOF FT_BUILD_SHA=${FT_BUILD_SHA} FT_BUILD_TIME_UTC=${FT_BUILD_TIME_UTC} resolvedAt=${resolvedAt}`);
   return buildInfo;
 }
