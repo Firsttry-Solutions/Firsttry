@@ -35,12 +35,14 @@ modules:
       handler: scheduled/scheduler_daily_dispatcher.runDailyDispatch
     - key: status-resolver-fn
       handler: resolvers/governance_status.get
+    # PHASE 2 FIX: Updated to use consolidated gadget-handlers that exports both getStatusSnapshot and getBuildInfo
     - key: get-status-snapshot-fn
-      handler: resolvers/getStatusSnapshot.getStatusSnapshot_resolver
+      handler: resolvers/gadget-handlers.getStatusSnapshot
     - key: refresh-now-fn
       handler: resolvers/refreshNow.refreshNow_resolver
+    # PHASE 2 FIX: getBuildInfo now also available via gadget-handlers but kept here for compatibility
     - key: get-build-info-fn
-      handler: resolvers/getBuildInfo.getBuildInfo_resolver
+      handler: resolvers/gadget-handlers.getBuildInfo
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)
