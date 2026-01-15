@@ -12,7 +12,6 @@ ENTERPRISE_DOCS=(
   "docs/PRICING_RATIONALE.md"
   "docs/SUPPORT_POLICY.md"
   "docs/CHANGE_MANAGEMENT.md"
-  "docs/ROADMAP.md"
   "docs/DOCS_INDEX.md"
 )
 

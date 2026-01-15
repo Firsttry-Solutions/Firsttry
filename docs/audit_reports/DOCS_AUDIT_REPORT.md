@@ -153,7 +153,7 @@ FirstTry - Audit Evidence Snapshot for Jira documentation has been audited for A
 **Purpose**: Non-bypassable documentation compliance gate
 
 **Gates Enforced**:
-1. **Required Docs**: SCOPES.md, README.md, SECURITY.md, PRIVACY.md, SUPPORT_POLICY.md, CHANGE_MANAGEMENT.md, ROADMAP.md, ENTERPRISE_ONE_PAGER.md, COMPLIANCE.md, DATA_RETENTION.md, DATA_INVENTORY.md, claims_proof_catalog.md
+1. **Required Docs**: SCOPES.md, README.md, SECURITY.md, PRIVACY.md, SUPPORT_POLICY.md, CHANGE_MANAGEMENT.md, ENTERPRISE_ONE_PAGER.md, COMPLIANCE.md, DATA_RETENTION.md, DATA_INVENTORY.md, claims_proof_catalog.md
 2. **Index Quality**: docs/README.md has ≥20 links
 3. **Scope Documentation**: SCOPES.md contains both required scope identifiers
 4. **No Placeholders**: SECURITY.md, PRIVACY.md, SCOPES.md contain no "TBD", "TODO", "coming soon", "lorem ipsum"

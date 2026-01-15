@@ -106,8 +106,8 @@ FirstTry has **minimal performance impact**:
 Email: `contact@firsttry.run`  
 Response Target: 24 hours
 
-**Roadmap & Feature Requests**:  
-GitHub: https://github.com/Firsttry-Solutions/Firsttry
+**Support & Contact**:  
+Email: contact@firsttry.run for feature feedback
 
 ---
 

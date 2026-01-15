@@ -316,7 +316,7 @@ Example violations that WOULD fail build:
 - ❌ User attribution
 - ❌ Issue content collection
 - ❌ Jira modification
-- ❌ Roadmap prediction
+- ❌ Future prediction
 - ❌ Impact analysis
 - ❌ Improvement claims
 - ❌ Prevention claims

@@ -80,8 +80,8 @@ Setup typically takes 4-8 hours (depending on your governance model complexity) 
 Performance optimization: [coming soon]
 
 # GOOD (move to FAQ)
-**Q: Is performance optimization roadmapped?**
-A: Yes, optimization features are under development. See [ROADMAP.md](ROADMAP.md).
+**Q: Are performance improvements being considered?**
+A: FirstTry does not publish forward-looking commitments. Current capabilities are documented in this guide.
 ```
 
 ### Option 4: Move to Archived/Test Context ✅ ACCEPTABLE

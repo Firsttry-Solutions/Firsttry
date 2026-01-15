@@ -49,7 +49,7 @@ Support explicitly does NOT include:
 
 4. **Resolution**: 
    - Bugs may be fixed in subsequent releases
-   - Feature requests may be considered for roadmap inclusion
+   - Feature requests are reviewed but no forward-looking commitments are made
    - Workarounds may be suggested where applicable
 
 ## Known Limitations
