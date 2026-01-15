@@ -94,6 +94,9 @@ header "STEP 2: VALIDATE FORGE AUTHENTICATION"
 cd "$REPO_ROOT/atlassian/forge-app"
 log "Working dir: $(pwd)"
 
+log "Checking dependencies..."
+command -v timeout >/dev/null 2>&1 || fail "Missing dependency: timeout (coreutils). Install it and re-run."
+
 header "STEP 2.5: AUTH GATE (FORGE WHOAMI)"
 
 log "Verifying Forge CLI authentication (timeout 20s)..."
@@ -120,6 +123,33 @@ fi
 
 pass "Forge CLI authenticated"
 log "Proof saved: $RUN_DIR/25_forge_whoami.txt"
+
+header "STEP 2.6: AUTH PATH GATE (FORGE ENVIRONMENTS)"
+
+log "Verifying Forge can access app environments (timeout 20s)..."
+
+set +e
+timeout 20 forge environments list > "$RUN_DIR/26_forge_envs.txt" 2>&1
+ENVS_RC=$?
+set -e
+
+if [ $ENVS_RC -ne 0 ]; then
+  {
+    echo "FAIL: Forge authenticated identity exists, but cannot access environments (or command timed out)."
+    echo "Fix:"
+    echo "  1) forge logout || true"
+    echo "  2) forge login"
+    echo "  3) forge environments list   # must succeed"
+    echo "Then re-run: bash tools/prod_buildinfo_proof_loop.sh"
+    echo ""
+    echo "Proof: $RUN_DIR/26_forge_envs.txt"
+    echo "ExitCode: $ENVS_RC (124 means timeout)"
+  } > "$RUN_DIR/ERR.txt"
+  fail "Forge env access failed. See $RUN_DIR/ERR.txt"
+fi
+
+pass "Forge environment access OK"
+log "Proof saved: $RUN_DIR/26_forge_envs.txt"
 
 header "STEP 3: FORCE BACKEND REDEPLOY"
 
