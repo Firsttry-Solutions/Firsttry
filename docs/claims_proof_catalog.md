@@ -12,10 +12,10 @@
 |-------|---------------|---------------|--------|
 | Privacy Policy URL exists (GitHub Pages) | `/docs/privacy.html` | doc | PASS |
 | Terms of Use URL exists (GitHub Pages) | `/docs/terms.html` | doc | PASS |
-| No third-party data sharing | `atlassian/forge-app/docs/EXTERNAL_APIS.md:11-13`<br>`/docs/privacy.html` (Third-Party Data Sharing section)<br>`atlassian/forge-app/tests/credibility/gap3_egress_static_and_runtime.test.ts` | doc+test | PASS |
-| No external network egress beyond Atlassian/Forge | `atlassian/forge-app/docs/EXTERNAL_APIS.md:11-13`<br>`atlassian/forge-app/manifest.yml:77-80` (no external.fetch permission)<br>`atlassian/forge-app/tests/credibility/gap3_egress_static_and_runtime.test.ts` (GAP3_STATIC_EGRESS_SCAN, GAP3_RUNTIME_NETWORK_TRAP)<br>`/docs/privacy.html` (Third-Party Data Sharing section) | code+doc+test | PASS |
-| Tenant-isolated storage (Forge storage only) | `atlassian/forge-app/manifest.yml:77-80` (storage:app scope)<br>`atlassian/forge-app/docs/DATA_RETENTION.md:11-48`<br>`atlassian/forge-app/docs/SECURITY.md` (Platform Sandboxing section)<br>`/docs/privacy.html` (Where Data is Processed and Stored section) | code+doc | PASS |
-| Read-only Jira access (no writes) | `atlassian/forge-app/src/jira_ingest.ts` (all requestJira calls are GET-equivalent reads)<br>`atlassian/forge-app/docs/EXTERNAL_APIS.md:23-59` (all documented calls are reads)<br>`/docs/privacy.html` (What Data the App Accesses section) | code+doc | PASS |
+| No third-party data sharing | `docs/EXTERNAL_APIS.md:11-13`<br>`/docs/privacy.html` (Third-Party Data Sharing section)<br>`atlassian/forge-app/tests/credibility/gap3_egress_static_and_runtime.test.ts` | doc+test | PASS |
+| No external network egress beyond Atlassian/Forge | `docs/EXTERNAL_APIS.md:11-13`<br>`atlassian/forge-app/manifest.yml:77-80` (no external.fetch permission)<br>`atlassian/forge-app/tests/credibility/gap3_egress_static_and_runtime.test.ts` (GAP3_STATIC_EGRESS_SCAN, GAP3_RUNTIME_NETWORK_TRAP)<br>`/docs/privacy.html` (Third-Party Data Sharing section) | code+doc+test | PASS |
+| Tenant-isolated storage (Forge storage only) | `atlassian/forge-app/manifest.yml:77-80` (storage:app scope)<br>`docs/DATA_RETENTION_AND_DELETION.md`<br>`docs/SECURITY.md` (Platform Sandboxing section)<br>`/docs/privacy.html` (Where Data is Processed and Stored section) | code+doc | PASS |
+| Read-only Jira access (no writes) | `atlassian/forge-app/src/jira_ingest.ts` (all requestJira calls are GET-equivalent reads)<br>`docs/EXTERNAL_APIS.md:23-59` (all documented calls are reads)<br>`/docs/privacy.html` (What Data the App Accesses section) | code+doc | PASS |
 
 ---
 
@@ -36,7 +36,7 @@
 ### No third-party data sharing
 - **Claim**: App does not share data with any external third-party services
 - **Proof**:
-  - `atlassian/forge-app/docs/EXTERNAL_APIS.md:11-13`: "This Forge app has **ZERO outbound egress to external services**"
+  - `docs/EXTERNAL_APIS.md:11-13`: "This Forge app has **ZERO outbound egress to external services**"
   - `/docs/privacy.html`: "Third-Party Data Sharing: None. FirstTry - Audit Evidence Snapshot for Jira has zero external egress."
   - `atlassian/forge-app/tests/credibility/gap3_egress_static_and_runtime.test.ts`: GAP3_STATIC_EGRESS_SCAN test verifies no external network libraries (axios, node-fetch, http.request)
 - **Verification**: Static code scan confirms no external API calls; documentation states zero egress; runtime tests enforce network traps
@@ -45,7 +45,7 @@
 ### No external network egress beyond Atlassian/Forge
 - **Claim**: All network activity is confined to Atlassian Forge platform APIs
 - **Proof**:
-  - `atlassian/forge-app/docs/EXTERNAL_APIS.md:11-13`: Policy statement "ZERO outbound egress to external services"
+  - `docs/EXTERNAL_APIS.md:11-13`: Policy statement "ZERO outbound egress to external services"
   - `atlassian/forge-app/manifest.yml:77-80`: No `external.fetch` permission declared (only `storage:app`)
   - `atlassian/forge-app/tests/credibility/gap3_egress_static_and_runtime.test.ts`:
     - GAP3_STATIC_EGRESS_SCAN: Scans src/** for axios, node-fetch, http.request (found 0)
@@ -58,8 +58,8 @@
 - **Claim**: All data storage is tenant-isolated using Forge Storage API
 - **Proof**:
   - `atlassian/forge-app/manifest.yml:77-80`: Only `storage:app` scope declared (tenant-isolated by Forge platform)
-  - `atlassian/forge-app/docs/DATA_RETENTION.md:11-48`: "Data is stored exclusively in tenant-isolated Forge Storage"
-  - `atlassian/forge-app/docs/SECURITY.md`: Documents platform sandboxing and tenant isolation mechanisms
+  - `docs/DATA_RETENTION_AND_DELETION.md`: "Data is stored exclusively in tenant-isolated Forge Storage"
+  - `docs/SECURITY.md`: Documents platform sandboxing and tenant isolation mechanisms
   - `/docs/privacy.html`: "Data is stored exclusively in tenant-isolated Forge Storage, managed by Atlassian"
 - **Verification**: Manifest declares storage:app scope; documentation confirms tenant isolation; Forge platform enforces isolation
 - **Status**: PASS
@@ -74,7 +74,7 @@
     - Line 352: `/rest/api/3/fields` (GET)
     - Line 421: `/rest/api/3/search` (GET)
     - Line 502: `/rest/api/3/automations` (GET)
-  - `atlassian/forge-app/docs/EXTERNAL_APIS.md:23-59`: Table documents all Jira API calls as reads
+  - `docs/EXTERNAL_APIS.md:23-59`: Table documents all Jira API calls as reads
   - `/docs/privacy.html`: "What Data the App Accesses" section specifies "read-only mode"
 - **Verification**: All documented Jira API calls are read operations; no POST/PUT/DELETE found in codebase
 - **Status**: PASS
