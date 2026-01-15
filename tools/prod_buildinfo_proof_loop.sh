@@ -62,6 +62,12 @@ if [[ -z "$JIRA_SITE" ]]; then
   fail "JIRA_SITE env var required. Example:\nexport JIRA_SITE='firsttry.atlassian.net'\nThen run: bash tools/prod_buildinfo_proof_loop.sh"
 fi
 
+# Validate JIRA_SITE is hostname-only (not a full URL)
+if echo "$JIRA_SITE" | grep -qE '^https?://'; then
+  echo "FAIL: JIRA_SITE must be hostname only, not a full URL (e.g., firsttry.atlassian.net, not https://...)" > "$RUN_DIR/ERR.txt"
+  fail "JIRA_SITE must be hostname only, not a full URL. Got: $JIRA_SITE"
+fi
+
 pass "Environment variables validated (not printed)"
 log "JIRA_SITE: $JIRA_SITE"
 
@@ -83,7 +89,28 @@ fi
 log "Audit artifacts: $AUDIT_RUN_DIR"
 cp -r "$AUDIT_RUN_DIR"/* "$RUN_DIR/" 2>/dev/null || true
 
-header "STEP 2: FORCE BACKEND REDEPLOY"
+header "STEP 2: VALIDATE FORGE AUTHENTICATION"
+
+cd "$REPO_ROOT/atlassian/forge-app"
+log "Working dir: $(pwd)"
+
+header "STEP 2.5: AUTH GATE (FORGE WHOAMI)"
+
+log "Verifying Forge CLI authentication..."
+
+if ! forge whoami 2>&1 | tee "$RUN_DIR/25_forge_whoami.txt"; then
+  test ${PIPESTATUS[0]} -eq 0 || {
+    echo "FAIL: Forge CLI is not authenticated in this shell." > "$RUN_DIR/ERR.txt"
+    echo "Fix: run 'forge login' interactively once, then re-run this script" >> "$RUN_DIR/ERR.txt"
+    echo "Proof: see $RUN_DIR/25_forge_whoami.txt" >> "$RUN_DIR/ERR.txt"
+    fail "Forge CLI not authenticated. Run 'forge login' interactively, then re-run this script.\nProof: $RUN_DIR/25_forge_whoami.txt"
+  }
+fi
+
+pass "Forge CLI authenticated"
+grep -E "User|Email|Account" "$RUN_DIR/25_forge_whoami.txt" | head -3 | while read -r line; do log "  $line"; done
+
+header "STEP 3: FORCE BACKEND REDEPLOY"
 
 cd "$REPO_ROOT/atlassian/forge-app"
 log "Working dir: $(pwd)"
@@ -95,7 +122,7 @@ fi
 pass "Backend deployed to $ENV"
 grep -i "deployed\|version" "$RUN_DIR/50_forge_deploy.log" | head -3 | while read -r line; do log "  $line"; done
 
-header "STEP 3: FORCE INSTALL UPGRADE"
+header "STEP 4: FORCE INSTALL UPGRADE"
 
 if ! forge install --upgrade --environment "$ENV" --site "$JIRA_SITE" --confirm-scopes --non-interactive 2>&1 | tee "$RUN_DIR/51_forge_install_upgrade.log"; then
   warn "forge install may have warnings, but continuing if app is up-to-date"
@@ -108,7 +135,7 @@ else
   warn "forge install output ambiguous; check log manually: $RUN_DIR/51_forge_install_upgrade.log"
 fi
 
-header "STEP 4: USER ACTION (IMPORTANT!)"
+header "STEP 5: USER ACTION (IMPORTANT!)"
 
 echo -e "${YELLOW}"
 cat << 'EOF'
@@ -130,7 +157,7 @@ echo -e "${NC}"
 
 read -p "Press ENTER after you've refreshed and re-added the gadget: " -t 120 || true
 
-header "STEP 5: PROVE RESOLVER REACHABILITY VIA LOGS"
+header "STEP 6: PROVE RESOLVER REACHABILITY VIA LOGS"
 
 log "Pulling logs from last 30 minutes..."
 
@@ -150,7 +177,7 @@ else
   fail "No BUILDINFO_UI_CALLED or BUILDINFO_UI_PROOF markers found in logs. Resolver may not have been called. See $RUN_DIR/60_forge_logs_full.txt"
 fi
 
-header "STEP 6: PROVE uiReqId CORRELATION"
+header "STEP 7: PROVE uiReqId CORRELATION"
 
 # Extract uiReqId tokens from BUILDINFO_UI_PROOF lines
 if grep "BUILDINFO_UI_PROOF" "$RUN_DIR/61_forge_logs_markers.txt" | grep -oE "uiReqId=[a-zA-Z0-9_]+" > "$RUN_DIR/62_uiReqIds.txt" 2>&1; then
