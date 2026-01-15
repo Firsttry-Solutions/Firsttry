@@ -17,6 +17,7 @@ import {
   createResolverErrorSnapshot 
 } from "../status/statusStorage";
 import { normalizeStatusV1, EMPTY_STATUS_V1, safeStorageKey, GovernanceStatusV1 } from "../shared/statusSchema";
+import { FT_BUILD_SHA, FT_BUILD_TIME_UTC } from "../shared/build_meta";
 
 export async function getStatusSnapshot_resolver(request: any, context: any): Promise<GovernanceStatusV1> {
   const tenantId = resolveTenantIdentity(context);
@@ -24,7 +25,9 @@ export async function getStatusSnapshot_resolver(request: any, context: any): Pr
   const uiBuild = "UI_v2.14.0";
 
   // Log backend build identifiers for deployment reconciliation
-  console.log("[govdash-backend-build]", { BUILD_SHA: backendBuild, FT_BUILD_SHA: process.env.FT_BUILD_SHA, env: process.env.FORGE_ENV || process.env.NODE_ENV });
+  console.log("[govdash-backend-build]", { BUILD_SHA: backendBuild, FT_BUILD_SHA, FT_BUILD_TIME_UTC, env: process.env.FORGE_ENV || process.env.NODE_ENV });
+  console.log("[BUILDINFO_CALLED] Backend build snapshot request");
+  console.log(`BUILDINFO_PROOF FT_BUILD_SHA=${FT_BUILD_SHA} FT_BUILD_TIME_UTC=${FT_BUILD_TIME_UTC}`);
 
   if (!tenantId) {
     console.error("[getStatusSnapshot] No tenant identity resolved");
