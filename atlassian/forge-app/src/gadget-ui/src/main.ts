@@ -19,7 +19,6 @@ import { toSummaryTextFromPayload } from './summaryText';
 // Import enterprise UI renderers (vanilla DOM, accessibility-safe)
 import { renderKpiTiles } from './enterprise/renderKpiTiles';
 import { renderStatusBanner } from './enterprise/renderStatusBanner';
-import { renderProgressTracker } from './enterprise/renderProgressTracker';
 import { renderTrustSection } from './enterprise/renderTrustSection';
 import { applyExportPolicy } from './enterprise/applyExportPolicy';
 import './enterprise/enterprise.css';
@@ -258,12 +257,6 @@ async function loadStatus() {
             // Render status banner (alert only if degraded/error)
             renderStatusBanner({
                 containerId: 'status-banner-section',
-                legacyData: data
-            });
-            
-            // Render progress tracker (timeline - collapsed roadmap)
-            renderProgressTracker({
-                containerId: 'progress-tracker-section',
                 legacyData: data
             });
             
@@ -1054,10 +1047,6 @@ window.refreshNow = async function() {
             });
             renderStatusBanner({
                 containerId: 'status-banner-section',
-                legacyData: newSnapshot
-            });
-            renderProgressTracker({
-                containerId: 'progress-tracker-section',
                 legacyData: newSnapshot
             });
         } catch (renderErr) {

@@ -64,17 +64,6 @@ FirstTry does NOT currently offer a standalone Data Processing Addendum (DPA). C
 
 ---
 
-## Compliance Roadmap (Not Commitments)
-
-| Certification | Status | Target Timeline |
-|--------------|--------|-----------------|
-| **SOC 2 Type II** | Not started | 2026+ (if demand justifies) |
-| **ISO 27001** | Not started | 2026+ (if demand justifies) |
-| **Cloud Fortified** | Not started | Evaluate 2026 |
-| **FedRAMP** | Not planned | Escalate to Atlassian if needed |
-
----
-
 ## Regulatory Assessments
 
 ### GDPR (EU General Data Protection Regulation)

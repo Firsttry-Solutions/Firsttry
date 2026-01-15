@@ -253,7 +253,7 @@ ensureReportHasRequiredMetadata(report);
 
 ---
 
-## Implementation Roadmap (Phase 5)
+## Implementation Requirements (Phase 5+)
 
 ### Week 1: Foundation
 
@@ -373,4 +373,4 @@ Rationale:
 
 | Date | Entry |
 |---|---|
-| 2025-12-22 | v1.0 - Documented all 11 blockers with effort estimates and roadmap |
+| 2025-12-22 | v1.0 - Documented all 11 blockers with effort estimates |

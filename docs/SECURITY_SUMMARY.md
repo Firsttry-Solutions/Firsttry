@@ -4,7 +4,7 @@
 
 **Audience**: Security evaluators, procurement teams, enterprise compliance offices, and IT security leaders assessing FirstTry for deployment in regulated environments.
 
-**Scope**: This document provides authoritative facts about the security posture of FirstTry as of the current build. It covers Forge manifest scopes, API surface restrictions, deterministic verification mechanisms, and read-only operational design. It does NOT describe future security features, roadmap enhancements, or conditional capabilities.
+**Scope**: This document provides authoritative facts about the security posture of FirstTry as of the current build. It covers Forge manifest scopes, API surface restrictions, deterministic verification mechanisms, and read-only operational design. It does NOT describe future security features, planned enhancements, or conditional capabilities.
 
 ## Executive Summary
 

@@ -4,7 +4,7 @@
  * Vertical timeline for Phase 4 & Phase 5 progress
  * Replaces old phase table with interactive visualization
  * Accessible: keyboard navigation, screen reader support
- * Color-coded: green (complete), yellow (in progress), gray (pending)
+ * Color-coded: green (complete), yellow (running), gray (pending)
  */
 
 .progress-tracker {

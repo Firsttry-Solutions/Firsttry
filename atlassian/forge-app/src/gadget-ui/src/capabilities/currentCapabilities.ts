@@ -5,7 +5,6 @@
  * Rules:
  * - Set to TRUE only if the feature is fully implemented and wired
  * - Set to FALSE for anything not yet shipped or only partially working
- * - Roadmap renderer uses these flags to auto-suppress completed items
  */
 
 export const CURRENT_CAPABILITIES = {

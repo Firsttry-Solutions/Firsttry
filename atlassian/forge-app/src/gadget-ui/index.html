@@ -14,6 +14,23 @@
     <div class="container">
         <h1>FirstTry – Governance Dashboard</h1>
         <p class="title-description">Real-time operational visibility. Read-only monitoring of platform configuration and data quality.</p>
+        
+        <!-- Scope Boundaries & Non-Goals -->
+        <div class="section" style="background: #f5f6f7; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 14px; font-weight: 600; color: #172b4d; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">📋 Scope Boundaries & Explicit Non-Goals</div>
+            <p style="font-size: 13px; color: #44546f; margin: 0 0 12px 0; line-height: 1.5;">This application is intentionally limited in scope. It does NOT:</p>
+            <ul style="font-size: 13px; color: #44546f; margin: 0; padding-left: 20px; line-height: 1.6;">
+                <li>Trigger background jobs</li>
+                <li>Ingest external events</li>
+                <li>Execute pipelines</li>
+                <li>Mutate Jira or host product data</li>
+                <li>Maintain audit trails or compliance snapshots</li>
+                <li>Export trust, audit, or PDF artifacts</li>
+                <li>Perform alerting, automation, or notifications</li>
+            </ul>
+            <p style="font-size: 12px; color: #626f86; margin: 12px 0 0 0; line-height: 1.5;">Any expansion of scope, if ever considered, would require explicit versioning, full disclosure, and re-review.</p>
+        </div>
+        
         <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
             <div class="build-marker" id="build-marker" style="flex: 1; display: none;"></div>
             <button id="refresh-now-btn" style="padding: 6px 14px; background: #0052cc; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;">Refresh now</button>

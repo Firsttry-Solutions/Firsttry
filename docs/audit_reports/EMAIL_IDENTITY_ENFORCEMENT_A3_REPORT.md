@@ -311,7 +311,6 @@ bash tools/validate_docs_email_identity.sh
 **Next Steps**:
 - Continue with marketplace submission
 - Monitor validator in CI/CD
-- Future releases can consolidate across other domains if needed
 
 ---
 
