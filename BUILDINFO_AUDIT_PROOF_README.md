@@ -368,3 +368,55 @@ These scripts ensure:
 2. **Evidence trail** - Timestamped artifacts capture exact state
 3. **Non-fakeable proof** - Request ID correlation ties UI invocation to backend logs
 4. **Reproducibility** - Any machine with bash + node + forge CLI can verify
+
+---
+
+## Gadget Title Cache Bust Ladder (PHASE 5)
+
+When the gadget title is updated in the manifest and deployed, Jira's caching layer may not immediately reflect the change. The following steps ensure the new title appears:
+
+### What Changed
+
+- **Before:** `key: governance-dashboard-gadget` | `title: FirstTry – Audit Evidence Snapshot for Jira`
+- **After:** `key: governance-dashboard-gadget-v2` | `title: FirstTry – Governance Dashboard (Real-time Status)`
+
+The gadget module key was also bumped (`-v2` suffix) to force Jira to re-load the module definition.
+
+### Cache Bust Steps (Try in Order)
+
+**Step 1: Remove & Re-add Gadget**
+1. Open Jira dashboard with the gadget
+2. Click gadget menu → Remove from dashboard
+3. Hard refresh: `Ctrl+Shift+R` (Windows/Linux) or `Cmd+Shift+R` (Mac)
+4. Click "+ Add gadget" / "Add it" button
+5. Search for "FirstTry" and re-add the gadget
+6. Check if title now shows: "FirstTry – Governance Dashboard (Real-time Status)"
+
+**Step 2: Incognito / Private Window**
+1. Open Jira in a new incognito window
+2. Login to the same Jira site
+3. Navigate to the dashboard
+4. Check if gadget title appears updated
+5. If yes, the issue is local cache; clear browser cache in Step 1
+
+**Step 3: Reinstall App**
+⚠️ **WARNING: This may cause data loss if unsaved state exists.**
+1. In Jira, go to **Apps** → **Manage your apps**
+2. Find "FirstTry" app
+3. Click **Uninstall**
+4. Confirm uninstall
+5. Run `forge install --upgrade --environment production --site <JIRA_SITE>`
+6. Return to Jira dashboard
+7. Check if gadget title is now correct
+
+### Proof: UI Build Meta Is Immutable
+
+The UI footer now displays:
+
+```
+Build: <SHA7> • <ISO_TIMESTAMP>
+```
+
+Where `<SHA7>` is the first 7 characters of the git commit SHA and `<ISO_TIMESTAMP>` is the build time in UTC. This is auto-generated at build time and proves the exact UI version deployed. It will **never** show "dev • dev".
+
+---

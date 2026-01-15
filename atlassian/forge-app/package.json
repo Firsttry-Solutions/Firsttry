@@ -14,6 +14,7 @@
     "verify:phase5": "node scripts/verify_phase5.mjs",
     "verify:phase4-5": "node scripts/verify_phase4_5.mjs",
     "lint": "echo \"lint: not configured (intentional)\"",
+    "prebuild": "node tools/gen_ui_build_meta.mjs",
     "build": "node tools/build_meta.mjs && node tools/run_build_with_meta.mjs && echo \"Backend build: not configured (intentional)\"",
     "reviewer:gate": "bash audit/reviewer_ready_gate.sh",
     "proof:auth": "bash audit/proof_run_authenticated.sh",
