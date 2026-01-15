@@ -122,24 +122,11 @@ FirstTry has no per-user limits:
 
 ## Known Limitations
 
-1. **Workspace-Wide Monitoring**: Cannot restrict to specific projects (future roadmap)
-2. **Custom Rules**: Drift detection rules are hardcoded (no UI configuration yet)
+1. **Workspace-Wide Monitoring**: Cannot restrict to specific projects
+2. **Custom Rules**: Drift detection rules are hardcoded
 3. **Historical Analysis**: Limited to 90-day retention (by design)
 4. **Export Formats**: JSON/CSV only (PDF not supported)
 5. **Webhook Support**: Cannot trigger external actions (read-only tool)
-
----
-
-## Roadmap & Future
-
-| Feature | Timeline | Status |
-|---------|----------|--------|
-| **Fine-Grained Permissions** | 2026+ | Planned |
-| **Custom Drift Rules UI** | 2026+ | Planned |
-| **Longer Retention (configurable)** | 2026+ | Planned |
-| **PDF Exports** | 2026+ | Under consideration |
-| **External Webhook Integration** | 2026+ | Under consideration |
-| **Atlassian Cloud Fortified** | 2026+ | Under evaluation |
 
 ---
 

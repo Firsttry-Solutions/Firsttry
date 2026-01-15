@@ -10,13 +10,27 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 
 ---
 
-## 📋 Documentation by Audience
+## 📋 Scope Boundaries & Explicit Non-Goals
+
+This application is intentionally limited in scope.
+
+It does NOT:
+- Trigger background jobs
+- Ingest external events
+- Execute pipelines
+- Mutate Jira or host product data
+- Maintain audit trails or compliance snapshots
+- Export trust, audit, or PDF artifacts
+- Perform alerting, automation, or notifications
+
+Any expansion of scope, if ever considered, would require explicit versioning, full disclosure, and re-review.
+
+---
 
 ### For End Users & Administrators
 
 - **[ENTERPRISE_ONE_PAGER.md](ENTERPRISE_ONE_PAGER.md)** — High-level overview, key features, what's included/excluded
 - **[SUPPORT_POLICY.md](SUPPORT_POLICY.md)** — How to get help, support scope, escalation paths
-- **[ROADMAP.md](ROADMAP.md)** — Planned capabilities and known limitations
 
 ### For Enterprise Security & Procurement Teams
 
@@ -70,7 +84,6 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 **Metrics & Data Models**:
 - **[PHASE_8_V2_SPEC.md](PHASE_8_V2_SPEC.md)** — Governance metrics specification (M1-M5)
 - **[PHASE_9_V2_SPEC.md](PHASE_9_V2_SPEC.md)** — Evidence ledger and canonical data spec
-- **[FEATURE_PHASE_TIER_MATRIX.md](FEATURE_PHASE_TIER_MATRIX.md)** — Feature matrix and tier definitions
 
 ---
 
@@ -88,7 +101,6 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 
 ### Operations & Reference
 
-- **[DOCS_INDEX.md](DOCS_INDEX.md)** — Comprehensive doc index (for navigation)
 - **[claims_proof_catalog.md](claims_proof_catalog.md)** — All claims with evidence references
 - **[CHANGE_MANAGEMENT.md](CHANGE_MANAGEMENT.md)** — How we manage changes and versioning
 - **[SUPPORT.md](SUPPORT.md)** — Legacy support guide

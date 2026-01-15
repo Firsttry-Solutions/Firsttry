@@ -138,7 +138,7 @@ with no guaranteed response times, resolution SLAs, or uptime guarantees.
 **Risk**: Using checkmark (✅) next to "Feature Requests" suggests supported → "(no commitment)" disclaimer may be missed
 
 **Severity**: 🟡 MEDIUM  
-**Fix**: DOWNGRADE — Replace checkmark with ℹ️ (info) or ⏳ (pending)
+**Fix**: DOWNGRADE — Replace checkmark with ℹ️ (info) or ℹ️ (pending)
 
 ---
 

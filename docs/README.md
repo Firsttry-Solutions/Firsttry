@@ -16,7 +16,6 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 
 - **[ENTERPRISE_ONE_PAGER.md](ENTERPRISE_ONE_PAGER.md)** — High-level overview, key features, what's included/excluded
 - **[SUPPORT_POLICY.md](SUPPORT_POLICY.md)** — How to get help, support scope, escalation paths
-- **[ROADMAP.md](ROADMAP.md)** — Planned capabilities and known limitations
 
 ### For Enterprise Security & Procurement Teams
 

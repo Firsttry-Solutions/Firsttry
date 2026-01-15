@@ -48,7 +48,7 @@ Support explicitly does NOT include:
    - Complex issues may require additional investigation
 
 4. **Resolution**: 
-   - Bugs may be fixed in future releases
+   - Bugs may be fixed in subsequent releases
    - Feature requests may be considered for roadmap inclusion
    - Workarounds may be suggested where applicable
 

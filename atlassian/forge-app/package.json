@@ -16,7 +16,9 @@
     "lint": "echo \"lint: not configured (intentional)\"",
     "build": "node tools/build_meta.mjs && node tools/run_build_with_meta.mjs && echo \"Backend build: not configured (intentional)\"",
     "reviewer:gate": "bash audit/reviewer_ready_gate.sh",
-    "proof:auth": "bash audit/proof_run_authenticated.sh"
+    "proof:auth": "bash audit/proof_run_authenticated.sh",
+    "audit:buildinfo": "bash ../../tools/audit_buildinfo_reachability.sh",
+    "proof:buildinfo:prod": "bash ../../tools/prod_buildinfo_proof_loop.sh"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

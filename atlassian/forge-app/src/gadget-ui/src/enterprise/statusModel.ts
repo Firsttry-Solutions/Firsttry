@@ -39,7 +39,7 @@ export const severityConfig: Record<Severity, { icon: string; bgColor: string; t
     textColor: '#ffffff',
   },
   UNKNOWN: {
-    icon: '⏳',
+    icon: 'ℹ️',
     bgColor: '#626f86',
     textColor: '#ffffff',
   },

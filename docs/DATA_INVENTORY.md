@@ -90,7 +90,7 @@ Event records capture changes to issues over time, enabling drift detection.
 |-------|--------|--------|
 | `issue.created` | Jira Webhook | issueKey, project, timestamp |
 | `issue.updated` | Jira Webhook | issueKey, changedFields, timestamp |
-| (others) | Future expansion | [Documented as future roadmap items](ROADMAP.md) |
+| (others) | Future expansion | Documented as out of current scope |
 
 ### 2.3 Storage Location
 

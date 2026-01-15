@@ -28,7 +28,7 @@ export function getStatusIcon(color: StatusColor): string {
         green: "✅",
         yellow: "⚠️",
         red: "⛔",
-        gray: "⏳"
+        gray: "ℹ️"
     };
     return icons[color] || "❓";
 }

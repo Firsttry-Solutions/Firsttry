@@ -362,7 +362,7 @@ Hi [Name],
 - [ ] By design (architectural constraint)
 - [ ] Duplicate of issue #[number]
 - [ ] Requires change to Atlassian Forge API (out of scope)
-- [ ] Enhancement out of scope for v1 (tracked for future release)
+- [ ] Enhancement out of scope for v1 (to be prioritized in future versions)
 - [ ] User error (see troubleshooting guide)
 - [ ] Requires customer to upgrade [dependency]
 

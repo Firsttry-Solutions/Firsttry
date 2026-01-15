@@ -195,10 +195,10 @@ FirstTry has defined TTL constants in code for potential future use, but they ar
 ```typescript
 // src/storage.ts - NOT CURRENTLY ENFORCED BY FIRSTRY
 
-export const SNAPSHOT_TTL_SECONDS = 7776000;   // 90 days (defined, not active)
-export const EVENT_TTL_SECONDS = 7776000;      // 90 days (defined, not active)
-export const REPORT_TTL_SECONDS = 2592000;     // 30 days (defined, not active)
-export const EXPORT_TTL_SECONDS = 604800;      // 7 days (defined, not active)
+export const SNAPSHOT_TTL_SECONDS = 7776000;   // 90 days (defined, not implemented)
+export const EVENT_TTL_SECONDS = 7776000;      // 90 days (defined, not implemented)
+export const REPORT_TTL_SECONDS = 2592000;     // 30 days (defined, not implemented)
+export const EXPORT_TTL_SECONDS = 604800;      // 7 days (defined, not implemented)
 ```
 
 **Status**: These constants are placeholders. FirstTry retains all data indefinitely.

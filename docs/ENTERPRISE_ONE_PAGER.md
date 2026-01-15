@@ -16,7 +16,7 @@ FirstTry is a read-only Jira governance application that provides real-time visi
 - Key governance capabilities
 - Security posture and architectural principles
 - Operational model and deployment approach
-- Support and roadmap vision
+- Support and operational model
 - Where to find detailed documentation for each topic
 
 ## What This Explicitly Does NOT Cover
@@ -25,7 +25,6 @@ FirstTry is a read-only Jira governance application that provides real-time visi
 - Deployment procedures or configuration instructions
 - Support scope boundaries (see Support Policy)
 - Detailed pricing or cost forecasting (see Pricing Rationale)
-- Feature roadmap details (see Roadmap document)
 - Organizational change management procedures
 
 ## Core Assertions
@@ -101,10 +100,9 @@ Technical support is provided through [SUPPORT_POLICY.md](SUPPORT_POLICY.md). Fi
 
 ## Contact & Resources
 
-- **Documentation**: [docs/DOCS_INDEX.md](DOCS_INDEX.md)
 - **Security Details**: [docs/SECURITY_SUMMARY.md](SECURITY_SUMMARY.md)
-- **Roadmap**: [docs/ROADMAP.md](ROADMAP.md)
 - **Change Management**: [docs/CHANGE_MANAGEMENT.md](CHANGE_MANAGEMENT.md)
+- **Support Policy**: [docs/SUPPORT_POLICY.md](SUPPORT_POLICY.md)
 
 ## Explicit Negative Assertions
 

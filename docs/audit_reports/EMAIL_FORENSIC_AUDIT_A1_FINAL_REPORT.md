@@ -33,7 +33,7 @@
 ### CATEGORY B: LEGACY/DEPRECATED DOMAINS (⚠️ Future consolidation needed)
 | Email | Count | Status | Action |
 |-------|-------|--------|--------|
-| `contact@firsttry.run` | 20 | ⚠️ Legacy | Consolidate in future release |
+| `contact@firsttry.run` | 20 | ⚠️ Legacy | Consolidate as needed |
 | `contact@firsttry.run` | 1 | ⚠️ Legacy | Non-critical |
 | `contact@firsttry.run` | 2 | ⚠️ Legacy | Non-critical |
 
