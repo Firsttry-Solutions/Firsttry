@@ -281,6 +281,33 @@ else
   log "Proof: $RUN_DIR/27_install_list.txt"
 fi
 
+header "STEP 2.8: BUNDLE DEPS GATE (NODE RESOLUTION)"
+
+enter_forge_app_dir
+
+log "Verifying @forge/resolver is resolvable (${T_SHORT}s timeout)..."
+set +e
+timeout "$T_SHORT" node -e "require.resolve('@forge/resolver'); console.log('OK: @forge/resolver resolvable')" \
+  >"$RUN_DIR/28_resolver_resolve.txt" 2>&1
+RC=$?
+set -e
+
+if [ $RC -ne 0 ]; then
+  {
+    echo "FAIL: @forge/resolver is not resolvable from forge-app. Bundling will fail."
+    echo "Fix:"
+    echo "  cd /workspaces/Firsttry/atlassian/forge-app"
+    echo "  npm install @forge/resolver --save"
+    echo "  rm -rf node_modules && npm ci"
+    echo "Proof: $RUN_DIR/28_resolver_resolve.txt"
+    echo "ExitCode: $RC (124=timeout)"
+  } > "$RUN_DIR/ERR.txt"
+  fail "Bundle dependency gate failed"
+fi
+
+pass "Bundle dependency gate passed (@forge/resolver resolvable)"
+log "Proof: $RUN_DIR/28_resolver_resolve.txt"
+
 header "STEP 3: PRINT PROOF SUMMARY"
 
 log ""
@@ -295,6 +322,7 @@ log "Auth Gates Passed:"
 log "  ✓ Gate 1: forge whoami (identity)"
 log "  ✓ Gate 2: forge environments (app access)"
 log "  ✓ Gate 3: deploy probe (permission)"
+log "  ✓ Gate 2.8: bundle deps (@forge/resolver resolvable)"
 log ""
 log "Proof artifacts: $RUN_DIR"
 log "════════════════════════════════════════════════════════════"
