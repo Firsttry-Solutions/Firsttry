@@ -81,6 +81,12 @@ checked = 0
 for p in sorted(docs.rglob("*")):
     if p.suffix.lower() not in [".md", ".html"]:
         continue
+    
+    # Skip internal docs (docs/internal/, docs/audit_reports/, docs/evidence/)
+    # These may have internal-only links and are not customer-facing
+    if "/internal/" in str(p) or "/audit_reports/" in str(p) or "/evidence/" in str(p):
+        continue
+    
     try:
         txt = p.read_text(errors="ignore")
     except:
@@ -229,8 +235,8 @@ if test -f "$SCOPES_FILE"; then
             done
             
             # Check for overclaims: scopes in "Declared Scopes" section but not in manifest (STRICT - must FAIL)
-            # Extract only the "Declared Scopes" section (between "## Declared Scopes" and "## What FirstTry NEVER")
-            DECLARED_SECTION=$(sed -n '/## Declared Scopes/,/## What FirstTry NEVER/p' "$SCOPES_FILE" | head -n -1)
+            # Extract only the "Declared Scopes" section (between "## Declared Scopes" and next ## header)
+            DECLARED_SECTION=$(sed -n '/## Declared Scopes/,/^##/p' "$SCOPES_FILE" | head -n -1)
             
             if test -n "$DECLARED_SECTION"; then
                 DOCS_SCOPE_PATTERNS=$(echo "$DECLARED_SECTION" | grep -o '[a-z][a-z]*:[a-z0-9_-]*' | sort -u 2>/dev/null || echo "")

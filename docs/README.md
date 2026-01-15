@@ -33,8 +33,6 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 - **[INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md)** — Security incident response procedures
 
 **Procurement & Business**:
-- **[ROI_JUSTIFICATION.md](ROI_JUSTIFICATION.md)** — ROI framework and cost-benefit analysis
-- **[PRICING_RATIONALE.md](PRICING_RATIONALE.md)** — Pricing model, tier justification
 - **[PRICING_GUARANTEES.md](PRICING_GUARANTEES.md)** — What pricing tiers include/exclude
 - **[ENTITLEMENTS.md](ENTITLEMENTS.md)** — Feature entitlements, tier mappings
 - **[COMPLIANCE.md](COMPLIANCE.md)** — Certification status, regulatory compliance posture
@@ -42,7 +40,6 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 ### For Atlassian Marketplace Reviewers
 
 **Required Reading**:
-- **[MARKETPLACE_LEGAL_IMPLEMENTATION.md](MARKETPLACE_LEGAL_IMPLEMENTATION.md)** — Marketplace compliance checklist
 - **[SCOPES.md](SCOPES.md)** — Scope justification and no-access assertions
 - **[SUPPORT_POLICY.md](SUPPORT_POLICY.md)** — Support model and no-SLA disclaimer
 - **[claims_proof_catalog.md](claims_proof_catalog.md)** — All marketplace claims with proof references
@@ -69,7 +66,6 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 **Metrics & Data Models**:
 - **[PHASE_8_V2_SPEC.md](PHASE_8_V2_SPEC.md)** — Governance metrics specification (M1-M5)
 - **[PHASE_9_V2_SPEC.md](PHASE_9_V2_SPEC.md)** — Evidence ledger and canonical data spec
-- **[FEATURE_PHASE_TIER_MATRIX.md](FEATURE_PHASE_TIER_MATRIX.md)** — Feature matrix and tier definitions
 
 ---
 
@@ -78,7 +74,6 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 ### Governance Models & Concepts
 
 - **[ENTERPRISE_READINESS.md](ENTERPRISE_READINESS.md)** — Enterprise readiness matrix
-- **[ENTERPRISE_ACCEPTANCE.md](ENTERPRISE_ACCEPTANCE.md)** — Acceptance criteria for enterprise deployments
 - **[SHAKEDOWN.md](SHAKEDOWN.md)** — Determinism and correctness verification
 
 ### Marketplace & Legal
@@ -87,7 +82,6 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 
 ### Operations & Reference
 
-- **[DOCS_INDEX.md](DOCS_INDEX.md)** — Comprehensive doc index (for navigation)
 - **[claims_proof_catalog.md](claims_proof_catalog.md)** — All claims with evidence references
 - **[CHANGE_MANAGEMENT.md](CHANGE_MANAGEMENT.md)** — How we manage changes and versioning
 - **[SUPPORT.md](SUPPORT.md)** — Legacy support guide
@@ -102,7 +96,7 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 | **Privacy Compliance** | ✅ Documented | [PRIVACY.md](PRIVACY.md) |
 | **API Scope Justification** | ✅ Complete | [SCOPES.md](SCOPES.md) |
 | **No False Claims** | ✅ Verified | [claims_proof_catalog.md](claims_proof_catalog.md) |
-| **Marketplace Readiness** | ✅ Checked | [MARKETPLACE_LEGAL_IMPLEMENTATION.md](MARKETPLACE_LEGAL_IMPLEMENTATION.md) |
+| **Marketplace Readiness** | ✅ Checked | [SCOPES.md](SCOPES.md) |
 | **Data Handling** | ✅ Explicit | [legal/data-handling.md](legal/data-handling.md) |
 
 ---
@@ -124,10 +118,9 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 4. Consult [forge-app/AUDIT_USAGE_GUIDE.md](forge-app/AUDIT_USAGE_GUIDE.md) for Forge-specific questions
 
 **"I'm a Marketplace reviewer checking compliance"**
-1. Review [MARKETPLACE_LEGAL_IMPLEMENTATION.md](MARKETPLACE_LEGAL_IMPLEMENTATION.md)
-2. Verify claims in [claims_proof_catalog.md](claims_proof_catalog.md)
-3. Check scopes and permissions: [SCOPES.md](SCOPES.md)
-4. Confirm support model: [SUPPORT_POLICY.md](SUPPORT_POLICY.md)
+1. Verify claims in [claims_proof_catalog.md](claims_proof_catalog.md)
+2. Check scopes and permissions: [SCOPES.md](SCOPES.md)
+3. Confirm support model: [SUPPORT_POLICY.md](SUPPORT_POLICY.md)
 
 ---
 

@@ -43,4 +43,4 @@ The following require **customer measurement** (not provided by FirstTry):
 - Setup time (varies by governance model complexity)
 - Error prevention value (depends on violation costs in your org)
 
-See [docs/ROI_MODEL.md](ROI_MODEL.md) for how to measure these yourself.
+For measurement frameworks, see the internal documentation or contact support for detailed ROI calculation guides.

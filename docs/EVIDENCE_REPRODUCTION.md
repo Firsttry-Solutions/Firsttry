@@ -211,6 +211,6 @@ rg -n "must be documented|you MUST list|Auto-populated" docs/ -S
 ## References
 
 - [Gate 1+2 Implementation](./ENTERPRISE_READINESS.md)
-- [Proof & Evidence Document](./FINAL_EVIDENCE_VERIFICATION.md)
+- [Proof & Evidence Document](../FINAL_EVIDENCE_VERIFICATION.md)
 - [Vendor Facts (Source of Truth)](./VENDOR_FACTS.yml)
 - [CI Workflow](../.github/workflows/reviewer-gates.yml)

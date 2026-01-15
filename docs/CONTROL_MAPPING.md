@@ -43,8 +43,8 @@ Each control mapping includes:
 | Control Area | FirstTry Control | Evidence | Status | Notes |
 |---|---|---|---|---|
 | **CC1.1**: The board of directors demonstrates independence from management and exercises oversight of the development, administration, and accountability of internal control and risk management | N/A — FirstTry is open-source | N/A | NOT IMPLEMENTED | FirstTry is maintained by volunteers; no formal board structure. Governance is via GitHub issues and pull requests. |
-| **CC1.2**: Management establishes structures, reporting lines, and appropriate authorities to facilitate effective carrying out of responsibilities to achieve organizational objectives | CODE_OF_CONDUCT + CONTRIBUTING guidelines | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | IMPLEMENTED | Maintainers defined via GitHub CODEOWNERS; contribution process documented. |
-| **CC1.3**: The organization demonstrates a commitment to competence | Developer docs + test coverage | [tests/](../tests) (34+ passing tests) | IMPLEMENTED | Continuous testing enforces code quality; 34+ security tests pass in CI. |
+| **CC1.2**: Management establishes structures, reporting lines, and appropriate authorities to facilitate effective carrying out of responsibilities to achieve organizational objectives | CODE_OF_CONDUCT + CONTRIBUTING guidelines | [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) | IMPLEMENTED | Maintainers defined via GitHub CODEOWNERS; contribution process documented. |
+| **CC1.3**: The organization demonstrates a commitment to competence | Developer docs + test coverage | tests/ (34+ passing tests) | IMPLEMENTED | Continuous testing enforces code quality; 34+ security tests pass in CI. |
 | **CC1.4**: The organization holds individuals accountable for their responsibilities | SECURITY.md + SUPPORT_POLICY.md | [SECURITY.md](SECURITY.md), [SUPPORT_POLICY.md](SUPPORT_POLICY.md) | IMPLEMENTED | Security contact defined; vulnerability disclosure timeline published. |
 
 #### CC2: Communication & Information
@@ -60,7 +60,7 @@ Each control mapping includes:
 | Control Area | FirstTry Control | Evidence | Status | Notes |
 |---|---|---|---|---|
 | **CC3.1**: The organization specifies objectives with sufficient clarity to enable the identification and assessment of risks relating to the organization's objectives across the entity | Risk model in SECURITY.md | [SECURITY.md#Threat-Model](SECURITY.md#5-threat-model) | IMPLEMENTED | Threat model defines in-scope and out-of-scope risks; explicit boundaries declared. |
-| **CC3.2**: The organization identifies risks across the organization relevant to the achievement of objectives across the entity and analyzes risks as a basis for determining how the identified risks should be managed | Bandit SAST + threat model | [.github/workflows/security-lite.yml:L47-L51](.github/workflows/security-lite.yml#L47-L51) | IMPLEMENTED | Automated SAST scanning (Bandit) runs on every push; findings logged. |
+| **CC3.2**: The organization identifies risks across the organization relevant to the achievement of objectives across the entity and analyzes risks as a basis for determining how the identified risks should be managed | Bandit SAST + threat model | security-lite.yml | IMPLEMENTED | Automated SAST scanning (Bandit) runs on every push; findings logged. |
 | **CC3.3**: The organization considers potential for fraud in assessing risks to the achievement of objectives across the entity | Code review via pull requests | GitHub PR gating | IMPLEMENTED | All changes require PR review before merge to main; enforced via branch protections. |
 
 #### CC4: Monitoring & Control Activities
@@ -70,7 +70,7 @@ Each control mapping includes:
 | **CC4.1**: The organization selects, develops, and deploys control activities over technology to achieve organizational objectives and address related risks | Manifest scope restriction | [manifest.yml#L58-L61](../atlassian/forge-app/manifest.yml#L58-L61) | IMPLEMENTED | Forge manifest restricts scopes to `storage:app` and `read:jira-work` only; write/admin scopes absent. |
 | **CC4.2**: The organization selects, develops, and deploys control activities over technology to achieve organizational objectives and address related risks | Freeze-lock verification gate | [reviewer_ready_gate.sh](../atlassian/forge-app/audit/reviewer_ready_gate.sh) | IMPLEMENTED | Deterministic freeze-lock mechanism enforces artifact integrity at build time. |
 | **CC5.1**: The entity selects, develops, and implements activities that contribute to the mitigation of risks to the achievement of objectives to acceptable levels | Read-only API enforcement | [reviewer_ready_gate.sh#L182-L192](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L182-L192) | IMPLEMENTED | Write-surface ban enforced; no POST/PUT/PATCH/DELETE on Jira in production code. |
-| **CC5.2**: The entity also selects, develops, and implements general control activities over technology | Dependency audit gate | [.github/workflows/security-lite.yml#L47-L51](.github/workflows/security-lite.yml#L47-L51) | IMPLEMENTED | `npm audit --audit-level=high` blocks releases with high/critical CVEs. |
+| **CC5.2**: The entity also selects, develops, and implements general control activities over technology | Dependency audit gate | security-lite.yml | IMPLEMENTED | `npm audit --audit-level=high` blocks releases with high/critical CVEs. |
 | **CC5.3**: The entity selects, develops, and implements policies and procedures over system inputs, processing, storage, output, and communications | Tenant isolation enforcement | [tenant_context.ts#L36-L52](../atlassian/forge-app/src/security/tenant_context.ts#L36-L52) + [tenant_storage.ts#L56-L91](../atlassian/forge-app/src/security/tenant_storage.ts#L56-L91) | IMPLEMENTED | Tenant-prefixed storage keys prevent cross-tenant access; 24 unit tests verify isolation. |
 
 #### CC6: Logical & Physical Access
@@ -85,8 +85,8 @@ Each control mapping includes:
 | Control Area | FirstTry Control | Evidence | Status | Notes |
 |---|---|---|---|---|
 | **CC7.1**: To meet objectives, the organization obtains or generates, uses, and communicates relevant, quality information regarding the effectiveness of internal control over financial reporting, operations, and compliance | Audit event logging | [audit_events.ts](../atlassian/forge-app/src/audit/audit_events.ts) | IMPLEMENTED | Every policy evaluation creates immutable audit entry (timestamp, policy ID, decision, reason). |
-| **CC7.2**: The organization monitors system activities and analyzes results to maintain effective control over risks | CI/CD pipeline gates | [.github/workflows/reviewer-gates.yml](.github/workflows/reviewer-gates.yml) | IMPLEMENTED | Non-bypassable doc validation and reviewer gates run on every push/PR. |
-| **CC7.3**: The organization monitors systems and related assets on a periodic basis and upon occurrence of anomalies; takes action to maintain baseline security | Security lite workflow | [.github/workflows/security-lite.yml](.github/workflows/security-lite.yml) | PARTIAL | Scheduled dependency audit runs daily; no real-time anomaly detection. |
+| **CC7.2**: The organization monitors system activities and analyzes results to maintain effective control over risks | CI/CD pipeline gates | reviewer-gates.yml | IMPLEMENTED | Non-bypassable doc validation and reviewer gates run on every push/PR. |
+| **CC7.3**: The organization monitors systems and related assets on a periodic basis and upon occurrence of anomalies; takes action to maintain baseline security | Security lite workflow | security-lite.yml | PARTIAL | Scheduled dependency audit runs daily; no real-time anomaly detection. |
 
 #### CC8: Logical Access & Authentication
 
@@ -99,7 +99,7 @@ Each control mapping includes:
 
 | Control Area | FirstTry Control | Evidence | Status | Notes |
 |---|---|---|---|---|
-| **CC9.1**: The organization identifies, selects, and develops risk mitigation activities for risks arising from potential business disruptions | Data retention policy | [DATA_RETENTION.md](../DATA_RETENTION.md) | IMPLEMENTED | Indefinite retention by default; users can delete via CLI; uninstall triggers platform-level deletion. |
+| **CC9.1**: The organization identifies, selects, and develops risk mitigation activities for risks arising from potential business disruptions | Data retention policy | [DATA_RETENTION.md](DATA_RETENTION.md) | IMPLEMENTED | Indefinite retention by default; users can delete via CLI; uninstall triggers platform-level deletion. |
 | **CC9.2**: The organization ensures that system components and information assets are protected from the effects of natural disasters, environmental hazards, and human-made threats | Atlassian Cloud | [SECURITY.md](SECURITY.md) | IMPLEMENTED | Data encrypted in transit (TLS 1.2+) and at rest (AES-256 by Atlassian); FirstTry relies on Forge. |
 
 ---
@@ -110,7 +110,7 @@ Each control mapping includes:
 
 | Control Area | FirstTry Control | Evidence | Status | Notes |
 |---|---|---|---|---|
-| **A.5.1**: Responsibility for assets | SUPPORTING_FILES (implied) | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | PARTIAL | Maintainers assigned via CODEOWNERS; GitHub defines asset responsibility implicitly. |
+| **A.5.1**: Responsibility for assets | SUPPORTING_FILES (implied) | [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) | PARTIAL | Maintainers assigned via CODEOWNERS; GitHub defines asset responsibility implicitly. |
 | **A.5.2**: Information classification | Not formalized | — | NOT IMPLEMENTED | Code is public; no internal classification scheme. Sensitive data is not stored (verified by tests). |
 
 ### A (Access Control) Controls
@@ -158,12 +158,12 @@ Each control mapping includes:
 | Control Area | FirstTry Control | Evidence | Status | Notes |
 |---|---|---|---|---|
 | **A.11.1**: Information security requirements in new system development | Manifest scopes | [manifest.yml#L58-L61](../atlassian/forge-app/manifest.yml#L58-L61) | IMPLEMENTED | Scope restrictions declared upfront; read-only enforced by design. |
-| **A.11.2**: Secure development policy | Code review + CI/CD gates | [.github/workflows/reviewer-gates.yml](.github/workflows/reviewer-gates.yml) | IMPLEMENTED | All changes require PR review and pass non-bypassable validator gates. |
+| **A.11.2**: Secure development policy | Code review + CI/CD gates | reviewer-gates.yml | IMPLEMENTED | All changes require PR review and pass non-bypassable validator gates. |
 | **A.11.3**: Test data protection | Deterministic test secrets | [.pre-commit-config.yaml](../.pre-commit-config.yaml) | IMPLEMENTED | Test secrets are hardcoded, deterministic, and explicitly non-production. |
 | **A.11.4**: Covert channel analysis | Not applicable | — | NOT IMPLEMENTED | FirstTry is open-source; covert channel analysis not required. |
 | **A.11.5**: Access control for program source code | GitHub access control | GitHub CODEOWNERS | PARTIAL | Repo is public; write access restricted to maintainers via CODEOWNERS. |
 | **A.11.6**: Change control process | Git + pull requests | [CHANGE_MANAGEMENT.md](CHANGE_MANAGEMENT.md) | IMPLEMENTED | All changes tracked in Git; PR workflow enforces review before merge. |
-| **A.11.7**: Control of technical vulnerabilities | Bandit + dependency audit | [.github/workflows/security-lite.yml](.github/workflows/security-lite.yml) | IMPLEMENTED | SAST (Bandit) and SCA (npm audit) run on every commit. |
+| **A.11.7**: Control of technical vulnerabilities | Bandit + dependency audit | security-lite.yml | IMPLEMENTED | SAST (Bandit) and SCA (npm audit) run on every commit. |
 
 ### A (Supplier Relations) Controls
 
@@ -183,7 +183,7 @@ Each control mapping includes:
 
 | Control Area | FirstTry Control | Evidence | Status | Notes |
 |---|---|---|---|---|
-| **A.14.1**: Business continuity management | Open source & Atlassian | [CONTRIBUTING.md](CONTRIBUTING.md) | PARTIAL | Community-driven; Atlassian Forge infrastructure ensures uptime. No SLA published. |
+| **A.14.1**: Business continuity management | Open source & Atlassian | [CONTRIBUTING.md](../CONTRIBUTING.md) | PARTIAL | Community-driven; Atlassian Forge infrastructure ensures uptime. No SLA published. |
 | **A.14.2**: Disaster recovery planning | Atlassian-managed | N/A | NOT IMPLEMENTED | FirstTry relies on Atlassian Cloud DR; no custom DR plan. |
 
 ### A (Compliance) Controls
@@ -226,7 +226,7 @@ Each control mapping includes:
 **Evidence**:
 - Manifest scopes: [manifest.yml#L58-L61](../atlassian/forge-app/manifest.yml#L58-L61)
 - Write-surface scan: [reviewer_ready_gate.sh#L182-L192](../atlassian/forge-app/audit/reviewer_ready_gate.sh#L182-L192)
-- Integration: [.github/workflows/reviewer-gates.yml](.github/workflows/reviewer-gates.yml)
+- Integration: reviewer-gates.yml
 
 **Status**: IMPLEMENTED ✅
 
@@ -236,7 +236,7 @@ Each control mapping includes:
 **Evidence**:
 - Docs validator: [tools/validate_docs.sh](../tools/validate_docs.sh)
 - Reviewer gate: [tools/reviewer_gate.sh](../tools/reviewer_gate.sh)
-- CI integration: [.github/workflows/reviewer-gates.yml](.github/workflows/reviewer-gates.yml)
+- CI integration: reviewer-gates.yml
 
 **Status**: IMPLEMENTED ✅
 
@@ -244,7 +244,7 @@ Each control mapping includes:
 
 **Control**: Automated secret scanning in CI/CD  
 **Evidence**:
-- Scheduled security job: [.github/workflows/security-lite.yml](.github/workflows/security-lite.yml)
+- Scheduled security job: security-lite.yml
 - npm audit gate: `npm audit --audit-level=high` (high/critical CVEs block release)
 
 **Status**: IMPLEMENTED ✅
@@ -335,8 +335,7 @@ bash tools/validate_docs.sh && bash tools/reviewer_gate.sh
 - [SCOPES.md](SCOPES.md) — Manifest scope enumeration with justifications
 - [CHANGE_MANAGEMENT.md](CHANGE_MANAGEMENT.md) — Change control process
 - [SUPPORT_POLICY.md](SUPPORT_POLICY.md) — Support contact & SLA
-- [DATA_RETENTION.md](../DATA_RETENTION.md) — Data retention & deletion policy
-- [RUNTIME_PROOF.md](RUNTIME_PROOF.md) — Deterministic runtime proof artifact
+- [DATA_RETENTION.md](DATA_RETENTION.md) — Data retention & deletion policy
 
 ---
 

@@ -169,7 +169,7 @@ FirstTry provides **NO SERVICE LEVEL AGREEMENT (SLA)** for privacy or data handl
 - **Data handling requests**: Processed when available (voluntary maintenance basis)
 - **Support**: GitHub Issues, best-effort basis only
 
-See [SUPPORT_POLICY.md](../SUPPORT_POLICY.md) for full support scope.
+See [SUPPORT_POLICY.md](SUPPORT_POLICY.md) for full support scope.
 
 ## Contact Information
 
