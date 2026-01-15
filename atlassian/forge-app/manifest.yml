@@ -15,8 +15,8 @@ app:
 modules:
   # Dashboard Gadget (Bundled UI via Vite)
   jira:dashboardGadget:
-    - key: governance-dashboard-gadget
-      title: FirstTry – Audit Evidence Snapshot for Jira
+    - key: governance-dashboard-gadget-v2
+      title: FirstTry – Governance Dashboard (Real-time Status)
       description: FirstTry Governance - real-time status overview
       resource: govGadget2140
       resolver:
@@ -35,14 +35,15 @@ modules:
       handler: scheduled/scheduler_daily_dispatcher.runDailyDispatch
     - key: status-resolver-fn
       handler: resolvers/governance_status.get
-    # PHASE 2 FIX: Updated to use consolidated gadget-handlers that exports both getStatusSnapshot and getBuildInfo
+    # PHASE 2 CANONICAL FIX: Use gadget-resolver.handler for all gadget UI invoke keys
     - key: get-status-snapshot-fn
-      handler: resolvers/gadget-handlers.getStatusSnapshot
+      handler: gadget-resolver.handler
     - key: refresh-now-fn
-      handler: resolvers/refreshNow.refreshNow_resolver
-    # PHASE 2 FIX: getBuildInfo now also available via gadget-handlers but kept here for compatibility
+      handler: gadget-resolver.handler
     - key: get-build-info-fn
-      handler: resolvers/gadget-handlers.getBuildInfo
+      handler: gadget-resolver.handler
+    - key: export-trust-snapshot-fn
+      handler: gadget-resolver.handler
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)
