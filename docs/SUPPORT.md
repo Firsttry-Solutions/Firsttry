@@ -1,5 +1,9 @@
 # FirstTry Support & Contact
 
+⚠️ **IMPORTANT**: FirstTry provides **NO SERVICE LEVEL AGREEMENT** (SLA), no guaranteed response times, and no uptime guarantees. This page describes best-effort support only.
+
+---
+
 ## Getting Help
 
 FirstTry is a community-supported Jira app. We're here to help you succeed.
@@ -208,6 +212,6 @@ No additional configuration needed.
 
 - [Security Model](./SECURITY.md)
 - [Privacy Policy](./PRIVACY.md)
-- [Reliability SLAs](./RELIABILITY.md)
+- [Reliability Model](./RELIABILITY.md)
 - [Shakedown Test Harness](./SHAKEDOWN.md)
 - [README](../README.md)

@@ -162,6 +162,15 @@ FirstTry has one subprocessor:
 
 Atlassian is a certified SOC2/ISO27001 provider.
 
+## Support Model & SLA Status
+
+FirstTry provides **NO SERVICE LEVEL AGREEMENT (SLA)** for privacy or data handling.
+- **Response Time**: Best effort (no guaranteed response timeframe)
+- **Data handling requests**: Processed when available (voluntary maintenance basis)
+- **Support**: GitHub Issues, best-effort basis only
+
+See [SUPPORT_POLICY.md](../SUPPORT_POLICY.md) for full support scope.
+
 ## Contact Information
 
 For privacy questions or data subject requests:

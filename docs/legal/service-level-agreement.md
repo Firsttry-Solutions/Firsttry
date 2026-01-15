@@ -1,3 +1,10 @@
+⚠️ **NON-BINDING INFORMATIONAL DOCUMENT**
+
+**FirstTry provides NO SERVICE LEVEL AGREEMENT.** This document is informational only 
+and does not constitute a legal SLA or support guarantee. See disclaimers below.
+
+---
+
 # Service Level Agreement (SLA)
 
 **Last Updated**: January 2, 2026

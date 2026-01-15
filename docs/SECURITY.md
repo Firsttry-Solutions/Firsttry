@@ -35,7 +35,7 @@ FirstTry is a read-only, workspace-scoped Atlassian Forge app with:
 | **MEDIUM** | 5-10 days | 2-4 weeks | Planned |
 | **LOW** | 30 days | Next quarter | Roadmap |
 
-**Note**: Targets, not SLAs. Actual response depends on complexity.
+**Note**: Targets, not SLAs. FirstTry provides best-effort support with no guaranteed response times. Actual response depends on complexity and maintainer availability.
 
 ---
 

@@ -101,7 +101,7 @@ First Try tracks these reliability metrics:
 - **degraded_export_rate**: % of exports marked as DEGRADED (target: <0.5%)
 - **false_green_rate**: % of "VALID" outputs that are false positives (target: 0%)
 
-If any SLI drops below target, we escalate automatically.
+If internal reliability indicators fall below expected thresholds, the issue may be reviewed by maintainers on a best-effort basis. This does not imply automated escalation or guaranteed response.
 
 ## Known Limitations
 
