@@ -23,11 +23,9 @@ import {
 } from '../phase6/constants';
 
 /**
- * Weekly snapshot scheduled handler
+ * Core handler logic (extracted to prevent top-level side effects)
  */
-scheduled.on('phase6:weekly', async (request) => {
-  const { tenantId, cloudId } = request.payload;
-
+async function weeklySnapshotLogic(tenantId: string, cloudId: string): Promise<void> {
   try {
     // Idempotency: use week start date (Monday)
     const windowStart = new Date();
@@ -84,7 +82,23 @@ scheduled.on('phase6:weekly', async (request) => {
     console.error('Weekly snapshot handler error:', error);
     throw error;
   }
-});
+}
+
+/**
+ * Register the scheduled event handler (safe initialization)
+ * Called during app startup to set up the event listener
+ */
+export function registerScheduledHandler(): void {
+  if (!scheduled || !scheduled.on) {
+    console.warn('[snapshot_weekly] scheduled.on not available during init; skipping registration');
+    return;
+  }
+  
+  scheduled.on('phase6:weekly', async (request) => {
+    const { tenantId, cloudId } = request.payload;
+    await weeklySnapshotLogic(tenantId, cloudId);
+  });
+}
 
 /**
  * Exported handler for Forge manifest compatibility
@@ -94,53 +108,8 @@ export async function handle(event: any, context: any) {
   const tenantId = cloudId; // Forge uses cloudId as tenant identifier
 
   try {
-    // Idempotency: use ISO week start date
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
-    weekStart.setHours(0, 0, 0, 0);
-    const weekStartISO = weekStart.toISOString().split('T')[0];
-    const idempotencyKey = `weekly_${weekStartISO}`;
-
-    // Check if already ran this week
-    const runStorage = new SnapshotRunStorage(tenantId, cloudId);
-    const existingRuns = await runStorage.listRuns(
-      { snapshot_type: 'weekly' },
-      0,
-      100
-    );
-
-    const alreadyRan = existingRuns.items.some(run =>
-      run.scheduled_for.startsWith(weekStartISO)
-    );
-
-    if (alreadyRan) {
-      console.log(`Weekly snapshot already ran for ${idempotencyKey}, skipping`);
-      return { statusCode: 200, body: 'Already ran this week' };
-    }
-
-    // Capture snapshot
-    const capturer = new SnapshotCapturer(tenantId, cloudId, 'weekly');
-    const { run, snapshot } = await capturer.capture();
-
-    // Save run record
-    await runStorage.createRun(run);
-
-    // Save snapshot if successful
-    if (snapshot) {
-      const snapshotStorage = new SnapshotStorage(tenantId, cloudId);
-      await snapshotStorage.createSnapshot(snapshot);
-
-      // Enforce retention
-      const enforcer = new RetentionEnforcer(tenantId, cloudId);
-      const { deleted_count, reason } = await enforcer.enforceRetention('weekly');
-      if (deleted_count > 0) {
-        console.log(`Retention enforcement: ${reason}`);
-      }
-    }
-
-    console.log(`Weekly snapshot completed: ${run.run_id}, status=${run.status}`);
-    return { statusCode: 200, body: `Snapshot completed: ${run.run_id}` };
+    await weeklySnapshotLogic(tenantId, cloudId);
+    return { statusCode: 200, body: 'Weekly snapshot completed' };
   } catch (error) {
     console.error('Weekly snapshot handler error:', error);
     return { statusCode: 500, body: `Error: ${error}` };
