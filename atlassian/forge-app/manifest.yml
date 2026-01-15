@@ -42,7 +42,7 @@ modules:
       handler: gadget-resolver.handler
     - key: get-build-info-fn
       handler: gadget-resolver.handler
-    - key: export-trust-snapshot-fn
+    - key: export-snap-fn
       handler: gadget-resolver.handler
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
