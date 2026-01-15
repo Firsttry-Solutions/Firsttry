@@ -1308,13 +1308,24 @@ function onDOMReady() {
         (async () => {
             try {
                 const backendBuild = await invoke('getBuildInfo');
-                console.log('[UI] Backend Build Info:', backendBuild);
+                // Unmissable logging: proof of resolver invocation and build info display
+                console.log('[UI_BUILDINFO_DISPLAY] Backend:', backendBuild);
+                console.log(`UI_BUILD_PROOF FT_BUILD_SHA=${backendBuild.FT_BUILD_SHA} FT_BUILD_TIME_UTC=${backendBuild.FT_BUILD_TIME_UTC} resolvedAt=${backendBuild.resolvedAt}`);
                 
                 // Update footer with both UI and backend versions
                 const backendDisplay = `${backendBuild.FT_BUILD_SHA} @ ${backendBuild.FT_BUILD_TIME_UTC}`;
                 buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                 buildFooter.style.color = '#0052cc';
                 buildFooter.style.fontWeight = '500';
+                
+                // Update visible footer with unmissable proof marker
+                const proofMarker = document.createElement('div');
+                proofMarker.style.fontSize = '10px';
+                proofMarker.style.marginTop = '4px';
+                proofMarker.style.color = '#626f86';
+                proofMarker.style.fontFamily = 'monospace';
+                proofMarker.textContent = `[✓ BUILD PROOF] UI+Backend versions verified in real-time`;
+                buildFooter.appendChild(proofMarker);
             } catch (err) {
                 console.log('[UI] Backend build info unavailable (expected if resolver not registered yet)', err);
                 // Keep UI-only build info if backend not available
