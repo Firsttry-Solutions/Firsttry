@@ -123,7 +123,6 @@ export interface GovernanceStatusV1 {
   mode?: string | null;
   lastSuccessAt?: string | null;
   lastCheckAt?: string | null;
-  generatedAt?: string | null;
   dataFreshness?: string | null;
 }
 
