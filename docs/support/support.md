@@ -25,9 +25,9 @@ Support may assist with:
 Support explicitly does NOT include:
 - **Compliance Interpretation**: The App provides informational data only. Support cannot provide legal, regulatory, or compliance advice
 - **Jira Platform Issues**: For Jira platform incidents or Atlassian Cloud outages, consult Atlassian public documentation and status pages
-- **Custom Development**: Feature requests or custom modifications are evaluated on a case-by-case basis but are not guaranteed
+- **Custom Development**: Feature requests or custom modifications are evaluated on a case-by-case basis but are not committed
 - **24/7 Availability**: Support is not available around the clock
-- **Guaranteed Response Times**: No SLA or response time guarantees are provided
+- **Response Time Targets**: No formal SLA or committed response timelines are provided
 - **Implementation Services**: Support does not include hands-on configuration or deployment assistance
 - **Third-Party Integration**: Support for integrating with tools outside the Atlassian ecosystem is not provided
 
@@ -44,7 +44,7 @@ Support explicitly does NOT include:
    - Feature requests are evaluated separately
 
 3. **Response**: You will receive a response on a best-effort timeline
-   - No guaranteed response times
+   - No formal response time commitments
    - Complex issues may require additional investigation
 
 4. **Resolution**: 
@@ -77,11 +77,11 @@ When reporting bugs, include:
 Feature requests can be submitted via email. Requests are:
 - Reviewed for feasibility and alignment with App goals
 - Prioritized based on user impact and technical complexity
-- Not guaranteed for implementation
+- Not committed for implementation
 
 ## Disclaimer
 
-Support is provided on a best-effort, as-available basis without guarantees. The App is provided "as is" without warranty of any kind. See Terms of Service for full disclaimers.
+Support is provided on a best-effort, as-available basis without warranties. The App is provided "as is" without warranty of any kind. See Terms of Service for full disclaimers.
 
 ---
 

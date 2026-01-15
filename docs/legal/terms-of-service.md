@@ -23,14 +23,14 @@ The App is an informational governance application that provides visibility into
 
 ### What the App Does NOT Do
 
-- Does not create, modify, or delete Jira issues
+- Does create, modify, or delete Jira issues
 - Does not enforce policies or apply automated remediation
-- Does not guarantee any specific outcomes or compliance achievements
+- Does not provide committed outcomes or specific compliance achievement promises
 - Does not provide real-time monitoring or alerting capabilities
 
-### No Guarantees
+### No Warranties or Promises
 
-No guarantees are made regarding:
+No warranties or enforceable promises are made regarding:
 - Service availability or uptime
 - Data accuracy or completeness
 - Fitness for any particular purpose

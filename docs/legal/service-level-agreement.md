@@ -1,21 +1,21 @@
 ⚠️ **NON-BINDING INFORMATIONAL DOCUMENT**
 
-**FirstTry provides NO SERVICE LEVEL AGREEMENT.** This document is informational only 
-and does not constitute a legal SLA or support guarantee. See disclaimers below.
+**FirstTry provides NO BINDING SERVICE LEVEL AGREEMENT.** This document is informational only 
+and does not constitute a legal commitment or enforceable warranty. See disclaimers below.
 
 ---
 
-# Service Level Agreement (SLA)
+# Service Information & Support Intentions (Non-Binding)
 
 **Last Updated**: January 2, 2026
 
 ## Introduction
 
-This Service Level Agreement describes service level intentions for Firsttry Solutions applications available on the Atlassian Marketplace. Firsttry applications are informational, read-only, and governance-focused tools designed to provide visibility into development workflows and compliance metrics. These applications do not enforce policies, modify Jira data, or provide real-time operational controls.
+This document describes service level intentions for Firsttry Solutions applications available on the Atlassian Marketplace. Firsttry applications are informational, read-only, and governance-focused tools designed to provide visibility into development workflows and compliance metrics. These applications do not enforce policies, modify Jira data, or provide real-time operational controls.
 
 ## Service Availability
 
-Firsttry applications are hosted on the Atlassian Forge platform and rely on Atlassian Cloud infrastructure for availability and performance. Service availability is dependent on the underlying Atlassian Cloud platform. Firsttry makes no specific uptime guarantees or availability percentages.
+Firsttry applications are hosted on the Atlassian Forge platform and rely on Atlassian Cloud infrastructure for availability and performance. Service availability is dependent on the underlying Atlassian Cloud platform. Firsttry provides no uptime commitments or service-level pledges.
 
 ## Support Scope
 
@@ -32,17 +32,17 @@ Support explicitly excludes:
 - Interpretation of compliance standards or regulatory requirements
 - Integration issues with third-party services outside Firsttry's control
 
-## Response Targets (Intent Only)
+## Response Targets (Internal Intention Only - Not Binding)
 
-Firsttry intends to acknowledge support requests within 2–5 business days. Resolution timelines vary based on issue complexity and are not guaranteed. These targets represent intentions, not commitments.
+Firsttry's internal targets are to acknowledge support requests within 2–5 business days. Resolution timelines vary based on issue complexity. These represent our internal hopes, not commitments or service-level obligations.
 
 ## Maintenance & Changes
 
 Firsttry may update applications without prior notice to address bugs, security issues, or platform compatibility requirements. Material changes to application behavior or functionality will be documented in release notes or application documentation.
 
-## Exclusions
+## Scope Exclusions
 
-This SLA does not apply to:
+This informational service description does not apply to:
 
 - Beta, experimental, or preview features explicitly marked as such
 - Service interruptions caused by Atlassian Cloud platform outages
@@ -55,4 +55,4 @@ For support inquiries, please contact: contact@firsttry.run
 
 ## Legal Note
 
-This Service Level Agreement is informational and non-binding. It describes Firsttry's service intentions and support practices but does not constitute a legal guarantee or warranty. Actual service levels may vary based on factors outside Firsttry's control, including but not limited to Atlassian Cloud platform availability and performance.
+**This Service Description is informational and non-binding.** It describes Firsttry's internal service intentions and support practices but does not constitute a legal commitment or enforceable warranty. Actual service delivery may vary based on factors outside Firsttry's control, including but not limited to Atlassian Cloud platform availability and performance.

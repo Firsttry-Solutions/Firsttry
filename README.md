@@ -45,14 +45,14 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 **Required Reading**:
 - **[MARKETPLACE_LEGAL_IMPLEMENTATION.md](MARKETPLACE_LEGAL_IMPLEMENTATION.md)** — Marketplace compliance checklist
 - **[SCOPES.md](SCOPES.md)** — Scope justification and no-access assertions
-- **[SUPPORT_POLICY.md](SUPPORT_POLICY.md)** — Support model and no-SLA disclaimer
+- **[SUPPORT_POLICY.md](SUPPORT_POLICY.md)** — Support model and service disclaimer
 - **[claims_proof_catalog.md](claims_proof_catalog.md)** — All marketplace claims with proof references
 
 **Legal & Terms**:
 - **[legal/terms-of-service.md](legal/terms-of-service.md)** — Terms of service
 - **[legal/privacy-policy.md](legal/privacy-policy.md)** — GDPR, data processing, privacy terms
 - **[legal/data-handling.md](legal/data-handling.md)** — Detailed data handling specification
-- **[legal/service-level-agreement.md](legal/service-level-agreement.md)** — SLA and support timelines
+- **[legal/service-level-agreement.md](legal/service-level-agreement.md)** — Service information and support timelines (non-binding)
 
 **Technical Specification**:
 - **[ATLASSIAN_DUAL_LAYER_SPEC.md](ATLASSIAN_DUAL_LAYER_SPEC.md)** — Complete technical specification
@@ -137,8 +137,8 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 All FirstTry documentation follows these principles:
 
 1. **Explicit over Implicit** — We document what we do AND what we don't do
-2. **Evidence-Backed Claims** — Every claim is anchored to code, tests, or Forge platform guarantees
-3. **No False Promises** — We avoid terms like "guarantee," "always," "never" without absolute proof
+2. **Evidence-Backed Claims** — Every claim is anchored to code, tests, or Forge platform capabilities
+3. **No False Promises** — We avoid overstated terms like "always," "never," or absolute commitments without proof
 4. **Reviewer-Ready** — Docs are structured for marketplace, security, and compliance reviews
 5. **Tenant Isolation First** — We explicitly call out Forge platform boundaries vs. FirstTry scope
 
