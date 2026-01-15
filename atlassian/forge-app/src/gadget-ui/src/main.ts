@@ -1326,8 +1326,25 @@ function onDOMReady() {
                 console.log('[UI_BUILDINFO_DISPLAY] Backend:', backendBuild);
                 console.log(`UI_BUILD_PROOF FT_BUILD_SHA=${backendBuild.FT_BUILD_SHA} FT_BUILD_TIME_UTC=${backendBuild.FT_BUILD_TIME_UTC} resolvedAt=${backendBuild.resolvedAt}`);
                 
+                // PHASE 2 FIX: Check response.ok to detect resolver errors
+                const invokeSucceeded = backendBuild?.ok === true;
+                const hasValidBuildMeta = backendBuild && backendBuild.FT_BUILD_SHA && backendBuild.FT_BUILD_TIME_UTC;
+                
+                if (!invokeSucceeded) {
+                  // Resolver returned an error in response.error field
+                  const errorInfo = backendBuild?.error ? `${backendBuild.error.name}: ${backendBuild.error.message}` : 'Unknown error';
+                  const backendDisplay = `(resolver_error: ${errorInfo.substring(0, 60)})`;
+                  buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                  buildFooter.style.color = '#ae2a19'; // Red for error
+                  
+                  const proofEl = ftEnsureServeProofEl();
+                  proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | ECHO:${backendBuild?.uiReqIdEcho || '(none)'} | BACKEND: ${backendDisplay} | RESOLVER_OK:false | ERROR:${errorInfo.substring(0, 40)}`;
+                  buildFooter.appendChild(proofEl);
+                  return;
+                }
+                
                 // Update footer with both UI and backend versions
-                const backendDisplay = (backendBuild && backendBuild.FT_BUILD_SHA && backendBuild.FT_BUILD_TIME_UTC) 
+                const backendDisplay = (hasValidBuildMeta) 
                     ? `${backendBuild.FT_BUILD_SHA} @ ${backendBuild.FT_BUILD_TIME_UTC}`
                     : `(missing_backend_build_meta)`;
                 buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
@@ -1344,8 +1361,7 @@ function onDOMReady() {
                 buildFooter.appendChild(proofMarker);
                 
                 // Add SERVE_PROOF DOM element with request ID correlation
-                const resolverOK = Boolean(backendBuild && backendBuild.FT_BUILD_SHA && backendBuild.FT_BUILD_TIME_UTC);
-                const echoMatch = backendBuild?.uiReqIdEcho === FT_UI_REQ_ID ? "MATCH" : "MISMATCH";
+                const resolverOK = Boolean(hasValidBuildMeta);
                 const proofEl = ftEnsureServeProofEl();
                 proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | ECHO:${backendBuild?.uiReqIdEcho || '(none)'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
                 buildFooter.appendChild(proofEl);
