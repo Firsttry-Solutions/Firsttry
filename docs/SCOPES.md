@@ -10,7 +10,7 @@ This document explicitly lists all Atlassian Forge API scopes and permissions re
 
 ## Declared Scopes (Manifest) — Proof Anchors
 
-FirstTry - Audit Evidence Snapshot for Jira declares exactly **two (2) scopes** in:
+FirstTry - Audit Evidence Snapshot for Jira declares exactly **two (2) scopes**.
 
 **Manifest location**: `atlassian/forge-app/manifest.yml` (lines 61-65)
 
@@ -86,22 +86,25 @@ permissions:
 
 **Access pattern**: Synchronous queries during metric computation (Phase 2-8) and scheduled snapshots (Phase 5-6).
 
-**Code proof**: [atlassian/forge-app/src/core/jira_query.ts](../atlassian/forge-app/src/core/jira_query.ts) — Uses `requestJira()` with `GET` only, `asApp()` call pattern.
+**Code proof**: Uses `requestJira()` with `GET` only, `asApp()` call pattern. See FirstTry source code for implementation.
 
 ---
 
-## What FirstTry NEVER Accesses
+## Scopes Explicitly NOT Requested
 
-### Explicitly NOT Requested Scopes (Write/Mutation)
+### Why These Scopes Are Absent
+
+The following scopes are **NOT declared in the manifest** and are **NOT used by FirstTry**:
 
 | Scope | Status | Reason |
 |-------|--------|--------|
-| `write:jira-work` | ❌ NOT REQUESTED | FirstTry is read-only; never modifies Jira issues, statuses, or automations |
-| `manage:jira-configuration` | ❌ NOT REQUESTED | Configuration drift is detected, never enforced; no writes to schemes/settings |
-| `read:jira-user` | ❌ NOT REQUESTED | No user tracking; governance evidence is about Jira configuration, not user activity |
-| `read:app-install` | ❌ NOT REQUESTED | Not required for governance; FirstTry operates on single-tenant basis |
-| `admin:jira-migration` | ❌ NOT REQUESTED | FirstTry is not a migration tool |
-| External HTTP (webhooks, fetch) | ❌ BLOCKED BY MANIFEST | Manifest lacks `external:fetch` permission; Forge platform blocks all outbound |
+| `write:jira-work` | ❌ NOT DECLARED | FirstTry is read-only; never modifies Jira issues, statuses, or automations |
+| `manage:jira-configuration` | ❌ NOT DECLARED | Configuration drift is detected, never enforced; no writes to schemes/settings |
+| `read:jira-user` | ❌ NOT DECLARED | No user tracking; governance evidence is about Jira configuration, not user activity |
+| `read:app-install` | ❌ NOT DECLARED | Not required for governance; FirstTry operates on single-tenant basis |
+| `admin:jira-migration` | ❌ NOT DECLARED | FirstTry is not a migration tool |
+| `storage:cloud` | ❌ NOT DECLARED | Only `storage:app` (tenant-isolated) is used for persistence |
+| External HTTP (`external:fetch`, webhooks, fetch) | ❌ NOT DECLARED | Manifest lacks these; Forge platform blocks all outbound HTTP |
 
 ### No Third-Party Integrations
 

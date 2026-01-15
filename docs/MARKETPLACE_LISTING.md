@@ -233,7 +233,7 @@ FirstTry is provided on a **community support basis** with transparent scope bou
 4. **View evidence snapshots**: Navigate to FirstTry dashboard gadget
 5. **Export or audit**: Use freeze-lock verification for compliance reporting
 
-**Full documentation**: [docs/DOCS_INDEX.md](DOCS_INDEX.md)
+See our [full documentation](./README.md) for comprehensive guides.
 
 ---
 
@@ -266,4 +266,4 @@ This file is the **canonical source** for FirstTry Marketplace copy. Any changes
 
 ---
 
-**Repository source**: [/docs/MARKETPLACE_LISTING.md](../MARKETPLACE_LISTING.md)
+*Repository location*: `/docs/MARKETPLACE_LISTING.md`

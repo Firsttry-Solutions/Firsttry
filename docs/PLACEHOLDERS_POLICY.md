@@ -222,9 +222,9 @@ Admin contact: contact@firsttry.run
 ### Audit Tools
 
 - **Scan Tool**: `ripgrep` (6 pattern searches)
-- **Registry**: [20_placeholder_registry.json](../tmp/ft_placeholders_audit_20260113T125008Z/20_placeholder_registry.json)
-- **Report**: [20_audit_report.md](../tmp/ft_placeholders_audit_20260113T125008Z/20_audit_report.md)
-- **Validator**: [tools/validate_placeholders.py](tools/validate_placeholders.py)
+- **Validator**: [tools/validate_placeholders.py](../tools/validate_placeholders.py)
+
+**Note**: Audit reports (registry and detailed report) are generated during CI runs and stored in temporary directories; they are not shipped with the product.
 
 ---
 
@@ -268,7 +268,7 @@ When adding documentation:
 ## Questions?
 
 - **Reporting placeholders** — Open an issue with tag `placeholder`
-- **Requesting allowlist exception** — Create PR to [tools/placeholder_allowlist.yml](tools/placeholder_allowlist.yml) with rationale
+- **Requesting allowlist exception** — Create PR to [tools/placeholder_allowlist.yml](../tools/placeholder_allowlist.yml) with rationale
 - **Reporting audit discrepancy** — Contact contact@firsttry.run
 
 ---
