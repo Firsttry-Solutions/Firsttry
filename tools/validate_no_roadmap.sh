@@ -65,7 +65,7 @@ echo
 #   - docs/evidence/**, docs/audit_reports/** (internal archives)
 #   - atlassian/forge-app/docs/** (internal engineering docs)
 #   - This script itself
-SHIPPING_FILES=$(git ls-files | grep -E "(^README\.md|^docs/.*\.(md|html)|^atlassian/forge-app/src/|^atlassian/forge-app/manifest\.yml|^tools/.*\.(sh|js|mjs))" | grep -v -E "(^docs/evidence/|^docs/audit_reports/|^atlassian/forge-app/docs/|^tools/validate_no_roadmap\.sh)" || true)
+SHIPPING_FILES=$(git ls-files | grep -E "(^README\.md|^docs/.*\.(md|html)|^atlassian/forge-app/src/|^atlassian/forge-app/manifest\.yml|^tools/.*\.(sh|js|mjs))" | grep -v -E "(^docs/evidence/|^docs/audit_reports/|^atlassian/forge-app/docs/|^tools/validate_no_roadmap\.sh|^tools/marketplace_push_and_deploy\.sh)" || true)
 
 SHIPPING_COUNT=$(echo "$SHIPPING_FILES" | wc -l)
 echo "Scanning $SHIPPING_COUNT shipping-surface files..."
