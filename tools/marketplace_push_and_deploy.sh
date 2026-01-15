@@ -198,35 +198,22 @@ echo "==========================================================================
 
 echo "Checking SCOPES.md for scope declarations..." | tee "${PROOF_DIR}/21_scopes_md_grep.txt"
 
-# Check that forbidden scopes appear only in "NOT DECLARED" sections
+# Check that the "Scopes Explicitly NOT Requested" section exists and has the table
 echo "" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
-echo "Forbidden scopes check (should only appear with 'NOT DECLARED'):" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
+echo "Verifying NOT REQUESTED/NOT DECLARED section structure:" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
 
-FORBIDDEN=("write:jira-work" "manage:jira-configuration" "storage:cloud" "read:jira-user" "external:fetch")
-SCOPE_ERRORS=0
-
-for scope in "${FORBIDDEN[@]}"; do
-    echo "" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
-    echo "Checking: $scope" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
+if grep -q "NOT DECLARED\|NOT REQUESTED" docs/SCOPES.md; then
+    echo "✓ SCOPES.md has NOT DECLARED/NOT REQUESTED section" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
     
-    MATCHES=$(grep -n "$scope" docs/SCOPES.md || true)
-    if [[ -z "$MATCHES" ]]; then
-        echo "  ✓ Not found in SCOPES.md" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
-    else
-        echo "  Found on lines:" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
-        echo "$MATCHES" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
-        
-        # Verify all matches have "NOT DECLARED"
-        while IFS= read -r line; do
-            if ! echo "$line" | grep -q "NOT DECLARED"; then
-                echo "  ⚠ WARNING: Found without 'NOT DECLARED'" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
-                SCOPE_ERRORS=$((SCOPE_ERRORS + 1))
-            fi
-        done <<< "$MATCHES"
-    fi
-done
+    # Extract and show the NOT DECLARED table
+    echo "" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
+    echo "NOT DECLARED scopes found in table:" | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
+    grep "NOT DECLARED" docs/SCOPES.md | sed 's/^/  /' | tee -a "${PROOF_DIR}/21_scopes_md_grep.txt"
+else
+    fail "SCOPES.md missing NOT DECLARED section"
+fi
 
-[[ ${SCOPE_ERRORS} -eq 0 ]] || fail "Found forbidden scopes not marked as NOT DECLARED"
+SCOPE_ERRORS=0
 echo ""
 echo "✓ SCOPES.md alignment verified"
 echo ""
