@@ -350,17 +350,38 @@ log "Proof: $RUN_DIR/50_forge_deploy.txt"
 
 header "STEP 5: FORCE INSTALL UPGRADE"
 
-log "Running: forge install --upgrade --environment $ENV --site $JIRA_SITE"
+enter_forge_app_dir
+
+# forge install --upgrade in non-interactive mode requires all of:
+# --site, --product, --environment, --non-interactive
+INSTALL_CMD="forge install --upgrade --site \"$JIRA_SITE\" --product jira --environment \"$ENV\" --non-interactive --confirm-scopes --verbose"
+log "Running: $INSTALL_CMD"
+
 set +e
-timeout $T_LONG forge install --upgrade --environment "$ENV" --site "$JIRA_SITE" --confirm-scopes --non-interactive > "$RUN_DIR/51_forge_install.txt" 2>&1
+timeout $T_LONG forge install --upgrade \
+  --site "$JIRA_SITE" \
+  --product jira \
+  --environment "$ENV" \
+  --non-interactive \
+  --confirm-scopes \
+  --verbose > "$RUN_DIR/51_forge_install.txt" 2>&1
 INSTALL_RC=$?
 set -e
 
 if [ $INSTALL_RC -ne 0 ]; then
-  warn "forge install non-zero exit (may be expected): $INSTALL_RC"
+  {
+    echo "FAIL: forge install --upgrade failed"
+    echo "ExitCode: $INSTALL_RC"
+    echo "Proof: $RUN_DIR/51_forge_install.txt"
+    echo ""
+    echo "Command (rerun manually to debug):"
+    echo "  cd $FORGE_APP_DIR"
+    echo "  $INSTALL_CMD"
+  } > "$RUN_DIR/ERR.txt"
+  fail "forge install --upgrade failed with exit code $INSTALL_RC (see $RUN_DIR/51_forge_install.txt)"
 fi
 
-pass "Install upgrade command completed"
+pass "Install upgraded"
 log "Proof: $RUN_DIR/51_forge_install.txt"
 
 header "STEP 6: USER ACTION (MANUAL - REQUIRED)"
