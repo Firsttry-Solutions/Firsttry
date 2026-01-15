@@ -122,7 +122,7 @@ echo ""
 echo "PHASE 3: Validator Checks"
 echo "================================================================================"
 
-echo "Running validate_no_roadmap.sh..."
+echo "Running validate shipping surface..."
 VALIDATE_NO_ROADMAP_EXIT=0
 bash tools/validate_no_roadmap.sh 2>&1 | tee "${PROOF_DIR}/10_validate_no_roadmap.txt" || VALIDATE_NO_ROADMAP_EXIT=$?
 
