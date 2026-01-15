@@ -24,7 +24,8 @@ import { FT_BUILD_SHA, FT_BUILD_TIME_UTC } from "../shared/build_meta";
 // PHASE 2 FIX: Import getBuildInfo resolver to expose it alongside getStatusSnapshot
 import { getBuildInfo_resolver } from "./getBuildInfo";
 
-export async function getStatusSnapshot_resolver(request: any, context: any): Promise<GovernanceStatusV1> {
+export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceStatusV1> {
+  const context = req.context || req;
   const tenantId = resolveTenantIdentity(context);
   const backendBuild = process.env.BUILD_SHA || "unknown";
   const uiBuild = "UI_v2.14.0";

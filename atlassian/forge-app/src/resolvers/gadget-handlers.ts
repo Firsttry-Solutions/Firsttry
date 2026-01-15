@@ -27,9 +27,9 @@ import { getBuildInfo_resolver } from "./getBuildInfo";
  * 
  * PHASE 2 FIX: Wrapped to ensure error handling at handler boundary
  */
-export async function getStatusSnapshot(request: any, context: any) {
+export async function getStatusSnapshot(req: any) {
   try {
-    return await getStatusSnapshot_resolver(request, context);
+    return await getStatusSnapshot_resolver(req);
   } catch (err) {
     console.error("[gadget-handlers.getStatusSnapshot] Unexpected error:", err);
     // Return minimal valid response instead of throwing
@@ -51,13 +51,13 @@ export async function getStatusSnapshot(request: any, context: any) {
  * 
  * PHASE 2 FIX: Wrapped to ensure error handling at handler boundary
  */
-export async function getBuildInfo(request: any, context: any) {
+export async function getBuildInfo(req: any) {
   try {
-    return await getBuildInfo_resolver(request, context);
+    return await getBuildInfo_resolver(req);
   } catch (err) {
     console.error("[gadget-handlers.getBuildInfo] Unexpected error:", err);
     // Return minimal valid BuildInfo response instead of throwing
-    const uiReqId = request?.payload?.uiReqId || request?.uiReqId || "(none)";
+    const uiReqId = req?.payload?.uiReqId || req?.uiReqId || "(none)";
     return {
       ok: false,
       FT_BUILD_SHA: "",
