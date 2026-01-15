@@ -5,7 +5,7 @@ Changelog: docs/CHANGELOG_PRIVACY.md
 # FirstTry Privacy Policy
 
 ---
-**COMPLIANCE DISCLAIMER**: Any references to SOC 2, ISO 27001, HIPAA, GDPR, or Cloud Fortified in this document refer to Atlassian's platform-level certifications, NOT independent app-level certifications. FirstTry - Audit Evidence Snapshot for Jira inherits security posture from the Atlassian Forge platform. See [docs/SECURITY.md](../atlassian/forge-app/docs/SECURITY.md) for explicit disclaimers.
+**COMPLIANCE DISCLAIMER**: Any references to SOC 2, ISO 27001, HIPAA, GDPR, or Cloud Fortified in this document refer to Atlassian's platform-level certifications, NOT independent app-level certifications. FirstTry - Audit Evidence Snapshot for Jira inherits security posture from the Atlassian Forge platform. See [SECURITY.md](SECURITY.md) for explicit disclaimers.
 ---
 
 
