@@ -59,7 +59,6 @@ REQUIRED_DOCS=(
   "docs/ENTERPRISE_SECURITY_PACKET.md"
   "docs/SUPPORT_POLICY.md"
   "docs/CHANGE_MANAGEMENT.md"
-  "docs/ROADMAP.md"
 )
 
 : > "$PROOFS_DIR/missing_docs.txt"

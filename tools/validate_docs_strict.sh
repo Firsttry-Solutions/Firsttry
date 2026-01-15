@@ -24,7 +24,7 @@ echo ""
 # GATE 1: Required Docs
 #######################################
 echo "GATE 1: Required Documentation"
-for doc in SCOPES.md README.md SECURITY.md PRIVACY.md SUPPORT_POLICY.md CHANGE_MANAGEMENT.md ROADMAP.md ENTERPRISE_ONE_PAGER.md COMPLIANCE.md DATA_RETENTION.md DATA_INVENTORY.md claims_proof_catalog.md; do
+for doc in SCOPES.md README.md SECURITY.md PRIVACY.md SUPPORT_POLICY.md CHANGE_MANAGEMENT.md ENTERPRISE_ONE_PAGER.md COMPLIANCE.md DATA_RETENTION.md DATA_INVENTORY.md claims_proof_catalog.md; do
     if test -f "${DOCS_DIR}/${doc}"; then
         echo -e "${GREEN}✅${NC} docs/${doc}"
         ((PASSED++))

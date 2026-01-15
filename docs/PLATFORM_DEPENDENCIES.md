@@ -171,7 +171,7 @@ FirstTry is a **read-only data analysis app** that runs entirely on **Atlassian 
 | **Data residency in [region]** | ✅ Via Jira Cloud region (US/EU) | Confirm Jira Cloud region matches |
 | **Custom data lifecycle** | ❌ Platform-controlled | Evaluate non-Forge apps |
 | **Faster updates** | ❌ Automatic on Atlassian schedule | Enterprise Marketplace app with staged rollout |
-| **Dedicated support SLA** | ⏳ "Best effort" | Escalate to Atlassian support via Jira Cloud plan |
+| **Dedicated support SLA** | ✅ Best-effort | Escalate to Atlassian support via Jira Cloud plan |
 
 ---
 

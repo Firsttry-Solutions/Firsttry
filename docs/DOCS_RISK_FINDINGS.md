@@ -33,7 +33,7 @@
 
 ### P2 — Internal/Informational
 
-- Audit reports, design docs, roadmaps, implementation guides
+- Audit reports, design docs, internal specifications, implementation guides
 - (Remaining 2,761 files)
 
 ---

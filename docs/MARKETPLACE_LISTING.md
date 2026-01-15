@@ -197,7 +197,7 @@ FirstTry is provided on a **community support basis** with transparent scope bou
 ### What's NOT Supported
 - **SLA guarantees**: No response time commitments
 - **Premium support tiers**: Not available
-- **Custom feature development**: Community-driven roadmap only
+- **Custom feature development**: Not available; FirstTry does not make forward-looking commitments
 - **Jira integration extensions**: Limited to standard Forge APIs
 - **Configuration consulting**: Users responsible for policy setup
 

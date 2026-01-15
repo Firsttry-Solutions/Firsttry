@@ -114,16 +114,16 @@ Jira Instance
 
 ---
 
-## Feature Roadmap Constraints
+## Scope Constraints
 
-### Future Features (Allowed)
+### Allowed Operations
 
 - 🟢 Enhanced trend analysis (more complex queries on same data)
 - 🟢 Policy templates (predefined compliance rules)
 - 🟢 Custom dashboards (different views of same data)
 - 🟢 CSV export templating (report generation)
 
-### Features NEVER Planned (Forbidden)
+### Forbidden Operations
 
 - 🔴 Two-way sync (would require write scope)
 - 🔴 User/admin panels (would expose PII)
