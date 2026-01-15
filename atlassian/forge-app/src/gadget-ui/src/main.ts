@@ -12,6 +12,10 @@ import './styles.css';
 // Import build info (injected by Vite)
 import { getBuildIdentifier } from './buildInfo';
 
+// Import pure modules (testable, deterministic)
+import { buildExportPayloadFromStatus, type ExportPayload } from './exportPayload';
+import { toSummaryTextFromPayload } from './summaryText';
+
 // Import enterprise UI renderers (vanilla DOM, accessibility-safe)
 import { renderKpiTiles } from './enterprise/renderKpiTiles';
 import { renderStatusBanner } from './enterprise/renderStatusBanner';
@@ -866,63 +870,12 @@ async function copyToClipboard(text: string): Promise<{ ok: true } | { ok: false
  * Build export payload from currently visible DOM state
  * All data is derived from rendered values; no backend calls
  */
-function buildExportPayload() {
+function buildExportPayload(): ExportPayload | null {
     if (!lastPayload) {
         return null;
     }
-
-    // Helper: explicitly mark unknown values instead of coercing to 0/false
-    const unknownMetrics: string[] = [];
-    if (lastPayload.operationalMetrics?.checksCompletedLifetime === null) unknownMetrics.push('checksCompletedLifetime');
-    if (lastPayload.operationalMetrics?.snapshotsRetainedCount === null) unknownMetrics.push('snapshotsRetainedCount');
-    if (lastPayload.operationalMetrics?.daysContinuousOperation === null) unknownMetrics.push('daysContinuousOperation');
-
-    const unknownBoundaries: string[] = [];
-    if (lastPayload.boundaries?.noJiraWrites === null) unknownBoundaries.push('noJiraWrites');
-    if (lastPayload.boundaries?.noConfigChanges === null) unknownBoundaries.push('noConfigChanges');
-    if (lastPayload.boundaries?.noEnforcement === null) unknownBoundaries.push('noEnforcement');
-
-    return {
-        timestamp: new Date().toISOString(),
-        source: 'dashboard-gadget-ui',
-        systemStatus: lastPayload.systemStatus || 'UNKNOWN',
-        mode: lastPayload.mode || 'Scheduled monitoring (read-only)',
-        lastSuccessfulRun: lastPayload.lastSuccessAt || null,
-        lastCheck: lastPayload.lastCheckAt || null,
-        snapshotAgeMinutes: lastPayload.snapshotAgeMinutes || null,
-        dataFreshness: lastPayload.isStale === null ? 'UNKNOWN' : (lastPayload.isStale ? 'STALE' : 'FRESH'),
-        operationalMetrics: {
-            checksCompletedLifetime: lastPayload.operationalMetrics?.checksCompletedLifetime ?? null,
-            snapshotCountRetained: lastPayload.operationalMetrics?.snapshotsRetainedCount ?? null,
-            daysContinuousOperation: lastPayload.operationalMetrics?.daysContinuousOperation ?? null,
-            failureCount7d: lastPayload.operationalMetrics?.failureCount7d ?? (lastPayload.failureCount7d ?? null),
-            skippedChecksCount7d: lastPayload.operationalMetrics?.skippedChecksCount7d ?? (lastPayload.skippedChecksCount7d ?? null),
-        },
-        // Mark which metrics are unknown/unavailable (prevents silent data loss)
-        unknownMetrics: unknownMetrics.length > 0 ? unknownMetrics : undefined,
-        availabilitySignals: {
-            tenantIdentityAvailable: lastPayload.tenantIdentity?.available !== false,
-            permissionVisibilityDetermined: lastPayload.permissionVisibility?.determined !== false,
-        },
-        boundaries: {
-            noJiraWrites: lastPayload.boundaries?.noJiraWrites ?? null,
-            noConfigChanges: lastPayload.boundaries?.noConfigChanges ?? null,
-            noEnforcement: lastPayload.boundaries?.noEnforcement ?? null,
-        },
-        // Mark which boundaries are unknown/unavailable (prevents silent data loss)
-        unknownBoundaries: unknownBoundaries.length > 0 ? unknownBoundaries : undefined,
-        completenessStatus: lastPayload.completenessStatus || 'UNKNOWN',
-        retentionPolicy: lastPayload.retentionPolicy?.effectiveRuleText || null,
-        checks: (lastPayload.checks || []).map((c: any) => ({
-            name: c.name,
-            status: c.status,
-            lastRun: c.lastRunAt,
-            reasonCode: c.reasonCode,
-        })),
-        version: lastPayload.version || 'UNKNOWN',
-        environment: lastPayload.environment || 'UNKNOWN',
-        generatedAt: lastPayload.generatedAt || new Date().toISOString(),
-    };
+    // Delegate to pure module for testable, deterministic payload construction
+    return buildExportPayloadFromStatus(lastPayload);
 }
 
 /**
@@ -1156,6 +1109,10 @@ window.downloadJSON = async function() {
             showExportToast('err', 'Export unavailable: no data loaded yet. Refresh after the next scheduled check.');
             return;
         }
+
+        // Generate summary text using pure module (shows unknown fields explicitly)
+        const summary = toSummaryTextFromPayload(payload);
+        console.log('Export Summary:', summary);
 
         const json = toJSONText(payload);
         if (!json || json.length === 0) {
