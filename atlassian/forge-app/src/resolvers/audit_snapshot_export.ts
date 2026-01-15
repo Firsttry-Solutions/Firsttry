@@ -25,9 +25,7 @@ import { resolveTenantIdentity } from '../core/tenant_identity';
  * - No new scopes
  */
 export async function exportTrustSnapshot(
-  _parent: unknown,
-  _args: unknown,
-  context: any
+  req: any
 ): Promise<{
   snapshotId: string;
   generatedAtISO: string;
@@ -37,6 +35,9 @@ export async function exportTrustSnapshot(
   pdfFilename: string;
   pdfBase64: string;
 }> {
+  // Extract context from request
+  const context = req.context || req;
+
   // Guard: verify tenant identity (same as governance_status resolver)
   const tenantIdentity = await resolveTenantIdentity(context);
   if (!tenantIdentity || !tenantIdentity.cloudId) {

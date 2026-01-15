@@ -12,7 +12,8 @@ import { resolveTenantIdentity } from "../core/tenant_identity";
 import { runCollection } from "../status/runCollection";
 import { createResolverErrorSnapshot } from "../status/statusStorage";
 
-export async function refreshNow_resolver(request: any, context: any): Promise<any> {
+export async function refreshNow_resolver(req: any): Promise<any> {
+  const context = req.context || req;
   const tenantId = resolveTenantIdentity(context);
 
   if (!tenantId) {

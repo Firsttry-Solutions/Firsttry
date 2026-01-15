@@ -27,12 +27,13 @@ export interface BuildInfo {
   error?: { name: string; message: string };
 }
 
-export async function getBuildInfo_resolver(request: any, context: any): Promise<BuildInfo> {
+export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
   // PHASE 2 FIX: Structured error handling - always return BuildInfo shape, never throw or undefined
   try {
     // SAFE RESOLVER: build meta is not tenant data; must work even when tenant context is missing.
     // This resolver is called from UI (untrusted, cross-tenant) contexts and must always return.
-    const uiReqId = request?.payload?.uiReqId || request?.uiReqId || "(none)";
+    const uiReqId = req?.payload?.uiReqId || req?.uiReqId || "(none)";
+    const context = req.context || req;
     const resolvedAt = new Date().toISOString();
 
     // Best-effort tenant presence detection (do NOT fail if missing)
@@ -41,7 +42,7 @@ export async function getBuildInfo_resolver(request: any, context: any): Promise
       tenantPresent = Boolean(
         (context as any)?.cloudId ||
         (context as any)?.siteUrl ||
-        (request as any)?.context?.cloudId
+        (req as any)?.context?.cloudId
       );
     } catch (_) {
       // Ignore detection errors
@@ -86,9 +87,9 @@ export async function getBuildInfo_resolver(request: any, context: any): Promise
     // PHASE 2 FIX: Catch-all to ensure we never throw or return undefined
     const errorName = err instanceof Error ? err.name : "UnknownError";
     const errorMsg = err instanceof Error ? err.message : String(err);
-    const uiReqId = request?.payload?.uiReqId || request?.uiReqId || "(none)";
+    const reqUiReqId = req?.payload?.uiReqId || req?.uiReqId || "(none)";
     
-    console.error(`[BUILDINFO_UI_ERROR] uiReqId=${uiReqId} error=${errorName}: ${errorMsg}`);
+    console.error(`[BUILDINFO_UI_ERROR] uiReqId=${reqUiReqId} error=${errorName}: ${errorMsg}`);
     
     return {
       ok: false,
@@ -97,7 +98,7 @@ export async function getBuildInfo_resolver(request: any, context: any): Promise
       backendEnv: process.env.FORGE_ENV || "unknown",
       nodeEnv: process.env.NODE_ENV || "unknown",
       resolvedAt: new Date().toISOString(),
-      uiReqIdEcho: uiReqId,
+      uiReqIdEcho: reqUiReqId,
       tenantPresent: false,
       error: { name: errorName, message: errorMsg }
     };
