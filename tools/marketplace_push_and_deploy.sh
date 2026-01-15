@@ -155,6 +155,7 @@ echo ""
 echo "PHASE 4: Manifest Scopes Verification"
 echo "================================================================================"
 
+{
 python3 << 'PYTHON_MANIFEST_CHECK'
 import yaml
 import sys
