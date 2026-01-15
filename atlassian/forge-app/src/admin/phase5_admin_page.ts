@@ -1133,6 +1133,8 @@ function getAdminPageScript(): string {
       status.style.display = 'none';
       
       try {
+        // Internal-only POST: admin page form submission to same-page handler.
+        // Not a Jira API call. No external fetch. No mutations to Jira data.
         const response = await fetch(window.location.href + '?action=generateNow', {
           method: 'POST',
         });

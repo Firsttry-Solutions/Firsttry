@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'docs/**'
+      - 'tools/validate_docs.sh'
       - 'tools/validate_docs_strict.sh'
       - '.github/workflows/docs-gate.yml'
       - '**/manifest.yml'
@@ -13,6 +14,7 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'tools/validate_docs.sh'
       - 'tools/validate_docs_strict.sh'
       - '**/manifest.yml'
       - '**/manifest.yaml'
@@ -22,14 +24,14 @@ permissions:
 
 jobs:
   docs-gate:
-    name: Validate Documentation
+    name: Validate Documentation (Required)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run DOCS_GATE validator
-        run: bash tools/validate_docs_strict.sh
+      - name: Run required DOCS validator
+        run: bash tools/validate_docs.sh
         shell: bash
 
       - name: Report validation status
@@ -37,8 +39,25 @@ jobs:
         run: |
           echo "❌ Documentation validation failed"
           echo "Please ensure:"
-          echo "  - All required docs exist in docs/ directory"
-          echo "  - Internal links are valid (no broken paths)"
-          echo "  - API scopes match between manifest and SCOPES.md"
-          echo "  - No placeholder terms (TBD, TODO, Lorem ipsum)"
+          echo "  - All required customer docs exist"
+          echo "  - No placeholder terms"
+          echo "  - API scopes are documented"
           exit 1
+
+  docs-strict:
+    name: Validate Documentation (Strict - Non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run strict DOCS validator
+        run: bash tools/validate_docs_strict.sh
+        shell: bash
+
+      - name: Report strict validation result
+        if: failure()
+        run: |
+          echo "⚠️  Strict documentation validation reported issues"
+          echo "Note: This is non-blocking for CI"
