@@ -39,6 +39,8 @@ modules:
       handler: resolvers/getStatusSnapshot.getStatusSnapshot_resolver
     - key: refresh-now-fn
       handler: resolvers/refreshNow.refreshNow_resolver
+    - key: get-build-info-fn
+      handler: resolvers/getBuildInfo.getBuildInfo_resolver
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)

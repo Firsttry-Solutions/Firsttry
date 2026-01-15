@@ -1298,10 +1298,29 @@ function wireExportButtons() {
 function onDOMReady() {
     wireExportButtons();
     
-    // Add build info footer
+    // Add build info footer (UI + Backend version proof)
     const buildFooter = document.getElementById('build-footer');
     if (buildFooter) {
-        buildFooter.textContent = getBuildIdentifier();
+        const uiBuild = getBuildIdentifier();
+        buildFooter.textContent = uiBuild;
+        
+        // Try to fetch backend build info via resolver for cache-bust proof
+        (async () => {
+            try {
+                const backendBuild = await invoke('getBuildInfo');
+                console.log('[UI] Backend Build Info:', backendBuild);
+                
+                // Update footer with both UI and backend versions
+                const backendDisplay = `${backendBuild.FT_BUILD_SHA} @ ${backendBuild.FT_BUILD_TIME_UTC}`;
+                buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                buildFooter.style.color = '#0052cc';
+                buildFooter.style.fontWeight = '500';
+            } catch (err) {
+                console.log('[UI] Backend build info unavailable (expected if resolver not registered yet)', err);
+                // Keep UI-only build info if backend not available
+                buildFooter.textContent = `UI: ${uiBuild}`;
+            }
+        })();
     }
     
     try {
