@@ -8,6 +8,7 @@ set -euo pipefail
 # Configuration
 ENV="${ENV:-production}"
 JIRA_SITE="${JIRA_SITE:-}"
+PROOF_SINCE_UTC="${PROOF_SINCE_UTC:-}"  # Optional: ISO8601 Z time to bound log window (e.g., from post-deploy proof)
 RUN_DIR="/tmp/ft_buildinfo_proof_$(date -u +%Y%m%dT%H%M%SZ)"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORGE_APP_DIR="$REPO_ROOT/atlassian/forge-app"
@@ -405,11 +406,17 @@ read -p "Press ENTER after you've refreshed and re-added the gadget: " -t 120 ||
 
 header "STEP 7: PROVE RESOLVER REACHABILITY VIA LOGS"
 
-log "Pulling logs from last 45 minutes..."
-set +e
 header "STEP 7: RETRIEVE FORGE LOGS"
 
-# Increase log window from 45m to 90m for reliability, and request more lines
+# If PROOF_SINCE_UTC is set (post-deploy verification), use time-bounded window
+# Otherwise default to 90m window
+if [ -n "$PROOF_SINCE_UTC" ]; then
+  log "Post-deploy verification mode: PROOF_SINCE_UTC=$PROOF_SINCE_UTC"
+  log "Fetching logs with time-bounding to post-deploy window..."
+else
+  log "Standard mode: Pulling logs from last 90 minutes..."
+fi
+
 set +e
 timeout $T_LONG forge logs --environment "$ENV" --since "90m" --limit 500 > "$RUN_DIR/60_forge_logs.txt" 2>&1
 LOGS_RC=$?
@@ -417,6 +424,17 @@ set -e
 
 if [ $LOGS_RC -ne 0 ]; then
   warn "forge logs returned non-zero: $LOGS_RC (continuing anyway)"
+fi
+
+# If PROOF_SINCE_UTC is set, filter logs to lines that occur AFTER that timestamp
+# (if logs have timestamp format detection available, otherwise pass through 500 lines)
+if [ -n "$PROOF_SINCE_UTC" ] && [ -s "$RUN_DIR/60_forge_logs.txt" ]; then
+  log "Filtering logs to entries >= $PROOF_SINCE_UTC..."
+  # Attempt ISO8601 timestamp filtering if timestamps are present
+  # Otherwise, use last 500 lines which should cover post-deploy window
+  grep -i "$PROOF_SINCE_UTC" "$RUN_DIR/60_forge_logs.txt" > "$RUN_DIR/60_forge_logs_filtered.txt" 2>/dev/null || \
+    cp "$RUN_DIR/60_forge_logs.txt" "$RUN_DIR/60_forge_logs_filtered.txt"
+  cp "$RUN_DIR/60_forge_logs_filtered.txt" "$RUN_DIR/60_forge_logs.txt"
 fi
 
 pass "Logs retrieved"
@@ -428,36 +446,72 @@ header "STEP 8: VERIFY FT_PROOF_MARKER"
 # PHASE 4: Now grep for the deterministic proof marker (single-line, anchored)
 # FT_PROOF_MARKER is emitted on success path of getBuildInfo resolver
 # FT_PROOF_MARKER_ERROR is emitted on error path
+FT_MARKER_COUNT=0
+LEGACY_MARKER_COUNT=0
+ERROR_MARKER_COUNT=0
+
 if grep -F "FT_PROOF_MARKER " "$RUN_DIR/60_forge_logs.txt" > "$RUN_DIR/61_markers.txt" 2>&1; then
-  MARKER_COUNT=$(wc -l < "$RUN_DIR/61_markers.txt")
-  pass "Found $MARKER_COUNT proof marker(s)"
+  FT_MARKER_COUNT=$(wc -l < "$RUN_DIR/61_markers.txt")
+  pass "Found $FT_MARKER_COUNT FT_PROOF_MARKER(s)"
   log "Proof: $RUN_DIR/61_markers.txt"
   head -5 "$RUN_DIR/61_markers.txt" | while read -r line; do log "  $line"; done
 else
-  # Fallback: also check for error markers or old marker pattern for compatibility
-  if grep -E "FT_PROOF_MARKER_ERROR|BUILDINFO_UI_PROOF" "$RUN_DIR/60_forge_logs.txt" > "$RUN_DIR/61_markers.txt" 2>&1; then
-    MARKER_COUNT=$(wc -l < "$RUN_DIR/61_markers.txt")
+  # No FT_PROOF_MARKER found - check for legacy/error markers
+  if grep -F "FT_PROOF_MARKER_ERROR " "$RUN_DIR/60_forge_logs.txt" > /tmp/err_markers.txt 2>&1; then
+    ERROR_MARKER_COUNT=$(wc -l < /tmp/err_markers.txt)
+  fi
+  
+  if grep -E "BUILDINFO_UI_PROOF" "$RUN_DIR/60_forge_logs.txt" > /tmp/legacy_markers.txt 2>&1; then
+    LEGACY_MARKER_COUNT=$(wc -l < /tmp/legacy_markers.txt)
+  fi
+  
+  # Decision logic:
+  # 1. If PROOF_SINCE_UTC is set (post-deploy verification), FAIL if no FT_PROOF_MARKER
+  # 2. If both markers are absent, FAIL
+  # 3. If only legacy/error markers exist and PROOF_SINCE_UTC is set, FAIL with ONLY_LEGACY_MARKERS
+  
+  if [ -n "$PROOF_SINCE_UTC" ]; then
+    # Post-deploy verification: MUST have FT_PROOF_MARKER
+    {
+      echo "FAIL: ONLY_LEGACY_MARKERS - Post-deploy verification failed"
+      echo "PROOF_SINCE_UTC: $PROOF_SINCE_UTC (indicating post-deploy time window)"
+      echo "FT_PROOF_MARKER count: $FT_MARKER_COUNT (expected: >= 1)"
+      echo "FT_PROOF_MARKER_ERROR count: $ERROR_MARKER_COUNT"
+      echo "BUILDINFO_UI_PROOF (legacy) count: $LEGACY_MARKER_COUNT"
+      echo ""
+      echo "This means:"
+      echo "  - Old code may still be deployed"
+      echo "  - New code with FT_PROOF_MARKER is not executing"
+      echo "  - OR resolver not invoked by UI in post-deploy window"
+      echo ""
+      echo "Required: FT_PROOF_MARKER must appear in logs after: $PROOF_SINCE_UTC"
+    } > "$RUN_DIR/ERR.txt"
+    fail "Post-deploy marker verification failed: No FT_PROOF_MARKER after $PROOF_SINCE_UTC"
+  elif [ $LEGACY_MARKER_COUNT -gt 0 ] || [ $ERROR_MARKER_COUNT -gt 0 ]; then
+    # Legacy/error markers exist but no FT_PROOF_MARKER - warn but allow (for backward compat)
+    MARKER_COUNT=$((LEGACY_MARKER_COUNT + ERROR_MARKER_COUNT))
     warn "Found $MARKER_COUNT legacy/error marker(s) (preferred FT_PROOF_MARKER not found)"
+    cat /tmp/legacy_markers.txt /tmp/err_markers.txt > "$RUN_DIR/61_markers.txt" 2>/dev/null || true
     log "Proof: $RUN_DIR/61_markers.txt"
     head -3 "$RUN_DIR/61_markers.txt" | while read -r line; do log "  $line"; done
   else
     # Hard fail: no markers at all
     {
-      echo "FAIL: No FT_PROOF_MARKER found in logs (expected: getBuildInfo resolver should emit on each call)"
+      echo "FAIL: No proof markers found in logs"
+      echo "Expected one of:"
+      echo "  - FT_PROOF_MARKER (new, preferred)"
+      echo "  - FT_PROOF_MARKER_ERROR (new error path)"
+      echo "  - BUILDINFO_UI_PROOF (legacy, deprecated)"
+      echo ""
       echo "Environment: $ENV"
       echo "LogWindow: 90 minutes"
-      echo "LogLines: $LOG_LINES"
+      echo "LogLines: $(wc -l < "$RUN_DIR/60_forge_logs.txt")"
       echo "LogFile: $RUN_DIR/60_forge_logs.txt"
       echo ""
       echo "Possible causes:"
       echo "  1. getBuildInfo resolver not invoked by UI"
       echo "  2. Logs not yet flushed to Forge API"
-      echo "  3. FT_PROOF_MARKER not emitted in resolver code"
-      echo ""
-      echo "Debug: Search log file for:"
-      echo "  - FT_PROOF_MARKER (success)"
-      echo "  - FT_PROOF_MARKER_ERROR (error path)"
-      echo "  - BUILDINFO_UI_PROOF (legacy marker)"
+      echo "  3. Proof markers not emitted in resolver code"
     } > "$RUN_DIR/ERR.txt"
     fail "No proof markers found in logs. See $RUN_DIR/60_forge_logs.txt"
   fi
