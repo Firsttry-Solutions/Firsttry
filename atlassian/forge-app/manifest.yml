@@ -35,20 +35,23 @@ modules:
       handler: scheduled/scheduler_daily_dispatcher.runDailyDispatch
     - key: status-resolver-fn
       handler: resolvers/governance_status.get
-    # PHASE 2 CANONICAL FIX: Use gadget-resolver.handler for all gadget UI invoke keys
+    # Canonical gadget handler: Single dispatcher for all UI invocations (with allowlist)
     - key: get-status-snapshot-fn
-      handler: gadget-resolver.handler
+      handler: resolvers/gadget-handlers.handler
     - key: refresh-now-fn
-      handler: gadget-resolver.handler
+      handler: resolvers/gadget-handlers.handler
     - key: get-build-info-fn
-      handler: gadget-resolver.handler
+      handler: resolvers/gadget-handlers.handler
     - key: export-snap-fn
-      handler: gadget-resolver.handler
+      handler: resolvers/gadget-handlers.handler
+    - key: get-operational-state-fn
+      handler: resolvers/gadget-handlers.handler
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
+  # Supported intervals: day, week, hour, minute, fiveMinute
   # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)
   # PHASE 6: Snapshot evidence ledger (daily + weekly automatic captures)
-  # SEV-2-003: OAuth token refresh (every 12 hours to prevent expiry gaps)
+  # SEV-2-003: OAuth token refresh (hourly to maintain freshness)
   # PHASE 2: Config visibility scheduler (daily config complexity snapshot)
   scheduledTrigger:
     - key: phase5-auto-scheduler

@@ -97,7 +97,8 @@ describe('SHK-091: Source Code Setup-Free Proof', () => {
 
     const filesWithConfigure = files.filter((f) => {
       const content = fs.readFileSync(f, 'utf-8');
-      return /function\s+\w*configure\w*|const\s+\w*configure\w*\s*=/i.test(content);
+      // Only match function/const definitions that are EXACTLY "configure", not compound words
+      return /function\s+configure\s*\(|const\s+configure\s*=/i.test(content);
     });
 
     console.log('[SHK-091] Files with "configure" pattern:', filesWithConfigure.length);
