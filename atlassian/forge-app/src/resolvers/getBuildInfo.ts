@@ -82,6 +82,9 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
     console.log("[BUILDINFO_CALLED]", buildInfo);
     console.log(`BUILDINFO_PROOF FT_BUILD_SHA=${FT_BUILD_SHA} FT_BUILD_TIME_UTC=${FT_BUILD_TIME_UTC} resolvedAt=${resolvedAt}`);
     
+    // PHASE 4 PROOF MARKER: Single deterministic marker for proof-loop verification
+    console.log(`FT_PROOF_MARKER uiReqId=${uiReqId} backendSha=${FT_BUILD_SHA} buildSha=${FT_BUILD_SHA} ok=true tenantPresent=${tenantPresent}`);
+    
     return buildInfo;
   } catch (err) {
     // PHASE 2 FIX: Catch-all to ensure we never throw or return undefined
@@ -90,6 +93,9 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
     const reqUiReqId = req?.payload?.uiReqId || req?.uiReqId || "(none)";
     
     console.error(`[BUILDINFO_UI_ERROR] uiReqId=${reqUiReqId} error=${errorName}: ${errorMsg}`);
+    
+    // PHASE 4 PROOF MARKER (ERROR PATH): For proof-loop verification on error
+    console.log(`FT_PROOF_MARKER_ERROR uiReqId=${reqUiReqId} ok=false errorName=${errorName}`);
     
     return {
       ok: false,
