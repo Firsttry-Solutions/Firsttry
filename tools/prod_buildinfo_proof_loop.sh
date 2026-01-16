@@ -530,6 +530,36 @@ else
   warn "Could not extract uiReqIds from markers (continuing anyway)"
 fi
 
+header "STEP 9.5: NONCE-BOUNDED PROOF VERIFICATION (OPTIONAL)"
+
+# If PROOF_NONCE and PROOF_BUILD_SHA are set, verify markers contain both nonce and build
+if [ -n "${PROOF_NONCE:-}" ] && [ -n "${PROOF_BUILD_SHA:-}" ]; then
+  log "Nonce-bounded verification mode: PROOF_NONCE=$PROOF_NONCE, PROOF_BUILD_SHA=$PROOF_BUILD_SHA"
+  
+  # Search for marker with both nonce and build sha
+  if grep -E "FT_PROOF_MARKER.*uiReqId=${PROOF_NONCE}.*buildSha=${PROOF_BUILD_SHA}" "$RUN_DIR/61_markers.txt" > "$RUN_DIR/63_nonce_build_marker.txt" 2>&1; then
+    NONCE_BUILD_COUNT=$(wc -l < "$RUN_DIR/63_nonce_build_marker.txt")
+    pass "Found $NONCE_BUILD_COUNT FT_PROOF_MARKER with nonce=$PROOF_NONCE and buildSha=$PROOF_BUILD_SHA"
+    log "Proof: $RUN_DIR/63_nonce_build_marker.txt"
+    cat "$RUN_DIR/63_nonce_build_marker.txt" | while read -r line; do log "  $line"; done
+  else
+    {
+      echo "FAIL: NONCE_BUILD_VERIFICATION_FAILED"
+      echo "Required: FT_PROOF_MARKER with uiReqId=$PROOF_NONCE AND buildSha=$PROOF_BUILD_SHA"
+      echo "Markers file: $RUN_DIR/61_markers.txt"
+      echo "This means:"
+      echo "  - Either nonce ($PROOF_NONCE) not found in markers"
+      echo "  - Or build SHA ($PROOF_BUILD_SHA) not found in markers"
+      echo "  - Or UI did not invoke resolver after deployment"
+    } > "$RUN_DIR/ERR.txt"
+    fail "Nonce-bounded marker verification failed"
+  fi
+elif [ -n "${PROOF_NONCE:-}" ] || [ -n "${PROOF_BUILD_SHA:-}" ]; then
+  warn "Partial nonce/build verification requested: PROOF_NONCE=${PROOF_NONCE:-<unset>}, PROOF_BUILD_SHA=${PROOF_BUILD_SHA:-<unset>} (both required for full verification)"
+else
+  log "Nonce-bounded verification not requested (PROOF_NONCE and PROOF_BUILD_SHA not set)"
+fi
+
 header "FINAL: ALL CHECKS PASSED"
 
 cat << 'EOF'

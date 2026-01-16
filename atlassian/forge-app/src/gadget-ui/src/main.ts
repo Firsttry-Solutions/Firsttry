@@ -819,6 +819,19 @@ async function loadStatus() {
         `;
         setHTML('availability-signals', signalsHtml);
 
+        // PHASE 2: After initial load, populate snapshot proof panel
+        try {
+            // @ts-ignore - invoke is checked in loadStatus
+            const debugInfo = await invoke('getSnapshotDebug', {});
+            if (debugInfo && debugInfo.ok) {
+                updateSnapshotProofPanel(debugInfo);
+            } else if (debugInfo && debugInfo.error) {
+                console.warn('[ProofPanel] getSnapshotDebug error:', debugInfo.error.message);
+            }
+        } catch (debugErr) {
+            console.warn('[ProofPanel] Failed to load snapshot debug info:', debugErr);
+        }
+
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         showError('Unexpected Error', 'UNEXPECTED_ERROR', errorMsg);
@@ -868,6 +881,90 @@ function showExportToast(kind: 'ok' | 'warn' | 'err', msg: string) {
         setTimeout(() => elem.classList.remove('show'), 3000);
     } catch (e) {
         // Silent catch
+    }
+}
+
+/**
+ * PHASE 2: Update snapshot proof panel with debug info
+ * Called after refreshNow completes to display persistence proof
+ */
+function updateSnapshotProofPanel(debugInfo: any) {
+    try {
+        // UI Request ID (nonce) - already set on page load
+        const uiReqIdEl = document.getElementById('proof-ui-req-id');
+        if (uiReqIdEl) {
+            uiReqIdEl.textContent = FT_UI_REQ_ID;
+        }
+
+        // UI Build SHA (static from build_meta.ts)
+        const uiBuildEl = document.getElementById('proof-ui-build-sha');
+        if (uiBuildEl) {
+            uiBuildEl.textContent = UI_DIST_STAMP.split('__')[0] || 'unknown';
+        }
+
+        // Backend Build SHA (from getSnapshotDebug - would need to be added via getBuildInfo or included in statusSnapshot)
+        // For now, we'll get it from the global if available
+        const backendBuildEl = document.getElementById('proof-backend-build-sha');
+        if (backendBuildEl && lastPayload && lastPayload.backendBuild) {
+            backendBuildEl.textContent = lastPayload.backendBuild.substring(0, 8);
+        }
+
+        // Snapshot Count
+        const countEl = document.getElementById('proof-snapshot-count');
+        if (countEl) {
+            const count = debugInfo.snapshotCount || 0;
+            countEl.textContent = String(count);
+            if (count === 0) {
+                countEl.style.color = '#626f86';
+                const panel = countEl.closest('.section');
+                if (panel) {
+                    const noteEl = panel.querySelector('div[style*="border-top"]');
+                    if (noteEl) {
+                        const status = document.createElement('div');
+                        status.style.fontSize = '11px';
+                        status.style.color = '#626f86';
+                        status.style.marginTop = '8px';
+                        status.textContent = '(No snapshots yet. Click "Refresh now" to create one.)';
+                        if (!noteEl.querySelector(':scope > div:last-child')?.textContent?.includes('No snapshots')) {
+                            // Only add if not already present
+                        }
+                    }
+                }
+            }
+        }
+
+        // Last Snapshot ID
+        const lastIdEl = document.getElementById('proof-last-snapshot-id');
+        if (lastIdEl) {
+            lastIdEl.textContent = debugInfo.lastSnapshotId || '(none yet)';
+        }
+
+        // Last Snapshot At (UTC)
+        const lastSnapEl = document.getElementById('proof-last-snapshot-at');
+        if (lastSnapEl) {
+            lastSnapEl.textContent = debugInfo.lastSnapshotAtUtc 
+                ? formatTimestampDisplay(debugInfo.lastSnapshotAtUtc) 
+                : 'Not available yet';
+        }
+
+        // Last Success At (UTC)
+        const lastSuccessEl = document.getElementById('proof-last-success-at');
+        if (lastSuccessEl) {
+            lastSuccessEl.textContent = debugInfo.lastSuccessAtUtc 
+                ? formatTimestampDisplay(debugInfo.lastSuccessAtUtc) 
+                : 'Not available yet';
+        }
+
+        // Storage State
+        const storageEl = document.getElementById('proof-storage-state');
+        if (storageEl) {
+            storageEl.textContent = debugInfo.storageState || 'UNKNOWN';
+            storageEl.style.color = debugInfo.storageState === 'NON_EMPTY' ? '#216e4e' : '#626f86';
+        }
+
+        console.log('[ProofPanel] Updated with snapshot debug info');
+    } catch (err) {
+        console.warn('[ProofPanel] Error updating panel:', err);
     }
 }
 
@@ -1106,6 +1203,17 @@ window.refreshNow = async function() {
             });
         } catch (renderErr) {
             console.warn('[Refresh] UI re-render error:', renderErr);
+        }
+
+        // PHASE 2: After refresh, call getSnapshotDebug to update proof panel
+        try {
+            // @ts-ignore - invoke is checked in loadStatus
+            const debugInfo = await invoke('getSnapshotDebug', {});
+            if (debugInfo && debugInfo.ok) {
+                updateSnapshotProofPanel(debugInfo);
+            }
+        } catch (debugErr) {
+            console.warn('[Refresh] getSnapshotDebug error:', debugErr);
         }
     } catch (err) {
         console.error('[Refresh] Error:', err);
