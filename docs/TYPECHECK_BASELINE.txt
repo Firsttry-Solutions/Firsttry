@@ -1,0 +1,9 @@
+
+> @firstry/forge-app@2.14.0 type-check
+> tsc --noEmit
+
+src/gadget-ui/vite.config.ts(26,29): error TS1343: The 'import.meta' meta-property is only allowed when the '--module' option is 'es2020', 'es2022', 'esnext', 'system', 'node16', 'node18', 'node20', or 'nodenext'.
+src/security/pii_sanitizer.ts(74,3): error TS2322: Type 'T | (T & any[])[number][]' is not assignable to type 'T'.
+  'T | (T & any[])[number][]' is assignable to the constraint of type 'T', but 'T' could be instantiated with a different subtype of constraint 'Record<string, any>'.
+    Type '(T & any[])[number][]' is not assignable to type 'T'.
+      '(T & any[])[number][]' is assignable to the constraint of type 'T', but 'T' could be instantiated with a different subtype of constraint 'Record<string, any>'.
