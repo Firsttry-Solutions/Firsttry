@@ -348,7 +348,14 @@ forge deploy -e production
 forge install --upgrade -e production
 
 # Step 3: Monitor
-forge logs -e production --tail
+# Use polling tail (forge logs does not support --tail)
+bash atlassian/forge-app/tools/forge_logs_tail.sh \
+  --env production \
+  --since "5m" \
+  --limit 200 \
+  --interval 5 \
+  --pattern "BUILDINFO_PROOF|TENANT_PROOF|SNAPSHOT_WRITE_PROOF|ERROR" \
+  --outdir "/tmp/ft_prod_logs_$(date +%s)"
 
 # Step 4: Verify
 # Open Jira dashboard, check export function
