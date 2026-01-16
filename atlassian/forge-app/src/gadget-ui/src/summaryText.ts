@@ -2,7 +2,7 @@ import { ExportPayload } from "./exportPayload";
 
 export function toSummaryTextFromPayload(payload: ExportPayload): string {
   const lines: string[] = [];
-  lines.push("FirstTry — Governance Status Summary");
+  lines.push("Firsttry: Audit Evidence for Jira — Summary");
   
   if (payload.unknownMetrics.length || payload.unknownBoundaries.length) {
     lines.push("⚠ Unknown fields detected (data not available yet):");
