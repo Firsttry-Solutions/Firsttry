@@ -87,7 +87,8 @@ bash atlassian/forge-app/tools/audit_no_forge_tail.sh
 
 Changed from:
 ```bash
-forge logs -e production --tail
+# ❌ UNSUPPORTED (replaced below):
+# forge logs -e production --tail
 ```
 
 To:
