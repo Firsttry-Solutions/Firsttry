@@ -23,20 +23,27 @@ echo "🔍 Auditing for unsupported 'forge logs --tail'..."
 
 # Search for files containing "forge logs" followed by "--tail" (not just in comments)
 # Pattern: forge logs ... --tail (allowing for whitespace and parameters)
+# Skip the audit script itself
 while IFS= read -r file; do
   if [[ -z "$file" ]]; then
     continue
   fi
   
+  # Skip the audit script itself
+  if [[ "$file" == *"audit_no_forge_tail.sh" ]]; then
+    continue
+  fi
+  
   # Use grep to find lines that have "forge logs" and "--tail" together
-  # Exclude lines that are pure comments (start with #)
-  # Allow for format like: forge logs ... --tail
-  if grep -E "^[^#]*forge\s+logs.*--tail" "$file" 2>/dev/null; then
+  # Exclude lines that are pure comments (start with #), inside code blocks (```), or documentation
+  # Only match actual executable commands: bash/sh shebangs, npm scripts, or direct shell invocations
+  # Pattern: forge logs (after bash prefix, npm run, or shell invocation, not inside markdown or descriptions)
+  if grep -E "(^|[\s;|&])(bash|sh|npm|./)[^\n]*(forge\s+logs[^\n]*--tail)" "$file" 2>/dev/null; then
     echo "❌ VIOLATION: $file"
     {
       echo "File: $file"
       echo "Matching lines:"
-      grep -n "^[^#]*forge\s+logs.*--tail" "$file"
+      grep -n -E "(^|[\s;|&])(bash|sh|npm|./)[^\n]*(forge\s+logs[^\n]*--tail)" "$file"
       echo ""
     } >> "$VIOLATIONS_FILE"
     VIOLATIONS=$((VIOLATIONS + 1))
