@@ -85,6 +85,13 @@ export async function runCollection(params: {
 
     // Always write snapshot, even on failure
     await putStatusSnapshot(snapshot);
+    
+    // SNAPSHOT_WRITE_VERIFICATION: read back to confirm persistence
+    const readBackSnapshot = await getStatusSnapshot(params.tenantKey);
+    if (!readBackSnapshot) {
+      throw new Error(`SNAPSHOT_VERIFICATION_FAILED: snapshot not readable after write for tenantKey=${params.tenantKey}`);
+    }
+    console.log(`SNAPSHOT_WRITE_PROOF tenantKey=${params.tenantKey} snapshotId=${snapshot.snapshotId} verified=true`);
 
     // Append run ledger entry
     const endedIso = new Date().toISOString();

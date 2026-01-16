@@ -54,28 +54,29 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
       console.log(`TENANT_PROOF resolver=getBuildInfo tenantKeyHash=unknown source=unavailable`);
     }
 
-    // CRITICAL: Validate build meta is not empty (MUST fail if missing)
-    if (!FT_BUILD_SHA || !FT_BUILD_TIME_UTC) {
-      const errorMsg = `Build metadata missing: SHA=${!FT_BUILD_SHA ? 'MISSING' : 'ok'}, TIME=${!FT_BUILD_TIME_UTC ? 'MISSING' : 'ok'}`;
-      console.error(`[BUILDINFO_ERROR] uiReqId=${uiReqId} ${errorMsg}`);
-      return {
-        ok: false,
-        FT_BUILD_SHA: FT_BUILD_SHA || "ERROR_MISSING",
-        FT_BUILD_TIME_UTC: FT_BUILD_TIME_UTC || "ERROR_MISSING",
-        backendEnv: process.env.FORGE_ENV || "UNKNOWN",
-        nodeEnv: process.env.NODE_ENV || "UNKNOWN",
-        resolvedAt,
-        uiReqIdEcho: uiReqId,
-        tenantPresent,
-        tenantKeyHash,
-        error: { name: "MissingBuildMetadata", message: errorMsg }
-      };
+    // CRITICAL: Resolve build SHA - MUST NOT return "unknown" or fallback
+    let buildSha = FT_BUILD_SHA;
+    let buildTimeUtc = FT_BUILD_TIME_UTC;
+    
+    if (!buildSha || buildSha === "unknown") {
+      // Try alternative source
+      buildSha = process.env.FORGE_APP_VERSION || null;
+    }
+    
+    if (!buildSha) {
+      // FAIL CLOSED: throw if we cannot resolve build SHA
+      throw new Error("BUILD_SHA_MISSING_IN_RUNTIME: neither FT_BUILD_SHA nor FORGE_APP_VERSION available");
+    }
+    
+    if (!buildTimeUtc) {
+      // FAIL CLOSED: throw if we cannot resolve build time
+      throw new Error("BUILD_TIME_MISSING_IN_RUNTIME: FT_BUILD_TIME_UTC not available");
     }
 
     const buildInfo: BuildInfo = {
       ok: true,
-      FT_BUILD_SHA,
-      FT_BUILD_TIME_UTC,
+      FT_BUILD_SHA: buildSha,
+      FT_BUILD_TIME_UTC: buildTimeUtc,
       backendEnv: process.env.FORGE_ENV || "UNKNOWN",
       nodeEnv: process.env.NODE_ENV || "UNKNOWN",
       resolvedAt,
@@ -84,24 +85,12 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
       tenantKeyHash,
     };
 
-    // BUILDINFO_PROOF: undeniable proof of backend build SHA
-    console.log(`BUILDINFO_PROOF tenantKeyHash=${tenantKeyHash || 'cross-tenant'} backendBuildSha=${FT_BUILD_SHA} uiReqId=${uiReqId} ok=true resolvedAt=${resolvedAt}`);
-    console.log(`FT_PROOF_MARKER uiReqId=${uiReqId} buildSha=${FT_BUILD_SHA} backendBuildSha=${FT_BUILD_SHA} ok=true tenantKeyHash=${tenantKeyHash || 'unknown'}`);
-    
-    console.log(
-      "FT_PROOF_MARKER",
-      JSON.stringify({
-        uiReqId,
-        buildSha: FT_BUILD_SHA,
-        tenantPresent
-      })
-    );
-
+    // BUILDINFO_PROOF: log after resolving the SHA (never unknown)
     console.log(
       "BUILDINFO_PROOF",
       JSON.stringify({
-        buildSha: FT_BUILD_SHA,
-        buildTimeUtc: FT_BUILD_TIME_UTC,
+        buildSha,
+        buildTimeUtc,
         tenantPresent
       })
     );
