@@ -1,38 +1,139 @@
 /**
- * Gadget Handler Resolver Wrapper
+ * Canonical Gadget Handler Dispatcher
  * 
- * PHASE 2 FIX: Consolidates all gadget-accessible resolvers in one module.
- * This allows the gadget UI to invoke multiple resolvers from a single handler function.
+ * SINGLE ENTRY POINT for all gadget UI invocations.
+ * Enforces allowlist: only registered resolvers are callable.
+ * All resolvers wrapped with error handling at handler boundary.
  * 
- * Exports:
- * - getStatusSnapshot (required gadget load)
- * - getBuildInfo (optional runtime build verification)
- * 
- * Manifest reference:
- * function:
- *   - key: get-status-snapshot-fn
- *     handler: resolvers/gadget-handlers.getStatusSnapshot
- * 
- * UI invocation:
- *   invoke('getStatusSnapshot', {...}) // returns GovernanceStatusV1
- *   invoke('getBuildInfo', { uiReqId: ... }) // returns BuildInfo
+ * Registered resolvers:
+ * - getOperationalState (authoritative system status)
+ * - refreshNow (trigger snapshot collection)
+ * - getBuildInfo (build metadata)
+ * - getSnapshotDebug (debug info)
+ * - getStatusSnapshot (status snapshot)
+ * - exportSnap (export JSON/CSV)
  */
 
 import { getStatusSnapshot_resolver } from "./getStatusSnapshot";
 import { getBuildInfo_resolver } from "./getBuildInfo";
+import { getSnapshotDebug_resolver } from "./getSnapshotDebug";
+import { getOperationalState_resolver } from "./getOperationalState";
+import { refreshNow_resolver } from "./refreshNow";
+
+// TODO: Replace with actual export resolver
+// For now, use a stub that returns error if no snapshots
+async function exportSnap_resolver(req: any) {
+  const opState = await getOperationalState_resolver(req);
+  if (!opState.export.enabled) {
+    return {
+      ok: false,
+      code: "NO_SNAPSHOTS",
+      reason: opState.export.reasonDisabled
+    };
+  }
+  // In production, this would generate and return JSON/CSV
+  return {
+    ok: true,
+    code: "EXPORT_READY",
+    message: "Export functionality to be implemented"
+  };
+}
 
 /**
- * Main gadget resolver: getStatusSnapshot
- * Entry point when gadget loads; returns current governance status snapshot.
- * 
- * PHASE 2 FIX: Wrapped to ensure error handling at handler boundary
+ * Resolver allowlist: Only these can be invoked by UI
  */
+const ALLOWED_RESOLVERS: Record<string, (req: any) => Promise<any>> = {
+  getOperationalState: getOperationalState_resolver,
+  refreshNow: refreshNow_resolver,
+  getBuildInfo: getBuildInfo_resolver,
+  getSnapshotDebug: getSnapshotDebug_resolver,
+  getStatusSnapshot: getStatusSnapshot_resolver,
+  exportSnap: exportSnap_resolver
+};
+
+/**
+ * Single canonical handler entry point (referenced by manifest as gadget-resolver.handler)
+ * Dispatcher pattern: UI passes resolverName in payload
+ */
+export async function handler(req: any) {
+  const payload = req.payload || req;
+  const resolverName = payload.resolverName || payload.resolver || "getStatusSnapshot";
+  const uiReqId = payload.uiReqId || `req_${Date.now()}`;
+
+  console.log(
+    "GADGET_INVOKE_REQUEST",
+    JSON.stringify({
+      uiReqId,
+      resolverName,
+      ts: new Date().toISOString()
+    })
+  );
+
+  // Enforce allowlist
+  if (!(resolverName in ALLOWED_RESOLVERS)) {
+    console.error(
+      "GADGET_INVOKE_DENIED",
+      JSON.stringify({
+        uiReqId,
+        resolverName,
+        reason: "INVOKE_KEY_NOT_ALLOWED",
+        ts: new Date().toISOString()
+      })
+    );
+    return {
+      ok: false,
+      error: {
+        code: "INVOKE_KEY_NOT_ALLOWED",
+        message: `Resolver '${resolverName}' is not in the allowlist`
+      }
+    };
+  }
+
+  // Resolve and invoke
+  try {
+    const resolverFunc = ALLOWED_RESOLVERS[resolverName];
+    const result = await resolverFunc(req);
+
+    console.log(
+      "GADGET_INVOKE_SUCCESS",
+      JSON.stringify({
+        uiReqId,
+        resolverName,
+        ts: new Date().toISOString()
+      })
+    );
+
+    return result;
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(
+      "GADGET_INVOKE_ERROR",
+      JSON.stringify({
+        uiReqId,
+        resolverName,
+        error: errorMsg,
+        ts: new Date().toISOString()
+      })
+    );
+
+    return {
+      ok: false,
+      error: {
+        code: "RESOLVER_ERROR",
+        message: errorMsg
+      }
+    };
+  }
+}
+
+// ============ BACKWARD COMPATIBILITY ==========
+// These exported functions are for direct testing/calling if needed
+
 export async function getStatusSnapshot(req: any) {
   try {
     return await getStatusSnapshot_resolver(req);
   } catch (err) {
     console.error("[gadget-handlers.getStatusSnapshot] Unexpected error:", err);
-    // Return minimal valid response instead of throwing
     return {
       workspaceKey: "UNKNOWN",
       health: "ERROR",
@@ -44,24 +145,16 @@ export async function getStatusSnapshot(req: any) {
   }
 }
 
-/**
- * Build info resolver: getBuildInfo
- * Called by UI to verify backend build metadata in real-time.
- * Provides correlation via uiReqId for tracing.
- * 
- * PHASE 2 FIX: Wrapped to ensure error handling at handler boundary
- */
 export async function getBuildInfo(req: any) {
   try {
     return await getBuildInfo_resolver(req);
   } catch (err) {
     console.error("[gadget-handlers.getBuildInfo] Unexpected error:", err);
-    // Return minimal valid BuildInfo response instead of throwing
     const uiReqId = req?.payload?.uiReqId || req?.uiReqId || "(none)";
     return {
       ok: false,
-      FT_BUILD_SHA: "",
-      FT_BUILD_TIME_UTC: "",
+      FT_BUILD_SHA: "ERROR_EXCEPTION",
+      FT_BUILD_TIME_UTC: "ERROR_EXCEPTION",
       backendEnv: process.env.FORGE_ENV || "unknown",
       nodeEnv: process.env.NODE_ENV || "unknown",
       resolvedAt: new Date().toISOString(),

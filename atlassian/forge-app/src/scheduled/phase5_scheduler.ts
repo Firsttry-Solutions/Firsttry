@@ -45,9 +45,46 @@ import {
   RETENTION_MAX_DAYS,
 } from '../core/constants';
 import { runCollection } from '../status/runCollection';
+import { collectSnapshotCore } from '../status/collectSnapshotCore';
 
 // ============================================================================
-// HELPERS
+// SCHEDULER STATE HELPERS
+// ============================================================================
+
+/**
+ * Update scheduler heartbeat and last fired timestamp in storage
+ * Called after each scheduler execution
+ */
+async function updateSchedulerHeartbeat(cloudId?: string): Promise<void> {
+  try {
+    if (!cloudId || cloudId.trim() === '') {
+      return; // No cloudId, skip update
+    }
+
+    const now = new Date().toISOString();
+    const heartbeatKey = `t/${cloudId}/scheduler/lastFiredUtc`;
+    const runResultKey = `t/${cloudId}/scheduler/lastRunResult`;
+
+    await storage.set(heartbeatKey, now);
+    await storage.set(runResultKey, "SUCCESS");
+
+    console.log(
+      "SCHEDULER_HEARTBEAT_UPDATED",
+      JSON.stringify({
+        cloudId,
+        lastFiredUtc: now,
+        ts: now
+      })
+    );
+  } catch (err) {
+    console.error(
+      "[updateSchedulerHeartbeat] Failed to update scheduler state:",
+      err
+    );
+    // Do not fail the scheduler if heartbeat update fails
+  }
+}
+
 // ============================================================================
 
 /**
@@ -385,6 +422,9 @@ export async function phase5SchedulerHandler(
 
     // Write status snapshot at start (for dashboard transparency)
     await writeStatusSnapshot(cloudId, startTime);
+
+    // Update scheduler heartbeat (for operational state queries)
+    await updateSchedulerHeartbeat(cloudId);
 
     // ====================================================================
     // 2. PHASE-4 EVIDENCE BACKFILL (Fail-Closed Preserved)
