@@ -47,11 +47,21 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
         tenantKeyHash = tenantInfo.tenantKeyHash;
         tenantPresent = true;
         // TENANT_PROOF: log on entry with actual tenant resolution
-        console.log(`TENANT_PROOF resolver=getBuildInfo tenantKeyHash=${tenantKeyHash} source=${tenantInfo.source}`);
+        console.log("TENANT_PROOF", JSON.stringify({
+          resolver: "getBuildInfo",
+          tenantKeyHash,
+          source: tenantInfo.source,
+          ts: new Date().toISOString()
+        }));
       }
     } catch (_) {
       // Ignore tenant detection errors - getBuildInfo works cross-tenant
-      console.log(`TENANT_PROOF resolver=getBuildInfo tenantKeyHash=unknown source=unavailable`);
+      console.log("TENANT_PROOF", JSON.stringify({
+        resolver: "getBuildInfo",
+        tenantKeyHash: "unknown",
+        source: "unavailable",
+        ts: new Date().toISOString()
+      }));
     }
 
     // CRITICAL: Resolve build SHA - MUST NOT return "unknown" or fallback
@@ -86,14 +96,12 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
     };
 
     // BUILDINFO_PROOF: log after resolving the SHA (never unknown)
-    console.log(
-      "BUILDINFO_PROOF",
-      JSON.stringify({
-        buildSha,
-        buildTimeUtc,
-        tenantPresent
-      })
-    );
+    console.log("BUILDINFO_PROOF", JSON.stringify({
+      buildSha,
+      buildTimeUtc,
+      tenantPresent,
+      ts: new Date().toISOString()
+    }));
     
     return buildInfo;
   } catch (err) {

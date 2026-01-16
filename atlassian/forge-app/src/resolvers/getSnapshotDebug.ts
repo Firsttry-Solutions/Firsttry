@@ -43,7 +43,12 @@ export async function getSnapshotDebug_resolver(req: any): Promise<SnapshotDebug
     tenantKey = tenantInfo.tenantKey;
     tenantKeyHash = tenantInfo.tenantKeyHash;
     // TENANT_PROOF: log on entry
-    console.log(`TENANT_PROOF resolver=getSnapshotDebug tenantKeyHash=${tenantKeyHash} source=${tenantInfo.source}`);
+    console.log("TENANT_PROOF", JSON.stringify({
+      resolver: "getSnapshotDebug",
+      tenantKeyHash,
+      source: tenantInfo.source,
+      ts: new Date().toISOString()
+    }));
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(`[getSnapshotDebug] Tenant key resolution failed: ${errorMsg}`);
@@ -61,7 +66,12 @@ export async function getSnapshotDebug_resolver(req: any): Promise<SnapshotDebug
 
     if (!snapshot) {
       // No snapshot written yet
-      console.log(`SNAPSHOT_READ_PROOF tenantKeyHash=${tenantKeyHash} countRead=0 lastSnapshotId=none storageState=EMPTY`);
+      console.log("SNAPSHOT_READ_PROOF", JSON.stringify({
+        tenantKeyHash,
+        snapshotCount: 0,
+        storageState: "EMPTY",
+        ts: new Date().toISOString()
+      }));
       return {
         ok: true,
         tenantKeyHash,
@@ -86,7 +96,12 @@ export async function getSnapshotDebug_resolver(req: any): Promise<SnapshotDebug
 
     // SNAPSHOT_READ_PROOF: log proof of read
     const storageState = snapshotCount > 0 ? "NON_EMPTY" : "EMPTY";
-    console.log(`SNAPSHOT_READ_PROOF tenantKeyHash=${tenantKeyHash} countRead=${snapshotCount} lastSnapshotId=${snapshot.snapshotId} storageState=${storageState}`);
+    console.log("SNAPSHOT_READ_PROOF", JSON.stringify({
+      tenantKeyHash,
+      snapshotCount,
+      storageState,
+      ts: new Date().toISOString()
+    }));
 
     return {
       ok: true,

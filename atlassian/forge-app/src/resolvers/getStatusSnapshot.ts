@@ -34,7 +34,12 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
     tenantKey = tenantInfo.tenantKey;
     tenantKeyHash = tenantInfo.tenantKeyHash;
     // TENANT_PROOF: log on entry
-    console.log(`TENANT_PROOF resolver=getStatusSnapshot tenantKeyHash=${tenantKeyHash} source=${tenantInfo.source}`);
+    console.log("TENANT_PROOF", JSON.stringify({
+      resolver: "getStatusSnapshot",
+      tenantKeyHash,
+      source: tenantInfo.source,
+      ts: new Date().toISOString()
+    }));
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(`[getStatusSnapshot] Tenant key resolution failed: ${errorMsg}`);
@@ -66,7 +71,12 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
     if (!readBack) {
       throw new Error(`SNAPSHOT_VERIFICATION_FAILED: snapshot not readable after write for ${tenantKey}`);
     }
-    console.log(`SNAPSHOT_WRITE_PROOF tenantKeyHash=${tenantKeyHash} snapshotId=${snapshot.snapshotId} verified=true`);
+    console.log("SNAPSHOT_WRITE_PROOF", JSON.stringify({
+      tenantKeyHash,
+      snapshotId: snapshot.snapshotId,
+      verified: true,
+      ts: new Date().toISOString()
+    }));
 
     // CRITICAL: Normalize the snapshot to GovernanceStatusV1
     // This guarantees UI never receives malformed data

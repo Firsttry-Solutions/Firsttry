@@ -91,7 +91,22 @@ export async function runCollection(params: {
     if (!readBackSnapshot) {
       throw new Error(`SNAPSHOT_VERIFICATION_FAILED: snapshot not readable after write for tenantKey=${params.tenantKey}`);
     }
-    console.log(`SNAPSHOT_WRITE_PROOF tenantKey=${params.tenantKey} snapshotId=${snapshot.snapshotId} verified=true`);
+    // Hash tenantKey for consistency with resolver logs (privacy)
+    let tenantKeyHashForProof = params.tenantKey;
+    try {
+      // Use simple hash (not cryptographic) for display purposes
+      const crypto = await import("crypto");
+      tenantKeyHashForProof = crypto.createHash("sha256").update(params.tenantKey).digest("hex").substring(0, 16);
+    } catch (_) {
+      // Fallback if crypto import fails
+      tenantKeyHashForProof = `hash_${params.tenantKey.substring(0, 8)}`;
+    }
+    console.log("SNAPSHOT_WRITE_PROOF", JSON.stringify({
+      tenantKeyHash: tenantKeyHashForProof,
+      snapshotId: snapshot.snapshotId,
+      verified: true,
+      ts: new Date().toISOString()
+    }));
 
     // Append run ledger entry
     const endedIso = new Date().toISOString();

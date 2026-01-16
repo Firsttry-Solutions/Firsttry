@@ -24,7 +24,12 @@ export async function refreshNow_resolver(req: any): Promise<any> {
     tenantKey = tenantInfo.tenantKey;
     tenantKeyHash = tenantInfo.tenantKeyHash;
     // TENANT_PROOF: log on entry
-    console.log(`TENANT_PROOF resolver=refreshNow tenantKeyHash=${tenantKeyHash} source=${tenantInfo.source}`);
+    console.log("TENANT_PROOF", JSON.stringify({
+      resolver: "refreshNow",
+      tenantKeyHash,
+      source: tenantInfo.source,
+      ts: new Date().toISOString()
+    }));
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(`[refreshNow] Tenant key resolution failed: ${errorMsg}`);
