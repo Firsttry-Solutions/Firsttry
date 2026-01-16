@@ -1,5 +1,5 @@
 /**
- * FirstTry Governance Dashboard Gadget - Main Entrypoint
+ * Firsttry: Audit Evidence for Jira - Main Entrypoint
  * 
  * This module is bundled by Vite and served in the Forge gadget iframe.
  * @forge/bridge is bundled with the gadget and provides invoke() for resolver calls.
@@ -15,6 +15,14 @@ import { getBuildIdentifier } from './buildInfo';
 // Import pure modules (testable, deterministic)
 import { buildExportPayloadFromStatus, type ExportPayload } from './exportPayload';
 import { toSummaryTextFromPayload } from './summaryText';
+
+// Import truth model (single source of truth for all UI state)
+import { 
+  computeGovernanceViewModel, 
+  GovernanceRuntimeState,
+  type GovernanceViewModel,
+  type RuntimeSignals
+} from './truthModel';
 
 // Import enterprise UI renderers (vanilla DOM, accessibility-safe)
 import { renderKpiTiles } from './enterprise/renderKpiTiles';
@@ -241,13 +249,60 @@ async function loadStatus() {
         lastPayload = data;
         setText('ui-selftest-invoke', 'OK (resolver responded)');
 
+        // PHASE 4: Compute deterministic view model from resolver payload
+        // This is the SINGLE SOURCE OF TRUTH for all UI state across all widgets
+        // All widgets MUST derive from this model; no local state computations
+        let viewModel: GovernanceViewModel;
+        try {
+            // Build RuntimeSignals from the normalized payload
+            const signals: RuntimeSignals = {
+                tenantIdentityStatus: data.tenantStatus || 'UNKNOWN',
+                backendStatus: data.systemStatus || 'UNKNOWN',
+                scheduleStatus: data.scheduler?.status || 'NOT_CONFIGURED',
+                lastSuccessfulRunISO: data.lastSuccessAt || null,
+                snapshot: data.snapshotData || null,
+                snapshotAgeMinutes: data.snapshotAgeMinutes || null,
+                storageStatus: data.storage?.status || 'UNKNOWN',
+                storageRecordCount: data.storage?.recordCount || 0,
+                exportSubsystemStatus: data.export?.status || 'UNKNOWN',
+                exportLastAttemptISO: data.export?.lastAttemptAt || null,
+                limitedPermissions: data.limitedPermissions || false,
+                probeErrors: data.probeErrors || []
+            };
+            
+            // Compute the view model (deterministic, invariant-enforced)
+            viewModel = computeGovernanceViewModel(signals);
+            
+            // Log the view model state for diagnostics
+            console.log(`[TruthModel] State: ${viewModel.runtimeState}, isOperational: ${viewModel.isOperational}`);
+        } catch (vmError) {
+            console.error('[TruthModel] Compute failed:', vmError);
+            // Fallback to BROKEN state
+            viewModel = {
+                runtimeState: GovernanceRuntimeState.BROKEN,
+                isOperational: false,
+                exportMode: 'EXPORT_BLOCKED_STORAGE',
+                overallHealthLabel: 'System Error',
+                overallHealthReason: 'Truth model computation failed',
+                freshnessLabel: 'Unknown',
+                freshnessReason: 'System error',
+                schedulerLabel: 'Unknown',
+                schedulerReason: 'System error',
+                exportReadinessLabel: 'Unavailable',
+                exportReadinessReason: 'System error',
+                storageCapacityLabel: 'Unknown',
+                identityLabel: 'Unknown'
+            } as any;
+        }
+
         // ===== ENTERPRISE UI RENDERING (KPI Tiles, Status Banner, Progress Tracker) =====
         // These are vanilla DOM renderers that integrate with existing UI
-        // They use unifiedStatus field from payload if available, fall back to legacy data
+        // They use viewModel as the single source of truth (not legacy data)
         try {
+            // Use the computed view model for all rendering
             const unifiedStatus = data.unifiedStatus || null;
             
-            // Render KPI tiles (8-tile grid at the top)
+            // Render KPI tiles (8-tile grid at the top) - should use viewModel fields
             renderKpiTiles({
                 containerId: 'kpi-tiles-section',
                 legacyData: data,
@@ -963,7 +1018,7 @@ function renderExportOutput(title: string, text: string) {
  */
 function toSummaryText(payload: any): string {
     return `═════════════════════════════════════════════════════════════
-FirstTry Governance Dashboard — Status Summary
+Firsttry: Audit Evidence for Jira — Status Summary
 ═════════════════════════════════════════════════════════════
 Generated: ${payload.timestamp}
 

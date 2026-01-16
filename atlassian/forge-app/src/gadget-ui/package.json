@@ -1,7 +1,7 @@
 {
   "name": "@firstry/gadget-ui",
   "version": "2.14.0",
-  "description": "FirstTry Governance Dashboard Gadget UI - Bundled with Vite",
+  "description": "Firsttry: Audit Evidence for Jira - Gadget UI (Vite)",
   "private": true,
   "type": "module",
   "scripts": {

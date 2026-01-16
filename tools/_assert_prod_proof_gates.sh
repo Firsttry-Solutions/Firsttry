@@ -94,6 +94,21 @@ else
   echo "[PASS] Timeout constants defined"
 fi
 
+# NEW GATE: Dashboard Title Validator (PHASE 4)
+echo ""
+echo "====== GATE: Dashboard Title Validator ======"
+TITLE_VALIDATOR="/workspaces/Firsttry/tools/validate_dashboard_title.sh"
+if [ -f "$TITLE_VALIDATOR" ]; then
+  if bash "$TITLE_VALIDATOR" /workspaces/Firsttry 2>&1 | tee /tmp/title_validation.log; then
+    echo "[PASS] Dashboard title validation passed"
+  else
+    echo "[FAIL] Dashboard title validation failed"
+    FAILURES=$((FAILURES + 1))
+  fi
+else
+  echo "[WARN] Dashboard title validator not found: $TITLE_VALIDATOR"
+fi
+
 if [ $FAILURES -eq 0 ]; then
   echo ""
   echo "[PASS] All gate assertions passed"

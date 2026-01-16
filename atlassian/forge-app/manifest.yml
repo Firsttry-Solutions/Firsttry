@@ -16,7 +16,7 @@ modules:
   # Dashboard Gadget (Bundled UI via Vite)
   jira:dashboardGadget:
     - key: governance-dashboard-gadget-v2
-      title: FirstTry – Governance Dashboard (Real-time Status)
+      title: "Firsttry: Audit Evidence for Jira"
       description: FirstTry Governance - real-time status overview
       resource: govGadget2140
       resolver:
