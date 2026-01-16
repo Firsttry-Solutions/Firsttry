@@ -192,18 +192,18 @@ MARKER_COUNT=0
 MARKER_LOG_FILE="$RUN_DIR/32_resolver_log_markers.txt"
 echo "=== Checking for log markers in resolver ===" > "$MARKER_LOG_FILE"
 
-if grep -q "BUILDINFO_UI_CALLED" "atlassian/forge-app/src/resolvers/getBuildInfo.ts"; then
-  echo "Found: BUILDINFO_UI_CALLED" >> "$MARKER_LOG_FILE"
+if grep -q "FT_PROOF_MARKER" "atlassian/forge-app/src/resolvers/getBuildInfo.ts"; then
+  echo "Found: FT_PROOF_MARKER" >> "$MARKER_LOG_FILE"
   MARKER_COUNT=$((MARKER_COUNT + 1))
 else
-  echo "Missing: BUILDINFO_UI_CALLED" >> "$MARKER_LOG_FILE"
+  echo "Missing: FT_PROOF_MARKER" >> "$MARKER_LOG_FILE"
 fi
 
-if grep -q "BUILDINFO_UI_PROOF" "atlassian/forge-app/src/resolvers/getBuildInfo.ts"; then
-  echo "Found: BUILDINFO_UI_PROOF" >> "$MARKER_LOG_FILE"
+if grep -q "BUILDINFO_PROOF" "atlassian/forge-app/src/resolvers/getBuildInfo.ts"; then
+  echo "Found: BUILDINFO_PROOF" >> "$MARKER_LOG_FILE"
   MARKER_COUNT=$((MARKER_COUNT + 1))
 else
-  echo "Missing: BUILDINFO_UI_PROOF" >> "$MARKER_LOG_FILE"
+  echo "Missing: BUILDINFO_PROOF" >> "$MARKER_LOG_FILE"
 fi
 
 if [[ $MARKER_COUNT -lt 2 ]]; then
