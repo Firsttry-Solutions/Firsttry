@@ -88,6 +88,24 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
     console.log(`BUILDINFO_PROOF tenantKeyHash=${tenantKeyHash || 'cross-tenant'} backendBuildSha=${FT_BUILD_SHA} uiReqId=${uiReqId} ok=true resolvedAt=${resolvedAt}`);
     console.log(`FT_PROOF_MARKER uiReqId=${uiReqId} buildSha=${FT_BUILD_SHA} backendBuildSha=${FT_BUILD_SHA} ok=true tenantKeyHash=${tenantKeyHash || 'unknown'}`);
     
+    console.log(
+      "FT_PROOF_MARKER",
+      JSON.stringify({
+        uiReqId,
+        buildSha: FT_BUILD_SHA,
+        tenantPresent
+      })
+    );
+
+    console.log(
+      "BUILDINFO_PROOF",
+      JSON.stringify({
+        buildSha: FT_BUILD_SHA,
+        buildTimeUtc: FT_BUILD_TIME_UTC,
+        tenantPresent
+      })
+    );
+    
     return buildInfo;
   } catch (err) {
     // Catch-all to ensure we never throw or return undefined
