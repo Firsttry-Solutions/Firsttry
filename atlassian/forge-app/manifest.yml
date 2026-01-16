@@ -44,7 +44,7 @@ modules:
       handler: resolvers/gadget-handlers.handler
     - key: export-snap-fn
       handler: resolvers/gadget-handlers.handler
-    - key: get-operational-state-fn
+    - key: get-ops-state-fn
       handler: resolvers/gadget-handlers.handler
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
