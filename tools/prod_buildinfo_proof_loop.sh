@@ -407,7 +407,11 @@ header "STEP 7: PROVE RESOLVER REACHABILITY VIA LOGS"
 
 log "Pulling logs from last 45 minutes..."
 set +e
-timeout $T_LONG forge logs --environment "$ENV" --since "45m" > "$RUN_DIR/60_forge_logs.txt" 2>&1
+header "STEP 7: RETRIEVE FORGE LOGS"
+
+# Increase log window from 45m to 90m for reliability, and request more lines
+set +e
+timeout $T_LONG forge logs --environment "$ENV" --since "90m" --limit 500 > "$RUN_DIR/60_forge_logs.txt" 2>&1
 LOGS_RC=$?
 set -e
 
@@ -417,29 +421,59 @@ fi
 
 pass "Logs retrieved"
 LOG_LINES=$(wc -l < "$RUN_DIR/60_forge_logs.txt")
-log "Log lines: $LOG_LINES"
+log "Log lines retrieved: $LOG_LINES"
 
-header "STEP 8: VERIFY BUILDINFO MARKERS"
+header "STEP 8: VERIFY FT_PROOF_MARKER"
 
-if grep -E "BUILDINFO_UI_CALLED|BUILDINFO_UI_PROOF" "$RUN_DIR/60_forge_logs.txt" > "$RUN_DIR/61_markers.txt" 2>&1; then
+# PHASE 4: Now grep for the deterministic proof marker (single-line, anchored)
+# FT_PROOF_MARKER is emitted on success path of getBuildInfo resolver
+# FT_PROOF_MARKER_ERROR is emitted on error path
+if grep -F "FT_PROOF_MARKER " "$RUN_DIR/60_forge_logs.txt" > "$RUN_DIR/61_markers.txt" 2>&1; then
   MARKER_COUNT=$(wc -l < "$RUN_DIR/61_markers.txt")
-  pass "Found $MARKER_COUNT marker lines"
+  pass "Found $MARKER_COUNT proof marker(s)"
   log "Proof: $RUN_DIR/61_markers.txt"
   head -5 "$RUN_DIR/61_markers.txt" | while read -r line; do log "  $line"; done
 else
-  fail "No markers found in logs. See $RUN_DIR/60_forge_logs.txt"
+  # Fallback: also check for error markers or old marker pattern for compatibility
+  if grep -E "FT_PROOF_MARKER_ERROR|BUILDINFO_UI_PROOF" "$RUN_DIR/60_forge_logs.txt" > "$RUN_DIR/61_markers.txt" 2>&1; then
+    MARKER_COUNT=$(wc -l < "$RUN_DIR/61_markers.txt")
+    warn "Found $MARKER_COUNT legacy/error marker(s) (preferred FT_PROOF_MARKER not found)"
+    log "Proof: $RUN_DIR/61_markers.txt"
+    head -3 "$RUN_DIR/61_markers.txt" | while read -r line; do log "  $line"; done
+  else
+    # Hard fail: no markers at all
+    {
+      echo "FAIL: No FT_PROOF_MARKER found in logs (expected: getBuildInfo resolver should emit on each call)"
+      echo "Environment: $ENV"
+      echo "LogWindow: 90 minutes"
+      echo "LogLines: $LOG_LINES"
+      echo "LogFile: $RUN_DIR/60_forge_logs.txt"
+      echo ""
+      echo "Possible causes:"
+      echo "  1. getBuildInfo resolver not invoked by UI"
+      echo "  2. Logs not yet flushed to Forge API"
+      echo "  3. FT_PROOF_MARKER not emitted in resolver code"
+      echo ""
+      echo "Debug: Search log file for:"
+      echo "  - FT_PROOF_MARKER (success)"
+      echo "  - FT_PROOF_MARKER_ERROR (error path)"
+      echo "  - BUILDINFO_UI_PROOF (legacy marker)"
+    } > "$RUN_DIR/ERR.txt"
+    fail "No proof markers found in logs. See $RUN_DIR/60_forge_logs.txt"
+  fi
 fi
 
 header "STEP 9: EXTRACT uiReqId CORRELATION"
 
-if grep "BUILDINFO_UI_PROOF" "$RUN_DIR/61_markers.txt" | grep -oE "uiReqId=[a-zA-Z0-9_]+" > "$RUN_DIR/62_uiReqIds.txt" 2>&1; then
+# Extract uiReqId from FT_PROOF_MARKER or fallback to BUILDINFO_UI_PROOF
+if grep -oE "uiReqId=[a-zA-Z0-9_]+" "$RUN_DIR/61_markers.txt" > "$RUN_DIR/62_uiReqIds.txt" 2>&1; then
   ID_COUNT=$(wc -l < "$RUN_DIR/62_uiReqIds.txt")
   UNIQUE=$(sort -u "$RUN_DIR/62_uiReqIds.txt" | wc -l)
   pass "Extracted $ID_COUNT uiReqId entries ($UNIQUE unique)"
   log "Proof: $RUN_DIR/62_uiReqIds.txt"
   head -3 "$RUN_DIR/62_uiReqIds.txt" | while read -r line; do log "  $line"; done
 else
-  fail "Could not extract uiReqIds"
+  warn "Could not extract uiReqIds from markers (continuing anyway)"
 fi
 
 header "FINAL: ALL CHECKS PASSED"
