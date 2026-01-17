@@ -11,12 +11,107 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+/**
+ * BACKBONE LAYER 0: HANDLER-LEVEL CORRELATION + TRACE ENFORCEMENT TESTS
+ * 
+ * CRITICAL CONTRACT:
+ * 1. All errors MUST include error.trace_id_stable (never UNSET, empty, or missing)
+ * 2. All responses MUST include meta with ui_req_id, backend_build_sha, now_iso
+ * 3. All resolver invocations MUST log RESOLVER_ENTER, RESOLVER_OK or RESOLVER_ERR
+ * 4. ui_req_id MUST be extractable and normalized from multiple payload formats
+ * 5. Legacy "req_" prefix MUST be normalized to "ui_" prefix
+ * 
+ * If any test fails, the correlation contract is broken and gadget logs won't be grepable.
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   handler,
   extractUiReqId,
   metaBase,
   ensureTraceOnError
 } from "../src/resolvers/gadget-handlers";
+
+// ============================================================================
+// PART 0: EXTRACTION + NORMALIZATION TESTS (END-TO-END PROOF)
+// ============================================================================
+
+describe("Layer 0: extractUiReqId with normalization (END-TO-END PROOF)", () => {
+  it("extracts and returns string (never null)", () => {
+    const result = extractUiReqId({});
+    expect(typeof result).toBe("string");
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("normalizes req_* prefix to ui_*", () => {
+    const payload = { ui_req_id: "req_123456" };
+    const result = extractUiReqId(payload);
+    
+    expect(result).toBe("ui_123456");
+    expect(result.startsWith("ui_")).toBe(true);
+  });
+
+  it("normalizes legacy uiReqId with req_ prefix", () => {
+    const payload = { uiReqId: "req_1768660190864_d8f211a2" };
+    const result = extractUiReqId(payload);
+    
+    expect(result).toBe("ui_1768660190864_d8f211a2");
+  });
+
+  it("complete precedence chain for end-to-end proof", () => {
+    // Precedence 1
+    expect(extractUiReqId({ ui_req_id: "first" })).toBe("first");
+    
+    // Precedence 2
+    expect(extractUiReqId({ meta: { ui_req_id: "second" } })).toBe("second");
+    
+    // Precedence 3
+    expect(extractUiReqId({ uiReqId: "third" })).toBe("third");
+    
+    // Precedence 4
+    expect(extractUiReqId({ meta: { uiReqId: "fourth" } })).toBe("fourth");
+    
+    // Precedence 5
+    expect(extractUiReqId({ requestId: "fifth" })).toBe("fifth");
+    
+    // Precedence 6
+    expect(extractUiReqId({ reqId: "sixth" })).toBe("sixth");
+    
+    // Precedence 7
+    expect(extractUiReqId({ ui_request_id: "seventh" })).toBe("seventh");
+    
+    // Precedence 8
+    expect(extractUiReqId({ context: { ui_req_id: "eighth" } })).toBe("eighth");
+  });
+
+  it("generates ui_missing_* when all formats missing", () => {
+    const result = extractUiReqId({ something: "else" });
+    
+    expect(result.startsWith("ui_missing_")).toBe(true);
+    expect(result.length).toBeGreaterThan("ui_missing_".length);
+  });
+
+  it("handles whitespace-only strings (treated as missing)", () => {
+    const result = extractUiReqId({ ui_req_id: "   " });
+    
+    expect(result.startsWith("ui_missing_")).toBe(true);
+  });
+
+  it("real-world proof: user footer ui_req_id remains grepable after normalization", () => {
+    // User sees in footer: ui_1768660190864_d8f211a2
+    const userFooterId = "ui_1768660190864_d8f211a2";
+    
+    // Old system sent legacy req_* format
+    const payloadLegacy = { uiReqId: "req_1768660190864_d8f211a2" };
+    const extracted = extractUiReqId(payloadLegacy);
+    
+    // After extraction and normalization, must match what user sees
+    expect(extracted).toBe(userFooterId);
+    
+    // This exact string can now be grepped in logs
+    expect(extracted).toContain("1768660190864_d8f211a2");
+  });
+});
 
 // ============================================================================
 // PART 1: ui_req_id EXTRACTION TESTS
@@ -31,21 +126,6 @@ describe("Layer 0: ui_req_id extraction", () => {
   it("extracts ui_req_id from payload.meta.ui_req_id (fallback 1)", () => {
     const payload = { meta: { ui_req_id: "ui_from_meta" } };
     expect(extractUiReqId(payload)).toBe("ui_from_meta");
-  });
-
-  it("extracts ui_req_id from payload.uiReqId (fallback 2, legacy)", () => {
-    const payload = { uiReqId: "req_legacy_456" };
-    expect(extractUiReqId(payload)).toBe("req_legacy_456");
-  });
-
-  it("extracts ui_req_id from payload.requestId (fallback 3, legacy)", () => {
-    const payload = { requestId: "request_789" };
-    expect(extractUiReqId(payload)).toBe("request_789");
-  });
-
-  it("returns null if no ui_req_id found", () => {
-    const payload = { something: "else" };
-    expect(extractUiReqId(payload)).toBeNull();
   });
 
   it("prioritizes payload.ui_req_id over other formats", () => {
@@ -72,10 +152,248 @@ describe("Layer 0: metaBase structure", () => {
     expect(typeof meta.now_iso).toBe("string");
   });
 
-  it("accepts null ui_req_id", () => {
-    const meta = metaBase(null);
+  it("now_iso is valid ISO timestamp", () => {
+    const meta = metaBase("ui_test");
+    const parsed = new Date(meta.now_iso);
+    expect(parsed.getTime()).toBeLessThanOrEqual(Date.now());
+    expect(parsed.getTime()).toBeGreaterThan(Date.now() - 1000); // within 1 second
+  });
+});
+
+// ============================================================================
+// PART 3: ERROR TRACE ENFORCEMENT TESTS (CRITICAL FOR PROOF)
+// ============================================================================
+
+describe("Layer 0: ensureTraceOnError - trace_id_stable NEVER UNSET", () => {
+  it("replaces UNSET trace_id_stable", () => {
+    const res = {
+      ok: false,
+      error: { code: "TEST", message: "Test", trace_id_stable: "UNSET" }
+    };
     
-    expect(meta.ui_req_id).toBeNull();
+    const normalized = ensureTraceOnError(res, "test-resolver", "ui_test_unset");
+    
+    expect(normalized.error.trace_id_stable).not.toBe("UNSET");
+    expect(normalized.error.trace_id_stable.length).toBeGreaterThan(0);
+  });
+
+  it("generates trace_id_stable if missing from ok:false response", () => {
+    const res = {
+      ok: false,
+      error: { code: "TEST_ERROR", message: "Test" }
+    };
+    
+    const normalized = ensureTraceOnError(res, "test-resolver", "ui_test_1");
+    
+    expect(normalized.ok).toBe(false);
+    expect(normalized.error.trace_id_stable).toBeTruthy();
+    expect(normalized.error.trace_id_stable.length).toBeGreaterThan(0);
+    expect(normalized.error.trace_id_stable).not.toBe("UNSET");
+  });
+
+  it("preserves existing trace_id_stable", () => {
+    const existingTrace = "my_stable_trace_id";
+    const res = {
+      ok: false,
+      error: { code: "TEST_ERROR", message: "Test", trace_id_stable: existingTrace }
+    };
+    
+    const normalized = ensureTraceOnError(res, "test-resolver", "ui_test_2");
+    
+    expect(normalized.error.trace_id_stable).toBe(existingTrace);
+  });
+
+  it("replaces empty string trace_id_stable", () => {
+    const res = {
+      ok: false,
+      error: { code: "TEST", message: "Test", trace_id_stable: "   " }
+    };
+    
+    const normalized = ensureTraceOnError(res, "test-resolver", "ui_test_5");
+    
+    expect(normalized.error.trace_id_stable.trim()).not.toBe("");
+    expect(normalized.error.trace_id_stable).toContain("trace_test-resolver");
+  });
+
+  it("includes ui_req_id in generated trace_id_stable", () => {
+    const res = {
+      ok: false,
+      error: { code: "TEST", message: "Test" }
+    };
+    
+    const normalized = ensureTraceOnError(res, "test-resolver", "ui_test_123");
+    
+    expect(normalized.error.trace_id_stable).toContain("ui_test_123");
+  });
+
+  it("ensures meta exists on error response with correct ui_req_id", () => {
+    const res = {
+      ok: false,
+      error: { code: "TEST", message: "Test" }
+    };
+    
+    const normalized = ensureTraceOnError(res, "test-resolver", "ui_test_6");
+    
+    expect(normalized.meta).toBeTruthy();
+    expect(normalized.meta.ui_req_id).toBe("ui_test_6");
+  });
+});
+
+// ============================================================================
+// PART 4: HANDLER INTEGRATION TESTS
+// ============================================================================
+
+describe("Layer 0: handler - mandatory logging for proof", () => {
+  let consoleLogs: string[] = [];
+  
+  beforeEach(() => {
+    consoleLogs = [];
+    vi.spyOn(console, "log").mockImplementation((msg: any) => {
+      if (typeof msg === "string") {
+        consoleLogs.push(msg);
+      }
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("logs RESOLVER_ENTER with extracted ui_req_id", async () => {
+    await handler({
+      payload: {
+        resolverName: "ping",
+        uiReqId: "req_proof_enter_1"  // Legacy format
+      }
+    });
+
+    const enterLog = consoleLogs.find(log => log.includes("RESOLVER_ENTER"));
+    expect(enterLog).toBeTruthy();
+    expect(enterLog).toContain("ui_proof_enter_1"); // Normalized!
+  });
+
+  it("logs RESOLVER_OK with normalized ui_req_id", async () => {
+    await handler({
+      payload: {
+        resolverName: "ping",
+        uiReqId: "req_proof_ok_1"
+      }
+    });
+
+    const okLog = consoleLogs.find(log => log.includes("RESOLVER_OK"));
+    expect(okLog).toBeTruthy();
+    expect(okLog).toContain("ui_proof_ok_1");
+  });
+
+  it("logs RESOLVER_ERR with trace_id_stable never UNSET", async () => {
+    const result = await handler({
+      payload: {
+        resolverName: "invalid_resolver",
+        uiReqId: "req_proof_err_1"
+      }
+    });
+
+    const errLog = consoleLogs.find(log => log.includes("RESOLVER_ERR"));
+    expect(errLog).toBeTruthy();
+    expect(errLog).toContain("ui_proof_err_1");
+    expect(errLog).toContain("trace_id_stable");
+    expect(errLog).not.toContain("UNSET");
+    
+    // Response must also have valid trace
+    expect(result.error.trace_id_stable).toBeTruthy();
+    expect(result.error.trace_id_stable).not.toBe("UNSET");
+  });
+
+  it("grepable output: all ui_req_id strings match between logs and response", async () => {
+    const result = await handler({
+      payload: {
+        resolverName: "ping",
+        uiReqId: "req_proof_grep_1"
+      }
+    });
+
+    // Response meta has normalized id
+    expect(result.meta.ui_req_id).toBe("ui_proof_grep_1");
+
+    // All logs should contain this exact normalized id
+    const uiLogs = consoleLogs.filter(log => log.includes("ui_proof_grep_1"));
+    expect(uiLogs.length).toBeGreaterThan(0);
+  });
+});
+
+// ============================================================================
+// PART 5: PING RESOLVER COMPLIANCE
+// ============================================================================
+
+describe("Layer 0: ping resolver compliance for proof", () => {
+  it("ping returns ok:true with meta.ui_req_id", async () => {
+    const result = await handler({
+      payload: {
+        resolverName: "ping",
+        ui_req_id: "ui_ping_ok"
+      }
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.meta).toBeTruthy();
+    expect(result.meta.ui_req_id).toBe("ui_ping_ok");
+  });
+});
+
+// ============================================================================
+// PART 6: REAL PROOF TEST - SIMULATE USER FOOTER + GREP
+// ============================================================================
+
+describe("Layer 0: Real-world proof (user footer → logs → grep)", () => {
+  let consoleLogs: string[] = [];
+  
+  beforeEach(() => {
+    consoleLogs = [];
+    vi.spyOn(console, "log").mockImplementation((msg: any) => {
+      consoleLogs.push(String(msg));
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("user sees ui_... in footer, exact string appears in grepable logs", async () => {
+    // User sees this in footer (from UI after reload)
+    const userFooterId = "ui_1768660190864_d8f211a2";
+    
+    // UI sends legacy uiReqId format to handler
+    const result = await handler({
+      payload: {
+        resolverName: "ping",
+        uiReqId: "req_1768660190864_d8f211a2"  // Legacy format gets normalized
+      }
+    });
+
+    // Response meta must have normalized version
+    expect(result.meta.ui_req_id).toBe(userFooterId);
+
+    // Logs must contain exact string for grepping
+    const grepResult = consoleLogs.filter(log => log.includes(userFooterId));
+    expect(grepResult.length).toBeGreaterThan(0);
+    
+    // Proof: can grep logs by footer string
+    const hasResolverEnter = grepResult.some(log => log.includes("RESOLVER_ENTER"));
+    const hasResolverOk = grepResult.some(log => log.includes("RESOLVER_OK"));
+    expect(hasResolverEnter && hasResolverOk).toBe(true);
+  });
+});
+
+
+// ============================================================================
+// PART 2: META BASE STRUCTURE TESTS
+// ============================================================================
+
+describe("Layer 0: metaBase structure", () => {
+  it("creates meta with ui_req_id, backend_build_sha, now_iso", () => {
+    const meta = metaBase("ui_test_meta");
+    
+    expect(meta.ui_req_id).toBe("ui_test_meta");
     expect(typeof meta.backend_build_sha).toBe("string");
     expect(typeof meta.now_iso).toBe("string");
   });
@@ -161,18 +479,6 @@ describe("Layer 0: ensureTraceOnError - error responses", () => {
     const normalized = ensureTraceOnError(res, "test-resolver", "ui_test_123");
     
     expect(normalized.error.trace_id_stable).toContain("ui_test_123");
-  });
-
-  it("handles null ui_req_id in trace generation", () => {
-    const res = {
-      ok: false,
-      error: { code: "TEST", message: "Test" }
-    };
-    
-    const normalized = ensureTraceOnError(res, "test-resolver", null);
-    
-    expect(normalized.error.trace_id_stable).toBeTruthy();
-    expect(normalized.error.trace_id_stable).toContain("no_ui_req_id");
   });
 
   it("ensures meta exists on error response", () => {
