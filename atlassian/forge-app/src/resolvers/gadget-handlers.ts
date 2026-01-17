@@ -26,6 +26,7 @@ import { getOperationalState_resolver } from "./getOperationalState";
 import { refreshNow_resolver } from "./refreshNow";
 import { ping } from "./ping";
 import { ensureFirstSnapshot } from "./ensureFirstSnapshot";
+import { probe } from "./probe"; // FORENSIC_PROBE
 
 // ============================================================================
 // BACKBONE LAYER 0: Canonical correlation + trace enforcement functions
@@ -192,6 +193,9 @@ async function exportSnap_resolver(req: any) {
  * Resolver allowlist: Only these can be invoked by UI
  */
 const ALLOWED_RESOLVERS: Record<string, (req: any) => Promise<any>> = {
+  // FORENSIC_PROBE: Correlation diagnostics
+  probe: probe,
+  // Regular resolvers
   ping: ping,
   ensureFirstSnapshot: ensureFirstSnapshot,
   getOperationalState: getOperationalState_resolver,
@@ -365,3 +369,8 @@ export async function getBuildInfo(req: any) {
     };
   }
 }
+
+// ============================================================================
+// EXPORT for tests
+// ============================================================================
+export { ALLOWED_RESOLVERS };
