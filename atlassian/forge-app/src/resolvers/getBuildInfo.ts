@@ -47,6 +47,18 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
     const context = req.context || req;
     const resolvedAt = new Date().toISOString();
 
+    // LOG_CANARY: Proof that we are reading the correct production log stream.
+    // MUST execute before any throw to guarantee visibility.
+    // 
+    // PROOF STEPS:
+    // 1. Deploy to production
+    // 2. Reload gadget in dashboard
+    // 3. Run: timeout 90 forge logs --environment production --since 10m | grep -F "LOG_CANARY" | head -50
+    // If zero lines found -> not reading correct logs OR resolver never executed OR deploy not active.
+    //
+    // Includes: resolver name, build SHA, ISO timestamp, UI request ID for correlation
+    console.log(`LOG_CANARY resolver=getBuildInfo build=${FT_BUILD_SHA} ts=${resolvedAt} ui_req_id=${uiReqId || 'UNSET'}`);
+
     // Best-effort tenant resolution (safe, non-throwing)
     let tenantKeyHash: string | undefined;
     let tenantPresent = false;
