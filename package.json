@@ -1,0 +1,19 @@
+{
+  "name": "firsttry",
+  "version": "1.0.0",
+  "description": "Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This directory contains comprehensive guides for users, enterprise reviewers, security teams, and developers.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}

@@ -17,6 +17,13 @@
 
 import { resolveTenantKey } from "../security/resolveTenantKey";
 import { getStatusSnapshot, listEvidenceSnapshotMeta } from "../status/statusStorage";
+import {
+  generateTraceIdStable,
+  generateTraceIdInstance,
+  emitResolverErrorLog,
+  classifyError,
+  ErrorCode,
+} from "./backbone_error_handling";
 
 export interface SnapshotDebugInfo {
   ok: boolean;
@@ -34,6 +41,8 @@ export interface SnapshotDebugInfo {
 
 export async function getSnapshotDebug_resolver(req: any): Promise<SnapshotDebugInfo> {
   const context = req.context || req;
+  const uiReqId = req?.payload?.uiReqId || `debug_${Date.now()}`;
+  const backendBuildSha = process.env.BUILD_SHA || null;
   
   let tenantKey: string;
   let tenantKeyHash: string;
@@ -51,6 +60,20 @@ export async function getSnapshotDebug_resolver(req: any): Promise<SnapshotDebug
     }));
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorCode: ErrorCode = "TENANT_CONTEXT_MISSING";
+    const traceIdStable = generateTraceIdStable(errorCode, err, backendBuildSha);
+    const traceIdInstance = generateTraceIdInstance(traceIdStable, err);
+    
+    emitResolverErrorLog(
+      traceIdStable,
+      traceIdInstance,
+      errorCode,
+      errorMsg,
+      backendBuildSha,
+      uiReqId,
+      "getSnapshotDebug"
+    );
+    
     console.error(`[getSnapshotDebug] Tenant key resolution failed: ${errorMsg}`);
     return {
       ok: false,
@@ -116,6 +139,21 @@ export async function getSnapshotDebug_resolver(req: any): Promise<SnapshotDebug
       checksCompletedLifetime,
     };
   } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorCode: ErrorCode = classifyError(err, "storage");
+    const traceIdStable = generateTraceIdStable(errorCode, err, backendBuildSha);
+    const traceIdInstance = generateTraceIdInstance(traceIdStable, err);
+    
+    emitResolverErrorLog(
+      traceIdStable,
+      traceIdInstance,
+      errorCode,
+      errorMsg,
+      backendBuildSha,
+      uiReqId,
+      "getSnapshotDebug"
+    );
+    
     console.error(
       `[getSnapshotDebug] Resolver error:`,
       err instanceof Error ? err.message : String(err)

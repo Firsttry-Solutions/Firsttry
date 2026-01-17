@@ -5,13 +5,20 @@
  * 
  * REQUIREMENTS:
  * - Always returns actual backend build SHA and time (NEVER "unknown")
- * - Logs TENANT_PROOF on entry (safe tenant detection for cross-tenant context)
- * - Logs BUILDINFO_PROOF with build identifiers
- * - Returns error if build metadata is missing
+ * - NEVER throws. Always returns structured BuildInfo.
+ * - On error: returns ok=false with stable error_code and deterministic trace_id
+ * - Emits single-line JSON log on failure with trace_id and ui_req_id
  */
 
 import { resolveTenantKeyOrNull } from "../security/resolveTenantKey";
 import { FT_BUILD_SHA, FT_BUILD_TIME_UTC } from "../shared/build_meta";
+import {
+  classifyError,
+  generateTraceIdStable,
+  generateTraceIdInstance,
+  emitResolverErrorLog,
+  extractUiReqId,
+} from "./backbone_error_handling";
 
 /**
  * BuildInfo interface - structured response from getBuildInfo resolver
@@ -30,11 +37,13 @@ export interface BuildInfo {
 }
 
 export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
-  // Structured error handling - always return BuildInfo shape, never throw or undefined
+  // BACKBONE NO-THROW CONTRACT: This resolver NEVER throws.
+  // It always returns BuildInfo shape with ok flag and error details if something fails.
+  
   try {
     // Build metadata is not tenant data; must work even when tenant context is missing.
     // This resolver is called from UI (untrusted, cross-tenant) contexts and must always return.
-    const uiReqId = req?.payload?.uiReqId || req?.uiReqId || "(none)";
+    const uiReqId = extractUiReqId(req);
     const context = req.context || req;
     const resolvedAt = new Date().toISOString();
 
@@ -90,7 +99,7 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
       backendEnv: process.env.FORGE_ENV || "UNKNOWN",
       nodeEnv: process.env.NODE_ENV || "UNKNOWN",
       resolvedAt,
-      uiReqIdEcho: uiReqId,
+      uiReqIdEcho: uiReqId || "(none)",
       tenantPresent,
       tenantKeyHash,
     };
@@ -100,19 +109,31 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
       buildSha,
       buildTimeUtc,
       tenantPresent,
+      trace_id_stable: generateTraceIdStable("RESOLVER_UNHANDLED_EXCEPTION", {}, buildSha), // success trace for correlation
       ts: new Date().toISOString()
     }));
     
     return buildInfo;
   } catch (err) {
-    // Catch-all to ensure we never throw or return undefined
-    const errorName = err instanceof Error ? err.name : "UnknownError";
+    // CATCH-ALL: Ensure we never throw. Extract error details and return error payload.
+    const errorCode = classifyError(err, "getBuildInfo");
+    const traceIdStable = generateTraceIdStable(errorCode, err, FT_BUILD_SHA);
+    const traceIdInstance = generateTraceIdInstance(traceIdStable, err);
     const errorMsg = err instanceof Error ? err.message : String(err);
-    const reqUiReqId = req?.payload?.uiReqId || req?.uiReqId || "(none)";
+    const uiReqId = extractUiReqId(req);
+
+    // Emit single-line JSON log (includes both trace IDs)
+    emitResolverErrorLog(
+      traceIdStable,
+      traceIdInstance,
+      errorCode,
+      errorMsg,
+      FT_BUILD_SHA,
+      uiReqId,
+      "getBuildInfo"
+    );
     
-    console.error(`[BUILDINFO_ERROR] uiReqId=${reqUiReqId} error=${errorName}: ${errorMsg}`);
-    console.log(`FT_PROOF_MARKER_ERROR uiReqId=${reqUiReqId} ok=false errorName=${errorName}`);
-    
+    // Return structured error (never throw)
     return {
       ok: false,
       FT_BUILD_SHA: "ERROR_EXCEPTION",
@@ -120,9 +141,12 @@ export async function getBuildInfo_resolver(req: any): Promise<BuildInfo> {
       backendEnv: process.env.FORGE_ENV || "UNKNOWN",
       nodeEnv: process.env.NODE_ENV || "UNKNOWN",
       resolvedAt: new Date().toISOString(),
-      uiReqIdEcho: reqUiReqId,
+      uiReqIdEcho: uiReqId || "(none)",
       tenantPresent: false,
-      error: { name: errorName, message: errorMsg }
+      error: {
+        name: errorCode,
+        message: errorMsg.substring(0, 200),
+      }
     };
   }
 }

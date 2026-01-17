@@ -39,11 +39,15 @@ import { normalizeStatusV1, EMPTY_STATUS_V1, GovernanceStatusV1 } from '../../sh
 // ============================================================================
 const UI_BUILD_VERSION = "UI_v2.14.0";
 const UI_BUILD_PROOF = "591f91ce__2026-01-04T165752Z";
-const UI_RESOURCE_KEY = "govGadget2140";
+const UI_RESOURCE_KEY = "govGadget2141";
 const BRIDGE_MODE = "BUNDLED";
 const INVOKE_AVAILABLE = true;
 // UI_DIST_STAMP: Git HEAD SHA + build timestamp. Proves which dist was deployed.
 const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
+// BACKBONE LAYER 0: Hard-coded UI_BUILD_MARKER for cache-busting verification
+// Must be changed on each deploy when debugging cache issues
+// Format: UI_MARKER_<YYYYMMDDTHHMMSSZ>
+const UI_BUILD_MARKER = "UI_MARKER_20260117T141000Z";
 // UI_REQ_ID: Unique per page load. Used to correlate UI invoke calls with resolver logs.
 const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).substring(0, 8)}`;
 
@@ -210,14 +214,16 @@ async function loadStatus() {
         // Step 3: Invoke resolver with try/catch for error handling
         let rawData: any = null;
         let invokeError: string | null = null;
+        let invokeErrorThrown = false;
 
         try {
             // @ts-ignore - invoke is checked above
             // Call the new getStatusSnapshot resolver (live dashboard)
-            rawData = await invoke('getStatusSnapshot', {});
+            rawData = await invoke('getStatusSnapshot', { ui_req_id: FT_UI_REQ_ID });
         } catch (e) {
             invokeError = e instanceof Error ? e.message : String(e);
-            console.error('Bridge.invoke failed:', invokeError);
+            invokeErrorThrown = true;
+            console.error('Bridge.invoke threw exception:', invokeError);
         }
 
         // CRITICAL: Normalize data immediately after receiving it
@@ -225,6 +231,7 @@ async function loadStatus() {
         let data: GovernanceStatusV1;
         if (!rawData || invokeError) {
             const errorMsg = invokeError || 'No data returned from resolver';
+            const errorType = invokeErrorThrown ? 'INVOKE_THROW' : 'INVOKE_ERROR';
             // Return safe, normalized empty state
             data = EMPTY_STATUS_V1("UNKNOWN", "unknown", UI_BUILD_VERSION);
             data.health = "ERROR";
@@ -233,13 +240,14 @@ async function loadStatus() {
                 <div class="error-panel" style="background: #ffeceb; border: 1px solid #f87462; border-radius: 8px; padding: 16px; color: #5d1f1a;">
                     <div style="font-weight: 600; font-size: 14px;">Resolver Invocation Failed</div>
                     <div style="margin-top: 8px; font-size: 12px;">
-                        <div><strong>Error:</strong> ${errorMsg}</div>
+                        <div><strong>Error Type:</strong> ${errorType}</div>
+                        <div><strong>Error Message:</strong> ${errorMsg}</div>
                         <div style="margin-top: 8px;">The backend resolver did not respond successfully. Check that the status-resolver-fn is deployed and functioning.</div>
                     </div>
                 </div>
             `;
             setHTML('operational-status', errorHtml);
-            setText('ui-selftest-invoke', `FAIL (error: ${errorMsg})`);
+            setText('ui-selftest-invoke', `FAIL (${errorType}: ${errorMsg})`);
             return;
         }
 
@@ -1476,58 +1484,160 @@ function onDOMReady() {
     const buildFooter = document.getElementById('build-footer');
     if (buildFooter) {
         const uiBuild = getBuildIdentifier();
-        buildFooter.textContent = uiBuild;
         
-        // Try to fetch backend build info via resolver for cache-bust proof
+        // BACKBONE LAYER 0: Always show UI_BUILD_MARKER first for cache-busting visibility
+        const initialMarker = document.createElement('div');
+        initialMarker.style.fontSize = '10px';
+        initialMarker.style.marginBottom = '4px';
+        initialMarker.style.color = '#626f86';
+        initialMarker.style.fontFamily = 'monospace';
+        initialMarker.style.fontWeight = 'bold';
+        initialMarker.textContent = `UI_BUILD_MARKER=${UI_BUILD_MARKER} | ui_req_id=${FT_UI_REQ_ID}`;
+        buildFooter.appendChild(initialMarker);
+        
+        // Clear the initial text and add it as a proper element
+        buildFooter.innerHTML = '';
+        buildFooter.appendChild(initialMarker);
+        
+        const uiBuildEl = document.createElement('div');
+        uiBuildEl.textContent = uiBuild;
+        buildFooter.appendChild(uiBuildEl);
+        
+        // Try to fetch backend health via ping, then build info via resolver for cache-bust proof
         (async () => {
             try {
-                // Pass UI request ID for correlation with backend logs
-                console.log(`[UI_BUILDINFO_INVOKE_START] uiReqId=${FT_UI_REQ_ID}`);
-                const backendBuild = await invoke('getBuildInfo', { uiReqId: FT_UI_REQ_ID });
-                console.log(`[UI_BUILDINFO_INVOKE_SUCCESS] uiReqId=${FT_UI_REQ_ID} echo=${backendBuild?.uiReqIdEcho}`);
-                // Unmissable logging: proof of resolver invocation and build info display
-                console.log('[UI_BUILDINFO_DISPLAY] Backend:', backendBuild);
-                console.log(`UI_BUILD_PROOF FT_BUILD_SHA=${backendBuild.FT_BUILD_SHA} FT_BUILD_TIME_UTC=${backendBuild.FT_BUILD_TIME_UTC} resolvedAt=${backendBuild.resolvedAt}`);
+                // PHASE 5C: First call ping to verify backend is responsive
+                console.log(`[UI_PING_INVOKE_START] uiReqId=${FT_UI_REQ_ID}`);
+                let pingResult: any = null;
+                let pingError: string | null = null;
                 
-                // PHASE 2 FIX: Check response.ok to detect resolver errors
-                const invokeSucceeded = backendBuild?.ok === true;
-                const hasValidBuildMeta = backendBuild && backendBuild.FT_BUILD_SHA && backendBuild.FT_BUILD_TIME_UTC;
-                
-                if (!invokeSucceeded) {
-                  // Resolver returned an error in response.error field
-                  const errorInfo = backendBuild?.error ? `${backendBuild.error.name}: ${backendBuild.error.message}` : 'Unknown error';
-                  const backendDisplay = `(resolver_error: ${errorInfo.substring(0, 60)})`;
-                  buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
-                  buildFooter.style.color = '#ae2a19'; // Red for error
-                  
-                  const proofEl = ftEnsureServeProofEl();
-                  proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | ECHO:${backendBuild?.uiReqIdEcho || '(none)'} | BACKEND: ${backendDisplay} | RESOLVER_OK:false | ERROR:${errorInfo.substring(0, 40)}`;
-                  buildFooter.appendChild(proofEl);
-                  return;
+                try {
+                    pingResult = await invoke('ping', { uiReqId: FT_UI_REQ_ID });
+                } catch (pingErr) {
+                    pingError = pingErr instanceof Error ? pingErr.message : String(pingErr);
+                    console.error(`[UI_PING_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} error=${pingError}`);
                 }
                 
-                // Update footer with both UI and backend versions
-                const backendDisplay = (hasValidBuildMeta) 
-                    ? `${backendBuild.FT_BUILD_SHA} @ ${backendBuild.FT_BUILD_TIME_UTC}`
-                    : `(missing_backend_build_meta)`;
-                buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
-                buildFooter.style.color = '#0052cc';
-                buildFooter.style.fontWeight = '500';
+                // If ping failed, show error immediately
+                if (pingError || !pingResult?.ok) {
+                    const pingErrorMsg = pingError || pingResult?.error?.message || 'Backend not responding';
+                    const pingErrorCode = pingResult?.error?.code || 'PING_FAILED';
+                    const pingTrace = pingResult?.error?.trace_id_stable || 'UNSET_TRACE_ID';
+                    
+                    // CRITICAL: Never show "no-trace" - if error, must have trace_id_stable
+                    if (pingTrace === 'UNSET_TRACE_ID' || !pingTrace) {
+                        console.error(`[CRITICAL] ping error response missing trace_id_stable! Response:`, pingResult);
+                    }
+                    
+                    const errorInfo = `${pingErrorCode} | trace: ${pingTrace}`;
+                    const backendDisplay = `(${errorInfo.substring(0, 50)})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.style.color = '#ae2a19'; // Red for error
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    // BACKBONE LAYER 0: Include UI_BUILD_MARKER, ui_req_id, error code, trace (never "no-trace")
+                    proofEl.textContent = `BACKBONE_L0 | UI_BUILD_MARKER:${UI_BUILD_MARKER} | ui_req_id:${FT_UI_REQ_ID} | PING_ERR | code:${pingErrorCode} | trace:${pingTrace}`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
                 
-                // Update visible footer with unmissable proof marker
-                const proofMarker = document.createElement('div');
-                proofMarker.style.fontSize = '10px';
-                proofMarker.style.marginTop = '4px';
-                proofMarker.style.color = '#626f86';
-                proofMarker.style.fontFamily = 'monospace';
-                proofMarker.textContent = `[✓ BUILD PROOF] UI+Backend versions verified in real-time`;
-                buildFooter.appendChild(proofMarker);
+                // Ping succeeded, show backend build SHA
+                console.log(`[UI_PING_INVOKE_SUCCESS] uiReqId=${FT_UI_REQ_ID} backend_build_sha=${pingResult?.backend_build_sha}`);
+                const backendBuildSha = pingResult?.backend_build_sha || 'unknown';
+                const backendTimestamp = pingResult?.now_iso || new Date().toISOString();
                 
-                // Add SERVE_PROOF DOM element with request ID correlation
-                const resolverOK = Boolean(hasValidBuildMeta);
-                const proofEl = ftEnsureServeProofEl();
-                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | ECHO:${backendBuild?.uiReqIdEcho || '(none)'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
-                buildFooter.appendChild(proofEl);
+                // PHASE 5B: Call ensureFirstSnapshot (idempotent health check + first snapshot)
+                console.log(`[UI_ENSURE_FIRST_SNAPSHOT_START] uiReqId=${FT_UI_REQ_ID}`);
+                let ensureResult: any = null;
+                let ensureError: string | null = null;
+                
+                try {
+                    ensureResult = await invoke('ensureFirstSnapshot', { uiReqId: FT_UI_REQ_ID });
+                } catch (ensureErr) {
+                    ensureError = ensureErr instanceof Error ? ensureErr.message : String(ensureErr);
+                    console.error(`[UI_ENSURE_FIRST_SNAPSHOT_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} error=${ensureError}`);
+                }
+                
+                // If ensureFirstSnapshot failed, show error
+                if (ensureError || !ensureResult?.ok) {
+                    const ensureErrorMsg = ensureError || ensureResult?.error?.message || 'Failed to ensure first snapshot';
+                    const ensureErrorCode = ensureResult?.error?.code || 'ENSURE_FIRST_SNAPSHOT_FAILED';
+                    const ensureTrace = ensureResult?.error?.trace_id_stable || 'no-trace';
+                    const errorInfo = `${ensureErrorCode} | trace: ${ensureTrace}`;
+                    const backendDisplay = `(${errorInfo.substring(0, 50)})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.style.color = '#ae2a19'; // Red for error
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | ENSURE_SNAPSHOT_FAILED | ERROR:${ensureErrorCode} | TRACE:${ensureTrace}`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+                
+                // ensureFirstSnapshot succeeded
+                console.log(`[UI_ENSURE_FIRST_SNAPSHOT_SUCCESS] uiReqId=${FT_UI_REQ_ID} did_write=${ensureResult?.did_write} snapshot_id=${ensureResult?.snapshot_id}`);
+                
+                // Now fetch build info for additional details
+                try {
+                    console.log(`[UI_BUILDINFO_INVOKE_START] uiReqId=${FT_UI_REQ_ID}`);
+                    const backendBuild = await invoke('getBuildInfo', { uiReqId: FT_UI_REQ_ID });
+                    console.log(`[UI_BUILDINFO_INVOKE_SUCCESS] uiReqId=${FT_UI_REQ_ID} echo=${backendBuild?.uiReqIdEcho}`);
+                    console.log('[UI_BUILDINFO_DISPLAY] Backend:', backendBuild);
+                    console.log(`UI_BUILD_PROOF FT_BUILD_SHA=${backendBuild?.FT_BUILD_SHA} FT_BUILD_TIME_UTC=${backendBuild?.FT_BUILD_TIME_UTC} resolvedAt=${backendBuild?.resolvedAt}`);
+                    
+                    // PHASE 2 FIX: Check response.ok to detect resolver errors
+                    const invokeSucceeded = backendBuild?.ok === true;
+                    const hasValidBuildMeta = backendBuild && backendBuild.FT_BUILD_SHA && backendBuild.FT_BUILD_TIME_UTC;
+                    
+                    if (!invokeSucceeded) {
+                      // Resolver returned an error in response.error field
+                      // Show error_code + trace_id_stable for structured error identification
+                      const errorCode = backendBuild?.error?.code || "UNKNOWN_CODE";
+                      const traceIdStable = backendBuild?.error?.trace_id_stable || "no-trace";
+                      const errorMsg = backendBuild?.error?.message || 'Unknown error';
+                      const errorInfo = `${errorCode} | trace: ${traceIdStable}`;
+                      const backendDisplay = `(resolver_error: ${errorInfo.substring(0, 60)})`;
+                      buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                      buildFooter.style.color = '#ae2a19'; // Red for error
+                      
+                      const proofEl = ftEnsureServeProofEl();
+                      proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | BUILDINFO_ERROR | ERROR_CODE:${errorCode} | TRACE:${traceIdStable}`;
+                      buildFooter.appendChild(proofEl);
+                      return;
+                    }
+                    
+                    // Update footer with both UI and backend versions
+                    const backendDisplay = (hasValidBuildMeta) 
+                        ? `${backendBuild.FT_BUILD_SHA} @ ${backendBuild.FT_BUILD_TIME_UTC}`
+                        : `(missing_backend_build_meta)`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.style.color = '#0052cc';
+                    buildFooter.style.fontWeight = '500';
+                    
+                    // BACKBONE LAYER 0: Update footer with unmissable proof marker
+                    // Include UI_BUILD_MARKER and ui_req_id for cache-busting + correlation verification
+                    const proofMarker = document.createElement('div');
+                    proofMarker.style.fontSize = '10px';
+                    proofMarker.style.marginTop = '4px';
+                    proofMarker.style.color = '#626f86';
+                    proofMarker.style.fontFamily = 'monospace';
+                    proofMarker.textContent = `BACKBONE_L0: ui_req_id=${FT_UI_REQ_ID} | UI_BUILD_MARKER=${UI_BUILD_MARKER}`;
+                    buildFooter.appendChild(proofMarker);
+                    
+                    // Add SERVE_PROOF DOM element with request ID correlation
+                    const resolverOK = Boolean(hasValidBuildMeta);
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | ECHO:${backendBuild?.uiReqIdEcho || '(none)'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
+                    buildFooter.appendChild(proofEl);
+                } catch (buildErr) {
+                    console.log(`[UI_BUILDINFO_INVOKE_ERROR] uiReqId=${FT_UI_REQ_ID} error=${String(buildErr).substring(0, 60)}`, buildErr);
+                    // buildInfo error but ping succeeded, show ping result
+                    const pingDisplay = `Ping: ${backendBuildSha}`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${pingDisplay}`;
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK | BUILDINFO_ERROR:${String(buildErr).substring(0, 30)}`;
+                    buildFooter.appendChild(proofEl);
+                }
             } catch (err) {
                 console.log(`[UI_BUILDINFO_INVOKE_ERROR] uiReqId=${FT_UI_REQ_ID} error=${String(err).substring(0, 60)}`, err);
                 // Keep UI-only build info if backend not available

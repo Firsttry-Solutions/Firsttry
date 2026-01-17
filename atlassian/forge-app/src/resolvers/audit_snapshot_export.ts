@@ -15,6 +15,13 @@ import { storeSnapshotRecord, generateSnapshotId } from '../core/audit_snapshot/
 import { generateTrustSnapshotPdf } from '../core/audit_snapshot/exportPdf';
 import { SnapshotRecord } from '../core/audit_snapshot/types';
 import { resolveTenantIdentity } from '../core/tenant_identity';
+import {
+  generateTraceIdStable,
+  generateTraceIdInstance,
+  emitResolverErrorLog,
+  classifyError,
+  ErrorCode,
+} from "./backbone_error_handling";
 
 /**
  * Export Trust Snapshot
@@ -37,16 +44,35 @@ export async function exportTrustSnapshot(
 }> {
   // Extract context from request
   const context = req.context || req;
-
-  // Guard: verify tenant identity (same as governance_status resolver)
-  const tenantIdentity = await resolveTenantIdentity(context);
-  if (!tenantIdentity || !tenantIdentity.cloudId) {
-    throw new Error('Tenant identity unavailable');
-  }
-
-  const cloudId = tenantIdentity.cloudId;
+  const uiReqId = req?.payload?.uiReqId || `export_${Date.now()}`;
+  const backendBuildSha = process.env.BUILD_SHA || null;
 
   try {
+    // Guard: verify tenant identity (same as governance_status resolver)
+    const tenantIdentity = await resolveTenantIdentity(context);
+    if (!tenantIdentity || !tenantIdentity.cloudId) {
+      const err = new Error('Tenant identity unavailable');
+      const errorCode: ErrorCode = "TENANT_CONTEXT_MISSING";
+      const traceIdStable = generateTraceIdStable(errorCode, err, backendBuildSha);
+      const traceIdInstance = generateTraceIdInstance(traceIdStable, err);
+      
+      emitResolverErrorLog(
+        traceIdStable,
+        traceIdInstance,
+        errorCode,
+        err.message,
+        backendBuildSha,
+        uiReqId,
+        "MISSING",
+        "UNKNOWN",
+        "exportTrustSnapshot"
+      );
+      
+      throw err;
+    }
+
+    const cloudId = tenantIdentity.cloudId;
+
     // 1. Generate snapshot from Phase 1-4 data
     const snapshot = await generateTrustSnapshot(cloudId);
 
@@ -88,7 +114,23 @@ export async function exportTrustSnapshot(
 
     return response;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Export failed: ${errorMessage}`);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    const errorCode: ErrorCode = classifyError(error, "export");
+    const traceIdStable = generateTraceIdStable(errorCode, error, backendBuildSha);
+    const traceIdInstance = generateTraceIdInstance(traceIdStable, error);
+    
+    emitResolverErrorLog(
+      traceIdStable,
+      traceIdInstance,
+      errorCode,
+      errorMsg,
+      backendBuildSha,
+      uiReqId,
+      "OK",
+      "ERROR",
+      "exportTrustSnapshot"
+    );
+    
+    throw new Error(`Export failed: ${errorMsg}`);
   }
 }

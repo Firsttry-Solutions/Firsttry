@@ -366,8 +366,10 @@ function computeHealthReason(state: GovernanceRuntimeState, signals: RuntimeSign
 }
 
 function computeFreshnessLabel(state: GovernanceRuntimeState, ageMin: number | null, signals: RuntimeSignals): string {
+  // FRESHNESS INVARIANT: If no timestamp (ageMin === null), NEVER show "Fresh"
+  // "Fresh" status MUST be paired with a valid timestamp
   if (!signals.snapshot) return "Never";
-  if (ageMin === null) return "Unknown";
+  if (ageMin === null) return "Never"; // CRITICAL FIX: was "Unknown", must be "Never" (no timestamp = never)
   if (ageMin <= signals.stalenessThresholdMinutes * 0.25) return "Fresh";
   if (ageMin <= signals.stalenessThresholdMinutes * 0.75) return "Current";
   if (ageMin <= signals.stalenessThresholdMinutes) return "Aging";
