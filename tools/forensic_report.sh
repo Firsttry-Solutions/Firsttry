@@ -77,6 +77,60 @@ echo "Output dir: $OUTDIR"
 echo ""
 
 # ============================================================================
+# HELPER FUNCTION: LOG VALIDITY CHECK
+# ============================================================================
+
+# Check if a log file contains real application logs (not just CLI errors)
+# Returns: 0 (valid) or 1 (invalid)
+is_log_valid() {
+  local logfile="$1"
+  
+  if [ ! -f "$logfile" ] || [ ! -s "$logfile" ]; then
+    return 1
+  fi
+  
+  # Check for "No logs found" message (explicit negative)
+  if grep -qi "no logs found\|not found\|empty" "$logfile"; then
+    return 1
+  fi
+  
+  # Count lines and error indicator lines
+  local total_lines=$(wc -l < "$logfile" 2>/dev/null || echo 0)
+  
+  # Check if MOST lines are CLI errors (these are bad signs)
+  local error_indicator_lines=$(grep -iE "^Error:|^WARN|failed|not authorized|rate limit|Forbidden|Unauthorized|manifest.*error|To run this command" "$logfile" 2>/dev/null | wc -l)
+  
+  # If most lines are error messages, it's not a valid app log
+  if [ "$total_lines" -gt 0 ]; then
+    local error_ratio=$((error_indicator_lines * 100 / total_lines))
+    if [ "$error_ratio" -gt 50 ]; then
+      # More than 50% error lines = probably CLI noise, not app logs
+      return 1
+    fi
+  fi
+  
+  # Check for at least one line that looks like a real app log entry
+  # App logs should have: timestamp + log level, JSON, or known app markers
+  if grep -qE "(^\[|\"timestamp\"|\"@timestamp\"|INFO|WARN|ERROR|DEBUG|\{.*\}|nonce=|marker|trace|PROBE)" "$logfile"; then
+    return 0
+  fi
+  
+  # Final check: if file has substantial content and isn't pure errors, it might be valid
+  # But only if it has lines longer than typical CLI output
+  local filesize=$(stat -c%s "$logfile" 2>/dev/null || wc -c < "$logfile" || echo 0)
+  if [ "$filesize" -gt 500 ]; then
+    # Check for lines that look like app logs (long lines with JSON-like or timestamp-like structure)
+    local app_like_lines=$(awk 'length > 50 && (/\{/ || /\[/ || /:/)' "$logfile" | wc -l)
+    if [ "$app_like_lines" -gt 0 ]; then
+      return 0
+    fi
+  fi
+  
+  # Default: not valid
+  return 1
+}
+
+# ============================================================================
 # CAPTURE ENVIRONMENT PROOF
 # ============================================================================
 
@@ -150,8 +204,41 @@ echo "  Raw logs (used): $USED_RAW ($USED_RAW_SIZE bytes)"
 echo ""
 
 # ============================================================================
-# SEARCH FOR MARKERS AND NONCE
+# CHECK LOG VALIDITY AND SAVE HEAD/TAIL
 # ============================================================================
+
+echo "Step 2b: Checking log validity..."
+
+# Save head and tail of used log files
+head -50 "$USED_GROUPED" > "$OUTDIR/head_grouped.txt" 2>/dev/null || true
+tail -50 "$USED_GROUPED" > "$OUTDIR/tail_grouped.txt" 2>/dev/null || true
+head -50 "$USED_RAW" > "$OUTDIR/head_raw.txt" 2>/dev/null || true
+tail -50 "$USED_RAW" > "$OUTDIR/tail_raw.txt" 2>/dev/null || true
+
+# Check validity using content rules
+if is_log_valid "$USED_GROUPED"; then
+  GROUPED_VALID="YES"
+else
+  GROUPED_VALID="NO"
+fi
+
+if is_log_valid "$USED_RAW"; then
+  RAW_VALID="YES"
+else
+  RAW_VALID="NO"
+fi
+
+# Overall validity: valid if EITHER format is valid
+if [ "$GROUPED_VALID" = "YES" ] || [ "$RAW_VALID" = "YES" ]; then
+  LOGS_VALID="YES"
+else
+  LOGS_VALID="NO"
+fi
+
+echo "  Grouped logs valid: $GROUPED_VALID"
+echo "  Raw logs valid: $RAW_VALID"
+echo "  Overall logs valid: $LOGS_VALID"
+echo ""
 
 echo "Step 3: Searching for evidence..."
 
@@ -231,7 +318,15 @@ DIAGNOSIS_SUMMARY=""
 DIAGNOSIS_ACTION=""
 
 # Branch determination logic (deterministic, using only facts)
-if [ "$nonce_found" = "YES" ]; then
+# CRITICAL: Check LOGS_VALID FIRST - if logs are not valid, it's always Branch D
+if [ "$LOGS_VALID" = "NO" ]; then
+  # BRANCH D: LOG CAPTURE FAILURE (content-based check, not byte size)
+  DIAGNOSIS_BRANCH="D"
+  DIAGNOSIS_TITLE="❌ BRANCH D: Log Capture Failed or Invalid"
+  DIAGNOSIS_SUMMARY="Log capture returned data that does not contain real application logs. Grouped logs valid: $GROUPED_VALID, Raw logs valid: $RAW_VALID. The captured output appears to be CLI errors or empty responses, not actual app logs."
+  DIAGNOSIS_ACTION="Action: (1) Run: forge whoami (verify email and tenant are correct). (2) Run: forge install list --environment $FORGE_ENV (verify app is listed and installed). (3) If app not installed: forge install --environment $FORGE_ENV (4) If auth issues: forge logout && forge login (5) Check your Forge environment is correct (--env $FORGE_ENV). (6) Try again in 1-2 minutes."
+
+elif [ "$nonce_found" = "YES" ]; then
   # BRANCH A: SUCCESS
   DIAGNOSIS_BRANCH="A"
   DIAGNOSIS_TITLE="✅ BRANCH A: SUCCESS - Nonce Found in Logs"
@@ -245,19 +340,12 @@ elif [ "$entry_found" = "YES" ] || [ "$ok_found" = "YES" ] || [ "$err_found" = "
   DIAGNOSIS_SUMMARY="Probe markers (PROBE_ENTRY/PROBE_OK/PROBE_ERR or JSON) were found in logs, but the specific nonce ($PROBE_NONCE) was not found. This suggests the nonce was generated at a different time than captured logs, or the capture window is too short."
   DIAGNOSIS_ACTION="Action: (1) Verify the probe was run AFTER the capture window started. (2) Re-run probe immediately. (3) Run this script again within 1-2 minutes with the new nonce. (4) Increase --minutes if needed: bash tools/forensic_report.sh --nonce <new_nonce> --minutes 120"
 
-elif [ "$USED_GROUPED_SIZE" -gt 200 ] || [ "$USED_RAW_SIZE" -gt 200 ]; then
-  # BRANCH B: LOGS CAPTURED BUT NO PROBE MARKERS AT ALL
+else
+  # BRANCH B: LOGS ARE VALID BUT NO PROBE MARKERS AT ALL
   DIAGNOSIS_BRANCH="B"
   DIAGNOSIS_TITLE="⚠️ BRANCH B: Logs Captured But Probe Not Invoked"
-  DIAGNOSIS_SUMMARY="Production logs were successfully captured ($USED_GROUPED_SIZE bytes grouped, $USED_RAW_SIZE bytes raw), but NO probe markers were found (no PROBE_ENTRY/PROBE_OK/PROBE_ERR, no JSON marker, no nonce). This means the probe resolver was not invoked."
+  DIAGNOSIS_SUMMARY="Production logs were successfully captured and validated as real application logs, but NO probe markers were found (no PROBE_ENTRY/PROBE_OK/PROBE_ERR, no JSON marker, no nonce). This means the probe resolver was not invoked during this period."
   DIAGNOSIS_ACTION="Action: (1) Verify 'Run Probe' button exists in Jira gadget. (2) Click the button. (3) Within 1-2 minutes, run: bash tools/forensic_report.sh --nonce <nonce_from_ui> --minutes 120"
-
-else
-  # BRANCH D: LOG CAPTURE FAILURE
-  DIAGNOSIS_BRANCH="D"
-  DIAGNOSIS_TITLE="❌ BRANCH D: Log Capture Failed or Too Small"
-  DIAGNOSIS_SUMMARY="Log capture returned very few bytes (grouped: $USED_GROUPED_SIZE, raw: $USED_RAW_SIZE). This indicates the Forge logs system is not working, or authentication is incorrect, or the application is not installed."
-  DIAGNOSIS_ACTION="Action: (1) Run: forge whoami (verify email and tenant). (2) Run: forge install list --environment production (verify app is listed). (3) If app not installed: forge install --environment production (4) If auth issues: forge logout && forge login (5) Try again in 1-2 minutes."
 fi
 
 echo "  Branch: $DIAGNOSIS_BRANCH"
@@ -306,6 +394,42 @@ cat > "$REPORT_FILE" << EOF
 **Raw Logs Used:** $USED_RAW ($USED_RAW_TYPE)  
 **Grouped Size:** $USED_GROUPED_SIZE bytes  
 **Raw Size:** $USED_RAW_SIZE bytes  
+
+---
+
+## Log Sanity Check
+
+**Validity Assessment (Content-Based):**
+
+| Log Type | Valid? | Reason |
+|----------|--------|--------|
+| Grouped Logs | $GROUPED_VALID | Checked for real app log markers, not just CLI noise |
+| Raw Logs | $RAW_VALID | Checked for real app log markers, not just CLI noise |
+| **Overall** | **$LOGS_VALID** | **Valid if either format contains real app logs** |
+
+### Grouped Logs HEAD (first 50 lines)
+
+\`\`\`
+$(cat "$OUTDIR/head_grouped.txt" 2>/dev/null || echo "(no data)")
+\`\`\`
+
+### Grouped Logs TAIL (last 50 lines)
+
+\`\`\`
+$(cat "$OUTDIR/tail_grouped.txt" 2>/dev/null || echo "(no data)")
+\`\`\`
+
+### Raw Logs HEAD (first 50 lines)
+
+\`\`\`
+$(cat "$OUTDIR/head_raw.txt" 2>/dev/null || echo "(no data)")
+\`\`\`
+
+### Raw Logs TAIL (last 50 lines)
+
+\`\`\`
+$(cat "$OUTDIR/tail_raw.txt" 2>/dev/null || echo "(no data)")
+\`\`\`
 
 ---
 
@@ -390,6 +514,10 @@ $NONCE_EXCERPT
 - \`logs_raw_full.txt\` - Full raw logs
 - \`logs_grouped_since.txt\` - Logs from last $MINUTES minutes (grouped)
 - \`logs_raw_since.txt\` - Logs from last $MINUTES minutes (raw)
+- \`head_grouped.txt\` - First 50 lines of grouped logs
+- \`tail_grouped.txt\` - Last 50 lines of grouped logs
+- \`head_raw.txt\` - First 50 lines of raw logs
+- \`tail_raw.txt\` - Last 50 lines of raw logs
 - \`ex_entry.txt\` - PROBE_ENTRY excerpts
 - \`ex_ok.txt\` - PROBE_OK excerpts
 - \`ex_err.txt\` - PROBE_ERR excerpts
@@ -397,10 +525,66 @@ $NONCE_EXCERPT
 
 ---
 
+## Self-Check: Forensic Commands & Validity Flags
+
+This section documents the exact commands executed and computed validity flags for audit purposes.
+
+### Commands Executed
+
+\`\`\`bash
+# Forge Identity
+forge whoami
+
+# Installation Status
+forge install list --environment $FORGE_ENV
+
+# Log Capture (Full)
+timeout 90 forge logs --environment $FORGE_ENV --limit 5000 --grouped > logs_grouped_full.txt
+timeout 90 forge logs --environment $FORGE_ENV --limit 5000 > logs_raw_full.txt
+
+# Log Capture (Time-Windowed)
+timeout 90 forge logs --environment $FORGE_ENV --limit 5000 --since ${MINUTES}m --grouped > logs_grouped_since.txt
+timeout 90 forge logs --environment $FORGE_ENV --limit 5000 --since ${MINUTES}m > logs_raw_since.txt
+\`\`\`
+
+### Log File Sizes
+
+| File | Path | Size (bytes) |
+|------|------|-------------|
+| Grouped (Full) | $LOGS_GROUPED_FULL | $SIZE_GROUPED_FULL |
+| Raw (Full) | $LOGS_RAW_FULL | $SIZE_RAW_FULL |
+| Grouped (Since) | $LOGS_GROUPED_SINCE | $SIZE_GROUPED_SINCE |
+| Raw (Since) | $LOGS_RAW_SINCE | $SIZE_RAW_SINCE |
+| **Used Grouped** | $USED_GROUPED | $USED_GROUPED_SIZE |
+| **Used Raw** | $USED_RAW | $USED_RAW_SIZE |
+
+### Validity Flags (Content-Based Validation)
+
+| Check | Result |
+|-------|--------|
+| Grouped Logs Valid? | $GROUPED_VALID |
+| Raw Logs Valid? | $RAW_VALID |
+| Overall Logs Valid? | $LOGS_VALID |
+| Nonce Found? | $nonce_found |
+| Markers Found? | $([ "$entry_found" = "YES" ] || [ "$ok_found" = "YES" ] || [ "$err_found" = "YES" ] && echo "YES" || echo "NO") |
+
+### Diagnostic Branch Selected
+
+**Branch:** $DIAGNOSIS_BRANCH
+
+This branch was determined by:
+1. First checking: Are logs VALID (content-based)? If NO → Branch D
+2. Then checking: Is nonce found in logs? If YES → Branch A
+3. Then checking: Are markers found but nonce missing? If YES → Branch C
+4. Finally: Logs valid but no markers? Then → Branch B
+
+---
+
 ## Verification
 
 **Generated:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')  
 **Branch:** $DIAGNOSIS_BRANCH  
+**Log Validity:** $LOGS_VALID (Grouped: $GROUPED_VALID, Raw: $RAW_VALID)  
 **Report Status:** Generated (see Diagnosis for interpretation)
 EOF
 
