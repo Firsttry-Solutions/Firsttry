@@ -32,29 +32,76 @@ import { ensureFirstSnapshot } from "./ensureFirstSnapshot";
 // ============================================================================
 
 /**
- * Extract ui_req_id from payload using fallback chain
- * Tries: payload.ui_req_id → payload.meta?.ui_req_id → payload.uiReqId → payload.requestId
+ * Extract ui_req_id from payload using complete fallback chain with normalization
+ * 
+ * Precedence order (exact):
+ * 1. payload.ui_req_id
+ * 2. payload.meta.ui_req_id
+ * 3. payload.uiReqId
+ * 4. payload.meta.uiReqId
+ * 5. payload.requestId
+ * 6. payload.reqId
+ * 7. payload.ui_request_id
+ * 8. payload.context.ui_req_id
+ * 
+ * Normalization:
+ * - If starts with "req_" → normalize to "ui_" + rest
+ * - If missing entirely → generate "ui_missing_" + Date.now()
  */
-export function extractUiReqId(payload: any): string | null {
-  if (typeof payload?.ui_req_id === 'string') {
-    return payload.ui_req_id;
+export function extractUiReqId(payload: any): string {
+  let extracted: string | null = null;
+
+  // Precedence 1
+  if (typeof payload?.ui_req_id === 'string' && payload.ui_req_id.trim()) {
+    extracted = payload.ui_req_id.trim();
   }
-  if (typeof payload?.meta?.ui_req_id === 'string') {
-    return payload.meta.ui_req_id;
+  // Precedence 2
+  else if (typeof payload?.meta?.ui_req_id === 'string' && payload.meta.ui_req_id.trim()) {
+    extracted = payload.meta.ui_req_id.trim();
   }
-  if (typeof payload?.uiReqId === 'string') {
-    return payload.uiReqId;
+  // Precedence 3
+  else if (typeof payload?.uiReqId === 'string' && payload.uiReqId.trim()) {
+    extracted = payload.uiReqId.trim();
   }
-  if (typeof payload?.requestId === 'string') {
-    return payload.requestId;
+  // Precedence 4
+  else if (typeof payload?.meta?.uiReqId === 'string' && payload.meta.uiReqId.trim()) {
+    extracted = payload.meta.uiReqId.trim();
   }
-  return null;
+  // Precedence 5
+  else if (typeof payload?.requestId === 'string' && payload.requestId.trim()) {
+    extracted = payload.requestId.trim();
+  }
+  // Precedence 6
+  else if (typeof payload?.reqId === 'string' && payload.reqId.trim()) {
+    extracted = payload.reqId.trim();
+  }
+  // Precedence 7
+  else if (typeof payload?.ui_request_id === 'string' && payload.ui_request_id.trim()) {
+    extracted = payload.ui_request_id.trim();
+  }
+  // Precedence 8
+  else if (typeof payload?.context?.ui_req_id === 'string' && payload.context.ui_req_id.trim()) {
+    extracted = payload.context.ui_req_id.trim();
+  }
+
+  // Normalize: if starts with "req_", convert to "ui_"
+  if (extracted && extracted.startsWith('req_')) {
+    extracted = 'ui_' + extracted.substring(4);
+  }
+
+  // If still missing, generate one
+  if (!extracted) {
+    extracted = `ui_missing_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  }
+
+  return extracted;
 }
 
 /**
  * Create base meta structure for all responses
+ * ui_req_id is now always a string (extracted and normalized by extractUiReqId)
  */
-export function metaBase(ui_req_id: string | null): { ui_req_id: string | null; backend_build_sha: string; now_iso: string } {
+export function metaBase(ui_req_id: string): { ui_req_id: string; backend_build_sha: string; now_iso: string } {
   return {
     ui_req_id,
     backend_build_sha: process.env.BACKEND_BUILD_SHA || "unknown",
@@ -64,16 +111,18 @@ export function metaBase(ui_req_id: string | null): { ui_req_id: string | null; 
 
 /**
  * Enforce trace_id_stable on error responses
+ * ui_req_id is now always a string (from extractUiReqId)
+ * 
  * Rules:
  * - If ok:false, ensure error.trace_id_stable is non-empty
- * - If missing, generate: trace_${resolverName}_${ui_req_id ?? "no_ui_req_id"}
+ * - If missing, generate: trace_${resolverName}_${ui_req_id}_${timestamp}
  * - Ensure error.code and error.message exist (with defaults)
  * - Ensure meta exists (merge with existing or create)
  */
 export function ensureTraceOnError(
   res: any,
   resolverName: string,
-  ui_req_id: string | null
+  ui_req_id: string
 ): any {
   // If ok:true, just ensure meta exists
   if (res?.ok !== false) {
@@ -105,8 +154,9 @@ export function ensureTraceOnError(
   }
 
   // Ensure error.trace_id_stable - CRITICAL
-  if (!res.error.trace_id_stable || typeof res.error.trace_id_stable !== 'string' || res.error.trace_id_stable.trim() === '') {
-    res.error.trace_id_stable = `trace_${resolverName}_${ui_req_id ?? "no_ui_req_id"}_${Date.now()}`;
+  // Must NEVER be UNSET, empty, or missing
+  if (!res.error.trace_id_stable || typeof res.error.trace_id_stable !== 'string' || res.error.trace_id_stable.trim() === '' || res.error.trace_id_stable === 'UNSET') {
+    res.error.trace_id_stable = `trace_${resolverName}_${ui_req_id}_${Date.now()}`;
   }
 
   // Ensure meta
