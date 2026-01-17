@@ -33,6 +33,8 @@ import { getBuildInfo_resolver } from './resolvers/getBuildInfo';
 import { refreshNow_resolver } from './resolvers/refreshNow';
 import { exportTrustSnapshot } from './resolvers/audit_snapshot_export';
 import { getSnapshotDebug_resolver } from './resolvers/getSnapshotDebug';
+import { ping } from './resolvers/ping';
+import { ensureFirstSnapshot } from './resolvers/ensureFirstSnapshot';
 
 // Create single canonical resolver instance
 const resolver = new Resolver();
@@ -44,6 +46,8 @@ resolver.define('getBuildInfo', getBuildInfo_resolver);
 resolver.define('refreshNow', refreshNow_resolver);
 resolver.define('exportTrustSnapshot', exportTrustSnapshot);
 resolver.define('getSnapshotDebug', getSnapshotDebug_resolver);
+resolver.define('ping', ping);
+resolver.define('ensureFirstSnapshot', ensureFirstSnapshot);
 
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
