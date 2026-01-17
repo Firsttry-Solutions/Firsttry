@@ -1,145 +1,282 @@
 #!/bin/bash
 # FORENSIC_PROBE: Production Log Capture & Correlation Verification
 # 
-# Usage: bash tools/probe_prod.sh <UI_REQ_ID> <PROBE_NONCE>
-# 
-# This script captures production logs and verifies the probe was logged
-# and can be grepped by nonce (definitive proof of correlation).
+# HARD PROOF: Nonce must be found in production logs (binary: PASS/FAIL)
+#
+# Usage:
+#   bash tools/probe_prod.sh --nonce <PROBE_NONCE> [--ui <UI_REQ_ID>] [--minutes <N>]
+#
+# Arguments:
+#   --nonce <PROBE_NONCE>    (REQUIRED) probe_nonce from UI (e.g., probe_1768662844441_af14b920)
+#   --ui <UI_REQ_ID>         (optional) ui_req_id from UI footer (e.g., ui_1768660190864_d8f211a2)
+#   --minutes <N>            (optional) log lookback window in minutes (default: 20)
+#
+# Returns:
+#   0 = PASS (nonce found in logs)
+#   2 = FAIL (nonce NOT found, diagnostics printed)
 
 set -euo pipefail
 
-# Arguments
-UI_REQ_ID="${1:-}"
-PROBE_NONCE="${2:-}"
+# ============================================================================
+# PARSE ARGUMENTS
+# ============================================================================
 
-if [ -z "$UI_REQ_ID" ] || [ -z "$PROBE_NONCE" ]; then
-  echo "USAGE: bash tools/probe_prod.sh <UI_REQ_ID> <PROBE_NONCE>"
-  echo ""
-  echo "Arguments:"
-  echo "  UI_REQ_ID:   ui_req_id shown in gadget footer (e.g., ui_1768660190864_d8f211a2)"
-  echo "  PROBE_NONCE: probe_nonce from Run Probe diagnostics (e.g., probe_1768662844441_af14b9209c)"
-  exit 1
+PROBE_NONCE=""
+UI_REQ_ID=""
+MINUTES=20
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --nonce)
+      PROBE_NONCE="${2:-}"
+      if [ -z "$PROBE_NONCE" ]; then
+        echo "ERROR: --nonce requires a value"
+        echo ""
+        echo "USAGE: bash tools/probe_prod.sh --nonce <PROBE_NONCE> [--ui <UI_REQ_ID>] [--minutes <N>]"
+        echo ""
+        echo "Examples:"
+        echo "  bash tools/probe_prod.sh --nonce probe_1768662844441_af14b920"
+        echo "  bash tools/probe_prod.sh --nonce probe_1768662844441_af14b920 --ui ui_1768660190864_d8f211a2"
+        echo "  bash tools/probe_prod.sh --nonce probe_1768662844441_af14b920 --minutes 30"
+        exit 2
+      fi
+      shift 2
+      ;;
+    --ui)
+      UI_REQ_ID="${2:-}"
+      if [ -z "$UI_REQ_ID" ]; then
+        echo "ERROR: --ui requires a value"
+        exit 2
+      fi
+      shift 2
+      ;;
+    --minutes)
+      MINUTES="${2:-20}"
+      if ! [[ "$MINUTES" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: --minutes requires a number"
+        exit 2
+      fi
+      shift 2
+      ;;
+    *)
+      echo "ERROR: Unknown argument: $1"
+      echo "USAGE: bash tools/probe_prod.sh --nonce <PROBE_NONCE> [--ui <UI_REQ_ID>] [--minutes <N>]"
+      exit 2
+      ;;
+  esac
+done
+
+# CRITICAL: --nonce is required
+if [ -z "$PROBE_NONCE" ]; then
+  echo "ERROR: --nonce is required"
+  echo "USAGE: bash tools/probe_prod.sh --nonce <PROBE_NONCE> [--ui <UI_REQ_ID>] [--minutes <N>]"
+  exit 2
 fi
 
-# Create timestamped output directory
+# ============================================================================
+# SETUP
+# ============================================================================
+
 TIMESTAMP=$(date -u +%Y%m%d_%H%M%S)
 OUTPUT_DIR="/tmp/ft_probe_${TIMESTAMP}"
 mkdir -p "$OUTPUT_DIR"
 
-echo "================================"
-echo "FORENSIC_PROBE Production Capture"
-echo "================================"
+echo "╔════════════════════════════════════════════════════════════════╗"
+echo "║ FORENSIC_PROBE: Production Log Capture & Verification          ║"
+echo "╚════════════════════════════════════════════════════════════════╝"
 echo ""
-echo "UI_REQ_ID:   $UI_REQ_ID"
-echo "PROBE_NONCE: $PROBE_NONCE"
-echo "Output dir:  $OUTPUT_DIR"
+echo "PROBE_NONCE:  $PROBE_NONCE"
+[ -n "$UI_REQ_ID" ] && echo "UI_REQ_ID:    $UI_REQ_ID"
+echo "LOOKBACK:     ${MINUTES} minutes"
+echo "OUTPUT_DIR:   $OUTPUT_DIR"
 echo ""
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 cd atlassian/forge-app
 
 # ============================================================================
-# STEP 1: Environment proof (who is deploying, what was deployed)
+# STEP 1: Capture environment metadata
 # ============================================================================
-echo "1) Capturing environment proof..."
-
+echo "Step 1: Capturing environment..."
 forge whoami > "$OUTPUT_DIR/00_whoami.txt" 2>&1 || echo "forge whoami failed" > "$OUTPUT_DIR/00_whoami.txt"
 forge install list --environment production > "$OUTPUT_DIR/01_install_list.txt" 2>&1 || echo "forge install list failed" > "$OUTPUT_DIR/01_install_list.txt"
 git rev-parse HEAD > "$OUTPUT_DIR/02_git_head.txt" 2>&1 || echo "unknown" > "$OUTPUT_DIR/02_git_head.txt"
-git rev-parse --short=7 HEAD >> "$OUTPUT_DIR/02_git_head.txt" 2>&1 || true
 
 # ============================================================================
-# STEP 2: Log capture (broad + time-windowed)
+# STEP 2: Capture production logs in BOTH grouped and raw formats
 # ============================================================================
-echo "2) Capturing production logs (this may take 30-60 seconds)..."
+echo "Step 2: Capturing production logs (${MINUTES}min lookback, timeout 120s)..."
 
-# WAY 1: Broad grouped logs
-echo "   - Fetching 5000 grouped logs..."
-timeout 90 forge logs --environment production --limit 5000 --grouped > "$OUTPUT_DIR/10_logs_grouped.txt" 2>&1 || {
-  EXIT_CODE=$?
-  if [ $EXIT_CODE -eq 124 ]; then
-    echo "   WARNING: forge logs timed out (124). Logs may be incomplete."
-  else
-    echo "   WARNING: forge logs failed with code $EXIT_CODE. Logs may be incomplete."
-  fi
-}
+# GROUPED format
+echo "  Fetching grouped logs..."
+timeout 120 forge logs --environment production --limit 8000 --since "${MINUTES}m" --grouped > "$OUTPUT_DIR/10_logs_grouped.txt" 2>&1 || true
 
-# WAY 2: Recent time window (if supported)
-echo "   - Fetching logs from last 2 hours..."
-timeout 90 forge logs --environment production --since 2h --limit 5000 --grouped > "$OUTPUT_DIR/11_logs_since_2h.txt" 2>&1 || {
-  EXIT_CODE=$?
-  if [ $EXIT_CODE -eq 124 ]; then
-    echo "   WARNING: forge logs --since timed out (124)"
-  else
-    echo "   INFO: --since flag not supported or returned error (not critical)"
-  fi
-}
+# RAW format (no grouping, might have different formatting)
+echo "  Fetching raw logs..."
+timeout 120 forge logs --environment production --limit 8000 --since "${MINUTES}m" > "$OUTPUT_DIR/11_logs_raw.txt" 2>&1 || true
 
-# ============================================================================
-# STEP 3: Grep for correlation proof
-# ============================================================================
-echo "3) Grepping for correlation markers..."
-
-# Any PROBE marker
-grep '"marker":"PROBE"' "$OUTPUT_DIR/10_logs_grouped.txt" 2>/dev/null | head -200 > "$OUTPUT_DIR/20_probe_any.txt" || true
-echo "   - PROBE markers found: $(wc -l < "$OUTPUT_DIR/20_probe_any.txt")"
-
-# By nonce (definitive)
-grep "$PROBE_NONCE" "$OUTPUT_DIR/10_logs_grouped.txt" 2>/dev/null | head -200 > "$OUTPUT_DIR/21_probe_by_nonce.txt" || true
-echo "   - Lines matching nonce: $(wc -l < "$OUTPUT_DIR/21_probe_by_nonce.txt")"
-
-# By ui_req_id (should match nonce if correlation works)
-grep "$UI_REQ_ID" "$OUTPUT_DIR/10_logs_grouped.txt" 2>/dev/null | head -200 > "$OUTPUT_DIR/22_probe_by_ui_req_id.txt" || true
-echo "   - Lines matching ui_req_id: $(wc -l < "$OUTPUT_DIR/22_probe_by_ui_req_id.txt")"
-
-# ============================================================================
-# STEP 4: Deterministic verdict
-# ============================================================================
+# Show log capture sizes
+GROUPED_SIZE=$(wc -c < "$OUTPUT_DIR/10_logs_grouped.txt" 2>/dev/null || echo 0)
+RAW_SIZE=$(wc -c < "$OUTPUT_DIR/11_logs_raw.txt" 2>/dev/null || echo 0)
+echo "  Grouped logs: $GROUPED_SIZE bytes"
+echo "  Raw logs:     $RAW_SIZE bytes"
 echo ""
-echo "================================"
-echo "VERIFICATION RESULTS"
-echo "================================"
 
-NONCE_COUNT=$(wc -l < "$OUTPUT_DIR/21_probe_by_nonce.txt")
-UI_COUNT=$(wc -l < "$OUTPUT_DIR/22_probe_by_ui_req_id.txt")
+# ============================================================================
+# STEP 3: Search for plain-text PROBE markers (PROBE_ENTRY/PROBE_OK/PROBE_ERR)
+# ============================================================================
+echo "Step 3: Searching for plain-text PROBE markers..."
 
-if [ "$NONCE_COUNT" -gt 0 ]; then
+# Search for PROBE_ENTRY (proof of invocation)
+grep -F "PROBE_ENTRY" "$OUTPUT_DIR/10_logs_grouped.txt" > "$OUTPUT_DIR/20_entry_grouped.txt" 2>&1 || true
+grep -F "PROBE_ENTRY" "$OUTPUT_DIR/11_logs_raw.txt" > "$OUTPUT_DIR/20_entry_raw.txt" 2>&1 || true
+ENTRY_GROUPED=$(wc -l < "$OUTPUT_DIR/20_entry_grouped.txt" 2>/dev/null || echo 0)
+ENTRY_RAW=$(wc -l < "$OUTPUT_DIR/20_entry_raw.txt" 2>/dev/null || echo 0)
+
+# Search for PROBE_OK (proof of success)
+grep -F "PROBE_OK" "$OUTPUT_DIR/10_logs_grouped.txt" > "$OUTPUT_DIR/21_ok_grouped.txt" 2>&1 || true
+grep -F "PROBE_OK" "$OUTPUT_DIR/11_logs_raw.txt" > "$OUTPUT_DIR/21_ok_raw.txt" 2>&1 || true
+OK_GROUPED=$(wc -l < "$OUTPUT_DIR/21_ok_grouped.txt" 2>/dev/null || echo 0)
+OK_RAW=$(wc -l < "$OUTPUT_DIR/21_ok_raw.txt" 2>/dev/null || echo 0)
+
+# Search for PROBE_ERR (proof of error)
+grep -F "PROBE_ERR" "$OUTPUT_DIR/10_logs_grouped.txt" > "$OUTPUT_DIR/22_err_grouped.txt" 2>&1 || true
+grep -F "PROBE_ERR" "$OUTPUT_DIR/11_logs_raw.txt" > "$OUTPUT_DIR/22_err_raw.txt" 2>&1 || true
+ERR_GROUPED=$(wc -l < "$OUTPUT_DIR/22_err_grouped.txt" 2>/dev/null || echo 0)
+ERR_RAW=$(wc -l < "$OUTPUT_DIR/22_err_raw.txt" 2>/dev/null || echo 0)
+
+echo "  PROBE_ENTRY (grouped): $ENTRY_GROUPED"
+echo "  PROBE_ENTRY (raw):     $ENTRY_RAW"
+echo "  PROBE_OK (grouped):    $OK_GROUPED"
+echo "  PROBE_OK (raw):        $OK_RAW"
+echo "  PROBE_ERR (grouped):   $ERR_GROUPED"
+echo "  PROBE_ERR (raw):       $ERR_RAW"
+echo ""
+
+# Search for JSON markers as fallback
+grep -E '"marker":"PROBE(_ERR)?"' "$OUTPUT_DIR/10_logs_grouped.txt" > "$OUTPUT_DIR/23_probe_json_grouped.txt" 2>&1 || true
+grep -E '"marker":"PROBE(_ERR)?"' "$OUTPUT_DIR/11_logs_raw.txt" > "$OUTPUT_DIR/23_probe_json_raw.txt" 2>&1 || true
+PROBE_JSON_GROUPED=$(wc -l < "$OUTPUT_DIR/23_probe_json_grouped.txt" 2>/dev/null || echo 0)
+PROBE_JSON_RAW=$(wc -l < "$OUTPUT_DIR/23_probe_json_raw.txt" 2>/dev/null || echo 0)
+
+echo "  JSON marker PROBE (grouped): $PROBE_JSON_GROUPED"
+echo "  JSON marker PROBE (raw):     $PROBE_JSON_RAW"
+echo ""
+
+# ============================================================================
+# STEP 4: Search for exact nonce (DEFINITIVE PROOF)
+# ============================================================================
+echo "Step 4: Searching for exact nonce: $PROBE_NONCE"
+
+# Search with -F for literal string match (safest)
+grep -F "$PROBE_NONCE" "$OUTPUT_DIR/10_logs_grouped.txt" > "$OUTPUT_DIR/21_nonce_in_grouped.txt" 2>&1 || true
+grep -F "$PROBE_NONCE" "$OUTPUT_DIR/11_logs_raw.txt" > "$OUTPUT_DIR/22_nonce_in_raw.txt" 2>&1 || true
+
+NONCE_GROUPED=$(wc -l < "$OUTPUT_DIR/21_nonce_in_grouped.txt" 2>/dev/null || echo 0)
+NONCE_RAW=$(wc -l < "$OUTPUT_DIR/22_nonce_in_raw.txt" 2>/dev/null || echo 0)
+
+echo "  Grouped logs: $NONCE_GROUPED matches"
+echo "  Raw logs:     $NONCE_RAW matches"
+echo ""
+
+# ============================================================================
+# STEP 5: Conditional grep by ui_req_id (only if provided)
+# ============================================================================
+if [ -n "$UI_REQ_ID" ]; then
+  echo "Step 5: Searching for ui_req_id: $UI_REQ_ID"
+  grep -F "$UI_REQ_ID" "$OUTPUT_DIR/10_logs_grouped.txt" > "$OUTPUT_DIR/30_ui_in_grouped.txt" 2>&1 || true
+  grep -F "$UI_REQ_ID" "$OUTPUT_DIR/11_logs_raw.txt" > "$OUTPUT_DIR/31_ui_in_raw.txt" 2>&1 || true
+  
+  UI_GROUPED=$(wc -l < "$OUTPUT_DIR/30_ui_in_grouped.txt" 2>/dev/null || echo 0)
+  UI_RAW=$(wc -l < "$OUTPUT_DIR/31_ui_in_raw.txt" 2>/dev/null || echo 0)
+  
+  echo "  Grouped logs: $UI_GROUPED matches"
+  echo "  Raw logs:     $UI_RAW matches"
+  echo ""
+else
+  echo "Step 5: Skipping ui_req_id grep (not provided with --ui flag)"
+  echo ""
+fi
+
+# ============================================================================
+# STEP 6: DETERMINISTIC VERDICT (PASS/FAIL ONLY)
+# ============================================================================
+echo "════════════════════════════════════════════════════════════════"
+echo "VERDICT"
+echo "════════════════════════════════════════════════════════════════"
+echo ""
+
+# PASS if nonce found in EITHER format
+if [ "$NONCE_GROUPED" -gt 0 ] || [ "$NONCE_RAW" -gt 0 ]; then
   echo "✅ PASS: Nonce found in production logs"
   echo ""
-  echo "First matching PROBE line:"
-  echo "---"
-  head -1 "$OUTPUT_DIR/21_probe_by_nonce.txt"
-  echo "---"
+  
+  # Print first matching line (prefer raw if both have matches)
+  if [ "$NONCE_RAW" -gt 0 ]; then
+    echo "First matching line (from raw logs):"
+    head -1 "$OUTPUT_DIR/22_nonce_in_raw.txt"
+  else
+    echo "First matching line (from grouped logs):"
+    head -1 "$OUTPUT_DIR/21_nonce_in_grouped.txt"
+  fi
+  
   echo ""
   echo "This PROVES:"
-  echo "  1. Probe resolver was invoked"
-  echo "  2. Backend logged the correlation data"
-  echo "  3. forge logs is returning the production stream"
+  echo "  ✓ UI invoked the probe resolver successfully"
+  echo "  ✓ Backend generated and returned the nonce"
+  echo "  ✓ Backend logged the nonce to production logs"
+  echo "  ✓ Forge logs system captured and returned the production stream"
   echo ""
-  echo "Grep commands for manual verification:"
-  echo "  timeout 60 forge logs --environment production --limit 1000 | grep '$PROBE_NONCE'"
-  echo "  timeout 60 forge logs --environment production --limit 1000 | grep '$UI_REQ_ID'"
+  echo "Output directory (for inspection): $OUTPUT_DIR"
   exit 0
+  
 else
+  # FAIL: No nonce found
   echo "❌ FAIL: Nonce NOT found in production logs"
   echo ""
-  echo "This means ONE of:"
-  echo "  1. Probe resolver was NOT invoked (UI issue)"
-  echo "  2. Probe was invoked but NOT logged (backend issue)"
-  echo "  3. Probe code not running (deploy issue)"
-  echo "  4. forge logs not returning production stream (auth/env issue)"
+  echo "Diagnostics:"
+  echo "  Total logs captured (grouped):  $GROUPED_SIZE bytes"
+  echo "  Total logs captured (raw):      $RAW_SIZE bytes"
+  echo "  Any PROBE markers (grouped):    $PROBE_ANY_GROUPED"
+  echo "  Any PROBE markers (raw):        $PROBE_ANY_RAW"
+  echo "  Nonce matches (grouped):        $NONCE_GROUPED"
+  echo "  Nonce matches (raw):            $NONCE_RAW"
   echo ""
-  echo "Diagnostic info saved to: $OUTPUT_DIR"
-  echo "Review these files:"
-  echo "  - 00_whoami.txt (auth context)"
-  echo "  - 01_install_list.txt (deployment status)"
-  echo "  - 02_git_head.txt (code version)"
-  echo "  - 10_logs_grouped.txt (production logs sample)"
-  echo "  - 20_probe_any.txt (any PROBE markers)"
+  
+  if [ "$GROUPED_SIZE" -lt 100 ] || [ "$RAW_SIZE" -lt 100 ]; then
+    echo "⚠ WARNING: Log capture returned very few bytes (< 100)"
+    echo "  Possible causes:"
+    echo "    - forge logs command not working"
+    echo "    - Not authenticated to production environment"
+    echo "    - No logs generated in lookback period"
+    echo ""
+    echo "  Action: Check 'forge whoami' and 'forge install list --environment production'"
+  fi
+  
+  if [ "$ENTRY_GROUPED" -eq 0 ] && [ "$OK_GROUPED" -eq 0 ] && [ "$ERR_GROUPED" -eq 0 ] && [ "$PROBE_JSON_GROUPED" -eq 0 ]; then
+    if [ "$ENTRY_RAW" -eq 0 ] && [ "$OK_RAW" -eq 0 ] && [ "$ERR_RAW" -eq 0 ] && [ "$PROBE_JSON_RAW" -eq 0 ]; then
+      echo "⚠ WARNING: No PROBE markers found at all (PROBE_ENTRY/PROBE_OK/PROBE_ERR/JSON)"
+      echo "  Possible causes:"
+      echo "    - Probe resolver not invoked from UI"
+      echo "    - Backend not deployed (wrong version with new markers)"
+      echo "    - Backend not logging properly"
+      echo ""
+      echo "  Action: Check UI button exists, click it, verify backend deployment has PROBE_ENTRY/PROBE_OK/PROBE_ERR logging"
+    fi
+  fi
+  
   echo ""
-  echo "Manual test:"
-  echo "  cd atlassian/forge-app"
-  echo "  timeout 60 forge logs --environment production --limit 1000 | head -50"
-  echo ""
+  echo "Output directory (for inspection): $OUTPUT_DIR"
+  echo "Files for inspection:"
+  echo "  20_probe_any_grouped.txt  - All PROBE markers (grouped)"
+  echo "  23_probe_any_raw.txt      - All PROBE markers (raw)"
+  echo "  10_logs_grouped.txt       - Full grouped logs (${GROUPED_SIZE} bytes)"
+  echo "  11_logs_raw.txt           - Full raw logs (${RAW_SIZE} bytes)"
+  
+  if [ -n "$UI_REQ_ID" ]; then
+    echo "  30_ui_in_grouped.txt      - Lines matching ui_req_id (grouped)"
+    echo "  31_ui_in_raw.txt          - Lines matching ui_req_id (raw)"
+  fi
+  
   exit 2
 fi
