@@ -1,0 +1,9 @@
+# E2E test artifacts and temporary files
+.auth/
+artifacts/
+playwright-report/
+test-results/
+*.zip
+*.har
+*.webm
+node_modules/

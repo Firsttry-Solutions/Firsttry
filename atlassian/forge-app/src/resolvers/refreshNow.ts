@@ -8,6 +8,13 @@
  */
 
 import { collectSnapshotCore, CollectedSnapshot } from "../status/collectSnapshotCore";
+import {
+  generateTraceIdStable,
+  generateTraceIdInstance,
+  emitResolverErrorLog,
+  classifyError,
+  ErrorCode,
+} from "./backbone_error_handling";
 
 export interface RefreshNowResult {
   ok: boolean;
@@ -24,6 +31,7 @@ export interface RefreshNowResult {
 export async function refreshNow_resolver(req: any): Promise<RefreshNowResult> {
   const context = req.context || req;
   const uiReqId = req?.payload?.uiReqId || `refresh_${Date.now()}`;
+  const backendBuildSha = process.env.BUILD_SHA || null;
 
   console.log(
     "REFRESH_NOW_INITIATED",
@@ -58,16 +66,28 @@ export async function refreshNow_resolver(req: any): Promise<RefreshNowResult> {
     };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    const errorCode = (err as any)?.code || "UNKNOWN_ERROR";
-    const errorStage = errorMsg.match(/\[(.*?)\]/)?.[1] || "unknown";
+    const errorCode: ErrorCode = classifyError(err, "collection");
+    const traceIdStable = generateTraceIdStable(errorCode, err, backendBuildSha);
+    const traceIdInstance = generateTraceIdInstance(traceIdStable, err);
+    
+    emitResolverErrorLog(
+      traceIdStable,
+      traceIdInstance,
+      errorCode,
+      errorMsg,
+      backendBuildSha,
+      uiReqId,
+      "refreshNow"
+    );
 
     console.error(
       "REFRESH_NOW_ERROR",
       JSON.stringify({
         uiReqId,
         errorCode,
-        errorStage,
         errorMessage: errorMsg,
+        trace_id_stable: traceIdStable,
+        trace_id_instance: traceIdInstance,
         ts: new Date().toISOString()
       })
     );
@@ -76,7 +96,7 @@ export async function refreshNow_resolver(req: any): Promise<RefreshNowResult> {
       ok: false,
       errorCode,
       errorMessage: errorMsg,
-      errorStage
+      errorStage: "collection"
     };
   }
 }

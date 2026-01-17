@@ -1,6 +1,11 @@
 /**
  * Resolver: getStatusSnapshot
  * Called on gadget load to fetch current snapshot.
+ * 
+ * BACKBONE NO-THROW CONTRACT:
+ * - This resolver NEVER throws
+ * - On any error: returns normalized error status with stable error_code and deterministic trace_id
+ * - Emits single-line JSON log on failure with trace_id and ui_req_id
  *
  * Logic:
  * 1. Resolve tenant key
@@ -12,7 +17,7 @@
  * resolvers from the same handler function.
  */
 
-import { resolveTenantKey } from "../security/resolveTenantKey";
+import { resolveTenantKey, resolveTenantKeyOrNull } from "../security/resolveTenantKey";
 import { 
   getStatusSnapshot as readSnapshot, 
   putStatusSnapshot, 
@@ -23,16 +28,29 @@ import { normalizeStatusV1, EMPTY_STATUS_V1, safeStorageKey, GovernanceStatusV1 
 import { FT_BUILD_SHA, FT_BUILD_TIME_UTC } from "../shared/build_meta";
 // PHASE 2 FIX: Import getBuildInfo resolver to expose it alongside getStatusSnapshot
 import { getBuildInfo_resolver } from "./getBuildInfo";
+import {
+  classifyError,
+  generateTraceIdStable,
+  generateTraceIdInstance,
+  emitResolverErrorLog,
+  extractUiReqId,
+} from "./backbone_error_handling";
 
 export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceStatusV1> {
+  // BACKBONE NO-THROW CONTRACT: This resolver NEVER throws.
+  // It always returns GovernanceStatusV1 shape, even on failure.
+  
+  const uiReqId = extractUiReqId(req);
   const context = req.context || req;
   let tenantKey: string;
   let tenantKeyHash: string;
+  let tenantStatus: "OK" | "MISSING" | "UNKNOWN" = "UNKNOWN";
   
   try {
     const tenantInfo = resolveTenantKey(context);
     tenantKey = tenantInfo.tenantKey;
     tenantKeyHash = tenantInfo.tenantKeyHash;
+    tenantStatus = "OK";
     // TENANT_PROOF: log on entry
     console.log("TENANT_PROOF", JSON.stringify({
       resolver: "getStatusSnapshot",
@@ -41,13 +59,27 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
       ts: new Date().toISOString()
     }));
   } catch (err) {
+    // Tenant resolution failed - return error status instead of throwing
+    const errorCode = classifyError(err, "getStatusSnapshot");
+    const traceIdStable = generateTraceIdStable(errorCode, err, FT_BUILD_SHA);
+    const traceIdInstance = generateTraceIdInstance(traceIdStable, err);
     const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error(`[getStatusSnapshot] Tenant key resolution failed: ${errorMsg}`);
-    // Fail-closed: return normalized error state instead of throwing
-    const errorStatus = EMPTY_STATUS_V1("UNKNOWN", "ERROR_MISSING", "UI_v2.14.0");
+
+    emitResolverErrorLog(
+      traceIdStable,
+      traceIdInstance,
+      errorCode,
+      errorMsg,
+      FT_BUILD_SHA,
+      uiReqId,
+      "getStatusSnapshot"
+    );
+
+    tenantStatus = "MISSING";
+    const errorStatus = EMPTY_STATUS_V1("UNKNOWN", FT_BUILD_SHA, "UI_v2.14.0");
     errorStatus.health = "ERROR";
     errorStatus.degradedReason = "Could not resolve tenant context";
-    return normalizeStatusV1(errorStatus, "UNKNOWN", "ERROR_MISSING", "UI_v2.14.0");
+    return normalizeStatusV1(errorStatus, "UNKNOWN", FT_BUILD_SHA, "UI_v2.14.0");
   }
 
   const backendBuild = FT_BUILD_SHA || "ERROR_MISSING";
@@ -82,11 +114,22 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
     // This guarantees UI never receives malformed data
     return normalizeStatusV1(snapshot, tenantAri, backendBuild, uiBuild);
   } catch (err) {
-    console.error(
-      `[getStatusSnapshot] Resolver error:`,
-      err instanceof Error ? err.message : String(err)
+    // Error reading or storing snapshot - return error status instead of throwing
+    const errorCode = classifyError(err, "getStatusSnapshot");
+    const traceIdStable = generateTraceIdStable(errorCode, err, FT_BUILD_SHA);
+    const traceIdInstance = generateTraceIdInstance(traceIdStable, err);
+    const errorMsg = err instanceof Error ? err.message : String(err);
+
+    emitResolverErrorLog(
+      traceIdStable,
+      traceIdInstance,
+      errorCode,
+      errorMsg,
+      FT_BUILD_SHA,
+      uiReqId,
+      "getStatusSnapshot"
     );
-    // Fail-closed: return normalized error state instead of throwing
+
     const errorStatus = EMPTY_STATUS_V1(tenantAri, backendBuild, uiBuild);
     errorStatus.health = "ERROR";
     errorStatus.degradedReason = err instanceof Error ? err.message : String(err);

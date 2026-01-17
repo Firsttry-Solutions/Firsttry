@@ -18,7 +18,7 @@ modules:
     - key: governance-dashboard-gadget-v2
       title: "Firsttry: Audit Evidence for Jira"
       description: FirstTry Governance - real-time status overview
-      resource: govGadget2140
+      resource: govGadget2141
       resolver:
         function: get-status-snapshot-fn
       thumbnail: https://www.atlassian.com/favicon.ico
@@ -78,5 +78,5 @@ permissions:
 
 # Resource pages
 resources:
-  - key: govGadget2140
+  - key: govGadget2141
     path: src/gadget-ui/dist

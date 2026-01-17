@@ -6,6 +6,7 @@
  * All resolvers wrapped with error handling at handler boundary.
  * 
  * Registered resolvers:
+ * - ping (health check, returns backend_build_sha)
  * - getOperationalState (authoritative system status)
  * - refreshNow (trigger snapshot collection)
  * - getBuildInfo (build metadata)
@@ -19,6 +20,8 @@ import { getBuildInfo_resolver } from "./getBuildInfo";
 import { getSnapshotDebug_resolver } from "./getSnapshotDebug";
 import { getOperationalState_resolver } from "./getOperationalState";
 import { refreshNow_resolver } from "./refreshNow";
+import { ping } from "./ping";
+import { ensureFirstSnapshot } from "./ensureFirstSnapshot";
 
 // TODO: Replace with actual export resolver
 // For now, use a stub that returns error if no snapshots
@@ -43,6 +46,8 @@ async function exportSnap_resolver(req: any) {
  * Resolver allowlist: Only these can be invoked by UI
  */
 const ALLOWED_RESOLVERS: Record<string, (req: any) => Promise<any>> = {
+  ping: ping,
+  ensureFirstSnapshot: ensureFirstSnapshot,
   getOperationalState: getOperationalState_resolver,
   refreshNow: refreshNow_resolver,
   getBuildInfo: getBuildInfo_resolver,
@@ -92,7 +97,19 @@ export async function handler(req: any) {
   // Resolve and invoke
   try {
     const resolverFunc = ALLOWED_RESOLVERS[resolverName];
-    const result = await resolverFunc(req);
+    
+    // BACKBONE LAYER 0: Pass ui_req_id to resolver
+    // Create a wrapped request that includes ui_req_id in a standard location
+    const wrappedReq = {
+      ...req,
+      payload: {
+        ...req.payload,
+        ui_req_id: uiReqId
+      },
+      ui_req_id: uiReqId
+    };
+    
+    const result = await resolverFunc(wrappedReq);
 
     console.log(
       "GADGET_INVOKE_SUCCESS",

@@ -1,0 +1,205 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                           ║
+║         EXTREME-PARANOID E2E TEST HARNESS - QUICK START GUIDE             ║
+║                                                                           ║
+║  Jira Dashboard Gadget: governance-dashboard-gadget-v2 (v2.88.0)         ║
+║  Target: https://firsttry.atlassian.net/jira/dashboards/10102            ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+STATUS: ✅ COMPLETE (ALL 7 PHASES)
+- PHASE 0: ✅ Directory structure + gitignore
+- PHASE 1: ✅ Playwright + chromium installed
+- PHASE 2: ✅ playwright.config.ts created
+- PHASE 3: ✅ auth_login.mjs ready
+- PHASE 4: ✅ dashboard_gadget_e2e.spec.ts complete
+- PHASE 5: ✅ run_dashboard_e2e.sh ready
+- PHASE 6: ✅ This guide
+- PHASE 7: ✅ Git safety verified
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+THREE STEPS TO RUN:
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STEP 1: ONE-TIME AUTHENTICATION (Headed Browser - You See Window)       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  $ export JIRA_SITE="https://firsttry.atlassian.net"
+  $ node e2e/scripts/auth_login.mjs
+
+  What happens:
+    ✓ Browser opens (HEADED MODE)
+    ✓ Log in to Jira manually
+    ✓ Script detects auth → browser closes
+    ✓ Credentials saved to: e2e/.auth/storageState.json (GITIGNORED)
+
+  Expected: "✓ Authenticated successfully! ✓ storageState saved..."
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STEP 2: RUN E2E TEST (Headless Browser - Not Visible)                  │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  $ export JIRA_SITE="https://firsttry.atlassian.net"
+  $ export DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
+  $ export GADGET_TITLE_CONTAINS="Firsttry: Audit Evidence for Jira"
+  $ bash e2e/scripts/run_dashboard_e2e.sh
+
+  What happens:
+    ✓ Test runs in HEADLESS MODE (browser not visible)
+    ✓ Finds gadget iframe on dashboard
+    ✓ Validates 6+ UI label tokens
+    ✓ Checks for console errors, network errors, auth errors
+    ✓ Takes screenshots + HTML dumps
+    ✓ Collects 11 proof artifacts
+    ✓ Copies summary to repo root
+
+  Expected: "✓ ALL CHECKS PASSED" or "✓ ALL TESTS PASSED"
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STEP 3: VIEW RESULTS                                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  View proof summary:
+    $ cat DASHBOARD_E2E_PROOF_SUMMARY.md
+
+  OR view interactive HTML report:
+    $ npx playwright show-report e2e/playwright-report
+
+  OR examine individual artifacts:
+    $ ls -lah e2e/artifacts/
+    $ cat e2e/artifacts/10_summary.md
+    $ open e2e/artifacts/07_full_page_screenshot.png
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILES CREATED:
+
+  e2e/
+  ├── .gitignore                       (artifact patterns)
+  ├── playwright.config.ts             (deterministic config)
+  ├── .auth/                           (GITIGNORED - auth storage)
+  ├── artifacts/                       (GITIGNORED - test outputs)
+  ├── scripts/
+  │   ├── auth_login.mjs              (one-time auth)
+  │   └── run_dashboard_e2e.sh        (test runner)
+  └── tests/
+      └── dashboard_gadget_e2e.spec.ts (paranoid test spec)
+
+  Root guides:
+  ├── E2E_TEST_HARNESS_COMPLETE.md         (comprehensive guide - 400+ lines)
+  ├── E2E_TEST_COMPLETION_VERIFICATION.md (verification checklist)
+  └── E2E_TEST_QUICK_START.txt            (this file)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROOF ARTIFACTS (Generated Per Test Run):
+
+  1. 00_env.json                   - Environment variables used
+  2. 01_iframes.json               - All iframes found on page
+  3. 02_console_messages.json      - Console output (log/warn/error)
+  4. 03_page_errors.json           - Page JavaScript errors
+  5. 04_network_requests.json      - HTTP requests + responses
+  6. 05_gadget_iframe_html.html    - Gadget iframe DOM
+  7. 06_gadget_viewport_screenshot.png   - Gadget screenshot
+  8. 07_full_page_screenshot.png   - Full dashboard screenshot
+  9. 08_dashboard_html.html        - Full dashboard DOM
+  10. 09_ui_labels_found.json      - UI labels detected
+  11. 10_summary.md                - Test result summary
+
+  All stored in: e2e/artifacts/ (GITIGNORED)
+  And also in: /tmp/e2e_test_YYYYMMDD_HHMMSS_UTC/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HARD FAILURE CONDITIONS (Test Fails Immediately If):
+
+  ✗ Gadget iframe not found
+  ✗ Expected UI texts (≥4 of 8 labels) not visible
+  ✗ console.error() detected
+  ✗ page error event fired
+  ✗ Failed HTTP requests (unless allowlisted)
+  ✗ 401/403 auth errors detected
+  ✗ 5xx server errors detected
+  ✗ UI stuck in INITIALIZING/NOT_AVAILABLE/Unknown state
+
+  → Test exits with code 1 (fail fast)
+  → All proof artifacts still captured for debugging
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ENVIRONMENT VARIABLES:
+
+  Required:
+  - JIRA_SITE               https://firsttry.atlassian.net
+  - DASHBOARD_URL           https://firsttry.atlassian.net/jira/dashboards/10102
+  - GADGET_TITLE_CONTAINS   Firsttry: Audit Evidence for Jira
+
+  Optional (Advanced Control):
+  - FAIL_ON_UNKNOWN=0       Don't fail if "Unknown" in UI
+  - FAIL_ON_INITIALIZING=0  Don't fail if "Initializing" in UI
+  - FAIL_ON_NOT_AVAILABLE=0 Don't fail if "Not Available" in UI
+  - HEADLESS=false          Show browser during test
+  - ALLOW_FAILED_REQUESTS_REGEX="pattern" - Allow certain failed requests
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GIT SAFETY:
+
+  ✅ What's GITIGNORED (SAFE - won't commit):
+     e2e/.auth/                (auth credentials)
+     e2e/artifacts/            (test outputs)
+     e2e/playwright-report/    (test report)
+     e2e/test-results/         (test results)
+
+  ✅ What's SAFE to commit (0 secrets):
+     e2e/playwright.config.ts
+     e2e/scripts/auth_login.mjs
+     e2e/scripts/run_dashboard_e2e.sh
+     e2e/tests/dashboard_gadget_e2e.spec.ts
+     e2e/.gitignore
+
+  Verify before committing:
+     $ git status e2e/
+     (should NOT show .auth/ or artifacts/)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TROUBLESHOOTING:
+
+  Problem: "storageState.json: No such file or directory"
+  Solution: Run auth first → node e2e/scripts/auth_login.mjs
+
+  Problem: "Gadget iframe not found"
+  Debug: cat e2e/artifacts/01_iframes.json
+         cat e2e/artifacts/07_full_page_screenshot.png
+
+  Problem: "Expected UI labels not found"
+  Debug: cat e2e/artifacts/09_ui_labels_found.json
+         open e2e/artifacts/08_dashboard_html.html
+
+  Problem: "Auth failed or timed out"
+  Solution: Run auth script, wait for browser, manually log in
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DETAILED DOCUMENTATION:
+
+  For comprehensive info:
+    → cat E2E_TEST_HARNESS_COMPLETE.md (400+ lines)
+
+  For verification checklist:
+    → cat E2E_TEST_COMPLETION_VERIFICATION.md
+
+  For this quick start:
+    → cat E2E_TEST_QUICK_START.txt (this file)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+READY TO EXECUTE ✅
+
+Next: Run Step 1 (Authentication)
+
+  $ export JIRA_SITE="https://firsttry.atlassian.net"
+  $ node e2e/scripts/auth_login.mjs
+
