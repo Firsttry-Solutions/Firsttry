@@ -197,7 +197,15 @@ export async function probe(req?: any): Promise<ProbeResponse> {
   };
 
   try {
-    // Log entry marker (JSON, grepable by nonce)
+    // ENTRY: Backend received invocation
+    // Plain text (unmissable, grepable)
+    console.log(`PROBE_ENTRY nonce=${probeNonce} ui=${uiReqId} build=${backendBuildSha} ts=${nowIso}`);
+    
+    // SUCCESS: Backend executed successfully
+    // Plain text (unmissable, primary proof)
+    console.log(`PROBE_OK nonce=${probeNonce} ui=${uiReqId} build=${backendBuildSha} ts=${nowIso}`);
+    
+    // JSON marker (structured log, secondary proof)
     console.log(
       JSON.stringify({
         marker: 'PROBE',
@@ -221,8 +229,11 @@ export async function probe(req?: any): Promise<ProbeResponse> {
     const errorMsg = err instanceof Error ? err.message : String(err);
     const traceIdStable = `trace_probe_${hashShort(errorMsg)}_${Date.now()}`;
 
-    // Log error marker
-    console.log(
+    // ERROR: Plain text (unmissable, primary proof of error)
+    console.log(`PROBE_ERR nonce=${probeNonce} ui=${uiReqId} code=PROBE_EXCEPTION trace=${traceIdStable} ts=${nowIso}`);
+    
+    // JSON marker (structured log, secondary proof)
+    console.error(
       JSON.stringify({
         marker: 'PROBE_ERR',
         ui_req_id: uiReqId,

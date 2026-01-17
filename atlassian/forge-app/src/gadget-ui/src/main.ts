@@ -1439,6 +1439,138 @@ async function handleExportTrustSnapshot() {
  * Wire up export buttons deterministically on DOM ready
  * Additive to existing inline onclick handlers
  */
+/**
+ * FORENSIC_PROBE: Invoke probe resolver to capture correlation proof
+ * 
+ * This function:
+ * 1. Sends payload with ui_req_id in multiple formats (for extraction testing)
+ * 2. Calls probe resolver
+ * 3. Displays response in diagnostics panel
+ * 4. Shows grep commands for manual verification
+ */
+// @ts-ignore - Expose globally for button onclick handlers
+window.runProbe = async function() {
+    const statusEl = document.getElementById('probe-status');
+    const btnEl = document.getElementById('probe-run-btn');
+    const panelEl = document.getElementById('probe-response-panel');
+    const metricsEl = document.getElementById('probe-metrics');
+    
+    try {
+        if (statusEl) statusEl.textContent = 'Running probe...';
+        if (btnEl) btnEl.disabled = true;
+        if (panelEl) panelEl.style.display = 'block';
+        if (panelEl) panelEl.innerHTML = 'Invoking probe resolver...';
+        
+        // Build correlation payload with multiple formats (intentional, for extraction testing)
+        const uiReqId = FT_UI_REQ_ID; // Current UI_REQ_ID (ui_...)
+        const uiReqIdCompat = `req_compat_${FT_UI_REQ_ID.substring(3)}`; // req_compat_... for legacy tests
+        const requestId = `rid_${Date.now()}`; // Additional correlation field
+        
+        const payload = {
+            ui_req_id: uiReqId,                  // Primary field
+            uiReqId: uiReqIdCompat,              // Compatibility field (req_* will be normalized to ui_*)
+            requestId: requestId,                // Legacy field
+            meta: {
+                ui_req_id: uiReqId,              // Structured format
+                uiReqId: uiReqIdCompat
+            }
+        };
+        
+        // Invoke probe resolver
+        const response = await invoke('probe', payload);
+        
+        // Render response to panel with proper formatting
+        if (panelEl) {
+            let htmlContent = '';
+            
+            if (response.ok) {
+                // SUCCESS: Show raw JSON with proof lines
+                htmlContent = `
+<strong style="color: #216e4e;">✅ PROBE SUCCESS</strong>
+
+<strong>PROOF LINES (Copy-Paste into Terminal):</strong>
+<code style="background: #f5f6f7; padding: 4px; border-radius: 2px; display: block; margin: 4px 0;">
+PROBE_GREP_NONCE=${response.meta?.probe_nonce || '—'}
+PROBE_GREP_UI_REQ_ID=${response.meta?.ui_req_id || '—'}
+BACKEND_BUILD_SHA_FROM_RESPONSE=${response.meta?.backend_build_sha || '—'}
+</code>
+
+<strong>Full Response JSON:</strong>
+<pre style="background: #f5f6f7; padding: 8px; border-radius: 2px; overflow-x: auto; font-size: 11px; line-height: 1.4;">
+${JSON.stringify(response, null, 2)}
+</pre>
+`;
+                panelEl.style.color = '#216e4e';
+            } else {
+                // ERROR: Show error details + raw JSON
+                htmlContent = `
+<strong style="color: #ae2a19;">❌ PROBE ERROR</strong>
+
+<strong>Error Code:</strong> ${response.error?.code || '—'}
+<strong>Error Message:</strong> ${response.error?.message || '—'}
+<strong>Trace ID:</strong> ${response.error?.trace_id_stable || '—'}
+
+<strong>Full Response JSON:</strong>
+<pre style="background: #f5f6f7; padding: 8px; border-radius: 2px; overflow-x: auto; font-size: 11px; line-height: 1.4;">
+${JSON.stringify(response, null, 2)}
+</pre>
+`;
+                panelEl.style.color = '#ae2a19';
+            }
+            
+            panelEl.innerHTML = htmlContent;
+        }
+        
+        // Extract and display key fields
+        if (response.ok && response.meta) {
+            const meta = response.meta;
+            
+            // Display fields
+            const uiReqIdEl = document.getElementById('probe-ui-req-id');
+            const nonceEl = document.getElementById('probe-nonce');
+            const buildShaEl = document.getElementById('probe-backend-build-sha');
+            const envEl = document.getElementById('probe-forge-env');
+            
+            if (uiReqIdEl) uiReqIdEl.textContent = meta.ui_req_id || '—';
+            if (nonceEl) nonceEl.textContent = meta.probe_nonce || '—';
+            if (buildShaEl) buildShaEl.textContent = meta.backend_build_sha ? meta.backend_build_sha.substring(0, 16) : '—';
+            if (envEl) envEl.textContent = meta.forge_env || '—';
+            
+            // Display grep commands
+            const grepUiReqIdEl = document.getElementById('probe-grep-ui-req-id');
+            const grepNonceEl = document.getElementById('probe-grep-nonce');
+            
+            if (grepUiReqIdEl && meta.ui_req_id) {
+                grepUiReqIdEl.textContent = `grep "${meta.ui_req_id}" <logs>`;
+            }
+            
+            if (grepNonceEl && meta.probe_nonce) {
+                grepNonceEl.textContent = `bash tools/probe_prod.sh --nonce ${meta.probe_nonce}`;
+            }
+            
+            if (statusEl) statusEl.textContent = `✅ Probe completed at ${new Date().toLocaleTimeString()}`;
+        } else {
+            if (statusEl) statusEl.textContent = `❌ Probe failed: ${response.error?.code || 'unknown error'}`;
+        }
+        
+    } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        if (panelEl) {
+            panelEl.innerHTML = `<strong>❌ INVOKE ERROR</strong>\n\n${errMsg}`;
+            panelEl.style.color = '#ae2a19';
+            panelEl.style.display = 'block';
+        }
+        if (statusEl) statusEl.textContent = `❌ Error: ${errMsg.substring(0, 60)}`;
+        console.error('[RunProbe] Error:', err);
+    } finally {
+        if (btnEl) btnEl.disabled = false;
+    }
+};
+
+// ============================================================================
+// EXPORT BUTTONS & UTILITIES
+// ============================================================================
+
 function wireExportButtons() {
     try {
         const refreshBtn = document.getElementById('refresh-now-btn');

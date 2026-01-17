@@ -84,6 +84,61 @@
             </div>
             </div>
         </details>
+
+        <!-- FORENSIC_PROBE Diagnostics Widget (Always Visible) -->
+        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
+            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">
+                🔬 Forensic Probe (Production Correlation Proof)
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button id="probe-run-btn" onclick="window.runProbe()" style="padding: 6px 14px; background: #0052cc; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">Run Probe</button>
+                <span id="probe-status" style="display: flex; align-items: center; font-size: 12px; color: #626f86; padding: 0 8px;">Ready</span>
+            </div>
+
+            <div id="probe-response-panel" style="display: none; background: #f5f6f7; border: 1px solid #dfe1e6; border-radius: 4px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; line-height: 1.5; color: #172b4d; max-height: 400px; overflow-y: auto;">
+                <!-- Response will be rendered here -->
+            </div>
+
+            <div id="probe-metrics" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px;">
+                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">UI Req ID</div>
+                    <div id="probe-ui-req-id" style="font-size: 12px; color: #172b4d; font-family: monospace; word-break: break-all;">—</div>
+                </div>
+                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px;">
+                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Probe Nonce</div>
+                    <div id="probe-nonce" style="font-size: 12px; color: #172b4d; font-family: monospace; word-break: break-all;">—</div>
+                </div>
+                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px;">
+                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Backend Build SHA</div>
+                    <div id="probe-backend-build-sha" style="font-size: 12px; color: #172b4d; font-family: monospace; word-break: break-all;">—</div>
+                </div>
+                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px;">
+                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Forge Env</div>
+                    <div id="probe-forge-env" style="font-size: 12px; color: #172b4d; font-family: monospace;">—</div>
+                </div>
+                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px; grid-column: 1/3;">
+                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Grep Commands (Copy-Paste for Manual Verification)</div>
+                    <div style="background: #ffffff; padding: 8px; border-radius: 2px; margin-bottom: 6px; border: 1px solid #dfe1e6;">
+                        <div style="color: #172b4d; margin-bottom: 4px;"><strong>UI Req ID Grep:</strong></div>
+                        <code id="probe-grep-ui-req-id" style="display: block; color: #626f86; word-break: break-all;">—</code>
+                    </div>
+                    <div style="background: #ffffff; padding: 8px; border-radius: 2px; border: 1px solid #dfe1e6;">
+                        <div style="color: #172b4d; margin-bottom: 4px;"><strong>Nonce Grep (Definitive):</strong></div>
+                        <code id="probe-grep-nonce" style="display: block; color: #626f86; word-break: break-all;">—</code>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 16px; padding: 12px; background: #f5f6f7; border-radius: 4px; border: 1px solid #dfe1e6; font-size: 12px; color: #44546f; line-height: 1.5;">
+                <strong>How to use:</strong><br/>
+                1. Click "Run Probe" button above<br/>
+                2. Copy the nonce grep command<br/>
+                3. Run in terminal: <code style="background: #ffffff; padding: 2px 4px; border-radius: 2px;">bash tools/probe_prod.sh --nonce &lt;nonce&gt;</code><br/>
+                4. Script will output PASS (nonce found in logs) or FAIL (with diagnosis)<br/>
+                <strong>Note:</strong> Nonce grep is definitive proof that backend processed the probe invocation.
+            </div>
+        </div>
         
         <!-- System Overview -->
         <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
