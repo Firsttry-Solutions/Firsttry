@@ -56,7 +56,7 @@ export S3_ENABLED="true"             # Default: "true"
 
 #### AWS S3
 ```bash
-export S3_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
+export S3_ACCESS_KEY_ID="[REDACTED_AWS_ACCESS_KEY_ID]"
 export S3_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 export S3_ENDPOINT_URL="https://s3.amazonaws.com"
 export S3_BUCKET_NAME="my-benchmarks"

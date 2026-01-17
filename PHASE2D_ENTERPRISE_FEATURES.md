@@ -40,7 +40,7 @@
 **Enforcement Rules:**
 - ✅ AWS Access Keys: Pattern `AKIA[0-9A-Z]{16}`
 - ✅ GitHub Tokens: Pattern `ghp_[0-9a-zA-Z]+`
-- ✅ Private Keys: Pattern `-----BEGIN RSA PRIVATE KEY-----`
+- ✅ Private Keys: Pattern `[REDACTED_PRIVATE_KEY_HEADER]`
 - ✅ Allowlisting: Exclude test fixtures and docs
 - ✅ CI Blocking: `allow_failure: false` prevents merge
 
