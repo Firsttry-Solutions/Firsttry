@@ -69,6 +69,29 @@ function main() {
 
     let htmlContent = fs.readFileSync(htmlPath, 'utf-8');
     
+    // ========================================================================
+    // L0.2: ASSERT NO QUERY-PARAM CACHE BUST OR LEGACY ENTRY ASSETS
+    // ========================================================================
+    if (htmlContent.includes('app.js?v=')) {
+      console.error('[POSTBUILD] ASSERT FAIL: Found legacy query-param cache bust "app.js?v="');
+      process.exit(1);
+    }
+    if (htmlContent.includes('assets/index.')) {
+      // Check if it's a .js file (bad) or just .css (OK - Vite convention)
+      const assetMatches = htmlContent.match(/assets\/index\.[^"']*/g) || [];
+      const jsAssets = assetMatches.filter(m => m.endsWith('.js'));
+      if (jsAssets.length > 0) {
+        console.error('[POSTBUILD] ASSERT FAIL: Found legacy JS asset reference in assets/index.*');
+        process.exit(1);
+      }
+      // CSS assets are OK (Vite bundles CSS separately)
+    }
+    if (htmlContent.includes('index.js?v=')) {
+      console.error('[POSTBUILD] ASSERT FAIL: Found legacy query-param "index.js?v="');
+      process.exit(1);
+    }
+    console.log('[POSTBUILD] ✓ Asserts passed: no query-param cache bust, no legacy entry assets');
+    
     // Remove any existing script tags that reference app.*.js or index.js
     htmlContent = htmlContent.replace(
       /<script[^>]*\s(src=["']\.\/)?(?:index\.js|app\.[0-9a-f]+\.js)["'][^>]*><\/script>/g,
@@ -107,6 +130,20 @@ function main() {
       console.error(`[POSTBUILD] ERROR: File does not exist: ${appShaJsPath}`);
       process.exit(1);
     }
+
+    // ========================================================================
+    // L0.1: WRITE ENTRY_PROOF.json FOR CACHE-BUST VERIFICATION
+    // ========================================================================
+    const entryProof = {
+      build_sha: uiBuildSha,
+      entry_filename: `app.${uiBuildSha}.js`,
+      time_utc: new Date().toISOString(),
+      cache_bust_method: 'filename-based',
+      verification: 'Filename must be unique per build; different SHA guarantees cache miss'
+    };
+    const entryProofPath = path.join(distDir, 'ENTRY_PROOF.json');
+    fs.writeFileSync(entryProofPath, JSON.stringify(entryProof, null, 2), 'utf-8');
+    console.log(`[POSTBUILD] wrote ENTRY_PROOF.json (build_sha=${uiBuildSha})`);
 
     console.log(`[POSTBUILD] ✓ Filename-based cache-bust ready`);
   } catch (err) {

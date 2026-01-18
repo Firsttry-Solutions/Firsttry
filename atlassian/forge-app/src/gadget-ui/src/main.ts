@@ -5,6 +5,35 @@
  * @forge/bridge is bundled with the gadget and provides invoke() for resolver calls.
  */
 
+// ============================================================================
+// L0.1: UI ENTRY PROOF - IIFE (runs immediately, before any other module code)
+// ============================================================================
+(() => {
+  try {
+    const scripts = [...document.querySelectorAll("script[src]")].map(s => s.src);
+    const entryScript = scripts.find(src => 
+      (src.includes("/govGadget2141/") || src.includes("app.")) && 
+      (src.endsWith(".js") || src.includes("app."))
+    );
+    
+    const proof = {
+      runtime_sha: "FT_RUNTIME_BUILD_SHA_INJECTED",
+      runtime_time: "FT_RUNTIME_BUILD_TIME_INJECTED",
+      script_srcs: scripts,
+      entry_detected: entryScript || null,
+      location: window.location.href,
+      timestamp_ms: Date.now()
+    };
+    
+    console.log("[UI_ENTRY_PROOF]", JSON.stringify(proof));
+    
+    // Store globally for banner rendering later
+    (window as any).__FT_ENTRY_PROOF = proof;
+  } catch (err) {
+    console.error("[UI_ENTRY_PROOF_ERR]", String(err));
+  }
+})();
+
 // Import invoke from @forge/bridge (now bundled, not injected as global)
 import { invoke } from '@forge/bridge';
 import './styles.css';
@@ -655,27 +684,44 @@ async function loadStatus() {
         setText('kpi-generated-at', formatTimestampDisplay(data.generatedAt) || '—');
 
         // Step 9: Operational Status Panel
+        // FIX L2: Proper formatting of Schedule Interval and Snapshot Age
+        const scheduleIntervalDisplay = data.expectedScheduleIntervalMinutes !== null 
+            ? data.expectedScheduleIntervalMinutes + ' min'
+            : 'N/A (unscheduled)';
+        
+        const snapshotAgeDisplay = data.snapshotAgeMinutes !== null 
+            ? data.snapshotAgeMinutes + ' min'
+            : 'N/A';
+        
+        // FIX L2: Freshness must be UNKNOWN if schedule interval is null
+        const freshnessDisplay = data.expectedScheduleIntervalMinutes === null
+            ? 'UNKNOWN'
+            : (data.isStale === null ? 'UNKNOWN' : data.isStale ? 'STALE' : 'FRESH');
+        
         const opStatus = `
             <div class="metrics-grid">
                 <div class="metric-row">
                     <div class="metric-label">Expected Schedule Interval</div>
-                    <div class="metric-value">${data.expectedScheduleIntervalMinutes !== null ? data.expectedScheduleIntervalMinutes + ' minutes' : 'UNKNOWN'}</div>
+                    <div class="metric-value">${scheduleIntervalDisplay}</div>
                 </div>
                 <div class="metric-row">
                     <div class="metric-label">Staleness Threshold Rule</div>
-                    <div class="metric-value">${data.staleIfAgeMinutesGreaterThan !== null ? '> ' + data.staleIfAgeMinutesGreaterThan + ' minutes' : 'UNKNOWN'}</div>
+                    <div class="metric-value">${data.staleIfAgeMinutesGreaterThan !== null ? '> ' + data.staleIfAgeMinutesGreaterThan + ' min' : 'UNKNOWN'}</div>
                 </div>
                 <div class="metric-row">
                     <div class="metric-label">Snapshot Age</div>
-                    <div class="metric-value">${data.snapshotAgeMinutes !== null ? data.snapshotAgeMinutes + ' minutes' : 'No snapshots yet'}</div>
+                    <div class="metric-value">${snapshotAgeDisplay}</div>
                 </div>
                 <div class="metric-row">
                     <div class="metric-label">Data Freshness</div>
-                    <div class="metric-value">${data.isStale === null ? 'UNKNOWN' : data.isStale ? 'STALE' : 'FRESH'}</div>
+                    <div class="metric-value">${freshnessDisplay}</div>
                 </div>
             </div>
             <div class="disclaimer">
-                <strong>Freshness:</strong> Based on snapshot age vs schedule interval (${data.expectedScheduleIntervalMinutes} min). Data older than ${data.staleIfAgeMinutesGreaterThan} min is marked STALE.
+                <strong>Freshness Logic:</strong> 
+                ${data.expectedScheduleIntervalMinutes === null
+                    ? 'Schedule interval is unscheduled; freshness cannot be determined (UNKNOWN).'
+                    : `Based on snapshot age (${snapshotAgeDisplay}) vs schedule interval (${scheduleIntervalDisplay}). Data older than ${data.staleIfAgeMinutesGreaterThan} min is marked STALE.`}
             </div>
         `;
         setHTML('operational-status', opStatus);
@@ -2161,6 +2207,31 @@ function wireExportButtons() {
 // Wire buttons on DOM ready
 function onDOMReady() {
     wireExportButtons();
+    
+    // ========================================================================
+    // L0.1: RENDER ENTRY PROOF BANNER (top of page)
+    // ========================================================================
+    try {
+        const proof = (window as any).__FT_ENTRY_PROOF;
+        const entryScript = proof?.entry_detected || 'NOT_DETECTED';
+        const sha = proof?.runtime_sha || 'UNKNOWN';
+        const scripts = proof?.script_srcs || [];
+        
+        const bannerHtml = `
+            <div style="background: #003f87; color: #fff; padding: 8px 12px; font-family: monospace; font-size: 11px; line-height: 1.4; border-bottom: 1px solid #0052cc;">
+                <strong>[UI_ENTRY_PROOF]</strong> runtime_sha=${sha} | entry=${entryScript}
+                <br/>Scripts: ${scripts.join(' | ') || '(none)'}
+            </div>
+        `;
+        
+        const mainSection = document.querySelector('main') || document.body;
+        const banner = document.createElement('div');
+        banner.id = 'ui-entry-proof-banner';
+        banner.innerHTML = bannerHtml;
+        mainSection.insertBefore(banner, mainSection.firstChild);
+    } catch (err) {
+        console.error('[UI_ENTRY_PROOF_BANNER_ERROR]', err);
+    }
     
     // Add build info footer (UI + Backend version proof)
     const buildFooter = document.getElementById('build-footer');
