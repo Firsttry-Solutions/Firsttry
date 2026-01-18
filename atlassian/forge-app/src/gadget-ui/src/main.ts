@@ -120,6 +120,173 @@ function formatTimestampExport(iso?: string): string {
 }
 
 // ============================================================================
+// INVOKE ERROR TRUTH: Safe Error Normalization (Phase C)
+// ============================================================================
+
+/**
+ * safeJsonStringify: Serialize any value to JSON, handling circular refs and bigints
+ * 
+ * RULES:
+ * 1. Detects circular references using WeakSet (no infinite loops)
+ * 2. Converts BigInt to string (JSON.stringify fails on BigInt)
+ * 3. Wraps entire operation in try/catch (never crashes UI)
+ * 4. Returns readable error message on failure, not empty string
+ * 
+ * Purpose: Ensure error objects can always be displayed in UI without crashes
+ */
+function safeJsonStringify(value: any, indent: number = 2): string {
+    try {
+        const seen = new WeakSet<object>();
+        
+        const stringified = JSON.stringify(
+            value,
+            (key, val) => {
+                // Handle BigInt
+                if (typeof val === 'bigint') {
+                    return val.toString();
+                }
+                
+                // Handle circular references
+                if (typeof val === 'object' && val !== null) {
+                    if (seen.has(val)) {
+                        return '[CIRCULAR_REFERENCE]';
+                    }
+                    seen.add(val);
+                }
+                
+                return val;
+            },
+            indent
+        );
+        
+        return stringified || '{}';
+    } catch (e) {
+        // Fallback: at least return something useful
+        const errorMsg = e instanceof Error ? e.message : String(e);
+        return JSON.stringify({
+            _stringify_error: 'Failed to serialize',
+            _error_msg: errorMsg,
+            _value_type: typeof value,
+            _value_class: value?.constructor?.name || 'unknown'
+        }, null, indent);
+    }
+}
+
+/**
+ * normalizeInvokeError: Extract and normalize error data from any thrown value
+ * 
+ * PURPOSE: When invoke() throws, extract real error details (code, message, traceId)
+ * and serialize safely without data loss (circulars, bigints, nested errors)
+ * 
+ * RETURN VALUE: {
+ *   kind: string,          // err.name or "UnknownError"
+ *   message: string,       // err.message or stringified err
+ *   stack: string,         // err.stack or err.cause.stack
+ *   code: string,          // extracted from err.code, err.errorCode, err.details.code, etc.
+ *   traceId: string,       // extracted from err.traceId, err.details.traceId, etc.
+ *   raw: string           // full error serialized via safeJsonStringify
+ * }
+ */
+interface NormalizedError {
+    kind: string;
+    message: string;
+    stack: string;
+    code: string;
+    traceId: string;
+    raw: string;
+}
+
+function normalizeInvokeError(err: any): NormalizedError {
+    // Extract kind (error type name)
+    const kind = err?.name || (err?.constructor?.name) || 'UnknownError';
+    
+    // Extract message
+    let message = 'Unknown error';
+    if (err instanceof Error) {
+        message = err.message || 'Empty error message';
+    } else if (typeof err?.message === 'string') {
+        message = err.message;
+    } else if (typeof err === 'string') {
+        message = err;
+    } else if (typeof err?.code === 'string') {
+        message = err.code;
+    } else {
+        message = `Error: ${typeof err}`;
+    }
+    
+    // Extract stack
+    let stack = '';
+    if (err?.stack && typeof err.stack === 'string') {
+        stack = err.stack;
+    } else if (err?.cause?.stack && typeof err.cause.stack === 'string') {
+        stack = err.cause.stack;
+    }
+    
+    // Extract code from nested paths (probe/ping may nest error details)
+    let code = 'UNKNOWN';
+    const codeSearchPaths = [
+        () => err?.code,
+        () => err?.errorCode,
+        () => err?.details?.code,
+        () => err?.details?.errorCode,
+        () => err?.error?.code,
+        () => err?.error?.errorCode,
+        () => err?.statusCode,
+        () => err?.status
+    ];
+    
+    for (const pathFn of codeSearchPaths) {
+        try {
+            const val = pathFn();
+            if (val && (typeof val === 'string' || typeof val === 'number')) {
+                code = String(val);
+                break;
+            }
+        } catch {
+            // ignore path errors, continue to next path
+        }
+    }
+    
+    // Extract traceId from nested paths
+    let traceId = 'UNKNOWN';
+    const traceSearchPaths = [
+        () => err?.traceId,
+        () => err?.traceID,
+        () => err?.trace_id,
+        () => err?.details?.traceId,
+        () => err?.details?.traceID,
+        () => err?.details?.trace_id,
+        () => err?.error?.traceId,
+        () => err?.error?.trace_id_stable,
+        () => err?.requestId
+    ];
+    
+    for (const pathFn of traceSearchPaths) {
+        try {
+            const val = pathFn();
+            if (val && (typeof val === 'string' || typeof val === 'number')) {
+                traceId = String(val);
+                break;
+            }
+        } catch {
+            // ignore path errors, continue to next path
+        }
+    }
+    
+    // Serialize raw error (safe, handles circulars + bigints)
+    const raw = safeJsonStringify(err);
+    
+    return {
+        kind,
+        message,
+        stack,
+        code,
+        traceId,
+        raw
+    };
+}
+
+// ============================================================================
 // BACKBONE LAYER 0: UI_REQ_ID CORRELATION WRAPPER
 // ============================================================================
 /**
@@ -1637,7 +1804,14 @@ ${JSON.stringify(response, null, 2)}
 
     } catch (err) {
         // CRITICAL: Preserve local IDs even on invoke error (never lose correlation)
-        const errMsg = err instanceof Error ? err.message : String(err);
+        // Use normalizeInvokeError to safely extract and serialize all error details
+        const normalized = normalizeInvokeError(err);
+        
+        // Update backend-specific fields with UNKNOWN (indicates backend wasn't reached)
+        const buildShaEl = document.getElementById('probe-backend-build-sha');
+        const envEl = document.getElementById('probe-forge-env');
+        if (buildShaEl) buildShaEl.textContent = 'UNKNOWN';
+        if (envEl) envEl.textContent = 'UNKNOWN';
         
         // Display error but keep local IDs visible in metrics section
         if (panelEl) {
@@ -1650,10 +1824,23 @@ UI_REQ_ID_LOCAL=${localUiReqId}
 PROBE_NONCE_LOCAL=${localProbeNonce}
 </code>
 
-<strong>Error Details:</strong>
+<strong>Backend Status:</strong>
 <code class="code-block">
-${errMsg}
+Build SHA: UNKNOWN
+Forge Env: UNKNOWN
 </code>
+
+<strong>Error Details:</strong>
+<strong>Error Kind:</strong> ${normalized.kind}
+<strong>Error Code:</strong> ${normalized.code}
+<strong>Error Message:</strong> ${normalized.message}
+<strong>Trace ID:</strong> ${normalized.traceId}
+${normalized.stack ? `<strong>Stack:</strong> ${normalized.stack.substring(0, 500)}` : ''}
+
+<strong>Full Error JSON:</strong>
+<pre class="code-block-multi">
+${normalized.raw}
+</pre>
 
 <strong>Recovery:</strong> Check logs for backend execution (nonce grep commands are set above). If backend received the invoke, nonce should be in logs despite frontend error.
 `;
@@ -1663,9 +1850,9 @@ ${errMsg}
             panelEl.classList.add('visible');
         }
         
-        // Status message includes local nonce (essential for debugging)
-        if (statusEl) statusEl.textContent = `❌ Invoke error: ${errMsg.substring(0, 40)} | nonce: ${localProbeNonce}`;
-        console.error('[RunProbe] Error:', err, 'Local IDs:', { localUiReqId, localProbeNonce });
+        // Status message includes local nonce and error code (essential for debugging)
+        if (statusEl) statusEl.textContent = `❌ Invoke error: code=${normalized.code} | nonce: ${localProbeNonce}`;
+        console.error('[RunProbe_Error]', { normalized, localIds: { localUiReqId, localProbeNonce }, raw: err });
     } finally {
         if (btnEl) btnEl.disabled = false;
     }
@@ -1803,24 +1990,42 @@ function onDOMReady() {
                 
                 // If ping failed, show error immediately
                 if (pingError || !pingResult?.ok) {
-                    const pingErrorMsg = pingError || pingResult?.error?.message || 'Backend not responding';
-                    const pingErrorCode = pingResult?.error?.code || 'PING_FAILED';
-                    const pingTrace = pingResult?.error?.trace_id_stable || 'UNSET_TRACE_ID';
+                    // Normalize the error if invoke failed, or extract from structured response
+                    let normalized: NormalizedError;
                     
-                    // CRITICAL: Never show "no-trace" - if error, must have trace_id_stable
-                    if (pingTrace === 'UNSET_TRACE_ID' || !pingTrace) {
-                        console.error(`[CRITICAL] ping error response missing trace_id_stable! Response:`, pingResult);
+                    if (pingError) {
+                        // invoke() threw an exception - normalize the thrown error
+                        normalized = normalizeInvokeError(new Error(pingError));
+                    } else {
+                        // invoke() succeeded but returned error payload - extract from response
+                        normalized = {
+                            kind: 'PingError',
+                            message: pingResult?.error?.message || 'Backend not responding',
+                            stack: '',
+                            code: pingResult?.error?.code || 'PING_FAILED',
+                            traceId: pingResult?.error?.trace_id_stable || 'UNKNOWN',
+                            raw: safeJsonStringify(pingResult?.error)
+                        };
                     }
                     
-                    const errorInfo = `${pingErrorCode} | trace: ${pingTrace}`;
+                    // CRITICAL: Never show "UNKNOWN" as "no-trace" or empty - keep the string for correlation
+                    const pingTrace = normalized.traceId;
+                    
+                    // Log full error details
+                    console.error(`[UI_PING_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} code=${normalized.code} trace=${pingTrace}`, {
+                        normalized,
+                        pingResult
+                    });
+                    
+                    const errorInfo = `${normalized.code} | trace: ${pingTrace}`;
                     const backendDisplay = `(${errorInfo.substring(0, 50)})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                     buildFooter.classList.add('text-error');
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    // BACKBONE LAYER 0: Include UI_BUILD_MARKER, ui_req_id, error code, trace (never "no-trace")
-                    proofEl.textContent = `BACKBONE_L0 | UI_BUILD_MARKER:${UI_BUILD_MARKER} | ui_req_id:${FT_UI_REQ_ID} | PING_ERR | code:${pingErrorCode} | trace:${pingTrace}`;
+                    // BACKBONE LAYER 0: Include UI_BUILD_MARKER, ui_req_id, error code, trace
+                    proofEl.textContent = `BACKBONE_L0 | UI_BUILD_MARKER:${UI_BUILD_MARKER} | ui_req_id:${FT_UI_REQ_ID} | PING_ERR | code:${normalized.code} | trace:${pingTrace}`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }

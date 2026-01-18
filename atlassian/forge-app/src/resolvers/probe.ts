@@ -152,22 +152,43 @@ export interface ProbeResponse {
  * 3. Backend extracted and normalized ui_req_id correctly
  * 4. Backend identity (build_sha) matches UI footer
  * 5. Logs are deterministically grepable by nonce
+ * 
+ * PHASE C (Invoke Error Truth):
+ * - ALWAYS logs FT_PROBE_ENTRY at function start (before any throw-able code)
+ * - Wraps entire logic in try/catch (never throws raw)
+ * - On error, returns structured error payload: {ok: false, error: {code, message, traceId, raw}, meta}
+ * - Guarantees ui_req_id, backend_build_sha, forge_env in meta even on error
  */
 export async function probe(req?: any): Promise<ProbeResponse> {
   const payload = req?.payload || req || {};
   const nowIso = new Date().toISOString();
   
   // ===================================================================
-  // PHASE 2A: Extract UI-generated IDs from payload
+  // PHASE C: Log FT_PROBE_ENTRY IMMEDIATELY (before any throw-able code)
+  // This GUARANTEES execution proof even if later code fails
   // ===================================================================
-  // UI sends local_probe_nonce (generated client-side on button click)
-  // This is the DEFINITIVE nonce for grep verification
+  const probeEntryId = `probe_entry_${Date.now()}_${randomHex(4)}`;
+  
+  // Extract these early (safe operations, won't throw)
   const uiLocalProbeNonce = payload?.meta?.local_probe_nonce 
     || payload?.local_probe_nonce 
     || `ui_missing_${Date.now()}_${randomHex(4)}`;
-  
-  // Also extract ui_req_id (for correlation redundancy)
   const uiReqId = extractUiReqId(payload);
+  
+  // Log entry marker (deterministic execution proof)
+  const entryMarker = {
+    marker: 'FT_PROBE_ENTRY',
+    probe_entry_id: probeEntryId,
+    ui_req_id: uiReqId,
+    ui_local_probe_nonce: uiLocalProbeNonce,
+    timestamp_iso: nowIso,
+    function_name: process.env.FORGE_FUNCTION_NAME || 'probe-resolver'
+  };
+  
+  console.log(`FT_PROBE_ENTRY ${JSON.stringify(entryMarker)}`);
+  
+  // Continue with original probe logic
+  const backendBuildSha = BACKEND_BUILD_SHA; // Will use this in error handling too
   
   // ===================================================================
   // PHASE 2B: Generate backend-side entropy
@@ -176,7 +197,6 @@ export async function probe(req?: any): Promise<ProbeResponse> {
   // This proves backend executed (separate from UI nonce)
   const backendProbeNonce = `backend_probe_${Date.now()}_${randomHex(8)}`;
   
-  const backendBuildSha = BACKEND_BUILD_SHA; // Injected at build time, never "unknown"
   const functionName = process.env.FORGE_FUNCTION_NAME || 'probe-resolver';
   const forgeEnv = process.env.FORGE_ENV || 'unknown';
 
@@ -242,6 +262,16 @@ export async function probe(req?: any): Promise<ProbeResponse> {
     // Also log plain-text for unmissable grep (backward compat)
     console.log(`PROBE_OK ui_nonce=${uiLocalProbeNonce} backend_nonce=${backendProbeNonce} ui_req=${uiReqId} build=${backendBuildSha} ts=${nowIso}`);
     
+    // PHASE C: Log FT_PROBE_OK (execution success proof)
+    console.log(`FT_PROBE_OK ${JSON.stringify({
+      marker: 'FT_PROBE_OK',
+      probe_entry_id: probeEntryId,
+      ui_req_id: uiReqId,
+      ui_local_probe_nonce: uiLocalProbeNonce,
+      backend_probe_nonce: backendProbeNonce,
+      timestamp_iso: nowIso
+    })}`);
+    
     // Success response with all IDs (for UI display)
     return {
       ok: true,
@@ -249,35 +279,56 @@ export async function probe(req?: any): Promise<ProbeResponse> {
       observed
     };
   } catch (err) {
-    // Error path (should rarely happen, but capture it)
+    // PHASE C (Invoke Error Truth): Log FT_PROBE_ERR IMMEDIATELY
+    // Error path (capture it without re-throwing)
     const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorCode = (err as any)?.code || (err as any)?.statusCode || 'PROBE_EXCEPTION';
     const traceIdStable = `trace_probe_err_${hashShort(errorMsg)}_${Date.now()}`;
-
-    // ERROR: Log FT_PROBE_MARKER with error details (ALWAYS log, even on error)
-    const errorMarker = {
-      marker: 'FT_PROBE_MARKER_ERROR',
+    
+    // Build meta even on error (CRITICAL for Backend Build SHA + Forge Env visibility)
+    const metaOnError: ProbeMeta = {
       ui_req_id: uiReqId,
-      ui_local_probe_nonce: uiLocalProbeNonce,    // Preserve for grep (even on error)
+      ui_local_probe_nonce: uiLocalProbeNonce,      // Preserve for grep (even on error)
+      backend_probe_nonce: backendProbeNonce,       // Server-side entropy (even on error)
+      backend_build_sha: backendBuildSha,           // NEVER hidden (even on error)
+      now_iso: nowIso,
+      node: process.version,
+      function_name: functionName,
+      forge_env: forgeEnv                            // NEVER hidden (even on error)
+    };
+    
+    // Log FT_PROBE_ERR with all error details (deterministic execution proof)
+    const errorMarker = {
+      marker: 'FT_PROBE_ERR',
+      probe_entry_id: probeEntryId,
+      ui_req_id: uiReqId,
+      ui_local_probe_nonce: uiLocalProbeNonce,      // Preserve for grep
       backend_probe_nonce: backendProbeNonce,
       backend_build_sha: backendBuildSha,
       forge_env: forgeEnv,
-      error_code: 'PROBE_EXCEPTION',
+      error_code: errorCode,
       error_message: errorMsg,
       trace_id_stable: traceIdStable,
-      timestamp_iso: nowIso
+      timestamp_iso: nowIso,
+      function_name: functionName
     };
     
-    console.error(`FT_PROBE_MARKER ${JSON.stringify(errorMarker)}`);
+    console.error(`FT_PROBE_ERR ${JSON.stringify(errorMarker)}`);
     
-    // Also log plain-text error (backward compat)
-    console.error(`PROBE_ERR ui_nonce=${uiLocalProbeNonce} ui_req=${uiReqId} code=PROBE_EXCEPTION trace=${traceIdStable} ts=${nowIso}`);
+    // Also log old format (backward compat)
+    console.error(`PROBE_ERR ui_nonce=${uiLocalProbeNonce} ui_req=${uiReqId} code=${errorCode} trace=${traceIdStable} ts=${nowIso}`);
     
+    // Return structured error (NEVER throw raw)
     return {
       ok: false,
-      meta,
-      observed,
+      meta: metaOnError,
+      observed: {
+        payload_keys: Object.keys(payload || {}),
+        correlation_fields: {},
+        context_signals: {}
+      },
       error: {
-        code: 'PROBE_EXCEPTION',
+        code: String(errorCode),
         message: errorMsg,
         trace_id_stable: traceIdStable
       }
