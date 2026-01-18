@@ -25,7 +25,8 @@ import {
   createResolverErrorSnapshot 
 } from "../status/statusStorage";
 import { normalizeStatusV1, EMPTY_STATUS_V1, safeStorageKey, GovernanceStatusV1 } from "../shared/statusSchema";
-import { FT_BUILD_SHA, FT_BUILD_TIME_UTC } from "../shared/build_meta";
+import { FT_BUILD_SHA } from "../shared/backend_build_meta";
+import { FT_BUILD_TIME_UTC } from "../shared/build_meta";
 // PHASE 2 FIX: Import getBuildInfo resolver to expose it alongside getStatusSnapshot
 import { getBuildInfo_resolver } from "./getBuildInfo";
 import {

@@ -11,7 +11,8 @@
  */
 
 import { resolveTenantKeyOrNull } from "../security/resolveTenantKey";
-import { FT_BUILD_SHA, FT_BUILD_TIME_UTC } from "../shared/build_meta";
+import { FT_BUILD_SHA } from "../shared/backend_build_meta";
+import { FT_BUILD_TIME_UTC } from "../shared/build_meta";
 import {
   classifyError,
   generateTraceIdStable,
