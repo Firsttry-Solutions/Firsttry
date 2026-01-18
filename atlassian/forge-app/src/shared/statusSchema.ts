@@ -77,6 +77,12 @@ export interface GovernanceStatusV1 {
     reasonNotReady?: string;
   };
 
+  // Scheduler contract: CRITICAL
+  // If schedulerConfigured=false OR mode="manual", expectedScheduleIntervalMinutes MUST be null.
+  // This prevents the UI invariant violation.
+  schedulerConfigured?: boolean;
+  mode?: string; // "onload" | "manual" | "scheduled"
+
   // Legacy fields (for backward compat with old UI code)
   // These will be SAFE defaults from normalizeStatusV1
   coverageIncluded?: string[];
@@ -89,8 +95,8 @@ export interface GovernanceStatusV1 {
   freshnessStatus?: string;
   skippedChecksCount7d?: number;
   skippedChecksPrimaryReason7d?: string;
-  expectedScheduleIntervalMinutes?: number;
-  staleIfAgeMinutesGreaterThan?: number;
+  expectedScheduleIntervalMinutes?: number | null;
+  staleIfAgeMinutesGreaterThan?: number | null;
   snapshotAgeMinutes?: number;
   isStale?: boolean;
 
@@ -120,7 +126,6 @@ export interface GovernanceStatusV1 {
   daysContinuousOperation?: number | null;
   version?: string | null;
   environment?: string | null;
-  mode?: string | null;
   lastSuccessAt?: string | null;
   lastCheckAt?: string | null;
   dataFreshness?: string | null;
@@ -158,6 +163,9 @@ export function EMPTY_STATUS_V1(
       pdfReady: false,
       reasonNotReady: "No snapshots yet",
     },
+    // CRITICAL: Schedule contract - no scheduler configured on load
+    schedulerConfigured: false,
+    mode: "onload", // Indicates initial load state (not yet scheduled)
     // Legacy compat fields
     coverageIncluded: [],
     coverageExcluded: [],
@@ -168,8 +176,8 @@ export function EMPTY_STATUS_V1(
     failureCount7d: 0,
     freshnessStatus: "NOT_AVAILABLE",
     skippedChecksCount7d: 0,
-    expectedScheduleIntervalMinutes: 60,
-    staleIfAgeMinutesGreaterThan: 120,
+    expectedScheduleIntervalMinutes: null,
+    staleIfAgeMinutesGreaterThan: null,
     snapshotAgeMinutes: undefined,
     isStale: undefined,
     // Operational metrics (all unknown)
@@ -260,10 +268,17 @@ export function normalizeStatusV1(
     freshnessStatus: typeof obj.freshnessStatus === "string" ? obj.freshnessStatus : "NOT_AVAILABLE",
     skippedChecksCount7d: typeof obj.skippedChecksCount7d === "number" ? obj.skippedChecksCount7d : 0,
     skippedChecksPrimaryReason7d: typeof obj.skippedChecksPrimaryReason7d === "string" ? obj.skippedChecksPrimaryReason7d : undefined,
-    expectedScheduleIntervalMinutes: typeof obj.expectedScheduleIntervalMinutes === "number" ? obj.expectedScheduleIntervalMinutes : 60,
-    staleIfAgeMinutesGreaterThan: typeof obj.staleIfAgeMinutesGreaterThan === "number" ? obj.staleIfAgeMinutesGreaterThan : 120,
+    // CRITICAL: If scheduler not configured OR mode is manual/onload, intervals MUST be null to prevent UI invariant violations
+    expectedScheduleIntervalMinutes: (obj.schedulerConfigured === false || obj.mode === "manual" || obj.mode === "onload")
+      ? null
+      : (typeof obj.expectedScheduleIntervalMinutes === "number" ? obj.expectedScheduleIntervalMinutes : 60),
+    staleIfAgeMinutesGreaterThan: (obj.schedulerConfigured === false || obj.mode === "manual" || obj.mode === "onload")
+      ? null
+      : (typeof obj.staleIfAgeMinutesGreaterThan === "number" ? obj.staleIfAgeMinutesGreaterThan : 120),
     snapshotAgeMinutes: typeof obj.snapshotAgeMinutes === "number" ? obj.snapshotAgeMinutes : undefined,
     isStale: typeof obj.isStale === "boolean" ? obj.isStale : undefined,
+    // CRITICAL: Include schedulerConfigured flag to prevent UI invariant violations
+    schedulerConfigured: typeof obj.schedulerConfigured === "boolean" ? obj.schedulerConfigured : undefined,
     // Operational metrics: preserve from input or use nulls
     operationalMetrics: {
       checksCompletedLifetime: typeof obj.operationalMetrics?.checksCompletedLifetime === "number" ? obj.operationalMetrics.checksCompletedLifetime : (typeof obj.checksCompletedLifetime === "number" ? obj.checksCompletedLifetime : null),

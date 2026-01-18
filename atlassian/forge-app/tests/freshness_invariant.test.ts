@@ -99,7 +99,9 @@ describe('Freshness Invariant: FRESH only with valid timestamp', () => {
       const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
       const signals = {
         ...baseSignals,
+        snapshotCountRetained: 1, // CRITICAL: match snapshot presence
         stalenessThresholdMinutes: 240,  // 4 hours
+        snapshotCountRetained: 1,
         snapshot: {
           generatedAtISO: fiveMinutesAgo.toISOString(),
           snapshotId: "test-snap-fresh",
@@ -122,6 +124,7 @@ describe('Freshness Invariant: FRESH only with valid timestamp', () => {
       const signals = {
         ...baseSignals,
         stalenessThresholdMinutes: 240,  // 4 hours
+        snapshotCountRetained: 1,
         snapshot: {
           generatedAtISO: ninetyMinutesAgo.toISOString(),
           snapshotId: "test-snap-current",
@@ -144,6 +147,7 @@ describe('Freshness Invariant: FRESH only with valid timestamp', () => {
       const signals = {
         ...baseSignals,
         stalenessThresholdMinutes: 240,  // 4 hours
+        snapshotCountRetained: 1,
         snapshot: {
           generatedAtISO: fiveDaysAgo.toISOString(),
           snapshotId: "test-snap-stale",
@@ -175,6 +179,7 @@ describe('Freshness Invariant: FRESH only with valid timestamp', () => {
       const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
       const signals = {
         ...baseSignals,
+        snapshotCountRetained: 1,
         snapshot: {
           generatedAtISO: tenMinutesAgo.toISOString(),
           snapshotId: "test-snap-age",
@@ -239,6 +244,7 @@ describe('Freshness Invariant: FRESH only with valid timestamp', () => {
         const signals = {
           ...baseSignals,
           stalenessThresholdMinutes: tc.threshold,
+          snapshotCountRetained: 1,
           snapshot: {
             generatedAtISO: snapshotTime.toISOString(),
             snapshotId: `test-${tc.ageMinutes}`,
