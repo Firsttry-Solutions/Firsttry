@@ -1748,9 +1748,42 @@ window.runProbe = async function() {
         };
         
         // ================================================================
-        // PHASE 4: Invoke probe resolver (backend may augment IDs)
+        // PHASE 4: Log invoke START + Invoke probe resolver
         // ================================================================
-        const response = await invokeWithUiReqId('probe', payload);
+        const invokeStartTs = new Date().toISOString();
+        console.log(JSON.stringify({
+          marker: '[UI_PROBE_INVOKE_START]',
+          ui_req_id: localUiReqId,
+          probe_nonce: localProbeNonce,
+          timestamp: invokeStartTs
+        }));
+        
+        let response;
+        try {
+          response = await invokeWithUiReqId('probe', payload);
+          console.log(JSON.stringify({
+            marker: '[UI_PROBE_INVOKE_OK]',
+            ui_req_id: localUiReqId,
+            probe_nonce: localProbeNonce,
+            timestamp: new Date().toISOString(),
+            result: response.ok ? 'success' : 'error'
+          }));
+        } catch (invokeErr) {
+          const errDetail = invokeErr instanceof Error ? {
+            errType: invokeErr.constructor.name,
+            errMessage: invokeErr.message,
+            errStack: invokeErr.stack?.substring(0, 200)
+          } : { errType: typeof invokeErr, raw: String(invokeErr) };
+          
+          console.error(JSON.stringify({
+            marker: '[UI_PROBE_INVOKE_FAILED]',
+            ui_req_id: localUiReqId,
+            probe_nonce: localProbeNonce,
+            timestamp: new Date().toISOString(),
+            ...errDetail
+          }));
+          throw invokeErr;
+        }
         
         // ================================================================
         // PHASE 5: Update UI with backend-provided fields (if available)
