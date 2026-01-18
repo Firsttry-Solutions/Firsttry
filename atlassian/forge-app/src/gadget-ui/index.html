@@ -33,7 +33,7 @@
         </div>
         
         <div class="flex gap-12 align-center mb-16">
-            <div class="build-marker" id="build-marker" style="flex: 1; display: none;"></div>
+            <div class="build-marker flex-1 is-hidden" id="build-marker"></div>
             <button id="refresh-now-btn">Refresh now</button>
             <span class="text-12 text-secondary">Last: <span id="last-refreshed-time">—</span></span>
             <span class="status-pill running" id="ui-style-proof" class="is-hidden"></span>
@@ -48,7 +48,7 @@
         <!-- Diagnostics (Collapsed by default) -->
         <details class="mb-16">
             <summary>🔧 Diagnostics (UI Self-Test)</summary>
-            <div class="section section--light" id="ui-selftest-section" style="margin-top: 12px;">
+            <div class="section section--light mt-12" id="ui-selftest-section">
                 <div class="metrics-grid">
                     <div class="metric-row">
                         <div class="metric-label">Bridge Mode</div>
@@ -116,7 +116,7 @@
                     <div class="probe-metric-label">Forge Env</div>
                     <div id="probe-forge-env" class="probe-metric-value">—</div>
                 </div>
-                <div class="probe-metric" style="grid-column: 1/3;">
+                <div class="probe-metric grid-span-2">
                     <div class="probe-metric-label">Grep Commands (Copy-Paste for Manual Verification)</div>
                     <div class="panel panel--info">
                         <div class="text-primary mb-4"><strong>UI Req ID Grep:</strong></div>
@@ -146,7 +146,7 @@
                 <div class="metric-row">
                     <div class="metric-label">System Status</div>
                     <div class="metric-value" id="kpi-status"><span class="status-pill initializing">INITIALIZING</span></div>
-                    <div class="text-12 text-tertiary mt-6" id="degraded-clarification" style="display: none;">Degraded indicates stale data, not failure.</div>
+                    <div class="text-12 text-tertiary mt-6 is-hidden" id="degraded-clarification">Degraded indicates stale data, not failure.</div>
                 </div>
                 <div class="metric-row">
                     <div class="metric-label">Mode</div>
@@ -174,7 +174,7 @@
                 </div>
                 <div class="metric-row">
                     <div class="metric-label">Degraded Reason</div>
-                    <div class="metric-value" id="kpi-degraded-reason" style="display: none;">—</div>
+                    <div class="metric-value is-hidden" id="kpi-degraded-reason">—</div>
                 </div>
             </div>
         </div>
@@ -268,7 +268,7 @@
         </div>
 
         <!-- Checks Table -->
-        <div class="section" id="checks-section" style="display: none;">
+        <div class="section is-hidden" id="checks-section">
             <div class="section-title">Check Results</div>
             <div id="checks-content"></div>
         </div>
@@ -330,7 +330,7 @@
                 <button class="btn" id="download-json-btn" onclick="window.downloadJSON()">Download JSON</button>
                 <button class="btn" id="download-csv-btn" onclick="window.downloadCSV()">Download CSV</button>
             </div>
-            <details class="mt-16 pt-12" style="border-top: 1px solid #dfe1e6;">
+            <details class="mt-16 pt-12 bt-divider">
                 <summary>Export Output (for manual copy)</summary>
                 <div class="export-output">
                     <div id="export-output-title" class="export-output-title"></div>
