@@ -30,37 +30,31 @@ echo "==========================================================================
 echo ""
 
 # ============================================================================
-# GATE 1: HTML inline style="" in SOURCE (src/gadget-ui)
+# GATE 1: Check SOURCE for ANY substring 'style="' (TRULY STRICT - NO EXCEPTIONS)
 # ============================================================================
-echo "[GATE 1] Scanning SOURCE for inline style= attributes..."
+echo "[GATE 1] Scanning SOURCE for any 'style=\"' substring..."
 out="/tmp/csp_gate_1_source.txt"
 if rg -n 'style="' "src/gadget-ui" >"$out" 2>&1; then
-  # Filter: only count actual style=" in HTML files (ignore CSS comments)
-  if rg 'style="' "src/gadget-ui/index.html" >/dev/null 2>&1; then
-    echo "❌ FAIL: Found inline style attributes in src/gadget-ui/index.html"
-    rg -n 'style="' "src/gadget-ui/index.html"
-    fail=1
-  else
-    # Only CSS comments found, this is OK
-    echo "✅ PASS: No inline styles in src/gadget-ui (CSS comments don't count)"
-  fi
+  echo "❌ FAIL: Found 'style=\"' substring in src/gadget-ui (including comments)"
+  cat "$out"
+  fail=1
 else
-  echo "✅ PASS: No inline styles in src/gadget-ui"
+  echo "✅ PASS: No 'style=\"' substring anywhere in src/gadget-ui"
 fi
 echo ""
 
 # ============================================================================
-# GATE 2: HTML inline style="" in DIST (src/gadget-ui/dist)
+# GATE 2: Check DIST for ANY substring 'style="' (TRULY STRICT - NO EXCEPTIONS)
 # ============================================================================
-echo "[GATE 2] Scanning DIST for inline style= attributes..."
+echo "[GATE 2] Scanning DIST for any 'style=\"' substring..."
 if [[ -d "src/gadget-ui/dist" ]]; then
   out="/tmp/csp_gate_2_dist.txt"
   if rg -n 'style="' "src/gadget-ui/dist" >"$out" 2>&1; then
-    echo "❌ FAIL: Found inline style attributes in src/gadget-ui/dist"
+    echo "❌ FAIL: Found 'style=\"' substring in src/gadget-ui/dist"
     cat "$out"
     fail=1
   else
-    echo "✅ PASS: No inline styles in src/gadget-ui/dist"
+    echo "✅ PASS: No 'style=\"' substring in src/gadget-ui/dist"
   fi
 else
   echo "⚠️  SKIP: src/gadget-ui/dist does not exist (not built yet)"
