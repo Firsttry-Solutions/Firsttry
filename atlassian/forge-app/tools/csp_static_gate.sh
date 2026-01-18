@@ -90,6 +90,48 @@ fi
 echo ""
 
 # ============================================================================
+# GATE 5: Inline Event Handlers in HTML SOURCE (PHASE 2)
+# ============================================================================
+echo "[GATE 5] Scanning SOURCE HTML for inline event handlers (on*=)..."
+out="/tmp/csp_gate_5_html_handlers.txt"
+if rg -n 'on[a-zA-Z]+\s*=' "src/gadget-ui/index.html" >"$out" 2>&1; then
+  # Filter out false positives (e.g., viewport="viewport")
+  if rg -n 'on[a-zA-Z]+\s*=' "src/gadget-ui/index.html" 2>/dev/null | grep -v 'viewport' >"$out" 2>&1; then
+    echo "❌ FAIL: Found inline event handlers in src/gadget-ui/index.html"
+    cat "$out"
+    fail=1
+  else
+    echo "✅ PASS: No inline event handlers in src/gadget-ui/index.html"
+  fi
+else
+  echo "✅ PASS: No inline event handlers in src/gadget-ui/index.html"
+fi
+echo ""
+
+# ============================================================================
+# GATE 6: Inline Event Handlers in DIST HTML (PHASE 2)
+# ============================================================================
+echo "[GATE 6] Scanning DIST HTML for inline event handlers (on*=)..."
+if [[ -d "src/gadget-ui/dist" ]]; then
+  out="/tmp/csp_gate_6_dist_handlers.txt"
+  if rg -n 'on[a-zA-Z]+\s*=' "src/gadget-ui/dist/index.html" >"$out" 2>&1; then
+    # Filter out false positives
+    if rg -n 'on[a-zA-Z]+\s*=' "src/gadget-ui/dist/index.html" 2>/dev/null | grep -v 'viewport' >"$out" 2>&1; then
+      echo "❌ FAIL: Found inline event handlers in src/gadget-ui/dist/index.html"
+      cat "$out"
+      fail=1
+    else
+      echo "✅ PASS: No inline event handlers in src/gadget-ui/dist/index.html"
+    fi
+  else
+    echo "✅ PASS: No inline event handlers in src/gadget-ui/dist/index.html"
+  fi
+else
+  echo "⚠️  SKIP: src/gadget-ui/dist does not exist (not built yet)"
+fi
+echo ""
+
+# ============================================================================
 # SUMMARY & EXIT
 # ============================================================================
 echo "============================================================================"
@@ -101,16 +143,20 @@ if [[ "$fail" -ne 0 ]]; then
   echo "  2. Replace with CSS classes in src/gadget-ui/src/styles/main.css"
   echo "  3. Remove all .style.* property mutations from src/gadget-ui/src/main.ts"
   echo "  4. Remove all setAttribute('style', ...) calls from src/gadget-ui/src/main.ts"
+  echo "  5. Remove all on[a-zA-Z]+= event handlers from src/gadget-ui/index.html"
+  echo "  6. Wire event handlers via addEventListener in src/gadget-ui/src/main.ts"
   echo ""
   exit 1
 else
   echo "✅ CSP STATIC GATE: PASS"
   echo ""
-  echo "All CSP inline style checks passed:"
+  echo "All CSP inline style and event handler checks passed:"
   echo "  ✅ Zero inline styles in source"
   echo "  ✅ Zero inline styles in dist (if built)"
   echo "  ✅ Zero .style.* mutations in JavaScript"
   echo "  ✅ Zero setAttribute('style') calls in JavaScript"
+  echo "  ✅ Zero inline event handlers in source HTML"
+  echo "  ✅ Zero inline event handlers in dist HTML"
   echo ""
   echo "Gadget is CSP-safe and ready for Jira deployment."
   echo "============================================================================"
