@@ -46,6 +46,16 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
   let tenantKeyHash: string;
   let tenantStatus: "OK" | "MISSING" | "UNKNOWN" = "UNKNOWN";
   
+  // FT_STATUS_ENTRY: Proof that resolver was invoked
+  console.log(`FT_STATUS_ENTRY ${JSON.stringify({
+    marker: "FT_STATUS_ENTRY",
+    resolver: "getStatusSnapshot",
+    ui_req_id: uiReqId || "ui_missing",
+    backend_build_sha: FT_BUILD_SHA,
+    ts: new Date().toISOString()
+  })}`);
+  
+  
   try {
     const tenantInfo = resolveTenantKey(context);
     tenantKey = tenantInfo.tenantKey;
@@ -64,6 +74,19 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
     const traceIdStable = generateTraceIdStable(errorCode, err, FT_BUILD_SHA);
     const traceIdInstance = generateTraceIdInstance(traceIdStable, err);
     const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack || "" : "";
+
+    // FT_STATUS_ERR: Tenant resolution failed
+    console.log(`FT_STATUS_ERR ${JSON.stringify({
+      marker: "FT_STATUS_ERR",
+      resolver: "getStatusSnapshot",
+      ui_req_id: uiReqId || "ui_missing",
+      backend_build_sha: FT_BUILD_SHA,
+      ts: new Date().toISOString(),
+      error_name: err instanceof Error ? err.name : "Unknown",
+      error_message: errorMsg.substring(0, 2000),
+      error_stack: errorStack.substring(0, 2000)
+    })}`);
 
     emitResolverErrorLog(
       traceIdStable,
@@ -112,6 +135,16 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
 
     // CRITICAL: Normalize the snapshot to GovernanceStatusV1
     // This guarantees UI never receives malformed data
+    
+    // FT_STATUS_OK: Resolver executed successfully
+    console.log(`FT_STATUS_OK ${JSON.stringify({
+      marker: "FT_STATUS_OK",
+      resolver: "getStatusSnapshot",
+      ui_req_id: uiReqId || "ui_missing",
+      backend_build_sha: FT_BUILD_SHA,
+      ts: new Date().toISOString()
+    })}`);
+    
     return normalizeStatusV1(snapshot, tenantAri, backendBuild, uiBuild);
   } catch (err) {
     // Error reading or storing snapshot - return error status instead of throwing
@@ -119,6 +152,19 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
     const traceIdStable = generateTraceIdStable(errorCode, err, FT_BUILD_SHA);
     const traceIdInstance = generateTraceIdInstance(traceIdStable, err);
     const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack || "" : "";
+
+    // FT_STATUS_ERR: Snapshot operation failed
+    console.log(`FT_STATUS_ERR ${JSON.stringify({
+      marker: "FT_STATUS_ERR",
+      resolver: "getStatusSnapshot",
+      ui_req_id: uiReqId || "ui_missing",
+      backend_build_sha: FT_BUILD_SHA,
+      ts: new Date().toISOString(),
+      error_name: err instanceof Error ? err.name : "Unknown",
+      error_message: errorMsg.substring(0, 2000),
+      error_stack: errorStack.substring(0, 2000)
+    })}`);
 
     emitResolverErrorLog(
       traceIdStable,
