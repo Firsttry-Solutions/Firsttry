@@ -1592,16 +1592,65 @@ ${JSON.stringify(response, null, 2)}
 };
 
 // ============================================================================
+// RUNTIME ERROR SURFACING (PHASE 2)
+// ============================================================================
+
+function surfaceErrorInUI(errorType: string, errorMsg: string, stack?: string) {
+    try {
+        const panelEl = document.getElementById('probe-response-panel');
+        if (panelEl) {
+            panelEl.classList.add('visible');
+            const displayMsg = `[${errorType}] ${errorMsg}${stack ? '\n' + stack.substring(0, 200) : ''}`;
+            panelEl.textContent = displayMsg;
+            panelEl.classList.add('error-panel');
+        }
+    } catch (e) {
+        console.error('[UI] Failed to surface error:', e);
+    }
+}
+
+// Global error handler: uncaught exceptions
+window.addEventListener('error', (event: ErrorEvent) => {
+    console.error('[GLOBAL_ERROR]', event.error);
+    surfaceErrorInUI('RUNTIME_ERROR', event.message, event.error?.stack);
+});
+
+// Global error handler: unhandled promise rejections
+window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    console.error('[UNHANDLED_REJECTION]', event.reason);
+    const msg = event.reason instanceof Error ? event.reason.message : String(event.reason);
+    surfaceErrorInUI('UNHANDLED_REJECTION', msg, event.reason?.stack);
+});
+
+// ============================================================================
 // EXPORT BUTTONS & UTILITIES
 // ============================================================================
 
 function wireExportButtons() {
     try {
+        const probeBtn = document.getElementById('probe-run-btn');
         const refreshBtn = document.getElementById('refresh-now-btn');
         const copyBtn = document.getElementById('copy-summary-btn');
         const jsonBtn = document.getElementById('download-json-btn');
         const csvBtn = document.getElementById('download-csv-btn');
         const exportSnapshotBtn = document.getElementById('export-trust-snapshot-btn');
+
+        // PHASE 2: Wire probe button (no inline onclick)
+        if (probeBtn) {
+            probeBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    await window.runProbe();
+                } catch (err) {
+                    console.error('[UI] Probe click handler error:', err);
+                    const panelEl = document.getElementById('probe-response-panel');
+                    if (panelEl) {
+                        panelEl.classList.add('visible');
+                        panelEl.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
+                    }
+                }
+            });
+        }
 
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => window.refreshNow());
@@ -1625,6 +1674,7 @@ function wireExportButtons() {
         }
     } catch (e) {
         // Silent catch
+        console.error('[UI] wireExportButtons error:', e);
     }
 }
 
