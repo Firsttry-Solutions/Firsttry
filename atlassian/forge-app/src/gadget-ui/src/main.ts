@@ -12,6 +12,9 @@ import './styles.css';
 // Import build info (injected by Vite)
 import { getBuildIdentifier } from './buildInfo';
 
+// Import UI build markers (auto-generated at build time)
+import { UI_BUILD_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
+
 // Import pure modules (testable, deterministic)
 import { buildExportPayloadFromStatus, type ExportPayload } from './exportPayload';
 import { toSummaryTextFromPayload } from './summaryText';
@@ -44,10 +47,9 @@ const BRIDGE_MODE = "BUNDLED";
 const INVOKE_AVAILABLE = true;
 // UI_DIST_STAMP: Git HEAD SHA + build timestamp. Proves which dist was deployed.
 const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
-// BACKBONE LAYER 0: Hard-coded UI_BUILD_MARKER for cache-busting verification
-// Must be changed on each deploy when debugging cache issues
-// Format: UI_MARKER_<YYYYMMDDTHHMMSSZ>
-const UI_BUILD_MARKER = "UI_MARKER_20260117T141000Z";
+// BACKBONE LAYER 0: UI_BUILD_MARKER is imported from ui_build_meta.ts and auto-generated at build time
+// It includes current UTC timestamp and SHA for cache-busting verification
+// Format: UI_MARKER_<YYYYMMDDTHHMMSSZ>_<SHA>
 // UI_REQ_ID: Unique per page load. Used to correlate UI invoke calls with resolver logs.
 const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).substring(0, 8)}`;
 
