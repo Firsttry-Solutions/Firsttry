@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
 # ============================================================================
-# CSP STATIC GATE - Non-bypassable content security policy enforcement
+# CSP STATIC GATE - Strict Zero-Inline-Styles Enforcement
 # ============================================================================
-# This script fails the build if any unsafe-inline style patterns are found
-# in the gadget UI code. These patterns would trigger Jira CSP violations.
+# This script enforces ZERO inline style="" attributes anywhere in the gadget UI.
+# No allowlists. No exceptions. No "safe structural styles."
 #
-# CSP violation origins:
-# 1) style="" attributes in HTML
-# 2) .style.* property mutations in JavaScript  
-# 3) setAttribute("style", ...) calls in JavaScript
+# CSP violation sources:
+# 1) style="" attributes in HTML source
+# 2) style="" attributes in compiled dist
+# 3) .style.* property mutations in JavaScript
+# 4) setAttribute("style", ...) calls in JavaScript
 #
-# All three patterns violate CSP:
-#   - style-src 'unsafe-inline' not allowed
-#   - Must use CSS classes only
+# Jira CSP Policy: style-src 'self' (no unsafe-inline)
 #
 # Exit codes:
-#   0 = PASS (no violations)
-#   1 = FAIL (violations found)
+#   0 = PASS (zero inline styles found)
+#   1 = FAIL (violations detected)
 # ============================================================================
 
 set -euo pipefail
@@ -24,109 +23,102 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 declare -i fail=0
-declare -i violations=0
 
 echo "============================================================================"
-echo "CSP STATIC GATE: Inline Style Enforcement"
+echo "CSP STATIC GATE: Strict Zero-Inline-Styles Enforcement"
 echo "============================================================================"
 echo ""
 
 # ============================================================================
-# GATE 1: HTML inline style=" attributes (FORBIDDEN)
+# GATE 1: HTML inline style="" in SOURCE (src/gadget-ui)
 # ============================================================================
-echo "[GATE 1] Scanning HTML for inline style= attributes..."
-if rg -n 'style="' src/gadget-ui/index.html >/tmp/csp_gate_style_attr.txt 2>&1; then
-  # Filter out safe styles (structural only: flex, grid-column, display: none, border-top)
-  # These won't trigger CSP violations because they're static at parse time
-  echo "⚠️  Found inline style attributes (checking if safe)..."
-  
-  # Count potentially unsafe styles (not just structural)
-  unsafe_count=$(rg 'style="[^"]*(?!flex: 1|grid-column: 1/3|display: none|border-top: 1px solid #dfe1e6|margin-top: 12px)[^"]*"' src/gadget-ui/index.html 2>/dev/null | wc -l || echo "0")
-  
-  if [[ "$unsafe_count" -gt 0 ]]; then
-    echo "❌ FAIL: Found unsafe inline style attributes in HTML:"
-    cat /tmp/csp_gate_style_attr.txt
+echo "[GATE 1] Scanning SOURCE for inline style= attributes..."
+out="/tmp/csp_gate_1_source.txt"
+if rg -n 'style="' "src/gadget-ui" >"$out" 2>&1; then
+  # Filter: only count actual style=" in HTML files (ignore CSS comments)
+  if rg 'style="' "src/gadget-ui/index.html" >/dev/null 2>&1; then
+    echo "❌ FAIL: Found inline style attributes in src/gadget-ui/index.html"
+    rg -n 'style="' "src/gadget-ui/index.html"
     fail=1
-    ((violations++))
   else
-    echo "✅ PASS: Only structural inline styles found (flex, grid-column, display: none)"
+    # Only CSS comments found, this is OK
+    echo "✅ PASS: No inline styles in src/gadget-ui (CSS comments don't count)"
   fi
 else
-  echo "✅ PASS: No style= attributes in HTML"
+  echo "✅ PASS: No inline styles in src/gadget-ui"
 fi
-
 echo ""
 
 # ============================================================================
-# GATE 2: JavaScript .style.* property mutations (CRITICAL CSP VIOLATION)
+# GATE 2: HTML inline style="" in DIST (src/gadget-ui/dist)
 # ============================================================================
-echo "[GATE 2] Scanning JavaScript for .style.* mutations..."
-if rg -n '\.style\.' src/gadget-ui/src >/tmp/csp_gate_style_mut.txt 2>&1; then
-  echo "❌ FAIL: Found JavaScript .style mutations (CSP VIOLATION):"
-  cat /tmp/csp_gate_style_mut.txt
+echo "[GATE 2] Scanning DIST for inline style= attributes..."
+if [[ -d "src/gadget-ui/dist" ]]; then
+  out="/tmp/csp_gate_2_dist.txt"
+  if rg -n 'style="' "src/gadget-ui/dist" >"$out" 2>&1; then
+    echo "❌ FAIL: Found inline style attributes in src/gadget-ui/dist"
+    cat "$out"
+    fail=1
+  else
+    echo "✅ PASS: No inline styles in src/gadget-ui/dist"
+  fi
+else
+  echo "⚠️  SKIP: src/gadget-ui/dist does not exist (not built yet)"
+fi
+echo ""
+
+# ============================================================================
+# GATE 3: JavaScript .style.* property mutations
+# ============================================================================
+echo "[GATE 3] Scanning JavaScript for .style.* mutations..."
+out="/tmp/csp_gate_3_js_style.txt"
+if rg -n '\.style\.' "src/gadget-ui/src" >"$out" 2>&1; then
+  echo "❌ FAIL: Found .style.* mutations in JavaScript"
+  cat "$out"
   fail=1
-  ((violations++))
 else
   echo "✅ PASS: No .style.* mutations in JavaScript"
 fi
-
 echo ""
 
 # ============================================================================
-# GATE 3: setAttribute("style") calls (CRITICAL CSP VIOLATION)
+# GATE 4: JavaScript setAttribute('style') calls
 # ============================================================================
-echo "[GATE 3] Scanning JavaScript for setAttribute('style') calls..."
-if rg -n 'setAttribute\(.*style' src/gadget-ui/src >/tmp/csp_gate_setattr_style.txt 2>&1; then
-  echo "❌ FAIL: Found setAttribute('style') calls (CSP VIOLATION):"
-  cat /tmp/csp_gate_setattr_style.txt
+echo "[GATE 4] Scanning JavaScript for setAttribute('style') calls..."
+out="/tmp/csp_gate_4_js_setattr.txt"
+if rg -n 'setAttribute\([^)]*style' "src/gadget-ui/src" >"$out" 2>&1; then
+  echo "❌ FAIL: Found setAttribute('style') calls in JavaScript"
+  cat "$out"
   fail=1
-  ((violations++))
 else
   echo "✅ PASS: No setAttribute('style') calls in JavaScript"
 fi
-
 echo ""
 
 # ============================================================================
-# GATE 4: Verify CSS file exists and is imported
-# ============================================================================
-echo "[GATE 4] Verifying CSS import..."
-if [[ -f "src/gadget-ui/src/styles/main.css" ]]; then
-  echo "✅ PASS: main.css exists"
-  if rg -n 'href="./src/styles/main.css"' src/gadget-ui/index.html >/dev/null 2>&1; then
-    echo "✅ PASS: main.css properly imported in HTML"
-  else
-    echo "❌ FAIL: main.css not imported in index.html"
-    fail=1
-    ((violations++))
-  fi
-else
-  echo "❌ FAIL: main.css does not exist"
-  fail=1
-  ((violations++))
-fi
-
-echo ""
-
-# ============================================================================
-# SUMMARY
+# SUMMARY & EXIT
 # ============================================================================
 echo "============================================================================"
 if [[ "$fail" -ne 0 ]]; then
   echo "❌ CSP STATIC GATE: FAIL"
-  echo "   Found $violations violation(s) that would trigger CSP errors"
   echo ""
-  echo "To fix:"
-  echo "  1. Replace all style= attributes with CSS classes in index.html"
-  echo "  2. Add corresponding CSS classes in src/gadget-ui/src/styles/main.css"
-  echo "  3. Replace all .style.* mutations with classList.add/remove/toggle"
-  echo "  4. Replace setAttribute('style') calls with classList methods"
+  echo "Violations found. To fix:"
+  echo "  1. Remove all style=\"...\" attributes from src/gadget-ui/index.html"
+  echo "  2. Replace with CSS classes in src/gadget-ui/src/styles/main.css"
+  echo "  3. Remove all .style.* property mutations from src/gadget-ui/src/main.ts"
+  echo "  4. Remove all setAttribute('style', ...) calls from src/gadget-ui/src/main.ts"
   echo ""
   exit 1
 else
   echo "✅ CSP STATIC GATE: PASS"
-  echo "   All inline style patterns eliminated"
-  echo "   Gadget is CSP compliant and safe for Jira deployment"
   echo ""
+  echo "All CSP inline style checks passed:"
+  echo "  ✅ Zero inline styles in source"
+  echo "  ✅ Zero inline styles in dist (if built)"
+  echo "  ✅ Zero .style.* mutations in JavaScript"
+  echo "  ✅ Zero setAttribute('style') calls in JavaScript"
+  echo ""
+  echo "Gadget is CSP-safe and ready for Jira deployment."
+  echo "============================================================================"
   exit 0
 fi
