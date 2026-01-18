@@ -62,8 +62,9 @@ async function updateSchedulerHeartbeat(cloudId?: string): Promise<void> {
     }
 
     const now = new Date().toISOString();
-    const heartbeatKey = `t/${cloudId}/scheduler/lastFiredUtc`;
-    const runResultKey = `t/${cloudId}/scheduler/lastRunResult`;
+    // Use colons instead of slashes to comply with Forge storage key pattern: ^(?!\s+$)[a-zA-Z0-9:._\s-#]+$
+    const heartbeatKey = `t:${cloudId}:scheduler:lastFiredUtc`;
+    const runResultKey = `t:${cloudId}:scheduler:lastRunResult`;
 
     await storage.set(heartbeatKey, now);
     await storage.set(runResultKey, "SUCCESS");

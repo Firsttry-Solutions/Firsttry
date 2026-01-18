@@ -180,8 +180,9 @@ export async function getOperationalState_resolver(
 
   if (tenantPresent && tenantKeyHash) {
     const prefix = getStoragePrefix(tenantKeyHash);
-    const lastFiredKey = `${prefix}/scheduler/lastFiredUtc`;
-    const lastRunResultKey = `${prefix}/scheduler/lastRunResult`;
+    // Use colons instead of slashes to comply with Forge storage key pattern: ^(?!\s+$)[a-zA-Z0-9:._\s-#]+$
+    const lastFiredKey = `${prefix}:scheduler:lastFiredUtc`;
+    const lastRunResultKey = `${prefix}:scheduler:lastRunResult`;
 
     try {
       const fired = await storage.get(lastFiredKey);
@@ -211,31 +212,31 @@ export async function getOperationalState_resolver(
     const prefix = getStoragePrefix(tenantKeyHash);
 
     try {
-      const countObj = await storage.get(`${prefix}/snapshots/count`);
+      const countObj = await storage.get(`${prefix}:snapshots:count`);
       if (typeof countObj === "number") {
         snapshotCount = countObj;
       }
 
-      const latestIdObj = await storage.get(`${prefix}/snapshots/latestId`);
+      const latestIdObj = await storage.get(`${prefix}:snapshots:latestId`);
       if (typeof latestIdObj === "string") {
         latestId = latestIdObj;
       }
 
       const latestAtUtcObj = await storage.get(
-        `${prefix}/snapshots/latestAtUtc`
+        `${prefix}:snapshots:latestAtUtc`
       );
       if (typeof latestAtUtcObj === "string") {
         latestAtUtc = latestAtUtcObj;
       }
 
       const lastSuccessUtcObj = await storage.get(
-        `${prefix}/snapshots/lastSuccessUtc`
+        `${prefix}:snapshots:lastSuccessUtc`
       );
       if (typeof lastSuccessUtcObj === "string") {
         lastSuccessUtc = lastSuccessUtcObj;
       }
 
-      const lastErrorObj = await storage.get(`${prefix}/snapshots/lastError`);
+      const lastErrorObj = await storage.get(`${prefix}:snapshots:lastError`);
       if (lastErrorObj && typeof lastErrorObj === "object") {
         lastError = lastErrorObj;
       }

@@ -92,12 +92,14 @@ export function applyExportPolicy(options: ExportPolicyOptions = {}): void {
     if (statusEl) {
         statusEl.textContent = message;
         if (!ready) {
-            statusEl.style.color = "#ae2a19"; // Error red
+            statusEl.classList.add('text-error');
+            statusEl.classList.remove('text-success');
             if (reasonCode) {
                 statusEl.title = `Reason: ${reasonCode}`;
             }
         } else {
-            statusEl.style.color = "#216e4e"; // Success green
+            statusEl.classList.add('text-success');
+            statusEl.classList.remove('text-error');
             statusEl.title = "";
         }
     }
@@ -108,13 +110,13 @@ export function applyExportPolicy(options: ExportPolicyOptions = {}): void {
         if (btn) {
             if (ready) {
                 btn.disabled = false;
-                btn.style.opacity = "1";
-                btn.style.cursor = "pointer";
+                btn.classList.add('status-enabled');
+                btn.classList.remove('status-disabled');
                 btn.removeAttribute("title");
             } else {
                 btn.disabled = true;
-                btn.style.opacity = "0.5";
-                btn.style.cursor = "not-allowed";
+                btn.classList.add('status-disabled');
+                btn.classList.remove('status-enabled');
                 btn.title = `${message} (${reasonCode || "unavailable"})`;
             }
         }
@@ -125,8 +127,8 @@ export function applyExportPolicy(options: ExportPolicyOptions = {}): void {
     const exportCopyBtn = root.querySelector("#export-copy-btn") as HTMLButtonElement | null;
     if (exportCopyBtn) {
         exportCopyBtn.disabled = false;
-        exportCopyBtn.style.opacity = "1";
-        exportCopyBtn.style.cursor = "pointer";
+        exportCopyBtn.classList.add('status-enabled');
+        exportCopyBtn.classList.remove('status-disabled');
         exportCopyBtn.removeAttribute("title");
     }
 

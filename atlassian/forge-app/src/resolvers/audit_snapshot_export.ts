@@ -22,6 +22,7 @@ import {
   classifyError,
   ErrorCode,
 } from "./backbone_error_handling";
+import { BACKEND_BUILD_SHA } from "../build/backend_build";
 
 /**
  * Export Trust Snapshot
@@ -45,7 +46,7 @@ export async function exportTrustSnapshot(
   // Extract context from request
   const context = req.context || req;
   const uiReqId = req?.payload?.uiReqId || `export_${Date.now()}`;
-  const backendBuildSha = process.env.BUILD_SHA || null;
+  const backendBuildSha = BACKEND_BUILD_SHA;
 
   try {
     // Guard: verify tenant identity (same as governance_status resolver)
@@ -63,8 +64,6 @@ export async function exportTrustSnapshot(
         err.message,
         backendBuildSha,
         uiReqId,
-        "MISSING",
-        "UNKNOWN",
         "exportTrustSnapshot"
       );
       
@@ -126,8 +125,6 @@ export async function exportTrustSnapshot(
       errorMsg,
       backendBuildSha,
       uiReqId,
-      "OK",
-      "ERROR",
       "exportTrustSnapshot"
     );
     

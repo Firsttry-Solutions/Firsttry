@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "type-check": "tsc --noEmit",
-    "build:gadget": "cd src/gadget-ui && npm install && npm run build",
+    "build:gadget": "node tools/build_meta.mjs && cd src/gadget-ui && npm install && npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:operator:full": "vitest run tests/operator_verification/ov_runner.test.ts && npx ts-node tests/operator_verification/ov_report_gen.ts",
@@ -14,13 +14,14 @@
     "verify:phase5": "node scripts/verify_phase5.mjs",
     "verify:phase4-5": "node scripts/verify_phase4_5.mjs",
     "lint": "echo \"lint: not configured (intentional)\"",
-    "prebuild": "node tools/gen_ui_build_meta.mjs",
-    "build": "npm run build:gadget && node tools/build_meta.mjs && node tools/run_build_with_meta.mjs && echo \"Backend build: not configured (intentional)\"",
-    "predeploy": "npm run test && npm run build:gadget && echo \"UI build ready for deploy\"",
+    "build": "node tools/build_meta.mjs && npm run build:gadget && node tools/run_build_with_meta.mjs && echo \"Backend build: not configured (intentional)\"",
+    "predeploy:prod": "node tools/build_meta.mjs && npm run test && npm run build:gadget && echo \"UI build ready for deploy\"",
     "reviewer:gate": "bash audit/reviewer_ready_gate.sh",
     "proof:auth": "bash audit/proof_run_authenticated.sh",
     "audit:buildinfo": "bash ../../tools/audit_buildinfo_reachability.sh",
-    "proof:buildinfo:prod": "bash ../../tools/prod_buildinfo_proof_loop.sh"
+    "proof:buildinfo:prod": "bash ../../tools/prod_buildinfo_proof_loop.sh",
+    "csp:lint": "node tools/csp_forbid_check.js",
+    "csp:gate": "bash tools/csp_static_gate.sh"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

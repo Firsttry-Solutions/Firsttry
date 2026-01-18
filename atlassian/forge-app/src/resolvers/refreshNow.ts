@@ -15,6 +15,7 @@ import {
   classifyError,
   ErrorCode,
 } from "./backbone_error_handling";
+import { BACKEND_BUILD_SHA } from "../build/backend_build";
 
 export interface RefreshNowResult {
   ok: boolean;
@@ -31,7 +32,7 @@ export interface RefreshNowResult {
 export async function refreshNow_resolver(req: any): Promise<RefreshNowResult> {
   const context = req.context || req;
   const uiReqId = req?.payload?.uiReqId || `refresh_${Date.now()}`;
-  const backendBuildSha = process.env.BUILD_SHA || null;
+  const backendBuildSha = BACKEND_BUILD_SHA;
 
   console.log(
     "REFRESH_NOW_INITIATED",

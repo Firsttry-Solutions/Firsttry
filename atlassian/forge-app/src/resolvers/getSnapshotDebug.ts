@@ -24,6 +24,7 @@ import {
   classifyError,
   ErrorCode,
 } from "./backbone_error_handling";
+import { BACKEND_BUILD_SHA } from "../build/backend_build";
 
 export interface SnapshotDebugInfo {
   ok: boolean;
@@ -42,7 +43,7 @@ export interface SnapshotDebugInfo {
 export async function getSnapshotDebug_resolver(req: any): Promise<SnapshotDebugInfo> {
   const context = req.context || req;
   const uiReqId = req?.payload?.uiReqId || `debug_${Date.now()}`;
-  const backendBuildSha = process.env.BUILD_SHA || null;
+  const backendBuildSha = BACKEND_BUILD_SHA;
   
   let tenantKey: string;
   let tenantKeyHash: string;

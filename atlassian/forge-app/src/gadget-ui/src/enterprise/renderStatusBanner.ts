@@ -91,11 +91,13 @@ export function renderStatusBanner(options: StatusBannerOptions = {}): HTMLEleme
     const { show, color, message } = shouldShowBanner(legacyData);
 
     if (!show) {
-        container.style.display = "none";
+        container.classList.remove('visible');
+        container.classList.add('hidden');
         return container;
     }
 
-    container.style.display = "block";
+    container.classList.add('visible');
+    container.classList.remove('hidden');
     container.className = `status-banner status-${color}`;
     container.setAttribute("role", "status");
     container.setAttribute("aria-live", color === "red" ? "assertive" : "polite");

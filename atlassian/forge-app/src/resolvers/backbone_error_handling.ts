@@ -160,6 +160,10 @@ export function generateTraceIdInstance(
  * - ui_req_id for correlating with UI requests
  * - error_code for stable classification
  * - backend_build_sha for version tracking
+ * 
+ * ENFORCEMENT: backendBuildSha MUST NOT be null.
+ * All callers must pass the injected BACKEND_BUILD_SHA constant.
+ * If null is passed, we throw (fail-closed) rather than fallback to "unknown".
  */
 export function emitResolverErrorLog(
   traceIdStable: string,
@@ -170,6 +174,16 @@ export function emitResolverErrorLog(
   uiReqId: string | null,
   resolverName: string
 ): void {
+  // ENFORCEMENT: backendBuildSha must not be null
+  // If a caller is passing null, it indicates incomplete migration to the injected constant
+  if (!backendBuildSha || backendBuildSha === "unknown") {
+    throw new Error(
+      `BACKBONE_BUILD_SHA_NOT_PROVIDED: Resolver "${resolverName}" attempted to emit error log ` +
+        `without providing backend_build_sha. All resolvers must import { BACKEND_BUILD_SHA } from "../build/backend_build" ` +
+        `and pass it to emitResolverErrorLog. Received: "${backendBuildSha}"`
+    );
+  }
+
   const logObject = {
     level: "error",
     component: "resolver",
@@ -179,7 +193,7 @@ export function emitResolverErrorLog(
     error_code: errorCode,
     message: errorMsg.substring(0, 200), // limit length
     ui_req_id: uiReqId || "unknown",
-    backend_build_sha: backendBuildSha || "unknown",
+    backend_build_sha: backendBuildSha, // Never "unknown" due to enforcement above
     timestamp_iso: new Date().toISOString(),
   };
 

@@ -540,7 +540,8 @@ export async function storeCoverageMatrixSnapshot(
 
   await api.asApp().requestStorage(async (storage) => {
     // Store snapshot
-    const storageKey = `coverage/${snapshotId}`;
+    // Use colons instead of slashes to comply with Forge storage key pattern: ^(?!\s+$)[a-zA-Z0-9:._\s-#]+$
+    const storageKey = `coverage:${snapshotId}`;
     await storage.set(storageKey, snapshot);
 
     // Update index
@@ -569,7 +570,8 @@ export async function getMostRecentCoverageMatrix(org: string): Promise<Coverage
 
     // Most recent is last in index
     const snapshotId = index[index.length - 1];
-    const storageKey = `coverage/${snapshotId}`;
+    // Use colons instead of slashes to comply with Forge storage key pattern
+    const storageKey = `coverage:${snapshotId}`;
     return await storage.get(storageKey);
   });
 
@@ -588,7 +590,8 @@ export async function listCoverageMatrices(org: string, limit: number = 100): Pr
     const recentIds = index.slice(-limit).reverse();
 
     const snapshotPromises = recentIds.map(async (id) => {
-      const storageKey = `coverage/${id}`;
+      // Use colons instead of slashes to comply with Forge storage key pattern
+      const storageKey = `coverage:${id}`;
       return await storage.get(storageKey);
     });
 

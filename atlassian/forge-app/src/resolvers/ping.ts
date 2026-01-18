@@ -10,6 +10,7 @@
  */
 
 import { emitResolverErrorLog, classifyError } from "./backbone_error_handling";
+import { BACKEND_BUILD_SHA } from "../build/backend_build";
 
 export interface PingResponseMeta {
   ui_req_id: string;
@@ -34,10 +35,11 @@ export interface PingResponse {
  * Ping resolver: Health check with correlation
  * Accepts { ui_req_id } from UI
  * Always returns meta with ui_req_id for log grepping
+ * Uses BACKEND_BUILD_SHA injected at build time (never "unknown")
  */
 export async function ping(req?: any): Promise<PingResponse> {
   const resolverName = "ping";
-  const backendBuildSha = process.env.BACKEND_BUILD_SHA || "unknown";
+  const backendBuildSha = BACKEND_BUILD_SHA; // Injected at build time, never fallback
   const nowIso = new Date().toISOString();
   
   // Extract ui_req_id from request (may be undefined, we'll generate one if needed)

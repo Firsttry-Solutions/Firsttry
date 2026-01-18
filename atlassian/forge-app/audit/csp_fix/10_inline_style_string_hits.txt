@@ -1,0 +1,66 @@
+src/gadget-ui/src/enterprise/renderTrustSection.ts:54:    <p style="margin: 0 0 12px 0;"><strong>Data Accessed:</strong> This dashboard reads Jira configuration and workflow metadata via the Forge platform's read:jira-work scope as declared in the manifest.</p>
+src/gadget-ui/src/enterprise/renderTrustSection.ts:55:    <p style="margin: 0 0 12px 0;"><strong>Data Stored:</strong> Governance snapshots and audit evidence are persisted using the Forge app storage scope (storage:app). Data retention policies are documented in docs/PRIVACY.md.</p>
+src/gadget-ui/src/enterprise/renderTrustSection.ts:56:    <p style="margin: 0 0 12px 0;"><strong>Data Egress:</strong> This dashboard does not initiate external network requests based on our repository network-surface scan. All processing occurs within your Jira Cloud instance via the Forge platform.</p>
+src/gadget-ui/src/enterprise/renderTrustSection.ts:57:    <p style="margin: 0;"><strong>Uninstall:</strong> Uninstalling this app removes access to Jira data and stops all background processes. Stored data is managed according to Forge platform policies (see docs/PRIVACY.md).</p>
+src/gadget-ui/src/main.ts:202:                <div class="error-panel" style="background: #fff7d6; border: 1px solid #f5cd47; border-radius: 8px; padding: 16px; color: #7f5f01;">
+src/gadget-ui/src/main.ts:203:                    <div style="font-weight: 600; font-size: 14px;">CRITICAL: invoke() Not Available</div>
+src/gadget-ui/src/main.ts:204:                    <div style="margin-top: 8px; font-size: 12px;">
+src/gadget-ui/src/main.ts:269:                <div class="error-panel" style="background: #ffeceb; border: 1px solid #f87462; border-radius: 8px; padding: 16px; color: #5d1f1a;">
+src/gadget-ui/src/main.ts:270:                    <div style="font-weight: 600; font-size: 14px;">Resolver Invocation Failed</div>
+src/gadget-ui/src/main.ts:271:                    <div style="margin-top: 8px; font-size: 12px;">
+src/gadget-ui/src/main.ts:274:                        <div style="margin-top: 8px;">The backend resolver did not respond successfully. Check that the status-resolver-fn is deployed and functioning.</div>
+src/gadget-ui/src/main.ts:530:            let metricsTableHtml = '<table class="config-visibility-table" style="width: 100%; border-collapse: collapse; border: 1px solid #dfe1e6;">';
+src/gadget-ui/src/main.ts:531:            metricsTableHtml += '<thead><tr style="background: #f5f6f7; border-bottom: 1px solid #dfe1e6;"><th style="padding: 12px; text-align: left; font-weight: 600; color: #172b4d; font-size: 13px;">Metric</th><th style="padding: 12px; text-align: left; font-weight: 600; color: #172b4d; font-size: 13px;">Value</th></tr></thead>';
+src/gadget-ui/src/main.ts:550:                metricsTableHtml += `<tr style="border-bottom: 1px solid #dfe1e6;">`;
+src/gadget-ui/src/main.ts:551:                metricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px;">${row.label}</td>`;
+src/gadget-ui/src/main.ts:552:                metricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px;">${displayValue}${reasonText}</td>`;
+src/gadget-ui/src/main.ts:561:                    <div style="margin-top: 16px; padding: 12px; background: #f5f6f7; border-radius: 4px; border: 1px solid #dfe1e6;">
+src/gadget-ui/src/main.ts:562:                        <div class="metric-row" style="display: flex; gap: 16px; margin-bottom: 12px;">
+src/gadget-ui/src/main.ts:564:                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Risk Band</div>
+src/gadget-ui/src/main.ts:565:                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${cv.riskBand || '—'}</div>
+src/gadget-ui/src/main.ts:566:                                <div style="font-size: 11px; color: #8590a2; margin-top: 4px;">Band indicates observed scale only.</div>
+src/gadget-ui/src/main.ts:569:                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Completeness</div>
+src/gadget-ui/src/main.ts:570:                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${cv.completeness || '—'}</div>
+src/gadget-ui/src/main.ts:573:                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Evaluated At</div>
+src/gadget-ui/src/main.ts:574:                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${formatTimestampDisplay(cv.evaluatedAtISO)}</div>
+src/gadget-ui/src/main.ts:577:                        <div style="border-top: 1px solid #dfe1e6; padding-top: 12px; margin-top: 12px; font-size: 12px; color: #44546f; line-height: 1.5;">
+src/gadget-ui/src/main.ts:584:            configVisibilityHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">Awaiting first scheduled snapshot. The configuration visibility report will appear here once collected.</div>';
+src/gadget-ui/src/main.ts:593:            let perfMetricsTableHtml = '<table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;"><tbody>';
+src/gadget-ui/src/main.ts:617:                perfMetricsTableHtml += `<tr style="border-bottom: 1px solid #dfe1e6;">`;
+src/gadget-ui/src/main.ts:618:                perfMetricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px; font-weight: 500; width: 40%;">${row.label}</td>`;
+src/gadget-ui/src/main.ts:619:                perfMetricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px;">${row.value}</td>`;
+src/gadget-ui/src/main.ts:628:                    <div style="margin-top: 16px; padding: 12px; background: #f5f6f7; border-radius: 4px; border: 1px solid #dfe1e6;">
+src/gadget-ui/src/main.ts:629:                        <div class="metric-row" style="display: flex; gap: 16px; margin-bottom: 12px;">
+src/gadget-ui/src/main.ts:631:                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Completeness</div>
+src/gadget-ui/src/main.ts:632:                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${ps.completeness || '—'}</div>
+src/gadget-ui/src/main.ts:635:                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Evaluated At</div>
+src/gadget-ui/src/main.ts:636:                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${formatTimestampDisplay(ps.evaluatedAtISO)}</div>
+src/gadget-ui/src/main.ts:639:                        <div style="border-top: 1px solid #dfe1e6; padding-top: 12px; margin-top: 12px; font-size: 12px; color: #44546f; line-height: 1.5;">
+src/gadget-ui/src/main.ts:646:            perfSignalsHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">Awaiting first scheduled snapshot. Performance signals will appear here once collected.</div>';
+src/gadget-ui/src/main.ts:655:            phase4TimelineHtml = '<div style="border: 1px solid #dfe1e6; border-radius: 4px; overflow: hidden;">';
+src/gadget-ui/src/main.ts:661:                    <div style="padding: 12px 16px; ${borderTop}">
+src/gadget-ui/src/main.ts:662:                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px;">
+src/gadget-ui/src/main.ts:663:                            <div style="flex: 1;">
+src/gadget-ui/src/main.ts:664:                                <div style="font-weight: 600; color: #172b4d; margin-bottom: 4px;">${event.description || 'Setting changed'}</div>
+src/gadget-ui/src/main.ts:665:                                <div style="font-size: 12px; color: #626f86; margin-bottom: 8px;">
+src/gadget-ui/src/main.ts:668:                                <div style="font-size: 12px; color: #626f86;">
+src/gadget-ui/src/main.ts:669:                                    <strong>Previous:</strong> <code style="background: #f5f6f7; padding: 2px 4px; border-radius: 2px; font-family: monospace;">${event.previousValue !== null ? String(event.previousValue) : 'null'}</code>
+src/gadget-ui/src/main.ts:670:                                    <strong style="margin-left: 12px;">Current:</strong> <code style="background: #f5f6f7; padding: 2px 4px; border-radius: 2px; font-family: monospace;">${event.currentValue !== null ? String(event.currentValue) : 'null'}</code>
+src/gadget-ui/src/main.ts:673:                            <div style="text-align: right; white-space: nowrap;">
+src/gadget-ui/src/main.ts:674:                                <div style="font-size: 11px; color: #8590a2;">${formatTimestampDisplay(event.detectedAt)}</div>
+src/gadget-ui/src/main.ts:682:                phase4TimelineHtml += `<div style="padding: 12px 16px; text-align: center; color: #8590a2; font-size: 12px; border-top: 1px solid #dfe1e6; background: #f5f6f7;">Showing 50 of ${phase4.totalEventCount} events. All events are retained in storage.</div>`;
+src/gadget-ui/src/main.ts:687:            phase4TimelineHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">No configuration changes detected yet. Timeline will populate once changes are detected by the daily scheduler.</div>';
+src/gadget-ui/src/main.ts:689:            phase4TimelineHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">Timeline data not yet available. Scheduled detection begins after first daily run.</div>';
+src/gadget-ui/src/main.ts:703:                <details style="margin-top: 8px;">
+src/gadget-ui/src/main.ts:704:                    <summary style="cursor: pointer; font-weight: 500; color: #172b4d;">View coverage details</summary>
+src/gadget-ui/src/main.ts:705:                    <ul class="coverage-list" style="margin-top: 8px;">${coverageList}</ul>
+src/gadget-ui/src/main.ts:1515:<strong style="color: #216e4e;">✅ PROBE SUCCESS</strong>
+src/gadget-ui/src/main.ts:1518:<code style="background: #f5f6f7; padding: 4px; border-radius: 2px; display: block; margin: 4px 0;">
+src/gadget-ui/src/main.ts:1525:<pre style="background: #f5f6f7; padding: 8px; border-radius: 2px; overflow-x: auto; font-size: 11px; line-height: 1.4;">
+src/gadget-ui/src/main.ts:1533:<strong style="color: #ae2a19;">❌ PROBE ERROR</strong>
+src/gadget-ui/src/main.ts:1540:<pre style="background: #f5f6f7; padding: 8px; border-radius: 2px; overflow-x: auto; font-size: 11px; line-height: 1.4;">
+src/gadget-ui/src/main.ts:1823:                <div class="error-panel" style="background: #ffeceb; border: 1px solid #f87462; border-radius: 8px; padding: 16px; color: #5d1f1a;">
+src/gadget-ui/src/main.ts:1824:                    <div style="font-weight: 600; font-size: 14px;">Dashboard Encountered an Error</div>
+src/gadget-ui/src/main.ts:1825:                    <div style="margin-top: 8px; font-size: 12px;">
+src/gadget-ui/src/main.ts:1827:                        <ul style="margin-top: 8px; margin-left: 20px;">
+src/gadget-ui/src/main.ts:1832:                        <div style="margin-top: 12px; font-family: monospace; font-size: 11px; color: #5d1f1a; opacity: 0.7;">
