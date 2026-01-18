@@ -2042,12 +2042,44 @@ function wireExportButtons() {
         const exportSnapshotBtn = document.getElementById('export-trust-snapshot-btn');
 
         // PHASE 2: Wire probe button (no inline onclick)
+        // Helper: Log button click with markers
+        const logButtonClick = (buttonName: string) => {
+            const ts = new Date().toISOString();
+            const req_id = `btn_req_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
+            console.log(JSON.stringify({
+                marker: '[UI_BTN_CLICK]',
+                button: buttonName,
+                ui_req_id: req_id,
+                ts,
+                uiReqId: FT_UI_REQ_ID
+            }));
+            return req_id;
+        };
+
+        // Helper: Log button completion with result
+        const logButtonDone = (buttonName: string, ok: boolean, error?: any) => {
+            const msg = ok
+                ? { marker: '[UI_BTN_DONE]', button: buttonName, ok: true }
+                : {
+                    marker: '[UI_BTN_DONE]',
+                    button: buttonName,
+                    ok: false,
+                    error_name: error?.name || 'Unknown',
+                    error_message: error?.message || String(error),
+                    error_code: error?.code || 'UNKNOWN'
+                  };
+            console.log(JSON.stringify(msg));
+        };
+
         if (probeBtn) {
             probeBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
+                const req_id = logButtonClick('RunProbe');
                 try {
                     await window.runProbe();
+                    logButtonDone('RunProbe', true);
                 } catch (err) {
+                    logButtonDone('RunProbe', false, err);
                     console.error('[UI] Probe click handler error:', err);
                     const panelEl = document.getElementById('probe-response-panel');
                     if (panelEl) {
@@ -2059,19 +2091,59 @@ function wireExportButtons() {
         }
 
         if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => window.refreshNow());
+            refreshBtn.addEventListener('click', async () => {
+                const req_id = logButtonClick('RefreshNow');
+                try {
+                    await window.refreshNow();
+                    logButtonDone('RefreshNow', true);
+                } catch (err) {
+                    logButtonDone('RefreshNow', false, err);
+                }
+            });
         }
         if (copyBtn) {
-            copyBtn.addEventListener('click', () => window.copySummary());
+            copyBtn.addEventListener('click', async () => {
+                const req_id = logButtonClick('CopySummary');
+                try {
+                    await window.copySummary();
+                    logButtonDone('CopySummary', true);
+                } catch (err) {
+                    logButtonDone('CopySummary', false, err);
+                }
+            });
         }
         if (jsonBtn) {
-            jsonBtn.addEventListener('click', () => window.downloadJSON());
+            jsonBtn.addEventListener('click', async () => {
+                const req_id = logButtonClick('DownloadJSON');
+                try {
+                    await window.downloadJSON();
+                    logButtonDone('DownloadJSON', true);
+                } catch (err) {
+                    logButtonDone('DownloadJSON', false, err);
+                }
+            });
         }
         if (csvBtn) {
-            csvBtn.addEventListener('click', () => window.downloadCSV());
+            csvBtn.addEventListener('click', async () => {
+                const req_id = logButtonClick('DownloadCSV');
+                try {
+                    await window.downloadCSV();
+                    logButtonDone('DownloadCSV', true);
+                } catch (err) {
+                    logButtonDone('DownloadCSV', false, err);
+                }
+            });
         }
         if (exportSnapshotBtn) {
-            exportSnapshotBtn.addEventListener('click', () => handleExportTrustSnapshot());
+            exportSnapshotBtn.addEventListener('click', async () => {
+                const req_id = logButtonClick('ExportSnapshot');
+                try {
+                    await handleExportTrustSnapshot();
+                    logButtonDone('ExportSnapshot', true);
+                } catch (err) {
+                    logButtonDone('ExportSnapshot', false, err);
+                }
+            });
         }
 
         // Verify all buttons are present
