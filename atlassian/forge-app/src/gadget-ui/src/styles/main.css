@@ -539,7 +539,7 @@ summary {
 
 /* ============================================================================
    CSP COMPLIANCE: INLINE STYLE REPLACEMENTS
-   All following classes replace the 185 inline style="" attributes found in
+   All following classes replace inline styling attributes found in
    index.html. This ensures 100% CSP compliance (no unsafe-inline).
    ============================================================================ */
 
