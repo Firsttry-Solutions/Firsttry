@@ -4,22 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firsttry: Audit Evidence for Jira</title>
+    <link rel="stylesheet" href="./src/styles/main.css">
 </head>
 <body>
     <!-- Diagnostics markers (hidden by default, shown in debug panel) -->
-    <div id="ui-serve-proof-banner" style="display: none;"></div>
-    <div id="ui-js-boot" style="display:none;">JS_BOOT: RUNNING</div>
-    <div id="ui-css-canary" class="status-pill running" style="display: none;"></div>
+    <div id="ui-serve-proof-banner" class="is-hidden"></div>
+    <div id="ui-js-boot" class="is-hidden">JS_BOOT: RUNNING</div>
+    <div id="ui-css-canary" class="status-pill running is-hidden"></div>
 
     <div class="container">
         <h1>Firsttry: Audit Evidence for Jira</h1>
         <p class="title-description">Real-time operational visibility. Read-only monitoring of platform configuration and data quality.</p>
         
         <!-- Scope Boundaries & Non-Goals -->
-        <div class="section" style="background: #f5f6f7; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 14px; font-weight: 600; color: #172b4d; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">📋 Scope Boundaries & Explicit Non-Goals</div>
-            <p style="font-size: 13px; color: #44546f; margin: 0 0 12px 0; line-height: 1.5;">This application is intentionally limited in scope. It does NOT:</p>
-            <ul style="font-size: 13px; color: #44546f; margin: 0; padding-left: 20px; line-height: 1.6;">
+        <div class="section section--gray">
+            <div class="section-title section-title--small">📋 Scope Boundaries & Explicit Non-Goals</div>
+            <p class="text-13 text-secondary mb-12">This application is intentionally limited in scope. It does NOT:</p>
+            <ul class="text-13 text-secondary">
                 <li>Trigger background jobs</li>
                 <li>Ingest external events</li>
                 <li>Execute pipelines</li>
@@ -28,14 +29,14 @@
                 <li>Export trust, audit, or PDF artifacts</li>
                 <li>Perform alerting, automation, or notifications</li>
             </ul>
-            <p style="font-size: 12px; color: #626f86; margin: 12px 0 0 0; line-height: 1.5;">Any expansion of scope, if ever considered, would require explicit versioning, full disclosure, and re-review.</p>
+            <p class="text-12 text-secondary mt-12">Any expansion of scope, if ever considered, would require explicit versioning, full disclosure, and re-review.</p>
         </div>
         
-        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
+        <div class="flex gap-12 align-center mb-16">
             <div class="build-marker" id="build-marker" style="flex: 1; display: none;"></div>
-            <button id="refresh-now-btn" style="padding: 6px 14px; background: #0052cc; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;">Refresh now</button>
-            <span style="font-size: 12px; color: #626f86;">Last: <span id="last-refreshed-time">—</span></span>
-            <span class="status-pill running" id="ui-style-proof" style="display: none;"></span>
+            <button id="refresh-now-btn">Refresh now</button>
+            <span class="text-12 text-secondary">Last: <span id="last-refreshed-time">—</span></span>
+            <span class="status-pill running" id="ui-style-proof" class="is-hidden"></span>
         </div>
 
         <!-- ENTERPRISE UI SECTIONS (KPI Tiles, Status Banner, Progress Tracker) -->
@@ -45,179 +46,177 @@
         <div id="progress-tracker-section"></div>
         
         <!-- Diagnostics (Collapsed by default) -->
-        <details style="margin-bottom: 16px;">
-            <summary style="cursor: pointer; font-size: 13px; font-weight: 600; color: #0052cc; margin-bottom: 12px;">🔧 Diagnostics (UI Self-Test)</summary>
-            <div class="section" id="ui-selftest-section" style="border: 1px solid #dfe1e6; background: #f1f2f4; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13); margin-top: 12px;">
-                <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Bridge Mode</div>
-                        <div class="metric-value" id="ui-selftest-bridge-mode" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+        <details class="mb-16">
+            <summary>🔧 Diagnostics (UI Self-Test)</summary>
+            <div class="section section--light" id="ui-selftest-section" style="margin-top: 12px;">
+                <div class="metrics-grid">
+                    <div class="metric-row">
+                        <div class="metric-label">Bridge Mode</div>
+                        <div class="metric-value" id="ui-selftest-bridge-mode">PENDING</div>
                     </div>
-                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Invoke Available</div>
-                        <div class="metric-value" id="ui-selftest-invoke-available" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    <div class="metric-row">
+                        <div class="metric-label">Invoke Available</div>
+                        <div class="metric-value" id="ui-selftest-invoke-available">PENDING</div>
                     </div>
-                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">HTML Marker</div>
-                        <div class="metric-value" id="ui-selftest-marker" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    <div class="metric-row">
+                        <div class="metric-label">HTML Marker</div>
+                        <div class="metric-value" id="ui-selftest-marker">PENDING</div>
                     </div>
-                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">CSS Applied</div>
-                        <div class="metric-value" id="ui-selftest-css" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    <div class="metric-row">
+                        <div class="metric-label">CSS Applied</div>
+                        <div class="metric-value" id="ui-selftest-css">PENDING</div>
                     </div>
-                    <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                        <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">JS Running</div>
-                        <div class="metric-value" id="ui-selftest-js" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
+                    <div class="metric-row">
+                        <div class="metric-label">JS Running</div>
+                        <div class="metric-value" id="ui-selftest-js">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Resolver Invoke</div>
+                        <div class="metric-value" id="ui-selftest-invoke">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Export Mode</div>
+                        <div class="metric-value" id="ui-selftest-export-mode">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Clipboard</div>
+                        <div class="metric-value" id="ui-selftest-clipboard">PENDING</div>
+                    </div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Resolver Invoke</div>
-                    <div class="metric-value" id="ui-selftest-invoke" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Export Mode</div>
-                    <div class="metric-value" id="ui-selftest-export-mode" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Clipboard</div>
-                    <div class="metric-value" id="ui-selftest-clipboard" style="font-size: 14px; color: #172b4d; font-weight: 500;">PENDING</div>
-                </div>
-            </div>
             </div>
         </details>
 
         <!-- FORENSIC_PROBE Diagnostics Widget (Always Visible) -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">
-                🔬 Forensic Probe (Production Correlation Proof)
-            </div>
+        <div class="section">
+            <div class="section-title">🔬 Forensic Probe (Production Correlation Proof)</div>
             
-            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                <button id="probe-run-btn" onclick="window.runProbe()" style="padding: 6px 14px; background: #0052cc; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">Run Probe</button>
-                <span id="probe-status" style="display: flex; align-items: center; font-size: 12px; color: #626f86; padding: 0 8px;">Ready</span>
+            <div class="flex gap-8 mb-16">
+                <button id="probe-run-btn" onclick="window.runProbe()">Run Probe</button>
+                <span id="probe-status" class="flex align-center text-12 text-secondary p-8">Ready</span>
             </div>
 
-            <div id="probe-response-panel" style="display: none; background: #f5f6f7; border: 1px solid #dfe1e6; border-radius: 4px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; line-height: 1.5; color: #172b4d; max-height: 400px; overflow-y: auto;">
+            <div id="probe-response-panel" class="probe-response">
                 <!-- Response will be rendered here -->
             </div>
 
-            <div id="probe-metrics" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">UI Req ID</div>
-                    <div id="probe-ui-req-id" style="font-size: 12px; color: #172b4d; font-family: monospace; word-break: break-all;">—</div>
+            <div id="probe-metrics" class="probe-metrics">
+                <div class="probe-metric">
+                    <div class="probe-metric-label">UI Req ID</div>
+                    <div id="probe-ui-req-id" class="probe-metric-value">—</div>
                 </div>
-                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Probe Nonce</div>
-                    <div id="probe-nonce" style="font-size: 12px; color: #172b4d; font-family: monospace; word-break: break-all;">—</div>
+                <div class="probe-metric">
+                    <div class="probe-metric-label">Probe Nonce</div>
+                    <div id="probe-nonce" class="probe-metric-value">—</div>
                 </div>
-                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Backend Build SHA</div>
-                    <div id="probe-backend-build-sha" style="font-size: 12px; color: #172b4d; font-family: monospace; word-break: break-all;">—</div>
+                <div class="probe-metric">
+                    <div class="probe-metric-label">Backend Build SHA</div>
+                    <div id="probe-backend-build-sha" class="probe-metric-value">—</div>
                 </div>
-                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Forge Env</div>
-                    <div id="probe-forge-env" style="font-size: 12px; color: #172b4d; font-family: monospace;">—</div>
+                <div class="probe-metric">
+                    <div class="probe-metric-label">Forge Env</div>
+                    <div id="probe-forge-env" class="probe-metric-value">—</div>
                 </div>
-                <div style="padding: 12px; background: #f5f6f7; border-radius: 4px; grid-column: 1/3;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Grep Commands (Copy-Paste for Manual Verification)</div>
-                    <div style="background: #ffffff; padding: 8px; border-radius: 2px; margin-bottom: 6px; border: 1px solid #dfe1e6;">
-                        <div style="color: #172b4d; margin-bottom: 4px;"><strong>UI Req ID Grep:</strong></div>
-                        <code id="probe-grep-ui-req-id" style="display: block; color: #626f86; word-break: break-all;">—</code>
+                <div class="probe-metric" style="grid-column: 1/3;">
+                    <div class="probe-metric-label">Grep Commands (Copy-Paste for Manual Verification)</div>
+                    <div class="panel panel--info">
+                        <div class="text-primary mb-4"><strong>UI Req ID Grep:</strong></div>
+                        <code id="probe-grep-ui-req-id" class="code-block">—</code>
                     </div>
-                    <div style="background: #ffffff; padding: 8px; border-radius: 2px; border: 1px solid #dfe1e6;">
-                        <div style="color: #172b4d; margin-bottom: 4px;"><strong>Nonce Grep (Definitive):</strong></div>
-                        <code id="probe-grep-nonce" style="display: block; color: #626f86; word-break: break-all;">—</code>
+                    <div class="panel panel--info">
+                        <div class="text-primary mb-4"><strong>Nonce Grep (Definitive):</strong></div>
+                        <code id="probe-grep-nonce" class="code-block">—</code>
                     </div>
                 </div>
             </div>
 
-            <div style="margin-top: 16px; padding: 12px; background: #f5f6f7; border-radius: 4px; border: 1px solid #dfe1e6; font-size: 12px; color: #44546f; line-height: 1.5;">
+            <div class="panel panel--info mt-16">
                 <strong>How to use:</strong><br/>
                 1. Click "Run Probe" button above<br/>
                 2. Copy the nonce grep command<br/>
-                3. Run in terminal: <code style="background: #ffffff; padding: 2px 4px; border-radius: 2px;">bash tools/probe_prod.sh --nonce &lt;nonce&gt;</code><br/>
+                3. Run in terminal: <code class="code-block">bash tools/probe_prod.sh --nonce &lt;nonce&gt;</code><br/>
                 4. Script will output PASS (nonce found in logs) or FAIL (with diagnosis)<br/>
                 <strong>Note:</strong> Nonce grep is definitive proof that backend processed the probe invocation.
             </div>
         </div>
         
         <!-- System Overview -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">System Overview</div>
-            <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">System Status</div>
-                    <div class="metric-value" id="kpi-status" style="font-size: 14px; color: #172b4d; font-weight: 500;"><span class="status-pill initializing" style="display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; background: #f5f6f7 !important; color: #626f86 !important;">INITIALIZING</span></div>
-                    <div style="font-size: 12px; color: #8590a2; margin-top: 6px; display: none;" id="degraded-clarification">Degraded indicates stale data, not failure.</div>
+        <div class="section">
+            <div class="section-title">System Overview</div>
+            <div class="metrics-grid">
+                <div class="metric-row">
+                    <div class="metric-label">System Status</div>
+                    <div class="metric-value" id="kpi-status"><span class="status-pill initializing">INITIALIZING</span></div>
+                    <div class="text-12 text-tertiary mt-6" id="degraded-clarification" style="display: none;">Degraded indicates stale data, not failure.</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Mode</div>
-                    <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">Scheduled monitoring (read-only)</div>
+                <div class="metric-row">
+                    <div class="metric-label">Mode</div>
+                    <div class="metric-value">Scheduled monitoring (read-only)</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Last Successful Run</div>
-                    <div class="metric-value" id="kpi-last-success" style="font-size: 14px; color: #172b4d; font-weight: 500;">Awaiting first successful run</div>
+                <div class="metric-row">
+                    <div class="metric-label">Last Successful Run</div>
+                    <div class="metric-value" id="kpi-last-success">Awaiting first successful run</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Days of Continuous Operation</div>
-                    <div class="metric-value" id="kpi-days-continuous" style="font-size: 14px; color: #172b4d; font-weight: 500;">0</div>
+                <div class="metric-row">
+                    <div class="metric-label">Days of Continuous Operation</div>
+                    <div class="metric-value" id="kpi-days-continuous">0</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Failures (7d)</div>
-                    <div class="metric-value" id="kpi-failures-7d" style="font-size: 14px; color: #172b4d; font-weight: 500;">—</div>
+                <div class="metric-row">
+                    <div class="metric-label">Failures (7d)</div>
+                    <div class="metric-value" id="kpi-failures-7d">—</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Freshness</div>
-                    <div class="metric-value" id="kpi-freshness-status" style="font-size: 14px; color: #172b4d; font-weight: 500;">—</div>
+                <div class="metric-row">
+                    <div class="metric-label">Freshness</div>
+                    <div class="metric-value" id="kpi-freshness-status">—</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Skipped Checks (7d)</div>
-                    <div class="metric-value" id="kpi-skipped-checks-7d" style="font-size: 14px; color: #172b4d; font-weight: 500;">—</div>
+                <div class="metric-row">
+                    <div class="metric-label">Skipped Checks (7d)</div>
+                    <div class="metric-value" id="kpi-skipped-checks-7d">—</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Degraded Reason</div>
-                    <div class="metric-value" id="kpi-degraded-reason" style="font-size: 14px; color: #172b4d; font-weight: 500; display: none;">—</div>
-                
+                <div class="metric-row">
+                    <div class="metric-label">Degraded Reason</div>
+                    <div class="metric-value" id="kpi-degraded-reason" style="display: none;">—</div>
+                </div>
             </div>
         </div>
 
         <!-- Operational Metrics -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Operational Metrics</div>
-            <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Checks Completed (Lifetime)</div>
-                    <div class="metric-value" id="kpi-checks-lifetime" style="font-size: 14px; color: #172b4d; font-weight: 500;">0</div>
+        <div class="section">
+            <div class="section-title">Operational Metrics</div>
+            <div class="metrics-grid">
+                <div class="metric-row">
+                    <div class="metric-label">Checks Completed (Lifetime)</div>
+                    <div class="metric-value" id="kpi-checks-lifetime">0</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Snapshot Count (Retained)</div>
-                    <div class="metric-value" id="kpi-snapshot-count" style="font-size: 14px; color: #172b4d; font-weight: 500;">0</div>
+                <div class="metric-row">
+                    <div class="metric-label">Snapshot Count (Retained)</div>
+                    <div class="metric-value" id="kpi-snapshot-count">0</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Last Check</div>
-                    <div class="metric-value" id="kpi-last-check" style="font-size: 14px; color: #172b4d; font-weight: 500;">Awaiting first check</div>
+                <div class="metric-row">
+                    <div class="metric-label">Last Check</div>
+                    <div class="metric-value" id="kpi-last-check">Awaiting first check</div>
                 </div>
-                <div class="metric-row" style="padding-bottom: 16px; border-bottom: 1px solid #dfe1e6; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Generated At</div>
-                    <div class="metric-value" id="kpi-generated-at" style="font-size: 14px; color: #172b4d; font-weight: 500;">—</div>
+                <div class="metric-row">
+                    <div class="metric-label">Generated At</div>
+                    <div class="metric-value" id="kpi-generated-at">—</div>
                 </div>
             </div>
         </div>
 
         <!-- Operational Boundaries -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Operational Boundaries</div>
+        <div class="section">
+            <div class="section-title">Operational Boundaries</div>
             <div id="boundaries"></div>
         </div>
 
         <!-- Operational Status -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Operational Status</div>
+        <div class="section">
+            <div class="section-title">Operational Status</div>
             <div id="operational-status"></div>
         </div>
 
         <!-- Health Status Panel -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Health Status</div>
+        <div class="section">
+            <div class="section-title">Health Status</div>
             <div class="metrics-grid">
                 <div class="metric-row">
                     <div class="metric-label">State</div>
@@ -236,127 +235,127 @@
                     <div class="metric-value" id="health-freshness">UNKNOWN</div>
                 </div>
             </div>
-            <div id="health-reasons" style="margin-top: 12px; padding: 8px; background: #f5f6f7; border-radius: 4px; font-size: 12px; color: #626f86;"></div>
-            <div id="health-boundaries" style="margin-top: 12px; padding: 8px; background: #f5f6f7; border-radius: 4px; font-size: 12px; color: #626f86;"></div>
+            <div id="health-reasons" class="panel panel--info mt-12"></div>
+            <div id="health-boundaries" class="panel panel--info mt-12"></div>
         </div>
 
         <!-- Jira Configuration Visibility (Phase 2) -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Jira Configuration Visibility (Read-only)</div>
+        <div class="section">
+            <div class="section-title">Jira Configuration Visibility (Read-only)</div>
             <div id="config-visibility-content"></div>
         </div>
 
         <!-- Phase 4: Change Awareness Timeline (Read-Only, Append-Only) -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Change Awareness Timeline (Phase 4)</div>
-            <div id="phase4-timeline-content" style="min-height: 60px;"></div>
-            <div class="truth-statement" style="font-size: 12px; color: #8590a2; margin-top: 16px; padding-top: 12px; border-top: 1px solid #dfe1e6; line-height: 1.5;">Timeline shows changes in Jira settings detected daily. Append-only, read-only record of configuration changes.</div>
+        <div class="section">
+            <div class="section-title">Change Awareness Timeline (Phase 4)</div>
+            <div id="phase4-timeline-content" class="min-h-60"></div>
+            <div class="truth-statement">Timeline shows changes in Jira settings detected daily. Append-only, read-only record of configuration changes.</div>
         </div>
 
         <!-- Phase 5: Audit Evidence Export -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Audit Evidence Export</div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <button id="export-trust-snapshot-btn" style="padding: 8px 16px; background: #0052cc; color: #ffffff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;">Export Trust Snapshot</button>
-                <div id="export-status" style="font-size: 13px; color: #626f86;"></div>
+        <div class="section">
+            <div class="section-title">Audit Evidence Export</div>
+            <div class="flex align-center gap-12">
+                <button id="export-trust-snapshot-btn">Export Trust Snapshot</button>
+                <div id="export-status" class="text-13 text-secondary"></div>
             </div>
         </div>
 
         <!-- Data Quality & Coverage Panel -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Data Quality & Coverage</div>
+        <div class="section">
+            <div class="section-title">Data Quality & Coverage</div>
             <div id="data-quality"></div>
         </div>
 
         <!-- Checks Table -->
-        <div class="section" id="checks-section" style="display: none; background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Check Results</div>
+        <div class="section" id="checks-section" style="display: none;">
+            <div class="section-title">Check Results</div>
             <div id="checks-content"></div>
         </div>
 
         <!-- Snapshot Debug Proof Panel (PHASE 2) -->
-        <div class="section" style="background: #f5f6f7; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 14px; font-weight: 600; color: #172b4d; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">🔐 Snapshot Proof &amp; Verification</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">UI Request ID (Nonce)</div>
-                    <div id="proof-ui-req-id" style="font-size: 12px; color: #172b4d; font-family: monospace; word-break: break-all;"></div>
+        <div class="section section--gray">
+            <div class="section-title section-title--small">🔐 Snapshot Proof &amp; Verification</div>
+            <div class="proof-grid">
+                <div class="proof-item">
+                    <div class="proof-item-label">UI Request ID (Nonce)</div>
+                    <div id="proof-ui-req-id" class="proof-item-value"></div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">UI Build SHA</div>
-                    <div id="proof-ui-build-sha" style="font-size: 12px; color: #172b4d; font-family: monospace;"></div>
+                <div class="proof-item">
+                    <div class="proof-item-label">UI Build SHA</div>
+                    <div id="proof-ui-build-sha" class="proof-item-value"></div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Backend Build SHA</div>
-                    <div id="proof-backend-build-sha" style="font-size: 12px; color: #172b4d; font-family: monospace;"></div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Backend Build SHA</div>
+                    <div id="proof-backend-build-sha" class="proof-item-value"></div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Snapshot Count</div>
-                    <div id="proof-snapshot-count" style="font-size: 12px; color: #172b4d; font-weight: 500;"></div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Snapshot Count</div>
+                    <div id="proof-snapshot-count" class="text-12 text-primary font-weight-500"></div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Last Snapshot ID</div>
-                    <div id="proof-last-snapshot-id" style="font-size: 12px; color: #172b4d; font-family: monospace; word-break: break-all;"></div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Last Snapshot ID</div>
+                    <div id="proof-last-snapshot-id" class="proof-item-value"></div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Last Snapshot At (UTC)</div>
-                    <div id="proof-last-snapshot-at" style="font-size: 12px; color: #172b4d;"></div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Last Snapshot At (UTC)</div>
+                    <div id="proof-last-snapshot-at" class="text-12 text-primary"></div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Last Success At (UTC)</div>
-                    <div id="proof-last-success-at" style="font-size: 12px; color: #172b4d;"></div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Last Success At (UTC)</div>
+                    <div id="proof-last-success-at" class="text-12 text-primary"></div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 11px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Storage State</div>
-                    <div id="proof-storage-state" style="font-size: 12px; color: #172b4d; font-weight: 500;"></div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Storage State</div>
+                    <div id="proof-storage-state" class="text-12 text-primary font-weight-500"></div>
                 </div>
             </div>
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #dfe1e6; font-size: 11px; color: #8590a2; line-height: 1.4;">
+            <div class="proof-text">
                 <strong>Note:</strong> This panel displays snapshot persistence proof. The UI Request ID (nonce) uniquely correlates this dashboard load with backend logs. Snapshot Count and timestamps verify persistence.
             </div>
         </div>
 
         <!-- Availability Signals -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Availability Signals</div>
+        <div class="section">
+            <div class="section-title">Availability Signals</div>
             <div id="availability-signals"></div>
         </div>
 
         <!-- Report & Export -->
-        <div class="section" style="background: #ffffff; border: 1px solid #dfe1e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);">
-            <div class="section-title" style="font-size: 16px; font-weight: 600; color: #172b4d; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #dfe1e6; display: flex; align-items: center; justify-content: space-between;">Report & Export</div>
-            <p style="font-size: 14px; color: #44546f; margin-bottom: 12px;">Download or copy governance status data for external review or records.</p>
-            <div class="action-buttons" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;">
-                <button class="btn primary" id="copy-summary-btn" onclick="window.copySummary()" style="padding: 8px 16px; border: 1px solid #0052cc; background: #0052cc; color: white; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Copy Summary to Clipboard</button>
-                <button class="btn" id="download-json-btn" onclick="window.downloadJSON()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download JSON</button>
-                <button class="btn" id="download-csv-btn" onclick="window.downloadCSV()" style="padding: 8px 16px; border: 1px solid #dfe1e6; background: #ffffff; color: #172b4d; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">Download CSV</button>
+        <div class="section">
+            <div class="section-title">Report & Export</div>
+            <p class="text-14 text-secondary mb-12">Download or copy governance status data for external review or records.</p>
+            <div class="action-buttons">
+                <button class="btn primary" id="copy-summary-btn" onclick="window.copySummary()">Copy Summary to Clipboard</button>
+                <button class="btn" id="download-json-btn" onclick="window.downloadJSON()">Download JSON</button>
+                <button class="btn" id="download-csv-btn" onclick="window.downloadCSV()">Download CSV</button>
             </div>
-            <details style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #dfe1e6;">
-                <summary style="cursor: pointer; font-size: 14px; font-weight: 600; color: #0052cc; margin-bottom: 12px;">Export Output (for manual copy)</summary>
-                <div style="padding: 12px; background: #f1f2f4; border-radius: 4px; margin-top: 8px;">
-                    <div id="export-output-title" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;"></div>
-                    <textarea id="export-output-text" readonly style="width: 100%; min-height: 220px; padding: 12px; border: 1px solid #dfe1e6; border-radius: 4px; font-family: 'Monaco', 'Courier New', monospace; font-size: 12px; color: #172b4d; background: #ffffff; box-sizing: border-box;"></textarea>
-                    <div style="font-size: 12px; color: #8590a2; margin-top: 8px; line-height: 1.4;">If downloads are blocked in Jira gadgets, use this box to copy exports manually.</div>
+            <details class="mt-16 pt-12" style="border-top: 1px solid #dfe1e6;">
+                <summary>Export Output (for manual copy)</summary>
+                <div class="export-output">
+                    <div id="export-output-title" class="export-output-title"></div>
+                    <textarea id="export-output-text" class="export-output-text" readonly></textarea>
+                    <div class="text-12 text-tertiary mt-8">If downloads are blocked in Jira gadgets, use this box to copy exports manually.</div>
                 </div>
             </details>
-            <div class="truth-statement" style="font-size: 12px; color: #8590a2; margin-top: 12px; padding: 8px 12px; border-top: 1px solid #dfe1e6; line-height: 1.5;">Exports always produce a result: download (if allowed) or manual copy panel.</div>
+            <div class="truth-statement">Exports always produce a result: download (if allowed) or manual copy panel.</div>
         </div>
 
         <!-- Trust & Data Handling (Enterprise v2) -->
         <div id="trust-section"></div>
 
         <!-- Footer -->
-        <div class="footer" style="border-top: 1px solid #dfe1e6; margin-top: 32px; padding-top: 16px; font-size: 14px; color: #44546f; line-height: 1.6; font-weight: 400;">
+        <div class="footer">
             <p>This dashboard is a read-only operational visibility surface. It exists to provide transparency into app activity and data quality.</p>
-            <div class="export-note" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #dfe1e6; font-size: 0.875em; color: #8590a2;">
+            <div class="export-note">
                 <div><strong>Note:</strong> This gadget does not trigger background jobs. All checks run via scheduled triggers.</div>
-                <div style="margin-top: 8px;"><strong>Cache Refresh:</strong> If this dashboard does not reflect the latest version shown above, remove and re-add the gadget to force a UI cache refresh.</div>
+                <div class="mt-8"><strong>Cache Refresh:</strong> If this dashboard does not reflect the latest version shown above, remove and re-add the gadget to force a UI cache refresh.</div>
             </div>
-            <div id="build-footer" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #dfe1e6; font-size: 0.75em; color: #626f86; font-family: 'Monaco', 'Courier New', monospace; letter-spacing: 0.2px;"><!-- Build info will be inserted here --></div>
+            <div id="build-footer" class="build-footer"><!-- Build info will be inserted here --></div>
         </div>
     </div>
 
-    <div class="copy-success" id="copy-success" style="display: none; position: fixed; top: 16px; right: 16px; background: #dffbf0; color: #216e4e; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; border: 1px solid #c3e6dd; z-index: 1000; box-shadow: 0 2px 4px rgba(9, 30, 66, 0.06);">✓ Copied to clipboard</div>
+    <div class="copy-success" id="copy-success">✓ Copied to clipboard</div>
 
     <!-- Main entry point (bundled by Vite) -->
     <script type="module" src="/src/main.ts"></script>

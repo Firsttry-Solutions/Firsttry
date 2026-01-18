@@ -16,6 +16,7 @@
  */
 
 import crypto from 'crypto';
+import { BACKEND_BUILD_SHA } from "../build/backend_build";
 
 // ============================================================================
 // HELPERS
@@ -92,19 +93,6 @@ function extractUiReqId(payload: any): string {
   return extracted;
 }
 
-/**
- * Get backend build SHA (same value shown in footer)
- * Falls back to process.env if helper unavailable
- */
-function getBackendBuildSha(): string {
-  try {
-    // Try to load from env first (set at deploy time)
-    return process.env.BACKEND_BUILD_SHA || process.env.FT_BUILD_SHA || 'unknown';
-  } catch {
-    return 'unknown';
-  }
-}
-
 // ============================================================================
 // PROBE RESPONSE TYPES
 // ============================================================================
@@ -156,7 +144,7 @@ export async function probe(req?: any): Promise<ProbeResponse> {
   const payload = req?.payload || req || {};
   const nowIso = new Date().toISOString();
   const probeNonce = `probe_${Date.now()}_${randomHex(8)}`;
-  const backendBuildSha = getBackendBuildSha();
+  const backendBuildSha = BACKEND_BUILD_SHA; // Injected at build time, never "unknown"
   const functionName = process.env.FORGE_FUNCTION_NAME || 'probe-resolver';
   const forgeEnv = process.env.FORGE_ENV || 'unknown';
 

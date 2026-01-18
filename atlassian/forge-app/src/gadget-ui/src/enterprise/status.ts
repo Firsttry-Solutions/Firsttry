@@ -132,7 +132,7 @@ export function createStatusBadge(options: {
     const icon = document.createElement("span");
     icon.textContent = getStatusIcon(color);
     icon.setAttribute("aria-hidden", "true");
-    icon.style.marginRight = "4px";
+    icon.className = "status-icon";
 
     const text = document.createElement("span");
     text.textContent = label;

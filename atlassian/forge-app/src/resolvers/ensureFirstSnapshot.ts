@@ -13,6 +13,7 @@
 
 import { storage } from '@forge/api';
 import { emitResolverErrorLog, classifyError } from "./backbone_error_handling";
+import { BACKEND_BUILD_SHA } from "../build/backend_build";
 
 export interface EnsureFirstSnapshotResponse {
   ok: boolean;
@@ -131,7 +132,7 @@ export async function ensureFirstSnapshot(input?: any): Promise<EnsureFirstSnaps
   const resolverName = "ensureFirstSnapshot";
   const traceIdStable = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
   const traceIdInstance = `${traceIdStable}-inst-${Math.random().toString(36).substring(2, 10)}`;
-  const backendBuildSha = process.env.BACKEND_BUILD_SHA || "unknown";
+  const backendBuildSha = BACKEND_BUILD_SHA; // Injected at build time, never "unknown"
   const uiReqId = input?.uiReqId || "no-req-id";
   
   try {

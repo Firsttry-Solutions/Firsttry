@@ -1,3 +1,103 @@
+YOU ARE WORKING IN: /workspaces/Firsttry
+
+GOAL (BACKBONE L0 ONLY):
+Find the exact reason why the Jira gadget UI shows:
+- Backend: (PING_FAILED | trace: UNSET_TRACE_ID)
+and why "Run Probe" cannot produce a nonce.
+Do NOT change any non-backbone features. Only produce deterministic proof.
+
+RULES:
+- No assumptions. Every conclusion must cite a captured artifact file path + line excerpts.
+- Every command output must be tee’d into /tmp evidence files.
+- Produce a final markdown report: /workspaces/Firsttry/BACKBONE_L0_ROOT_CAUSE_REPORT.md
+- If you need to change code, do it only after you have proven which layer is failing.
+- The final report must include: observed symptom, tested hypotheses, evidence, root cause, fix, verification proof.
+
+PHASE 0 — CAPTURE CURRENT PRODUCTION CONTEXT (NO CODE CHANGES)
+Run these and save outputs:
+
+1) Forge identity + environment:
+cd /workspaces/Firsttry/atlassian/forge-app
+forge whoami 2>&1 | tee /tmp/l0_whoami.txt
+forge settings list 2>&1 | tee /tmp/l0_settings_list.txt || true
+forge env list 2>&1 | tee /tmp/l0_env_list.txt
+
+2) Confirm production installation:
+forge install list --environment production 2>&1 | tee /tmp/l0_install_list_prod.txt
+
+3) Capture production logs (raw + grouped) for 20 minutes:
+timeout 180 forge logs --environment production --since 20m 2>&1 | tee /tmp/l0_logs_raw_20m.txt
+timeout 180 forge logs --environment production --since 20m --grouped 2>&1 | tee /tmp/l0_logs_grouped_20m.txt
+
+4) Show sizes + head/tail to detect CLI errors vs real logs:
+wc -c /tmp/l0_logs_raw_20m.txt /tmp/l0_logs_grouped_20m.txt | tee /tmp/l0_log_sizes.txt
+sed -n '1,80p' /tmp/l0_logs_raw_20m.txt | tee /tmp/l0_logs_raw_head.txt
+tail -80 /tmp/l0_logs_raw_20m.txt | tee /tmp/l0_logs_raw_tail.txt
+sed -n '1,80p' /tmp/l0_logs_grouped_20m.txt | tee /tmp/l0_logs_grouped_head.txt
+tail -80 /tmp/l0_logs_grouped_20m.txt | tee /tmp/l0_logs_grouped_tail.txt
+
+PHASE 1 — VERIFY WHICH RESOLVER IS ACTUALLY CALLED ON LOAD (STATIC PROOF)
+We must prove what the UI invokes.
+
+1) Find all invoke() calls in gadget UI source:
+cd /workspaces/Firsttry/atlassian/forge-app
+rg -n "invoke\\(" src/gadget-ui/src/main.ts src/gadget-ui/index.html 2>&1 | tee /tmp/l0_invoke_calls.txt
+
+2) Identify which resolver name is called first on load (e.g., ping/getBuildInfo).
+Extract the exact function names (strings inside invoke()) and list them in the report.
+
+3) Verify those resolver names exist in backend allowlist/dispatcher:
+rg -n "ALLOWED_RESOLVERS|allowed|dispatch|case|resolver" src/resolvers/gadget-handlers.ts 2>&1 | tee /tmp/l0_handlers_allowlist.txt
+rg -n "export.*resolver|export.*handler|run\\(" src/index.ts src/resolvers/*.ts 2>&1 | tee /tmp/l0_backend_exports.txt
+
+PHASE 2 — RUNTIME PROOF: DID THE BACKEND RUN AT ALL?
+We will use LOG_CANARY (already merged) to prove backend invocation.
+
+1) Search logs for LOG_CANARY:
+grep -F "LOG_CANARY" /tmp/l0_logs_raw_20m.txt | head -50 | tee /tmp/l0_canary_raw_hits.txt
+grep -F "LOG_CANARY" /tmp/l0_logs_grouped_20m.txt | head -50 | tee /tmp/l0_canary_grouped_hits.txt
+
+2) If canary is missing, search logs for any evidence the function ran:
+grep -E "getBuildInfo|PING_|PROBE_|RESOLVER_" /tmp/l0_logs_raw_20m.txt | head -80 | tee /tmp/l0_runtime_markers_raw.txt
+grep -E "getBuildInfo|PING_|PROBE_|RESOLVER_" /tmp/l0_logs_grouped_20m.txt | head -80 | tee /tmp/l0_runtime_markers_grouped.txt
+
+PHASE 3 — DETERMINE FAILURE LAYER (DECISION TREE, EVIDENCE-BASED)
+Using the above artifacts, classify exactly ONE root cause bucket:
+
+Bucket D: forge logs is not returning real runtime logs (CLI/auth/stream problem)
+Evidence: logs contain errors, no timestamps, no app markers, tiny size, etc.
+
+Bucket B: backend is not invoked on gadget load (UI not invoking, or wrong resolver name)
+Evidence: invoke() calls exist but point to non-existent resolver or not wired.
+
+Bucket E: backend invoked but immediately fails before handler enforcement (permission/bridge failure)
+Evidence: logs show function start but errors before RESOLVER_ENTER / before trace injection.
+
+Bucket F: backend invoked and handler runs, but ping/probe fails inside resolver logic
+Evidence: logs show RESOLVER_ENTER + RESOLVER_ERR with real trace_id.
+
+PHASE 4 — APPLY MINIMAL FIX ONLY AFTER ROOT CAUSE IS PROVEN
+Once a bucket is proven, implement only the minimal code/config fix for that bucket.
+Then redeploy production and re-run PHASE 0-2 to prove:
+- LOG_CANARY appears in logs after gadget reload
+- ping returns ok:true
+- probe returns nonce
+- forge logs grep finds nonce
+
+DEPLOY COMMANDS (ONLY AFTER FIX):
+cd /workspaces/Firsttry/atlassian/forge-app
+npm test
+npm run build:gadget
+forge deploy --environment production
+forge install --upgrade --environment production
+
+FINAL OUTPUT:
+Write /workspaces/Firsttry/BACKBONE_L0_ROOT_CAUSE_REPORT.md including:
+- Exact UI symptom (copied from footer)
+- Evidence list: every /tmp/*.txt file produced
+- Which bucket and why (with excerpts)
+- The minimal fix applied (file diffs)
+- Post-fix proof (new log grep outputs showing LOG_CANARY and successful ping/probe)
 # FORENSIC_CHECK_REPORT
 
 **Generated:** 20260117T163044Z  

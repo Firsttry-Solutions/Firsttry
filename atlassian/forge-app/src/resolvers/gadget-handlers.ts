@@ -27,6 +27,8 @@ import { refreshNow_resolver } from "./refreshNow";
 import { ping } from "./ping";
 import { ensureFirstSnapshot } from "./ensureFirstSnapshot";
 import { probe } from "./probe"; // FORENSIC_PROBE
+import { exportTrustSnapshot as exportTrustSnapshot_resolver } from "./audit_snapshot_export";
+import { BACKEND_BUILD_SHA } from "../build/backend_build";
 
 // ============================================================================
 // BACKBONE LAYER 0: Canonical correlation + trace enforcement functions
@@ -100,12 +102,12 @@ export function extractUiReqId(payload: any): string {
 
 /**
  * Create base meta structure for all responses
- * ui_req_id is now always a string (extracted and normalized by extractUiReqId)
+ * Uses build-time injected BACKEND_BUILD_SHA for deterministic backend identification
  */
 export function metaBase(ui_req_id: string): { ui_req_id: string; backend_build_sha: string; now_iso: string } {
   return {
     ui_req_id,
-    backend_build_sha: process.env.BACKEND_BUILD_SHA || "unknown",
+    backend_build_sha: BACKEND_BUILD_SHA,  // Injected at build time, never "unknown"
     now_iso: new Date().toISOString()
   };
 }
@@ -203,7 +205,7 @@ const ALLOWED_RESOLVERS: Record<string, (req: any) => Promise<any>> = {
   getBuildInfo: getBuildInfo_resolver,
   getSnapshotDebug: getSnapshotDebug_resolver,
   getStatusSnapshot: getStatusSnapshot_resolver,
-  exportSnap: exportSnap_resolver
+  exportTrustSnapshot: exportTrustSnapshot_resolver
 };
 
 /**
@@ -231,7 +233,7 @@ export async function handler(req: any) {
       marker: "RESOLVER_ENTER",
       resolver: resolverName,
       ui_req_id,
-      backend_build_sha: process.env.BACKEND_BUILD_SHA || "unknown",
+      backend_build_sha: BACKEND_BUILD_SHA,
       ts: new Date().toISOString()
     })
   );
@@ -254,8 +256,9 @@ export async function handler(req: any) {
         marker: "RESOLVER_ERR",
         resolver: resolverName,
         ui_req_id,
-        backend_build_sha: process.env.BACKEND_BUILD_SHA || "unknown",
+        backend_build_sha: BACKEND_BUILD_SHA,
         error_code: normalized.error.code,
+        message: normalized.error.message.substring(0, 200),  // Truncate to 200 chars for safety
         trace_id_stable: normalized.error.trace_id_stable,
         ts: new Date().toISOString()
       })
@@ -283,22 +286,28 @@ export async function handler(req: any) {
     // Normalize response: ensure trace_id_stable on errors, meta on all
     const normalized = ensureTraceOnError(result, resolverName, ui_req_id);
 
-    // Log success
-    console.log(
-      JSON.stringify({
-        marker: normalized.ok ? "RESOLVER_OK" : "RESOLVER_ERR",
-        resolver: resolverName,
-        ui_req_id,
-        backend_build_sha: process.env.BACKEND_BUILD_SHA || "unknown",
-        ...(normalized.ok ? {} : { error_code: normalized.error?.code, trace_id_stable: normalized.error?.trace_id_stable }),
-        ts: new Date().toISOString()
-      })
-    );
+    // Log success or error with complete details
+    const logObj: any = {
+      marker: normalized.ok ? "RESOLVER_OK" : "RESOLVER_ERR",
+      resolver: resolverName,
+      ui_req_id,
+      backend_build_sha: BACKEND_BUILD_SHA,
+      ts: new Date().toISOString()
+    };
+
+    if (!normalized.ok && normalized.error) {
+      logObj.error_code = normalized.error.code;
+      logObj.message = normalized.error.message.substring(0, 200);  // Truncate for safety
+      logObj.trace_id_stable = normalized.error.trace_id_stable;
+    }
+
+    console.log(JSON.stringify(logObj));
 
     return normalized;
   } catch (err) {
     // Resolver threw an exception
     const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack : '';
 
     const errorResponse = {
       ok: false,
@@ -311,18 +320,32 @@ export async function handler(req: any) {
     // Normalize (enforces trace_id_stable)
     const normalized = ensureTraceOnError(errorResponse, resolverName, ui_req_id);
 
+    // Log error marker with all details
     console.log(
       JSON.stringify({
         marker: "RESOLVER_ERR",
         resolver: resolverName,
         ui_req_id,
-        backend_build_sha: process.env.BACKEND_BUILD_SHA || "unknown",
+        backend_build_sha: BACKEND_BUILD_SHA,
         error_code: normalized.error.code,
+        message: normalized.error.message.substring(0, 200),  // Truncate for safety
         trace_id_stable: normalized.error.trace_id_stable,
-        exception_message: errorMsg,
         ts: new Date().toISOString()
       })
     );
+
+    // Log stack trace as separate line (max 20 lines)
+    if (errorStack) {
+      const stackLines = errorStack.split('\n').slice(0, 20);
+      console.log(
+        JSON.stringify({
+          marker: "STACK",
+          resolver: resolverName,
+          trace_id_stable: normalized.error.trace_id_stable,
+          stack: stackLines.join(' | ')
+        })
+      );
+    }
 
     return normalized;
   }

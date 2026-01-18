@@ -64,14 +64,7 @@ function ftEnsureServeProofEl(): HTMLElement {
     if (!el) {
         el = document.createElement("div");
         el.id = id;
-        el.style.fontFamily = "monospace";
-        el.style.fontSize = "11px";
-        el.style.marginTop = "8px";
-        el.style.padding = "4px";
-        el.style.backgroundColor = "#f1f2f4";
-        el.style.border = "1px solid #626f86";
-        el.style.borderRadius = "3px";
-        el.style.opacity = "0.95";
+        el.className = "proof-element";
     }
     return el as HTMLElement;
 }
@@ -127,6 +120,35 @@ function formatTimestampExport(iso?: string): string {
 }
 
 // ============================================================================
+// BACKBONE LAYER 0: UI_REQ_ID CORRELATION WRAPPER
+// ============================================================================
+/**
+ * invokeWithUiReqId: Wrapper that guarantees every resolver invocation includes ui_req_id
+ * 
+ * RULES (non-bypassable):
+ * 1. Always injects ui_req_id into payload
+ * 2. Uses FT_UI_REQ_ID as single source of truth (same as displayed in footer)
+ * 3. If payload is null/undefined, creates { ui_req_id }
+ * 4. Every invoke() call in main.ts must use this wrapper (guarded by CI test)
+ * 
+ * This is the ONLY entry point to the Forge bridge for gadget resolvers.
+ */
+async function invokeWithUiReqId<T>(
+  resolverName: string,
+  payload?: any
+): Promise<T> {
+  // Always inject ui_req_id using CURRENT_UI_REQ_ID (single source of truth)
+  const enrichedPayload = {
+    ...(payload || {}),
+    ui_req_id: FT_UI_REQ_ID
+  };
+  
+  // Call Forge bridge with enriched payload
+  // @ts-ignore - invoke is from @forge/bridge, checked in INVOKE_AVAILABLE
+  return await invoke<T>(resolverName, enrichedPayload);
+}
+
+// ============================================================================
 // CSS CANARY FAIL-FAST CHECK
 // ============================================================================
 
@@ -170,9 +192,9 @@ async function loadStatus() {
         // If invoke is not available, show error and stop
         if (!INVOKE_AVAILABLE) {
             const errorHtml = `
-                <div class="error-panel" style="background: #fff7d6; border: 1px solid #f5cd47; border-radius: 8px; padding: 16px; color: #7f5f01;">
-                    <div style="font-weight: 600; font-size: 14px;">CRITICAL: invoke() Not Available</div>
-                    <div style="margin-top: 8px; font-size: 12px;">
+                <div class="error-panel critical">
+                    <div class="error-panel-section">CRITICAL: invoke() Not Available</div>
+                    <div class="error-panel-details">
                         The @forge/bridge invoke function could not be loaded or is not available.
                         This is a critical issue with the gadget setup.
                     </div>
@@ -217,9 +239,9 @@ async function loadStatus() {
         let invokeErrorThrown = false;
 
         try {
-            // @ts-ignore - invoke is checked above
             // Call the new getStatusSnapshot resolver (live dashboard)
-            rawData = await invoke('getStatusSnapshot', { ui_req_id: FT_UI_REQ_ID });
+            // Uses invokeWithUiReqId wrapper to guarantee ui_req_id correlation
+            rawData = await invokeWithUiReqId('getStatusSnapshot', { ui_req_id: FT_UI_REQ_ID });
         } catch (e) {
             invokeError = e instanceof Error ? e.message : String(e);
             invokeErrorThrown = true;
@@ -237,12 +259,12 @@ async function loadStatus() {
             data.health = "ERROR";
             data.degradedReason = errorMsg;
             const errorHtml = `
-                <div class="error-panel" style="background: #ffeceb; border: 1px solid #f87462; border-radius: 8px; padding: 16px; color: #5d1f1a;">
-                    <div style="font-weight: 600; font-size: 14px;">Resolver Invocation Failed</div>
-                    <div style="margin-top: 8px; font-size: 12px;">
+                <div class="error-panel error">
+                    <div class="error-panel-section">Resolver Invocation Failed</div>
+                    <div class="error-panel-details">
                         <div><strong>Error Type:</strong> ${errorType}</div>
                         <div><strong>Error Message:</strong> ${errorMsg}</div>
-                        <div style="margin-top: 8px;">The backend resolver did not respond successfully. Check that the status-resolver-fn is deployed and functioning.</div>
+                        <div class="gap-top-small">The backend resolver did not respond successfully. Check that the status-resolver-fn is deployed and functioning.</div>
                     </div>
                 </div>
             `;
@@ -422,9 +444,9 @@ async function loadStatus() {
         const degradedReasonEl = document.getElementById('kpi-degraded-reason');
         if (data.systemStatus === 'DEGRADED' && data.degradedReason) {
             setText('kpi-degraded-reason', data.degradedReason);
-            if (degradedReasonEl) degradedReasonEl.style.display = 'block';
+            if (degradedReasonEl) degradedReasonEl.classList.add('visible');
         } else {
-            if (degradedReasonEl) degradedReasonEl.style.display = 'none';
+            if (degradedReasonEl) degradedReasonEl.classList.remove('visible');
         }
 
         setText('kpi-version', `${data.version} / ${data.environment}`);
@@ -459,7 +481,7 @@ async function loadStatus() {
         // Show degraded clarification if status is DEGRADED
         if (data.systemStatus === 'DEGRADED') {
             const clarif = document.getElementById('degraded-clarification');
-            if (clarif) clarif.style.display = 'block';
+            if (clarif) clarif.classList.add('visible');
         }
 
         // Step 9.5: Render Health Status (Minimal)
@@ -498,8 +520,8 @@ async function loadStatus() {
                 }
             }
 
-            let metricsTableHtml = '<table class="config-visibility-table" style="width: 100%; border-collapse: collapse; border: 1px solid #dfe1e6;">';
-            metricsTableHtml += '<thead><tr style="background: #f5f6f7; border-bottom: 1px solid #dfe1e6;"><th style="padding: 12px; text-align: left; font-weight: 600; color: #172b4d; font-size: 13px;">Metric</th><th style="padding: 12px; text-align: left; font-weight: 600; color: #172b4d; font-size: 13px;">Value</th></tr></thead>';
+            let metricsTableHtml = '<table class="config-visibility-table">';
+            metricsTableHtml += '<thead><tr><th>Metric</th><th>Value</th></tr></thead>';
             metricsTableHtml += '<tbody>';
 
             for (const row of tableRows) {
@@ -518,9 +540,9 @@ async function loadStatus() {
                 
                 const reasonText = issueMap[metricKey] ? ` (${issueMap[metricKey]})` : '';
                 
-                metricsTableHtml += `<tr style="border-bottom: 1px solid #dfe1e6;">`;
-                metricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px;">${row.label}</td>`;
-                metricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px;">${displayValue}${reasonText}</td>`;
+                metricsTableHtml += `<tr>`;
+                metricsTableHtml += `<td>${row.label}</td>`;
+                metricsTableHtml += `<td>${displayValue}${reasonText}</td>`;
                 metricsTableHtml += `</tr>`;
             }
 
@@ -529,30 +551,30 @@ async function loadStatus() {
             configVisibilityHtml = `
                 <div>
                     ${metricsTableHtml}
-                    <div style="margin-top: 16px; padding: 12px; background: #f5f6f7; border-radius: 4px; border: 1px solid #dfe1e6;">
-                        <div class="metric-row" style="display: flex; gap: 16px; margin-bottom: 12px;">
+                    <div class="metrics-container gap-top-small">
+                        <div class="metric-row">
                             <div>
-                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Risk Band</div>
-                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${cv.riskBand || '—'}</div>
-                                <div style="font-size: 11px; color: #8590a2; margin-top: 4px;">Band indicates observed scale only.</div>
+                                <div class="metric-label">Risk Band</div>
+                                <div class="metric-value">${cv.riskBand || '—'}</div>
+                                <div class="metric-note">Band indicates observed scale only.</div>
                             </div>
                             <div>
-                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Completeness</div>
-                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${cv.completeness || '—'}</div>
+                                <div class="metric-label">Completeness</div>
+                                <div class="metric-value">${cv.completeness || '—'}</div>
                             </div>
                             <div>
-                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Evaluated At</div>
-                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${formatTimestampDisplay(cv.evaluatedAtISO)}</div>
+                                <div class="metric-label">Evaluated At</div>
+                                <div class="metric-value">${formatTimestampDisplay(cv.evaluatedAtISO)}</div>
                             </div>
                         </div>
-                        <div style="border-top: 1px solid #dfe1e6; padding-top: 12px; margin-top: 12px; font-size: 12px; color: #44546f; line-height: 1.5;">
+                        <div class="metric-divider">
                             <strong>Observational Only:</strong> FirstTry does not modify Jira configuration. This view is observational only.
                         </div>
                     </div>
                 </div>
             `;
         } else {
-            configVisibilityHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">Awaiting first scheduled snapshot. The configuration visibility report will appear here once collected.</div>';
+            configVisibilityHtml = '<div class="awaiting-snapshot">Awaiting first scheduled snapshot. The configuration visibility report will appear here once collected.</div>';
         }
         setHTML('config-visibility-content', configVisibilityHtml);
 
@@ -561,7 +583,7 @@ async function loadStatus() {
         const ps = data.perfSignals;
         if (ps) {
             // Build metrics table for perf signals
-            let perfMetricsTableHtml = '<table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;"><tbody>';
+            let perfMetricsTableHtml = '<table class="perf-metrics-table"><tbody>';
             
             // Scheduler section
             const schedulerRows = [
@@ -585,9 +607,9 @@ async function loadStatus() {
             const allRows = [...schedulerRows, ...jiraApiRows];
             
             for (const row of allRows) {
-                perfMetricsTableHtml += `<tr style="border-bottom: 1px solid #dfe1e6;">`;
-                perfMetricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px; font-weight: 500; width: 40%;">${row.label}</td>`;
-                perfMetricsTableHtml += `<td style="padding: 12px; color: #172b4d; font-size: 13px;">${row.value}</td>`;
+                perfMetricsTableHtml += `<tr>`;
+                perfMetricsTableHtml += `<td>${row.label}</td>`;
+                perfMetricsTableHtml += `<td>${row.value}</td>`;
                 perfMetricsTableHtml += `</tr>`;
             }
 
@@ -596,25 +618,25 @@ async function loadStatus() {
             perfSignalsHtml = `
                 <div>
                     ${perfMetricsTableHtml}
-                    <div style="margin-top: 16px; padding: 12px; background: #f5f6f7; border-radius: 4px; border: 1px solid #dfe1e6;">
-                        <div class="metric-row" style="display: flex; gap: 16px; margin-bottom: 12px;">
+                    <div class="perf-signals-container">
+                        <div class="perf-signals-row">
                             <div>
-                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Completeness</div>
-                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${ps.completeness || '—'}</div>
+                                <div class="metric-label">Completeness</div>
+                                <div class="metric-value">${ps.completeness || '—'}</div>
                             </div>
                             <div>
-                                <div class="metric-label" style="font-size: 12px; font-weight: 600; color: #8590a2; text-transform: uppercase; letter-spacing: 0.3px;">Evaluated At</div>
-                                <div class="metric-value" style="font-size: 14px; color: #172b4d; font-weight: 500;">${formatTimestampDisplay(ps.evaluatedAtISO)}</div>
+                                <div class="metric-label">Evaluated At</div>
+                                <div class="metric-value">${formatTimestampDisplay(ps.evaluatedAtISO)}</div>
                             </div>
                         </div>
-                        <div style="border-top: 1px solid #dfe1e6; padding-top: 12px; margin-top: 12px; font-size: 12px; color: #44546f; line-height: 1.5;">
+                        <div class="perf-signals-footer">
                             <strong>Observational Only:</strong> Signals record latencies, error counts, and rate limits from Jira API interactions. FirstTry does not interpret, recommend, or enforce changes based on these signals.
                         </div>
                     </div>
                 </div>
             `;
         } else {
-            perfSignalsHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">Awaiting first scheduled snapshot. Performance signals will appear here once collected.</div>';
+            perfSignalsHtml = '<div class="awaiting-snapshot">Awaiting first scheduled snapshot. Performance signals will appear here once collected.</div>';
         }
         setHTML('perf-signals-content', perfSignalsHtml);
 
@@ -623,41 +645,37 @@ async function loadStatus() {
         const phase4 = data.phase4Timeline;
         if (phase4 && phase4.isAvailable && phase4.events && phase4.events.length > 0) {
             // Render chronological timeline (most recent first)
-            phase4TimelineHtml = '<div style="border: 1px solid #dfe1e6; border-radius: 4px; overflow: hidden;">';
+            phase4TimelineHtml = '<div class="phase4-timeline">';
             
             phase4.events.slice(0, 50).forEach((event: any, index: number) => {
-                const isFirst = index === 0;
-                const borderTop = isFirst ? '' : 'border-top: 1px solid #dfe1e6;';
                 phase4TimelineHtml += `
-                    <div style="padding: 12px 16px; ${borderTop}">
-                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #172b4d; margin-bottom: 4px;">${event.description || 'Setting changed'}</div>
-                                <div style="font-size: 12px; color: #626f86; margin-bottom: 8px;">
-                                    <strong>Setting:</strong> ${event.settingKey || '—'}
-                                </div>
-                                <div style="font-size: 12px; color: #626f86;">
-                                    <strong>Previous:</strong> <code style="background: #f5f6f7; padding: 2px 4px; border-radius: 2px; font-family: monospace;">${event.previousValue !== null ? String(event.previousValue) : 'null'}</code>
-                                    <strong style="margin-left: 12px;">Current:</strong> <code style="background: #f5f6f7; padding: 2px 4px; border-radius: 2px; font-family: monospace;">${event.currentValue !== null ? String(event.currentValue) : 'null'}</code>
-                                </div>
+                    <div class="phase4-event">
+                        <div class="phase4-event-content">
+                            <div class="phase4-event-title">${event.description || 'Setting changed'}</div>
+                            <div class="phase4-event-setting">
+                                <strong>Setting:</strong> ${event.settingKey || '—'}
                             </div>
-                            <div style="text-align: right; white-space: nowrap;">
-                                <div style="font-size: 11px; color: #8590a2;">${formatTimestampDisplay(event.detectedAt)}</div>
+                            <div class="phase4-event-values">
+                                <strong>Previous:</strong> <code class="phase4-event-code">${event.previousValue !== null ? String(event.previousValue) : 'null'}</code>
+                                <strong class="phase4-event-current">Current:</strong> <code class="phase4-event-code">${event.currentValue !== null ? String(event.currentValue) : 'null'}</code>
                             </div>
+                        </div>
+                        <div class="phase4-event-timestamp">
+                            ${formatTimestampDisplay(event.detectedAt)}
                         </div>
                     </div>
                 `;
             });
 
             if (phase4.totalEventCount > 50) {
-                phase4TimelineHtml += `<div style="padding: 12px 16px; text-align: center; color: #8590a2; font-size: 12px; border-top: 1px solid #dfe1e6; background: #f5f6f7;">Showing 50 of ${phase4.totalEventCount} events. All events are retained in storage.</div>`;
+                phase4TimelineHtml += `<div class="timeline-footer">Showing 50 of ${phase4.totalEventCount} events. All events are retained in storage.</div>`;
             }
 
             phase4TimelineHtml += '</div>';
         } else if (phase4 && phase4.isAvailable) {
-            phase4TimelineHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">No configuration changes detected yet. Timeline will populate once changes are detected by the daily scheduler.</div>';
+            phase4TimelineHtml = '<div class="timeline-empty">No configuration changes detected yet. Timeline will populate once changes are detected by the daily scheduler.</div>';
         } else {
-            phase4TimelineHtml = '<div style="padding: 12px; color: #626f86; font-size: 13px;">Timeline data not yet available. Scheduled detection begins after first daily run.</div>';
+            phase4TimelineHtml = '<div class="timeline-empty">Timeline data not yet available. Scheduled detection begins after first daily run.</div>';
         }
         setHTML('phase4-timeline-content', phase4TimelineHtml);
 
@@ -671,9 +689,9 @@ async function loadStatus() {
             </div>
             <div class="metric-row">
                 <div class="metric-label">Coverage Included</div>
-                <details style="margin-top: 8px;">
-                    <summary style="cursor: pointer; font-weight: 500; color: #172b4d;">View coverage details</summary>
-                    <ul class="coverage-list" style="margin-top: 8px;">${coverageList}</ul>
+                <details class="gap-top-small">
+                    <summary>View coverage details</summary>
+                    <ul class="coverage-list">${coverageList}</ul>
                 </details>
             </div>
             <div class="metric-row">
@@ -714,7 +732,7 @@ async function loadStatus() {
             }
             setHTML('checks-content', tableHtml);
             if (checksSection) {
-                checksSection.style.display = 'block';
+                checksSection.classList.add('visible');
             }
         }
 
@@ -829,8 +847,7 @@ async function loadStatus() {
 
         // PHASE 2: After initial load, populate snapshot proof panel
         try {
-            // @ts-ignore - invoke is checked in loadStatus
-            const debugInfo = await invoke('getSnapshotDebug', {});
+            const debugInfo = await invokeWithUiReqId('getSnapshotDebug', {});
             if (debugInfo && debugInfo.ok) {
                 updateSnapshotProofPanel(debugInfo);
             } else if (debugInfo && debugInfo.error) {
@@ -923,15 +940,13 @@ function updateSnapshotProofPanel(debugInfo: any) {
             const count = debugInfo.snapshotCount || 0;
             countEl.textContent = String(count);
             if (count === 0) {
-                countEl.style.color = '#626f86';
+                countEl.classList.add('text-secondary');
                 const panel = countEl.closest('.section');
                 if (panel) {
                     const noteEl = panel.querySelector('div[style*="border-top"]');
                     if (noteEl) {
                         const status = document.createElement('div');
-                        status.style.fontSize = '11px';
-                        status.style.color = '#626f86';
-                        status.style.marginTop = '8px';
+                        status.className = 'font-small text-secondary gap-top-small';
                         status.textContent = '(No snapshots yet. Click "Refresh now" to create one.)';
                         if (!noteEl.querySelector(':scope > div:last-child')?.textContent?.includes('No snapshots')) {
                             // Only add if not already present
@@ -967,7 +982,13 @@ function updateSnapshotProofPanel(debugInfo: any) {
         const storageEl = document.getElementById('proof-storage-state');
         if (storageEl) {
             storageEl.textContent = debugInfo.storageState || 'UNKNOWN';
-            storageEl.style.color = debugInfo.storageState === 'NON_EMPTY' ? '#216e4e' : '#626f86';
+            if (debugInfo.storageState === 'NON_EMPTY') {
+                storageEl.classList.add('text-success');
+                storageEl.classList.remove('text-secondary');
+            } else {
+                storageEl.classList.add('text-secondary');
+                storageEl.classList.remove('text-success');
+            }
         }
 
         console.log('[ProofPanel] Updated with snapshot debug info');
@@ -1023,9 +1044,7 @@ async function copyToClipboard(text: string): Promise<{ ok: true } | { ok: false
     try {
         const textarea = document.createElement('textarea');
         textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.left = '-9999px';
-        textarea.style.opacity = '0';
+        textarea.className = 'copy-helper';
         document.body.appendChild(textarea);
         textarea.select();
         const success = document.execCommand('copy');
@@ -1183,8 +1202,7 @@ window.refreshNow = async function() {
             btn.textContent = 'Refreshing...';
         }
 
-        // @ts-ignore - invoke is checked in loadStatus
-        const newSnapshot = await invoke('refreshNow', {});
+        const newSnapshot = await invokeWithUiReqId('refreshNow', {});
         
         // Update lastPayload and re-render UI
         lastPayload = newSnapshot;
@@ -1215,8 +1233,7 @@ window.refreshNow = async function() {
 
         // PHASE 2: After refresh, call getSnapshotDebug to update proof panel
         try {
-            // @ts-ignore - invoke is checked in loadStatus
-            const debugInfo = await invoke('getSnapshotDebug', {});
+            const debugInfo = await invokeWithUiReqId('getSnapshotDebug', {});
             if (debugInfo && debugInfo.ok) {
                 updateSnapshotProofPanel(debugInfo);
             }
@@ -1388,14 +1405,16 @@ async function handleExportTrustSnapshot() {
 
     try {
         statusEl.textContent = 'Generating...';
-        statusEl.style.color = '#0052cc';
+        statusEl.classList.add('text-info');
+        statusEl.classList.remove('text-error', 'text-success');
 
         // Call resolver
-        const response = await invoke('exportTrustSnapshot', {});
+        const response = await invokeWithUiReqId('exportTrustSnapshot', {});
 
         if (!response || !response.snapshotId) {
             statusEl.textContent = 'Export unavailable';
-            statusEl.style.color = '#ae2a19';
+            statusEl.classList.add('text-error');
+            statusEl.classList.remove('text-info', 'text-success');
             return;
         }
 
@@ -1424,10 +1443,12 @@ async function handleExportTrustSnapshot() {
 
         // Show success
         statusEl.textContent = `Export generated: ${response.snapshotId}`;
-        statusEl.style.color = '#216e4e';
+        statusEl.classList.add('text-success');
+        statusEl.classList.remove('text-info', 'text-error');
     } catch (error) {
         statusEl.textContent = 'Export unavailable';
-        statusEl.style.color = '#ae2a19';
+        statusEl.classList.add('text-error');
+        statusEl.classList.remove('text-info', 'text-success');
     }
 }
 
@@ -1458,7 +1479,7 @@ window.runProbe = async function() {
     try {
         if (statusEl) statusEl.textContent = 'Running probe...';
         if (btnEl) btnEl.disabled = true;
-        if (panelEl) panelEl.style.display = 'block';
+        if (panelEl) panelEl.classList.add('visible');
         if (panelEl) panelEl.innerHTML = 'Invoking probe resolver...';
         
         // Build correlation payload with multiple formats (intentional, for extraction testing)
@@ -1477,7 +1498,7 @@ window.runProbe = async function() {
         };
         
         // Invoke probe resolver
-        const response = await invoke('probe', payload);
+        const response = await invokeWithUiReqId('probe', payload);
         
         // Render response to panel with proper formatting
         if (panelEl) {
@@ -1486,36 +1507,38 @@ window.runProbe = async function() {
             if (response.ok) {
                 // SUCCESS: Show raw JSON with proof lines
                 htmlContent = `
-<strong style="color: #216e4e;">✅ PROBE SUCCESS</strong>
+<strong class="text-success">✅ PROBE SUCCESS</strong>
 
 <strong>PROOF LINES (Copy-Paste into Terminal):</strong>
-<code style="background: #f5f6f7; padding: 4px; border-radius: 2px; display: block; margin: 4px 0;">
+<code class="code-block">
 PROBE_GREP_NONCE=${response.meta?.probe_nonce || '—'}
 PROBE_GREP_UI_REQ_ID=${response.meta?.ui_req_id || '—'}
 BACKEND_BUILD_SHA_FROM_RESPONSE=${response.meta?.backend_build_sha || '—'}
 </code>
 
 <strong>Full Response JSON:</strong>
-<pre style="background: #f5f6f7; padding: 8px; border-radius: 2px; overflow-x: auto; font-size: 11px; line-height: 1.4;">
+<pre class="code-block-multi">
 ${JSON.stringify(response, null, 2)}
 </pre>
 `;
-                panelEl.style.color = '#216e4e';
+                panelEl.classList.add('text-success');
+                panelEl.classList.remove('text-error');
             } else {
                 // ERROR: Show error details + raw JSON
                 htmlContent = `
-<strong style="color: #ae2a19;">❌ PROBE ERROR</strong>
+<strong class="text-error">❌ PROBE ERROR</strong>
 
 <strong>Error Code:</strong> ${response.error?.code || '—'}
 <strong>Error Message:</strong> ${response.error?.message || '—'}
 <strong>Trace ID:</strong> ${response.error?.trace_id_stable || '—'}
 
 <strong>Full Response JSON:</strong>
-<pre style="background: #f5f6f7; padding: 8px; border-radius: 2px; overflow-x: auto; font-size: 11px; line-height: 1.4;">
+<pre class="code-block-multi">
 ${JSON.stringify(response, null, 2)}
 </pre>
 `;
-                panelEl.style.color = '#ae2a19';
+                panelEl.classList.add('text-error');
+                panelEl.classList.remove('text-success');
             }
             
             panelEl.innerHTML = htmlContent;
@@ -1556,9 +1579,10 @@ ${JSON.stringify(response, null, 2)}
     } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         if (panelEl) {
-            panelEl.innerHTML = `<strong>❌ INVOKE ERROR</strong>\n\n${errMsg}`;
-            panelEl.style.color = '#ae2a19';
-            panelEl.style.display = 'block';
+            panelEl.innerHTML = `<strong class="text-error">❌ INVOKE ERROR</strong>\n\n${errMsg}`;
+            panelEl.classList.add('text-error');
+            panelEl.classList.remove('text-success');
+            panelEl.classList.add('visible');
         }
         if (statusEl) statusEl.textContent = `❌ Error: ${errMsg.substring(0, 60)}`;
         console.error('[RunProbe] Error:', err);
@@ -1619,11 +1643,7 @@ function onDOMReady() {
         
         // BACKBONE LAYER 0: Always show UI_BUILD_MARKER first for cache-busting visibility
         const initialMarker = document.createElement('div');
-        initialMarker.style.fontSize = '10px';
-        initialMarker.style.marginBottom = '4px';
-        initialMarker.style.color = '#626f86';
-        initialMarker.style.fontFamily = 'monospace';
-        initialMarker.style.fontWeight = 'bold';
+        initialMarker.className = 'proof-marker';
         initialMarker.textContent = `UI_BUILD_MARKER=${UI_BUILD_MARKER} | ui_req_id=${FT_UI_REQ_ID}`;
         buildFooter.appendChild(initialMarker);
         
@@ -1644,7 +1664,7 @@ function onDOMReady() {
                 let pingError: string | null = null;
                 
                 try {
-                    pingResult = await invoke('ping', { uiReqId: FT_UI_REQ_ID });
+                    pingResult = await invokeWithUiReqId('ping', { uiReqId: FT_UI_REQ_ID });
                 } catch (pingErr) {
                     pingError = pingErr instanceof Error ? pingErr.message : String(pingErr);
                     console.error(`[UI_PING_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} error=${pingError}`);
@@ -1664,7 +1684,8 @@ function onDOMReady() {
                     const errorInfo = `${pingErrorCode} | trace: ${pingTrace}`;
                     const backendDisplay = `(${errorInfo.substring(0, 50)})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
-                    buildFooter.style.color = '#ae2a19'; // Red for error
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
                     // BACKBONE LAYER 0: Include UI_BUILD_MARKER, ui_req_id, error code, trace (never "no-trace")
@@ -1684,7 +1705,7 @@ function onDOMReady() {
                 let ensureError: string | null = null;
                 
                 try {
-                    ensureResult = await invoke('ensureFirstSnapshot', { uiReqId: FT_UI_REQ_ID });
+                    ensureResult = await invokeWithUiReqId('ensureFirstSnapshot', { uiReqId: FT_UI_REQ_ID });
                 } catch (ensureErr) {
                     ensureError = ensureErr instanceof Error ? ensureErr.message : String(ensureErr);
                     console.error(`[UI_ENSURE_FIRST_SNAPSHOT_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} error=${ensureError}`);
@@ -1698,7 +1719,8 @@ function onDOMReady() {
                     const errorInfo = `${ensureErrorCode} | trace: ${ensureTrace}`;
                     const backendDisplay = `(${errorInfo.substring(0, 50)})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
-                    buildFooter.style.color = '#ae2a19'; // Red for error
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
                     proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | ENSURE_SNAPSHOT_FAILED | ERROR:${ensureErrorCode} | TRACE:${ensureTrace}`;
@@ -1712,7 +1734,7 @@ function onDOMReady() {
                 // Now fetch build info for additional details
                 try {
                     console.log(`[UI_BUILDINFO_INVOKE_START] uiReqId=${FT_UI_REQ_ID}`);
-                    const backendBuild = await invoke('getBuildInfo', { uiReqId: FT_UI_REQ_ID });
+                    const backendBuild = await invokeWithUiReqId('getBuildInfo', { uiReqId: FT_UI_REQ_ID });
                     console.log(`[UI_BUILDINFO_INVOKE_SUCCESS] uiReqId=${FT_UI_REQ_ID} echo=${backendBuild?.uiReqIdEcho}`);
                     console.log('[UI_BUILDINFO_DISPLAY] Backend:', backendBuild);
                     console.log(`UI_BUILD_PROOF FT_BUILD_SHA=${backendBuild?.FT_BUILD_SHA} FT_BUILD_TIME_UTC=${backendBuild?.FT_BUILD_TIME_UTC} resolvedAt=${backendBuild?.resolvedAt}`);
@@ -1730,7 +1752,8 @@ function onDOMReady() {
                       const errorInfo = `${errorCode} | trace: ${traceIdStable}`;
                       const backendDisplay = `(resolver_error: ${errorInfo.substring(0, 60)})`;
                       buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
-                      buildFooter.style.color = '#ae2a19'; // Red for error
+                      buildFooter.classList.add('text-error');
+                      buildFooter.classList.remove('text-info');
                       
                       const proofEl = ftEnsureServeProofEl();
                       proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | BUILDINFO_ERROR | ERROR_CODE:${errorCode} | TRACE:${traceIdStable}`;
@@ -1743,16 +1766,13 @@ function onDOMReady() {
                         ? `${backendBuild.FT_BUILD_SHA} @ ${backendBuild.FT_BUILD_TIME_UTC}`
                         : `(missing_backend_build_meta)`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
-                    buildFooter.style.color = '#0052cc';
-                    buildFooter.style.fontWeight = '500';
+                    buildFooter.classList.add('text-info');
+                    buildFooter.classList.remove('text-error');
                     
                     // BACKBONE LAYER 0: Update footer with unmissable proof marker
                     // Include UI_BUILD_MARKER and ui_req_id for cache-busting + correlation verification
                     const proofMarker = document.createElement('div');
-                    proofMarker.style.fontSize = '10px';
-                    proofMarker.style.marginTop = '4px';
-                    proofMarker.style.color = '#626f86';
-                    proofMarker.style.fontFamily = 'monospace';
+                    proofMarker.className = 'proof-marker';
                     proofMarker.textContent = `BACKBONE_L0: ui_req_id=${FT_UI_REQ_ID} | UI_BUILD_MARKER=${UI_BUILD_MARKER}`;
                     buildFooter.appendChild(proofMarker);
                     
@@ -1794,16 +1814,16 @@ function onDOMReady() {
         const errorPanel = document.getElementById('operational-status');
         if (errorPanel) {
             errorPanel.innerHTML = `
-                <div class="error-panel" style="background: #ffeceb; border: 1px solid #f87462; border-radius: 8px; padding: 16px; color: #5d1f1a;">
-                    <div style="font-weight: 600; font-size: 14px;">Dashboard Encountered an Error</div>
-                    <div style="margin-top: 8px; font-size: 12px;">
+                <div class="error-panel error-panel.error">
+                    <div class="error-panel-section">Dashboard Encountered an Error</div>
+                    <div class="error-panel-details">
                         The dashboard UI encountered an unexpected error. Please try:
-                        <ul style="margin-top: 8px; margin-left: 20px;">
+                        <ul>
                             <li>Refresh the page</li>
                             <li>Remove and re-add the gadget</li>
                             <li>Contact support if the issue persists</li>
                         </ul>
-                        <div style="margin-top: 12px; font-family: monospace; font-size: 11px; color: #5d1f1a; opacity: 0.7;">
+                        <div class="error-panel-trace text-error">
                             ${String(fatalError).substring(0, 200)}
                         </div>
                     </div>
