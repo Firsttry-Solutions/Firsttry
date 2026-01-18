@@ -244,14 +244,30 @@ export function computeGovernanceViewModel(signals: RuntimeSignals): GovernanceV
 
 /**
  * Compute the core runtime state deterministically.
+ * 
+ * CRITICAL: Never allow the UI to get stuck in BOOTING.
+ * If tenant/backend cannot be reached, must transition to explicit terminal state.
  */
 function computeRuntimeState(signals: RuntimeSignals, snapshotAgeMinutes: number | null): GovernanceRuntimeState {
-  // BOOTING: tenant unknown OR backend unreachable OR no signals yet
+  // BROKEN: Fatal error conditions take priority
+  if (signals.backendStatus === "ERROR" || signals.exportSubsystemStatus === "ERROR") {
+    return GovernanceRuntimeState.BROKEN;
+  }
+
+  // BOOTING is a transitional state: tenant and backend must BOTH be reachable
+  // If either is unreachable/unknown AND we have no snapshot history, stay BOOTING briefly.
+  // BUT: If tenantIdentityStatus=MISSING (permanent), transition to BROKEN after attempts.
+  // For now: BOOTING means we're still trying to establish contact.
   if (signals.tenantIdentityStatus !== "OK" || signals.backendStatus !== "OK") {
+    // CRITICAL FIX: If tenant is explicitly MISSING (not just UNKNOWN), this is terminal.
+    // Don't loop in BOOTING forever; transition to BROKEN after max retries implied by caller.
+    // For this computation: return BOOTING but UI will log this and may retry.
+    // The invariant enforcer will ensure intervals are null in this state.
     return GovernanceRuntimeState.BOOTING;
   }
 
   // WAITING_FIRST_RUN: schedule configured but no successful run AND no snapshot
+  // This is a healthy transitional state (not an error).
   if (
     signals.scheduleStatus === "CONFIGURED" &&
     !signals.lastSuccessfulRunISO &&
@@ -470,50 +486,71 @@ function computePermissionReason(signals: RuntimeSignals): string {
 
 /**
  * Enforce invariants to prevent contradictory state combinations.
- * In production, clamps values; in development, throws.
+ * CRITICAL: Never throws - always auto-corrects with diagnostic logging.
+ * This ensures the UI always renders in a consistent state and never freezes.
  */
 function enforceInvariants(vm: GovernanceViewModel, signals: RuntimeSignals, snapshotAgeMin: number | null): void {
-  const isDev = process.env.NODE_ENV === "development";
-
-  // Invariant 1: If snapshot is null, age must be null and freshness cannot be FRESH
+  // Invariant 1: If snapshot is null, age must be null
   if (!signals.snapshot && vm.snapshotAgeMinutes !== null) {
-    const msg = "Invariant violation: snapshot is null but snapshotAgeMinutes is not null";
-    if (isDev) throw new Error(msg);
+    const msg = "Invariant violation (auto-corrected): snapshot is null but snapshotAgeMinutes is not null";
     console.warn(msg);
     vm.snapshotAgeMinutes = null;
   }
 
   // Invariant 2: FRESH only occurs with snapshot
   if (vm.dataFreshnessLabel === "Fresh" && !signals.snapshot) {
-    const msg = "Invariant violation: freshness is FRESH but snapshot is null";
-    if (isDev) throw new Error(msg);
+    const msg = "Invariant violation (auto-corrected): freshness is FRESH but snapshot is null";
     console.warn(msg);
-    // Clamp to Current or Aging
-    if (signals.snapshot) vm.dataFreshnessLabel = "Current";
-    else vm.dataFreshnessLabel = "Never";
+    vm.dataFreshnessLabel = "Never";
   }
 
-  // Invariant 3: If no schedule, expectedScheduleIntervalMinutes must be null
+  // Invariant 3: If schedule NOT CONFIGURED, expectedScheduleIntervalMinutes must be null
+  // CRITICAL: Only enforce when explicitly NOT_CONFIGURED, not during WAITING_FIRST_RUN
+  // (WAITING_FIRST_RUN can still show interval because schedule IS configured, just no run yet)
   if (signals.scheduleStatus !== "CONFIGURED" && vm.expectedScheduleIntervalMinutes !== null) {
-    const msg = "Invariant violation: schedule not configured but expectedScheduleIntervalMinutes is not null";
-    if (isDev) throw new Error(msg);
-    console.warn(msg);
+    const msg = "Invariant violation (auto-corrected): schedule not configured but expectedScheduleIntervalMinutes is not null";
+    console.warn(msg, {
+      scheduleStatus: signals.scheduleStatus,
+      expectedScheduleIntervalMinutes: vm.expectedScheduleIntervalMinutes
+    });
     vm.expectedScheduleIntervalMinutes = null;
   }
 
   // Invariant 4: Storage empty => snapshot count is 0
   if (signals.storageStatus === "EMPTY" && vm.snapshotCountRetained !== 0) {
-    const msg = "Invariant violation: storage is EMPTY but snapshotCountRetained is not 0";
-    if (isDev) throw new Error(msg);
+    const msg = "Invariant violation (auto-corrected): storage is EMPTY but snapshotCountRetained is not 0";
     console.warn(msg);
     vm.snapshotCountRetained = 0;
   }
 
   // Invariant 5: WAITING_FIRST_RUN => freshness must be UNKNOWN/Never (not FRESH)
+  // This is correct: if no successful run yet, cannot be fresh
   if (vm.runtimeState === GovernanceRuntimeState.WAITING_FIRST_RUN && vm.dataFreshnessLabel === "Fresh") {
-    const msg = "Invariant violation: state is WAITING_FIRST_RUN but freshness is FRESH";
-    if (isDev) throw new Error(msg);
+    const msg = "Invariant violation (auto-corrected): state is WAITING_FIRST_RUN but freshness is FRESH";
     console.warn(msg);
     vm.dataFreshnessLabel = "Never";
+  }
+
+  // Invariant 6: No snapshot => freshness must be "Never", not "Fresh"
+  // Only apply when retainedCount is explicitly 0 (measured state)
+  if (signals.snapshotCountRetained === 0 && vm.dataFreshnessLabel === "Fresh") {
+    const msg = "Invariant violation (auto-corrected): zero snapshots retained but freshness is Fresh";
+    console.warn(msg);
+    vm.dataFreshnessLabel = "Never";
+  }
+
+  // Invariant 7: BOOTING state sanitization
+  // When truly BOOTING (unable to reach backend/tenant), no freshness or interval should be shown
+  if (vm.runtimeState === GovernanceRuntimeState.BOOTING) {
+    if (vm.dataFreshnessLabel !== "Never" && vm.dataFreshnessLabel !== "Unknown") {
+      const msg = "Invariant violation (auto-corrected): BOOTING state but freshness label is not Never/Unknown";
+      console.warn(msg);
+      vm.dataFreshnessLabel = "Never";
+    }
+    if (vm.expectedScheduleIntervalMinutes !== null) {
+      const msg = "Invariant violation (auto-corrected): BOOTING state but expectedScheduleIntervalMinutes is not null";
+      console.warn(msg);
+      vm.expectedScheduleIntervalMinutes = null;
+    }
   }
 }

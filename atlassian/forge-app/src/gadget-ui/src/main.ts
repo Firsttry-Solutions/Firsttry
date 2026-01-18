@@ -53,6 +53,39 @@ const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
 // UI_REQ_ID: Unique per page load. Used to correlate UI invoke calls with resolver logs.
 const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).substring(0, 8)}`;
 
+// ============================================================================
+// UI BOOT PROOF LOGGING (CACHE-BUST VISIBILITY)
+// ============================================================================
+// Log to console immediately on module load to prove:
+// 1. Which exact script URL was loaded (for cache-bust verification)
+// 2. The UI build SHA and time
+// 3. Unique request ID for correlation
+(function captureBootProof() {
+  try {
+    // Collect all script URLs currently loaded in document
+    const scriptUrls: string[] = [];
+    for (const script of document.scripts) {
+      if (script.src) {
+        scriptUrls.push(script.src);
+      }
+    }
+    
+    // Log single-line proof that includes SHA, time, and loaded script(s)
+    // Format: [UI_BOOT_PROOF] ui_build=<SHA> time=<UTC> scripts=<urls>
+    console.log(
+      `[UI_BOOT_PROOF] ui_build=${UI_BUILD_SHA} time=${UI_BUILD_TIME_UTC} ` +
+      `scripts=[${scriptUrls.join('; ')}] uiReqId=${FT_UI_REQ_ID}`
+    );
+    
+    // Also log individual script URLs for easy inspection in browser DevTools
+    for (let i = 0; i < scriptUrls.length; i++) {
+      console.log(`[UI_BOOT_SCRIPT_${i}] ${scriptUrls[i]}`);
+    }
+  } catch (err) {
+    console.error('[UI_BOOT_PROOF] Error capturing boot proof:', err);
+  }
+})();
+
 // Track last payload for export functions
 let lastPayload: any = null;
 
@@ -1961,13 +1994,27 @@ function onDOMReady() {
     if (buildFooter) {
         const uiBuild = getBuildIdentifier();
         
+        // Collect loaded script URLs for cache-bust verification in footer
+        const scriptUrls: string[] = [];
+        for (const script of document.scripts) {
+            if (script.src) {
+                scriptUrls.push(script.src);
+            }
+        }
+        
         // BACKBONE LAYER 0: Always show UI_BUILD_MARKER first for cache-busting visibility
+        // Include SHA, time, and loaded script URL(s) for immediate cache-bust verification
         const initialMarker = document.createElement('div');
         initialMarker.className = 'proof-marker';
-        initialMarker.textContent = `UI_BUILD_MARKER=${UI_BUILD_MARKER} | ui_req_id=${FT_UI_REQ_ID}`;
+        initialMarker.innerHTML = `
+            <strong>UI Build Info:</strong><br/>
+            SHA: <code>${UI_BUILD_SHA}</code> | Time: <code>${UI_BUILD_TIME_UTC}</code><br/>
+            Loaded Scripts: <code>${scriptUrls.join('; ')}</code><br/>
+            UI Request ID: <code>${FT_UI_REQ_ID}</code>
+        `;
         buildFooter.appendChild(initialMarker);
         
-        // Clear the initial text and add it as a proper element
+        // Clear and rebuild footer with fresh marker
         buildFooter.innerHTML = '';
         buildFooter.appendChild(initialMarker);
         
@@ -2013,11 +2060,11 @@ function onDOMReady() {
                     // CRITICAL: Never show "UNKNOWN" as "no-trace" or empty - keep the string for correlation
                     const pingTrace = normalized.traceId;
                     
-                    // Log full error details
-                    console.error(`[UI_PING_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} code=${normalized.code} trace=${pingTrace}`, {
-                        normalized,
-                        pingResult
-                    });
+                    // Log full error details - ALWAYS print raw error for diagnostic visibility
+                    console.error(`[UI_PING_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} code=${normalized.code} trace=${pingTrace}`);
+                    console.error('[UI_PING_INVOKE_FAILED] Full normalized error:', normalized);
+                    console.error('[UI_PING_INVOKE_FAILED] Raw ping response:', pingResult);
+                    console.error('[UI_PING_INVOKE_FAILED] Raw error details:', safeJsonStringify(pingResult?.error || pingError));
                     
                     const errorInfo = `${normalized.code} | trace: ${pingTrace}`;
                     const backendDisplay = `(${errorInfo.substring(0, 50)})`;

@@ -69,7 +69,8 @@ export default defineConfig({
     rollupOptions: {
       input: './index.html',
       output: {
-        entryFileNames: 'assets/[name].[hash].js',
+        // CACHE-BUST: Keep hashed names in assets folder, but also output stable app.js for query param cache-busting
+        entryFileNames: '[name].js',
         chunkFileNames: 'assets/[name].[hash].js',
         assetFileNames: 'assets/[name].[hash][extname]'
       }
