@@ -111,14 +111,6 @@ export function validateBackendBuildSha(): boolean {
   // Allow 7-40 hex chars (short SHA or full SHA)
   const hexRegex = /^[0-9a-f]{7,40}$/;
 
-  if (BACKEND_BUILD_SHA === "__BACKEND_BUILD_SHA__") {
-    throw new Error(
-      "BACKEND_BUILD_SHA_NOT_INJECTED: Placeholder not replaced by build script. " +
-        "Did you run 'npm run build:gadget' or 'node tools/build_meta.mjs'? " +
-        "The injected SHA is required for deterministic build identification."
-    );
-  }
-
   if (!hexRegex.test(BACKEND_BUILD_SHA)) {
     throw new Error(
       \`BACKEND_BUILD_SHA_INVALID_FORMAT: "\${BACKEND_BUILD_SHA}" does not match /^[0-9a-f]{7,40}$/ \` +
