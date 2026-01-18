@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 /**
- * POST-BUILD SCRIPT: Cache-Bust Loader Injection
+ * POST-BUILD SCRIPT: Filename-Based Cache Busting
  * 
  * After Vite builds:
- * 1. Read ui_build_meta.json to get FT_BUILD_SHA
- * 2. Rename index.js to app.js (stable filename for cache-busting)
+ * 1. Read UI_BUILD_SHA from src/gadget-ui/src/ui_build_meta.ts
+ * 2. Rename index.js to app.<SHA>.js (filename-based cache-busting)
  * 3. Remove Vite's auto-injected index.js script tag from dist/index.html
- * 4. Inject new <script src="app.js?v=<sha>"></script> with cache-bust version
+ * 4. Inject EXACTLY ONE script tag: <script src="./app.<SHA>.js"></script>
  * 
- * Result: dist/index.html will have ONLY <script src="app.js?v=<sha>"></script>
- * Browser will refetch app.js whenever the version query param changes
+ * Result: dist/index.html will have ONLY <script src="./app.<SHA>.js"></script>
+ * Browser cache key is based on filename, NOT query param.
+ * Different SHA = completely different filename = guaranteed cache miss.
+ * Forge CDN will always serve the correct file.
  */
 
 import fs from 'fs';
@@ -18,79 +20,95 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, 'dist');
-const metaPath = path.join(__dirname, 'src', 'build', 'ui_build_meta.json');
+const metaPath = path.join(__dirname, 'src', 'ui_build_meta.ts');
 const htmlPath = path.join(distDir, 'index.html');
+
+function extractShaFromMeta() {
+  try {
+    const content = fs.readFileSync(metaPath, 'utf-8');
+    // Match: export const UI_BUILD_SHA = "f1c06fb";
+    const match = content.match(/export\s+const\s+UI_BUILD_SHA\s*=\s*["']([^"']+)["']/);
+    if (match && match[1]) {
+      return match[1];
+    }
+  } catch (err) {
+    console.error(`[POSTBUILD] Error reading ${metaPath}:`, err.message);
+  }
+  return null;
+}
 
 function main() {
   try {
-    // 1. Read build metadata
-    if (!fs.existsSync(metaPath)) {
-      console.warn('⚠️  ui_build_meta.json not found, skipping postbuild injection');
-      return;
-    }
-
-    const metaContent = fs.readFileSync(metaPath, 'utf-8');
-    const meta = JSON.parse(metaContent);
-    const uiBuildSha = meta.FT_BUILD_SHA;
+    // 1. Extract UI_BUILD_SHA from ui_build_meta.ts
+    const uiBuildSha = extractShaFromMeta();
 
     if (!uiBuildSha) {
-      console.warn('⚠️  FT_BUILD_SHA not found in ui_build_meta.json');
-      return;
+      console.error(`[POSTBUILD] ERROR: Could not extract UI_BUILD_SHA from ${metaPath}`);
+      process.exit(1);
     }
 
-    console.log(`[POSTBUILD] Injecting FT_BUILD_SHA=${uiBuildSha} cache-bust loader`);
+    console.log(`[POSTBUILD] sha=${uiBuildSha}`);
 
-    // 2. Rename index.js to app.js (make entry stable for cache-busting)
+    // 2. Rename index.js to app.<SHA>.js (filename-based cache busting)
     const indexJsPath = path.join(distDir, 'index.js');
-    const appJsPath = path.join(distDir, 'app.js');
+    const appShaJsPath = path.join(distDir, `app.${uiBuildSha}.js`);
 
-    if (fs.existsSync(indexJsPath)) {
-      fs.renameSync(indexJsPath, appJsPath);
-      console.log(`[POSTBUILD] ✓ Renamed index.js → app.js (stable entry point)`);
-    } else {
-      console.warn(`⚠️  ${indexJsPath} not found (expected Vite output)`);
-      return;
+    if (!fs.existsSync(indexJsPath)) {
+      console.error(`[POSTBUILD] ERROR: ${indexJsPath} not found (expected Vite output)`);
+      process.exit(1);
     }
+
+    fs.renameSync(indexJsPath, appShaJsPath);
+    console.log(`[POSTBUILD] wrote entry=app.${uiBuildSha}.js`);
 
     // 3. Process index.html
     if (!fs.existsSync(htmlPath)) {
-      console.warn(`⚠️  ${htmlPath} not found, skipping HTML injection`);
-      return;
+      console.error(`[POSTBUILD] ERROR: ${htmlPath} not found`);
+      process.exit(1);
     }
 
     let htmlContent = fs.readFileSync(htmlPath, 'utf-8');
     
-    // Remove Vite's auto-injected index.js script tag
+    // Remove any existing script tags that reference app.*.js or index.js
     htmlContent = htmlContent.replace(
-      /<script[^>]*\ssrc=["']\.\/index\.js["'][^>]*><\/script>/g,
+      /<script[^>]*\s(src=["']\.\/)?(?:index\.js|app\.[0-9a-f]+\.js)["'][^>]*><\/script>/g,
       ''
     );
-    console.log(`[POSTBUILD] ✓ Removed auto-injected index.js script tag`);
     
-    // Inject new script tag with cache-bust version
-    const scriptTag = `<script type="module" src="./app.js?v=${uiBuildSha}"></script>`;
+    // Inject exactly ONE script tag with filename-based cache bust
+    const scriptTag = `<script type="module" src="./app.${uiBuildSha}.js"></script>`;
     
     if (htmlContent.includes('</head>')) {
       htmlContent = htmlContent.replace('</head>', `    ${scriptTag}\n</head>`);
       fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
-      console.log(`[POSTBUILD] ✓ Injected script tag with cache-bust: ${scriptTag}`);
+      console.log(`[POSTBUILD] index.html script=<script type="module" src="./app.${uiBuildSha}.js"></script>`);
     } else {
-      console.warn('⚠️  </head> tag not found in index.html');
-      return;
+      console.error('[POSTBUILD] ERROR: </head> tag not found in index.html');
+      process.exit(1);
     }
 
-    // 4. Verification: Print what browser will load
+    // 4. Verification
     const finalHtml = fs.readFileSync(htmlPath, 'utf-8');
     const scriptTagMatch = finalHtml.match(/<script[^>]+src="([^"]+)"/);
-    if (scriptTagMatch) {
-      console.log(`[POSTBUILD] ✓ Browser will load: ${scriptTagMatch[1]}`);
+    if (!scriptTagMatch) {
+      console.error('[POSTBUILD] ERROR: No script tag found after injection');
+      process.exit(1);
     }
-    
-    // Verify we have exactly one script tag
-    const scriptCount = (finalHtml.match(/<script/g) || []).length;
-    console.log(`[POSTBUILD] ✓ Final HTML has ${scriptCount} script tag(s)`);
 
-    console.log(`[POSTBUILD] ✓ Cache-bust loader ready`);
+    // Verify exactly one script tag
+    const scriptCount = (finalHtml.match(/<script/g) || []).length;
+    if (scriptCount !== 1) {
+      console.error(`[POSTBUILD] ERROR: Found ${scriptCount} script tags, expected exactly 1`);
+      process.exit(1);
+    }
+
+    // Verify the loaded file exists
+    if (!fs.existsSync(appShaJsPath)) {
+      console.error(`[POSTBUILD] ERROR: File does not exist: ${appShaJsPath}`);
+      process.exit(1);
+    }
+
+    console.log(`[POSTBUILD] ✓ Filename-based cache-bust ready`);
   } catch (err) {
     console.error('[POSTBUILD] ERROR:', err.message);
     process.exit(1);

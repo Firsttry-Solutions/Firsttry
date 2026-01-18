@@ -1982,6 +1982,146 @@ function wireExportButtons() {
 }
 
 // ============================================================================
+// UI SERVE PROOF BANNER (USER-VISIBLE)
+// ============================================================================
+// Display the UI build SHA, time, and loaded scripts in a visible banner
+// This proves which exact code is running in production
+(function initializeServeProofBanner() {
+  try {
+    const banner = document.getElementById('ui-serve-proof-banner');
+    if (!banner) return;
+    
+    // Collect loaded script URLs
+    const scriptUrls: string[] = [];
+    for (const script of document.scripts) {
+      if (script.src) {
+        scriptUrls.push(script.src);
+      }
+    }
+    
+    // Make banner visible and populate with UI build info
+    banner.className = ''; // Remove is-hidden
+    banner.style.cssText = `
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #f0f7ff;
+      border-bottom: 2px solid #0052cc;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-family: monospace;
+      z-index: 9999;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+    
+    banner.innerHTML = `
+      <strong style="color: #0052cc;">[UI_SERVE_PROOF]</strong>
+      UI_BUILD_SHA=<code>${UI_BUILD_SHA}</code>
+      UI_BUILD_TIME=<code>${UI_BUILD_TIME_UTC}</code>
+      SCRIPT_SRC=<code>${scriptUrls.join(' | ')}</code>
+      UI_REQ_ID=<code>${FT_UI_REQ_ID}</code>
+    `;
+  } catch (err) {
+    console.error('[UI_SERVE_PROOF_BANNER] Error:', err);
+  }
+})();
+
+// ============================================================================
+// SERVE MISMATCH DETECTOR (FILENAME-BASED CACHE-BUST VERIFICATION)
+// ============================================================================
+/**
+ * Detect if UI served from Forge CDN is stale.
+ * 
+ * Compares:
+ * - runtimeSha: __FT_BUILD_SHA__ (from bundled code)
+ * - filenameFromLoadedScript: extracted from app.<SHA>.js URL
+ * 
+ * If they differ: RED banner [UI_SERVE_MISMATCH]
+ * If they match: BLUE banner [UI_SERVE_OK]
+ * 
+ * This makes CDN staleness VISIBLE without DevTools.
+ */
+(function initializeServeMismatchDetector() {
+  try {
+    // 1. Get runtime SHA from bundled code
+    const runtimeSha = UI_BUILD_SHA || 'UNKNOWN';
+    
+    // 2. Find the loaded app.<SHA>.js script
+    let loadedEntry = null;
+    let filenameShaPart = null;
+    
+    for (const script of document.scripts) {
+      if (script.src && script.src.includes('/app.')) {
+        // Extract the part after /app. and before .js
+        // Examples: /app.f1c06fb.js, http://cdn.../app.f1c06fb.js
+        const match = script.src.match(/\/app\.([0-9a-f]+)\.js/);
+        if (match && match[1]) {
+          loadedEntry = script.src;
+          filenameShaPart = match[1];
+          break;
+        }
+      }
+    }
+    
+    // 3. Compare runtime SHA with filename SHA
+    const isMatch = runtimeSha === filenameShaPart;
+    
+    // 4. Create proof object for console logging
+    const proofObj = {
+      runtime_sha: runtimeSha,
+      loaded_entry: loadedEntry,
+      filename_sha: filenameShaPart,
+      match: isMatch,
+      ui_req_id: FT_UI_REQ_ID
+    };
+    
+    // 5. Render appropriate banner
+    let banner = document.createElement('div');
+    banner.id = 'ft-serve-mismatch-banner';
+    banner.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 99999;
+      padding: 12px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: auto;
+    `;
+    
+    if (isMatch) {
+      // GREEN/BLUE: All good
+      banner.style.backgroundColor = '#f0f7ff';
+      banner.style.borderBottom = '2px solid #0052cc';
+      banner.style.color = '#003d66';
+      banner.textContent = `[UI_SERVE_OK] runtime=${runtimeSha} loaded=${filenameShaPart} url=${loadedEntry} uiReqId=${FT_UI_REQ_ID}`;
+      console.log('[UI_SERVE_OK]', proofObj);
+    } else {
+      // RED: Mismatch detected (CDN is serving stale code)
+      banner.style.backgroundColor = '#ffeceb';
+      banner.style.borderBottom = '3px solid #cc0000';
+      banner.style.color = '#660000';
+      banner.textContent = `[UI_SERVE_MISMATCH] runtime=${runtimeSha} loaded=${filenameShaPart} url=${loadedEntry} uiReqId=${FT_UI_REQ_ID}`;
+      console.error('[UI_SERVE_MISMATCH]', proofObj);
+    }
+    
+    // Inject banner at top of document
+    if (document.body) {
+      document.body.insertBefore(banner, document.body.firstChild);
+    } else {
+      document.documentElement.insertBefore(banner, document.documentElement.firstChild);
+    }
+  } catch (err) {
+    console.error('[SERVE_MISMATCH_DETECTOR]', err);
+  }
+})();
+
+// ============================================================================
 // INITIALIZATION
 // ============================================================================
 
