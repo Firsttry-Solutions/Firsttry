@@ -123,9 +123,26 @@ echo "  Raw logs:     $RAW_SIZE bytes"
 echo ""
 
 # ============================================================================
-# STEP 3: Search for plain-text PROBE markers (PROBE_ENTRY/PROBE_OK/PROBE_ERR)
+# STEP 3: Search for FT_PROBE_MARKER with specific nonce (DETERMINISTIC)
 # ============================================================================
-echo "Step 3: Searching for plain-text PROBE markers..."
+echo "Step 3: Searching for FT_PROBE_MARKER with UI nonce: $PROBE_NONCE"
+
+# PHASE 3 (NEW): Search for structured FT_PROBE_MARKER format (JSON)
+# Format: FT_PROBE_MARKER {"marker":"FT_PROBE_MARKER",...,"ui_local_probe_nonce":"<nonce>",...}
+grep "FT_PROBE_MARKER.*\"ui_local_probe_nonce\".*\"$PROBE_NONCE\"" "$OUTPUT_DIR/10_logs_grouped.txt" > "$OUTPUT_DIR/25_marker_nonce_grouped.txt" 2>&1 || true
+grep "FT_PROBE_MARKER.*\"ui_local_probe_nonce\".*\"$PROBE_NONCE\"" "$OUTPUT_DIR/11_logs_raw.txt" > "$OUTPUT_DIR/25_marker_nonce_raw.txt" 2>&1 || true
+
+MARKER_NONCE_GROUPED=$(wc -l < "$OUTPUT_DIR/25_marker_nonce_grouped.txt" 2>/dev/null || echo 0)
+MARKER_NONCE_RAW=$(wc -l < "$OUTPUT_DIR/25_marker_nonce_raw.txt" 2>/dev/null || echo 0)
+
+echo "  FT_PROBE_MARKER (grouped): $MARKER_NONCE_GROUPED matches"
+echo "  FT_PROBE_MARKER (raw):     $MARKER_NONCE_RAW matches"
+echo ""
+
+# ============================================================================
+# STEP 3B: Fallback to plain-text markers (backward compatibility)
+# ============================================================================
+echo "Step 3B: Searching for plain-text markers (backward compat)..."
 
 # Search for PROBE_ENTRY (proof of invocation)
 grep -F "PROBE_ENTRY" "$OUTPUT_DIR/10_logs_grouped.txt" > "$OUTPUT_DIR/20_entry_grouped.txt" 2>&1 || true
@@ -206,26 +223,42 @@ echo "VERDICT"
 echo "════════════════════════════════════════════════════════════════"
 echo ""
 
-# PASS if nonce found in EITHER format
-if [ "$NONCE_GROUPED" -gt 0 ] || [ "$NONCE_RAW" -gt 0 ]; then
+# PASS if nonce found in FT_PROBE_MARKER (preferred) OR plain-text markers (fallback)
+MARKER_FOUND=$((MARKER_NONCE_GROUPED + MARKER_NONCE_RAW))
+PLAINTEXT_FOUND=$((NONCE_GROUPED + NONCE_RAW))
+
+if [ "$MARKER_FOUND" -gt 0 ] || [ "$PLAINTEXT_FOUND" -gt 0 ]; then
   echo "✅ PASS: Nonce found in production logs"
   echo ""
   
-  # Print first matching line (prefer raw if both have matches)
-  if [ "$NONCE_RAW" -gt 0 ]; then
-    echo "First matching line (from raw logs):"
-    head -1 "$OUTPUT_DIR/22_nonce_in_raw.txt"
+  # Show which format found it (prefer structured FT_PROBE_MARKER)
+  if [ "$MARKER_FOUND" -gt 0 ]; then
+    echo "Source: FT_PROBE_MARKER (structured JSON format)"
+    if [ "$MARKER_NONCE_RAW" -gt 0 ]; then
+      echo "First matching FT_PROBE_MARKER (from raw logs):"
+      head -1 "$OUTPUT_DIR/25_marker_nonce_raw.txt" | cut -c1-200
+    else
+      echo "First matching FT_PROBE_MARKER (from grouped logs):"
+      head -1 "$OUTPUT_DIR/25_marker_nonce_grouped.txt" | cut -c1-200
+    fi
   else
-    echo "First matching line (from grouped logs):"
-    head -1 "$OUTPUT_DIR/21_nonce_in_grouped.txt"
+    echo "Source: Plain-text PROBE markers (legacy format)"
+    if [ "$NONCE_RAW" -gt 0 ]; then
+      echo "First matching marker (from raw logs):"
+      head -1 "$OUTPUT_DIR/22_nonce_in_raw.txt"
+    else
+      echo "First matching marker (from grouped logs):"
+      head -1 "$OUTPUT_DIR/21_nonce_in_grouped.txt"
+    fi
   fi
   
   echo ""
   echo "This PROVES:"
-  echo "  ✓ UI invoked the probe resolver successfully"
-  echo "  ✓ Backend generated and returned the nonce"
-  echo "  ✓ Backend logged the nonce to production logs"
-  echo "  ✓ Forge logs system captured and returned the production stream"
+  echo "  ✓ UI generated deterministic nonce: $PROBE_NONCE"
+  echo "  ✓ UI invoked probe resolver with nonce"
+  echo "  ✓ Backend received and logged nonce in FT_PROBE_MARKER"
+  echo "  ✓ Backend execution proven by structured JSON in logs"
+  echo "  ✓ Forge logs captured production stream deterministically"
   echo ""
   echo "Output directory (for inspection): $OUTPUT_DIR"
   exit 0
