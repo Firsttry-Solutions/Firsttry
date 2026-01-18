@@ -8,33 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-
-// ============================================================================
-// STATUS FORMATTER FUNCTIONS (extracted from main.ts for testing)
-// ============================================================================
-
-function formatScheduleInterval(intervalMinutes: number | null): string {
-  return intervalMinutes !== null 
-    ? intervalMinutes + ' min'
-    : 'N/A (unscheduled)';
-}
-
-function formatSnapshotAge(ageMinutes: number | null): string {
-  return ageMinutes !== null 
-    ? ageMinutes + ' min'
-    : 'N/A';
-}
-
-function formatFreshness(
-  isStale: boolean | null,
-  scheduleIntervalMinutes: number | null
-): string {
-  // FIX L2: If schedule interval is null, freshness must be UNKNOWN
-  if (scheduleIntervalMinutes === null) {
-    return 'UNKNOWN';
-  }
-  return isStale === null ? 'UNKNOWN' : (isStale ? 'STALE' : 'FRESH');
-}
+import { formatScheduleInterval, formatSnapshotAge, computeFreshness } from './statusFormatter';
 
 // ============================================================================
 // TESTS
@@ -79,25 +53,30 @@ describe('L2: Status Formatter Fixes', () => {
   describe('formatFreshness', () => {
     it('should return UNKNOWN if scheduleIntervalMinutes is null', () => {
       // This is the critical L2 fix: if schedule is unknown, freshness must be unknown
-      expect(formatFreshness(false, null)).toBe('UNKNOWN');
-      expect(formatFreshness(true, null)).toBe('UNKNOWN');
-      expect(formatFreshness(null, null)).toBe('UNKNOWN');
+      expect(computeFreshness(null, false, 1)).toBe('UNKNOWN');
+      expect(computeFreshness(null, true, 1)).toBe('UNKNOWN');
+      expect(computeFreshness(null, null, 1)).toBe('UNKNOWN');
     });
 
     it('should return UNKNOWN if isStale is null (but schedule is set)', () => {
-      expect(formatFreshness(null, 15)).toBe('UNKNOWN');
+      expect(computeFreshness(15, null, 1)).toBe('UNKNOWN');
     });
 
     it('should return STALE if isStale is true', () => {
-      expect(formatFreshness(true, 15)).toBe('STALE');
+      expect(computeFreshness(15, true, 1)).toBe('STALE');
     });
 
     it('should return FRESH if isStale is false', () => {
-      expect(formatFreshness(false, 15)).toBe('FRESH');
+      expect(computeFreshness(15, false, 1)).toBe('FRESH');
     });
 
     it('should handle edge case: schedule=0, fresh=true', () => {
-      expect(formatFreshness(false, 0)).toBe('FRESH');
+      expect(computeFreshness(0, false, 1)).toBe('FRESH');
+    });
+
+    it('should return UNKNOWN if snapshotCount is 0 (no data yet)', () => {
+      expect(computeFreshness(15, false, 0)).toBe('UNKNOWN');
+      expect(computeFreshness(15, true, 0)).toBe('UNKNOWN');
     });
   });
 });
