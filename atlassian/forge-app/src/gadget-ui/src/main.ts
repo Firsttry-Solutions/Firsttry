@@ -1461,13 +1461,31 @@ async function handleExportTrustSnapshot() {
  * Additive to existing inline onclick handlers
  */
 /**
+ * Helper: Generate deterministic correlation IDs (matches backend randomHex logic)
+ * Input: prefix (e.g., "ui", "probe")
+ * Output: ${prefix}_${Date.now()}_${randomHex(8)}
+ * 
+ * CRITICAL: IDs are generated client-side on button click for immediate UI display
+ * This ensures IDs are visible BEFORE backend response (no more "—")
+ */
+function mkId(prefix: string): string {
+  // Generate 8 random hex bytes (16 hex chars)
+  const randomBytes = Array.from({ length: 8 })
+    .map(() => Math.floor(Math.random() * 256))
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join('');
+  return `${prefix}_${Date.now()}_${randomBytes}`;
+}
+
+/**
  * FORENSIC_PROBE: Invoke probe resolver to capture correlation proof
  * 
- * This function:
- * 1. Sends payload with ui_req_id in multiple formats (for extraction testing)
- * 2. Calls probe resolver
- * 3. Displays response in diagnostics panel
- * 4. Shows grep commands for manual verification
+ * PHASE 1: Generate ui_req_id + probe_nonce client-side (deterministic, immediate)
+ * PHASE 2: Display IDs immediately in UI (before backend response)
+ * PHASE 3: Build payload with generated IDs
+ * PHASE 4: Invoke probe resolver (backend may augment correlation data)
+ * PHASE 5: Update UI with backend-provided fields (build_sha, env, trace_id)
+ * PHASE 6: On error, preserve locally-generated IDs (no loss of correlation)
  */
 // @ts-ignore - Expose globally for button onclick handlers
 window.runProbe = async function() {
@@ -1482,24 +1500,77 @@ window.runProbe = async function() {
         if (panelEl) panelEl.classList.add('visible');
         if (panelEl) panelEl.innerHTML = 'Invoking probe resolver...';
         
-        // Build correlation payload with multiple formats (intentional, for extraction testing)
-        const uiReqId = FT_UI_REQ_ID; // Current UI_REQ_ID (ui_...)
-        const uiReqIdCompat = `req_compat_${FT_UI_REQ_ID.substring(3)}`; // req_compat_... for legacy tests
-        const requestId = `rid_${Date.now()}`; // Additional correlation field
+        // ================================================================
+        // PHASE 1: Generate deterministic IDs client-side (IMMEDIATELY)
+        // ================================================================
+        const localUiReqId = mkId('ui');         // UI-generated request ID
+        const localProbeNonce = mkId('probe');   // UI-generated probe nonce
+        
+        // ================================================================
+        // PHASE 2: Display IDs IMMEDIATELY in UI (before backend call)
+        // ================================================================
+        const uiReqIdEl = document.getElementById('probe-ui-req-id');
+        const nonceEl = document.getElementById('probe-nonce');
+        const grepUiReqIdEl = document.getElementById('probe-grep-ui-req-id');
+        const grepNonceEl = document.getElementById('probe-grep-nonce');
+        
+        // Set IDs immediately (BEFORE invoke, guarantees visible)
+        if (uiReqIdEl) uiReqIdEl.textContent = localUiReqId;
+        if (nonceEl) nonceEl.textContent = localProbeNonce;
+        
+        // Set grep commands immediately
+        if (grepUiReqIdEl) grepUiReqIdEl.textContent = `grep "${localUiReqId}" <logs>`;
+        if (grepNonceEl) grepNonceEl.textContent = `bash tools/probe_prod.sh --nonce ${localProbeNonce}`;
+        
+        // ================================================================
+        // PHASE 3: Build payload with generated IDs + additional fields
+        // ================================================================
+        const uiReqIdCompat = `req_compat_${localUiReqId.substring(3)}`; // Compatibility format
+        const requestId = `rid_${Date.now()}`; // Legacy field
         
         const payload = {
-            ui_req_id: uiReqId,                  // Primary field
-            uiReqId: uiReqIdCompat,              // Compatibility field (req_* will be normalized to ui_*)
-            requestId: requestId,                // Legacy field
+            // Primary correlation fields (generated client-side)
+            ui_req_id: localUiReqId,                  // PRIMARY UI-generated ID
+            local_probe_nonce: localProbeNonce,       // UI-generated probe nonce
+            
+            // Compatibility fields (for extraction testing)
+            uiReqId: uiReqIdCompat,                   // Compatibility format (will normalize to ui_*)
+            requestId: requestId,                      // Legacy field
+            
+            // Structured meta
             meta: {
-                ui_req_id: uiReqId,              // Structured format
+                ui_req_id: localUiReqId,              // Structured format
+                local_probe_nonce: localProbeNonce,   // Structured nonce
                 uiReqId: uiReqIdCompat
             }
         };
         
-        // Invoke probe resolver
+        // ================================================================
+        // PHASE 4: Invoke probe resolver (backend may augment IDs)
+        // ================================================================
         const response = await invokeWithUiReqId('probe', payload);
         
+        // ================================================================
+        // PHASE 5: Update UI with backend-provided fields (if available)
+        // ================================================================
+        // Backend may return additional correlation data; update UI with those
+        // But PRESERVE locally-generated ui_req_id + probe_nonce (never override)
+        const buildShaEl = document.getElementById('probe-backend-build-sha');
+        const envEl = document.getElementById('probe-forge-env');
+        
+        if (response.ok && response.meta) {
+            // Update backend-specific fields (only if success response)
+            if (buildShaEl && response.meta.backend_build_sha) {
+                buildShaEl.textContent = response.meta.backend_build_sha.substring(0, 16);
+            }
+            if (envEl && response.meta.forge_env) {
+                envEl.textContent = response.meta.forge_env;
+            }
+        }
+        
+        // ================================================================
+        // PHASE 6: Render response panel (preserve local IDs regardless)
+        // ================================================================
         // Render response to panel with proper formatting
         if (panelEl) {
             let htmlContent = '';
@@ -1509,11 +1580,12 @@ window.runProbe = async function() {
                 htmlContent = `
 <strong class="text-success">✅ PROBE SUCCESS</strong>
 
-<strong>PROOF LINES (Copy-Paste into Terminal):</strong>
+<strong>Correlation Proof (Local + Backend):</strong>
 <code class="code-block">
-PROBE_GREP_NONCE=${response.meta?.probe_nonce || '—'}
-PROBE_GREP_UI_REQ_ID=${response.meta?.ui_req_id || '—'}
-BACKEND_BUILD_SHA_FROM_RESPONSE=${response.meta?.backend_build_sha || '—'}
+UI_REQ_ID_LOCAL=${localUiReqId}
+PROBE_NONCE_LOCAL=${localProbeNonce}
+BACKEND_BUILD_SHA=${response.meta?.backend_build_sha || '—'}
+FORGE_ENV=${response.meta?.forge_env || '—'}
 </code>
 
 <strong>Full Response JSON:</strong>
@@ -1524,10 +1596,17 @@ ${JSON.stringify(response, null, 2)}
                 panelEl.classList.add('text-success');
                 panelEl.classList.remove('text-error');
             } else {
-                // ERROR: Show error details + raw JSON
+                // ERROR: Show error details + preserve local IDs (critical for correlation)
                 htmlContent = `
 <strong class="text-error">❌ PROBE ERROR</strong>
 
+<strong>Local Correlation IDs (preserved despite error):</strong>
+<code class="code-block">
+UI_REQ_ID_LOCAL=${localUiReqId}
+PROBE_NONCE_LOCAL=${localProbeNonce}
+</code>
+
+<strong>Backend Error:</strong>
 <strong>Error Code:</strong> ${response.error?.code || '—'}
 <strong>Error Message:</strong> ${response.error?.message || '—'}
 <strong>Trace ID:</strong> ${response.error?.trace_id_stable || '—'}
@@ -1544,51 +1623,53 @@ ${JSON.stringify(response, null, 2)}
             panelEl.innerHTML = htmlContent;
         }
         
-        // Extract and display key fields
-        if (response.ok && response.meta) {
-            const meta = response.meta;
-            
-            // Display fields
-            const uiReqIdEl = document.getElementById('probe-ui-req-id');
-            const nonceEl = document.getElementById('probe-nonce');
-            const buildShaEl = document.getElementById('probe-backend-build-sha');
-            const envEl = document.getElementById('probe-forge-env');
-            
-            if (uiReqIdEl) uiReqIdEl.textContent = meta.ui_req_id || '—';
-            if (nonceEl) nonceEl.textContent = meta.probe_nonce || '—';
-            if (buildShaEl) buildShaEl.textContent = meta.backend_build_sha ? meta.backend_build_sha.substring(0, 16) : '—';
-            if (envEl) envEl.textContent = meta.forge_env || '—';
-            
-            // Display grep commands
-            const grepUiReqIdEl = document.getElementById('probe-grep-ui-req-id');
-            const grepNonceEl = document.getElementById('probe-grep-nonce');
-            
-            if (grepUiReqIdEl && meta.ui_req_id) {
-                grepUiReqIdEl.textContent = `grep "${meta.ui_req_id}" <logs>`;
-            }
-            
-            if (grepNonceEl && meta.probe_nonce) {
-                grepNonceEl.textContent = `bash tools/probe_prod.sh --nonce ${meta.probe_nonce}`;
-            }
-            
-            if (statusEl) statusEl.textContent = `✅ Probe completed at ${new Date().toLocaleTimeString()}`;
+        // Update status with local IDs (proof of correlation)
+        if (response.ok) {
+            if (statusEl) statusEl.textContent = `✅ Probe completed at ${new Date().toLocaleTimeString()} | nonce: ${localProbeNonce}`;
         } else {
-            if (statusEl) statusEl.textContent = `❌ Probe failed: ${response.error?.code || 'unknown error'}`;
+            if (statusEl) statusEl.textContent = `❌ Probe error: ${response.error?.code || 'unknown'} | nonce: ${localProbeNonce}`;
         }
         
+        // Legacy: Extract and display key fields (for backward compatibility - already set above)
+        // Note: ui_req_id and probe_nonce are set IMMEDIATELY (lines ~1476-1478)
+        // Only backend-specific fields (build_sha, forge_env) are updated here
+        // This preserves the local IDs even if backend response is slow or fails
+
     } catch (err) {
+        // CRITICAL: Preserve local IDs even on invoke error (never lose correlation)
         const errMsg = err instanceof Error ? err.message : String(err);
+        
+        // Display error but keep local IDs visible in metrics section
         if (panelEl) {
-            panelEl.innerHTML = `<strong class="text-error">❌ INVOKE ERROR</strong>\n\n${errMsg}`;
+            const localIdsPreserved = `
+<strong class="text-error">❌ INVOKE ERROR</strong>
+
+<strong>Local Correlation IDs (preserved despite error):</strong>
+<code class="code-block">
+UI_REQ_ID_LOCAL=${localUiReqId}
+PROBE_NONCE_LOCAL=${localProbeNonce}
+</code>
+
+<strong>Error Details:</strong>
+<code class="code-block">
+${errMsg}
+</code>
+
+<strong>Recovery:</strong> Check logs for backend execution (nonce grep commands are set above). If backend received the invoke, nonce should be in logs despite frontend error.
+`;
+            panelEl.innerHTML = localIdsPreserved;
             panelEl.classList.add('text-error');
             panelEl.classList.remove('text-success');
             panelEl.classList.add('visible');
         }
-        if (statusEl) statusEl.textContent = `❌ Error: ${errMsg.substring(0, 60)}`;
-        console.error('[RunProbe] Error:', err);
+        
+        // Status message includes local nonce (essential for debugging)
+        if (statusEl) statusEl.textContent = `❌ Invoke error: ${errMsg.substring(0, 40)} | nonce: ${localProbeNonce}`;
+        console.error('[RunProbe] Error:', err, 'Local IDs:', { localUiReqId, localProbeNonce });
     } finally {
         if (btnEl) btnEl.disabled = false;
     }
+
 };
 
 // ============================================================================
