@@ -6,32 +6,53 @@
  */
 
 // ============================================================================
-// L0.1: UI ENTRY PROOF - IIFE (runs immediately, before any other module code)
+// L0.C: UI ENTRY RUNTIME PROOF - IIFE (runs immediately before any other code)
+// Must run before importing build_meta so we capture globals at their actual load time
 // ============================================================================
+
+// We declare these as any to avoid TypeScript errors about injected globals
+// The actual values are set by postbuild.mjs or the HTML template
+declare const __FT_BUILD_SHA__: string | undefined;
+declare const __FT_BUILD_TIME__: string | undefined;
+
+// Immediately capture proof before any other module executes
+// This proves the actual entry script filename, not just what was requested
 (() => {
-  try {
-    const scripts = [...document.querySelectorAll("script[src]")].map(s => s.src);
-    const entryScript = scripts.find(src => 
-      (src.includes("/govGadget2141/") || src.includes("app.")) && 
-      (src.endsWith(".js") || src.includes("app."))
-    );
-    
-    const proof = {
-      runtime_sha: "FT_RUNTIME_BUILD_SHA_INJECTED",
-      runtime_time: "FT_RUNTIME_BUILD_TIME_INJECTED",
-      script_srcs: scripts,
-      entry_detected: entryScript || null,
-      location: window.location.href,
-      timestamp_ms: Date.now()
-    };
-    
-    console.log("[UI_ENTRY_PROOF]", JSON.stringify(proof));
-    
-    // Store globally for banner rendering later
-    (window as any).__FT_ENTRY_PROOF = proof;
-  } catch (err) {
-    console.error("[UI_ENTRY_PROOF_ERR]", String(err));
-  }
+  // Get injected values if available, otherwise mark as UNSET
+  const ui_build_sha =
+    typeof __FT_BUILD_SHA__ !== 'undefined'
+      ? __FT_BUILD_SHA__
+      : 'UNSET';
+  const ui_build_time =
+    typeof __FT_BUILD_TIME__ !== 'undefined'
+      ? __FT_BUILD_TIME__
+      : 'UNSET';
+
+  // Import here to capture entry before any bundled code runs
+  // This MUST be inline to run before module imports below
+  const scripts = Array.from(
+    document.querySelectorAll<HTMLScriptElement>('script[src]')
+  ).map(s => s.src);
+
+  const entry_script_src =
+    scripts.find(
+      url =>
+        url.includes('/govGadget2141/') &&
+        /\/app\.[0-9a-f]+\.js(\?|$)/.test(url)
+    ) || null;
+
+  const proof = {
+    marker: 'UI_ENTRY_RUNTIME_PROOF',
+    ui_build_sha,
+    ui_build_time,
+    entry_script_src,
+    script_srcs: scripts,
+    href: window.location.href,
+    iso: new Date().toISOString(),
+  };
+
+  (window as any).__FT_RUNTIME_ENTRY_PROOF__ = proof;
+  console.log('[UI_ENTRY_RUNTIME_PROOF]', JSON.stringify(proof));
 })();
 
 // Import invoke from @forge/bridge (now bundled, not injected as global)
@@ -43,6 +64,9 @@ import { getBuildIdentifier } from './buildInfo';
 
 // Import UI build markers (auto-generated at build time)
 import { UI_BUILD_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
+
+// Import L0.C entry proof functions for testing and banner display
+import { captureRuntimeEntryProof, formatEntryProofForBanner } from './entryProof';
 
 // Import pure modules (testable, deterministic)
 import { buildExportPayloadFromStatus, type ExportPayload } from './exportPayload';
@@ -2209,17 +2233,17 @@ function onDOMReady() {
     wireExportButtons();
     
     // ========================================================================
-    // L0.1: RENDER ENTRY PROOF BANNER (top of page)
+    // L0.C: RENDER ENTRY RUNTIME PROOF BANNER (top of page)
     // ========================================================================
     try {
-        const proof = (window as any).__FT_ENTRY_PROOF;
-        const entryScript = proof?.entry_detected || 'NOT_DETECTED';
-        const sha = proof?.runtime_sha || 'UNKNOWN';
+        const proof = (window as any).__FT_RUNTIME_ENTRY_PROOF__;
+        const entryProofText = formatEntryProofForBanner();
+        const sha = proof?.ui_build_sha || 'UNSET';
         const scripts = proof?.script_srcs || [];
         
         const bannerHtml = `
             <div style="background: #003f87; color: #fff; padding: 8px 12px; font-family: monospace; font-size: 11px; line-height: 1.4; border-bottom: 1px solid #0052cc;">
-                <strong>[UI_ENTRY_PROOF]</strong> runtime_sha=${sha} | entry=${entryScript}
+                <strong>[UI_ENTRY_RUNTIME_PROOF]</strong> ui_build_sha=${sha} | ${entryProofText}
                 <br/>Scripts: ${scripts.join(' | ') || '(none)'}
             </div>
         `;
