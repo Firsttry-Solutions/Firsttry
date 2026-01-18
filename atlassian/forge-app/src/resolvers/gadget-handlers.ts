@@ -287,15 +287,19 @@ export async function handler(req: any) {
     const normalized = ensureTraceOnError(result, resolverName, ui_req_id);
 
     // Log success or error with complete details
+    // IMPORTANT: Only log RESOLVER_ERR if normalized.ok is EXPLICITLY false
+    // (not just falsy - some resolvers return status objects without 'ok' property)
+    const isError = normalized.ok === false;
+    
     const logObj: any = {
-      marker: normalized.ok ? "RESOLVER_OK" : "RESOLVER_ERR",
+      marker: isError ? "RESOLVER_ERR" : "RESOLVER_OK",
       resolver: resolverName,
       ui_req_id,
       backend_build_sha: BACKEND_BUILD_SHA,
       ts: new Date().toISOString()
     };
 
-    if (!normalized.ok && normalized.error) {
+    if (isError && normalized.error) {
       logObj.error_code = normalized.error.code;
       logObj.message = normalized.error.message.substring(0, 200);  // Truncate for safety
       logObj.trace_id_stable = normalized.error.trace_id_stable;
