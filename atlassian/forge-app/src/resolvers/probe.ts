@@ -1,18 +1,30 @@
 /**
  * FORENSIC_PROBE: Deterministic Correlation Proof
  * 
- * This resolver proves UI → backend correlation works end-to-end:
- * 1. UI sends ui_req_id in multiple formats (intentionally)
- * 2. Backend extracts and normalizes (proves extraction logic)
- * 3. Backend logs probe marker with nonce (proves backend execution)
- * 4. UI displays nonce + ui_req_id (user can grep logs)
- * 5. tools/probe_prod.sh greps logs by nonce (definitive proof)
+ * PHASE 1 (UI-SIDE, COMPLETE):
+ * - UI generates deterministic ui_req_id + local_probe_nonce client-side
+ * - Immediately displays in UI (before backend call)
+ * - Sends both to backend in payload
+ * 
+ * PHASE 2 (BACKEND, THIS FILE):
+ * - Backend accepts ui_req_id + local_probe_nonce from UI
+ * - Generates backend_probe_nonce (server-side entropy)
+ * - Logs FT_PROBE_MARKER with ALL correlation IDs
+ * - Preserves UI-generated nonce for grep verification
+ * - Returns meta with backend_build_sha + forge_env + trace_id
+ * 
+ * PHASE 3 (GREP VERIFICATION):
+ * - tools/probe_prod.sh greps logs by UI nonce
+ * - Proves backend received and logged probe invocation
+ * - Returns PASS/FAIL deterministically
  * 
  * Contract:
  * - Always returns ok:true/false with meta + observed fields
  * - Never throws
- * - Logs exactly one JSON line per invocation
+ * - Logs exactly one FT_PROBE_MARKER JSON line per invocation
  * - trace_id_stable never empty/UNSET
+ * - Backend nonce always included (server-side entropy)
+ * - UI nonce (local_probe_nonce) preserved for grep correlation
  */
 
 import crypto from 'crypto';
@@ -99,7 +111,8 @@ function extractUiReqId(payload: any): string {
 
 export interface ProbeMeta {
   ui_req_id: string;
-  probe_nonce: string;
+  ui_local_probe_nonce: string;        // UI-generated nonce (for grep)
+  backend_probe_nonce: string;         // Server-side entropy
   backend_build_sha: string;
   now_iso: string;
   node: string;
@@ -143,13 +156,29 @@ export interface ProbeResponse {
 export async function probe(req?: any): Promise<ProbeResponse> {
   const payload = req?.payload || req || {};
   const nowIso = new Date().toISOString();
-  const probeNonce = `probe_${Date.now()}_${randomHex(8)}`;
+  
+  // ===================================================================
+  // PHASE 2A: Extract UI-generated IDs from payload
+  // ===================================================================
+  // UI sends local_probe_nonce (generated client-side on button click)
+  // This is the DEFINITIVE nonce for grep verification
+  const uiLocalProbeNonce = payload?.meta?.local_probe_nonce 
+    || payload?.local_probe_nonce 
+    || `ui_missing_${Date.now()}_${randomHex(4)}`;
+  
+  // Also extract ui_req_id (for correlation redundancy)
+  const uiReqId = extractUiReqId(payload);
+  
+  // ===================================================================
+  // PHASE 2B: Generate backend-side entropy
+  // ===================================================================
+  // Backend generates its own nonce for server-side entropy proof
+  // This proves backend executed (separate from UI nonce)
+  const backendProbeNonce = `backend_probe_${Date.now()}_${randomHex(8)}`;
+  
   const backendBuildSha = BACKEND_BUILD_SHA; // Injected at build time, never "unknown"
   const functionName = process.env.FORGE_FUNCTION_NAME || 'probe-resolver';
   const forgeEnv = process.env.FORGE_ENV || 'unknown';
-
-  // Extract ui_req_id (same extraction used by handler)
-  const uiReqId = extractUiReqId(payload);
 
   // Capture observations for diagnostics
   const observed: ProbeObserved = {
@@ -160,7 +189,8 @@ export async function probe(req?: any): Promise<ProbeResponse> {
       reqId: payload?.reqId ?? null,
       requestId: payload?.requestId ?? null,
       meta_ui_req_id: payload?.meta?.ui_req_id ?? null,
-      meta_uiReqId: payload?.meta?.uiReqId ?? null
+      meta_uiReqId: payload?.meta?.uiReqId ?? null,
+      local_probe_nonce: payload?.meta?.local_probe_nonce ?? payload?.local_probe_nonce ?? null  // UI NONCE
     },
     context_signals: {
       cloudId: (req as any)?.context?.cloudId ?? null,
@@ -173,10 +203,11 @@ export async function probe(req?: any): Promise<ProbeResponse> {
     }
   };
 
-  // Build meta (must be rendered in UI for proof grepping)
+  // Build meta (returned in response + included in logs)
   const meta: ProbeMeta = {
     ui_req_id: uiReqId,
-    probe_nonce: probeNonce,
+    ui_local_probe_nonce: uiLocalProbeNonce,      // UI-generated nonce (for grep)
+    backend_probe_nonce: backendProbeNonce,       // Server-side entropy
     backend_build_sha: backendBuildSha,
     now_iso: nowIso,
     node: process.version,
@@ -185,28 +216,33 @@ export async function probe(req?: any): Promise<ProbeResponse> {
   };
 
   try {
-    // ENTRY: Backend received invocation
-    // Plain text (unmissable, grepable)
-    console.log(`PROBE_ENTRY nonce=${probeNonce} ui=${uiReqId} build=${backendBuildSha} ts=${nowIso}`);
+    // ===================================================================
+    // PHASE 2C: Log FT_PROBE_MARKER (DETERMINISTIC, GREPABLE)
+    // ===================================================================
+    // Single structured JSON line with all correlation IDs
+    // Format: FT_PROBE_MARKER <json>
+    // This enables grep by any ID and ensures backend execution proof
     
-    // SUCCESS: Backend executed successfully
-    // Plain text (unmissable, primary proof)
-    console.log(`PROBE_OK nonce=${probeNonce} ui=${uiReqId} build=${backendBuildSha} ts=${nowIso}`);
+    const marker = {
+      marker: 'FT_PROBE_MARKER',
+      ui_req_id: uiReqId,
+      ui_local_probe_nonce: uiLocalProbeNonce,    // PRIMARY for grep (set by UI)
+      backend_probe_nonce: backendProbeNonce,     // Secondary (server-side)
+      backend_build_sha: backendBuildSha,
+      forge_env: forgeEnv,
+      function_name: functionName,
+      timestamp_iso: nowIso,
+      node_version: process.version,
+      correlation_observed: observed.correlation_fields,
+      trace_id_stable: `trace_probe_${hashShort(uiReqId)}_${Date.now()}`
+    };
     
-    // JSON marker (structured log, secondary proof)
-    console.log(
-      JSON.stringify({
-        marker: 'PROBE',
-        ui_req_id: uiReqId,
-        probe_nonce: probeNonce,
-        backend_build_sha: backendBuildSha,
-        forge_env: forgeEnv,
-        function_name: functionName,
-        observed: observed
-      })
-    );
-
-    // Success response
+    console.log(`FT_PROBE_MARKER ${JSON.stringify(marker)}`);
+    
+    // Also log plain-text for unmissable grep (backward compat)
+    console.log(`PROBE_OK ui_nonce=${uiLocalProbeNonce} backend_nonce=${backendProbeNonce} ui_req=${uiReqId} build=${backendBuildSha} ts=${nowIso}`);
+    
+    // Success response with all IDs (for UI display)
     return {
       ok: true,
       meta,
@@ -215,24 +251,27 @@ export async function probe(req?: any): Promise<ProbeResponse> {
   } catch (err) {
     // Error path (should rarely happen, but capture it)
     const errorMsg = err instanceof Error ? err.message : String(err);
-    const traceIdStable = `trace_probe_${hashShort(errorMsg)}_${Date.now()}`;
+    const traceIdStable = `trace_probe_err_${hashShort(errorMsg)}_${Date.now()}`;
 
-    // ERROR: Plain text (unmissable, primary proof of error)
-    console.log(`PROBE_ERR nonce=${probeNonce} ui=${uiReqId} code=PROBE_EXCEPTION trace=${traceIdStable} ts=${nowIso}`);
+    // ERROR: Log FT_PROBE_MARKER with error details (ALWAYS log, even on error)
+    const errorMarker = {
+      marker: 'FT_PROBE_MARKER_ERROR',
+      ui_req_id: uiReqId,
+      ui_local_probe_nonce: uiLocalProbeNonce,    // Preserve for grep (even on error)
+      backend_probe_nonce: backendProbeNonce,
+      backend_build_sha: backendBuildSha,
+      forge_env: forgeEnv,
+      error_code: 'PROBE_EXCEPTION',
+      error_message: errorMsg,
+      trace_id_stable: traceIdStable,
+      timestamp_iso: nowIso
+    };
     
-    // JSON marker (structured log, secondary proof)
-    console.error(
-      JSON.stringify({
-        marker: 'PROBE_ERR',
-        ui_req_id: uiReqId,
-        probe_nonce: probeNonce,
-        backend_build_sha: backendBuildSha,
-        error_code: 'PROBE_EXCEPTION',
-        message: errorMsg,
-        trace_id_stable: traceIdStable
-      })
-    );
-
+    console.error(`FT_PROBE_MARKER ${JSON.stringify(errorMarker)}`);
+    
+    // Also log plain-text error (backward compat)
+    console.error(`PROBE_ERR ui_nonce=${uiLocalProbeNonce} ui_req=${uiReqId} code=PROBE_EXCEPTION trace=${traceIdStable} ts=${nowIso}`);
+    
     return {
       ok: false,
       meta,

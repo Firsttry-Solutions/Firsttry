@@ -143,15 +143,21 @@ describe("FORENSIC_PROBE: callable", () => {
     const result = await probeResolver({
       payload: {
         ui_req_id: "ui_test_callable",
-        meta: { ui_req_id: "ui_from_meta" }
+        meta: { 
+          ui_req_id: "ui_from_meta",
+          local_probe_nonce: "probe_test_ui_local_123"  // UI-generated nonce
+        }
       }
     });
 
     expect(result.ok).toBe(true);
     expect(result.meta).toBeTruthy();
     expect(result.meta.ui_req_id).toBe("ui_test_callable");
-    expect(result.meta.probe_nonce).toBeTruthy();
-    expect(result.meta.probe_nonce.startsWith("probe_")).toBe(true);
+    // Check both UI and backend nonces (from PHASE 2)
+    expect(result.meta.ui_local_probe_nonce).toBeTruthy();
+    expect(result.meta.ui_local_probe_nonce).toBe("probe_test_ui_local_123");  // Preserve UI nonce
+    expect(result.meta.backend_probe_nonce).toBeTruthy();
+    expect(result.meta.backend_probe_nonce.startsWith("backend_probe_")).toBe(true);  // Backend generates its own
     expect(result.meta.backend_build_sha).toBeTruthy();
     expect(result.observed).toBeTruthy();
   });
