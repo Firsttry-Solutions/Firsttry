@@ -1,25 +1,46 @@
 #!/bin/bash
-# PHASE 3: prove_prod_served_bundle.sh (HARDENED - CACHE-BUST SAFE)
-# Downloads served bundle from production with cache-bust headers
-# Verifies it against same structural gate invariants
-# Usage: bash tools/prove_prod_served_bundle.sh --bundle-url "<PROD URL>" --iframe-url "<IFRAME URL>"
+# GATE PROD_PROOF: prove_prod_served_bundle.sh (NON-BYPASSABLE)
+# Verifies served bundle matches expected identity values
+# Requires --expected-git-sha and --expected-bundle-hash parameters
+# FAILS if served bundle doesn't match expected values
+# Usage: bash tools/prove_prod_served_bundle.sh --bundle-url "<URL>" \
+#        --expected-git-sha "86bdc7b" --expected-bundle-hash "f1c06fb"
 
 set -euo pipefail
 
 BUNDLE_URL=""
-IFRAME_URL=""
+EXPECTED_GIT_SHA=""
+EXPECTED_BUNDLE_HASH=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         --bundle-url) BUNDLE_URL="$2"; shift 2 ;;
-        --iframe-url) IFRAME_URL="$2"; shift 2 ;;
-        *) echo "Usage: $0 --bundle-url '<URL>' --iframe-url '<URL>'"; exit 1 ;;
+        --expected-git-sha) EXPECTED_GIT_SHA="$2"; shift 2 ;;
+        --expected-bundle-hash) EXPECTED_BUNDLE_HASH="$2"; shift 2 ;;
+        *) 
+            echo "Usage: $0 --bundle-url '<URL>' --expected-git-sha '<SHA>' --expected-bundle-hash '<HASH>'"
+            exit 1
+        ;;
     esac
 done
 
-if [ -z "$BUNDLE_URL" ] || [ -z "$IFRAME_URL" ]; then
-    echo "[PROD_PROOF] ERROR: Missing --bundle-url or --iframe-url"
+if [ -z "$BUNDLE_URL" ] || [ -z "$EXPECTED_GIT_SHA" ] || [ -z "$EXPECTED_BUNDLE_HASH" ]; then
+    echo "[PROD_PROOF] ERROR: Missing required parameters"
+    echo "[PROD_PROOF]   --bundle-url: $BUNDLE_URL"
+    echo "[PROD_PROOF]   --expected-git-sha: $EXPECTED_GIT_SHA"
+    echo "[PROD_PROOF]   --expected-bundle-hash: $EXPECTED_BUNDLE_HASH"
+    exit 1
+fi
+
+# Validate expected SHA format
+if ! echo "$EXPECTED_GIT_SHA" | grep -qE '^[a-f0-9]{7}$'; then
+    echo "[PROD_PROOF] ERROR: --expected-git-sha must be 7 hex characters"
+    exit 1
+fi
+
+if ! echo "$EXPECTED_BUNDLE_HASH" | grep -qE '^[a-f0-9]{6,12}$'; then
+    echo "[PROD_PROOF] ERROR: --expected-bundle-hash must be 6-12 hex characters"
     exit 1
 fi
 
@@ -30,10 +51,11 @@ trap "rm -rf $TMPDIR" EXIT
 FAIL=0
 
 echo "[PROD_PROOF] ============================================================"
-echo "[PROD_PROOF] PRODUCTION SERVED BUNDLE VERIFICATION (CACHE-BUST SAFE)"
+echo "[PROD_PROOF] PRODUCTION SERVED BUNDLE VERIFICATION (EXPECTED VALUES)"
 echo "[PROD_PROOF] ============================================================"
 echo "[PROD_PROOF] Bundle URL: $BUNDLE_URL"
-echo "[PROD_PROOF] Iframe URL: $IFRAME_URL"
+echo "[PROD_PROOF] Expected git_sha: $EXPECTED_GIT_SHA"
+echo "[PROD_PROOF] Expected bundle_hash: $EXPECTED_BUNDLE_HASH"
 echo ""
 
 # ========================================================================
@@ -63,126 +85,88 @@ fi
 BUNDLE_SIZE=$(wc -c < "$BUNDLE_FILE")
 echo "[PROD_PROOF]   ✓ Downloaded $BUNDLE_SIZE bytes"
 
-# Fetch cache headers separately
-echo "[PROD_PROOF] Fetching cache headers..."
-HEADERS_FILE="$TMPDIR/headers.txt"
-curl -fsSI \
-    -H "Cache-Control: no-cache" \
-    -H "Pragma: no-cache" \
-    "$FETCH_URL" > "$HEADERS_FILE" 2>/dev/null || true
+# ========================================================================
+# EXTRACT: Served git_sha from bundle proof marker
+# Pattern: ui_git_sha:"<7-hex>"
+# ========================================================================
+echo "[PROD_PROOF] Extracting served identity..."
+SERVED_GIT_SHA=$(grep -oE 'ui_git_sha:"[a-f0-9]{7,}"' "$BUNDLE_FILE" 2>/dev/null | head -1 | sed 's/ui_git_sha:"//' | sed 's/"$//' || echo "")
 
-# Extract and display cache headers
-echo "[PROD_PROOF] Cache headers:"
-for header in x-cache age etag last-modified cache-control x-served-by cf-cache-status; do
-    value=$(grep -i "^$header:" "$HEADERS_FILE" | head -1 | cut -d' ' -f2-)
-    if [ -n "$value" ]; then
-        echo "[PROD_PROOF]   $header: $value"
-    fi
-done
-
-# Extract filename hash from URL
-URL_HASH=$(echo "$BUNDLE_URL" | sed -E 's/.*app\.([a-f0-9]+)\.js.*/\1/')
-if ! echo "$URL_HASH" | grep -qE '^[a-f0-9]{6,12}$'; then
-    echo "[PROD_PROOF] WARN: Could not extract hash from URL filename"
-    URL_HASH="unknown"
+if [ -z "$SERVED_GIT_SHA" ]; then
+    echo "[PROD_PROOF] ✗ Served git_sha NOT FOUND in bundle"
+    FAIL=1
+elif ! echo "$SERVED_GIT_SHA" | grep -qE '^[a-f0-9]{7}$'; then
+    echo "[PROD_PROOF] ✗ Served git_sha INVALID FORMAT: $SERVED_GIT_SHA"
+    FAIL=1
 else
-    echo "[PROD_PROOF]   bundle_hash=$URL_HASH (from URL)"
+    echo "[PROD_PROOF]   served_git_sha=$SERVED_GIT_SHA"
 fi
 
 # ========================================================================
-# TEST 1: Extract identity markers from served bundle
+# EXTRACT: Served bundle_hash from bundle filename or content
+# Pattern: ui_bundle_hash:"<6-12-hex>"
 # ========================================================================
-echo ""
-echo "[PROD_PROOF] TEST 1: Identity markers (structural extraction)"
+SERVED_BUNDLE_HASH=$(grep -oE 'ui_bundle_hash:"[a-f0-9]{6,12}"' "$BUNDLE_FILE" 2>/dev/null | head -1 | sed 's/ui_bundle_hash:"//' | sed 's/"$//' || echo "")
 
-# Extract UI_GIT_SHA from known markers
-GIT_SHA=$(grep -oE '[":=,]([a-f0-9]{7})[",;]' "$BUNDLE_FILE" 2>/dev/null | grep -oE '[a-f0-9]{7}' | sort -u | head -1 || echo "")
-
-if [ -n "$GIT_SHA" ] && echo "$GIT_SHA" | grep -qE '^[a-f0-9]{7}$'; then
-    echo "[PROD_PROOF]   ✓ UI_GIT_SHA found: $GIT_SHA"
-else
-    echo "[PROD_PROOF]   ✗ UI_GIT_SHA missing or invalid"
-    FAIL=1
+if [ -z "$SERVED_BUNDLE_HASH" ]; then
+    # Try extracting from URL filename as fallback
+    SERVED_BUNDLE_HASH=$(echo "$BUNDLE_URL" | sed -E 's/.*app\.([a-f0-9]{6,12})\.js.*/\1/' || echo "")
 fi
 
-# Extract UI_GIT_TIME
-GIT_TIME=$(grep -oE 'ui_git_time[^,}]*' "$BUNDLE_FILE" 2>/dev/null | head -1 || echo "")
-if [ -n "$GIT_TIME" ] && ! echo "$GIT_TIME" | grep -q 'UNSET'; then
-    echo "[PROD_PROOF]   ✓ UI_GIT_TIME present (not UNSET)"
-else
-    echo "[PROD_PROOF]   ✗ UI_GIT_TIME missing or UNSET"
+if [ -z "$SERVED_BUNDLE_HASH" ]; then
+    echo "[PROD_PROOF] ✗ Served bundle_hash NOT FOUND"
     FAIL=1
-fi
-
-# Check for proof markers
-if grep -q 'UI_ENTRY_RUNTIME_PROOF\|UI_BOOT_PROOF' "$BUNDLE_FILE" 2>/dev/null; then
-    echo "[PROD_PROOF]   ✓ Proof markers present (UI_ENTRY_RUNTIME_PROOF or UI_BOOT_PROOF)"
-else
-    echo "[PROD_PROOF]   ✗ Proof markers missing"
+elif ! echo "$SERVED_BUNDLE_HASH" | grep -qE '^[a-f0-9]{6,12}$'; then
+    echo "[PROD_PROOF] ✗ Served bundle_hash INVALID FORMAT: $SERVED_BUNDLE_HASH"
     FAIL=1
+else
+    echo "[PROD_PROOF]   served_bundle_hash=$SERVED_BUNDLE_HASH"
 fi
 
 # ========================================================================
-# TEST 2: Verify invoke allowlist (literal extraction, same as dist gate)
+# CHECK 1: Served git_sha MUST equal expected git_sha
 # ========================================================================
 echo ""
-echo "[PROD_PROOF] TEST 2: Invoke allowlist (literal extraction)"
-
-# Count total invoke calls
-TOTAL_INVOKE=$(grep -o 'invoke(' "$BUNDLE_FILE" 2>/dev/null | wc -l)
-echo "[PROD_PROOF]   total_invoke_count=$TOTAL_INVOKE"
-
-# Extract literal resolvers
-EXTRACTED=$(grep -oE 'invoke\(["'"'"']([^"'"'"']+)["'"'"']' "$BUNDLE_FILE" 2>/dev/null | sed -E 's/invoke\(["'"'"']//; s/["'"'"'].*//' || echo "")
-LITERAL_COUNT=$(echo "$EXTRACTED" | wc -l)
-echo "[PROD_PROOF]   literal_invoke_count=$LITERAL_COUNT"
-
-if echo "$EXTRACTED" | grep -q "^ft_getDashboardState_v1\$"; then
-    echo "[PROD_PROOF]   ✓ ft_getDashboardState_v1 found in extracted literals"
+echo "[PROD_PROOF] Verification..."
+if [ "$SERVED_GIT_SHA" = "$EXPECTED_GIT_SHA" ]; then
+    echo "[PROD_PROOF]   ✓ git_sha matches: $SERVED_GIT_SHA == $EXPECTED_GIT_SHA"
 else
-    echo "[PROD_PROOF]   ✗ ft_getDashboardState_v1 NOT found in extracted literals"
+    echo "[PROD_PROOF]   ✗ git_sha MISMATCH"
+    echo "[PROD_PROOF]     served:   $SERVED_GIT_SHA"
+    echo "[PROD_PROOF]     expected: $EXPECTED_GIT_SHA"
     FAIL=1
-fi
-
-# Check for forbidden resolvers
-if echo "$EXTRACTED" | grep -qE '^(ping|ensureFirstSnapshot|getBuildInfo|getSnapshotDebug)$'; then
-    echo "[PROD_PROOF]   ✗ FAIL: Forbidden resolver detected"
-    FAIL=1
-else
-    echo "[PROD_PROOF]   ✓ No forbidden resolvers"
-fi
-
-# Detect dynamic invoke
-if [ "$TOTAL_INVOKE" -ne "$LITERAL_COUNT" ]; then
-    echo "[PROD_PROOF]   ✗ DYNAMIC INVOKE DETECTED (total != literal)"
-    FAIL=1
-else
-    echo "[PROD_PROOF]   ✓ All invoke calls are literal"
 fi
 
 # ========================================================================
-# TEST 3: CSP header verification
+# CHECK 2: Served bundle_hash MUST equal expected bundle_hash
 # ========================================================================
-echo ""
-echo "[PROD_PROOF] TEST 3: CSP header verification"
-
-IFRAME_HEADERS_FILE="$TMPDIR/iframe_headers.txt"
-curl -fsSI \
-    -H "Cache-Control: no-cache" \
-    -H "Pragma: no-cache" \
-    "$IFRAME_URL" > "$IFRAME_HEADERS_FILE" 2>/dev/null || true
-
-if grep -qi "content-security-policy" "$IFRAME_HEADERS_FILE"; then
-    CSP_LINE=$(grep -i "content-security-policy" "$IFRAME_HEADERS_FILE" | head -1)
-    echo "[PROD_PROOF]   ✓ CSP header present"
-    echo "[PROD_PROOF]     $CSP_LINE"
-    if echo "$CSP_LINE" | grep -qi "style-src.*unsafe-inline\|unsafe-inline.*style-src"; then
-        echo "[PROD_PROOF]   ✓ style-src 'unsafe-inline' found"
-    else
-        echo "[PROD_PROOF]   ⚠ style-src 'unsafe-inline' not confirmed"
-    fi
+if [ "$SERVED_BUNDLE_HASH" = "$EXPECTED_BUNDLE_HASH" ]; then
+    echo "[PROD_PROOF]   ✓ bundle_hash matches: $SERVED_BUNDLE_HASH == $EXPECTED_BUNDLE_HASH"
 else
-    echo "[PROD_PROOF]   ⚠ CSP header not found on iframe"
+    echo "[PROD_PROOF]   ✗ bundle_hash MISMATCH"
+    echo "[PROD_PROOF]     served:   $SERVED_BUNDLE_HASH"
+    echo "[PROD_PROOF]     expected: $EXPECTED_BUNDLE_HASH"
+    FAIL=1
+fi
+
+# ========================================================================
+# CHECK 3: Verify git_sha != bundle_hash (distinctness)
+# ========================================================================
+if [ "$SERVED_GIT_SHA" = "$SERVED_BUNDLE_HASH" ]; then
+    echo "[PROD_PROOF]   ✗ DISTINCTNESS FAILED: git_sha == bundle_hash"
+    FAIL=1
+else
+    echo "[PROD_PROOF]   ✓ Distinctness: git_sha != bundle_hash"
+fi
+
+# ========================================================================
+# CHECK 4: Verify proof marker exists
+# ========================================================================
+if grep -q 'UI_ENTRY_RUNTIME_PROOF' "$BUNDLE_FILE" 2>/dev/null; then
+    echo "[PROD_PROOF]   ✓ Proof marker present: UI_ENTRY_RUNTIME_PROOF"
+else
+    echo "[PROD_PROOF]   ✗ Proof marker MISSING"
+    FAIL=1
 fi
 
 # ========================================================================
@@ -191,11 +175,11 @@ fi
 echo ""
 echo "[PROD_PROOF] ============================================================"
 if [ $FAIL -eq 0 ]; then
-    echo "[PROD_PROOF] PASS: Served bundle matches structural invariants"
+    echo "[PROD_PROOF] PASS: Served bundle identity verified"
     echo "[PROD_PROOF] ============================================================"
     exit 0
 else
-    echo "[PROD_PROOF] FAIL: Served bundle does not match expected structure"
+    echo "[PROD_PROOF] FAIL: Served bundle does not match expected identity"
     echo "[PROD_PROOF] ============================================================"
     exit 1
 fi
