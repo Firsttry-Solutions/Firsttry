@@ -6,6 +6,37 @@
  */
 
 // ============================================================================
+// FORGE BRIDGE RUNTIME CHECK (NO TOP-LEVEL THROW)
+// Detects bridge at runtime and renders fail-closed panel if missing
+// ============================================================================
+import { ensureForgeBridgeOrRenderFatal } from "./_FATAL_MISSING_FORGE_BRIDGE";
+
+// ============================================================================
+// BRIDGE INVOKE WRAPPER: Safe invocation of backend resolvers
+// ============================================================================
+import { forgeInvoke } from "./forgeInvoke";
+
+// ============================================================================
+// IDENTITY ANCHOR GENERATION (FOR GATE VERIFICATION)
+// ============================================================================
+import { createIdentityAnchor } from "./ui_identity";
+
+// ============================================================================
+// LEGACY FLOW DETECTOR: Fail-closed validation (PHASE 3)
+// ============================================================================
+import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownState } from "./legacy_flow_detector";
+
+// ============================================================================
+// IDENTITY ANCHOR CONSTANT (FOR GATE VERIFICATION)
+// ============================================================================
+import { IDENTITY_ANCHOR_V1 } from "./entryProof";
+
+// ============================================================================
+// UI INVOKE WIRING PROOF
+// ============================================================================
+console.log("[UI_INVOKE_WIRING_PROOF] start");
+
+// ============================================================================
 // CSP INLINE STYLE VERIFICATION (PHASE 1 - MANDATORY)
 // Must run FIRST to fail fast if CSP blocks inline styles
 // ============================================================================
@@ -18,6 +49,20 @@ try {
 } catch (e) {
   throw new Error("CSP inline style still blocked");
 }
+
+// ============================================================================
+// FORGE BRIDGE RUNTIME CHECK (FAIL-CLOSED, NO THROW)
+// Must run EARLY to detect if bridge is available, render panel if not
+// ============================================================================
+console.log("[UI_BRIDGE_RUNTIME_CHECK] Checking Forge bridge availability...");
+const bridgeOk = ensureForgeBridgeOrRenderFatal(document.body);
+if (!bridgeOk) {
+  // Bridge missing and panel rendered. Stop execution.
+  console.error("[UI_BRIDGE_RUNTIME_CHECK] Bridge not available. Fatal panel rendered. Stopping boot.");
+  // Exit early - do not continue with app initialization
+  throw new Error("FATAL_UI_BRIDGE_MISSING_RUNTIME: Cannot proceed without Forge bridge");
+}
+console.log("[UI_BRIDGE_RUNTIME_CHECK] Bridge available. Proceeding with boot.");
 
 // ============================================================================
 // L0.C: UI ENTRY RUNTIME PROOF - IIFE (runs immediately before any other code)
@@ -95,6 +140,9 @@ import './styles.css';
 // Import build info (injected by Vite)
 import { getBuildIdentifier } from './buildInfo';
 
+// Import UI identity type (PHASE 2: strict types for build markers)
+import { buildUiIdentity, formatUiIdentity, type UiIdentity } from './ui_identity';
+
 // Import UI build markers (auto-generated at build time)
 import { UI_GIT_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
 
@@ -143,6 +191,42 @@ const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
 const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).substring(0, 8)}`;
 
 // ============================================================================
+// PHASE 2: UI IDENTITY INITIALIZATION (STRICT TYPES)
+// Build identity distinguishing git SHA from bundle hash at runtime
+// ============================================================================
+let UI_IDENTITY: UiIdentity;
+try {
+  UI_IDENTITY = buildUiIdentity(UI_GIT_SHA, UI_BUILD_TIME_UTC);
+  console.log(`[UI_IDENTITY_RESOLVED] ${formatUiIdentity(UI_IDENTITY)}`);
+  
+  // EMIT IDENTITY ANCHOR - single source of truth for gate verification
+  // This literal string will be parsed by Gate 2 (verify_dist_identity_labels.sh)
+  // It MUST appear exactly once in the bundle as a literal string constant
+  const identityAnchor = createIdentityAnchor(UI_IDENTITY);
+  console.log(`[FT_IDENTITY_ANCHOR] ${identityAnchor}`);
+  
+  // CRITICAL: Output anchor constant for gate verification
+  // This must be a literal string that survives minification
+  console.log(IDENTITY_ANCHOR_V1);
+  
+} catch (err) {
+  console.error('[FATAL_UI_IDENTITY]', err instanceof Error ? err.message : String(err));
+  // Fail closed: if identity cannot be built, show error and stop
+  const errPanel = document.createElement('div');
+  errPanel.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:9999;' +
+    'display:flex;align-items:center;justify-content:center;font-family:monospace;';
+  errPanel.innerHTML = `<div style="max-width:600px;padding:20px;background:#fee;border:1px solid #c00;">` +
+    `<h2>FATAL: UI Identity Error</h2>` +
+    `<pre>${err instanceof Error ? err.message : String(err)}</pre>` +
+    `<p>The UI bundle identity could not be determined. This prevents secure operation.` +
+    ` Check that @forge/bridge is installed and the gadget is served from dist.</p>` +
+    `</div>`;
+  document.body.innerHTML = '';
+  document.body.appendChild(errPanel);
+  throw err;
+}
+
+// ============================================================================
 // UI BOOT PROOF LOGGING (CACHE-BUST VISIBILITY)
 // ============================================================================
 // Log to console immediately on module load to prove:
@@ -159,11 +243,11 @@ const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).sub
       }
     }
     
-    // Log single-line proof that includes git SHA, time, and loaded script(s)
-    // Format: [UI_BOOT_PROOF] ui_git_sha=<SHA> time=<UTC> scripts=<urls>
+    // Log single-line proof using DISTINGUISHED labels for git sha vs bundle hash
+    // Format: [UI_BOOT_PROOF] UI_GIT_SHA=<git> UI_BUNDLE_HASH=<hash> time=<UTC> scripts=<urls>
     console.log(
-      `[UI_BOOT_PROOF] ui_git_sha=${UI_GIT_SHA} time=${UI_BUILD_TIME_UTC} ` +
-      `scripts=[${scriptUrls.join('; ')}] uiReqId=${FT_UI_REQ_ID}`
+      `[UI_BOOT_PROOF] UI_GIT_SHA=${UI_IDENTITY.ui_git_sha} UI_BUNDLE_HASH=${UI_IDENTITY.ui_bundle_hash} ` +
+      `time=${UI_IDENTITY.ui_git_time_iso} scripts=[${scriptUrls.join('; ')}] uiReqId=${FT_UI_REQ_ID}`
     );
     
     // Also log individual script URLs for easy inspection in browser DevTools
@@ -598,10 +682,9 @@ async function loadStatus() {
         if (!rawData || invokeError) {
             const errorMsg = invokeError || 'No data returned from resolver';
             const errorType = invokeErrorThrown ? 'INVOKE_THROW' : 'INVOKE_ERROR';
-            // Return safe, normalized empty state
-            data = EMPTY_STATUS_V1("UNKNOWN", "unknown", UI_BUILD_VERSION);
-            data.health = "ERROR";
-            data.degradedReason = errorMsg;
+            
+            // PHASE 1: NEVER render fallback UNKNOWN state
+            // Show error panel and exit
             const errorHtml = `
                 <div class="error-panel error">
                     <div class="error-panel-section">Resolver Invocation Failed</div>
@@ -614,7 +697,7 @@ async function loadStatus() {
             `;
             setHTML('operational-status', errorHtml);
             setText('ui-selftest-invoke', `FAIL (${errorType}: ${errorMsg})`);
-            return;
+            return;  // DO NOT CONTINUE - render error panel only
         }
 
         // Normalize the payload to GovernanceStatusV1
@@ -2412,7 +2495,49 @@ function onDOMReady() {
     // ========================================================================
     (async () => {
       try {
-        const state = await (window as any).invoke('ft_getDashboardState_v1', {});
+        // PHASE 3: Validate resolver name
+        validateNonLegacyFlow('ft_getDashboardState_v1');
+        
+        const result = await forgeInvoke('ft_getDashboardState_v1', {});
+        
+        // PHASE 3: Validate response format (must not be legacy)
+        validateResponseNoLegacyMode(result);
+        
+        if (!result.ok) {
+          // FAIL-CLOSED: Do not continue on error
+          const errorMsg = `[FATAL_UI] ${result.error.code}: ${result.error.message}`;
+          console.error(errorMsg);
+          
+          // Render error panel in the gadget UI
+          const errorPanel = document.createElement('div');
+          errorPanel.id = '__ft-ui-fatal-error';
+          errorPanel.style.cssText = `
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f3f3f3; border: 2px solid #d32f2f;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; font-family: monospace; z-index: 999999; overflow: auto;
+          `;
+          
+          const title = document.createElement('h2');
+          title.textContent = 'FATAL: UI cannot invoke backend';
+          title.style.color = '#d32f2f';
+          errorPanel.appendChild(title);
+          
+          const msg = document.createElement('p');
+          msg.textContent = result.error.message;
+          msg.style.cssText = 'color: #666; word-wrap: break-word; max-width: 100%;';
+          errorPanel.appendChild(msg);
+          
+          const notice = document.createElement('p');
+          notice.textContent = 'Legacy fallback mode is disabled. Backend must be reachable.';
+          notice.style.cssText = 'color: #999; font-size: 12px; margin-top: 20px;';
+          errorPanel.appendChild(notice);
+          
+          document.body.appendChild(errorPanel);
+          throw new Error(errorMsg);
+        }
+        
+        const state = result.value;
         if (state?.ok === false) {
           console.warn("[BACKBONE_L0] ft_getDashboardState_v1 returned error:", state);
         } else {
@@ -2482,199 +2607,101 @@ function onDOMReady() {
         uiBuildEl.textContent = uiBuild;
         buildFooter.appendChild(uiBuildEl);
         
-        // Try to fetch backend health via ping, then build info via resolver for cache-bust proof
+        // PHASE 1: Single source of truth - ft_getDashboardState_v1 only
+        // No legacy ping fallback, no LEGACY mode, deterministic end-to-end
         (async () => {
             try {
-                // PHASE 5C: First call ping to verify backend is responsive
-                console.log(`[UI_PING_INVOKE_START] uiReqId=${FT_UI_REQ_ID}`);
-                let pingResult: any = null;
-                let pingError: string | null = null;
+                console.log(`[UI_FT_GETDASHBOARDSTATE_START] uiReqId=${FT_UI_REQ_ID}`);
+                let stateResult: any = null;
+                let stateError: string | null = null;
                 
                 try {
-                    pingResult = await invokeWithUiReqId('ping', { uiReqId: FT_UI_REQ_ID });
-                } catch (pingErr) {
-                    pingError = pingErr instanceof Error ? pingErr.message : String(pingErr);
-                    console.error(`[UI_PING_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} error=${pingError}`);
+                    // PHASE 3: Validate resolver name
+                    validateNonLegacyFlow('ft_getDashboardState_v1');
+                    
+                    stateResult = await invokeWithUiReqId('ft_getDashboardState_v1', { 
+                        uiReqId: FT_UI_REQ_ID,
+                        uiBundleHash: UI_DIST_STAMP,
+                        uiGitSha: UI_BUILD_MARKER,
+                    });
+                    
+                    // PHASE 3: Validate response format (must not be legacy)
+                    validateResponseNoLegacyMode(stateResult);
+                } catch (invokeErr) {
+                    stateError = invokeErr instanceof Error ? invokeErr.message : String(invokeErr);
+                    console.error(`[UI_FT_GETDASHBOARDSTATE_INVOKE_ERROR] uiReqId=${FT_UI_REQ_ID} error=${stateError}`);
                 }
                 
-                // If ping failed, show error immediately
-                if (pingError) {
-                    // invoke() threw an exception - backend definitely not responding
-                    console.error(`[UI_PING_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} error_type=INVOKE_THREW error_message=${pingError}`);
+                // If invoke threw, backend not responding
+                if (stateError) {
+                    const normalized = normalizeInvokeError(new Error(stateError));
+                    const traceId = normalized.traceId;
                     
-                    const normalized = normalizeInvokeError(new Error(pingError));
-                    const pingTrace = normalized.traceId;
+                    console.error(`[UI_FT_GETDASHBOARDSTATE_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} trace=${traceId} error=${stateError}`);
                     
-                    // Log full error details
-                    console.error(`[UI_PING_RESPONSE_DETAILS] pingError=${pingError}`);
-                    
-                    const errorInfo = `PING_FAILED | trace: ${pingTrace}`;
+                    const errorInfo = `Backend unreachable | trace: ${traceId}`;
                     const backendDisplay = `(${errorInfo.substring(0, 60)})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                     buildFooter.classList.add('text-error');
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_FAILED | INVOKE_THREW | ERROR:${normalized.code} | TRACE:${pingTrace}`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | INVOKE_ERROR | TRACE:${traceId}`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }
                 
-                // Parse ping response (handles both TruthEnvelope and legacy formats)
-                const parsedPing = parsePingResponse(pingResult);
-                console.log(`[UI_PING_RESPONSE_PARSED] mode=${parsedPing.mode} ok=${parsedPing.ok} data_keys=${Object.keys(parsedPing.data).join(',')}`);
+                // Parse response - expect {trace, data} structure from ft_getDashboardState_v1
+                const trace = stateResult?.trace;
+                const data = stateResult?.data;
                 
-                // CRITICAL FIX: Only show "Backend not responding" if invoke threw (no JSON at all)
-                // If JSON was received, even with ok:false, treat as backend IS responding with an error
-                if (!parsedPing.ok) {
-                    // Backend responded with error (JSON was parsed successfully)
-                    const errorMsg = parsedPing.error?.message || 'Ping rejected by backend';
-                    const errorCode = parsedPing.error?.code || 'PING_REJECTED';
-                    const errorTrace = parsedPing.error?.trace_id_stable || 'no-trace';
+                if (!stateResult || !data) {
+                    console.error(`[UI_FT_GETDASHBOARDSTATE_INVALID_RESPONSE] uiReqId=${FT_UI_REQ_ID} response_keys=${Object.keys(stateResult || {}).join(',')}`);
                     
-                    // Try to extract structured error details from envelope
-                    const envelopeDetails = extractErrorEnvelopeDetails(parsedPing);
-                    const displayCode = envelopeDetails.errorCode || errorCode;
-                    const displayTrace = envelopeDetails.traceId || errorTrace;
-                    
-                    console.error(`[UI_PING_INVOKE_RESPONSE_ERROR] uiReqId=${FT_UI_REQ_ID} mode=${parsedPing.mode} error_code=${displayCode} error_msg=${errorMsg} trace=${displayTrace}`);
-                    console.error(`[UI_PING_RESPONSE_DETAILS] Raw ping response:`, parsedPing.data);
-                    if (envelopeDetails.steps?.length) {
-                        console.error(`[UI_PING_TRACE_STEPS]`, envelopeDetails.steps.join(' → '));
-                    }
-                    
-                    const errorInfo = `${envelopeDetails.resolverName || 'ping'}: ${displayCode} | trace: ${displayTrace}`;
-                    const backendDisplay = `(${errorInfo.substring(0, 60)})`;
+                    const errorInfo = `Invalid response structure`;
+                    const backendDisplay = `(${errorInfo})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                     buildFooter.classList.add('text-error');
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_REJECTED | MODE:${parsedPing.mode} | ERROR:${displayCode} | TRACE:${displayTrace}`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | INVALID_RESPONSE`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }
                 
-                // Ping succeeded, show backend build SHA
-                console.log(`[UI_PING_INVOKE_SUCCESS] uiReqId=${FT_UI_REQ_ID} mode=${parsedPing.mode}`);
-                const backendBuildSha = 
-                  parsedPing.data?.backend_build_sha ||
-                  parsedPing.data?.build?.backendSha ||
-                  parsedPing.data?.build?.sha ||
-                  'unknown';
-                const backendTimestamp = parsedPing.data?.now_iso || new Date().toISOString();
+                // Success - show backend build SHA and status
+                console.log(`[UI_FT_GETDASHBOARDSTATE_SUCCESS] uiReqId=${FT_UI_REQ_ID} status=${data?.status} reason=${data?.reason_code}`);
                 
-                // PHASE 5B: Call ensureFirstSnapshot (idempotent health check + first snapshot)
-                console.log(`[UI_ENSURE_FIRST_SNAPSHOT_START] uiReqId=${FT_UI_REQ_ID}`);
-                let ensureResult: any = null;
-                let ensureError: string | null = null;
+                // Extract backend build SHA from response
+                const backendBuildSha = data?.ledger?.build_sha_last_seen_backend || data?.build_sha_backend || 'unknown';
+                const responseTime = data?.now_utc || new Date().toISOString();
                 
-                try {
-                    ensureResult = await invokeWithUiReqId('ensureFirstSnapshot', { uiReqId: FT_UI_REQ_ID });
-                } catch (ensureErr) {
-                    ensureError = ensureErr instanceof Error ? ensureErr.message : String(ensureErr);
-                    console.error(`[UI_ENSURE_FIRST_SNAPSHOT_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} error=${ensureError}`);
+                // Update footer with both UI and backend versions
+                const backendDisplay = backendBuildSha !== 'unknown' 
+                    ? `${backendBuildSha}`
+                    : `(no_backend_sha_yet)`;
+                buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                buildFooter.classList.add('text-info');
+                buildFooter.classList.remove('text-error');
+                
+                // Add proof markers
+                const resolverOK = Boolean(data?.ok === true && data?.status !== 'FAILED');
+                const proofEl = ftEnsureServeProofEl();
+                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | STATUS:${data?.status || 'UNKNOWN'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
+                if (trace?.stepId) {
+                    proofEl.textContent += ` | TRACE_STEP:${trace.stepId}`;
                 }
+                buildFooter.appendChild(proofEl);
                 
-                // If ensureFirstSnapshot failed, show error
-                if (ensureError || !ensureResult?.ok) {
-                    const ensureErrorMsg = ensureError || ensureResult?.error?.message || 'Failed to ensure first snapshot';
-                    const ensureErrorCode = ensureResult?.error?.code || 'ENSURE_FIRST_SNAPSHOT_FAILED';
-                    const ensureTrace = ensureResult?.error?.trace_id_stable || 'no-trace';
-                    
-                    // Try to extract structured error details from envelope
-                    const envelopeDetails = extractErrorEnvelopeDetails(ensureResult);
-                    const displayCode = envelopeDetails.errorCode || ensureErrorCode;
-                    const displayTrace = envelopeDetails.traceId || ensureTrace;
-                    
-                    const errorInfo = `${envelopeDetails.resolverName || 'ensureFirstSnapshot'}: ${displayCode} | trace: ${displayTrace}`;
-                    const backendDisplay = `(${errorInfo.substring(0, 50)})`;
-                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
-                    buildFooter.classList.add('text-error');
-                    buildFooter.classList.remove('text-info');
-                    
-                    const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | ENSURE_SNAPSHOT_FAILED | ERROR:${displayCode} | TRACE:${displayTrace}`;
-                    buildFooter.appendChild(proofEl);
-                    return;
-                }
-                
-                // ensureFirstSnapshot succeeded
-                console.log(`[UI_ENSURE_FIRST_SNAPSHOT_SUCCESS] uiReqId=${FT_UI_REQ_ID} did_write=${ensureResult?.did_write} snapshot_id=${ensureResult?.snapshot_id}`);
-                
-                // Now fetch build info for additional details
-                try {
-                    console.log(`[UI_BUILDINFO_INVOKE_START] uiReqId=${FT_UI_REQ_ID}`);
-                    const backendBuild = await invokeWithUiReqId('getBuildInfo', { uiReqId: FT_UI_REQ_ID });
-                    console.log(`[UI_BUILDINFO_INVOKE_SUCCESS] uiReqId=${FT_UI_REQ_ID} echo=${backendBuild?.uiReqIdEcho}`);
-                    console.log('[UI_BUILDINFO_DISPLAY] Backend:', backendBuild);
-                    console.log(`UI_BUILD_PROOF FT_BUILD_SHA=${backendBuild?.FT_BUILD_SHA} FT_BUILD_TIME_UTC=${backendBuild?.FT_BUILD_TIME_UTC} resolvedAt=${backendBuild?.resolvedAt}`);
-                    
-                    // PHASE 2 FIX: Check response.ok to detect resolver errors
-                    const invokeSucceeded = backendBuild?.ok === true;
-                    const hasValidBuildMeta = backendBuild && backendBuild.FT_BUILD_SHA && backendBuild.FT_BUILD_TIME_UTC;
-                    
-                    if (!invokeSucceeded) {
-                      // Resolver returned an error in response.error field
-                      // Show error_code + trace_id_stable for structured error identification
-                      const errorCode = backendBuild?.error?.code || "UNKNOWN_CODE";
-                      const traceIdStable = backendBuild?.error?.trace_id_stable || "no-trace";
-                      const errorMsg = backendBuild?.error?.message || 'Unknown error';
-                      
-                      // Try to extract structured error details from envelope
-                      const envelopeDetails = extractErrorEnvelopeDetails(backendBuild);
-                      const displayCode = envelopeDetails.errorCode || errorCode;
-                      const displayTrace = envelopeDetails.traceId || traceIdStable;
-                      
-                      const errorInfo = `${envelopeDetails.resolverName || 'getBuildInfo'}: ${displayCode} | trace: ${displayTrace}`;
-                      const backendDisplay = `(resolver_error: ${errorInfo.substring(0, 60)})`;
-                      buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
-                      buildFooter.classList.add('text-error');
-                      buildFooter.classList.remove('text-info');
-                      
-                      const proofEl = ftEnsureServeProofEl();
-                      proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | BUILDINFO_ERROR | ERROR_CODE:${displayCode} | TRACE:${displayTrace}`;
-                      buildFooter.appendChild(proofEl);
-                      return;
-                    }
-                    
-                    // Update footer with both UI and backend versions
-                    const backendDisplay = (hasValidBuildMeta) 
-                        ? `${backendBuild.FT_BUILD_SHA} @ ${backendBuild.FT_BUILD_TIME_UTC}`
-                        : `(missing_backend_build_meta)`;
-                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
-                    buildFooter.classList.add('text-info');
-                    buildFooter.classList.remove('text-error');
-                    
-                    // BACKBONE LAYER 0: Update footer with unmissable proof marker
-                    // Include UI_BUILD_MARKER and ui_req_id for cache-busting + correlation verification
-                    const proofMarker = document.createElement('div');
-                    proofMarker.className = 'proof-marker';
-                    proofMarker.textContent = `BACKBONE_L0: ui_req_id=${FT_UI_REQ_ID} | UI_BUILD_MARKER=${UI_BUILD_MARKER}`;
-                    buildFooter.appendChild(proofMarker);
-                    
-                    // Add SERVE_PROOF DOM element with request ID correlation
-                    const resolverOK = Boolean(hasValidBuildMeta);
-                    const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | ECHO:${backendBuild?.uiReqIdEcho || '(none)'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
-                    buildFooter.appendChild(proofEl);
-                } catch (buildErr) {
-                    console.log(`[UI_BUILDINFO_INVOKE_ERROR] uiReqId=${FT_UI_REQ_ID} error=${String(buildErr).substring(0, 60)}`, buildErr);
-                    // buildInfo error but ping succeeded, show ping result
-                    const pingDisplay = `Ping: ${backendBuildSha}`;
-                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${pingDisplay}`;
-                    const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK | BUILDINFO_ERROR:${String(buildErr).substring(0, 30)}`;
-                    buildFooter.appendChild(proofEl);
-                }
+                console.log(`[UI_FT_GETDASHBOARDSTATE_FOOTER_UPDATED] status=${data?.status} resolve_ok=${resolverOK}`);
             } catch (err) {
-                console.log(`[UI_BUILDINFO_INVOKE_ERROR] uiReqId=${FT_UI_REQ_ID} error=${String(err).substring(0, 60)}`, err);
-                // Keep UI-only build info if backend not available
+                console.error(`[UI_OUTER_ERROR] uiReqId=${FT_UI_REQ_ID} error=${String(err).substring(0, 60)}`, err);
+                // Keep UI-only build info if outer error
                 buildFooter.textContent = `UI: ${uiBuild}`;
-                // Still add serve-proof even on error (proves dist was served)
                 try {
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | (resolver_invoke_error:${String(err).substring(0, 40)})`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | (outer_error:${String(err).substring(0, 40)})`;
                     buildFooter.appendChild(proofEl);
                 } catch (e) {
                     console.error('[UI] Failed to render serve-proof element', e);
