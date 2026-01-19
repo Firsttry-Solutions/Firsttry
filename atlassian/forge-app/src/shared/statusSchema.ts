@@ -178,7 +178,8 @@ export function EMPTY_STATUS_V1(
     skippedChecksCount7d: 0,
     expectedScheduleIntervalMinutes: null,
     staleIfAgeMinutesGreaterThan: null,
-    snapshotAgeMinutes: undefined,
+    // CRITICAL: snapshotAgeMinutes must be number|null, never undefined
+    snapshotAgeMinutes: null,
     isStale: undefined,
     // Operational metrics (all unknown)
     operationalMetrics: {
@@ -275,7 +276,8 @@ export function normalizeStatusV1(
     staleIfAgeMinutesGreaterThan: (obj.schedulerConfigured === false || obj.mode === "manual" || obj.mode === "onload")
       ? null
       : (typeof obj.staleIfAgeMinutesGreaterThan === "number" ? obj.staleIfAgeMinutesGreaterThan : 120),
-    snapshotAgeMinutes: typeof obj.snapshotAgeMinutes === "number" ? obj.snapshotAgeMinutes : undefined,
+    // CRITICAL: snapshotAgeMinutes must ALWAYS be number|null, NEVER undefined
+    snapshotAgeMinutes: typeof obj.snapshotAgeMinutes === "number" ? obj.snapshotAgeMinutes : null,
     isStale: typeof obj.isStale === "boolean" ? obj.isStale : undefined,
     // CRITICAL: Include schedulerConfigured flag to prevent UI invariant violations
     schedulerConfigured: typeof obj.schedulerConfigured === "boolean" ? obj.schedulerConfigured : undefined,

@@ -1,127 +1,171 @@
 /**
- * BACKBONE LAYER 0: PING RESOLVER
+ * LAYER-0: PING RESOLVER (with TruthEnvelope contract)
  * 
- * Hardened health check with correlation support:
- * 1. Accepts ui_req_id from caller (for correlation)
- * 2. ALWAYS includes ui_req_id in meta on success AND error
- * 3. NEVER returns "no-trace" - always has trace_id_stable on error
- * 4. Returns meta: { ui_req_id, backend_build_sha, now_iso }
- * 5. Emits JSON log (PING_OK or PING_ERR) for grepping
+ * Hardened health check with mandatory correlation:
+ * 1. REQUIRES ui_req_id from caller (FAIL CLOSED if missing)
+ * 2. ECHOES back ui_req_id in correlation for verification
+ * 3. Uses TruthEnvelope<PingData> canonical structure
+ * 4. All responses wrapped in envelope (ok, kind, schemaVersion, correlation, build, trace, data, error)
+ * 5. Ensures no undefined fields (normalizes to null)
+ * 6. Emits JSON log (PING_OK or PING_ERR) for grepping
+ * 
+ * CONTRACT GUARANTEE:
+ * - If ui_req_id provided → envelope.correlation.uiReqId === provided ui_req_id (exact echo)
+ * - If ui_req_id missing → return error envelope (FAIL CLOSED, NOT "ui_missing_")
  */
 
 import { emitResolverErrorLog, classifyError } from "./backbone_error_handling";
 import { BACKEND_BUILD_SHA } from "../build/backend_build";
-
-export interface PingResponseMeta {
-  ui_req_id: string;
-  backend_build_sha: string;
-  now_iso: string;
-}
-
-export interface PingErrorResponse {
-  code: string;
-  message: string;
-  trace_id_stable: string;
-  trace_id_instance?: string;
-}
-
-export interface PingResponse {
-  ok: boolean;
-  meta: PingResponseMeta;
-  error?: PingErrorResponse;
-}
+import {
+  TruthEnvelope,
+  PingData,
+  createErrorEnvelope,
+  createSuccessEnvelope,
+  normalizeUndefinedToNull,
+} from "../shared/truth_contract";
 
 /**
- * Ping resolver: Health check with correlation
- * Accepts { ui_req_id } from UI
- * Always returns meta with ui_req_id for log grepping
- * Uses BACKEND_BUILD_SHA injected at build time (never "unknown")
+ * Ping resolver: Health check with MANDATORY correlation
  * 
- * PHASE C (Invoke Error Truth):
- * - ALWAYS logs FT_PING_ENTRY at function start (before any throw-able code)
- * - Wraps entire logic in try/catch (never throws raw)
- * - On error, returns structured error payload: {ok: false, error: {code, message, traceId}, meta}
- * - Guarantees ui_req_id, backend_build_sha in meta even on error
+ * Accepts uiReqId from request (via payload or headers)
+ * FAIL CLOSED: Returns error envelope if uiReqId missing
+ * Always returns TruthEnvelope<PingData> with exact uiReqId echo
+ * 
+ * Response Structure (TruthEnvelope):
+ * {
+ *   ok: boolean
+ *   kind: "ping"
+ *   schemaVersion: "1"
+ *   generatedAt: ISO timestamp
+ *   correlation: { uiReqId: "...", probeNonce: null }
+ *   build: { backendSha: "...", uiArtifactSha: null }
+ *   trace: { traceId: "...", instanceId: "..." }
+ *   data: PingData | null
+ *   error: ErrorPayload | null
+ * }
  */
-export async function ping(req?: any): Promise<PingResponse> {
+export async function ping(
+  req?: any
+): Promise<TruthEnvelope<PingData>> {
   const resolverName = "ping";
-  const backendBuildSha = BACKEND_BUILD_SHA; // Injected at build time, never fallback
+  const backendBuildSha = BACKEND_BUILD_SHA; // Injected at build time
   const nowIso = new Date().toISOString();
-  
-  // Extract ui_req_id from request (may be undefined, we'll generate one if needed)
-  const uiReqId = req?.payload?.ui_req_id || req?.ui_req_id || `req_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
-  
-  // Generate entry ID for correlation
-  const pingEntryId = `ping_entry_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
-  
-  // PHASE C: Log FT_PING_ENTRY IMMEDIATELY (before any throw-able code)
-  // This GUARANTEES execution proof even if later code fails
-  console.log(JSON.stringify({
-    marker: 'FT_PING_ENTRY',
-    ping_entry_id: pingEntryId,
-    ui_req_id: uiReqId,
-    resolver_name: resolverName,
-    timestamp_iso: nowIso
-  }));
-  
-  try {
-    const meta: PingResponseMeta = {
-      ui_req_id: uiReqId,
-      backend_build_sha: backendBuildSha,
-      now_iso: nowIso
-    };
-    
-    // Log successful ping as JSON (grepable)
-    console.log(JSON.stringify({
-      marker: "PING_OK",
-      ui_req_id: uiReqId,
-      backend_build_sha: backendBuildSha,
-      timestamp_iso: nowIso
-    }));
-    
-    // PHASE C: Log FT_PING_OK (execution success proof)
-    console.log(JSON.stringify({
-      marker: 'FT_PING_OK',
-      ping_entry_id: pingEntryId,
-      ui_req_id: uiReqId,
-      resolver_name: resolverName,
-      timestamp_iso: nowIso
-    }));
 
-    return {
-      ok: true,
-      meta
+  // STEP 1: Extract uiReqId from request (payload takes precedence, then headers)
+  const uiReqId =
+    req?.payload?.ui_req_id ||
+    req?.headers?.["x-firsttry-ui-req-id"] ||
+    req?.ui_req_id;
+
+  // Generate stable trace ID (for logging)
+  const traceIdStable = `ping-${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+  const traceIdInstance = `${traceIdStable}_inst_${Math.random().toString(36).substring(7)}`;
+
+  // STEP 2: Log entry
+  console.log(
+    JSON.stringify({
+      marker: "FT_PING_ENTRY",
+      trace_id_stable: traceIdStable,
+      ui_req_id: uiReqId || "MISSING",
+      resolver_name: resolverName,
+      timestamp_iso: nowIso,
+    })
+  );
+
+  // STEP 3: FAIL CLOSED - uiReqId is REQUIRED
+  if (!uiReqId) {
+    console.log(
+      JSON.stringify({
+        marker: "FT_PING_ERR",
+        trace_id_stable: traceIdStable,
+        ui_req_id: "MISSING",
+        resolver_name: resolverName,
+        error_code: "MISSING_UI_REQ_ID",
+        error_message: "UI request ID is required for correlation",
+        timestamp_iso: nowIso,
+      })
+    );
+
+    // Create empty PingData for error envelope
+    const emptyData: PingData = {
+      respondedAt: nowIso,
+      env: "unknown",
     };
+
+    const errorEnvelope = createErrorEnvelope<PingData>(
+      "ping",
+      "NO_CORRELATION_ID", // Placeholder when truly missing
+      null,
+      "MISSING_UI_REQ_ID",
+      "UI request ID is required for correlation",
+      backendBuildSha,
+      null,
+      traceIdStable
+    );
+
+    const normalized = normalizeUndefinedToNull(errorEnvelope);
+    return normalized;
+  }
+
+  // STEP 4: Healthy ping - return success envelope
+  try {
+    console.log(
+      JSON.stringify({
+        marker: "PING_OK",
+        ui_req_id: uiReqId,
+        backend_build_sha: backendBuildSha,
+        trace_id_stable: traceIdStable,
+        timestamp_iso: nowIso,
+      })
+    );
+
+    console.log(
+      JSON.stringify({
+        marker: "FT_PING_OK",
+        trace_id_stable: traceIdStable,
+        ui_req_id: uiReqId,
+        resolver_name: resolverName,
+        timestamp_iso: nowIso,
+      })
+    );
+
+    // Build PingData payload
+    const pingData: PingData = {
+      respondedAt: nowIso,
+      env: process.env.NODE_ENV || "unknown",
+    };
+
+    // Create success envelope with exact uiReqId echo
+    const successEnvelope = createSuccessEnvelope<PingData>(
+      "ping",
+      uiReqId, // ECHO back exact uiReqId
+      null, // probeNonce not used in ping
+      pingData,
+      backendBuildSha,
+      null, // uiArtifactSha not available in backend
+      traceIdStable
+    );
+
+    // Normalize to ensure no undefined fields
+    const normalized = normalizeUndefinedToNull(successEnvelope);
+    return normalized;
   } catch (err) {
-    // PHASE C: Log FT_PING_ERR IMMEDIATELY
-    // Error path (capture it without re-throwing)
+    // STEP 5: Error handling
     const errorMsg = err instanceof Error ? err.message : String(err);
     const errorCode = classifyError(err, "internal");
-    
-    // Generate stable + instance trace IDs
-    const traceIdStable = `ping-error-${Date.now()}`;
-    const traceIdInstance = `${traceIdStable}-${Math.random().toString(36).substring(7)}`;
-    
-    // Build meta even on error (CRITICAL for Backend Build SHA visibility)
-    const metaOnError: PingResponseMeta = {
-      ui_req_id: uiReqId,
-      backend_build_sha: backendBuildSha,          // NEVER hidden (even on error)
-      now_iso: nowIso
-    };
-    
-    // Log FT_PING_ERR with all error details (deterministic execution proof)
-    console.log(JSON.stringify({
-      marker: 'FT_PING_ERR',
-      ping_entry_id: pingEntryId,
-      ui_req_id: uiReqId,
-      resolver_name: resolverName,
-      error_code: errorCode,
-      error_message: errorMsg,
-      trace_id_stable: traceIdStable,
-      timestamp_iso: nowIso
-    }));
-    
-    // Emit error log (old format, backward compat)
+
+    console.log(
+      JSON.stringify({
+        marker: "FT_PING_ERR",
+        trace_id_stable: traceIdStable,
+        ui_req_id: uiReqId,
+        resolver_name: resolverName,
+        error_code: errorCode,
+        error_message: errorMsg,
+        timestamp_iso: nowIso,
+      })
+    );
+
     emitResolverErrorLog(
       traceIdStable,
       traceIdInstance,
@@ -132,26 +176,18 @@ export async function ping(req?: any): Promise<PingResponse> {
       resolverName
     );
 
-    // Log error as JSON (grepable) - includes trace_id_stable
-    console.log(JSON.stringify({
-      marker: "PING_ERR",
-      ui_req_id: uiReqId,
-      backend_build_sha: backendBuildSha,
-      timestamp_iso: nowIso,
-      error_code: errorCode,
-      trace_id_stable: traceIdStable
-    }));
+    const errorEnvelope = createErrorEnvelope<PingData>(
+      "ping",
+      uiReqId,
+      null,
+      errorCode,
+      errorMsg,
+      backendBuildSha,
+      null,
+      traceIdStable
+    );
 
-    // Return structured error (NEVER throw raw)
-    return {
-      ok: false,
-      meta: metaOnError,
-      error: {
-        code: errorCode,
-        message: errorMsg,
-        trace_id_stable: traceIdStable,
-        trace_id_instance: traceIdInstance
-      }
-    };
+    const normalized = normalizeUndefinedToNull(errorEnvelope);
+    return normalized;
   }
 }

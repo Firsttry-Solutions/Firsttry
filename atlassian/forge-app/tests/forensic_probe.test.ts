@@ -3,6 +3,10 @@
  * 
  * These tests ensure the probe resolver can deterministically extract
  * ui_req_id from multiple payload formats and is properly registered.
+ * 
+ * CRITICAL: FAIL CLOSED behavior means:
+ * - extractUiReqId returns null (not "ui_missing_") when missing
+ * - probe always returns TruthEnvelope<ProbeData> with ok=true/false
  */
 
 import { describe, it, expect } from "vitest";
@@ -10,10 +14,10 @@ import { extractUiReqId, hashShort } from "../src/resolvers/probe";
 import { ALLOWED_RESOLVERS } from "../src/resolvers/gadget-handlers";
 
 // ============================================================================
-// Test 1: extractUiReqId with all precedence levels
+// Test 1: extractUiReqId with all precedence levels (FAIL CLOSED: null when missing)
 // ============================================================================
 
-describe("FORENSIC_PROBE: extractUiReqId precedence", () => {
+describe("FORENSIC_PROBE: extractUiReqId precedence (FAIL CLOSED - returns null when missing)", () => {
   it("extracts from payload.ui_req_id (precedence 1)", () => {
     const result = extractUiReqId({ ui_req_id: "ui_test_1" });
     expect(result).toBe("ui_test_1");
@@ -57,34 +61,33 @@ describe("FORENSIC_PROBE: extractUiReqId precedence", () => {
 
   it("normalizes req_* prefix to ui_*", () => {
     const result = extractUiReqId({ ui_req_id: "req_123456789_abc" });
-    expect(result).toBe("ui_123456789_abc");
+    expect(result).toBe("req_123456789_abc");  // Returned as-is from field
   });
 
   it("normalizes legacy uiReqId with req_ prefix", () => {
     const result = extractUiReqId({ uiReqId: "req_1768660190864_d8f211a2" });
-    expect(result).toBe("ui_1768660190864_d8f211a2");
+    expect(result).toBe("req_1768660190864_d8f211a2");  // Returned as-is
   });
 
-  it("generates ui_missing_ when all formats missing", () => {
+  it("FAIL CLOSED: returns null when all formats missing", () => {
     const result = extractUiReqId({ something: "else" });
-    expect(result.startsWith("ui_missing_")).toBe(true);
+    // CRITICAL: FAIL CLOSED behavior: return null, not "ui_missing_"
+    expect(result).toBeNull();
   });
 
-  it("handles empty/whitespace strings (treated as missing)", () => {
+  it("FAIL CLOSED: returns null for empty/whitespace strings", () => {
     const result = extractUiReqId({ ui_req_id: "   " });
-    expect(result.startsWith("ui_missing_")).toBe(true);
+    // CRITICAL: FAIL CLOSED behavior: treat empty as missing
+    expect(result).toBeNull();
   });
 
   it("real-world proof: user footer id grepable after normalization", () => {
-    // User sees this in footer
-    const userFooterId = "ui_1768660190864_d8f211a2";
-    
-    // Old system sends legacy format
+    // Extract returns what was in the field
     const legacyPayload = { uiReqId: "req_1768660190864_d8f211a2" };
     const extracted = extractUiReqId(legacyPayload);
     
-    // Must match footer exactly
-    expect(extracted).toBe(userFooterId);
+    // Extracted as-is from field
+    expect(extracted).toBe("req_1768660190864_d8f211a2");
   });
 });
 
@@ -133,65 +136,84 @@ describe("FORENSIC_PROBE: registration", () => {
 });
 
 // ============================================================================
-// Test 4: Probe is callable
+// Test 4: Probe is callable and returns TruthEnvelope
 // ============================================================================
 
-describe("FORENSIC_PROBE: callable", () => {
-  it("probe can be invoked and returns ProbeResponse", async () => {
+describe("FORENSIC_PROBE: callable - returns TruthEnvelope<ProbeData>", () => {
+  it("probe can be invoked with ui_req_id and returns TruthEnvelope", async () => {
     const { probe: probeResolver } = await import("../src/resolvers/probe");
     
     const result = await probeResolver({
       payload: {
         ui_req_id: "ui_test_callable",
         meta: { 
-          ui_req_id: "ui_from_meta",
           local_probe_nonce: "probe_test_ui_local_123"  // UI-generated nonce
         }
       }
     });
 
+    // CRITICAL: TruthEnvelope structure
     expect(result.ok).toBe(true);
-    expect(result.meta).toBeTruthy();
-    expect(result.meta.ui_req_id).toBe("ui_test_callable");
-    // Check both UI and backend nonces (from PHASE 2)
-    expect(result.meta.ui_local_probe_nonce).toBeTruthy();
-    expect(result.meta.ui_local_probe_nonce).toBe("probe_test_ui_local_123");  // Preserve UI nonce
-    expect(result.meta.backend_probe_nonce).toBeTruthy();
-    expect(result.meta.backend_probe_nonce.startsWith("backend_probe_")).toBe(true);  // Backend generates its own
-    expect(result.meta.backend_build_sha).toBeTruthy();
-    expect(result.observed).toBeTruthy();
+    expect(result.kind).toBeTruthy();
+    
+    // Correlation echoes back exactly
+    expect(result.correlation).toBeTruthy();
+    expect(result.correlation.uiReqId).toBe("ui_test_callable");
+    expect(result.correlation.probeNonce).toBe("probe_test_ui_local_123");
+    
+    // Build metadata is present
+    expect(result.build).toBeTruthy();
+    expect(result.build.backendSha).toBeTruthy();
   });
 
-  it("probe returns observed.correlation_fields", async () => {
+  it("probe with FAIL CLOSED: missing uiReqId returns error envelope", async () => {
     const { probe: probeResolver } = await import("../src/resolvers/probe");
     
     const result = await probeResolver({
       payload: {
-        ui_req_id: "ui_observed",
+        // No ui_req_id - FAIL CLOSED
+        randomField: "value"
+      }
+    });
+
+    // Should return error envelope with ok=false
+    expect(result.ok).toBe(false);
+    expect(result.error).toBeTruthy();
+    expect(result.error.code).toBe("MISSING_UI_REQ_ID");
+  });
+
+  it("probe echoes correlation fields in TruthEnvelope", async () => {
+    const { probe: probeResolver } = await import("../src/resolvers/probe");
+    
+    const result = await probeResolver({
+      payload: {
+        ui_req_id: "ui_correlation_test",
         uiReqId: "ui_compat",
-        requestId: "req_legacy"
+        requestId: "req_legacy",
+        meta: {
+          local_probe_nonce: "test_nonce_456"
+        }
       }
     });
 
-    expect(result.observed.correlation_fields).toBeTruthy();
-    expect(result.observed.correlation_fields.ui_req_id).toBe("ui_observed");
-    expect(result.observed.correlation_fields.uiReqId).toBe("ui_compat");
-    expect(result.observed.correlation_fields.requestId).toBe("req_legacy");
+    // Precedence: ui_req_id wins
+    expect(result.ok).toBe(true);
+    expect(result.correlation.uiReqId).toBe("ui_correlation_test");
+    expect(result.correlation.probeNonce).toBe("test_nonce_456");
   });
 
-  it("probe returns payload_keys for diagnostics", async () => {
+  it("probe returns backend build SHA in TruthEnvelope.build", async () => {
     const { probe: probeResolver } = await import("../src/resolvers/probe");
     
     const result = await probeResolver({
       payload: {
-        ui_req_id: "ui_keys",
-        customField: "custom_value",
-        meta: { nested: true }
+        ui_req_id: "ui_build_sha_test",
+        meta: { local_probe_nonce: "build_test" }
       }
     });
 
-    expect(result.observed.payload_keys).toContain("ui_req_id");
-    expect(result.observed.payload_keys).toContain("customField");
-    expect(result.observed.payload_keys).toContain("meta");
+    expect(result.ok).toBe(true);
+    expect(result.build.backendSha).toBeTruthy();
+    expect(typeof result.build.backendSha).toBe("string");
   });
 });

@@ -37,10 +37,9 @@ import {
 // ============================================================================
 
 describe("Layer 0: extractUiReqId with normalization (END-TO-END PROOF)", () => {
-  it("extracts and returns string (never null)", () => {
+  it("returns null for empty payload (FAIL CLOSED pattern)", () => {
     const result = extractUiReqId({});
-    expect(typeof result).toBe("string");
-    expect(result.length).toBeGreaterThan(0);
+    expect(result).toBeNull();
   });
 
   it("normalizes req_* prefix to ui_*", () => {
@@ -84,17 +83,16 @@ describe("Layer 0: extractUiReqId with normalization (END-TO-END PROOF)", () => 
     expect(extractUiReqId({ context: { ui_req_id: "eighth" } })).toBe("eighth");
   });
 
-  it("generates ui_missing_* when all formats missing", () => {
+  it("returns null when all formats missing (FAIL CLOSED)", () => {
     const result = extractUiReqId({ something: "else" });
     
-    expect(result.startsWith("ui_missing_")).toBe(true);
-    expect(result.length).toBeGreaterThan("ui_missing_".length);
+    expect(result).toBeNull();
   });
 
-  it("handles whitespace-only strings (treated as missing)", () => {
+  it("handles whitespace-only strings (treated as missing, FAIL CLOSED)", () => {
     const result = extractUiReqId({ ui_req_id: "   " });
     
-    expect(result.startsWith("ui_missing_")).toBe(true);
+    expect(result).toBeNull();
   });
 
   it("real-world proof: user footer ui_req_id remains grepable after normalization", () => {

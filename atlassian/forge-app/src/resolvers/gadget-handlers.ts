@@ -47,11 +47,14 @@ import { BACKEND_BUILD_SHA } from "../build/backend_build";
  * 7. payload.ui_request_id
  * 8. payload.context.ui_req_id
  * 
+ * FAIL CLOSED:
+ * - Returns null if not found (caller must handle)
+ * - No longer generates "ui_missing_" fallback (deprecated pattern)
+ * 
  * Normalization:
  * - If starts with "req_" → normalize to "ui_" + rest
- * - If missing entirely → generate "ui_missing_" + Date.now()
  */
-export function extractUiReqId(payload: any): string {
+export function extractUiReqId(payload: any): string | null {
   let extracted: string | null = null;
 
   // Precedence 1
@@ -92,12 +95,8 @@ export function extractUiReqId(payload: any): string {
     extracted = 'ui_' + extracted.substring(4);
   }
 
-  // If still missing, generate one
-  if (!extracted) {
-    extracted = `ui_missing_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-  }
-
-  return extracted;
+  // FAIL CLOSED: return null if not found (no ui_missing_ fallback)
+  return extracted || null;
 }
 
 /**
