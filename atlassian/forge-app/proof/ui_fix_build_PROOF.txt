@@ -1,0 +1,40 @@
+
+5 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+> @firstry/gadget-ui@2.14.0 build
+> vite build && node postbuild.mjs
+
+vite v7.3.0 building client environment for production...
+transforming...
+✓ 84 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                  18.79 kB │ gzip:  3.92 kB
+dist/assets/index.Ba8Di7b3.css   31.52 kB │ gzip:  5.95 kB
+dist/index.js                   107.71 kB │ gzip: 30.96 kB
+✓ built in 566ms
+[POSTBUILD] sha=f1c06fb
+[POSTBUILD] wrote entry=app.f1c06fb.js
+[POSTBUILD] ✓ Asserts passed: no query-param cache bust, no legacy entry assets
+[POSTBUILD] index.html script=<script type="module" src="./app.f1c06fb.js"></script>
+[POSTBUILD] wrote ENTRY_PROOF.json (build_sha=f1c06fb)
+[POSTBUILD] ✓ Filename-based cache-bust ready
+
+> @firstry/forge-app@2.14.0 verify:ui:no-fatal-dist
+> bash tools/verify_no_fatal_ui_bridge_in_dist.sh
+
+[verify_no_fatal_ui_bridge_in_dist] Checking dist for fatal markers...
+OK: No fatal UI bridge markers in dist bundle
+
+> @firstry/forge-app@2.14.0 verify:ui:no-top-level-throw
+> bash tools/verify_no_top_level_throw_in_entry.sh
+
+[verify_no_top_level_throw_in_entry] Checking entry bundle for top-level throw...
+Checking: src/gadget-ui/dist/app.f1c06fb.js
+OK: No top-level throw in entry bundle
+
+✅ Build succeeded
+Backend build: not configured (intentional)

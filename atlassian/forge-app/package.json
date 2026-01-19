@@ -5,7 +5,10 @@
   "main": "src/index.ts",
   "scripts": {
     "type-check": "tsc --noEmit",
-    "build:gadget": "node tools/build_meta.mjs && cd src/gadget-ui && npm install && npm run build",
+    "verify:bridge-installed": "node tools/verify_forge_bridge_installed.js",
+    "verify:ui:no-fatal-dist": "bash tools/verify_no_fatal_ui_bridge_in_dist.sh",
+    "verify:ui:no-top-level-throw": "bash tools/verify_no_top_level_throw_in_entry.sh",
+    "build:gadget": "npm run verify:bridge-installed && node tools/build_meta.mjs && cd src/gadget-ui && npm install && npm run build && cd ../.. && npm run verify:ui:no-fatal-dist && npm run verify:ui:no-top-level-throw",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:operator:full": "vitest run tests/operator_verification/ov_runner.test.ts && npx ts-node tests/operator_verification/ov_report_gen.ts",
@@ -17,6 +20,7 @@
     "verify:contracts": "npm run verify:ui-naming && npm run verify:error-envelope",
     "verify:error-envelope": "bash tools/verify_error_envelope_contract.sh",
     "verify:layer0": "bash tools/verify_layer0_contract.sh",
+    "verify:no-window-invoke": "bash tools/verify_no_window_invoke.sh",
     "lint": "echo \"lint: not configured (intentional)\"",
     "build": "node tools/build_meta.mjs && npm run build:gadget && node tools/run_build_with_meta.mjs && echo \"Backend build: not configured (intentional)\"",
     "predeploy:prod": "node tools/build_meta.mjs && npm run test && npm run build:gadget && echo \"UI build ready for deploy\"",
@@ -25,10 +29,11 @@
     "audit:buildinfo": "bash ../../tools/audit_buildinfo_reachability.sh",
     "proof:buildinfo:prod": "bash ../../tools/prod_buildinfo_proof_loop.sh",
     "csp:lint": "node tools/csp_forbid_check.js",
-    "csp:gate": "bash tools/csp_static_gate.sh"
+    "csp:gate": "bash tools/csp_static_gate.sh",
+    "verify:backbone:l0": "bash tools/proof_backbone_l0.sh"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.30",
     "@types/pdfkit": "^0.17.4",
     "@types/react": "^18.2.21",
     "@vitest/ui": "^4.0.16",
@@ -41,6 +46,7 @@
   "_comment": "Forge CLI packages (@forge/api, @forge/ui) require authentication to private Atlassian registry. Installed via 'forge create' workflow in production. See docs/ATLASSIAN_DUAL_LAYER_SPEC.md for installation instructions.",
   "dependencies": {
     "@forge/api": "^6.4.2",
+    "@forge/bridge": "^6.4.2",
     "@forge/resolver": "^1.7.1",
     "pdfkit": "^0.17.2"
   }

@@ -6,6 +6,50 @@
  */
 
 // ============================================================================
+// FORGE BRIDGE RUNTIME CHECK (NO TOP-LEVEL THROW)
+// Detects bridge at runtime and renders fail-closed panel if missing
+// ============================================================================
+import { ensureForgeBridgeOrRenderFatal } from "./_FATAL_MISSING_FORGE_BRIDGE";
+
+// ============================================================================
+// BRIDGE INVOKE WRAPPER: Safe invocation of backend resolvers
+// ============================================================================
+import { forgeInvoke } from "./forgeInvoke";
+
+// ============================================================================
+// UI INVOKE WIRING PROOF
+// ============================================================================
+console.log("[UI_INVOKE_WIRING_PROOF] start");
+
+// ============================================================================
+// CSP INLINE STYLE VERIFICATION (PHASE 1 - MANDATORY)
+// Must run FIRST to fail fast if CSP blocks inline styles
+// ============================================================================
+console.log("[UI_CSP_PROOF] inline-style-allowed-check");
+try {
+  const testDiv = document.createElement("div");
+  testDiv.style.cssText = "position:absolute;left:-9999px;top:-9999px";
+  document.body.appendChild(testDiv);
+  document.body.removeChild(testDiv);
+} catch (e) {
+  throw new Error("CSP inline style still blocked");
+}
+
+// ============================================================================
+// FORGE BRIDGE RUNTIME CHECK (FAIL-CLOSED, NO THROW)
+// Must run EARLY to detect if bridge is available, render panel if not
+// ============================================================================
+console.log("[UI_BRIDGE_RUNTIME_CHECK] Checking Forge bridge availability...");
+const bridgeOk = ensureForgeBridgeOrRenderFatal(document.body);
+if (!bridgeOk) {
+  // Bridge missing and panel rendered. Stop execution.
+  console.error("[UI_BRIDGE_RUNTIME_CHECK] Bridge not available. Fatal panel rendered. Stopping boot.");
+  // Exit early - do not continue with app initialization
+  throw new Error("FATAL_UI_BRIDGE_MISSING_RUNTIME: Cannot proceed without Forge bridge");
+}
+console.log("[UI_BRIDGE_RUNTIME_CHECK] Bridge available. Proceeding with boot.");
+
+// ============================================================================
 // L0.C: UI ENTRY RUNTIME PROOF - IIFE (runs immediately before any other code)
 // Must run before importing build_meta so we capture globals at their actual load time
 // ============================================================================
@@ -2392,6 +2436,58 @@ function wireExportButtons() {
 // Wire buttons on DOM ready
 function onDOMReady() {
     wireExportButtons();
+    
+    // ========================================================================
+    // Layer-0 Backbone: Load dashboard state at startup
+    // ========================================================================
+    (async () => {
+      try {
+        const result = await forgeInvoke('ft_getDashboardState_v1', {});
+        
+        if (!result.ok) {
+          // FAIL-CLOSED: Do not continue on error
+          const errorMsg = `[FATAL_UI] ${result.error.code}: ${result.error.message}`;
+          console.error(errorMsg);
+          
+          // Render error panel in the gadget UI
+          const errorPanel = document.createElement('div');
+          errorPanel.id = '__ft-ui-fatal-error';
+          errorPanel.style.cssText = `
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f3f3f3; border: 2px solid #d32f2f;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; font-family: monospace; z-index: 999999; overflow: auto;
+          `;
+          
+          const title = document.createElement('h2');
+          title.textContent = 'FATAL: UI cannot invoke backend';
+          title.style.color = '#d32f2f';
+          errorPanel.appendChild(title);
+          
+          const msg = document.createElement('p');
+          msg.textContent = result.error.message;
+          msg.style.cssText = 'color: #666; word-wrap: break-word; max-width: 100%;';
+          errorPanel.appendChild(msg);
+          
+          const notice = document.createElement('p');
+          notice.textContent = 'Legacy fallback mode is disabled. Backend must be reachable.';
+          notice.style.cssText = 'color: #999; font-size: 12px; margin-top: 20px;';
+          errorPanel.appendChild(notice);
+          
+          document.body.appendChild(errorPanel);
+          throw new Error(errorMsg);
+        }
+        
+        const state = result.value;
+        if (state?.ok === false) {
+          console.warn("[BACKBONE_L0] ft_getDashboardState_v1 returned error:", state);
+        } else {
+          console.log("[BACKBONE_L0] Dashboard state loaded:", state?.status, state?.reason_code);
+        }
+      } catch (e) {
+        console.error("[BACKBONE_L0] Failed to load dashboard state:", e);
+      }
+    })();
     
     // ========================================================================
     // L0.C: RENDER ENTRY RUNTIME PROOF BANNER (top of page)

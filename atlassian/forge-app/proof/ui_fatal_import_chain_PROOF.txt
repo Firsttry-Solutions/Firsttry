@@ -1,0 +1,7 @@
+=== PHASE 1: PROVE IMPORT CHAIN ===
+
+Search 1: _FATAL_MISSING_FORGE_BRIDGE
+src/gadget-ui/src/main.ts:12:import "./_FATAL_MISSING_FORGE_BRIDGE";
+
+Search 2: FATAL_UI_BRIDGE
+src/gadget-ui/src/_FATAL_MISSING_FORGE_BRIDGE.ts:13:  "[FATAL_UI_BRIDGE] @forge/bridge not installed in dependencies. " +
