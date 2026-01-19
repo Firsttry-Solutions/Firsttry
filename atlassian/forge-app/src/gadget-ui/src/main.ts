@@ -27,6 +27,12 @@ import { createIdentityAnchor } from "./ui_identity";
 import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownState } from "./legacy_flow_detector";
 
 // ============================================================================
+// DASHBOARD ENVELOPE MAPPING & VALIDATION (SHARED MODULE)
+// CRITICAL: Both UI and tests use these real functions (no duplicates allowed)
+// ============================================================================
+import { mapDashEnvelopeV1, assertNonNullDashboardState, logRawDashboardEnvelope } from "./dashEnvelope";
+
+// ============================================================================
 // IDENTITY ANCHOR CONSTANT (FOR GATE VERIFICATION)
 // ============================================================================
 import { IDENTITY_ANCHOR_V1 } from "./entryProof";
@@ -2536,95 +2542,9 @@ function logUiBuildIdentityProof() {
 // - assertNonNullDashboardState prevents undefined state from reaching store
 // ============================================================================
 
-/**
- * Maps backend v1 envelope to dashboard state.
- * Enforces strict schema and fail-closed behavior.
- */
-function mapDashEnvelopeV1(resp: any): Record<string, any> {
-  // FAIL-CLOSED: Invalid envelope structure (check for null, undefined, non-object, or array)
-  if (resp === null || resp === undefined || typeof resp !== 'object' || Array.isArray(resp)) {
-    console.error('[DASH_ENVELOPE_INVALID_FAIL_CLOSED]', { received: typeof resp, isArray: Array.isArray(resp), value: resp });
-    throw new Error('DASH_ENVELOPE_INVALID_FAIL_CLOSED: resp must be object');
-  }
-  
-  // FAIL-CLOSED: Wrong schema version
-  if (resp.schemaVersion !== 'v1') {
-    console.error('[DASH_SCHEMA_VERSION_UNSUPPORTED_FAIL_CLOSED]', { schemaVersion: resp.schemaVersion });
-    throw new Error(`DASH_SCHEMA_VERSION_UNSUPPORTED_FAIL_CLOSED: expected v1, got ${resp.schemaVersion}`);
-  }
-  
-  // FAIL-CLOSED: Backend reported error
-  if (resp.ok !== true) {
-    console.warn('[DASH_ENVELOPE_BACKEND_ERROR]', { ok: resp.ok, error: resp.error });
-    return {
-      status: 'ERROR',
-      reason: 'DASH_REQUEST_FAILED',
-      error: resp.error ?? { code: 'UNKNOWN', message: 'Unknown error' },
-      canonical_envelope_applied: true,
-    };
-  }
-  
-  // FAIL-CLOSED: Missing or invalid data
-  if (!resp.data || typeof resp.data !== 'object') {
-    console.error('[DASH_ENVELOPE_MISSING_DATA_FAIL_CLOSED]', { hasData: !!resp.data, dataType: typeof resp.data });
-    throw new Error('DASH_ENVELOPE_MISSING_DATA_FAIL_CLOSED: data must be object');
-  }
-  
-  // SUCCESS: Return data with envelope marker
-  const mapped = {
-    ...resp.data,
-    canonical_envelope_applied: true,
-    envelope_schema_version: 'v1',
-  };
-  
-  return mapped;
-}
-
-/**
- * Asserts that dashboard state is valid before store commit.
- * Logs diagnostic info if state is invalid.
- */
-function assertNonNullDashboardState(
-  state: any,
-  ctx: any
-): asserts state is Record<string, any> {
-  if (!state || typeof state !== 'object') {
-    console.error('[BACKBONE_STATE_SET_FAIL]', {
-      ctx,
-      typeofState: typeof state,
-      stateIsNull: state === null,
-      stateKeys: state && typeof state === 'object' ? Object.keys(state) : null,
-      stack: new Error().stack,
-    });
-    throw new Error('DASHBOARD_STATE_UNDEFINED_FAIL_CLOSED: state must be non-null object');
-  }
-  
-  console.log('[BACKBONE_STATE_SET_OK]', {
-    ctx,
-    stateType: typeof state,
-    keys: Object.keys(state).slice(0, 60),
-    hasCanonicalMarker: !!state.canonical_envelope_applied,
-  });
-}
-
-/**
- * Logs raw envelope shape before processing.
- */
-function logRawDashboardEnvelope(resp: any) {
-  try {
-    console.log('[UI_DASH_RAW_ENVELOPE]', {
-      topKeys: resp && typeof resp === 'object' ? Object.keys(resp) : [],
-      ok: resp?.ok ?? null,
-      schemaVersion: resp?.schemaVersion ?? null,
-      hasData: !!resp?.data,
-      dataKeys: resp?.data && typeof resp.data === 'object' ? Object.keys(resp.data).slice(0, 60) : null,
-      mode: resp?.data?.mode ?? resp?.mode ?? null,
-      error: resp?.error ? { code: resp.error.code, message: resp.error.message } : null,
-    });
-  } catch (e) {
-    console.error('[UI_DASH_RAW_ENVELOPE_ERROR]', e);
-  }
-}
+// NOTE: mapDashEnvelopeV1, assertNonNullDashboardState, and logRawDashboardEnvelope
+// are now imported from dashEnvelope.ts (shared with tests).
+// DO NOT define them locally here.
 
 // ============================================================================
 // INITIALIZATION
