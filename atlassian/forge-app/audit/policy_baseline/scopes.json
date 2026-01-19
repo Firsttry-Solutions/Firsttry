@@ -5,6 +5,7 @@
   "source": "manifest.yml",
   "baseline_scopes": [
     "storage:app",
-    "read:jira-work"
+    "read:jira-work",
+    "TEMP_INJECTED_UNAUTHORIZED_SCOPE"
   ]
 }
