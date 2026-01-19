@@ -16,5 +16,5 @@ export const FT_BUILD_SHA = "8127c76ee8ea";export const FT_BUILD_COMMIT_TIME = "
 
  // Backward compatibility: old names for the same values
 export const FT_BUILD_TIME_UTC = FT_BUILD_COMMIT_TIME;
-export const UI_BUILD_SHA = FT_BUILD_SHA;
+export const UI_GIT_SHA = FT_BUILD_SHA;
 export const UI_BUILD_TIME_UTC = FT_BUILD_COMMIT_TIME;
