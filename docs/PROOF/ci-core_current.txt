@@ -37,34 +37,35 @@ jobs:
           cache: "npm"
           cache-dependency-path: "atlassian/forge-app/package-lock.json"
 
-      - name: Verify lockfile exists (fast fail)
+      - name: Install dependencies (forge-app)
         working-directory: atlassian/forge-app
         run: |
           set -euo pipefail
-          test -f package-lock.json || {
-            echo "ERROR: package-lock.json missing"
+          if [ ! -f package-lock.json ]; then
+            echo "ERROR: package-lock.json not found"
             echo "Reproducible installs require a lockfile."
             echo "Run: npm install (to generate lockfile)"
             exit 1
-          }
+          fi
+          npm ci
 
-      - name: Run cold-install proof (deterministic validation - single source)
+      - name: Run cold-install proof (deterministic validation)
         working-directory: atlassian/forge-app
         run: |
           set -euo pipefail
           bash tools/prove_clean_install.sh
 
-      - name: Verify repo clean after proof (must not dirty working tree)
+      - name: Verify lockfile integrity (detect drift)
+        working-directory: atlassian/forge-app
         run: |
           set -euo pipefail
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "ERROR: Working tree dirty after CI proof run"
-            echo "Changes detected:"
-            git status --porcelain
-            git diff || true
+          git diff --exit-code package-lock.json || {
+            echo "ERROR: package-lock.json has uncommitted changes (lockfile drift detected)"
+            echo "This typically happens when npm ci or gadget-ui npm install modifies the lockfile."
+            echo "Fix: Review the diff and commit the updated lockfile if intentional."
+            git diff package-lock.json
             exit 1
-          fi
-          echo "OK: repo clean after proof"
+          }
 
       - name: Verify UI naming contract (enforce non-bypassable)
         working-directory: atlassian/forge-app

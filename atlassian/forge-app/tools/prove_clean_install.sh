@@ -25,6 +25,17 @@
 
 set -euo pipefail
 
+# Trap to ensure cleanup on exit
+cleanup() {
+  EXIT_CODE=$?
+  # Clean up any temp files if created
+  if [ -n "${TEMP_DIR:-}" ] && [ -d "$TEMP_DIR" ]; then
+    rm -rf "$TEMP_DIR" || true
+  fi
+  return $EXIT_CODE
+}
+trap cleanup EXIT
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -33,9 +44,15 @@ NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_APP_DIR="$(dirname "$SCRIPT_DIR")"
+TEMP_DIR=""
 
 echo -e "${YELLOW}[COLD_INSTALL_PROOF]${NC} Starting deterministic cold install..."
 echo -e "${YELLOW}[COLD_INSTALL_PROOF]${NC} Working directory: $FORGE_APP_DIR"
+echo ""
+
+# Print environment info for traceability
+echo -e "${YELLOW}[ENVIRONMENT]${NC} Node version: $(node -v)"
+echo -e "${YELLOW}[ENVIRONMENT]${NC} npm version: $(npm -v)"
 echo ""
 
 # Step 1: Clean node_modules
@@ -99,8 +116,20 @@ else
 fi
 echo ""
 
-# Step 7: Validate package-lock.json is valid JSON
-echo -e "${YELLOW}[STEP 7]${NC} Validating package-lock.json JSON integrity..."
+# Step 7: Check for lockfile drift (prevent silent mutations)
+echo -e "${YELLOW}[STEP 7]${NC} Checking for lockfile drift (git diff package-lock.json)..."
+if git diff --exit-code package-lock.json > /dev/null 2>&1; then
+  echo -e "${GREEN}✓${NC} package-lock.json has no uncommitted changes (no drift)"
+else
+  echo -e "${RED}✗ FAIL: package-lock.json has uncommitted changes (drift detected)${NC}"
+  echo -e "${RED}This typically happens when npm ci modifies the lockfile.${NC}"
+  git diff package-lock.json || true
+  exit 1
+fi
+echo ""
+
+# Step 8: Validate package-lock.json is valid JSON
+echo -e "${YELLOW}[STEP 8]${NC} Validating package-lock.json JSON integrity..."
 if node -e "const fs = require('fs'); const lockfile = JSON.parse(fs.readFileSync('package-lock.json', 'utf8')); console.log('✓ package-lock.json is valid JSON');" 2>&1; then
   echo -e "${GREEN}✓${NC} package-lock.json JSON validation passed"
 else
@@ -112,13 +141,17 @@ echo ""
 # Success banner
 echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║${NC}                                                              ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}  ✅ COLD INSTALL PROOF: ALL CHECKS PASSED                    ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}  ✅ COLD INSTALL PROOF: ALL 8 CHECKS PASSED                 ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}                                                              ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}  Summary:                                                    ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}    • node_modules: removed (clean state)                     ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}    • npm cache: cleared                                      ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}    • package-lock.json: verified (determinism requirement)  ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}    • npm ci: reproducible install from lockfile             ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}    • npm test: 1716 tests passed                            ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}    • npm test: full test suite passed                       ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}    • build:gadget: all gates green (7/7)                    ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}    • package-lock.json: valid JSON                          ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}    • lockfile drift: no uncommitted changes                 ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}    • JSON validation: package-lock.json is valid            ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}                                                              ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}  Conclusion: Zero cache dependence ✓                        ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}              CI reproducibility verified ✓                   ${GREEN}║${NC}"

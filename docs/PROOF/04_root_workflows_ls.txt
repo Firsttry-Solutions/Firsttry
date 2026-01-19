@@ -1,0 +1,15 @@
+total 56
+drwxrwxrwx+ 2 vscode root   4096 Jan 19 15:54 .
+drwxrwxrwx+ 6 vscode root   4096 Jan 19 09:29 ..
+-rw-rw-rw-  1 vscode vscode 2767 Jan 19 16:57 ci-core.yml
+-rw-rw-rw-  1 vscode root   1035 Jan 19 09:29 deploy-pages.yml
+-rw-rw-rw-  1 vscode root   1562 Jan 19 09:29 docs-gate.yml
+-rw-rw-rw-  1 vscode root   2751 Jan 19 09:29 evidence-guard.yml
+-rw-rw-rw-  1 vscode root    959 Jan 19 09:29 gates.yml
+-rw-rw-rw-  1 vscode root    634 Jan 19 09:29 pages-branding-gate.yml
+-rw-rw-rw-  1 vscode root   1832 Jan 19 09:29 placeholders-guard.yml
+-rw-rw-rw-  1 vscode root   1180 Jan 19 16:57 release-manual.yml
+-rw-rw-rw-  1 vscode root   1136 Jan 19 09:29 reviewer-gates.yml
+-rw-rw-rw-  1 vscode root   1464 Jan 19 16:57 security-lite.yml
+-rw-rw-rw-  1 vscode root   1464 Jan 19 09:29 static.yml
+-rw-rw-rw-  1 vscode root    632 Jan 19 09:29 workflow-sanity.yml
