@@ -142,7 +142,6 @@ echo ""
 # Step PD: POLICY DRIFT ENFORCEMENT (moved from nested workflow to root proof)
 echo -e "${YELLOW}[STEP PD]${NC} POLICY DRIFT ENFORCEMENT (Root-Based Enforcement)"
 echo "Running legacy policy drift gate commands (moved from nested workflow)..."
-echo "[CI_PROOF] POLICY_DRIFT_STEP_PD_RAN"
 echo ""
 
 # Run Policy Drift Detection (via node script)
