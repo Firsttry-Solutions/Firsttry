@@ -1,0 +1,2 @@
+=== ci-core.yml prove step ===
+55:          bash tools/prove_clean_install.sh

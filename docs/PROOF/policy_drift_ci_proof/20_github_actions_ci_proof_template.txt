@@ -1,0 +1,41 @@
+===============================================================================
+GITHUB ACTIONS CI PROOF (Manual Collection Step)
+===============================================================================
+
+OBJECTIVE: Confirm that GitHub Actions runs STEP PD and the failure blocks merge.
+
+EVIDENCE CHECKLIST:
+1. Open the PR with the TEMP failure injection commit (f83a0d90)
+2. Go to "Checks" tab
+3. Expand the job that runs ci-core.yml (main CI workflow)
+4. Search the logs for: [CI_PROOF] POLICY_DRIFT_STEP_PD_RAN
+5. Scroll down to see the STEP PD failure message
+6. Confirm workflow final status is RED/FAILED
+7. Verify merge is blocked (PR shows "required status checks do not pass")
+
+KEY SEARCH TERMS IN LOGS:
+- "[CI_PROOF] POLICY_DRIFT_STEP_PD_RAN" (proves STEP PD ran)
+- "✗ POLICY DRIFT DETECTED" (proves check caught the injected failure)
+- "POLICY_DRIFT_SCOPES_UNAPPROVED" (specific drift type caught)
+
+WHAT PROVES BLOCKING:
+- Job exit code: non-zero
+- Workflow status: Failed (red X)
+- PR merge button: Disabled with "required status checks do not pass"
+- ci-core.yml job shows as failed in checks tab
+
+TEMPORARY FAILURE INJECTED IN:
+- File: atlassian/forge-app/audit/policy_baseline/scopes.json
+- Change: Added "TEMP_INJECTED_UNAUTHORIZED_SCOPE" to baseline_scopes array
+- Effect: policy_drift_check.js detects 1/5 checks fail (scope mismatch)
+- Commit: f83a0d90 "ci(proof): failure injection to confirm STEP PD blocks merges (TEMP)"
+
+LOCAL VERIFICATION SHOWS:
+- Scope drift detected
+- policy_drift_check.js exit code: 1 (failure)
+- STEP PD in prove_clean_install.sh exits 1 when check fails
+- npm test also fails due to the drift in the baseline
+
+Once you've collected GitHub Actions evidence, REVERT this commit with:
+  git revert --no-edit HEAD
+  git push origin fix/bridge-guard-contract-20260119T161347Z
