@@ -253,6 +253,34 @@ src/gadget-ui/src/legacy_flow_detector.ts:7:  const FORBIDDEN_RESOLVERS = ['ping
 
 **Interpretation**: ensureFirstSnapshot is explicitly marked as FORBIDDEN. It is NOT invoked anywhere in UI code. Dashboard loading is deterministic (no stalling fallback needed).
 
+**Clarification on Proof Semantics**:
+
+The proof file `/tmp/dashboard_phase2_final_proof/50_ui_ensure_hits.txt` may be:
+- **Empty**: Meaning no references to ensureFirstSnapshot anywhere in the codebase
+- **Non-empty but containing only FORBIDDEN matches**: Meaning references exist ONLY within the `FORBIDDEN_RESOLVERS` list
+
+The proof **FAILS** only if ANY line indicates:
+- A real invocation site (e.g., `ensureFirstSnapshot()` call outside forbidden list)
+- A dynamic resolver invocation (e.g., `invoke(resolverName)` where resolverName could be ensureFirstSnapshot)
+- A fallback mechanism that would call it
+
+**Exact grep command used**:
+```bash
+rg -n "ensureFirstSnapshot|ft_ensureFirstSnapshot|ENSURE_FIRST_SNAPSHOT" src/gadget-ui/src
+```
+
+**Allowed file/line patterns**:
+- Lines in `legacy_flow_detector.ts` defining FORBIDDEN_RESOLVERS: ✅ Allowed
+- Comments mentioning it: ✅ Allowed
+- String literals in config/lists: ✅ Allowed
+- Actual function calls or dynamic invocations: ❌ FAIL
+
+**Evidence from execution**:
+```
+src/gadget-ui/src/legacy_flow_detector.ts:7:  const FORBIDDEN_RESOLVERS = ['ping', 'ensureFirstSnapshot', ...];
+```
+This is the ONLY match, confirming the resolver is forbidden, not invoked.
+
 ---
 
 ## HARD PROOF #6: Tests and Build Pass
@@ -378,6 +406,79 @@ To verify the deployed gadget is running the intended bundle with non-stalling b
    - Reload page multiple times
    - Dashboard state always loads to same state
    - No "BOOTING" state persists
+
+---
+
+## Runtime Proof Capture (Manual Paste Required)
+
+This section documents runtime evidence from the deployed gadget. **This must be filled in manually after deployment**.
+
+### Procedure
+
+1. **Open FirstTry gadget in Jira** (any project, any issue)
+2. **Open DevTools Console** (F12 → Console tab)
+3. **Wait for gadget to load** (dashboard state should complete within 5 seconds)
+4. **Copy all lines matching `[UI_BUILD_IDENTITY_PROOF]` and `[BACKBONE_STATE_*]`**
+5. **Paste below in the PROOF_EVIDENCE section**
+6. **Record timestamp in UTC**
+
+### Expected Markers
+
+The console should show (in order):
+```
+[UI_BUILD_IDENTITY_PROOF] identity_consistent:true
+[UI_DASH_RAW_ENVELOPE] schemaVersion:"v1" ok:true hasData:true
+[BACKBONE_STATE_SET_OK] ...
+[BACKBONE_STATE_COMMITTED] truthModelState:...
+```
+
+### PROOF_EVIDENCE (Paste Exact Console Output Here)
+
+```
+TimestampUTC: [FILL IN: Date -u +"%Y-%m-%d %H:%M:%SZ" from terminal when captured]
+Jira Instance: [FILL IN: Jira URL or environment identifier, redact if necessary]
+Gadget URL: [FILL IN: Gadget URL from browser address bar, may redact domain]
+
+Console Output:
+[PASTE EXACT LINES BELOW]
+
+[UI_BUILD_IDENTITY_PROOF] identity_consistent:[PASTE VALUE]
+[UI_DASH_RAW_ENVELOPE] schemaVersion:[PASTE VALUE] ok:[PASTE VALUE] hasData:[PASTE VALUE]
+[BACKBONE_STATE_SET_OK] ctx:[PASTE IF PRESENT] stateType:[PASTE VALUE]
+[BACKBONE_STATE_COMMITTED] truthModelState:[PASTE VALUE] isOperational:[PASTE VALUE]
+```
+
+### Proof Verification Checklist
+
+After pasting evidence above, verify:
+
+- [ ] `identity_consistent:true` is present
+- [ ] `schemaVersion:"v1"` is exactly present (not other version)
+- [ ] `ok:true` or `ok:false` (if error test) is present
+- [ ] `truthModelState` is NOT "BOOTING" (should be "OK", "BOOTSTRAP", or "ERROR")
+- [ ] `[BACKBONE_STATE_COMMITTED]` appears (state was committed)
+- [ ] All console lines are from the active gadget (not cached/old logs)
+
+### Error Simulation Test (Optional)
+
+To additionally verify fail-closed semantics:
+
+1. **Temporarily modify backend** to return `{ ok: false, schemaVersion: "v1", error: { code: "TEST_ERROR", message: "Test" } }`
+2. **Redeploy and reload gadget**
+3. **Verify console shows**:
+   ```
+   [UI_DASH_RAW_ENVELOPE] schemaVersion:"v1" ok:false error:...
+   [BACKBONE_STATE_COMMITTED] truthModelState:"ERROR"
+   ```
+4. **Confirm UI does NOT show "BOOTING"** (shows error message instead)
+5. **Revert and redeploy**
+
+### Notes
+
+- Proof must be captured from **actual running gadget**, not simulated or staged
+- Console lines must be **exact copy-paste**, not paraphrased
+- Timestamp must be in **UTC** (use `date -u`)
+- If gadget takes >10 seconds to load, check browser console for errors
 
 ---
 
