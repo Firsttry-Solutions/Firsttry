@@ -141,19 +141,32 @@ else
   exit 1
 fi
 
-# Step 11: Verify build marker fix (ui_artifact_sha instead of ui_build_sha)
+# Step 11: Verify build marker fix (ui_git_sha instead of ui_build_sha or ui_artifact_sha)
 echo ""
 echo -e "${YELLOW}Step 11: Verifying build marker label fix...${NC}"
-if grep -q "ui_artifact_sha" "$PROJECT_ROOT/src/gadget-ui/src/main.ts"; then
-  echo -e "${GREEN}✓ Build markers use 'ui_artifact_sha' (corrected label)${NC}"
+if grep -q "ui_git_sha" "$PROJECT_ROOT/src/gadget-ui/src/main.ts"; then
+  echo -e "${GREEN}✓ Build markers use 'ui_git_sha' (clean naming)${NC}"
 else
-  echo -e "${RED}✗ Build markers not corrected to 'ui_artifact_sha'${NC}"
+  echo -e "${RED}✗ Build markers not using 'ui_git_sha'${NC}"
   exit 1
 fi
 
-# Verify old label is removed
-if grep -q "ui_build_sha" "$PROJECT_ROOT/src/gadget-ui/src/main.ts" | grep -v "UI_BUILD_SHA\|buildInfo\|ui_build_meta"; then
-  echo -e "${YELLOW}⚠ Warning: Still has 'ui_build_sha' (may be in variable names)${NC}"
+# Verify ambiguous labels are removed
+if grep -q "ui_build_sha\|ui_artifact_sha" "$PROJECT_ROOT/src/gadget-ui/src/main.ts"; then
+  echo -e "${RED}✗ Found ambiguous naming in main.ts (ui_build_sha or ui_artifact_sha)${NC}"
+  exit 1
+else
+  echo -e "${GREEN}✓ No ambiguous naming patterns found${NC}"
+fi
+
+# Step 12: Verify UI naming contract (prevent ambiguous token regression)
+echo ""
+echo -e "${YELLOW}Step 12: Verifying UI naming contract (non-bypassable enforcement)...${NC}"
+if bash "$SCRIPT_DIR/verify_ui_naming_contract.sh"; then
+  echo -e "${GREEN}✓ UI naming contract verified (no ambiguous tokens)${NC}"
+else
+  echo -e "${RED}✗ UI naming contract violation detected${NC}"
+  exit 1
 fi
 
 echo ""
@@ -172,6 +185,10 @@ echo "UI Ping Invoke Bug Fix Verification:"
 echo "  ✓ UI ping invoke tests pass (24 tests covering all scenarios)"
 echo "  ✓ expectedScheduleIntervalMinutes never undefined (always number|null)"
 echo "  ✓ Backward-compatible parser handles LEGACY and TruthEnvelope formats"
-echo "  ✓ Build markers correctly labeled (ui_artifact_sha)"
+echo "  ✓ Build markers correctly labeled (ui_git_sha)"
 echo "  ✓ No 'Backend not responding' when JSON is received"
+echo ""
+echo "UI Naming Contract Enforcement:"
+echo "  ✓ No ambiguous 'UI_BUILD_SHA' or 'ui_artifact_sha' tokens in codebase"
+echo "  ✓ Clean naming standards enforced: UI_GIT_SHA, __FT_BUILD_SHA__, ui_git_sha"
 echo ""
