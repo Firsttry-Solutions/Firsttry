@@ -25,6 +25,10 @@ modules:
 
   # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
   function:
+    - key: ftBackboneScheduled
+      handler: src/backbone/forge-entry.scheduled
+    - key: ftRunNow
+      handler: src/backbone/forge-entry.runNow
     - key: phase5-scheduler-fn
       handler: scheduled/phase5_scheduler.run
     - key: phase6-weekly-snap-fn
@@ -53,7 +57,12 @@ modules:
   # PHASE 6: Snapshot evidence ledger (daily + weekly automatic captures)
   # SEV-2-003: OAuth token refresh (hourly to maintain freshness)
   # PHASE 2: Config visibility scheduler (daily config complexity snapshot)
+  # Layer-0 Backbone: ftBackboneScheduled runs on fiveMinute to maintain ledger
   scheduledTrigger:
+    - key: ft-backbone-scheduler
+      function: ftBackboneScheduled
+      interval: fiveMinute
+
     - key: phase5-auto-scheduler
       function: phase5-scheduler-fn
       interval: fiveMinute
@@ -70,11 +79,19 @@ modules:
       function: daily-dispatcher-fn
       interval: day
 
+  # Layer-0 Backbone: Web trigger for manual run-now invocations
+  webTrigger:
+    - key: ftRunNow
+      function: ftRunNow
+
 # Permissions
 permissions:
   scopes:
     - storage:app
     - read:jira-work
+  content:
+    styles:
+      - 'unsafe-inline'
 
 # Resource pages
 resources:
