@@ -1,0 +1,59 @@
+name: Forge App Repro Proof
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "atlassian/forge-app/**"
+      - ".github/workflows/**"
+  push:
+    branches: [main, develop]
+    paths:
+      - "atlassian/forge-app/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repro-proof:
+    name: Reproducible Cold Install Proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "atlassian/forge-app/package-lock.json"
+
+      - name: Verify lockfile exists (fast fail)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          test -f package-lock.json || {
+            echo "ERROR: package-lock.json missing"
+            echo "Reproducible installs require a lockfile."
+            exit 1
+          }
+
+      - name: Run cold-install proof (deterministic validation)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/prove_clean_install.sh
+
+      - name: Verify repo clean after proof
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "ERROR: Working tree dirty after proof"
+            git status --porcelain
+            exit 1
+          fi
+          echo "✓ repo clean after proof"

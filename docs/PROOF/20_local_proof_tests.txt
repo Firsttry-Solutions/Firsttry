@@ -1,0 +1,40 @@
+GAP E: Scope Versioning: ✓ SEALED
+GAP F: Phase-4 Boundary Guards: ✓ SEALED
+BYPASS PREVENTION: ✓ SEALED
+
+================================================================================
+
+
+ [32m✓[39m tests/test_gaps_a_f_enforcement.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m tests/operator_verification/ov_report_gen.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m tests/operator_verification/ov_helpers.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m tests/credibility/_harness/determinism.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/p1_policy_drift.test.ts[2m [ tests/p1_policy_drift.test.ts ][22m
+[31m[1mError[22m: Transform failed with 1 error:
+/workspaces/Firsttry/atlassian/forge-app/tests/p1_policy_drift.test.ts:520:0: ERROR: Unterminated string literal[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36m/workspaces/Firsttry/atlassian/forge-app/tests/p1_policy_drift.test.ts[39m:520:0
+[33m  
+  Unterminated string literal
+  518 |  
+  519 |  ```
+  520 |  
+      |  ^
+  [39m
+[90m [2m❯[22m failureErrorWithLog node_modules/esbuild/lib/main.js:[2m1467:15[22m[39m
+[90m [2m❯[22m node_modules/esbuild/lib/main.js:[2m736:50[22m[39m
+[90m [2m❯[22m responseCallbacks.<computed> node_modules/esbuild/lib/main.js:[2m603:9[22m[39m
+[90m [2m❯[22m handleIncomingPacket node_modules/esbuild/lib/main.js:[2m658:12[22m[39m
+[90m [2m❯[22m Socket.readFromStdout node_modules/esbuild/lib/main.js:[2m581:7[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m139 passed[39m[22m[90m (140)[39m
+[2m      Tests [22m [1m[32m1696 passed[39m[22m[90m (1696)[39m
+[2m   Start at [22m 17:18:46
+[2m   Duration [22m 24.22s[2m (transform 1.79s, setup 1.14s, import 3.02s, tests 3.13s, environment 20ms)[22m
+
