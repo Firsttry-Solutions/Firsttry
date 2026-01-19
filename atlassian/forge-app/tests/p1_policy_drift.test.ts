@@ -504,14 +504,35 @@ export async function evilFunction() {
   });
 
   describe('CI Integration Validation', () => {
-    it('should enforce policy drift check via root CI workflow', () => {
-      // NOTE: Policy drift was previously checked via nested workflow in atlassian/forge-app/.github/workflows/policy-drift-gate.yml
-      // That nested workflow has been deleted because GitHub Actions does not execute nested workflows.
-      // Policy drift enforcement must now be done via root workflow (if needed).
-      // For now, we verify that the nested workflow is gone (by design).
+    it('should enforce policy drift check via root prove_clean_install.sh', () => {
+      // Policy drift is now enforced in ROOT CI via prove_clean_install.sh
+      // (previously in nested workflow which GitHub Actions never executes)
+      
+      // Assertion 1: prove_clean_install.sh must contain policy drift marker
+      const proveScriptPath = path.join(__dirname, '../tools/prove_clean_install.sh');
+      expect(fs.existsSync(proveScriptPath)).toBe(true);
+      
+      const proveScript = fs.readFileSync(proveScriptPath, 'utf8');
+      expect(proveScript).toContain('POLICY_DRIFT_ROOT_ENFORCED=1');
+      // Check for STEP PD - it may have color codes so check for the content
+      expect(proveScript).toContain('[STEP PD]');
+      expect(proveScript).toContain('POLICY DRIFT ENFORCEMENT');
+      expect(proveScript).toContain('node audit/policy_drift_check.js');
+      expect(proveScript).toContain('audit/policy_baseline/');
+      console.log('✓ Policy drift enforcement found in root prove_clean_install.sh');
+      
+      // Assertion 2: ci-core.yml must run prove_clean_install.sh
+      const ciCoreYamlPath = path.join(__dirname, '../../../.github/workflows/ci-core.yml');
+      expect(fs.existsSync(ciCoreYamlPath)).toBe(true);
+      
+      const ciCoreYaml = fs.readFileSync(ciCoreYamlPath, 'utf8');
+      expect(ciCoreYaml).toContain('bash tools/prove_clean_install.sh');
+      console.log('✓ ci-core.yml runs prove_clean_install.sh (policy drift included)');
+      
+      // Assertion 3: nested workflow must NOT exist (by design)
       const nestedWorkflowPath = path.join(__dirname, '../.github/workflows/policy-drift-gate.yml');
       expect(fs.existsSync(nestedWorkflowPath)).toBe(false);
-      console.log('✓ Nested workflow removed (GitHub Actions never executes them)');
+      console.log('✓ Nested workflow removed (GitHub Actions never executes them anyway)');
     });
   });
 });
