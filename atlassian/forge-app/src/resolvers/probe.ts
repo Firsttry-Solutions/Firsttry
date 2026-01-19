@@ -34,6 +34,11 @@ import {
   createSuccessEnvelope,
   normalizeUndefinedToNull,
 } from "../shared/truth_contract";
+import { buildInvocationMeta } from "../security/invocationMeta";
+import { traceOk, traceFail } from "../security/stepTrace";
+import { checkStorageProof } from "../security/storageProof";
+import { makeErrorEnvelope } from "../security/errorEnvelope";
+import type { ErrorEnvelopeV1 } from "../shared/invocationEnvelope";
 
 // ============================================================================
 // HELPERS
@@ -198,6 +203,9 @@ export async function probe(
   const uiReqId = extractUiReqId(payload, headers);
   const probeNonce = extractProbeNonce(payload, headers);
 
+  // Build invocation metadata
+  const meta = buildInvocationMeta({ ctx: { payload, headers } as any, uiReqId });
+
   // STEP 1: Log entry with correlation IDs
   console.log(
     JSON.stringify({
@@ -224,7 +232,21 @@ export async function probe(
       })
     );
 
-    const errorEnvelope = createErrorEnvelope<ProbeData>(
+    // Create error envelope with trace
+    const errorTrace = [
+      traceFail("probe", "uiReqId_validation", "MISSING_UI_REQ_ID", "UI request ID is required for correlation")
+    ];
+
+    const errorEnvelopeV1 = makeErrorEnvelope({
+      resolverName: "probe",
+      stepId: "uiReqId_validation",
+      errorCode: "MISSING_UI_REQ_ID",
+      message: "UI request ID is required for correlation",
+      meta,
+      trace: errorTrace,
+    }) as ErrorEnvelopeV1;
+
+    const errorTruthEnvelope = createErrorEnvelope<ProbeData>(
       "probe",
       "NO_CORRELATION_ID", // Placeholder when truly missing
       null,
@@ -235,7 +257,10 @@ export async function probe(
       traceIdStable
     );
 
-    const normalized = normalizeUndefinedToNull(errorEnvelope);
+    // Attach error envelope for UI parsing
+    (errorTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
+
+    const normalized = normalizeUndefinedToNull(errorTruthEnvelope);
     return normalized;
   }
 
@@ -265,14 +290,29 @@ export async function probe(
       })
     );
 
+    // Create success trace
+    const successTrace = [
+      traceOk("probe", "execution", "Probe executed successfully")
+    ];
+
     // Build ProbeData payload
     const probeData: ProbeData = {
       executedAt: nowIso,
       result: { status: "ok" },
     };
 
+    // Create success envelope with error trace data
+    const errorEnvelopeV1 = makeErrorEnvelope({
+      resolverName: "probe",
+      stepId: "execution",
+      errorCode: "OK" as any, // Success
+      message: "Probe executed successfully",
+      meta,
+      trace: successTrace,
+    }) as ErrorEnvelopeV1;
+
     // Create success envelope with exact correlation echo
-    const successEnvelope = createSuccessEnvelope<ProbeData>(
+    const successTruthEnvelope = createSuccessEnvelope<ProbeData>(
       "probe",
       uiReqId, // ECHO back exact uiReqId
       probeNonce, // ECHO back probeNonce (or null if not provided)
@@ -282,13 +322,16 @@ export async function probe(
       traceIdStable
     );
 
+    // Attach error envelope (even on success, for trace data)
+    (successTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
+
     // Normalize to ensure no undefined fields
-    const normalized = normalizeUndefinedToNull(successEnvelope);
+    const normalized = normalizeUndefinedToNull(successTruthEnvelope);
     return normalized;
   } catch (err) {
     // STEP 4: Error handling
     const errorMsg = err instanceof Error ? err.message : String(err);
-    const errorCode = (err as any)?.code || "PROBE_ERROR";
+    const errorCode = (err as any)?.code || "PROBE_FAILED";
 
     console.log(
       JSON.stringify({
@@ -301,7 +344,21 @@ export async function probe(
       })
     );
 
-    const errorEnvelope = createErrorEnvelope<ProbeData>(
+    // Create error trace
+    const errorTrace = [
+      traceFail("probe", "execution", errorCode as any, errorMsg)
+    ];
+
+    const errorEnvelopeV1 = makeErrorEnvelope({
+      resolverName: "probe",
+      stepId: "execution",
+      errorCode: errorCode as any,
+      message: errorMsg,
+      meta,
+      trace: errorTrace,
+    }) as ErrorEnvelopeV1;
+
+    const errorTruthEnvelope = createErrorEnvelope<ProbeData>(
       "probe",
       uiReqId,
       probeNonce,
@@ -312,7 +369,10 @@ export async function probe(
       traceIdStable
     );
 
-    const normalized = normalizeUndefinedToNull(errorEnvelope);
+    // Attach error envelope for UI parsing
+    (errorTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
+
+    const normalized = normalizeUndefinedToNull(errorTruthEnvelope);
     return normalized;
   }
 }

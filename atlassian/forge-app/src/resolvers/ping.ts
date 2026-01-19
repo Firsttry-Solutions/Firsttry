@@ -23,6 +23,11 @@ import {
   createSuccessEnvelope,
   normalizeUndefinedToNull,
 } from "../shared/truth_contract";
+import { buildInvocationMeta } from "../security/invocationMeta";
+import { traceOk, traceFail } from "../security/stepTrace";
+import { checkStorageProof } from "../security/storageProof";
+import { makeErrorEnvelope } from "../security/errorEnvelope";
+import type { ErrorEnvelopeV1 } from "../shared/invocationEnvelope";
 
 /**
  * Ping resolver: Health check with MANDATORY correlation
@@ -61,6 +66,9 @@ export async function ping(
   const traceIdStable = `ping-${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
   const traceIdInstance = `${traceIdStable}_inst_${Math.random().toString(36).substring(7)}`;
 
+  // Build invocation metadata (extract trace context from Forge)
+  const meta = buildInvocationMeta({ ctx: req as any, uiReqId });
+
   // STEP 2: Log entry
   console.log(
     JSON.stringify({
@@ -86,13 +94,27 @@ export async function ping(
       })
     );
 
-    // Create empty PingData for error envelope
+    // Create error envelope with trace
+    const errorTrace = [
+      traceFail(resolverName, "uiReqId_validation", "MISSING_UI_REQ_ID", "UI request ID is required for correlation")
+    ];
+
+    const errorEnvelopeV1 = makeErrorEnvelope({
+      resolverName,
+      stepId: "uiReqId_validation",
+      errorCode: "MISSING_UI_REQ_ID",
+      message: "UI request ID is required for correlation",
+      meta,
+      trace: errorTrace,
+    }) as ErrorEnvelopeV1;
+
+    // Also return legacy TruthEnvelope for backward compatibility
     const emptyData: PingData = {
       respondedAt: nowIso,
       env: "unknown",
     };
 
-    const errorEnvelope = createErrorEnvelope<PingData>(
+    const errorTruthEnvelope = createErrorEnvelope<PingData>(
       "ping",
       "NO_CORRELATION_ID", // Placeholder when truly missing
       null,
@@ -103,7 +125,10 @@ export async function ping(
       traceIdStable
     );
 
-    const normalized = normalizeUndefinedToNull(errorEnvelope);
+    // Attach error envelope as metadata for UI parsing
+    (errorTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
+
+    const normalized = normalizeUndefinedToNull(errorTruthEnvelope);
     return normalized;
   }
 
@@ -129,14 +154,29 @@ export async function ping(
       })
     );
 
+    // Create success trace
+    const successTrace = [
+      traceOk(resolverName, "health_check", "Ping successful")
+    ];
+
     // Build PingData payload
     const pingData: PingData = {
       respondedAt: nowIso,
       env: process.env.NODE_ENV || "unknown",
     };
 
+    // Create success envelope
+    const errorEnvelopeV1 = makeErrorEnvelope({
+      resolverName,
+      stepId: "health_check",
+      errorCode: "OK" as any, // Success case - will be handled in UI
+      message: "Ping successful",
+      meta,
+      trace: successTrace,
+    }) as ErrorEnvelopeV1;
+
     // Create success envelope with exact uiReqId echo
-    const successEnvelope = createSuccessEnvelope<PingData>(
+    const successTruthEnvelope = createSuccessEnvelope<PingData>(
       "ping",
       uiReqId, // ECHO back exact uiReqId
       null, // probeNonce not used in ping
@@ -146,8 +186,11 @@ export async function ping(
       traceIdStable
     );
 
+    // Attach error envelope (even on success, for trace data)
+    (successTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
+
     // Normalize to ensure no undefined fields
-    const normalized = normalizeUndefinedToNull(successEnvelope);
+    const normalized = normalizeUndefinedToNull(successTruthEnvelope);
     return normalized;
   } catch (err) {
     // STEP 5: Error handling
@@ -176,7 +219,21 @@ export async function ping(
       resolverName
     );
 
-    const errorEnvelope = createErrorEnvelope<PingData>(
+    // Create error trace
+    const errorTrace = [
+      traceFail(resolverName, "execution", errorCode as any, errorMsg)
+    ];
+
+    const errorEnvelopeV1 = makeErrorEnvelope({
+      resolverName,
+      stepId: "execution",
+      errorCode: errorCode as any,
+      message: errorMsg,
+      meta,
+      trace: errorTrace,
+    }) as ErrorEnvelopeV1;
+
+    const errorTruthEnvelope = createErrorEnvelope<PingData>(
       "ping",
       uiReqId,
       null,
@@ -187,7 +244,10 @@ export async function ping(
       traceIdStable
     );
 
-    const normalized = normalizeUndefinedToNull(errorEnvelope);
+    // Attach error envelope for UI parsing
+    (errorTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
+
+    const normalized = normalizeUndefinedToNull(errorTruthEnvelope);
     return normalized;
   }
 }

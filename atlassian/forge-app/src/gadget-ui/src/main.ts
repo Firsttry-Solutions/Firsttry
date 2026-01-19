@@ -397,6 +397,59 @@ function normalizeInvokeError(err: any): NormalizedError {
 }
 
 // ============================================================================
+// ERROR ENVELOPE EXTRACTION: Structured error details from backend
+// ============================================================================
+
+/**
+ * extractErrorEnvelopeDetails: Extract error details from ErrorEnvelopeV1 attached to response
+ * 
+ * PURPOSE: Parse structured error envelope and return formatted error details
+ * for display in UI (resolverName, errorCode, traceId, storage state, trace steps)
+ * 
+ * RETURN: { resolverName, errorCode, message, traceId, storageState, steps[] }
+ */
+interface ExtractedErrorDetails {
+    resolverName?: string;
+    errorCode?: string;
+    message?: string;
+    traceId?: string;
+    storageState?: string;
+    steps?: string[];
+}
+
+function extractErrorEnvelopeDetails(response: any): ExtractedErrorDetails {
+    try {
+        // Check for error envelope attached to response
+        const envelope = response?._errorEnvelopeV1 || response?.errorEnvelope;
+        
+        if (!envelope || typeof envelope !== 'object') {
+            return {};
+        }
+
+        const details: ExtractedErrorDetails = {
+            resolverName: envelope.resolverName,
+            errorCode: envelope.errorCode,
+            message: envelope.message,
+            traceId: envelope.meta?.traceId || envelope.meta?.requestId,
+            storageState: envelope.storage?.state
+        };
+
+        // Extract trace steps (for detailed error info)
+        if (Array.isArray(envelope.trace)) {
+            details.steps = envelope.trace.map((step: any) => {
+                const status = step.ok ? '✓' : '✗';
+                const msg = step.message || (step.ok ? 'OK' : step.errorCode || 'FAILED');
+                return `${status} ${step.stepId || step.resolverName}: ${msg}`;
+            });
+        }
+
+        return details;
+    } catch {
+        return {};
+    }
+}
+
+// ============================================================================
 // BACKBONE LAYER 0: UI_REQ_ID CORRELATION WRAPPER
 // ============================================================================
 /**
@@ -2449,17 +2502,25 @@ function onDOMReady() {
                     const errorCode = parsedPing.error?.code || 'PING_REJECTED';
                     const errorTrace = parsedPing.error?.trace_id_stable || 'no-trace';
                     
-                    console.error(`[UI_PING_INVOKE_RESPONSE_ERROR] uiReqId=${FT_UI_REQ_ID} mode=${parsedPing.mode} error_code=${errorCode} error_msg=${errorMsg} trace=${errorTrace}`);
-                    console.error(`[UI_PING_RESPONSE_DETAILS] Raw ping response:`, parsedPing.data);
+                    // Try to extract structured error details from envelope
+                    const envelopeDetails = extractErrorEnvelopeDetails(parsedPing);
+                    const displayCode = envelopeDetails.errorCode || errorCode;
+                    const displayTrace = envelopeDetails.traceId || errorTrace;
                     
-                    const errorInfo = `${errorCode} | trace: ${errorTrace}`;
+                    console.error(`[UI_PING_INVOKE_RESPONSE_ERROR] uiReqId=${FT_UI_REQ_ID} mode=${parsedPing.mode} error_code=${displayCode} error_msg=${errorMsg} trace=${displayTrace}`);
+                    console.error(`[UI_PING_RESPONSE_DETAILS] Raw ping response:`, parsedPing.data);
+                    if (envelopeDetails.steps?.length) {
+                        console.error(`[UI_PING_TRACE_STEPS]`, envelopeDetails.steps.join(' → '));
+                    }
+                    
+                    const errorInfo = `${envelopeDetails.resolverName || 'ping'}: ${displayCode} | trace: ${displayTrace}`;
                     const backendDisplay = `(${errorInfo.substring(0, 60)})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                     buildFooter.classList.add('text-error');
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_REJECTED | MODE:${parsedPing.mode} | ERROR:${errorCode} | TRACE:${errorTrace}`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_REJECTED | MODE:${parsedPing.mode} | ERROR:${displayCode} | TRACE:${displayTrace}`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }
@@ -2490,14 +2551,20 @@ function onDOMReady() {
                     const ensureErrorMsg = ensureError || ensureResult?.error?.message || 'Failed to ensure first snapshot';
                     const ensureErrorCode = ensureResult?.error?.code || 'ENSURE_FIRST_SNAPSHOT_FAILED';
                     const ensureTrace = ensureResult?.error?.trace_id_stable || 'no-trace';
-                    const errorInfo = `${ensureErrorCode} | trace: ${ensureTrace}`;
+                    
+                    // Try to extract structured error details from envelope
+                    const envelopeDetails = extractErrorEnvelopeDetails(ensureResult);
+                    const displayCode = envelopeDetails.errorCode || ensureErrorCode;
+                    const displayTrace = envelopeDetails.traceId || ensureTrace;
+                    
+                    const errorInfo = `${envelopeDetails.resolverName || 'ensureFirstSnapshot'}: ${displayCode} | trace: ${displayTrace}`;
                     const backendDisplay = `(${errorInfo.substring(0, 50)})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                     buildFooter.classList.add('text-error');
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | ENSURE_SNAPSHOT_FAILED | ERROR:${ensureErrorCode} | TRACE:${ensureTrace}`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | ENSURE_SNAPSHOT_FAILED | ERROR:${displayCode} | TRACE:${displayTrace}`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }
@@ -2523,14 +2590,20 @@ function onDOMReady() {
                       const errorCode = backendBuild?.error?.code || "UNKNOWN_CODE";
                       const traceIdStable = backendBuild?.error?.trace_id_stable || "no-trace";
                       const errorMsg = backendBuild?.error?.message || 'Unknown error';
-                      const errorInfo = `${errorCode} | trace: ${traceIdStable}`;
+                      
+                      // Try to extract structured error details from envelope
+                      const envelopeDetails = extractErrorEnvelopeDetails(backendBuild);
+                      const displayCode = envelopeDetails.errorCode || errorCode;
+                      const displayTrace = envelopeDetails.traceId || traceIdStable;
+                      
+                      const errorInfo = `${envelopeDetails.resolverName || 'getBuildInfo'}: ${displayCode} | trace: ${displayTrace}`;
                       const backendDisplay = `(resolver_error: ${errorInfo.substring(0, 60)})`;
                       buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                       buildFooter.classList.add('text-error');
                       buildFooter.classList.remove('text-info');
                       
                       const proofEl = ftEnsureServeProofEl();
-                      proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | BUILDINFO_ERROR | ERROR_CODE:${errorCode} | TRACE:${traceIdStable}`;
+                      proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_OK:${backendBuildSha} | BUILDINFO_ERROR | ERROR_CODE:${displayCode} | TRACE:${displayTrace}`;
                       buildFooter.appendChild(proofEl);
                       return;
                     }
