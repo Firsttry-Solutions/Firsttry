@@ -30,11 +30,11 @@ jobs:
         working-directory: atlassian/forge-app
         run: |
           set -euo pipefail
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
+          if [ ! -f package-lock.json ]; then
+            echo "ERROR: package-lock.json not found"
+            exit 1
           fi
+          npm ci
 
       - name: npm audit (forge-app)
         working-directory: atlassian/forge-app
