@@ -15,7 +15,7 @@
 
 import { storage } from "@forge/api";
 import { resolveTenantKey } from "../security/resolveTenantKey";
-import { UI_BUILD_SHA } from "../gadget-ui/src/ui_build_meta";
+import { UI_GIT_SHA } from "../gadget-ui/src/ui_build_meta";
 import { FT_BUILD_SHA } from "../shared/backend_build_meta";
 import { FT_BUILD_TIME_UTC } from "../shared/build_meta";
 
@@ -143,7 +143,7 @@ export async function getOperationalState_resolver(
   const nowUtc = new Date().toISOString();
 
   // ========== BUILD INFO ==========
-  const uiBuildSha = UI_BUILD_SHA || "ERROR_BUILD_SHA_MISSING";
+  const uiBuildSha = UI_GIT_SHA || "ERROR_BUILD_SHA_MISSING";
   const backendBuildSha = FT_BUILD_SHA || "ERROR_BUILD_SHA_MISSING";
   const backendBuildTimeUtc = FT_BUILD_TIME_UTC || "ERROR_TIME_MISSING";
   const buildMismatch = uiBuildSha !== backendBuildSha;
