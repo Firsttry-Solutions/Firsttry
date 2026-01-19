@@ -18,34 +18,53 @@ declare const __FT_BUILD_TIME__: string | undefined;
 // Immediately capture proof before any other module executes
 // This proves the actual entry script filename, not just what was requested
 (() => {
-  // Get injected values if available, otherwise mark as UNSET
-  const ui_build_sha =
+  // Get injected git/build metadata (names corrected to distinguish from bundle hash)
+  const ui_git_sha =
     typeof __FT_BUILD_SHA__ !== 'undefined'
       ? __FT_BUILD_SHA__
       : 'UNSET';
-  const ui_build_time =
+  const ui_git_time =
     typeof __FT_BUILD_TIME__ !== 'undefined'
       ? __FT_BUILD_TIME__
       : 'UNSET';
 
-  // Import here to capture entry before any bundled code runs
+  // Capture entry before any bundled code runs
   // This MUST be inline to run before module imports below
   const scripts = Array.from(
     document.querySelectorAll<HTMLScriptElement>('script[src]')
   ).map(s => s.src);
 
-  const entry_script_src =
-    scripts.find(
-      url =>
-        url.includes('/govGadget2141/') &&
-        /\/app\.[0-9a-f]+\.js(\?|$)/.test(url)
-    ) || null;
+  // Extract entry bundle URL and hash
+  // Precedence: document.currentScript -> scan for /app.<HASH>.js pattern
+  const currentScript = (document.currentScript as any)?.src || null;
+  let ui_entry_bundle_url: string | null = null;
+  let ui_entry_bundle_hash: string | null = null;
+
+  // Try current script first
+  if (currentScript && /\/app\.[a-z0-9]+\.(js|mjs)/.test(currentScript)) {
+    ui_entry_bundle_url = currentScript;
+    const match = currentScript.match(/\/app\.([a-z0-9]+)\.(js|mjs)/);
+    if (match) ui_entry_bundle_hash = match[1];
+  }
+
+  // If not found, scan all scripts
+  if (!ui_entry_bundle_hash) {
+    for (const src of scripts) {
+      const match = src.match(/\/app\.([a-z0-9]+)\.(js|mjs)/);
+      if (match) {
+        ui_entry_bundle_url = src;
+        ui_entry_bundle_hash = match[1];
+        break;
+      }
+    }
+  }
 
   const proof = {
     marker: 'UI_ENTRY_RUNTIME_PROOF',
-    ui_build_sha,
-    ui_build_time,
-    entry_script_src,
+    ui_git_sha,
+    ui_git_time,
+    ui_entry_bundle_url,
+    ui_entry_bundle_hash,
     script_srcs: scripts,
     href: window.location.href,
     iso: new Date().toISOString(),
@@ -63,7 +82,8 @@ import './styles.css';
 import { getBuildIdentifier } from './buildInfo';
 
 // Import UI build markers (auto-generated at build time)
-import { UI_BUILD_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
+// Note: UI_BUILD_SHA from build system contains git SHA; renamed to UI_GIT_SHA for clarity
+import { UI_BUILD_SHA as UI_GIT_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
 
 // Import L0.C entry proof functions for testing and banner display
 import { captureRuntimeEntryProof, formatEntryProofForBanner } from './entryProof';
@@ -89,6 +109,9 @@ import './enterprise/enterprise.css';
 
 // Import shared status schema and normalizer (CRITICAL to prevent UI crashes)
 import { normalizeStatusV1, EMPTY_STATUS_V1, GovernanceStatusV1 } from '../../shared/statusSchema';
+
+// Import ping response parser (CRITICAL for production bug fix)
+import { parsePingResponse, shouldShowBackendNotResponding, type ParsedPingResponse } from './pingResponseParser';
 
 // ============================================================================
 // BUILD & PROOF MARKERS
@@ -124,9 +147,9 @@ const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).sub
     }
     
     // Log single-line proof that includes SHA, time, and loaded script(s)
-    // Format: [UI_BOOT_PROOF] ui_build=<SHA> time=<UTC> scripts=<urls>
+    // Format: [UI_BOOT_PROOF] ui_git_sha=<SHA> time=<UTC> scripts=<urls>
     console.log(
-      `[UI_BOOT_PROOF] ui_build=${UI_BUILD_SHA} time=${UI_BUILD_TIME_UTC} ` +
+      `[UI_BOOT_PROOF] ui_git_sha=${UI_GIT_SHA} time=${UI_BUILD_TIME_UTC} ` +
       `scripts=[${scriptUrls.join('; ')}] uiReqId=${FT_UI_REQ_ID}`
     );
     
@@ -540,19 +563,33 @@ async function loadStatus() {
         let viewModel: GovernanceViewModel;
         try {
             // Build RuntimeSignals from the normalized payload
+            // CRITICAL INVARIANT:
+            // If scheduleStatus === NOT_CONFIGURED, then expectedScheduleIntervalMinutes MUST be null (never number)
+            const scheduleStatus = data.scheduler?.status || 'NOT_CONFIGURED';
+            const expectedScheduleIntervalMinutes =
+              scheduleStatus === 'NOT_CONFIGURED'
+                ? null
+                : (typeof data.expectedScheduleIntervalMinutes === 'number'
+                    ? data.expectedScheduleIntervalMinutes
+                    : null);
+
             const signals: RuntimeSignals = {
                 tenantIdentityStatus: data.tenantStatus || 'UNKNOWN',
                 backendStatus: data.systemStatus || 'UNKNOWN',
-                scheduleStatus: data.scheduler?.status || 'NOT_CONFIGURED',
+                scheduleStatus,
+                expectedScheduleIntervalMinutes,
                 lastSuccessfulRunISO: data.lastSuccessAt || null,
+                lastAttemptISO: data.lastAttemptAt || null,
                 snapshot: data.snapshotData || null,
-                snapshotAgeMinutes: data.snapshotAgeMinutes || null,
                 storageStatus: data.storage?.status || 'UNKNOWN',
-                storageRecordCount: data.storage?.recordCount || 0,
+                snapshotCountRetained: data.snapshotCountRetained || 0,
+                checksCompletedLifetime: data.checksCompletedLifetime || 0,
+                failures7d: data.failureCount7d || 0,
+                skippedChecks7d: data.skippedChecksCount7d || 0,
                 exportSubsystemStatus: data.export?.status || 'UNKNOWN',
-                exportLastAttemptISO: data.export?.lastAttemptAt || null,
-                limitedPermissions: data.limitedPermissions || false,
-                probeErrors: data.probeErrors || []
+                permissionsVisibility: data.limitedPermissions ? 'LIMITED' : 'OK',
+                stalenessThresholdMinutes: data.staleIfAgeMinutesGreaterThan || 120,
+                nowISO: new Date().toISOString()
             };
             
             // Compute the view model (deterministic, invariant-enforced)
@@ -2193,7 +2230,7 @@ function wireExportButtons() {
     
     banner.innerHTML = `
       <strong style="color: #0052cc;">[UI_SERVE_PROOF]</strong>
-      UI_BUILD_SHA=<code>${UI_BUILD_SHA}</code>
+      UI_GIT_SHA=<code>${UI_GIT_SHA}</code>
       UI_BUILD_TIME=<code>${UI_BUILD_TIME_UTC}</code>
       SCRIPT_SRC=<code>${scriptUrls.join(' | ')}</code>
       UI_REQ_ID=<code>${FT_UI_REQ_ID}</code>
@@ -2221,7 +2258,7 @@ function wireExportButtons() {
 (function initializeServeMismatchDetector() {
   try {
     // 1. Get runtime SHA from bundled code
-    const runtimeSha = UI_BUILD_SHA || 'UNKNOWN';
+    const runtimeSha = UI_GIT_SHA || 'UNKNOWN';
     
     // 2. Find the loaded app.<SHA>.js script
     let loadedEntry = null;
@@ -2310,12 +2347,13 @@ function onDOMReady() {
     try {
         const proof = (window as any).__FT_RUNTIME_ENTRY_PROOF__;
         const entryProofText = formatEntryProofForBanner();
-        const sha = proof?.ui_build_sha || 'UNSET';
+        const bundleHash = proof?.ui_entry_bundle_hash || 'UNKNOWN';
+        const gitSha = proof?.ui_git_sha || 'UNSET';
         const scripts = proof?.script_srcs || [];
         
         const bannerHtml = `
             <div style="background: #003f87; color: #fff; padding: 8px 12px; font-family: monospace; font-size: 11px; line-height: 1.4; border-bottom: 1px solid #0052cc;">
-                <strong>[UI_ENTRY_RUNTIME_PROOF]</strong> ui_build_sha=${sha} | ${entryProofText}
+                <strong>[UI_ENTRY_RUNTIME_PROOF]</strong> UI_ENTRY_BUNDLE_HASH=${bundleHash} | UI_GIT_SHA=${gitSha} | ${entryProofText}
                 <br/>Scripts: ${scripts.join(' | ') || '(none)'}
             </div>
         `;
@@ -2348,7 +2386,7 @@ function onDOMReady() {
         initialMarker.className = 'proof-marker';
         initialMarker.innerHTML = `
             <strong>UI Build Info:</strong><br/>
-            SHA: <code>${UI_BUILD_SHA}</code> | Time: <code>${UI_BUILD_TIME_UTC}</code><br/>
+            GIT_SHA: <code>${UI_GIT_SHA}</code> | Time: <code>${UI_BUILD_TIME_UTC}</code><br/>
             Loaded Scripts: <code>${scriptUrls.join('; ')}</code><br/>
             UI Request ID: <code>${FT_UI_REQ_ID}</code>
         `;
@@ -2378,51 +2416,63 @@ function onDOMReady() {
                 }
                 
                 // If ping failed, show error immediately
-                if (pingError || !pingResult?.ok) {
-                    // Normalize the error if invoke failed, or extract from structured response
-                    let normalized: NormalizedError;
+                if (pingError) {
+                    // invoke() threw an exception - backend definitely not responding
+                    console.error(`[UI_PING_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} error_type=INVOKE_THREW error_message=${pingError}`);
                     
-                    if (pingError) {
-                        // invoke() threw an exception - normalize the thrown error
-                        normalized = normalizeInvokeError(new Error(pingError));
-                    } else {
-                        // invoke() succeeded but returned error payload - extract from response
-                        normalized = {
-                            kind: 'PingError',
-                            message: pingResult?.error?.message || 'Backend not responding',
-                            stack: '',
-                            code: pingResult?.error?.code || 'PING_FAILED',
-                            traceId: pingResult?.error?.trace_id_stable || 'UNKNOWN',
-                            raw: safeJsonStringify(pingResult?.error)
-                        };
-                    }
-                    
-                    // CRITICAL: Never show "UNKNOWN" as "no-trace" or empty - keep the string for correlation
+                    const normalized = normalizeInvokeError(new Error(pingError));
                     const pingTrace = normalized.traceId;
                     
-                    // Log full error details - ALWAYS print raw error for diagnostic visibility
-                    console.error(`[UI_PING_INVOKE_FAILED] uiReqId=${FT_UI_REQ_ID} code=${normalized.code} trace=${pingTrace}`);
-                    console.error('[UI_PING_INVOKE_FAILED] Full normalized error:', normalized);
-                    console.error('[UI_PING_INVOKE_FAILED] Raw ping response:', pingResult);
-                    console.error('[UI_PING_INVOKE_FAILED] Raw error details:', safeJsonStringify(pingResult?.error || pingError));
+                    // Log full error details
+                    console.error(`[UI_PING_RESPONSE_DETAILS] pingError=${pingError}`);
                     
-                    const errorInfo = `${normalized.code} | trace: ${pingTrace}`;
-                    const backendDisplay = `(${errorInfo.substring(0, 50)})`;
+                    const errorInfo = `PING_FAILED | trace: ${pingTrace}`;
+                    const backendDisplay = `(${errorInfo.substring(0, 60)})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                     buildFooter.classList.add('text-error');
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    // BACKBONE LAYER 0: Include UI_BUILD_MARKER, ui_req_id, error code, trace
-                    proofEl.textContent = `BACKBONE_L0 | UI_BUILD_MARKER:${UI_BUILD_MARKER} | ui_req_id:${FT_UI_REQ_ID} | PING_ERR | code:${normalized.code} | trace:${pingTrace}`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_FAILED | INVOKE_THREW | ERROR:${normalized.code} | TRACE:${pingTrace}`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+                
+                // Parse ping response (handles both TruthEnvelope and legacy formats)
+                const parsedPing = parsePingResponse(pingResult);
+                console.log(`[UI_PING_RESPONSE_PARSED] mode=${parsedPing.mode} ok=${parsedPing.ok} data_keys=${Object.keys(parsedPing.data).join(',')}`);
+                
+                // CRITICAL FIX: Only show "Backend not responding" if invoke threw (no JSON at all)
+                // If JSON was received, even with ok:false, treat as backend IS responding with an error
+                if (!parsedPing.ok) {
+                    // Backend responded with error (JSON was parsed successfully)
+                    const errorMsg = parsedPing.error?.message || 'Ping rejected by backend';
+                    const errorCode = parsedPing.error?.code || 'PING_REJECTED';
+                    const errorTrace = parsedPing.error?.trace_id_stable || 'no-trace';
+                    
+                    console.error(`[UI_PING_INVOKE_RESPONSE_ERROR] uiReqId=${FT_UI_REQ_ID} mode=${parsedPing.mode} error_code=${errorCode} error_msg=${errorMsg} trace=${errorTrace}`);
+                    console.error(`[UI_PING_RESPONSE_DETAILS] Raw ping response:`, parsedPing.data);
+                    
+                    const errorInfo = `${errorCode} | trace: ${errorTrace}`;
+                    const backendDisplay = `(${errorInfo.substring(0, 60)})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | PING_REJECTED | MODE:${parsedPing.mode} | ERROR:${errorCode} | TRACE:${errorTrace}`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }
                 
                 // Ping succeeded, show backend build SHA
-                console.log(`[UI_PING_INVOKE_SUCCESS] uiReqId=${FT_UI_REQ_ID} backend_build_sha=${pingResult?.backend_build_sha}`);
-                const backendBuildSha = pingResult?.backend_build_sha || 'unknown';
-                const backendTimestamp = pingResult?.now_iso || new Date().toISOString();
+                console.log(`[UI_PING_INVOKE_SUCCESS] uiReqId=${FT_UI_REQ_ID} mode=${parsedPing.mode}`);
+                const backendBuildSha = 
+                  parsedPing.data?.backend_build_sha ||
+                  parsedPing.data?.build?.backendSha ||
+                  parsedPing.data?.build?.sha ||
+                  'unknown';
+                const backendTimestamp = parsedPing.data?.now_iso || new Date().toISOString();
                 
                 // PHASE 5B: Call ensureFirstSnapshot (idempotent health check + first snapshot)
                 console.log(`[UI_ENSURE_FIRST_SNAPSHOT_START] uiReqId=${FT_UI_REQ_ID}`);

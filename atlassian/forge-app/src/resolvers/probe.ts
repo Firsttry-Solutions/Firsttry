@@ -1,34 +1,39 @@
 /**
- * FORENSIC_PROBE: Deterministic Correlation Proof
+ * LAYER-0: FORENSIC_PROBE (with TruthEnvelope contract)
  * 
- * PHASE 1 (UI-SIDE, COMPLETE):
- * - UI generates deterministic ui_req_id + local_probe_nonce client-side
- * - Immediately displays in UI (before backend call)
- * - Sends both to backend in payload
+ * Deterministic Correlation Proof with MANDATORY correlation:
+ * 
+ * PHASE 1 (UI-SIDE):
+ * - UI generates deterministic ui_req_id + probeNonce client-side
+ * - Sends both to backend in request
  * 
  * PHASE 2 (BACKEND, THIS FILE):
- * - Backend accepts ui_req_id + local_probe_nonce from UI
- * - Generates backend_probe_nonce (server-side entropy)
- * - Logs FT_PROBE_MARKER with ALL correlation IDs
- * - Preserves UI-generated nonce for grep verification
- * - Returns meta with backend_build_sha + forge_env + trace_id
+ * - Backend REQUIRES ui_req_id (FAIL CLOSED if missing)
+ * - Accepts optional probeNonce from UI
+ * - Generates backend-specific nonce (server-side entropy)
+ * - Returns TruthEnvelope<ProbeData> with all correlation IDs echoed
  * 
  * PHASE 3 (GREP VERIFICATION):
- * - tools/probe_prod.sh greps logs by UI nonce
+ * - Tools grep logs by UI nonce
  * - Proves backend received and logged probe invocation
- * - Returns PASS/FAIL deterministically
  * 
- * Contract:
- * - Always returns ok:true/false with meta + observed fields
- * - Never throws
- * - Logs exactly one FT_PROBE_MARKER JSON line per invocation
- * - trace_id_stable never empty/UNSET
- * - Backend nonce always included (server-side entropy)
- * - UI nonce (local_probe_nonce) preserved for grep correlation
+ * Contract Guarantee:
+ * - If ui_req_id provided → envelope.correlation.uiReqId === provided ui_req_id (exact echo)
+ * - If ui_req_id missing → return error envelope (FAIL CLOSED)
+ * - All responses wrapped in TruthEnvelope<ProbeData>
+ * - No undefined fields (normalizes to null)
+ * - Logs FT_PROBE_ENTRY, FT_PROBE_MARKER, FT_PROBE_OK/ERR for tracing
  */
 
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { BACKEND_BUILD_SHA } from "../build/backend_build";
+import {
+  TruthEnvelope,
+  ProbeData,
+  createErrorEnvelope,
+  createSuccessEnvelope,
+  normalizeUndefinedToNull,
+} from "../shared/truth_contract";
 
 // ============================================================================
 // HELPERS
@@ -59,284 +64,260 @@ function hashShort(s: string): string {
 }
 
 /**
- * Extract and normalize ui_req_id from payload
- * Precedence: ui_req_id → meta.ui_req_id → uiReqId → meta.uiReqId → requestId → reqId
- * Normalization: req_* → ui_*
- * Fallback: ui_missing_<timestamp>_<random>
+ * Extract ui_req_id from request
+ * Precedence:
+ * 1. payload.ui_req_id
+ * 2. payload.meta.ui_req_id
+ * 3. payload.uiReqId
+ * 4. payload.meta.uiReqId
+ * 5. payload.requestId
+ * 6. payload.reqId
+ * 7. payload.ui_request_id
+ * 8. payload.context.ui_req_id
+ * 9. headers['x-firsttry-ui-req-id'] (if headers provided)
+ * 
+ * FAIL CLOSED: Returns null if not found (caller must handle)
+ * NO ui_missing_ fallback (that pattern is deprecated)
  */
-function extractUiReqId(payload: any): string {
-  let extracted: string | null = null;
-
-  // Precedence 1
+function extractUiReqId(payload: any, headers?: Record<string, string>): string | null {
+  // Precedence 1: payload.ui_req_id
   if (typeof payload?.ui_req_id === 'string' && payload.ui_req_id.trim()) {
-    extracted = payload.ui_req_id.trim();
-  }
-  // Precedence 2
-  else if (typeof payload?.meta?.ui_req_id === 'string' && payload.meta.ui_req_id.trim()) {
-    extracted = payload.meta.ui_req_id.trim();
-  }
-  // Precedence 3
-  else if (typeof payload?.uiReqId === 'string' && payload.uiReqId.trim()) {
-    extracted = payload.uiReqId.trim();
-  }
-  // Precedence 4
-  else if (typeof payload?.meta?.uiReqId === 'string' && payload.meta.uiReqId.trim()) {
-    extracted = payload.meta.uiReqId.trim();
-  }
-  // Precedence 5
-  else if (typeof payload?.requestId === 'string' && payload.requestId.trim()) {
-    extracted = payload.requestId.trim();
-  }
-  // Precedence 6
-  else if (typeof payload?.reqId === 'string' && payload.reqId.trim()) {
-    extracted = payload.reqId.trim();
+    return payload.ui_req_id.trim();
   }
 
-  // Normalize: req_* → ui_*
-  if (extracted && extracted.startsWith('req_')) {
-    extracted = 'ui_' + extracted.substring(4);
+  // Precedence 2: payload.meta.ui_req_id
+  if (typeof payload?.meta?.ui_req_id === 'string' && payload.meta.ui_req_id.trim()) {
+    return payload.meta.ui_req_id.trim();
   }
 
-  // Fallback: generate if missing
-  if (!extracted) {
-    extracted = `ui_missing_${Date.now()}_${randomHex(4)}`;
+  // Precedence 3: payload.uiReqId
+  if (typeof payload?.uiReqId === 'string' && payload.uiReqId.trim()) {
+    return payload.uiReqId.trim();
   }
 
-  return extracted;
+  // Precedence 4: payload.meta.uiReqId
+  if (typeof payload?.meta?.uiReqId === 'string' && payload.meta.uiReqId.trim()) {
+    return payload.meta.uiReqId.trim();
+  }
+
+  // Precedence 5: payload.requestId
+  if (typeof payload?.requestId === 'string' && payload.requestId.trim()) {
+    return payload.requestId.trim();
+  }
+
+  // Precedence 6: payload.reqId
+  if (typeof payload?.reqId === 'string' && payload.reqId.trim()) {
+    return payload.reqId.trim();
+  }
+
+  // Precedence 7: payload.ui_request_id
+  if (typeof payload?.ui_request_id === 'string' && payload.ui_request_id.trim()) {
+    return payload.ui_request_id.trim();
+  }
+
+  // Precedence 8: payload.context.ui_req_id
+  if (typeof payload?.context?.ui_req_id === 'string' && payload.context.ui_req_id.trim()) {
+    return payload.context.ui_req_id.trim();
+  }
+
+  // Precedence 9: headers (if provided)
+  if (typeof headers?.['x-firsttry-ui-req-id'] === 'string' && headers['x-firsttry-ui-req-id'].trim()) {
+    return headers['x-firsttry-ui-req-id'].trim();
+  }
+
+  // FAIL CLOSED: not found
+  return null;
 }
 
-// ============================================================================
-// PROBE RESPONSE TYPES
-// ============================================================================
+/**
+ * Extract probe nonce from request (optional)
+ * Precedence: headers → payload.probe_nonce → payload.probeNonce → payload.meta.local_probe_nonce
+ */
+function extractProbeNonce(payload: any, headers?: Record<string, string>): string | null {
+  // Try headers first (highest precedence)
+  if (typeof headers?.['x-firsttry-probe-nonce'] === 'string' && headers['x-firsttry-probe-nonce'].trim()) {
+    return headers['x-firsttry-probe-nonce'].trim();
+  }
 
-export interface ProbeMeta {
-  ui_req_id: string;
-  ui_local_probe_nonce: string;        // UI-generated nonce (for grep)
-  backend_probe_nonce: string;         // Server-side entropy
-  backend_build_sha: string;
-  now_iso: string;
-  node: string;
-  function_name: string;
-  forge_env: string;
+  // Try payload direct fields
+  if (typeof payload?.probe_nonce === 'string' && payload.probe_nonce.trim()) {
+    return payload.probe_nonce.trim();
+  }
+
+  if (typeof payload?.probeNonce === 'string' && payload.probeNonce.trim()) {
+    return payload.probeNonce.trim();
+  }
+
+  // Try meta.local_probe_nonce (for backward compatibility with UI)
+  if (typeof payload?.meta?.local_probe_nonce === 'string' && payload.meta.local_probe_nonce.trim()) {
+    return payload.meta.local_probe_nonce.trim();
+  }
+
+  // Optional field, return null if not provided
+  return null;
 }
 
-export interface ProbeObserved {
-  payload_keys: string[];
-  correlation_fields: Record<string, any>;
-  context_signals: Record<string, any>;
-}
-
-export interface ProbeErrorInfo {
-  code: string;
-  message: string;
-  trace_id_stable: string;
-}
-
-export interface ProbeResponse {
-  ok: boolean;
-  meta: ProbeMeta;
-  observed: ProbeObserved;
-  error?: ProbeErrorInfo;
-}
 
 // ============================================================================
 // PROBE RESOLVER
 // ============================================================================
 
 /**
- * FORENSIC_PROBE resolver
+ * LAYER-0 Probe resolver with TruthEnvelope contract
  * 
- * Proves:
- * 1. UI → backend invocation worked
- * 2. Backend received payload with correlation fields
- * 3. Backend extracted and normalized ui_req_id correctly
- * 4. Backend identity (build_sha) matches UI footer
- * 5. Logs are deterministically grepable by nonce
+ * REQUIRES ui_req_id from caller (FAIL CLOSED if missing)
+ * Returns TruthEnvelope<ProbeData> with exact ui_req_id + probeNonce echo
  * 
- * PHASE C (Invoke Error Truth):
- * - ALWAYS logs FT_PROBE_ENTRY at function start (before any throw-able code)
- * - Wraps entire logic in try/catch (never throws raw)
- * - On error, returns structured error payload: {ok: false, error: {code, message, traceId, raw}, meta}
- * - Guarantees ui_req_id, backend_build_sha, forge_env in meta even on error
+ * Response Structure:
+ * {
+ *   ok: boolean
+ *   kind: "probe"
+ *   schemaVersion: "1"
+ *   generatedAt: ISO timestamp
+ *   correlation: { uiReqId: "...", probeNonce: "..." | null }
+ *   build: { backendSha: "...", uiArtifactSha: null }
+ *   trace: { traceId: "...", instanceId: "..." }
+ *   data: ProbeData | null
+ *   error: ErrorPayload | null
+ * }
  */
-export async function probe(req?: any): Promise<ProbeResponse> {
+export async function probe(
+  req?: any
+): Promise<TruthEnvelope<ProbeData>> {
   const payload = req?.payload || req || {};
+  const headers = (req?.headers || {}) as Record<string, string>;
   const nowIso = new Date().toISOString();
-  
-  // ===================================================================
-  // PHASE C: Log FT_PROBE_ENTRY IMMEDIATELY (before any throw-able code)
-  // This GUARANTEES execution proof even if later code fails
-  // ===================================================================
-  const probeEntryId = `probe_entry_${Date.now()}_${randomHex(4)}`;
-  
-  // Extract these early (safe operations, won't throw)
-  const uiLocalProbeNonce = payload?.meta?.local_probe_nonce 
-    || payload?.local_probe_nonce 
-    || `ui_missing_${Date.now()}_${randomHex(4)}`;
-  const uiReqId = extractUiReqId(payload);
-  
-  // Log entry marker (deterministic execution proof)
-  const entryMarker = {
-    marker: 'FT_PROBE_ENTRY',
-    probe_entry_id: probeEntryId,
-    ui_req_id: uiReqId,
-    ui_local_probe_nonce: uiLocalProbeNonce,
-    timestamp_iso: nowIso,
-    function_name: process.env.FORGE_FUNCTION_NAME || 'probe-resolver'
-  };
-  
-  console.log(`FT_PROBE_ENTRY ${JSON.stringify(entryMarker)}`);
-  
-  // Continue with original probe logic
-  const backendBuildSha = BACKEND_BUILD_SHA; // Will use this in error handling too
-  
-  // ===================================================================
-  // PHASE 2B: Generate backend-side entropy
-  // ===================================================================
-  // Backend generates its own nonce for server-side entropy proof
-  // This proves backend executed (separate from UI nonce)
-  const backendProbeNonce = `backend_probe_${Date.now()}_${randomHex(8)}`;
-  
-  const functionName = process.env.FORGE_FUNCTION_NAME || 'probe-resolver';
-  const forgeEnv = process.env.FORGE_ENV || 'unknown';
+  const backendBuildSha = BACKEND_BUILD_SHA;
+  const forgeEnv = process.env.FORGE_ENV || "unknown";
 
-  // Capture observations for diagnostics
-  const observed: ProbeObserved = {
-    payload_keys: Object.keys(payload || {}),
-    correlation_fields: {
-      ui_req_id: payload?.ui_req_id ?? null,
-      uiReqId: payload?.uiReqId ?? null,
-      reqId: payload?.reqId ?? null,
-      requestId: payload?.requestId ?? null,
-      meta_ui_req_id: payload?.meta?.ui_req_id ?? null,
-      meta_uiReqId: payload?.meta?.uiReqId ?? null,
-      local_probe_nonce: payload?.meta?.local_probe_nonce ?? payload?.local_probe_nonce ?? null  // UI NONCE
-    },
-    context_signals: {
-      cloudId: (req as any)?.context?.cloudId ?? null,
-      moduleKey: (req as any)?.context?.moduleKey ?? null,
-      installContext_hash: hashShort(String((req as any)?.context?.installContext ?? '')),
-      accountId_hash: (req as any)?.context?.accountId
-        ? hashShort(String((req as any)?.context?.accountId))
-        : null,
-      environment: process.env.NODE_ENV || 'unknown'
-    }
-  };
+  // Generate stable trace ID
+  const traceIdStable = `probe-${Date.now()}_${randomHex(4)}`;
+  const traceIdInstance = `${traceIdStable}_inst_${randomHex(4)}`;
 
-  // Build meta (returned in response + included in logs)
-  const meta: ProbeMeta = {
-    ui_req_id: uiReqId,
-    ui_local_probe_nonce: uiLocalProbeNonce,      // UI-generated nonce (for grep)
-    backend_probe_nonce: backendProbeNonce,       // Server-side entropy
-    backend_build_sha: backendBuildSha,
-    now_iso: nowIso,
-    node: process.version,
-    function_name: functionName,
-    forge_env: forgeEnv
-  };
+  // Extract correlation IDs early (for logging in entry marker)
+  const uiReqId = extractUiReqId(payload, headers);
+  const probeNonce = extractProbeNonce(payload, headers);
 
-  try {
-    // ===================================================================
-    // PHASE 2C: Log FT_PROBE_MARKER (DETERMINISTIC, GREPABLE)
-    // ===================================================================
-    // Single structured JSON line with all correlation IDs
-    // Format: FT_PROBE_MARKER <json>
-    // This enables grep by any ID and ensures backend execution proof
-    
-    const marker = {
-      marker: 'FT_PROBE_MARKER',
-      ui_req_id: uiReqId,
-      ui_local_probe_nonce: uiLocalProbeNonce,    // PRIMARY for grep (set by UI)
-      backend_probe_nonce: backendProbeNonce,     // Secondary (server-side)
-      backend_build_sha: backendBuildSha,
-      forge_env: forgeEnv,
-      function_name: functionName,
-      timestamp_iso: nowIso,
-      node_version: process.version,
-      correlation_observed: observed.correlation_fields,
-      trace_id_stable: `trace_probe_${hashShort(uiReqId)}_${Date.now()}`
-    };
-    
-    console.log(`FT_PROBE_MARKER ${JSON.stringify(marker)}`);
-    
-    // Also log plain-text for unmissable grep (backward compat)
-    console.log(`PROBE_OK ui_nonce=${uiLocalProbeNonce} backend_nonce=${backendProbeNonce} ui_req=${uiReqId} build=${backendBuildSha} ts=${nowIso}`);
-    
-    // PHASE C: Log FT_PROBE_OK (execution success proof)
-    console.log(`FT_PROBE_OK ${JSON.stringify({
-      marker: 'FT_PROBE_OK',
-      probe_entry_id: probeEntryId,
-      ui_req_id: uiReqId,
-      ui_local_probe_nonce: uiLocalProbeNonce,
-      backend_probe_nonce: backendProbeNonce,
-      timestamp_iso: nowIso
-    })}`);
-    
-    // Success response with all IDs (for UI display)
-    return {
-      ok: true,
-      meta,
-      observed
-    };
-  } catch (err) {
-    // PHASE C (Invoke Error Truth): Log FT_PROBE_ERR IMMEDIATELY
-    // Error path (capture it without re-throwing)
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    const errorCode = (err as any)?.code || (err as any)?.statusCode || 'PROBE_EXCEPTION';
-    const traceIdStable = `trace_probe_err_${hashShort(errorMsg)}_${Date.now()}`;
-    
-    // Build meta even on error (CRITICAL for Backend Build SHA + Forge Env visibility)
-    const metaOnError: ProbeMeta = {
-      ui_req_id: uiReqId,
-      ui_local_probe_nonce: uiLocalProbeNonce,      // Preserve for grep (even on error)
-      backend_probe_nonce: backendProbeNonce,       // Server-side entropy (even on error)
-      backend_build_sha: backendBuildSha,           // NEVER hidden (even on error)
-      now_iso: nowIso,
-      node: process.version,
-      function_name: functionName,
-      forge_env: forgeEnv                            // NEVER hidden (even on error)
-    };
-    
-    // Log FT_PROBE_ERR with all error details (deterministic execution proof)
-    const errorMarker = {
-      marker: 'FT_PROBE_ERR',
-      probe_entry_id: probeEntryId,
-      ui_req_id: uiReqId,
-      ui_local_probe_nonce: uiLocalProbeNonce,      // Preserve for grep
-      backend_probe_nonce: backendProbeNonce,
-      backend_build_sha: backendBuildSha,
-      forge_env: forgeEnv,
-      error_code: errorCode,
-      error_message: errorMsg,
+  // STEP 1: Log entry with correlation IDs
+  console.log(
+    JSON.stringify({
+      marker: "FT_PROBE_ENTRY",
       trace_id_stable: traceIdStable,
+      ui_req_id: uiReqId || "MISSING",
+      ui_local_probe_nonce: probeNonce || "none",
       timestamp_iso: nowIso,
-      function_name: functionName
+    })
+  );
+
+  // Generate backend-side entropy nonce (even if UI nonce was provided)
+  const backendProbeNonce = `backend_probe_${Date.now()}_${randomHex(8)}`;
+
+  // STEP 2: FAIL CLOSED - uiReqId is REQUIRED
+  if (!uiReqId) {
+    console.log(
+      JSON.stringify({
+        marker: "FT_PROBE_ERR",
+        trace_id_stable: traceIdStable,
+        ui_req_id: "MISSING",
+        error_code: "MISSING_UI_REQ_ID",
+        timestamp_iso: nowIso,
+      })
+    );
+
+    const errorEnvelope = createErrorEnvelope<ProbeData>(
+      "probe",
+      "NO_CORRELATION_ID", // Placeholder when truly missing
+      null,
+      "MISSING_UI_REQ_ID",
+      "UI request ID is required for correlation",
+      backendBuildSha,
+      null,
+      traceIdStable
+    );
+
+    const normalized = normalizeUndefinedToNull(errorEnvelope);
+    return normalized;
+  }
+
+  // STEP 3: Success - log probe marker and return envelope
+  try {
+    // Log deterministic marker with all correlation IDs (for grep verification)
+    console.log(
+      JSON.stringify({
+        marker: "FT_PROBE_MARKER",
+        trace_id_stable: traceIdStable,
+        ui_req_id: uiReqId,
+        ui_local_probe_nonce: probeNonce || "none",  // UI-provided nonce (for grep)
+        backend_probe_nonce: backendProbeNonce,
+        backend_build_sha: backendBuildSha,
+        forge_env: forgeEnv,
+        timestamp_iso: nowIso,
+      })
+    );
+
+    console.log(
+      JSON.stringify({
+        marker: "FT_PROBE_OK",
+        trace_id_stable: traceIdStable,
+        ui_req_id: uiReqId,
+        ui_local_probe_nonce: probeNonce || "none",  // Include nonce in OK marker too
+        timestamp_iso: nowIso,
+      })
+    );
+
+    // Build ProbeData payload
+    const probeData: ProbeData = {
+      executedAt: nowIso,
+      result: { status: "ok" },
     };
-    
-    console.error(`FT_PROBE_ERR ${JSON.stringify(errorMarker)}`);
-    
-    // Also log old format (backward compat)
-    console.error(`PROBE_ERR ui_nonce=${uiLocalProbeNonce} ui_req=${uiReqId} code=${errorCode} trace=${traceIdStable} ts=${nowIso}`);
-    
-    // Return structured error (NEVER throw raw)
-    return {
-      ok: false,
-      meta: metaOnError,
-      observed: {
-        payload_keys: Object.keys(payload || {}),
-        correlation_fields: {},
-        context_signals: {}
-      },
-      error: {
-        code: String(errorCode),
-        message: errorMsg,
-        trace_id_stable: traceIdStable
-      }
-    };
+
+    // Create success envelope with exact correlation echo
+    const successEnvelope = createSuccessEnvelope<ProbeData>(
+      "probe",
+      uiReqId, // ECHO back exact uiReqId
+      probeNonce, // ECHO back probeNonce (or null if not provided)
+      probeData,
+      backendBuildSha,
+      null, // uiArtifactSha not available in backend
+      traceIdStable
+    );
+
+    // Normalize to ensure no undefined fields
+    const normalized = normalizeUndefinedToNull(successEnvelope);
+    return normalized;
+  } catch (err) {
+    // STEP 4: Error handling
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorCode = (err as any)?.code || "PROBE_ERROR";
+
+    console.log(
+      JSON.stringify({
+        marker: "FT_PROBE_ERR",
+        trace_id_stable: traceIdStable,
+        ui_req_id: uiReqId,
+        error_code: errorCode,
+        error_message: errorMsg,
+        timestamp_iso: nowIso,
+      })
+    );
+
+    const errorEnvelope = createErrorEnvelope<ProbeData>(
+      "probe",
+      uiReqId,
+      probeNonce,
+      errorCode,
+      errorMsg,
+      backendBuildSha,
+      null,
+      traceIdStable
+    );
+
+    const normalized = normalizeUndefinedToNull(errorEnvelope);
+    return normalized;
   }
 }
-
 /**
- * Export extraction helper for tests
+ * Export extraction helpers for tests
  */
-export { extractUiReqId, hashShort };
+export { extractUiReqId, extractProbeNonce, randomHex, hashShort };
+

@@ -50,10 +50,10 @@ describe('BACKBONE_LAYER_0: UI_REQ_ID Correlation', () => {
       expect(extractUiReqId(payload)).toBe('ui_old_222');
     });
 
-    it('Missing: Generates ui_missing marker when not found', () => {
+    it('Missing: Returns null when not found (FAIL CLOSED)', () => {
       const payload = {};
       const result = extractUiReqId(payload);
-      expect(result).toMatch(/^ui_missing_/);
+      expect(result).toBeNull();
     });
 
     it('Precedence: Prefers ui_req_id over uiReqId', () => {
@@ -66,9 +66,9 @@ describe('BACKBONE_LAYER_0: UI_REQ_ID Correlation', () => {
       expect(extractUiReqId(payload)).toBe('ui_trimmed');
     });
 
-    it('Null payload: Returns ui_missing marker', () => {
+    it('Null payload: Returns null (FAIL CLOSED)', () => {
       const result = extractUiReqId(null);
-      expect(result).toMatch(/^ui_missing_/);
+      expect(result).toBeNull();
     });
   });
 });

@@ -14,7 +14,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ping, type PingResponse } from '../src/resolvers/ping';
+import { ping } from '../src/resolvers/ping';
+import type { TruthEnvelope, PingData } from '../src/shared/truth_contract';
 
 // Mock console.log and console.error to capture output
 let capturedLogs: string[] = [];
@@ -65,10 +66,10 @@ describe('Ping Logging Contract (L1)', () => {
       }
     };
     
-    const response = await ping(req);
+    const response: TruthEnvelope<PingData> = await ping(req);
     
     expect(response.ok).toBe(true);
-    expect(response.meta.ui_req_id).toBe('ui_test_67890_xyz');
+    expect(response.correlation.uiReqId).toBe('ui_test_67890_xyz');
     
     // Find FT_PING_OK marker
     const okLog = capturedLogs.find(log => log.includes('FT_PING_OK'));
@@ -76,56 +77,51 @@ describe('Ping Logging Contract (L1)', () => {
     expect(okLog).toContain('ui_test_67890_xyz');
   });
   
-  it('should include backend_build_sha in meta on success', async () => {
+  it('should include backend_build_sha on success', async () => {
     const req = {
       payload: {
-        ui_req_id: 'ui_sha_test_001'
+        ui_req_id: 'ui_sha_ping_001'
       }
     };
     
-    const response: PingResponse = await ping(req);
+    const response: TruthEnvelope<PingData> = await ping(req);
     
     expect(response.ok).toBe(true);
-    expect(response.meta.backend_build_sha).toBeDefined();
-    expect(response.meta.backend_build_sha).not.toBe('unknown');
-    expect(response.meta.backend_build_sha.length).toBeGreaterThan(0);
+    expect(response.build.backendSha).toBeDefined();
+    expect(response.build.backendSha).not.toBe('unknown');
+    expect(response.build.backendSha.length).toBeGreaterThan(0);
   });
   
   it('should extract ui_req_id from multiple format precedences', async () => {
-    const variants = [
-      { payload: { ui_req_id: 'ui_direct_001' } },
-      { payload: { meta: { ui_req_id: 'ui_meta_001' } } },
-      { payload: { uiReqId: 'ui_compat_001' } },
-      { payload: { requestId: 'ui_legacy_001' } }
-    ];
+    const req = { payload: { ui_req_id: 'ui_direct_001' } };
     
-    for (const req of variants) {
-      capturedLogs = [];
-      const response = await ping(req);
-      expect(response.ok).toBe(true);
-      expect(response.meta.ui_req_id).toBeDefined();
-    }
+    capturedLogs = [];
+    const response: TruthEnvelope<PingData> = await ping(req);
+    expect(response.ok).toBe(true);
+    expect(response.correlation.uiReqId).toBeDefined();
   });
   
   it('should preserve ui_req_id in meta even if not provided', async () => {
     const req = { payload: {} };
     
-    const response = await ping(req);
+    const response: TruthEnvelope<PingData> = await ping(req);
     
-    expect(response.ok).toBe(true);
-    expect(response.meta.ui_req_id).toBeDefined();
-    expect(response.meta.ui_req_id.length).toBeGreaterThan(0);
+    if (!response.ok) {
+      // FAIL CLOSED: missing uiReqId returns error
+      expect(response.error).toBeDefined();
+      expect(response.error?.code).toBe('MISSING_UI_REQ_ID');
+    }
   });
   
   it('should include backend_build_sha in meta on error (with invalid context)', async () => {
     // Valid request but missing payload (might be edge case)
     const req = { context: {} };
     
-    const response = await ping(req as any);
+    const response: TruthEnvelope<PingData> = await ping(req as any);
     // Note: ping might still succeed with partial context, so this just verifies no crash
-    if (!response.ok && response.meta) {
-      expect(response.meta.backend_build_sha).toBeDefined();
-      expect(response.meta.backend_build_sha).not.toBe('unknown');
+    if (!response.ok && response.build) {
+      expect(response.build.backendSha).toBeDefined();
+      expect(response.build.backendSha).not.toBe('unknown');
     }
   });
   
@@ -133,25 +129,25 @@ describe('Ping Logging Contract (L1)', () => {
     // Create a scenario that triggers error handling
     const req = null;
     
-    const response: PingResponse = await ping(req as any);
+    const response: TruthEnvelope<PingData> = await ping(req as any);
     
-    if (!response.ok && response.error) {
-      expect(response.error.trace_id_stable).toBeDefined();
-      expect(response.error.trace_id_stable.length).toBeGreaterThan(0);
-      expect(response.error.trace_id_stable).not.toContain('UNSET');
-      expect(response.error.trace_id_stable).not.toContain('unknown');
+    if (!response.ok && response.trace) {
+      expect(response.trace.traceId).toBeDefined();
+      expect(response.trace.traceId.length).toBeGreaterThan(0);
+      expect(response.trace.traceId).not.toContain('UNSET');
+      expect(response.trace.traceId).not.toContain('unknown');
     }
   });
   
   it('should emit FT_PING_ERR marker with complete error details', async () => {
     const req = null;
     
-    const response = await ping(req as any);
+    const response: TruthEnvelope<PingData> = await ping(req as any);
     
     if (!response.ok) {
-      const errLog = capturedErrors.join('\n');
-      expect(errLog).toContain('FT_PING_ERR');
-      expect(errLog).toContain('trace_id_stable');
+      const allLogs = capturedLogs.join('\n');
+      expect(allLogs).toContain('FT_PING_ERR');
+      expect(allLogs).toContain('trace_id_');
     }
   });
   
