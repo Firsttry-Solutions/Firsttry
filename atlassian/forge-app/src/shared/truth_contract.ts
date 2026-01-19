@@ -65,6 +65,14 @@ export interface ErrorPayload {
   message: string;
   /** Optional details object (must not contain undefined fields) */
   details?: Record<string, any> | null;
+  /** Structured trace for debugging (resolver name, steps, storage state) */
+  trace?: {
+    resolverName?: string | null;
+    stepCount?: number | null;
+    failedStepId?: string | null;
+    storageState?: string | null;
+    executionTimeMs?: number | null;
+  } | null;
 }
 
 /**
