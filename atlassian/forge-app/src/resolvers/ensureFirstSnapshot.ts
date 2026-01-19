@@ -14,6 +14,11 @@
 import { storage } from '@forge/api';
 import { emitResolverErrorLog, classifyError } from "./backbone_error_handling";
 import { BACKEND_BUILD_SHA } from "../build/backend_build";
+import { buildInvocationMeta } from "../security/invocationMeta";
+import { traceOk, traceFail } from "../security/stepTrace";
+import { checkStorageProof } from "../security/storageProof";
+import { makeErrorEnvelope } from "../security/errorEnvelope";
+import type { ErrorEnvelopeV1 } from "../shared/invocationEnvelope";
 
 export interface EnsureFirstSnapshotResponse {
   ok: boolean;
@@ -25,6 +30,7 @@ export interface EnsureFirstSnapshotResponse {
     message?: string;
     trace_id_stable?: string;
   };
+  _errorEnvelopeV1?: ErrorEnvelopeV1;
 }
 
 /**
@@ -134,13 +140,18 @@ export async function ensureFirstSnapshot(input?: any): Promise<EnsureFirstSnaps
   const traceIdInstance = `${traceIdStable}-inst-${Math.random().toString(36).substring(2, 10)}`;
   const backendBuildSha = BACKEND_BUILD_SHA; // Injected at build time, never "unknown"
   const uiReqId = input?.uiReqId || "no-req-id";
-  
+  const nowIso = new Date().toISOString();
+
+  // Build invocation metadata
+  const meta = buildInvocationMeta({ ctx: input as any, uiReqId });
+
   try {
     // Step 1: Resolve tenant key
     const tenantKey = await resolveTenantKey();
     if (!tenantKey) {
       const errorMsg = "Tenant key not available";
       const errorCode: "TENANT_CONTEXT_MISSING" = "TENANT_CONTEXT_MISSING";
+      
       emitResolverErrorLog(
         traceIdStable,
         traceIdInstance,
@@ -150,10 +161,30 @@ export async function ensureFirstSnapshot(input?: any): Promise<EnsureFirstSnaps
         null,
         resolverName
       );
+
+      // Create error envelope
+      const errorTrace = [
+        traceFail(resolverName, "tenant_resolution", errorCode, errorMsg)
+      ];
+
+      const errorEnvelopeV1 = makeErrorEnvelope({
+        resolverName,
+        stepId: "tenant_resolution",
+        errorCode,
+        message: errorMsg,
+        meta,
+        trace: errorTrace,
+      }) as ErrorEnvelopeV1;
+
       return {
         ok: false,
         did_write: false,
-        error: { code: errorCode, message: errorMsg, trace_id_stable: traceIdStable }
+        error: { 
+          code: errorCode, 
+          message: errorMsg, 
+          trace_id_stable: traceIdStable
+        },
+        _errorEnvelopeV1: errorEnvelopeV1 as any
       };
     }
     
@@ -174,12 +205,27 @@ export async function ensureFirstSnapshot(input?: any): Promise<EnsureFirstSnaps
         ui_req_id: uiReqId,
         backend_build_sha: backendBuildSha
       }));
-      
+
+      // Create success envelope
+      const successTrace = [
+        traceOk(resolverName, "snapshot_check", "Snapshot already exists")
+      ];
+
+      const errorEnvelopeV1 = makeErrorEnvelope({
+        resolverName,
+        stepId: "snapshot_check",
+        errorCode: "OK" as any,
+        message: "Snapshot already exists",
+        meta,
+        trace: successTrace,
+      }) as ErrorEnvelopeV1;
+
       return {
         ok: true,
         did_write: false,
         snapshot_id: status.snapshotId,
-        lastSnapshotAtISO: status.lastSnapshotAtISO
+        lastSnapshotAtISO: status.lastSnapshotAtISO,
+        _errorEnvelopeV1: errorEnvelopeV1 as any
       };
     }
     
@@ -199,12 +245,27 @@ export async function ensureFirstSnapshot(input?: any): Promise<EnsureFirstSnaps
       ui_req_id: uiReqId,
       backend_build_sha: backendBuildSha
     }));
-    
+
+    // Create success envelope
+    const successTrace = [
+      traceOk(resolverName, "snapshot_creation", "First snapshot created")
+    ];
+
+    const errorEnvelopeV1 = makeErrorEnvelope({
+      resolverName,
+      stepId: "snapshot_creation",
+      errorCode: "OK" as any,
+      message: "First snapshot created",
+      meta,
+      trace: successTrace,
+    }) as ErrorEnvelopeV1;
+
     return {
       ok: true,
       did_write: true,
       snapshot_id: writeResult.snapshotId,
-      lastSnapshotAtISO: writeResult.lastSnapshotAtISO
+      lastSnapshotAtISO: writeResult.lastSnapshotAtISO,
+      _errorEnvelopeV1: errorEnvelopeV1 as any
     };
   } catch (err) {
     // Error path: use backbone error handling
@@ -220,7 +281,21 @@ export async function ensureFirstSnapshot(input?: any): Promise<EnsureFirstSnaps
       null,
       resolverName
     );
-    
+
+    // Create error envelope
+    const errorTrace = [
+      traceFail(resolverName, "execution", errorCode as any, errorMsg)
+    ];
+
+    const errorEnvelopeV1 = makeErrorEnvelope({
+      resolverName,
+      stepId: "execution",
+      errorCode: errorCode as any,
+      message: errorMsg,
+      meta,
+      trace: errorTrace,
+    }) as ErrorEnvelopeV1;
+
     return {
       ok: false,
       did_write: false,
@@ -228,7 +303,8 @@ export async function ensureFirstSnapshot(input?: any): Promise<EnsureFirstSnaps
         code: errorCode,
         message: errorMsg,
         trace_id_stable: traceIdStable
-      }
+      },
+      _errorEnvelopeV1: errorEnvelopeV1 as any
     };
   }
 }
