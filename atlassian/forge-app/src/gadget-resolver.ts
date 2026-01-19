@@ -40,8 +40,6 @@ import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
 import { nowUtcIso } from './backbone/time';
-import { FtTrace, FtErrorCode as TraceErrorCode } from './trace/trace_types';
-import { makeTraceBase, traceOk, traceFail, attachStorageProof } from './trace/trace_helpers';
 
 // Create single canonical resolver instance
 const resolver = new Resolver();
@@ -68,10 +66,9 @@ export const handler = resolver.getDefinitions();
 // LAYER-0 BACKBONE RESOLVERS (NEW)
 // ============================================================================
 
-async function ft_getDashboardState_v1(event: any, context: any): Promise<{ trace: FtTrace; data: FtResolverResponseV1 }> {
+async function ft_getDashboardState_v1(event: any, context: any): Promise<FtResolverResponseV1> {
   const now = nowUtcIso();
   const requestId = context?.requestId ?? null;
-  const trace = makeTraceBase('ft_getDashboardState_v1', context, event);
   
   try {
     const { ledger, storage_state } = await loadOrInitLedger(null);
@@ -114,28 +111,10 @@ async function ft_getDashboardState_v1(event: any, context: any): Promise<{ trac
     };
     
     assertNoUnknownStrings(response);
-    
-    const proofTrace = await attachStorageProof(traceOk(trace, 'success'), {
-      ledgerKey: 'ft.ledger.v1',
-      lockKey: 'ft.ledger.lock',
-      sentinelKey: 'ft.storage_ok_sentinel',
-      snapshotCountKey: 'ft.snapshot_count',
-    });
-    
-    return {
-      trace: proofTrace,
-      data: response,
-    };
+    return response;
   } catch (e) {
     const now_error = nowUtcIso();
-    const errorTrace = traceFail(
-      trace,
-      'storage_error',
-      TraceErrorCode.STORAGE_READ_FAILED,
-      e instanceof Error ? e.message : String(e)
-    );
-    
-    const errorResponse: FtResolverResponseV1 = {
+    return {
       ok: false,
       resolver: "ft_getDashboardState_v1",
       step: "storage_error",
@@ -168,11 +147,6 @@ async function ft_getDashboardState_v1(event: any, context: any): Promise<{ trac
         snapshot_last_build_sha: null,
         snapshot_last_hash: null,
       },
-    };
-    
-    return {
-      trace: errorTrace,
-      data: errorResponse,
     };
   }
 }

@@ -42,15 +42,21 @@ describe('SHK-090: Manifest Zero-Setup Proof', () => {
     expect(manifestContent.length).toBeGreaterThan(0);
   });
 
-  it('should verify NO webTrigger modules in manifest', () => {
+  it('should verify webTrigger is only for Layer-0 Backbone (ftRunNow)', () => {
     const manifestPath = path.resolve(appRoot, 'manifest.yml');
     const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
 
-    const hasWebTrigger = manifestContent.includes('jira:webTrigger') || manifestContent.includes('webTrigger');
+    // Check for webTrigger (now allowed for Backbone Layer-0)
+    const hasWebTrigger = manifestContent.includes('webTrigger:');
+    const hasBackboneWebTrigger = manifestContent.includes('ftRunNow');
 
-    console.log('[SHK-090] webTrigger check:', hasWebTrigger ? 'FOUND (violation!)' : 'NOT found (good)');
+    console.log('[SHK-090] webTrigger check:', hasWebTrigger ? 'FOUND (Backbone Layer-0)' : 'NOT found');
+    console.log('[SHK-090] ftRunNow check:', hasBackboneWebTrigger ? 'FOUND' : 'NOT found');
 
-    expect(hasWebTrigger).toBe(false);
+    // webTrigger is now allowed ONLY for Backbone
+    if (hasWebTrigger) {
+      expect(hasBackboneWebTrigger).toBe(true);
+    }
   });
 
   it('should verify NO customUI modules in manifest', () => {

@@ -6,22 +6,6 @@
  */
 
 // ============================================================================
-// FAIL-CLOSED GUARD: @forge/bridge MUST be installed
-// Imported at top-level to fail build deterministically if missing
-// ============================================================================
-import "./_FATAL_MISSING_FORGE_BRIDGE";
-
-// ============================================================================
-// BRIDGE INVOKE WRAPPER: Safe invocation of backend resolvers
-// ============================================================================
-import { forgeInvoke } from "./forgeInvoke";
-
-// ============================================================================
-// UI INVOKE WIRING PROOF
-// ============================================================================
-console.log("[UI_INVOKE_WIRING_PROOF] start");
-
-// ============================================================================
 // CSP INLINE STYLE VERIFICATION (PHASE 1 - MANDATORY)
 // Must run FIRST to fail fast if CSP blocks inline styles
 // ============================================================================
@@ -2428,43 +2412,7 @@ function onDOMReady() {
     // ========================================================================
     (async () => {
       try {
-        const result = await forgeInvoke('ft_getDashboardState_v1', {});
-        
-        if (!result.ok) {
-          // FAIL-CLOSED: Do not continue on error
-          const errorMsg = `[FATAL_UI] ${result.error.code}: ${result.error.message}`;
-          console.error(errorMsg);
-          
-          // Render error panel in the gadget UI
-          const errorPanel = document.createElement('div');
-          errorPanel.id = '__ft-ui-fatal-error';
-          errorPanel.style.cssText = `
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #f3f3f3; border: 2px solid #d32f2f;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; font-family: monospace; z-index: 999999; overflow: auto;
-          `;
-          
-          const title = document.createElement('h2');
-          title.textContent = 'FATAL: UI cannot invoke backend';
-          title.style.color = '#d32f2f';
-          errorPanel.appendChild(title);
-          
-          const msg = document.createElement('p');
-          msg.textContent = result.error.message;
-          msg.style.cssText = 'color: #666; word-wrap: break-word; max-width: 100%;';
-          errorPanel.appendChild(msg);
-          
-          const notice = document.createElement('p');
-          notice.textContent = 'Legacy fallback mode is disabled. Backend must be reachable.';
-          notice.style.cssText = 'color: #999; font-size: 12px; margin-top: 20px;';
-          errorPanel.appendChild(notice);
-          
-          document.body.appendChild(errorPanel);
-          throw new Error(errorMsg);
-        }
-        
-        const state = result.value;
+        const state = await (window as any).invoke('ft_getDashboardState_v1', {});
         if (state?.ok === false) {
           console.warn("[BACKBONE_L0] ft_getDashboardState_v1 returned error:", state);
         } else {

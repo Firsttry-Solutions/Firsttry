@@ -53,6 +53,12 @@ jobs:
           set -euo pipefail
           bash tools/verify_ui_naming_contract.sh
 
+      - name: Verify Layer-0 Backbone infrastructure (non-bypassable gate)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          npm run verify:backbone:l0
+
       - name: Run tests (forge-app)
         working-directory: atlassian/forge-app
         run: |
