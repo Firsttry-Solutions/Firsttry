@@ -18,8 +18,8 @@ function getUTCTimestampForMarker(): string {
   return `${yyyy}${mm}${dd}T${hh}${min}${ss}Z`;
 }
 
-export const UI_BUILD_SHA = "f1c06fb";
+export const UI_GIT_SHA = "f1c06fb";
 export const UI_BUILD_TIME_UTC = "2026-01-17T15:56:34.826Z";
 // Dynamic marker for cache-busting: proves the UI was redeployed
 // Format: UI_MARKER_<YYYYMMDDTHHMMSSZ>_<SHA>
-export const UI_BUILD_MARKER = `UI_MARKER_${getUTCTimestampForMarker()}_${UI_BUILD_SHA}`;
+export const UI_BUILD_MARKER = `UI_MARKER_${getUTCTimestampForMarker()}_${UI_GIT_SHA}`;

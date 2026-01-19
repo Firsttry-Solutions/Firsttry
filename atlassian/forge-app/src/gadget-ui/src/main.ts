@@ -82,8 +82,7 @@ import './styles.css';
 import { getBuildIdentifier } from './buildInfo';
 
 // Import UI build markers (auto-generated at build time)
-// Note: UI_BUILD_SHA from build system contains git SHA; renamed to UI_GIT_SHA for clarity
-import { UI_BUILD_SHA as UI_GIT_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
+import { UI_GIT_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
 
 // Import L0.C entry proof functions for testing and banner display
 import { captureRuntimeEntryProof, formatEntryProofForBanner } from './entryProof';
@@ -146,7 +145,7 @@ const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).sub
       }
     }
     
-    // Log single-line proof that includes SHA, time, and loaded script(s)
+    // Log single-line proof that includes git SHA, time, and loaded script(s)
     // Format: [UI_BOOT_PROOF] ui_git_sha=<SHA> time=<UTC> scripts=<urls>
     console.log(
       `[UI_BOOT_PROOF] ui_git_sha=${UI_GIT_SHA} time=${UI_BUILD_TIME_UTC} ` +

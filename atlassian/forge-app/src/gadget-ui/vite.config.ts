@@ -34,7 +34,7 @@ function loadUiBuildMeta() {
     if (!uiSha || !hexRegex.test(uiSha)) {
       if (isProduction) {
         throw new Error(
-          'UI_BUILD_SHA_INVALID: FT_BUILD_SHA "' + (uiSha || 'undefined') + 
+          'UI_GIT_SHA_INVALID: FT_BUILD_SHA "' + (uiSha || 'undefined') + 
           '" does not match expected format /^[0-9a-f]{7,40}$/'
         );
       }

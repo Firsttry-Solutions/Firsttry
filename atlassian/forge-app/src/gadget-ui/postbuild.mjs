@@ -3,7 +3,7 @@
  * POST-BUILD SCRIPT: Filename-Based Cache Busting
  * 
  * After Vite builds:
- * 1. Read UI_BUILD_SHA from src/gadget-ui/src/ui_build_meta.ts
+ * 1. Read UI_GIT_SHA from src/gadget-ui/src/ui_build_meta.ts
  * 2. Rename index.js to app.<SHA>.js (filename-based cache-busting)
  * 3. Remove Vite's auto-injected index.js script tag from dist/index.html
  * 4. Inject EXACTLY ONE script tag: <script src="./app.<SHA>.js"></script>
@@ -26,8 +26,8 @@ const htmlPath = path.join(distDir, 'index.html');
 function extractShaFromMeta() {
   try {
     const content = fs.readFileSync(metaPath, 'utf-8');
-    // Match: export const UI_BUILD_SHA = "f1c06fb";
-    const match = content.match(/export\s+const\s+UI_BUILD_SHA\s*=\s*["']([^"']+)["']/);
+    // Match: export const UI_GIT_SHA = "f1c06fb";
+    const match = content.match(/export\s+const\s+UI_GIT_SHA\s*=\s*["']([^"']+)["']/);
     if (match && match[1]) {
       return match[1];
     }
@@ -39,11 +39,11 @@ function extractShaFromMeta() {
 
 function main() {
   try {
-    // 1. Extract UI_BUILD_SHA from ui_build_meta.ts
+    // 1. Extract UI_GIT_SHA from ui_build_meta.ts
     const uiBuildSha = extractShaFromMeta();
 
     if (!uiBuildSha) {
-      console.error(`[POSTBUILD] ERROR: Could not extract UI_BUILD_SHA from ${metaPath}`);
+      console.error(`[POSTBUILD] ERROR: Could not extract UI_GIT_SHA from ${metaPath}`);
       process.exit(1);
     }
 
