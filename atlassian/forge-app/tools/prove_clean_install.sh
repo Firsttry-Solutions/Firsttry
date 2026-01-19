@@ -48,6 +48,7 @@ TEMP_DIR=""
 
 echo -e "${YELLOW}[COLD_INSTALL_PROOF]${NC} Starting deterministic cold install..."
 echo -e "${YELLOW}[COLD_INSTALL_PROOF]${NC} Working directory: $FORGE_APP_DIR"
+echo "[TRACE] POLICY_DRIFT_ROOT_ENFORCED=1"
 echo ""
 
 # Print environment info for traceability
@@ -138,10 +139,73 @@ else
 fi
 echo ""
 
+# Step PD: POLICY DRIFT ENFORCEMENT (moved from nested workflow to root proof)
+echo -e "${YELLOW}[STEP PD]${NC} POLICY DRIFT ENFORCEMENT (Root-Based Enforcement)"
+echo "Running legacy policy drift gate commands (moved from nested workflow)..."
+echo ""
+
+# Run Policy Drift Detection (via node script)
+echo -e "${YELLOW}  [PD.1]${NC} Running policy drift detection script..."
+if node audit/policy_drift_check.js 2>&1 | tail -20; then
+  echo -e "${GREEN}  ✓${NC} Policy drift detection passed"
+else
+  echo -e "${RED}  ✗ FAIL: Policy drift detection failed${NC}"
+  exit 1
+fi
+echo ""
+
+# Check for Policy Baseline Changes
+echo -e "${YELLOW}  [PD.2]${NC} Checking for policy baseline changes..."
+BASELINE_MODIFIED=false
+if git diff --name-only HEAD~1..HEAD 2>/dev/null | grep -q "audit/policy_baseline/"; then
+  BASELINE_MODIFIED=true
+  echo -e "${YELLOW}  ⚠️  Baseline files modified:${NC}"
+  git diff --name-only HEAD~1..HEAD | grep "audit/policy_baseline/" || true
+else
+  echo -e "${GREEN}  ✓${NC} No baseline changes detected"
+fi
+echo ""
+
+# Verify Documentation Update on Baseline Change
+if [ "$BASELINE_MODIFIED" = "true" ]; then
+  echo -e "${YELLOW}  [PD.3]${NC} Verifying documentation update on baseline change..."
+  SECURITY_UPDATED=$(git diff --name-only HEAD~1..HEAD | grep -E "(SECURITY|PRIVACY)\.md" || true)
+  PRIVACY_UPDATED=$(echo "$SECURITY_UPDATED" | grep -c "SECURITY\|PRIVACY" || true)
+  
+  if [ -z "$SECURITY_UPDATED" ]; then
+    echo -e "${RED}  ✗ FAIL: POLICY BASELINE MODIFIED WITHOUT DOCUMENTATION${NC}"
+    echo -e "${RED}${NC}"
+    echo -e "${RED}  When baseline files in audit/policy_baseline/ change, you MUST also:${NC}"
+    echo -e "${RED}    • Update SECURITY.md to document WHY the policy changed${NC}"
+    echo -e "${RED}    • Add approval reason (e.g., 'Added for new feature X')${NC}"
+    echo -e "${RED}${NC}"
+    echo -e "${RED}  This ensures:${NC}"
+    echo -e "${RED}    ✓ Policy changes are explicitly reviewed${NC}"
+    echo -e "${RED}    ✓ Audit trail of what changed and why${NC}"
+    echo -e "${RED}    ✓ Prevents silent scope/storage/TTL expansion${NC}"
+    echo -e "${RED}${NC}"
+    exit 1
+  else
+    echo -e "${GREEN}  ✓${NC} Documentation was updated"
+  fi
+else
+  echo -e "${GREEN}  ✓${NC} No documentation update required (no baseline changes)"
+fi
+echo ""
+
+echo -e "${GREEN}✓ POLICY DRIFT GATE: ALL CHECKS PASSED${NC}"
+echo -e "${GREEN}  Security guarantees verified:${NC}"
+echo -e "${GREEN}    ✓ OAuth scopes unchanged${NC}"
+echo -e "${GREEN}    ✓ Storage key prefixes unchanged${NC}"
+echo -e "${GREEN}    ✓ Outbound network calls unauthorized${NC}"
+echo -e "${GREEN}    ✓ Export schema version stable${NC}"
+echo -e "${GREEN}    ✓ Retention policy TTL enforced (90 days)${NC}"
+echo ""
+
 # Success banner
 echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║${NC}                                                              ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}  ✅ COLD INSTALL PROOF: ALL 8 CHECKS PASSED                 ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}  ✅ COLD INSTALL PROOF: ALL 8+PD CHECKS PASSED              ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}                                                              ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}  Summary:                                                    ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}    • node_modules: removed (clean state)                     ${GREEN}║${NC}"
@@ -152,9 +216,10 @@ echo -e "${GREEN}║${NC}    • npm test: full test suite passed               
 echo -e "${GREEN}║${NC}    • build:gadget: all gates green (7/7)                    ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}    • lockfile drift: no uncommitted changes                 ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}    • JSON validation: package-lock.json is valid            ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}    • policy drift: root-enforced gate passed (OAuth/TTL)   ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}                                                              ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}  Conclusion: Zero cache dependence ✓                        ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}              CI reproducibility verified ✓                   ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}              CI reproducibility + policy enforcement ✓       ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}                                                              ${GREEN}║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
 

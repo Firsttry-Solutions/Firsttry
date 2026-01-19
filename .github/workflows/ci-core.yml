@@ -57,6 +57,7 @@ jobs:
       - name: Verify repo clean after proof (must not dirty working tree)
         run: |
           set -euo pipefail
+          cd "${GITHUB_WORKSPACE:-.}"
           if [ -n "$(git status --porcelain)" ]; then
             echo "ERROR: Working tree dirty after CI proof run"
             echo "Changes detected:"
