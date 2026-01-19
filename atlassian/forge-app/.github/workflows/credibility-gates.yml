@@ -27,7 +27,14 @@ jobs:
           cache-dependency-path: atlassian/forge-app/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "ERROR: package-lock.json not found. Reproducible install requires lockfile."
+            exit 1
+          fi
 
       - name: Run GAP-1 PII Logging Tests
         run: npm run test:credibility -- --grep "GAP-1"
