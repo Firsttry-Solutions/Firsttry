@@ -66,7 +66,7 @@ export const handler = resolver.getDefinitions();
 // LAYER-0 BACKBONE RESOLVERS (NEW)
 // ============================================================================
 
-async function ft_getDashboardState_v1(event: any, context: any): Promise<FtResolverResponseV1> {
+async function ft_getDashboardState_v1(event: any, context: any): Promise<any> {
   const now = nowUtcIso();
   const requestId = context?.requestId ?? null;
   
@@ -97,7 +97,8 @@ async function ft_getDashboardState_v1(event: any, context: any): Promise<FtReso
       reason_code = FtReasonCode.OK;
     }
     
-    const response: FtResolverResponseV1 = {
+    // PHASE 4: Canonical v1 envelope structure
+    const dashboardData: FtResolverResponseV1 = {
       ok: true,
       resolver: "ft_getDashboardState_v1",
       step: "success",
@@ -110,22 +111,35 @@ async function ft_getDashboardState_v1(event: any, context: any): Promise<FtReso
       ledger,
     };
     
-    assertNoUnknownStrings(response);
-    return response;
+    assertNoUnknownStrings(dashboardData);
+    
+    // PHASE 4: Backend canonical envelope (v1)
+    console.log('[BACKEND_DASH_STATE_ENVELOPE]', {
+      ok: true,
+      schemaVersion: 'v1',
+      dataKeys: Object.keys(dashboardData).slice(0, 60),
+      mode: dashboardData.mode ?? null,
+    });
+    
+    return {
+      ok: true,
+      schemaVersion: 'v1',
+      data: dashboardData,
+    };
   } catch (e) {
     const now_error = nowUtcIso();
-    return {
+    const errorData = {
       ok: false,
       resolver: "ft_getDashboardState_v1",
       step: "storage_error",
       now_utc: now_error,
       request_id: requestId,
       build_sha_backend: null,
-      storage_state: "ERROR",
-      status: "FAILED",
+      storage_state: "ERROR" as const,
+      status: "FAILED" as const,
       reason_code: FtReasonCode.NO_LEDGER,
       ledger: {
-        version: 1,
+        version: 1 as const,
         install_id: "ERROR",
         installed_at_utc: now_error,
         build_sha_last_seen_ui: null,
@@ -147,6 +161,19 @@ async function ft_getDashboardState_v1(event: any, context: any): Promise<FtReso
         snapshot_last_build_sha: null,
         snapshot_last_hash: null,
       },
+    };
+    
+    // PHASE 4: Backend canonical envelope for errors
+    console.log('[BACKEND_DASH_STATE_ENVELOPE_ERROR]', {
+      ok: false,
+      schemaVersion: 'v1',
+      error: { code: FtErrorCode.STORAGE_READ_FAILED, message: 'Storage error' },
+    });
+    
+    return {
+      ok: false,
+      schemaVersion: 'v1',
+      error: { code: FtErrorCode.STORAGE_READ_FAILED, message: e instanceof Error ? e.message : String(e) },
     };
   }
 }
