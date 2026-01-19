@@ -47,6 +47,12 @@ jobs:
             npm install
           fi
 
+      - name: Verify UI naming contract (enforce non-bypassable)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/verify_ui_naming_contract.sh
+
       - name: Run tests (forge-app)
         working-directory: atlassian/forge-app
         run: |
