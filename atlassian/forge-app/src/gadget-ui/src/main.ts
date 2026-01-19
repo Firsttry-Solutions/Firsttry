@@ -17,6 +17,11 @@ import { ensureForgeBridgeOrRenderFatal } from "./_FATAL_MISSING_FORGE_BRIDGE";
 import { forgeInvoke } from "./forgeInvoke";
 
 // ============================================================================
+// LEGACY FLOW DETECTOR: Fail-closed validation (PHASE 3)
+// ============================================================================
+import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownState } from "./legacy_flow_detector";
+
+// ============================================================================
 // UI INVOKE WIRING PROOF
 // ============================================================================
 console.log("[UI_INVOKE_WIRING_PROOF] start");
@@ -125,6 +130,9 @@ import './styles.css';
 // Import build info (injected by Vite)
 import { getBuildIdentifier } from './buildInfo';
 
+// Import UI identity type (PHASE 2: strict types for build markers)
+import { buildUiIdentity, formatUiIdentity, type UiIdentity } from './ui_identity';
+
 // Import UI build markers (auto-generated at build time)
 import { UI_GIT_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
 
@@ -173,6 +181,31 @@ const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
 const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).substring(0, 8)}`;
 
 // ============================================================================
+// PHASE 2: UI IDENTITY INITIALIZATION (STRICT TYPES)
+// Build identity distinguishing git SHA from bundle hash at runtime
+// ============================================================================
+let UI_IDENTITY: UiIdentity;
+try {
+  UI_IDENTITY = buildUiIdentity(UI_GIT_SHA, UI_BUILD_TIME_UTC);
+  console.log(`[UI_IDENTITY_RESOLVED] ${formatUiIdentity(UI_IDENTITY)}`);
+} catch (err) {
+  console.error('[FATAL_UI_IDENTITY]', err instanceof Error ? err.message : String(err));
+  // Fail closed: if identity cannot be built, show error and stop
+  const errPanel = document.createElement('div');
+  errPanel.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:9999;' +
+    'display:flex;align-items:center;justify-content:center;font-family:monospace;';
+  errPanel.innerHTML = `<div style="max-width:600px;padding:20px;background:#fee;border:1px solid #c00;">` +
+    `<h2>FATAL: UI Identity Error</h2>` +
+    `<pre>${err instanceof Error ? err.message : String(err)}</pre>` +
+    `<p>The UI bundle identity could not be determined. This prevents secure operation.` +
+    ` Check that @forge/bridge is installed and the gadget is served from dist.</p>` +
+    `</div>`;
+  document.body.innerHTML = '';
+  document.body.appendChild(errPanel);
+  throw err;
+}
+
+// ============================================================================
 // UI BOOT PROOF LOGGING (CACHE-BUST VISIBILITY)
 // ============================================================================
 // Log to console immediately on module load to prove:
@@ -189,11 +222,11 @@ const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).sub
       }
     }
     
-    // Log single-line proof that includes git SHA, time, and loaded script(s)
-    // Format: [UI_BOOT_PROOF] ui_git_sha=<SHA> time=<UTC> scripts=<urls>
+    // Log single-line proof using DISTINGUISHED labels for git sha vs bundle hash
+    // Format: [UI_BOOT_PROOF] UI_GIT_SHA=<git> UI_BUNDLE_HASH=<hash> time=<UTC> scripts=<urls>
     console.log(
-      `[UI_BOOT_PROOF] ui_git_sha=${UI_GIT_SHA} time=${UI_BUILD_TIME_UTC} ` +
-      `scripts=[${scriptUrls.join('; ')}] uiReqId=${FT_UI_REQ_ID}`
+      `[UI_BOOT_PROOF] UI_GIT_SHA=${UI_IDENTITY.ui_git_sha} UI_BUNDLE_HASH=${UI_IDENTITY.ui_bundle_hash} ` +
+      `time=${UI_IDENTITY.ui_git_time_iso} scripts=[${scriptUrls.join('; ')}] uiReqId=${FT_UI_REQ_ID}`
     );
     
     // Also log individual script URLs for easy inspection in browser DevTools
@@ -2441,7 +2474,13 @@ function onDOMReady() {
     // ========================================================================
     (async () => {
       try {
+        // PHASE 3: Validate resolver name
+        validateNonLegacyFlow('ft_getDashboardState_v1');
+        
         const result = await forgeInvoke('ft_getDashboardState_v1', {});
+        
+        // PHASE 3: Validate response format (must not be legacy)
+        validateResponseNoLegacyMode(result);
         
         if (!result.ok) {
           // FAIL-CLOSED: Do not continue on error
@@ -2556,11 +2595,17 @@ function onDOMReady() {
                 let stateError: string | null = null;
                 
                 try {
+                    // PHASE 3: Validate resolver name
+                    validateNonLegacyFlow('ft_getDashboardState_v1');
+                    
                     stateResult = await invokeWithUiReqId('ft_getDashboardState_v1', { 
                         uiReqId: FT_UI_REQ_ID,
                         uiBundleHash: UI_DIST_STAMP,
                         uiGitSha: UI_BUILD_MARKER,
                     });
+                    
+                    // PHASE 3: Validate response format (must not be legacy)
+                    validateResponseNoLegacyMode(stateResult);
                 } catch (invokeErr) {
                     stateError = invokeErr instanceof Error ? invokeErr.message : String(invokeErr);
                     console.error(`[UI_FT_GETDASHBOARDSTATE_INVOKE_ERROR] uiReqId=${FT_UI_REQ_ID} error=${stateError}`);
