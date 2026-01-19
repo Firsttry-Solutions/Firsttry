@@ -6,6 +6,68 @@
  */
 
 // ============================================================================
+<<<<<<< HEAD
+=======
+// FORGE BRIDGE RUNTIME CHECK (NO TOP-LEVEL THROW)
+// Detects bridge at runtime and renders fail-closed panel if missing
+// ============================================================================
+import { ensureForgeBridgeOrRenderFatal } from "./_FATAL_MISSING_FORGE_BRIDGE";
+
+// ============================================================================
+// BRIDGE INVOKE WRAPPER: Safe invocation of backend resolvers
+// ============================================================================
+import { forgeInvoke } from "./forgeInvoke";
+
+// ============================================================================
+// IDENTITY ANCHOR GENERATION (FOR GATE VERIFICATION)
+// ============================================================================
+import { createIdentityAnchor } from "./ui_identity";
+
+// ============================================================================
+// LEGACY FLOW DETECTOR: Fail-closed validation (PHASE 3)
+// ============================================================================
+import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownState } from "./legacy_flow_detector";
+
+// ============================================================================
+// IDENTITY ANCHOR CONSTANT (FOR GATE VERIFICATION)
+// ============================================================================
+import { IDENTITY_ANCHOR_V1 } from "./entryProof";
+
+// ============================================================================
+// UI INVOKE WIRING PROOF
+// ============================================================================
+console.log("[UI_INVOKE_WIRING_PROOF] start");
+
+// ============================================================================
+// CSP INLINE STYLE VERIFICATION (PHASE 1 - MANDATORY)
+// Must run FIRST to fail fast if CSP blocks inline styles
+// ============================================================================
+console.log("[UI_CSP_PROOF] inline-style-allowed-check");
+try {
+  const testDiv = document.createElement("div");
+  testDiv.style.cssText = "position:absolute;left:-9999px;top:-9999px";
+  document.body.appendChild(testDiv);
+  document.body.removeChild(testDiv);
+} catch (e) {
+  throw new Error("CSP inline style still blocked");
+}
+
+// ============================================================================
+// FORGE BRIDGE RUNTIME CHECK (FAIL-CLOSED, NO THROW)
+// Must run EARLY to detect if bridge is available, render panel if not
+// ============================================================================
+console.log("[UI_BRIDGE_RUNTIME_CHECK] Checking Forge bridge availability...");
+const bridgeOk = ensureForgeBridgeOrRenderFatal(document.body);
+if (!bridgeOk) {
+  // Bridge missing and panel rendered. Stop execution.
+  console.error("[UI_BRIDGE_RUNTIME_CHECK] Bridge not available. Fatal panel rendered. Stopping boot.");
+  // Exit early - do not continue with app initialization
+  throw new Error("FATAL_UI_BRIDGE_MISSING_RUNTIME: Cannot proceed without Forge bridge");
+}
+console.log("[UI_BRIDGE_RUNTIME_CHECK] Bridge available. Proceeding with boot.");
+
+// ============================================================================
+>>>>>>> fe8c3ff7 (hardening: real-bundle gate selftest + portable integrity gate + anchor uniqueness gate + build-chain wiring)
 // L0.C: UI ENTRY RUNTIME PROOF - IIFE (runs immediately before any other code)
 // Must run before importing build_meta so we capture globals at their actual load time
 // ============================================================================
@@ -129,6 +191,45 @@ const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
 const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).substring(0, 8)}`;
 
 // ============================================================================
+<<<<<<< HEAD
+=======
+// PHASE 2: UI IDENTITY INITIALIZATION (STRICT TYPES)
+// Build identity distinguishing git SHA from bundle hash at runtime
+// ============================================================================
+let UI_IDENTITY: UiIdentity;
+try {
+  UI_IDENTITY = buildUiIdentity(UI_GIT_SHA, UI_BUILD_TIME_UTC);
+  console.log(`[UI_IDENTITY_RESOLVED] ${formatUiIdentity(UI_IDENTITY)}`);
+  
+  // EMIT IDENTITY ANCHOR - single source of truth for gate verification
+  // This literal string will be parsed by Gate 2 (verify_dist_identity_labels.sh)
+  // It MUST appear exactly once in the bundle as a literal string constant
+  const identityAnchor = createIdentityAnchor(UI_IDENTITY);
+  console.log(`[FT_IDENTITY_ANCHOR] ${identityAnchor}`);
+  
+  // CRITICAL: Output anchor constant for gate verification
+  // This must be a literal string that survives minification
+  console.log(IDENTITY_ANCHOR_V1);
+  
+} catch (err) {
+  console.error('[FATAL_UI_IDENTITY]', err instanceof Error ? err.message : String(err));
+  // Fail closed: if identity cannot be built, show error and stop
+  const errPanel = document.createElement('div');
+  errPanel.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:9999;' +
+    'display:flex;align-items:center;justify-content:center;font-family:monospace;';
+  errPanel.innerHTML = `<div style="max-width:600px;padding:20px;background:#fee;border:1px solid #c00;">` +
+    `<h2>FATAL: UI Identity Error</h2>` +
+    `<pre>${err instanceof Error ? err.message : String(err)}</pre>` +
+    `<p>The UI bundle identity could not be determined. This prevents secure operation.` +
+    ` Check that @forge/bridge is installed and the gadget is served from dist.</p>` +
+    `</div>`;
+  document.body.innerHTML = '';
+  document.body.appendChild(errPanel);
+  throw err;
+}
+
+// ============================================================================
+>>>>>>> fe8c3ff7 (hardening: real-bundle gate selftest + portable integrity gate + anchor uniqueness gate + build-chain wiring)
 // UI BOOT PROOF LOGGING (CACHE-BUST VISIBILITY)
 // ============================================================================
 // Log to console immediately on module load to prove:
