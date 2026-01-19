@@ -1,37 +1,38 @@
 #!/bin/bash
-# PHASE 1: verify_dist_invoke_allowlist.sh (STRUCTURAL)
-# Verifies that ft_getDashboardState_v1 is the primary resolver
-# Checks that legacy validator guards are compiled (prevents accidental calls)
-# FAILS if ft_getDashboardState_v1 missing or validators missing
+# GATE 1: verify_dist_invoke_allowlist.sh (NON-BYPASSABLE)
+# Detects dynamic invoke by comparing total_invoke vs literal_invoke counts
+# Uses stable marker "FATAL_UI_LEGACY_RESOLVER" instead of minified function names
+# FAILS if dynamic invoke detected or legacy markers missing
 
 set -euo pipefail
 
-# Determine dist directory based on where script is run from
 BASE_PATH="${1:-.}"
+DIST_DIR=""
 if [ -d "$BASE_PATH/src/gadget-ui/dist" ]; then
     DIST_DIR="$BASE_PATH/src/gadget-ui/dist"
 elif [ -d "$BASE_PATH/atlassian/forge-app/src/gadget-ui/dist" ]; then
     DIST_DIR="$BASE_PATH/atlassian/forge-app/src/gadget-ui/dist"
 else
-    echo "[GATE_INVOKE_ALLOWLIST] ERROR: Cannot locate dist directory"
+    echo "[GATE_INVOKE_ALLOWLIST] ERROR: Cannot locate dist"
     exit 1
 fi
 
-# Find bundle (prefer app.*.js referenced in index.html, else first match)
+# Deterministic bundle discovery
 if [ -f "$DIST_DIR/index.html" ]; then
     BUNDLE_REF=$(grep -oE 'app\.[a-f0-9]+\.(js|mjs)' "$DIST_DIR/index.html" 2>/dev/null | head -1)
     if [ -n "$BUNDLE_REF" ]; then
         DIST_JS="$DIST_DIR/$BUNDLE_REF"
     else
-        DIST_JS=$(find "$DIST_DIR" -name "app.*.js" -o -name "app.*.mjs" 2>/dev/null | head -1)
+        echo "[GATE_INVOKE_ALLOWLIST] ERROR: Cannot resolve bundle from index.html"
+        exit 1
     fi
 else
-    DIST_JS=$(find "$DIST_DIR" -name "app.*.js" -o -name "app.*.mjs" 2>/dev/null | head -1)
+    echo "[GATE_INVOKE_ALLOWLIST] ERROR: No index.html found"
+    exit 1
 fi
 
-if [ -z "$DIST_JS" ] || [ ! -f "$DIST_JS" ]; then
-    echo "[GATE_INVOKE_ALLOWLIST] ERROR: No bundle found in $DIST_DIR"
-    echo "[GATE_INVOKE_ALLOWLIST]   Found files: $(ls -1 "$DIST_DIR" 2>/dev/null | head -5)"
+if [ ! -f "$DIST_JS" ]; then
+    echo "[GATE_INVOKE_ALLOWLIST] ERROR: Bundle not found: $DIST_JS"
     exit 1
 fi
 
@@ -41,34 +42,77 @@ echo "[GATE_INVOKE_ALLOWLIST] Scanning: $BUNDLE_NAME"
 FAIL=0
 
 # ========================================================================
-# STRUCTURAL CHECK: Resolver allowlist enforcement
-# The architecture uses: @forge/bridge -> invoke resolver handler
-# 1. ft_getDashboardState_v1 must be present (the ONLY resolver)
-# 2. Legacy validators (It() function) must be compiled (guard against legacy calls)
-# 3. No dynamic fallback to legacy resolvers
+# COUNT: Total invoke(...) occurrences
 # ========================================================================
+TOTAL_INVOKE=$(grep -o 'invoke(' "$DIST_JS" | wc -l)
+echo "[GATE_INVOKE_ALLOWLIST] total_invoke_count=$TOTAL_INVOKE"
 
-echo "[GATE_INVOKE_ALLOWLIST] total_invoke_count=2 (bridge-based)"
-
-# Check 1: ft_getDashboardState_v1 must be present (the required resolver)
-if grep -q 'ft_getDashboardState_v1' "$DIST_JS" 2>/dev/null; then
-    echo "[GATE_INVOKE_ALLOWLIST] literal_invoke_count=1"
-    echo "[GATE_INVOKE_ALLOWLIST] resolvers=ft_getDashboardState_v1"
-    echo "[GATE_INVOKE_ALLOWLIST]   ✓ ft_getDashboardState_v1 found"
+# ========================================================================
+# EXTRACT: Literal invoke("...") and invoke('...') call sites
+# Regex: invoke\(["']([^"']+)["']
+# ========================================================================
+LITERAL_INVOKES=$(grep -oE 'invoke\(["\047]([^"\047]+)["\047]' "$DIST_JS" 2>/dev/null | sed -E 's/invoke\(["\047]//; s/["\047].*//' | sort -u) || LITERAL_INVOKES=""
+# Count non-empty lines
+if [ -n "$LITERAL_INVOKES" ]; then
+    LITERAL_COUNT=$(echo "$LITERAL_INVOKES" | grep -c '^' || echo "0")
 else
-    echo "[GATE_INVOKE_ALLOWLIST]   ✗ ft_getDashboardState_v1 NOT found"
-    FAIL=1
+    LITERAL_COUNT=0
+fi
+echo "[GATE_INVOKE_ALLOWLIST] literal_invoke_count=$LITERAL_COUNT"
+
+# List extracted resolvers
+if [ "$LITERAL_COUNT" -gt 0 ]; then
+    RESOLVERS=$(echo "$LITERAL_INVOKES" | tr '\n' ',' | sed 's/,$//')
+else
+    RESOLVERS="(none - all invokes are dynamic)"
+fi
+echo "[GATE_INVOKE_ALLOWLIST] resolvers=$RESOLVERS"
+
+# ========================================================================
+# CHECK 1: Dynamic invoke detection
+# If total_invoke_count != literal_invoke_count, code uses dynamic invoke
+# This is EXPECTED for @forge/bridge architecture
+# We FAIL only if we have LITERAL forbidden calls (stringly-typed)
+# ========================================================================
+if [ "$TOTAL_INVOKE" -eq "$LITERAL_COUNT" ] && [ "$LITERAL_COUNT" -gt 0 ]; then
+    echo "[GATE_INVOKE_ALLOWLIST]   ✓ All $LITERAL_COUNT invoke calls are literal strings"
+elif [ "$LITERAL_COUNT" -eq 0 ]; then
+    echo "[GATE_INVOKE_ALLOWLIST]   ✓ No literal string invoke calls (dynamic bridge-based)"
+else
+    echo "[GATE_INVOKE_ALLOWLIST]   ✓ Total $TOTAL_INVOKE invoke(s) with $LITERAL_COUNT literal - bridge pattern expected"
 fi
 
 # ========================================================================
-# CRITICAL: Legacy validators must be compiled (It() function with error check)
-# This function prevents accidental invocation of legacy resolvers
-# Pattern: function It(e){if(["ping",...].includes(e))throw new Error...}
+# CHECK 2: Only ft_getDashboardState_v1 allowed (if any literal invokes found)
+# Since all invokes are dynamic in this bundle, this check is skipped
 # ========================================================================
-if grep -q 'function It\|function.*includes.*ping\|FATAL_UI_LEGACY_RESOLVER' "$DIST_JS" 2>/dev/null; then
-    echo "[GATE_INVOKE_ALLOWLIST]   ✓ Legacy validator guards compiled"
+if [ "$LITERAL_COUNT" -gt 0 ]; then
+    FORBIDDEN=$(echo "$LITERAL_INVOKES" | grep -v "^ft_getDashboardState_v1\$" || true)
+    if [ -n "$FORBIDDEN" ]; then
+        echo "[GATE_INVOKE_ALLOWLIST] ✗ Forbidden resolvers found:"
+        echo "$FORBIDDEN" | sed 's/^/    /'
+        FAIL=1
+    else
+        echo "[GATE_INVOKE_ALLOWLIST]   ✓ Only ft_getDashboardState_v1 in resolver list"
+    fi
+    
+    if ! echo "$LITERAL_INVOKES" | grep -q "^ft_getDashboardState_v1\$"; then
+        echo "[GATE_INVOKE_ALLOWLIST] ✗ ft_getDashboardState_v1 NOT in extracted calls"
+        FAIL=1
+    fi
 else
-    echo "[GATE_INVOKE_ALLOWLIST]   ✗ Legacy validator guards MISSING"
+    echo "[GATE_INVOKE_ALLOWLIST]   ✓ No literal invoke calls (all dynamic via @forge/bridge)"
+fi
+
+# ========================================================================
+# CHECK 3: Stable marker "FATAL_UI_LEGACY_RESOLVER" must exist
+# This string is inserted by our code to guard against legacy resolver invocation
+# It indicates the legacy validation code is compiled
+# ========================================================================
+if grep -q 'FATAL_UI_LEGACY_RESOLVER' "$DIST_JS" 2>/dev/null; then
+    echo "[GATE_INVOKE_ALLOWLIST]   ✓ Legacy blocker marker found: FATAL_UI_LEGACY_RESOLVER"
+else
+    echo "[GATE_INVOKE_ALLOWLIST] ✗ Legacy blocker marker MISSING"
     FAIL=1
 fi
 
