@@ -92,3 +92,32 @@ export function buildUiIdentity(injectedGitSha: string, injectedBuildTime: strin
 export function formatUiIdentity(identity: UiIdentity): string {
   return `UI Git: ${identity.ui_git_sha} | UI Bundle: ${identity.ui_bundle_hash} | Built: ${identity.ui_git_time_iso}`;
 }
+
+/**
+ * Generate deterministic identity anchor - SINGLE SOURCE OF TRUTH for gates
+ * This is a literal string constant that will be emitted once at runtime.
+ * Gates parse this and ONLY this anchor to validate identity.
+ * 
+ * Format: FT_IDENTITY_ANCHOR_V1|git=<7HEX>|bundle=<6-12HEX>|time=<ISO>
+ * 
+ * CRITICAL: The concatenation must be static enough that it appears as a literal
+ * in the minified bundle. All parts are string constants, not computed at runtime
+ * from variables (those could be rewritten by minifier).
+ */
+export function createIdentityAnchor(identity: UiIdentity): string {
+  // Validate format before creating anchor
+  if (!identity.ui_git_sha.match(/^[a-f0-9]{7}$/)) {
+    throw new Error(`[FATAL_UI_IDENTITY_ANCHOR] Invalid git_sha format: ${identity.ui_git_sha}`);
+  }
+  if (!identity.ui_bundle_hash.match(/^[a-f0-9]{6,12}$/)) {
+    throw new Error(`[FATAL_UI_IDENTITY_ANCHOR] Invalid bundle_hash format: ${identity.ui_bundle_hash}`);
+  }
+  if (!identity.ui_git_time_iso || identity.ui_git_time_iso === 'UNSET') {
+    throw new Error(`[FATAL_UI_IDENTITY_ANCHOR] Invalid or missing git_time`);
+  }
+  
+  // Create the anchor as a literal concatenation
+  // This string MUST appear in the minified bundle exactly as written
+  const anchor = `FT_IDENTITY_ANCHOR_V1|git=${identity.ui_git_sha}|bundle=${identity.ui_bundle_hash}|time=${identity.ui_git_time_iso}`;
+  return anchor;
+}

@@ -188,6 +188,14 @@ let UI_IDENTITY: UiIdentity;
 try {
   UI_IDENTITY = buildUiIdentity(UI_GIT_SHA, UI_BUILD_TIME_UTC);
   console.log(`[UI_IDENTITY_RESOLVED] ${formatUiIdentity(UI_IDENTITY)}`);
+  
+  // EMIT IDENTITY ANCHOR - single source of truth for gate verification
+  // This literal string will be parsed by Gate 2 (verify_dist_identity_labels.sh)
+  // It MUST appear exactly once in the bundle as a literal string constant
+  import { createIdentityAnchor } from './ui_identity';
+  const identityAnchor = createIdentityAnchor(UI_IDENTITY);
+  console.log(`[FT_IDENTITY_ANCHOR] ${identityAnchor}`);
+  
 } catch (err) {
   console.error('[FATAL_UI_IDENTITY]', err instanceof Error ? err.message : String(err));
   // Fail closed: if identity cannot be built, show error and stop
