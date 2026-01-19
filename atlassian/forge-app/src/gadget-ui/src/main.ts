@@ -17,9 +17,19 @@ import { ensureForgeBridgeOrRenderFatal } from "./_FATAL_MISSING_FORGE_BRIDGE";
 import { forgeInvoke } from "./forgeInvoke";
 
 // ============================================================================
+// IDENTITY ANCHOR GENERATION (FOR GATE VERIFICATION)
+// ============================================================================
+import { createIdentityAnchor } from "./ui_identity";
+
+// ============================================================================
 // LEGACY FLOW DETECTOR: Fail-closed validation (PHASE 3)
 // ============================================================================
 import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownState } from "./legacy_flow_detector";
+
+// ============================================================================
+// IDENTITY ANCHOR CONSTANT (FOR GATE VERIFICATION)
+// ============================================================================
+import { IDENTITY_ANCHOR_V1 } from "./entryProof";
 
 // ============================================================================
 // UI INVOKE WIRING PROOF
@@ -192,9 +202,12 @@ try {
   // EMIT IDENTITY ANCHOR - single source of truth for gate verification
   // This literal string will be parsed by Gate 2 (verify_dist_identity_labels.sh)
   // It MUST appear exactly once in the bundle as a literal string constant
-  import { createIdentityAnchor } from './ui_identity';
   const identityAnchor = createIdentityAnchor(UI_IDENTITY);
   console.log(`[FT_IDENTITY_ANCHOR] ${identityAnchor}`);
+  
+  // CRITICAL: Output anchor constant for gate verification
+  // This must be a literal string that survives minification
+  console.log(IDENTITY_ANCHOR_V1);
   
 } catch (err) {
   console.error('[FATAL_UI_IDENTITY]', err instanceof Error ? err.message : String(err));

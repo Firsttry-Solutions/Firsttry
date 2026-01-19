@@ -2,18 +2,32 @@
 # GATE 2: verify_dist_identity_labels.sh
 set -u
 BUNDLE_FILE=""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --bundle-file) BUNDLE_FILE="$2"; shift 2 ;;
-        *) echo "Usage: $0 --bundle-file <path>"; exit 1 ;;
+        *) echo "Usage: $0 [--bundle-file <path>]"; exit 1 ;;
     esac
 done
-[ -n "$BUNDLE_FILE" ] || { echo "[GATE_IDENTITY_LABELS] ERROR: No bundle file"; exit 1; }
-[ -f "$BUNDLE_FILE" ] || { echo "[GATE_IDENTITY_LABELS] ERROR: Bundle not found"; exit 1; }
+
+# Auto-discover if not provided
+if [ -z "$BUNDLE_FILE" ]; then
+    DIST_DIR="$SCRIPT_DIR/../src/gadget-ui/dist"
+    if [ -f "$DIST_DIR/index.html" ]; then
+        BUNDLE_REF=$(grep -oE 'app\.[a-f0-9]+\.(js|mjs)' "$DIST_DIR/index.html" 2>/dev/null | head -1 || true)
+        if [ -n "$BUNDLE_REF" ]; then
+            BUNDLE_FILE="$DIST_DIR/$BUNDLE_REF"
+        fi
+    fi
+fi
+
+[ -n "$BUNDLE_FILE" ] || { echo "[GATE_IDENTITY_LABELS] ERROR: No bundle file (provide --bundle-file or ensure dist/index.html exists)"; exit 1; }
+[ -f "$BUNDLE_FILE" ] || { echo "[GATE_IDENTITY_LABELS] ERROR: Bundle not found: $BUNDLE_FILE"; exit 1; }
 BUNDLE_NAME=$(basename "$BUNDLE_FILE")
 echo "[GATE_IDENTITY_LABELS] Scanning: $BUNDLE_NAME"
 FAIL=0
-ANCHOR_COUNT=$(grep -c 'FT_IDENTITY_ANCHOR_V1|git=' "$BUNDLE_FILE" 2>/dev/null || echo 0)
+ANCHOR_COUNT=$(grep -c 'FT_IDENTITY_ANCHOR_V1|git=' "$BUNDLE_FILE" 2>/dev/null | tail -1 || echo 0)
 echo "[GATE_IDENTITY_LABELS] identity_anchors_count=$ANCHOR_COUNT"
 if [ "$ANCHOR_COUNT" -ne 1 ]; then
     echo "[GATE_IDENTITY_LABELS] ✗ Must have exactly 1 anchor"

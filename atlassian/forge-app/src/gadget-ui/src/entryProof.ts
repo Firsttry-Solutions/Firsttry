@@ -5,6 +5,9 @@
  * Used to prove filename-based cache-busting is working and no query-param fallback.
  */
 
+// IDENTITY ANCHOR - injected at build time
+export const IDENTITY_ANCHOR_V1 = "FT_IDENTITY_ANCHOR_V1|git=af35dde|bundle=f1c06fb|time=2026-01-19T13:42:09Z";
+
 declare global {
   interface Window {
     __FT_RUNTIME_ENTRY_PROOF__?: {
