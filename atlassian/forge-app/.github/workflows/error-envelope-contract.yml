@@ -39,10 +39,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: atlassian/forge-app/package-lock.json
 
-      - name: Install dependencies
+      - name: Install dependencies (reproducible from lockfile)
         working-directory: ./atlassian/forge-app
-        run: npm install --legacy-peer-deps
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "ERROR: package-lock.json not found. Reproducible install requires lockfile."
+            exit 1
+          fi
 
       - name: Run Error Envelope Contract Verification
         working-directory: ./atlassian/forge-app

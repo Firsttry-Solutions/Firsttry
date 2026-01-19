@@ -16,7 +16,7 @@
     "verify:source:anchor-unique": "bash tools/verify_source_identity_anchor_unique.sh",
     "verify:bundle:integrity": "bash tools/verify_bundle_integrity.sh --bundle-file src/gadget-ui/dist/app.*.js",
     "verify:gates:selftest": "bash tools/test_gates_selftest.sh",
-    "build:gadget": "npm run verify:bridge-installed && npm run verify:required-files && node tools/build_meta.mjs && cd src/gadget-ui && npm install && npm run build && cd ../.. && npm run verify:ui:no-fatal-dist && npm run verify:ui:no-top-level-throw && npm run verify:ui:no-legacy-states && npm run verify:dist:invoke-allowlist && npm run verify:dist:identity-labels && npm run verify:source:anchor-unique && npm run verify:bundle:integrity && npm run verify:gates:selftest",
+    "build:gadget": "npm run verify:bridge-installed && npm run verify:required-files && node tools/build_meta.mjs && cd src/gadget-ui && npm install && npm run build && cd ../.. && npm run verify:ui:no-fatal-dist && npm run verify:ui:no-top-level-throw && npm run verify:ui:no-legacy-states && npm run verify:dist:invoke-allowlist && npm run verify:dist:identity-labels && npm run verify:source:anchor-unique && npm run verify:bundle:integrity && npm run verify:gates:selftest && npm run verify:lockfile:clean",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:operator:full": "vitest run tests/operator_verification/ov_runner.test.ts && npx ts-node tests/operator_verification/ov_report_gen.ts",
@@ -38,7 +38,8 @@
     "proof:buildinfo:prod": "bash ../../tools/prod_buildinfo_proof_loop.sh",
     "csp:lint": "node tools/csp_forbid_check.js",
     "csp:gate": "bash tools/csp_static_gate.sh",
-    "verify:backbone:l0": "bash tools/proof_backbone_l0.sh"
+    "verify:backbone:l0": "bash tools/proof_backbone_l0.sh",
+    "verify:lockfile:clean": "git diff --exit-code package-lock.json || (echo 'ERROR: package-lock.json has uncommitted changes (lockfile drift detected)' && exit 1)"
   },
   "devDependencies": {
     "@types/node": "^20.19.30",
