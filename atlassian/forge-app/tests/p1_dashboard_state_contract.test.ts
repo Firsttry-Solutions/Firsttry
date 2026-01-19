@@ -16,61 +16,13 @@
  * B) mapDashEnvelopeV1 returns explicit ERROR state on backend failure
  * C) mapDashEnvelopeV1 throws on invalid envelopes
  * D) assertNonNullDashboardState prevents undefined from reaching store
+ * 
+ * PHASE 2 REFACTOR: Functions now imported from shared dashEnvelope.ts module
+ * to ensure tests exercise REAL implementation, not local copies (fake coverage).
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-
-/**
- * Copy of mapDashEnvelopeV1 from main.ts for testing
- * (Must match the production implementation exactly)
- */
-function mapDashEnvelopeV1(resp: any): Record<string, any> {
-  // FAIL-CLOSED: Invalid envelope structure (check for null, undefined, non-object, or array)
-  if (resp === null || resp === undefined || typeof resp !== 'object' || Array.isArray(resp)) {
-    throw new Error('DASH_ENVELOPE_INVALID_FAIL_CLOSED: resp must be object');
-  }
-
-  // FAIL-CLOSED: Wrong schema version
-  if (resp.schemaVersion !== 'v1') {
-    throw new Error(`DASH_SCHEMA_VERSION_UNSUPPORTED_FAIL_CLOSED: expected v1, got ${resp.schemaVersion}`);
-  }
-
-  // FAIL-CLOSED: Backend reported error
-  if (resp.ok !== true) {
-    return {
-      status: 'ERROR',
-      reason: 'DASH_REQUEST_FAILED',
-      error: resp.error ?? { code: 'UNKNOWN', message: 'Unknown error' },
-      canonical_envelope_applied: true,
-    };
-  }
-
-  // FAIL-CLOSED: Missing or invalid data
-  if (!resp.data || typeof resp.data !== 'object') {
-    throw new Error('DASH_ENVELOPE_MISSING_DATA_FAIL_CLOSED: data must be object');
-  }
-
-  // SUCCESS: Return data with envelope marker
-  const mapped = {
-    ...resp.data,
-    canonical_envelope_applied: true,
-    envelope_schema_version: 'v1',
-  };
-
-  return mapped;
-}
-
-/**
- * Copy of assertNonNullDashboardState for testing
- */
-function assertNonNullDashboardState(
-  state: any,
-  ctx: any
-): asserts state is Record<string, any> {
-  if (!state || typeof state !== 'object') {
-    throw new Error('DASHBOARD_STATE_UNDEFINED_FAIL_CLOSED: state must be non-null object');
-  }
-}
+import { mapDashEnvelopeV1, assertNonNullDashboardState } from '../src/gadget-ui/src/dashEnvelope';
 
 describe('P1: Dashboard State Contract', () => {
   describe('mapDashEnvelopeV1 success cases', () => {
