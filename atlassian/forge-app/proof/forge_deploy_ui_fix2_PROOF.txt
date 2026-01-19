@@ -1,0 +1,23 @@
+Deploying your app to the production environment.
+Press Ctrl+C to cancel.
+
+Running forge lint...
+Warning: Could not perform some linting actions for PermissionLinter due to unhandled error "Unknown product".
+
+No issues found.
+
+Deploying FirstTry – Governance Status to production...
+
+ℹ Packaging app files
+ℹ Uploading app
+ℹ Validating manifest
+ℹ Snapshotting functions
+ℹ Deploying to environment
+
+✔ Deployed
+
+Deployed FirstTry – Governance Status to the production environment.
+
+ℹ The version of your app [3.2.0] that was just deployed to [production] is not eligible for the Runs on Atlassian program. Run forge eligibility to know more.
+
+To know more about Runs on Atlassian, go to https://go.atlassian.com/runs-on-atlassian.

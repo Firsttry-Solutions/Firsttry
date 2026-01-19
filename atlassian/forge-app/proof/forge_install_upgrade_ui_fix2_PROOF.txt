@@ -1,0 +1,20 @@
+To upgrade your app to use the latest code and scopes, select it from the list.
+Press Ctrl+C to cancel.
+? Select the site or workspace to upgrade:  (Use the Enter key to select)
+┌──────────────┬────────────────────────┬────────────────┬───────────────┐
+│ Environment  │ Site                   │ Atlassian apps │ Major Version │
+├──────────────┼────────────────────────┼────────────────┼───────────────┤
+│ ❯ production │ firsttry.atlassian.net │ Jira           │ 3 (Latest)    │
+└──────────────┴────────────────────────┴────────────────┴───────────────┘
+[6A[0D[73C[6B[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[GTo upgrade your app to use the latest code and scopes, select it from the list.
+Press Ctrl+C to cancel.
+? Select the site or workspace to upgrade: firsttry.atlassian.net[65D[65C
+
+Upgrading your app on the Atlassian site.
+
+? Do you want to continue? (y/N) [33D[33C[2K[G? Do you want to continue? (y/N) y[34D[34C[2K[G? Do you want to continue? Yes[30D[30C
+
+Upgrading your app in production...
+✔ Site is already at the latest version
+
+Your app in the production environment is at the latest in Jira on firsttry.atlassian.net.

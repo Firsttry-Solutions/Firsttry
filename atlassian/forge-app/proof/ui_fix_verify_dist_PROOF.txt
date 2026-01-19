@@ -1,0 +1,16 @@
+=== VERIFICATION: No fatal markers in dist ===
+
+> @firstry/forge-app@2.14.0 verify:ui:no-fatal-dist
+> bash tools/verify_no_fatal_ui_bridge_in_dist.sh
+
+[verify_no_fatal_ui_bridge_in_dist] Checking dist for fatal markers...
+OK: No fatal UI bridge markers in dist bundle
+
+=== VERIFICATION: No top-level throw in entry ===
+
+> @firstry/forge-app@2.14.0 verify:ui:no-top-level-throw
+> bash tools/verify_no_top_level_throw_in_entry.sh
+
+[verify_no_top_level_throw_in_entry] Checking entry bundle for top-level throw...
+Checking: src/gadget-ui/dist/app.f1c06fb.js
+OK: No top-level throw in entry bundle
