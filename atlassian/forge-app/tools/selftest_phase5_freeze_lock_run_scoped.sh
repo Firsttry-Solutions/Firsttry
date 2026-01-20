@@ -96,6 +96,7 @@ echo "📋 Running Phase 5 verification with RUN-SCOPED lock..."
 
 # Export environment variables as Phase 5 does
 export PHASE5_FREEZE_LOCK_PATH="$TEMP_RUN_DIR/FREEZE_LOCK.json"
+export PHASE5_FREEZE_LOCK_MODE="proof"
 export PHASE5_PAYLOAD_COMMIT="$ORIGINAL_HEAD"
 
 cd "$FORGE_APP_DIR"
