@@ -384,11 +384,22 @@ phase_1_create_proof_folder() {
   write_marker "$PROOF/01_utc.txt"
   
   cd "$REPO_ROOT"
+  
+  # CRITICAL: Capture payload commit once at the start of the run
+  # This is the single source of truth for all Phase 5 validations
+  local payload_commit=$(git rev-parse HEAD)
+  echo "$payload_commit" > "$PROOF/PAYLOAD_COMMIT.txt"
+  echo "  RUN_PAYLOAD_COMMIT=$payload_commit"
+  
   git rev-parse HEAD > "$PROOF/02_head_sha.txt"
   git branch --show-current > "$PROOF/03_branch.txt"
   
   local normalized_site=$(normalize_site_url "$FIRSTTRY_FORGE_SITE")
   echo "$normalized_site" > "$PROOF/04_site.txt"
+  
+  # Also capture HEAD at end for diagnostics (not used for validation)
+  # Will be updated in final phase
+  echo "$payload_commit" > "$PROOF/HEAD_AT_START.txt"
   
   echo "  ✓ Metadata written"
   echo "✓ PHASE 1: CREATE PROOF FOLDER OK"
@@ -462,6 +473,17 @@ phase_5_freeze_verify() {
   echo "════════════════════════════════════════════════════════════════"
   
   cd "$FORGE_APP_DIR"
+  
+  # Pass the payload commit from Phase 1 to verify_freeze_lock.sh
+  # This is the single source of truth: stored in $PROOF/PAYLOAD_COMMIT.txt
+  local payload_commit=""
+  if [[ -f "$PROOF/PAYLOAD_COMMIT.txt" ]]; then
+    payload_commit=$(cat "$PROOF/PAYLOAD_COMMIT.txt")
+  fi
+  
+  # Export environment variable for verify_freeze_lock.sh to use
+  export PHASE5_PAYLOAD_COMMIT="$payload_commit"
+  export PHASE5_PROOF_DIR="$PROOF"
   
   local cmd="bash audit/verify_freeze_lock.sh"
   
