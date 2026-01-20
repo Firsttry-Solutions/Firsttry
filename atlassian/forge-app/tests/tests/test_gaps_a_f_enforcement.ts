@@ -747,22 +747,17 @@ gaps.forEach((gap) => {
 console.log('\n' + '='.repeat(80) + '\n');
 
 
-if (failedTests.length > 0) {
-  throw new Error(`${failedTests.length} gap enforcement tests failed`);
-}
-
-// Standalone mode: run immediately and exit
-(async () => {
-  try {
-    if (failedTests.length === 0) {
-      console.log('\n✅ GAPS A-F ENFORCEMENT: ALL TESTS PASSED');
-      process.exit(0);
-    } else {
-      throw new Error(`${failedTests.length} tests failed`);
+// Export for vitest
+describe('GAPS A-F Enforcement', () => {
+  it('all gap enforcement tests must pass', () => {
+    if (failedTests.length > 0) {
+      const errorMsg = failedTests
+        .map((r) => `  ✗ ${r.name}: ${r.error}`)
+        .join('\n');
+      console.error('\n❌ GAPS A-F ENFORCEMENT: TEST FAILED');
+      console.error(errorMsg);
+      throw new Error(`${failedTests.length} gap enforcement tests failed`);
     }
-  } catch (err) {
-    console.error('\n❌ GAPS A-F ENFORCEMENT: TEST FAILED');
-    console.error(err instanceof Error ? err.message : String(err));
-    process.exit(1);
-  }
-})();
+    console.log('\n✅ GAPS A-F ENFORCEMENT: ALL TESTS PASSED');
+  });
+});
