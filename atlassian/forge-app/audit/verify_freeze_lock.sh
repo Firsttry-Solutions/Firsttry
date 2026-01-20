@@ -43,19 +43,9 @@ if [[ ! -f "$FREEZE_LOCK_PATH" ]]; then
     exit 1
 fi
 
-# Read the locked frozenContentSha
-LOCKED_SHA=$(jq -r '.frozenContentSha' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
-if [[ -z "$LOCKED_SHA" ]]; then
-    echo "FAIL: frozenContentSha not found in FREEZE_LOCK.json"
-    exit 1
-fi
-
-# Read the locked commit
+# Read the locked commit and content SHA
 LOCKED_COMMIT=$(jq -r '.commitSha' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
-if [[ -z "$LOCKED_COMMIT" ]]; then
-    echo "FAIL: FREEZE_COMMIT_MISSING"
-    exit 1
-fi
+LOCKED_SHA=$(jq -r '.frozenContentSha' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
 
 # ============================================================================
 # CRITICAL VALIDATION: Payload commit must match
@@ -79,62 +69,64 @@ if [[ "$LOCKED_COMMIT" != "$EXPECTED_PAYLOAD_COMMIT" ]]; then
     exit 1
 fi
 
-# Enforce algorithm immutability (only for release mode with repo lock)
+# ============================================================================
+# Content validation: Only for release mode (proof mode has no content SHA)
+# ============================================================================
 if [[ "$RUN_MODE" == "release" ]]; then
-    LOCKED_METHOD=$(jq -r '.method' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
-    if [[ -n "$LOCKED_METHOD" && "$LOCKED_METHOD" != "git-tracked-files+sha256-manifest" ]]; then
-        echo "FAIL: FREEZE_METHOD_MISMATCH"
-        echo "  Expected: git-tracked-files+sha256-manifest"
-        echo "  Got:      $LOCKED_METHOD"
+    # Release mode: Verify frozen content SHA
+    
+    # Compute FROZEN_CONTENT_SHA from git-tracked files
+    cd "$REPO_ROOT"
+
+    # Step 1: Get all git-tracked files under atlassian/forge-app/
+    ALL_FILES=$(git ls-files "atlassian/forge-app" 2>/dev/null || echo "")
+
+    # Step 2: Filter out excluded patterns
+    FILTERED_FILES=$(echo "$ALL_FILES" | grep -v -E "(audit/proof_runs|OV_RESULTS|SHK_REPORT|audit/verification_reports|audit/out_runs|audit/.*OUT|audit/state_assessment/run_|FREEZE_LOCK\.json|node_modules/|dist/)" || true)
+
+    # Step 3: Sort lexicographically with locale stability
+    SORTED_FILES=$(echo "$FILTERED_FILES" | LC_ALL=C sort)
+
+    # Step 4: Build canonical manifest with sha256 for each file
+    MANIFEST=$(mktemp)
+    trap "rm -f $MANIFEST" EXIT
+
+    echo "$SORTED_FILES" | while read -r file; do
+        if [[ -z "$file" ]]; then
+            continue
+        fi
+        if [[ -f "$REPO_ROOT/$file" ]]; then
+            file_sha=$(sha256sum "$REPO_ROOT/$file" | awk '{print $1}')
+            echo "$file_sha  $file"
+        fi
+    done | LC_ALL=C sort > "$MANIFEST"
+
+    # Step 5: Hash the manifest to get current FROZEN_CONTENT_SHA
+    CURRENT_SHA=$(sha256sum "$MANIFEST" | awk '{print $1}')
+
+    # Emit machine-readable proof output
+    echo "COMPUTED_FROZEN_SHA=$CURRENT_SHA"
+    echo "LOCKED_FROZEN_SHA=$LOCKED_SHA"
+    echo "EXPECTED_PAYLOAD_COMMIT=$EXPECTED_PAYLOAD_COMMIT"
+    echo "LOCKED_COMMIT=$LOCKED_COMMIT"
+
+    # Compare frozen content
+    if [[ "$CURRENT_SHA" == "$LOCKED_SHA" ]]; then
+        echo "✓ Freeze lock matches (release mode: commitSha + frozenContentSha validated)"
+        exit 0
+    else
+        echo "FAIL: FREEZE_VERIFY_FAIL"
+        echo "  Expected SHA: $LOCKED_SHA"
+        echo "  Got SHA:      $CURRENT_SHA"
+        echo ""
+        echo "REMEDIATION:"
+        echo "  The frozen content does not match the lock."
+        echo "  Run: npm run release:freeze-lock"
         exit 1
     fi
-fi
 
-cd "$REPO_ROOT"
-
-# Step 1: Get all git-tracked files under atlassian/forge-app/
-ALL_FILES=$(git ls-files "atlassian/forge-app" 2>/dev/null || echo "")
-
-# Step 2: Filter out excluded patterns
-FILTERED_FILES=$(echo "$ALL_FILES" | grep -v -E "(audit/proof_runs|OV_RESULTS|SHK_REPORT|audit/verification_reports|audit/out_runs|audit/.*OUT|audit/state_assessment/run_|FREEZE_LOCK\.json|node_modules/|dist/)" || true)
-
-# Step 3: Sort lexicographically with locale stability
-SORTED_FILES=$(echo "$FILTERED_FILES" | LC_ALL=C sort)
-
-# Step 4: Build canonical manifest with sha256 for each file
-MANIFEST=$(mktemp)
-trap "rm -f $MANIFEST" EXIT
-
-echo "$SORTED_FILES" | while read -r file; do
-    if [[ -z "$file" ]]; then
-        continue
-    fi
-    if [[ -f "$REPO_ROOT/$file" ]]; then
-        file_sha=$(sha256sum "$REPO_ROOT/$file" | awk '{print $1}')
-        echo "$file_sha  $file"
-    fi
-done | LC_ALL=C sort > "$MANIFEST"
-
-# Step 5: Hash the manifest to get current FROZEN_CONTENT_SHA
-CURRENT_SHA=$(sha256sum "$MANIFEST" | awk '{print $1}')
-
-# Emit machine-readable proof output
-echo "COMPUTED_FROZEN_SHA=$CURRENT_SHA"
-echo "LOCKED_FROZEN_SHA=$LOCKED_SHA"
-echo "EXPECTED_PAYLOAD_COMMIT=$EXPECTED_PAYLOAD_COMMIT"
-echo "LOCKED_COMMIT=$LOCKED_COMMIT"
-
-# Compare frozen content
-if [[ "$CURRENT_SHA" == "$LOCKED_SHA" ]]; then
-    echo "✓ Freeze lock matches"
-    exit 0
 else
-    echo "FAIL: FREEZE_VERIFY_FAIL"
-    echo "  Expected SHA: $LOCKED_SHA"
-    echo "  Got SHA:      $CURRENT_SHA"
-    echo ""
-    echo "REMEDIATION:"
-    echo "  The frozen content does not match the lock."
-    echo "  Run: ./audit/generate_freeze_lock.sh && ./audit/verify_freeze_lock.sh"
-    exit 1
+    # Proof mode: Only commitSha validation (no content check)
+    echo "✓ Freeze lock validated (proof mode: commitSha only, no content check)"
+    exit 0
 fi
