@@ -19,6 +19,6 @@
     "allowJs": true,
     "checkJs": false
   },
-  "include": ["src/**/*", "src/gadget-ui/dist/**/*.js", "tests/**/*_standalone.ts"],
+  "include": ["src/**/*", "src/gadget-ui/dist/**/*.js", "tests/**/*_standalone.ts", "tests/tests/**/test_gaps_a_f_enforcement.ts"],
   "exclude": ["node_modules", "**/*.test.ts", "src/gadget-ui/src/**/*"]
 }
