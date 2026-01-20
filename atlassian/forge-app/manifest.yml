@@ -26,17 +26,17 @@ modules:
   # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
   function:
     - key: ftBackboneScheduled
-      handler: src/backbone/forge-entry.scheduled
+      handler: backbone/forge-entry.scheduled
     - key: ftRunNow
-      handler: src/backbone/forge-entry.runNow
+      handler: backbone/forge-entry.runNow
     - key: phase5-scheduler-fn
-      handler: src/scheduled/phase5_scheduler.run
+      handler: scheduled/phase5_scheduler.run
     - key: phase6-weekly-snap-fn
-      handler: src/scheduled/snapshot_weekly.handle
+      handler: scheduled/snapshot_weekly.handle
     - key: token-refresh-job-fn
-      handler: src/scheduled/token_refresh_scheduler.handle
+      handler: scheduled/token_refresh_scheduler.handle
     - key: daily-dispatcher-fn
-      handler: src/scheduled/scheduler_daily_dispatcher.runDailyDispatch
+      handler: scheduled/scheduler_daily_dispatcher.runDailyDispatch
     - key: status-resolver-fn
       handler: resolvers/governance_status.get
     # Canonical gadget handler: Single dispatcher for all UI invocations (with allowlist)
@@ -65,7 +65,7 @@ modules:
 
     - key: phase5-auto-scheduler
       function: phase5-scheduler-fn
-      interval: fiveMinute
+      interval: hour
 
     - key: phase6-weekly-snapshot
       function: phase6-weekly-snap-fn
