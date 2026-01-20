@@ -2,8 +2,10 @@
 # Verify FREEZE_LOCK.json by recomputing the deterministic content hash
 # Uses the FROZEN_CONTENT_SHA algorithm
 #
-# RUN-SCOPED MODE: During proof:auth runs, uses PHASE5_FREEZE_LOCK_PATH (from run folder)
-# STANDALONE MODE: When run directly, uses audit/marketplace_submission/FREEZE_LOCK.json (for releases)
+# PROOF MODE: During proof:auth runs, uses PHASE5_FREEZE_LOCK_MODE="proof" or lock path inside audit/proof_runs/
+#             Requires commitSha only, frozenContentSha optional
+# RELEASE MODE: For marketplace submissions, requires BOTH commitSha and frozenContentSha
+#               Fails HARD if frozenContentSha missing
 
 set -euo pipefail
 export LC_ALL=C
@@ -13,67 +15,87 @@ REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 AUDIT_DIR="$(dirname "$0")"
 
 # ============================================================================
-# Determine FREEZE_LOCK path: run-scoped (proof mode) or repo (release mode)
+# Determine mode: proof (run-scoped) or release (repo lock)
 # ============================================================================
-if [[ -n "${PHASE5_FREEZE_LOCK_PATH:-}" ]]; then
-    # RUN-SCOPED MODE: proof:auth passes this env var
-    FREEZE_LOCK_PATH="$PHASE5_FREEZE_LOCK_PATH"
-    RUN_MODE="proof"
-else
-    # STANDALONE MODE: release verification (uses repo-committed lock)
-    FREEZE_LOCK_PATH="$AUDIT_DIR/marketplace_submission/FREEZE_LOCK.json"
-    RUN_MODE="release"
+MODE="${PHASE5_FREEZE_LOCK_MODE:-release}"
+LOCK_PATH="${PHASE5_FREEZE_LOCK_PATH:-${1:-$AUDIT_DIR/marketplace_submission/FREEZE_LOCK.json}}"
+PAYLOAD="${PHASE5_PAYLOAD_COMMIT:-$(cd "$REPO_ROOT" && git rev-parse HEAD)}"
+
+# Auto-detect proof mode if lock is inside audit/proof_runs/
+if [[ "$LOCK_PATH" == *"audit/proof_runs/"* ]]; then
+    MODE="proof"
 fi
 
 # ============================================================================
-# Single Source of Truth: Payload commit
+# Print evidence of mode and settings
 # ============================================================================
-EXPECTED_PAYLOAD_COMMIT="${PHASE5_PAYLOAD_COMMIT:-}"
-
-if [[ -z "$EXPECTED_PAYLOAD_COMMIT" ]]; then
-    # Fallback: use current HEAD (standalone mode only)
-    EXPECTED_PAYLOAD_COMMIT=$(cd "$REPO_ROOT" && git rev-parse HEAD)
-fi
-
-CURRENT_HEAD=$(cd "$REPO_ROOT" && git rev-parse HEAD)
+echo "[FREEZE_VERIFY] mode=$MODE"
+echo "[FREEZE_VERIFY] lock_path=$LOCK_PATH"
+echo "[FREEZE_VERIFY] payload_commit=$PAYLOAD"
 
 # Check if FREEZE_LOCK exists
-if [[ ! -f "$FREEZE_LOCK_PATH" ]]; then
-    echo "FAIL: FREEZE_LOCK_MISSING"
+if [[ ! -f "$LOCK_PATH" ]]; then
+    echo "[FREEZE_VERIFY] FAIL: FREEZE_LOCK_MISSING at $LOCK_PATH"
     exit 1
 fi
 
-# Read the locked commit and content SHA
-LOCKED_COMMIT=$(jq -r '.commitSha' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
-LOCKED_SHA=$(jq -r '.frozenContentSha' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
+# ============================================================================
+# Read lock file
+# ============================================================================
+LOCKED_COMMIT=$(jq -r '.commitSha' "$LOCK_PATH" 2>/dev/null || echo "")
+LOCKED_SHA=$(jq -r '.frozenContentSha' "$LOCK_PATH" 2>/dev/null || echo "")
 
 # ============================================================================
-# CRITICAL VALIDATION: Payload commit must match
+# MODE-SPECIFIC LOGIC
 # ============================================================================
-# The payload commit is the exact commit the freeze was locked against.
-# It should NOT change between when the run started and when Phase 5 validates.
-if [[ "$LOCKED_COMMIT" != "$EXPECTED_PAYLOAD_COMMIT" ]]; then
-    echo "FAIL: FREEZE_COMMIT_MISMATCH"
-    echo "  EXPECTED_PAYLOAD_COMMIT: $EXPECTED_PAYLOAD_COMMIT"
-    echo "  LOCKED_COMMIT_IN_FREEZE: $LOCKED_COMMIT"
-    echo "  CURRENT_HEAD:            $CURRENT_HEAD"
-    echo "  FREEZE_LOCK_PATH:        $FREEZE_LOCK_PATH"
-    echo "  RUN_MODE:                $RUN_MODE"
-    echo ""
-    echo "REMEDIATION:"
-    if [[ "$RUN_MODE" == "proof" ]]; then
-        echo "  Proof run: Re-run proof:auth to generate fresh run-scoped lock"
-    else
-        echo "  Release mode: Run 'npm run release:freeze-lock' to update repo lock"
+
+if [[ "$MODE" == "proof" ]]; then
+    # PROOF MODE: Require commitSha, frozenContentSha is optional
+    echo "[FREEZE_VERIFY] checking_frozenContentSha=no"
+    
+    # Validate commitSha exists
+    if [[ -z "$LOCKED_COMMIT" ]]; then
+        echo "[FREEZE_VERIFY] FAIL: commitSha missing in run-scoped lock"
+        exit 1
     fi
-    exit 1
-fi
+    
+    # Validate commitSha matches payload
+    if [[ "$LOCKED_COMMIT" != "$PAYLOAD" ]]; then
+        echo "[FREEZE_VERIFY] FAIL: commitSha mismatch"
+        echo "  Expected: $PAYLOAD"
+        echo "  Got:      $LOCKED_COMMIT"
+        exit 1
+    fi
+    
+    # Proof mode: Success on commitSha match
+    echo "[FREEZE_VERIFY] OK: proof mode - commitSha validated"
+    exit 0
 
-# ============================================================================
-# Content validation: Only for release mode (proof mode has no content SHA)
-# ============================================================================
-if [[ "$RUN_MODE" == "release" ]]; then
-    # Release mode: Verify frozen content SHA
+else
+    # RELEASE MODE: Require BOTH commitSha and frozenContentSha
+    echo "[FREEZE_VERIFY] checking_frozenContentSha=yes"
+    
+    # HARD FAIL if frozenContentSha is missing in release mode
+    if [[ -z "$LOCKED_SHA" ]]; then
+        echo "[FREEZE_VERIFY] FAIL: frozenContentSha MISSING (release mode requires it)"
+        echo "  lock_path: $LOCK_PATH"
+        echo "  REMEDIATION: Run 'npm run release:freeze-lock' to generate a proper release lock"
+        exit 1
+    fi
+    
+    # Validate commitSha exists
+    if [[ -z "$LOCKED_COMMIT" ]]; then
+        echo "[FREEZE_VERIFY] FAIL: commitSha missing in release lock"
+        exit 1
+    fi
+    
+    # Validate commitSha matches payload
+    if [[ "$LOCKED_COMMIT" != "$PAYLOAD" ]]; then
+        echo "[FREEZE_VERIFY] FAIL: commitSha mismatch"
+        echo "  Expected: $PAYLOAD"
+        echo "  Got:      $LOCKED_COMMIT"
+        exit 1
+    fi
     
     # Compute FROZEN_CONTENT_SHA from git-tracked files
     cd "$REPO_ROOT"
@@ -104,29 +126,15 @@ if [[ "$RUN_MODE" == "release" ]]; then
     # Step 5: Hash the manifest to get current FROZEN_CONTENT_SHA
     CURRENT_SHA=$(sha256sum "$MANIFEST" | awk '{print $1}')
 
-    # Emit machine-readable proof output
-    echo "COMPUTED_FROZEN_SHA=$CURRENT_SHA"
-    echo "LOCKED_FROZEN_SHA=$LOCKED_SHA"
-    echo "EXPECTED_PAYLOAD_COMMIT=$EXPECTED_PAYLOAD_COMMIT"
-    echo "LOCKED_COMMIT=$LOCKED_COMMIT"
-
     # Compare frozen content
     if [[ "$CURRENT_SHA" == "$LOCKED_SHA" ]]; then
-        echo "✓ Freeze lock matches (release mode: commitSha + frozenContentSha validated)"
+        echo "[FREEZE_VERIFY] OK: release mode - commitSha and frozenContentSha validated"
         exit 0
     else
-        echo "FAIL: FREEZE_VERIFY_FAIL"
-        echo "  Expected SHA: $LOCKED_SHA"
-        echo "  Got SHA:      $CURRENT_SHA"
-        echo ""
-        echo "REMEDIATION:"
-        echo "  The frozen content does not match the lock."
-        echo "  Run: npm run release:freeze-lock"
+        echo "[FREEZE_VERIFY] FAIL: frozenContentSha mismatch (release mode)"
+        echo "  Expected: $LOCKED_SHA"
+        echo "  Got:      $CURRENT_SHA"
+        echo "  REMEDIATION: Run 'npm run release:freeze-lock' to update the lock"
         exit 1
     fi
-
-else
-    # Proof mode: Only commitSha validation (no content check)
-    echo "✓ Freeze lock validated (proof mode: commitSha only, no content check)"
-    exit 0
 fi
