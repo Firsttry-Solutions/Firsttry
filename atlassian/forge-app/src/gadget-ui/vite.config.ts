@@ -80,5 +80,11 @@ export default defineConfig({
     alias: {
       '@': new URL('./src', import.meta.url).pathname
     }
+  },
+  // CRITICAL FIX: Ensure @forge/bridge is bundled into the output (not externalized)
+  // The bridge must be available at runtime, either bundled or injected
+  // We bundle it to ensure it's included in the final app.*.js bundle
+  optimizeDeps: {
+    include: ['@forge/bridge']
   }
 });

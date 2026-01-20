@@ -59,27 +59,46 @@ try {
 // ============================================================================
 // FORGE BRIDGE RUNTIME CHECK (FAIL-CLOSED, NO THROW)
 // Must run EARLY to detect if bridge is available, render panel if not
+// Uses async probeForgeBridge() which pings backend via real invoke call
 // ============================================================================
 console.log("[UI_BRIDGE_RUNTIME_CHECK] Checking Forge bridge availability...");
-const bridgeOk = ensureForgeBridgeOrRenderFatal(document.body);
-if (!bridgeOk) {
-  // Bridge missing and panel rendered. Stop execution.
-  console.error("[UI_BRIDGE_RUNTIME_CHECK] Bridge not available. Fatal panel rendered. Stopping boot.");
-  // Exit early - do not continue with app initialization
-  throw new Error("FATAL_UI_BRIDGE_MISSING_RUNTIME: Cannot proceed without Forge bridge");
-}
+const bridgeProbePromise = ensureForgeBridgeOrRenderFatal(document.body);
+// We'll await this at the top of onDOMReady() function (see bottom of file)
 
 // ============================================================================
-// CANONICAL PROOF: Bridge is available and app can proceed
+// INSTANT FALLBACK: if bridge is provably missing, render error immediately
+// This catches cases where the async probe might hang or crash
 // ============================================================================
-console.log("[UI_BRIDGE_RUNTIME_PROOF]", {
-  hasBridgeImport: true,
-  canInvoke: true,
-  timestamp: new Date().toISOString(),
-  href: typeof window !== "undefined" ? window.location.href : "N/A",
-  context: "Custom UI",
-});
-console.log("[UI_BRIDGE_RUNTIME_CHECK] Bridge available. Proceeding with boot.");
+setTimeout(() => {
+  // After 3 seconds, if bridge hasn't been verified, assume it's missing
+  const fatalPanel = document.getElementById("forge-bridge-fatal-error-panel");
+  if (!fatalPanel && !document.body.classList.contains("ft-bridge-verified")) {
+    const panel = document.createElement("div");
+    panel.id = "forge-bridge-fatal-error-panel-timeout";
+    panel.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      z-index: 999999;
+      font-family: system-ui, -apple-system, sans-serif;
+    `;
+    panel.innerHTML = `
+      <div style="text-align: center; padding: 24px; max-width: 500px;">
+        <h1 style="color: #d32f2f; margin: 0 0 16px 0; font-size: 24px;">⚠️ Timeout</h1>
+        <p style="color: #666; font-size: 16px;">
+          The Forge bridge did not respond within 3 seconds.
+        </p>
+      </div>
+    `;
+    document.body.appendChild(panel);
+  }
+}, 3000);
 
 // ============================================================================
 // L0.C: UI ENTRY RUNTIME PROOF - IIFE (runs immediately before any other code)
@@ -2563,6 +2582,31 @@ function logUiBuildIdentityProof() {
 
 // Wire buttons on DOM ready
 function onDOMReady() {
+    // ========================================================================
+    // CRITICAL: Await bridge availability check before proceeding
+    // ========================================================================
+    (async () => {
+      try {
+        const bridgeOk = await bridgeProbePromise;
+        if (!bridgeOk) {
+          console.error("[UI_BRIDGE_RUNTIME_CHECK] Bridge not available. Fatal panel rendered. Stopping boot.");
+          document.body.classList.add("ft-bridge-failed");
+          return; // Stop all further initialization
+        }
+        
+        // Bridge is working - mark as verified and proceed
+        document.body.classList.add("ft-bridge-verified");
+        console.log("[UI_BRIDGE_RUNTIME_CHECK] Bridge verified. Proceeding with full initialization.");
+        
+        proceedWithBoot();
+      } catch (err) {
+        console.error("[UI_BRIDGE_RUNTIME_CHECK] Error awaiting bridge probe:", err);
+        document.body.classList.add("ft-bridge-error");
+      }
+    })();
+}
+
+async function proceedWithBoot() {
     wireExportButtons();
     
     // ========================================================================
