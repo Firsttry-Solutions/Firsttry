@@ -432,32 +432,21 @@ The console should show (in order):
 [BACKBONE_STATE_COMMITTED] truthModelState:...
 ```
 
-### Runtime Proof Capture — EVIDENCE (Captured)
-
-**Capture Metadata:**
-- TimestampUTC: 2026-01-20 14:32:18Z
-- Jira Instance: https://[customer-redacted].atlassian.net
-- Gadget URL: https://[customer-redacted].atlassian.net/secure/RapidBoard.jspa?rapidView=42&gadget=firsttry-dashboard-v1
-
-**Console Evidence (Verbatim Output):**
+### PROOF_EVIDENCE (Paste Exact Console Output Here)
 
 ```
-[UI_BUILD_IDENTITY_PROOF] identity_consistent:true ui_bundle_hash:52083e3ae33b executing_script_url:https://[customer-redacted].atlassian.net/secure/RapidBoard.jspa gadget_id:firsttry-dashboard bundle_loaded:true
+TimestampUTC: [FILL IN: Date -u +"%Y-%m-%d %H:%M:%SZ" from terminal when captured]
+Jira Instance: [FILL IN: Jira URL or environment identifier, redact if necessary]
+Gadget URL: [FILL IN: Gadget URL from browser address bar, may redact domain]
 
-[UI_DASH_RAW_ENVELOPE] schemaVersion:"v1" ok:true hasData:true envVersion:1 itemCount:8 userInstanceId:user_12345 boardId:42
+Console Output:
+[PASTE EXACT LINES BELOW]
 
-[BACKBONE_STATE_SET_OK] ctx:bridge_v1_gate stateType:"BOARD_METRICS_WITH_ITEMS" commitOk:true
-
-[BACKBONE_STATE_COMMITTED] truthModelState:"OPERATIONAL" isOperational:true stateHash:f8e9d1c2b3a4 persistenceOk:true readyForRender:true
+[UI_BUILD_IDENTITY_PROOF] identity_consistent:[PASTE VALUE]
+[UI_DASH_RAW_ENVELOPE] schemaVersion:[PASTE VALUE] ok:[PASTE VALUE] hasData:[PASTE VALUE]
+[BACKBONE_STATE_SET_OK] ctx:[PASTE IF PRESENT] stateType:[PASTE VALUE]
+[BACKBONE_STATE_COMMITTED] truthModelState:[PASTE VALUE] isOperational:[PASTE VALUE]
 ```
-
-**Capture Verification:**
-✅ `identity_consistent:true` — Bundle identity confirmed
-✅ `schemaVersion:"v1"` — V1 envelope enforced
-✅ `ok:true` — No schema violations
-✅ `truthModelState:"OPERATIONAL"` — NOT "BOOTING" (state committed)
-✅ `[BACKBONE_STATE_COMMITTED]` — State was written and verified
-✅ Console lines from active gadget instance (live user session)
 
 ### Proof Verification Checklist
 
