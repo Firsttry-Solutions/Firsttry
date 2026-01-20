@@ -100,19 +100,23 @@ else
         exit 1
     fi
     
-    # Compute FROZEN_CONTENT_SHA from git-tracked files
+    # RELEASE MODE: Compute FROZEN_CONTENT_SHA from git snapshot (NOT working tree)
+    # Use LOCKED_COMMIT (or PAYLOAD if provided) to get deterministic snapshot
+    SNAPSHOT_COMMIT="${PAYLOAD}"
+    echo "[FREEZE_VERIFY] Computing hash from git snapshot at ${SNAPSHOT_COMMIT}..."
+    
     cd "$REPO_ROOT"
 
-    # Step 1: Get all git-tracked files under atlassian/forge-app/
-    ALL_FILES=$(git ls-files "atlassian/forge-app" 2>/dev/null || echo "")
+    # Step 1: Get all git-tracked files under atlassian/forge-app/ from git tree
+    ALL_FILES=$(git ls-tree -r --name-only "${SNAPSHOT_COMMIT}" -- atlassian/forge-app/ 2>/dev/null || echo "")
 
-    # Step 2: Filter out excluded patterns
-    FILTERED_FILES=$(echo "$ALL_FILES" | grep -v -E "(audit/proof_runs|OV_RESULTS|SHK_REPORT|audit/verification_reports|audit/out_runs|audit/.*OUT|audit/state_assessment/run_|FREEZE_LOCK\.json|node_modules/|dist/)" || true)
+    # Step 2: Filter out excluded patterns (including FREEZE_LOCK.json to avoid circularity)
+    FILTERED_FILES=$(echo "$ALL_FILES" | grep -v -E "(audit/proof_runs|OV_RESULTS|SHK_REPORT|audit/verification_reports|audit/out_runs|audit/.*OUT|audit/state_assessment/run_|audit/marketplace_submission/FREEZE_LOCK\.json|node_modules/|dist/)" || true)
 
     # Step 3: Sort lexicographically with locale stability
     SORTED_FILES=$(echo "$FILTERED_FILES" | LC_ALL=C sort)
 
-    # Step 4: Build canonical manifest with sha256 for each file
+    # Step 4: Build canonical manifest with sha256 for each file (from git snapshot, not working tree)
     MANIFEST=$(mktemp)
     trap "rm -f $MANIFEST" EXIT
 
@@ -120,13 +124,11 @@ else
         if [[ -z "$file" ]]; then
             continue
         fi
-        if [[ -f "$REPO_ROOT/$file" ]]; then
-            file_sha=$(sha256sum "$REPO_ROOT/$file" | awk '{print $1}')
-            echo "$file_sha  $file"
-        fi
+        # Pipe git show through sha256sum (binary-safe)
+        git show "${SNAPSHOT_COMMIT}:${file}" 2>/dev/null | sha256sum | awk -v f="$file" '{print $1 "  " f}'
     done | LC_ALL=C sort > "$MANIFEST"
 
-    # Step 5: Hash the manifest to get current FROZEN_CONTENT_SHA
+    # Step 5: Hash the manifest to get CURRENT_SHA
     CURRENT_SHA=$(sha256sum "$MANIFEST" | awk '{print $1}')
 
     # Compare frozen content
@@ -137,7 +139,9 @@ else
         echo "[FREEZE_VERIFY] FAIL: frozenContentSha mismatch (release mode)"
         echo "  Expected: $LOCKED_SHA"
         echo "  Got:      $CURRENT_SHA"
-        echo "  REMEDIATION: Run 'npm run release:freeze-lock' to update the lock"
+        echo "  PAYLOAD:  $PAYLOAD"
+        echo "  Commit:   $LOCKED_COMMIT"
+        echo "  REMEDIATION: Ensure RELEASE_PAYLOAD_COMMIT matches lock's commitSha, then run 'npm run release:freeze-lock'"
         exit 1
     fi
 fi
