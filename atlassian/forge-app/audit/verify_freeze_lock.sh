@@ -45,6 +45,9 @@ fi
 LOCKED_COMMIT=$(jq -r '.commitSha' "$LOCK_PATH" 2>/dev/null || echo "")
 LOCKED_SHA=$(jq -r '.frozenContentSha' "$LOCK_PATH" 2>/dev/null || echo "")
 
+# Normalize "null" string from jq to empty string
+[[ "$LOCKED_SHA" == "null" ]] && LOCKED_SHA=""
+
 # ============================================================================
 # MODE-SPECIFIC LOGIC
 # ============================================================================
