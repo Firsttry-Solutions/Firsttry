@@ -57,6 +57,29 @@ try {
 }
 
 // ============================================================================
+// UI BUILD IDENTITY — ALWAYS PRINTED (even if bridge fails)
+// This marker runs before bridge check so we know which bundle is executing
+// ============================================================================
+(() => {
+  const ui_git_sha = typeof __FT_BUILD_SHA__ !== 'undefined' ? __FT_BUILD_SHA__ : 'UNSET';
+  const ui_bundle_hash = (() => {
+    const scripts = Array.from(document.querySelectorAll('script[src]')).map(s => s.src);
+    for (const src of scripts) {
+      const m = src.match(/\/app\.([a-z0-9]+)\.(js|mjs)/);
+      if (m) return m[1];
+    }
+    return 'UNSET';
+  })();
+  
+  console.log('[UI_BUILD_IDENTITY_EARLY]', {
+    marker: 'UI_BUILD_IDENTITY_EARLY',
+    ui_git_sha,
+    ui_bundle_hash,
+    ts: new Date().toISOString(),
+  });
+})();
+
+// ============================================================================
 // FORGE BRIDGE RUNTIME CHECK (FAIL-CLOSED, NO THROW)
 // Must run EARLY to detect if bridge is available, render panel if not
 // Uses async probeForgeBridge() which pings backend via real invoke call
@@ -90,9 +113,9 @@ setTimeout(() => {
     `;
     panel.innerHTML = `
       <div style="text-align: center; padding: 24px; max-width: 500px;">
-        <h1 style="color: #d32f2f; margin: 0 0 16px 0; font-size: 24px;">⚠️ Timeout</h1>
+        <h1 style="color: #d32f2f; margin: 0 0 16px 0; font-size: 24px;">⚠️ Bridge Timeout</h1>
         <p style="color: #666; font-size: 16px;">
-          The Forge bridge did not respond within 3 seconds.
+          The Forge bridge did not respond within 3 seconds. Try refreshing the page.
         </p>
       </div>
     `;
@@ -2584,14 +2607,15 @@ function logUiBuildIdentityProof() {
 function onDOMReady() {
     // ========================================================================
     // CRITICAL: Await bridge availability check before proceeding
+    // NEVER throw uncaught error; gracefully stop if bridge fails
     // ========================================================================
     (async () => {
       try {
-        const bridgeOk = await bridgeProbePromise;
-        if (!bridgeOk) {
+        const result = await bridgeProbePromise;
+        if (!result.ok) {
           console.error("[UI_BRIDGE_RUNTIME_CHECK] Bridge not available. Fatal panel rendered. Stopping boot.");
           document.body.classList.add("ft-bridge-failed");
-          return; // Stop all further initialization
+          return; // Stop all further initialization - NO THROW
         }
         
         // Bridge is working - mark as verified and proceed
@@ -2602,6 +2626,7 @@ function onDOMReady() {
       } catch (err) {
         console.error("[UI_BRIDGE_RUNTIME_CHECK] Error awaiting bridge probe:", err);
         document.body.classList.add("ft-bridge-error");
+        return; // Stop gracefully - NO THROW
       }
     })();
 }

@@ -63,16 +63,15 @@ describe('Bridge Runtime Probe (Phase 3 - No require)', () => {
   it('ForgeBridgePresenceProof must have deterministic fields', () => {
     const fileContent = fs.readFileSync(bridgeCheckFile, 'utf-8');
     const expectedFields = [
-      'hasInvokeImport',
-      'canInvoke',
-      'pingOk',
-      'pingErr',
-      'href',
-      'scripts',
-      'ts'
+      'uiReqId:',
+      'href:',
+      'invokeType:',
+      'pingOk:',
+      'pingErr:',
+      'ts:'
     ];
     expectedFields.forEach((field) => {
-      expect(fileContent).toContain(`${field}:`);
+      expect(fileContent).toContain(field);
     });
   });
 
@@ -88,16 +87,15 @@ describe('Bridge Runtime Probe (Phase 3 - No require)', () => {
 
   /**
    * TEST 6: Probe must NOT fabricate evidence
-   * canInvoke should only be true if ping actually succeeded.
+   * pingOk should only be true if ping actually succeeded.
    */
-  it('must set canInvoke only when ping succeeds', () => {
+  it('must set pingOk only when ping succeeds', () => {
     const fileContent = fs.readFileSync(bridgeCheckFile, 'utf-8');
-    // Check that pingOk is used to determine canInvoke
+    // Check that pingOk reflects actual ping result
     expect(fileContent).toContain('pingOk: true');
-    // Verify canInvoke follows ping success
-    expect(fileContent).toContain('canInvoke: true');
+    // Verify it's set to false on ping failure
+    expect(fileContent).toContain('pingOk: false');
   });
-
   /**
    * TEST 7: Fatal panel must show actionable diagnostics
    * Including: URL, bridge import status, ping error reason.
@@ -105,7 +103,7 @@ describe('Bridge Runtime Probe (Phase 3 - No require)', () => {
   it('fatal panel must include actionable diagnostics', () => {
     const fileContent = fs.readFileSync(bridgeCheckFile, 'utf-8');
     expect(fileContent).toContain('proof.href');
-    expect(fileContent).toContain('proof.hasInvokeImport');
+    expect(fileContent).toContain('proof.invokeType');
     expect(fileContent).toContain('proof.pingErr');
   });
 
