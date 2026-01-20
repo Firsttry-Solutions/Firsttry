@@ -16,30 +16,32 @@ export type ForgeBridgePresenceProof = {
 
 /**
  * Detects @forge/bridge availability at runtime.
+ * Tests if the canonical @forge/bridge import can actually invoke.
  * Returns proof object. Caller decides what to do.
  */
 function checkForgeBridgeAvailable(): ForgeBridgePresenceProof {
-  const w = globalThis as any;
-  
-  // Check for @forge/bridge
-  const hasBridge = !!(w && (w.__bridge || w.bridge));
-  
-  // Check for invoke capability
-  const hasInvoke = typeof w?.invoke === "function" || 
-                    typeof w?.__bridge?.invoke === "function" ||
-                    typeof w?.bridge?.invoke === "function";
-  
-  if (hasInvoke) {
-    return { 
-      ok: true, 
-      reason: "Forge bridge invoke available", 
-      hasInvoke: true 
-    };
+  try {
+    // Attempt to import invoke from @forge/bridge at runtime
+    // This will only work if Forge Custom UI bridge has injected the module
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { invoke } = require("@forge/bridge") as any;
+    
+    const hasInvoke = typeof invoke === "function";
+    
+    if (hasInvoke) {
+      return { 
+        ok: true, 
+        reason: "Forge bridge invoke available via @forge/bridge module", 
+        hasInvoke: true 
+      };
+    }
+  } catch (e) {
+    // Module import failed - bridge not available
   }
   
   return { 
     ok: false, 
-    reason: "Forge bridge invoke not found in global", 
+    reason: "Forge bridge invoke not available - @forge/bridge module not injected by Forge runtime", 
     hasInvoke: false 
   };
 }
@@ -88,11 +90,18 @@ export function ensureForgeBridgeOrRenderFatal(container: HTMLElement): boolean 
   content.innerHTML = `
     <h1 style="color: #d32f2f; margin: 0 0 16px 0; font-size: 24px;">⚠️ Fatal Error</h1>
     <p style="color: #666; margin: 0 0 12px 0; font-size: 16px;">
-      Forge bridge invoke not available in this context.
+      Forge bridge @forge/bridge module not available in this context.
     </p>
+    <div style="background: #f5f5f5; padding: 12px; border-radius: 4px; margin: 12px 0; text-align: left; font-size: 12px; color: #666;">
+      <strong>Diagnostics:</strong><br>
+      Context: ${typeof window !== 'undefined' ? 'Window/Custom UI' : 'Unknown'}<br>
+      URL: ${typeof window !== 'undefined' ? window.location.href : 'N/A'}<br>
+      Bridge Reason: ${proof.reason}<br>
+    </div>
     <p style="color: #999; margin: 0; font-size: 14px;">
-      This app requires @forge/bridge to function.
-      Please contact support if this persists.
+      This app requires Forge Custom UI bridge to function.
+      Ensure this gadget is loaded within a Jira dashboard Custom UI context.
+      Contact support if this persists.
     </p>
   `;
   

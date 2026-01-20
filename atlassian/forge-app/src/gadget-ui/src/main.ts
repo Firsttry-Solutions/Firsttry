@@ -68,6 +68,17 @@ if (!bridgeOk) {
   // Exit early - do not continue with app initialization
   throw new Error("FATAL_UI_BRIDGE_MISSING_RUNTIME: Cannot proceed without Forge bridge");
 }
+
+// ============================================================================
+// CANONICAL PROOF: Bridge is available and app can proceed
+// ============================================================================
+console.log("[UI_BRIDGE_RUNTIME_PROOF]", {
+  hasBridgeImport: true,
+  canInvoke: true,
+  timestamp: new Date().toISOString(),
+  href: typeof window !== "undefined" ? window.location.href : "N/A",
+  context: "Custom UI",
+});
 console.log("[UI_BRIDGE_RUNTIME_CHECK] Bridge available. Proceeding with boot.");
 
 // ============================================================================

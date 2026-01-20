@@ -14,6 +14,9 @@ app:
 # Modules
 modules:
   # Dashboard Gadget (Bundled UI via Vite)
+  # REQUIREMENT: Must run as Custom UI resource within Jira dashboard context.
+  # Forge bridge (@forge/bridge) is injected by the Jira Custom UI runtime.
+  # If bridge is not available, the gadget will display a fatal error and stop.
   jira:dashboardGadget:
     - key: governance-dashboard-gadget-v2
       title: "Firsttry: Audit Evidence for Jira"
