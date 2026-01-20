@@ -442,7 +442,9 @@ m = yaml.safe_load(pathlib.Path("manifest.yml").read_text())
 sched = m["modules"]["scheduledTrigger"]
 print(f"scheduledTrigger_count: {len(sched)}")
 for t in sched:
-  print(f"  - {t[\"key\"]}: interval={t[\"interval\"]}")
+  key = t["key"]
+  interval = t["interval"]
+  print(f"  - {key}: interval={interval}")
 assert len(sched) <= 5, f"Expected <=5 triggers, got {len(sched)}"
 print("OK")
 PYEOF'
