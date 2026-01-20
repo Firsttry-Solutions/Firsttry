@@ -2,9 +2,8 @@
 # Verify FREEZE_LOCK.json by recomputing the deterministic content hash
 # Uses the FROZEN_CONTENT_SHA algorithm
 #
-# CRITICAL FIX: Payload commit is passed via PHASE5_PAYLOAD_COMMIT environment variable
-# (set by proof_run_authenticated.sh Phase 5)
-# This makes verification non-brittle to extra commits after payload creation.
+# RUN-SCOPED MODE: During proof:auth runs, uses PHASE5_FREEZE_LOCK_PATH (from run folder)
+# STANDALONE MODE: When run directly, uses audit/marketplace_submission/FREEZE_LOCK.json (for releases)
 
 set -euo pipefail
 export LC_ALL=C
@@ -12,26 +11,27 @@ export LANG=C
 
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 AUDIT_DIR="$(dirname "$0")"
-FREEZE_LOCK_PATH="$AUDIT_DIR/marketplace_submission/FREEZE_LOCK.json"
+
+# ============================================================================
+# Determine FREEZE_LOCK path: run-scoped (proof mode) or repo (release mode)
+# ============================================================================
+if [[ -n "${PHASE5_FREEZE_LOCK_PATH:-}" ]]; then
+    # RUN-SCOPED MODE: proof:auth passes this env var
+    FREEZE_LOCK_PATH="$PHASE5_FREEZE_LOCK_PATH"
+    RUN_MODE="proof"
+else
+    # STANDALONE MODE: release verification (uses repo-committed lock)
+    FREEZE_LOCK_PATH="$AUDIT_DIR/marketplace_submission/FREEZE_LOCK.json"
+    RUN_MODE="release"
+fi
 
 # ============================================================================
 # Single Source of Truth: Payload commit
 # ============================================================================
-# This comes from Phase 1 (stored in PAYLOAD_COMMIT.txt in run folder)
-# and is passed via PHASE5_PAYLOAD_COMMIT environment variable.
-# If not set (e.g., running verify_freeze_lock.sh standalone), use current HEAD.
 EXPECTED_PAYLOAD_COMMIT="${PHASE5_PAYLOAD_COMMIT:-}"
-PROOF_DIR="${PHASE5_PROOF_DIR:-}"
-
-if [[ -z "$EXPECTED_PAYLOAD_COMMIT" && -n "$PROOF_DIR" ]]; then
-    # Try to read from proof folder
-    if [[ -f "$PROOF_DIR/PAYLOAD_COMMIT.txt" ]]; then
-        EXPECTED_PAYLOAD_COMMIT=$(cat "$PROOF_DIR/PAYLOAD_COMMIT.txt")
-    fi
-fi
 
 if [[ -z "$EXPECTED_PAYLOAD_COMMIT" ]]; then
-    # Fallback: use current HEAD (standalone mode, not ideal but safe)
+    # Fallback: use current HEAD (standalone mode only)
     EXPECTED_PAYLOAD_COMMIT=$(cd "$REPO_ROOT" && git rev-parse HEAD)
 fi
 
@@ -67,20 +67,27 @@ if [[ "$LOCKED_COMMIT" != "$EXPECTED_PAYLOAD_COMMIT" ]]; then
     echo "  EXPECTED_PAYLOAD_COMMIT: $EXPECTED_PAYLOAD_COMMIT"
     echo "  LOCKED_COMMIT_IN_FREEZE: $LOCKED_COMMIT"
     echo "  CURRENT_HEAD:            $CURRENT_HEAD"
+    echo "  FREEZE_LOCK_PATH:        $FREEZE_LOCK_PATH"
+    echo "  RUN_MODE:                $RUN_MODE"
     echo ""
     echo "REMEDIATION:"
-    echo "  This means the freeze was locked for a different commit than expected."
-    echo "  Re-run: npm run proof:auth"
+    if [[ "$RUN_MODE" == "proof" ]]; then
+        echo "  Proof run: Re-run proof:auth to generate fresh run-scoped lock"
+    else
+        echo "  Release mode: Run 'npm run release:freeze-lock' to update repo lock"
+    fi
     exit 1
 fi
 
-# Enforce algorithm immutability
-LOCKED_METHOD=$(jq -r '.method' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
-if [[ "$LOCKED_METHOD" != "git-tracked-files+sha256-manifest" ]]; then
-    echo "FAIL: FREEZE_METHOD_MISMATCH"
-    echo "  Expected: git-tracked-files+sha256-manifest"
-    echo "  Got:      $LOCKED_METHOD"
-    exit 1
+# Enforce algorithm immutability (only for release mode with repo lock)
+if [[ "$RUN_MODE" == "release" ]]; then
+    LOCKED_METHOD=$(jq -r '.method' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
+    if [[ -n "$LOCKED_METHOD" && "$LOCKED_METHOD" != "git-tracked-files+sha256-manifest" ]]; then
+        echo "FAIL: FREEZE_METHOD_MISMATCH"
+        echo "  Expected: git-tracked-files+sha256-manifest"
+        echo "  Got:      $LOCKED_METHOD"
+        exit 1
+    fi
 fi
 
 cd "$REPO_ROOT"

@@ -25,6 +25,8 @@
     "verify:phase5": "node scripts/verify_phase5.mjs",
     "verify:phase4-5": "node scripts/verify_phase4_5.mjs",
     "verify:phase5:payload-commit-selftest": "bash tools/selftest_phase5_payload_commit.sh",
+    "verify:phase5:freeze-lock-selftest": "bash tools/selftest_phase5_freeze_lock_run_scoped.sh",
+    "release:freeze-lock": "node scripts/release_freeze_lock.mjs",
     "verify:ui-naming": "bash tools/verify_ui_naming_contract.sh",
     "verify:contracts": "npm run verify:ui-naming && npm run verify:error-envelope",
     "verify:error-envelope": "bash tools/verify_error_envelope_contract.sh",
