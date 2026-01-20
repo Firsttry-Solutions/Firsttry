@@ -18,6 +18,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@forge/api': `${__dirname}/tests/__mocks__/forge-api.ts`,
+      '@forge/bridge': `${__dirname}/tests/__mocks__/forge-bridge.ts`,
     },
   },
 });
