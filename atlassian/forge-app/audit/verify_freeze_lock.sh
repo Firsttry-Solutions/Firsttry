@@ -1,6 +1,10 @@
 #!/bin/bash
 # Verify FREEZE_LOCK.json by recomputing the deterministic content hash
 # Uses the FROZEN_CONTENT_SHA algorithm
+#
+# CRITICAL FIX: Payload commit is passed via PHASE5_PAYLOAD_COMMIT environment variable
+# (set by proof_run_authenticated.sh Phase 5)
+# This makes verification non-brittle to extra commits after payload creation.
 
 set -euo pipefail
 export LC_ALL=C
@@ -9,6 +13,29 @@ export LANG=C
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 AUDIT_DIR="$(dirname "$0")"
 FREEZE_LOCK_PATH="$AUDIT_DIR/marketplace_submission/FREEZE_LOCK.json"
+
+# ============================================================================
+# Single Source of Truth: Payload commit
+# ============================================================================
+# This comes from Phase 1 (stored in PAYLOAD_COMMIT.txt in run folder)
+# and is passed via PHASE5_PAYLOAD_COMMIT environment variable.
+# If not set (e.g., running verify_freeze_lock.sh standalone), use current HEAD.
+EXPECTED_PAYLOAD_COMMIT="${PHASE5_PAYLOAD_COMMIT:-}"
+PROOF_DIR="${PHASE5_PROOF_DIR:-}"
+
+if [[ -z "$EXPECTED_PAYLOAD_COMMIT" && -n "$PROOF_DIR" ]]; then
+    # Try to read from proof folder
+    if [[ -f "$PROOF_DIR/PAYLOAD_COMMIT.txt" ]]; then
+        EXPECTED_PAYLOAD_COMMIT=$(cat "$PROOF_DIR/PAYLOAD_COMMIT.txt")
+    fi
+fi
+
+if [[ -z "$EXPECTED_PAYLOAD_COMMIT" ]]; then
+    # Fallback: use current HEAD (standalone mode, not ideal but safe)
+    EXPECTED_PAYLOAD_COMMIT=$(cd "$REPO_ROOT" && git rev-parse HEAD)
+fi
+
+CURRENT_HEAD=$(cd "$REPO_ROOT" && git rev-parse HEAD)
 
 # Check if FREEZE_LOCK exists
 if [[ ! -f "$FREEZE_LOCK_PATH" ]]; then
@@ -23,19 +50,27 @@ if [[ -z "$LOCKED_SHA" ]]; then
     exit 1
 fi
 
-# Enforce commitSha == HEAD~1 (payload commit, not lock commit)
+# Read the locked commit
 LOCKED_COMMIT=$(jq -r '.commitSha' "$FREEZE_LOCK_PATH" 2>/dev/null || echo "")
 if [[ -z "$LOCKED_COMMIT" ]]; then
     echo "FAIL: FREEZE_COMMIT_MISSING"
     exit 1
 fi
 
-CURRENT_COMMIT=$(git rev-parse HEAD~1)
-if [[ "$LOCKED_COMMIT" != "$CURRENT_COMMIT" ]]; then
-    echo "FAIL: FREEZE_COMMIT_MISMATCH (expected payload commit HEAD~1)"
-    echo "  Locked:  $LOCKED_COMMIT"
-    echo "  Payload: $CURRENT_COMMIT"
-    echo "  Head:    $(git rev-parse HEAD)"
+# ============================================================================
+# CRITICAL VALIDATION: Payload commit must match
+# ============================================================================
+# The payload commit is the exact commit the freeze was locked against.
+# It should NOT change between when the run started and when Phase 5 validates.
+if [[ "$LOCKED_COMMIT" != "$EXPECTED_PAYLOAD_COMMIT" ]]; then
+    echo "FAIL: FREEZE_COMMIT_MISMATCH"
+    echo "  EXPECTED_PAYLOAD_COMMIT: $EXPECTED_PAYLOAD_COMMIT"
+    echo "  LOCKED_COMMIT_IN_FREEZE: $LOCKED_COMMIT"
+    echo "  CURRENT_HEAD:            $CURRENT_HEAD"
+    echo ""
+    echo "REMEDIATION:"
+    echo "  This means the freeze was locked for a different commit than expected."
+    echo "  Re-run: npm run proof:auth"
     exit 1
 fi
 
@@ -79,14 +114,20 @@ CURRENT_SHA=$(sha256sum "$MANIFEST" | awk '{print $1}')
 # Emit machine-readable proof output
 echo "COMPUTED_FROZEN_SHA=$CURRENT_SHA"
 echo "LOCKED_FROZEN_SHA=$LOCKED_SHA"
+echo "EXPECTED_PAYLOAD_COMMIT=$EXPECTED_PAYLOAD_COMMIT"
+echo "LOCKED_COMMIT=$LOCKED_COMMIT"
 
-# Compare
+# Compare frozen content
 if [[ "$CURRENT_SHA" == "$LOCKED_SHA" ]]; then
     echo "✓ Freeze lock matches"
     exit 0
 else
     echo "FAIL: FREEZE_VERIFY_FAIL"
-    echo "  Expected: $LOCKED_SHA"
-    echo "  Got:      $CURRENT_SHA"
+    echo "  Expected SHA: $LOCKED_SHA"
+    echo "  Got SHA:      $CURRENT_SHA"
+    echo ""
+    echo "REMEDIATION:"
+    echo "  The frozen content does not match the lock."
+    echo "  Run: ./audit/generate_freeze_lock.sh && ./audit/verify_freeze_lock.sh"
     exit 1
 fi
