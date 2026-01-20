@@ -66,7 +66,9 @@ export const handler = resolver.getDefinitions();
 // LAYER-0 BACKBONE RESOLVERS (NEW)
 // ============================================================================
 
-async function ft_getDashboardState_v1(event: any, context: any): Promise<any> {
+async function ft_getDashboardState_v1(request: any): Promise<any> {
+  const event = request?.payload || {};
+  const context = request?.context || {};
   const now = nowUtcIso();
   const requestId = context?.requestId ?? null;
   
@@ -178,7 +180,8 @@ async function ft_getDashboardState_v1(event: any, context: any): Promise<any> {
   }
 }
 
-async function ft_setUiBuildSha_v1(event: any, context: any): Promise<{ ok: boolean; error?: string }> {
+async function ft_setUiBuildSha_v1(request: any): Promise<{ ok: boolean; error?: string }> {
+  const event = request?.payload || {};
   try {
     const { build_sha_ui } = event ?? {};
     if (!build_sha_ui) return { ok: false, error: "missing build_sha_ui" };

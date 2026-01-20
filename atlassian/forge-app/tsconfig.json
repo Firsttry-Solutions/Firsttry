@@ -19,6 +19,6 @@
     "allowJs": true,
     "checkJs": false
   },
-  "include": ["src/**/*", "src/gadget-ui/dist/**/*.js"],
+  "include": ["src/**/*", "src/gadget-ui/dist/**/*.js", "tests/**/*_standalone.ts"],
   "exclude": ["node_modules", "**/*.test.ts", "src/gadget-ui/src/**/*"]
 }

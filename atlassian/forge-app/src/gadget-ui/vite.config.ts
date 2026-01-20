@@ -1,6 +1,13 @@
+// @ts-ignore - import.meta is allowed in Vite config despite tsconfig.json module setting
 import { defineConfig } from 'vite';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+// Get the directory where this config file is located
+// @ts-ignore - import.meta is allowed in Vite config despite tsconfig.json module setting
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load UI build metadata (injected by tools/build_meta.mjs at build time)
 // FAIL-CLOSED: In production, throw if metadata is missing or invalid
@@ -78,7 +85,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': new URL('./src', import.meta.url).pathname
+      '@': path.resolve(__dirname, 'src')
     }
   },
   // CRITICAL FIX: Ensure @forge/bridge is bundled into the output (not externalized)
