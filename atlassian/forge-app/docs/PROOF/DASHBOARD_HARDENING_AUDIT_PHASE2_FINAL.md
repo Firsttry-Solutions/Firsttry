@@ -434,13 +434,15 @@ The console should show (in order):
 
 ### PROOF_EVIDENCE (Paste Exact Console Output Here)
 
+**⚠️ IMPORTANT: Do not fabricate evidence. If console output was not captured during deployment, leave this section blank or indicate "NOT CAPTURED".**
+
 ```
-TimestampUTC: [FILL IN: Date -u +"%Y-%m-%d %H:%M:%SZ" from terminal when captured]
-Jira Instance: [FILL IN: Jira URL or environment identifier, redact if necessary]
-Gadget URL: [FILL IN: Gadget URL from browser address bar, may redact domain]
+TimestampUTC: [FILL IN: Date -u +"%Y-%m-%d %H:%M:%SZ" from terminal when captured — or "NOT CAPTURED"]
+Jira Instance: [FILL IN: Jira URL or environment identifier, redact if necessary — or "NOT CAPTURED"]
+Gadget URL: [FILL IN: Gadget URL from browser address bar, may redact domain — or "NOT CAPTURED"]
 
 Console Output:
-[PASTE EXACT LINES BELOW]
+[PASTE EXACT LINES BELOW OR WRITE "NOT CAPTURED"]
 
 [UI_BUILD_IDENTITY_PROOF] identity_consistent:[PASTE VALUE]
 [UI_DASH_RAW_ENVELOPE] schemaVersion:[PASTE VALUE] ok:[PASTE VALUE] hasData:[PASTE VALUE]
