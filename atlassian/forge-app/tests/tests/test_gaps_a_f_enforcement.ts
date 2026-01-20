@@ -10,7 +10,6 @@
  * 4. Types prevent compilation of violations
  */
 
-import { describe, it, expect } from 'vitest';
 import {
   PHASE,
   assertValidDisclosure,
@@ -29,7 +28,7 @@ import {
   ConfidenceLevel,
   ZeroValueReason,
   ForbiddenPhase5Signals,
-} from '../src/disclosure_hardening_gaps_a_f';
+} from '../../src/disclosure_hardening_gaps_a_f';
 
 // ============================================================================
 // Test Framework
@@ -747,14 +746,23 @@ gaps.forEach((gap) => {
 
 console.log('\n' + '='.repeat(80) + '\n');
 
+
 if (failedTests.length > 0) {
   throw new Error(`${failedTests.length} gap enforcement tests failed`);
 }
 
-describe('Phase 4 - Gaps A-F Enforcement Tests', () => {
-  it('validates all gap enforcement tests pass', () => {
-    // All tests have already run at module load time and passed
-    // This wrapper test exists to satisfy vitest's requirement for test suites
-    expect(failedTests.length).toBe(0);
-  });
-});
+// Standalone mode: run immediately and exit
+(async () => {
+  try {
+    if (failedTests.length === 0) {
+      console.log('\n✅ GAPS A-F ENFORCEMENT: ALL TESTS PASSED');
+      process.exit(0);
+    } else {
+      throw new Error(`${failedTests.length} tests failed`);
+    }
+  } catch (err) {
+    console.error('\n❌ GAPS A-F ENFORCEMENT: TEST FAILED');
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+})();

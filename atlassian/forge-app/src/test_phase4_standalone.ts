@@ -3,11 +3,10 @@
  * 
  * This test harness includes all type definitions and helper functions inline
  * to avoid module dependency issues during testing.
+ * 
+ * STANDALONE MODE: Runs without vitest dependency (plain node compatible)
  */
 
-import { describe, it } from 'vitest';
-
-// ============================================================================
 // TYPE DEFINITIONS (from src/jira_ingest.ts, src/evidence_storage.ts, src/coverage_matrix.ts)
 // ============================================================================
 
@@ -487,8 +486,15 @@ function runAllPhase4Tests(): void {
   }
 }
 
-describe('Phase 4 - Standalone Tests', () => {
-  it('should run all phase 4 standalone tests', () => {
+// Standalone mode: run immediately and exit
+(async () => {
+  try {
     runAllPhase4Tests();
-  });
-});
+    console.log('\n✅ PHASE 4 STANDALONE: ALL TESTS PASSED');
+    process.exit(0);
+  } catch (err) {
+    console.error('\n❌ PHASE 4 STANDALONE: TEST FAILED');
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+})();
