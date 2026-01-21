@@ -1,32 +1,97 @@
 /**
- * Unit Test: Contract Proof Webtrigger Handler
+ * Unit Test: Contract Proof Webtrigger Handler - WITH TOKEN AUTHENTICATION
  * 
- * Tests the webtrigger response shape matches DashEnvelopeV1 contract
- * without needing a Forge runtime or actual HTTP invocation.
+ * Tests the webtrigger response shape and token validation.
+ * Verifies that:
+ * - Missing token returns 401
+ * - Wrong token returns 401
+ * - Correct token returns 200 + valid envelope
  * 
  * file: atlassian/forge-app/tests/p1_contract_proof_webtrigger.test.ts
  * run: npm test
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { run as contractProofHandler } from "../src/webtriggers/contract-proof";
 
-describe("Contract Proof Webtrigger", () => {
-  it("should return valid envelope structure", async () => {
-    const req = {};
-    const res = await contractProofHandler(req);
+const TEST_TOKEN = "test-token-12345678901234567890";
 
-    // Webtrigger returns envelope directly (Forge serializes)
-    expect(res).toBeDefined();
-    expect(res.envelopeKind).toBeDefined();
-    expect(res.ok).toBeDefined();
+describe("Contract Proof Webtrigger - Token Authentication", () => {
+  beforeEach(() => {
+    // Set test token in environment
+    process.env.FT_CONTRACT_PROOF_TOKEN = TEST_TOKEN;
   });
 
-  it("should return JSON with correct envelope structure", async () => {
-    const req = {};
+  afterEach(() => {
+    // Clean up
+    delete process.env.FT_CONTRACT_PROOF_TOKEN;
+  });
+
+  // ===== TOKEN VALIDATION TESTS =====
+
+  it("should return 401 when x-ft-proof-token header is missing", async () => {
+    const req = {
+      headers: {}
+    };
+    const res = await contractProofHandler(req);
+
+    expect(res).toBeDefined();
+    expect(res.ok).toBe(false);
+    expect(res.error).toBeDefined();
+    expect(res.error.code).toBe("UNAUTHORIZED");
+    expect(res.error.message).toContain("x-ft-proof-token");
+  });
+
+  it("should return 401 when x-ft-proof-token is incorrect", async () => {
+    const req = {
+      headers: {
+        "x-ft-proof-token": "wrong-token"
+      }
+    };
+    const res = await contractProofHandler(req);
+
+    expect(res.ok).toBe(false);
+    expect(res.error.code).toBe("UNAUTHORIZED");
+  });
+
+  it("should return valid envelope when x-ft-proof-token is correct", async () => {
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
     const envelope = await contractProofHandler(req);
 
-    // Direct envelope object (not wrapped)
+    // Should return envelope, not error
+    expect(envelope.ok).toBe(true);
+    expect(envelope.envelopeKind).toBe("FT_DASH_ENVELOPE_V1");
+  });
+
+  it("should return 401 when FT_CONTRACT_PROOF_TOKEN env var is not set", async () => {
+    delete process.env.FT_CONTRACT_PROOF_TOKEN;
+    
+    const req = {
+      headers: {
+        "x-ft-proof-token": "any-token"
+      }
+    };
+    const res = await contractProofHandler(req);
+
+    expect(res.ok).toBe(false);
+    expect(res.error.code).toBe("UNAUTHORIZED");
+  });
+
+  // ===== ENVELOPE CONTRACT TESTS (only with valid token) =====
+
+  it("should return JSON with correct envelope structure", async () => {
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
+    const envelope = await contractProofHandler(req);
+
+    // Contract: Envelope shape
     expect(envelope).toHaveProperty("envelopeKind");
     expect(envelope).toHaveProperty("envelopeVersion");
     expect(envelope).toHaveProperty("ok");
@@ -36,7 +101,11 @@ describe("Contract Proof Webtrigger", () => {
   });
 
   it("should have correct marker and version", async () => {
-    const req = {};
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
     const envelope = await contractProofHandler(req);
 
     // Contract: Specific values
@@ -46,7 +115,11 @@ describe("Contract Proof Webtrigger", () => {
   });
 
   it("should have ok as boolean", async () => {
-    const req = {};
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
     const envelope = await contractProofHandler(req);
 
     // Contract: ok field type
@@ -54,7 +127,11 @@ describe("Contract Proof Webtrigger", () => {
   });
 
   it("should have data when ok=true", async () => {
-    const req = {};
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
     const envelope = await contractProofHandler(req);
 
     // Contract: ok=true => data exists
@@ -65,7 +142,11 @@ describe("Contract Proof Webtrigger", () => {
   });
 
   it("should have meta with required fields", async () => {
-    const req = {};
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
     const envelope = await contractProofHandler(req);
 
     // Contract: meta structure
@@ -78,7 +159,11 @@ describe("Contract Proof Webtrigger", () => {
   });
 
   it("should have meta fields with correct structure", async () => {
-    const req = {};
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
     const envelope = await contractProofHandler(req);
     const { meta } = envelope;
 
@@ -97,7 +182,11 @@ describe("Contract Proof Webtrigger", () => {
   });
 
   it("should not include sensitive tenant data", async () => {
-    const req = {};
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
     const envelope = await contractProofHandler(req);
 
     const bodyStr = JSON.stringify(envelope).toLowerCase();
@@ -109,7 +198,11 @@ describe("Contract Proof Webtrigger", () => {
   });
 
   it("should include proofName in data", async () => {
-    const req = {};
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
     const envelope = await contractProofHandler(req);
 
     // The data object should identify itself as proof
