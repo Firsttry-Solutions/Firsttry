@@ -22,11 +22,12 @@ This proof is **NOT generated locally** and **NOT code inspection**:
 
 ## Production Invocation Details
 
-**Webtrigger URL:** `https://59d86182-c1c6-49ea-b2fb-6ee5be52b7fc.hello.atlassian-dev.net/x1/C05blHqcUuOrdfPj28-FFEO_EU0`
+**Webtrigger URL:** `[REDACTED - Stored in /tmp/ft_contract_proof_url.txt during CI]`
 
 **Invocation Method:**
 ```bash
-curl -fsSL "https://59d86182-c1c6-49ea-b2fb-6ee5be52b7fc.hello.atlassian-dev.net/x1/C05blHqcUuOrdfPj28-FFEO_EU0" \
+URL=$(cat /tmp/ft_contract_proof_url.txt)
+curl -fsSL -H "x-ft-proof-token: $FT_CONTRACT_PROOF_TOKEN" "$URL" \
   -o /tmp/ft_contract_proof_prod.json
 ```
 
