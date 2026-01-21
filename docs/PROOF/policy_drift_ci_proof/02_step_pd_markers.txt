@@ -1,0 +1,2 @@
+=== prove_clean_install.sh STEP PD markers ===
+51:echo "[TRACE] POLICY_DRIFT_ROOT_ENFORCED=1"

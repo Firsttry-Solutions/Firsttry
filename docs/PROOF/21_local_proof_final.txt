@@ -1,0 +1,139 @@
+[1;33m[COLD_INSTALL_PROOF][0m Starting deterministic cold install...
+[1;33m[COLD_INSTALL_PROOF][0m Working directory: /workspaces/Firsttry/atlassian/forge-app
+
+[1;33m[ENVIRONMENT][0m Node version: v20.20.0
+[1;33m[ENVIRONMENT][0m npm version: 10.8.2
+
+[1;33m[STEP 1][0m Removing node_modules...
+[0;32m✓[0m node_modules removed
+
+[1;33m[STEP 2][0m Clearing npm cache...
+npm warn using --force Recommended protections disabled.
+[0;32m✓[0m npm cache cleared
+
+[1;33m[STEP 3][0m Verifying package-lock.json exists...
+[0;32m✓[0m package-lock.json found (125052 bytes)
+
+[1;33m[STEP 4][0m Running 'npm ci' (deterministic install from lockfile)...
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+npm warn deprecated jpeg-exif@1.1.4: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+
+added 224 packages, and audited 225 packages in 4s
+
+52 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+[0;32m✓[0m npm ci succeeded (1360 directories)
+
+[1;33m[STEP 5][0m Running 'npm test' (full test suite)...
+[22m[39m[DailyPipeline] Org test-org: marked as success
+
+[90mstdout[2m | tests/test_phase3_daily_pipeline_no_data.ts[2m > [22m[2mPhase 3 - Daily Pipeline No Data Tests[2m > [22m[2mshould run all daily pipeline (no-data) tests
+[22m[39m✓ Test 3: last_attempt_at always written
+
+2/2 tests passed
+
+✅ All daily pipeline (no-data) tests PASS
+
+
+ [32m✓[39m tests/test_phase3_daily_pipeline_no_data.ts [2m([22m[2m1 test[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m tests/shakedown/scenarios/shk_scheduler.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/audit_snapshot/no_jira_calls_contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m tests/audit_snapshot/export_contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/shakedown/scenarios/shk_install.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/ui_no_env_build_sha.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/statusSchema_snapshotAgeMinutes.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/perf_signals/percentiles.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/storageProof.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/p8_runtime_read_only_guard_wiring.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/invocationMeta.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/stepTrace.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/audit_snapshot/hash_correctness.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/p8_runtime_read_only_guard.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m140 passed[39m[22m[90m (140)[39m
+[2m      Tests [22m [1m[32m1715 passed[39m[22m[90m (1715)[39m
+[2m   Start at [22m 17:20:18
+[2m   Duration [22m 26.07s[2m (transform 1.89s, setup 1.20s, import 3.23s, tests 4.03s, environment 20ms)[22m
+
+[0;32m✓[0m npm test passed
+
+[1;33m[STEP 6][0m Running 'npm run build:gadget' (UI build + gates)...
+[GATE_SOURCE_ANCHOR_UNIQUE]   ✓ Exactly 1 anchor definition in source
+[GATE_SOURCE_ANCHOR_UNIQUE] PASS
+
+> @firstry/forge-app@2.14.0 verify:bundle:integrity
+> bash tools/verify_bundle_integrity.sh --bundle-file src/gadget-ui/dist/app.*.js
+
+[GATE_BUNDLE_INTEGRITY] Scanning: app.f1c06fb.js
+[GATE_BUNDLE_INTEGRITY] file_size=106038 (threshold=10240)
+[GATE_BUNDLE_INTEGRITY]   ✓ File size check passed
+[GATE_BUNDLE_INTEGRITY] Using sha256 for hashing
+[GATE_BUNDLE_INTEGRITY] hash_algo=sha256
+[GATE_BUNDLE_INTEGRITY] hash=da4e078c554218c71ac5ab80ed42938129d757d02e48bc93fa63b804ed24ad9f
+[GATE_BUNDLE_INTEGRITY]   ✓ Hash is valid sha256 (64 hex)
+[GATE_BUNDLE_INTEGRITY] PASS algo=sha256 hash=da4e078c554218c71ac5ab80ed42938129d757d02e48bc93fa63b804ed24ad9f size=106038
+
+> @firstry/forge-app@2.14.0 verify:gates:selftest
+> bash tools/test_gates_selftest.sh
+
+[SELFTEST] Phase 1: Locate real dist bundle
+[SELFTEST] PASS: Real bundle located: /workspaces/Firsttry/atlassian/forge-app/tools/../src/gadget-ui/dist/app.f1c06fb.js
+
+[SELFTEST] Phase 2: Real bundle smoke tests (must PASS)
+[SELFTEST] Running Gate 2 on real bundle...
+[SELFTEST] PASS: Gate 2 PASSED on real bundle
+[SELFTEST] Running Gate 1 on real bundle...
+[SELFTEST] PASS: Gate 1 PASSED on real bundle
+
+[SELFTEST] Phase 3: Mutation tests on real bundle
+[SELFTEST] Mutation A: Remove anchor substring
+[SELFTEST]   ✓ Gate 2 correctly FAILED
+[SELFTEST] Mutation B: Duplicate anchor
+[SELFTEST]   ✓ Gate 2 correctly FAILED
+[SELFTEST] Mutation C: Replace time with UNSET
+[SELFTEST]   ✓ Gate 2 correctly FAILED
+[SELFTEST] Mutation D: Replace git with bundle value (no distinctness)
+[SELFTEST]   ✓ Gate 2 correctly FAILED
+[SELFTEST] Mutation E: Tiny file (Gate 1 must FAIL)
+[SELFTEST]   ✓ Gate 1 correctly FAILED
+
+[SELFTEST] ==========================================
+[SELFTEST] SELFTEST SUMMARY
+[SELFTEST] ==========================================
+[SELFTEST] Real bundle smoke tests: 2/2 PASS
+[SELFTEST] Mutation tests: 5/5 PASS
+
+[SELFTEST] PASS: ALL TESTS PASSED (7/7)
+
+> @firstry/forge-app@2.14.0 verify:lockfile:clean
+> git diff --exit-code package-lock.json || (echo 'ERROR: package-lock.json has uncommitted changes (lockfile drift detected)' && exit 1)
+
+[0;32m✓[0m build:gadget passed (all gates GREEN)
+
+[1;33m[STEP 7][0m Checking for lockfile drift (git diff package-lock.json)...
+[0;32m✓[0m package-lock.json has no uncommitted changes (no drift)
+
+[1;33m[STEP 8][0m Validating package-lock.json JSON integrity...
+✓ package-lock.json is valid JSON
+[0;32m✓[0m package-lock.json JSON validation passed
+
+[0;32m╔══════════════════════════════════════════════════════════════╗[0m
+[0;32m║[0m                                                              [0;32m║[0m
+[0;32m║[0m  ✅ COLD INSTALL PROOF: ALL 8 CHECKS PASSED                 [0;32m║[0m
+[0;32m║[0m                                                              [0;32m║[0m
+[0;32m║[0m  Summary:                                                    [0;32m║[0m
+[0;32m║[0m    • node_modules: removed (clean state)                     [0;32m║[0m
+[0;32m║[0m    • npm cache: cleared                                      [0;32m║[0m
+[0;32m║[0m    • package-lock.json: verified (determinism requirement)  [0;32m║[0m
+[0;32m║[0m    • npm ci: reproducible install from lockfile             [0;32m║[0m
+[0;32m║[0m    • npm test: full test suite passed                       [0;32m║[0m
+[0;32m║[0m    • build:gadget: all gates green (7/7)                    [0;32m║[0m
+[0;32m║[0m    • lockfile drift: no uncommitted changes                 [0;32m║[0m
+[0;32m║[0m    • JSON validation: package-lock.json is valid            [0;32m║[0m
+[0;32m║[0m                                                              [0;32m║[0m
+[0;32m║[0m  Conclusion: Zero cache dependence ✓                        [0;32m║[0m
+[0;32m║[0m              CI reproducibility verified ✓                   [0;32m║[0m
+[0;32m║[0m                                                              [0;32m║[0m
+[0;32m╚══════════════════════════════════════════════════════════════╝[0m

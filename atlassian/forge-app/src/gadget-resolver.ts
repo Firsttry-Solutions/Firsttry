@@ -40,6 +40,7 @@ import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
 import { nowUtcIso } from './backbone/time';
+import { dashOk, dashErr } from './shared/dashEnvelopeV1';
 
 // Create single canonical resolver instance
 const resolver = new Resolver();
@@ -66,7 +67,9 @@ export const handler = resolver.getDefinitions();
 // LAYER-0 BACKBONE RESOLVERS (NEW)
 // ============================================================================
 
-async function ft_getDashboardState_v1(event: any, context: any): Promise<FtResolverResponseV1> {
+async function ft_getDashboardState_v1(request: any): Promise<any> {
+  const event = request?.payload || {};
+  const context = request?.context || {};
   const now = nowUtcIso();
   const requestId = context?.requestId ?? null;
   
@@ -97,7 +100,8 @@ async function ft_getDashboardState_v1(event: any, context: any): Promise<FtReso
       reason_code = FtReasonCode.OK;
     }
     
-    const response: FtResolverResponseV1 = {
+    // PHASE 4: Canonical v1 envelope structure
+    const dashboardData: FtResolverResponseV1 = {
       ok: true,
       resolver: "ft_getDashboardState_v1",
       step: "success",
@@ -110,48 +114,55 @@ async function ft_getDashboardState_v1(event: any, context: any): Promise<FtReso
       ledger,
     };
     
-    assertNoUnknownStrings(response);
-    return response;
+    assertNoUnknownStrings(dashboardData);
+    
+    // BACKBONE #2: Use dashEnvelopeV1 to guarantee schemaVersion='v1'
+    console.log('[BACKEND_DASH_STATE_ENVELOPE]', {
+      ok: true,
+      schemaVersion: 'v1',
+      dataKeys: Object.keys(dashboardData).slice(0, 60),
+      mode: dashboardData.mode ?? null,
+    });
+    
+    return dashOk({
+      data: dashboardData,
+      meta: {
+        backend_build_sha: undefined, // Will use BACKEND_BUILD_SHA
+        ui_build_sha: null,
+        ui_req_id: requestId || 'UNSET',
+        probe_nonce: null,
+        ts_utc: now,
+      },
+    });
   } catch (e) {
     const now_error = nowUtcIso();
-    return {
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    
+    // BACKBONE #2: Use dashEnvelopeV1 to guarantee schemaVersion='v1' even on error
+    console.log('[BACKEND_DASH_STATE_ENVELOPE_ERROR]', {
       ok: false,
-      resolver: "ft_getDashboardState_v1",
-      step: "storage_error",
-      now_utc: now_error,
-      request_id: requestId,
-      build_sha_backend: null,
-      storage_state: "ERROR",
-      status: "FAILED",
-      reason_code: FtReasonCode.NO_LEDGER,
-      ledger: {
-        version: 1,
-        install_id: "ERROR",
-        installed_at_utc: now_error,
-        build_sha_last_seen_ui: null,
-        build_sha_last_seen_backend: null,
-        storage_verified_at_utc: null,
-        scheduler_last_attempt_at_utc: null,
-        scheduler_last_success_at_utc: null,
-        scheduler_consecutive_failures: 0,
-        scheduler_last_error: {
-          code: FtErrorCode.STORAGE_READ_FAILED,
-          step: "loadOrInitLedger",
-          message_short: e instanceof Error ? e.message.slice(0, 180) : String(e).slice(0, 180),
-          request_id: requestId,
-          at_utc: now_error,
-        },
-        snapshot_count: 0,
-        snapshot_last_id: null,
-        snapshot_last_at_utc: null,
-        snapshot_last_build_sha: null,
-        snapshot_last_hash: null,
+      schemaVersion: 'v1',
+      error: { code: FtErrorCode.STORAGE_READ_FAILED, message: 'Storage error' },
+    });
+    
+    return dashErr({
+      error: {
+        code: FtErrorCode.STORAGE_READ_FAILED,
+        message: errorMessage.slice(0, 180),
       },
-    };
+      meta: {
+        backend_build_sha: undefined,
+        ui_build_sha: null,
+        ui_req_id: requestId || 'UNSET',
+        probe_nonce: null,
+        ts_utc: now_error,
+      },
+    });
   }
 }
 
-async function ft_setUiBuildSha_v1(event: any, context: any): Promise<{ ok: boolean; error?: string }> {
+async function ft_setUiBuildSha_v1(request: any): Promise<{ ok: boolean; error?: string }> {
+  const event = request?.payload || {};
   try {
     const { build_sha_ui } = event ?? {};
     if (!build_sha_ui) return { ok: false, error: "missing build_sha_ui" };

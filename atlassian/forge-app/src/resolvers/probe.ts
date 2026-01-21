@@ -39,6 +39,7 @@ import { traceOk, traceFail } from "../security/stepTrace";
 import { checkStorageProof } from "../security/storageProof";
 import { makeErrorEnvelope } from "../security/errorEnvelope";
 import type { ErrorEnvelopeV1 } from "../shared/invocationEnvelope";
+import { dashOk, dashErr } from "../shared/dashEnvelopeV1";
 
 // ============================================================================
 // HELPERS
@@ -232,36 +233,22 @@ export async function probe(
       })
     );
 
-    // Create error envelope with trace
-    const errorTrace = [
-      traceFail("probe", "uiReqId_validation", "MISSING_UI_REQ_ID", "UI request ID is required for correlation")
-    ];
-
-    const errorEnvelopeV1 = makeErrorEnvelope({
-      resolverName: "probe",
-      stepId: "uiReqId_validation",
-      errorCode: "MISSING_UI_REQ_ID",
-      message: "UI request ID is required for correlation",
-      meta,
-      trace: errorTrace,
-    }) as ErrorEnvelopeV1;
-
-    const errorTruthEnvelope = createErrorEnvelope<ProbeData>(
-      "probe",
-      "NO_CORRELATION_ID", // Placeholder when truly missing
-      null,
-      "MISSING_UI_REQ_ID",
-      "UI request ID is required for correlation",
-      backendBuildSha,
-      null,
-      traceIdStable
-    );
-
-    // Attach error envelope for UI parsing
-    (errorTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
-
-    const normalized = normalizeUndefinedToNull(errorTruthEnvelope);
-    return normalized;
+    // BACKBONE #3: Return dashEnvelopeV1 with proper error structure
+    // ui_req_id is MISSING, so echo "UNSET" (never null, never "MISSING")
+    return dashErr({
+      error: {
+        code: "MISSING_UI_REQ_ID",
+        message: "UI request ID is required for correlation",
+        traceId: traceIdStable,
+      },
+      meta: {
+        backend_build_sha: backendBuildSha,
+        ui_build_sha: null,
+        ui_req_id: "UNSET", // Cannot echo missing ID
+        probe_nonce: probeNonce || null,
+        ts_utc: nowIso,
+      },
+    });
   }
 
   // STEP 3: Success - log probe marker and return envelope
@@ -290,44 +277,24 @@ export async function probe(
       })
     );
 
-    // Create success trace
-    const successTrace = [
-      traceOk("probe", "execution", "Probe executed successfully")
-    ];
-
     // Build ProbeData payload
     const probeData: ProbeData = {
       executedAt: nowIso,
       result: { status: "ok" },
     };
 
-    // Create success envelope with error trace data
-    const errorEnvelopeV1 = makeErrorEnvelope({
-      resolverName: "probe",
-      stepId: "execution",
-      errorCode: "OK" as any, // Success
-      message: "Probe executed successfully",
-      meta,
-      trace: successTrace,
-    }) as ErrorEnvelopeV1;
-
-    // Create success envelope with exact correlation echo
-    const successTruthEnvelope = createSuccessEnvelope<ProbeData>(
-      "probe",
-      uiReqId, // ECHO back exact uiReqId
-      probeNonce, // ECHO back probeNonce (or null if not provided)
-      probeData,
-      backendBuildSha,
-      null, // uiArtifactSha not available in backend
-      traceIdStable
-    );
-
-    // Attach error envelope (even on success, for trace data)
-    (successTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
-
-    // Normalize to ensure no undefined fields
-    const normalized = normalizeUndefinedToNull(successTruthEnvelope);
-    return normalized;
+    // BACKBONE #3: Return dashEnvelopeV1 with exact correlation echo
+    // CRITICAL: Echo back EXACT ui_req_id and probe_nonce (or null if not provided)
+    return dashOk({
+      data: probeData,
+      meta: {
+        backend_build_sha: backendBuildSha,
+        ui_build_sha: null,
+        ui_req_id: uiReqId, // ECHO exact ui_req_id from request
+        probe_nonce: probeNonce || null, // ECHO probe_nonce if provided, null otherwise
+        ts_utc: nowIso,
+      },
+    });
   } catch (err) {
     // STEP 4: Error handling
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -344,36 +311,21 @@ export async function probe(
       })
     );
 
-    // Create error trace
-    const errorTrace = [
-      traceFail("probe", "execution", errorCode as any, errorMsg)
-    ];
-
-    const errorEnvelopeV1 = makeErrorEnvelope({
-      resolverName: "probe",
-      stepId: "execution",
-      errorCode: errorCode as any,
-      message: errorMsg,
-      meta,
-      trace: errorTrace,
-    }) as ErrorEnvelopeV1;
-
-    const errorTruthEnvelope = createErrorEnvelope<ProbeData>(
-      "probe",
-      uiReqId,
-      probeNonce,
-      errorCode,
-      errorMsg,
-      backendBuildSha,
-      null,
-      traceIdStable
-    );
-
-    // Attach error envelope for UI parsing
-    (errorTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
-
-    const normalized = normalizeUndefinedToNull(errorTruthEnvelope);
-    return normalized;
+    // BACKBONE #3: Return dashEnvelopeV1 with structured error (never "unknown")
+    return dashErr({
+      error: {
+        code: errorCode,
+        message: errorMsg,
+        traceId: traceIdStable,
+      },
+      meta: {
+        backend_build_sha: backendBuildSha,
+        ui_build_sha: null,
+        ui_req_id: uiReqId,
+        probe_nonce: probeNonce || null,
+        ts_utc: nowIso,
+      },
+    });
   }
 }
 /**

@@ -71,7 +71,7 @@ export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
     }
   }
 
-  return sanitized;
+  return sanitized as T;
 }
 
 /**

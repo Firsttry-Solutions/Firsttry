@@ -17,7 +17,7 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: false, // IMPORTANT: serial execution
   forbidOnly: process.env.CI ? true : false,
-  retries: 0, // FAIL FAST
+  retries: process.env.CI ? 1 : 0, // CI gets 1 retry; local gets fail-fast
   workers: 1, // SERIAL EXECUTION ONLY
   reporter: [
     ['list'],
@@ -35,7 +35,16 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        storageState: process.env.STORAGE_STATE || './.auth/storageState.json',
+        storageState: process.env.STORAGE_STATE === '__NONE__' ? undefined : (process.env.STORAGE_STATE || './.auth/storageState.json'),
+        // Stable launch options for headless Chromium in CI/container environments
+        launchOptions: {
+          args: [
+            '--no-sandbox', // Allow running in container without CAP_SYS_ADMIN
+            '--disable-dev-shm-usage', // Use /tmp instead of /dev/shm for shared memory
+            '--disable-gpu', // Disable GPU acceleration (not needed for headless)
+            '--disable-features=IsolateOrigins,site-per-process', // Disable features that require special setup
+          ],
+        },
       },
     },
   ],

@@ -27,6 +27,12 @@ import { createIdentityAnchor } from "./ui_identity";
 import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownState } from "./legacy_flow_detector";
 
 // ============================================================================
+// DASHBOARD ENVELOPE MAPPING & VALIDATION (SHARED MODULE)
+// CRITICAL: Both UI and tests use these real functions (no duplicates allowed)
+// ============================================================================
+import { mapDashEnvelopeV1, assertNonNullDashboardState, logRawDashboardEnvelope } from "./dashEnvelope";
+
+// ============================================================================
 // IDENTITY ANCHOR CONSTANT (FOR GATE VERIFICATION)
 // ============================================================================
 import { IDENTITY_ANCHOR_V1 } from "./entryProof";
@@ -51,18 +57,71 @@ try {
 }
 
 // ============================================================================
+// UI BUILD IDENTITY — ALWAYS PRINTED (even if bridge fails)
+// This marker runs before bridge check so we know which bundle is executing
+// ============================================================================
+(() => {
+  const ui_git_sha = typeof __FT_BUILD_SHA__ !== 'undefined' ? __FT_BUILD_SHA__ : 'UNSET';
+  const ui_bundle_hash = (() => {
+    const scripts = Array.from(document.querySelectorAll('script[src]')).map(s => s.src);
+    for (const src of scripts) {
+      const m = src.match(/\/app\.([a-z0-9]+)\.(js|mjs)/);
+      if (m) return m[1];
+    }
+    return 'UNSET';
+  })();
+  
+  console.log('[UI_BUILD_IDENTITY_EARLY]', {
+    marker: 'UI_BUILD_IDENTITY_EARLY',
+    ui_git_sha,
+    ui_bundle_hash,
+    ts: new Date().toISOString(),
+  });
+})();
+
+// ============================================================================
 // FORGE BRIDGE RUNTIME CHECK (FAIL-CLOSED, NO THROW)
 // Must run EARLY to detect if bridge is available, render panel if not
+// Uses async probeForgeBridge() which pings backend via real invoke call
 // ============================================================================
 console.log("[UI_BRIDGE_RUNTIME_CHECK] Checking Forge bridge availability...");
-const bridgeOk = ensureForgeBridgeOrRenderFatal(document.body);
-if (!bridgeOk) {
-  // Bridge missing and panel rendered. Stop execution.
-  console.error("[UI_BRIDGE_RUNTIME_CHECK] Bridge not available. Fatal panel rendered. Stopping boot.");
-  // Exit early - do not continue with app initialization
-  throw new Error("FATAL_UI_BRIDGE_MISSING_RUNTIME: Cannot proceed without Forge bridge");
-}
-console.log("[UI_BRIDGE_RUNTIME_CHECK] Bridge available. Proceeding with boot.");
+const bridgeProbePromise = ensureForgeBridgeOrRenderFatal(document.body);
+// We'll await this at the top of onDOMReady() function (see bottom of file)
+
+// ============================================================================
+// INSTANT FALLBACK: if bridge is provably missing, render error immediately
+// This catches cases where the async probe might hang or crash
+// ============================================================================
+setTimeout(() => {
+  // After 3 seconds, if bridge hasn't been verified, assume it's missing
+  const fatalPanel = document.getElementById("forge-bridge-fatal-error-panel");
+  if (!fatalPanel && !document.body.classList.contains("ft-bridge-verified")) {
+    const panel = document.createElement("div");
+    panel.id = "forge-bridge-fatal-error-panel-timeout";
+    panel.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      z-index: 999999;
+      font-family: system-ui, -apple-system, sans-serif;
+    `;
+    panel.innerHTML = `
+      <div style="text-align: center; padding: 24px; max-width: 500px;">
+        <h1 style="color: #d32f2f; margin: 0 0 16px 0; font-size: 24px;">⚠️ Bridge Timeout</h1>
+        <p style="color: #666; font-size: 16px;">
+          The Forge bridge did not respond within 3 seconds. Try refreshing the page.
+        </p>
+      </div>
+    `;
+    document.body.appendChild(panel);
+  }
+}, 3000);
 
 // ============================================================================
 // L0.C: UI ENTRY RUNTIME PROOF - IIFE (runs immediately before any other code)
@@ -146,6 +205,25 @@ import { buildUiIdentity, formatUiIdentity, type UiIdentity } from './ui_identit
 // Import UI build markers (auto-generated at build time)
 import { UI_GIT_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
 
+// ============================================================================
+// BACKBONE FIX #1: PREVENT TREE-SHAKING OF UI BUILD IDENTIFIERS
+// ============================================================================
+// Force Vite to include these constants by using them at module level
+// (Cannot be tree-shaken if used at top level outside of a function)
+const _FT_BUILD_META_PROOF = {
+  sha: UI_GIT_SHA,
+  time: UI_BUILD_TIME_UTC,
+  marker: UI_BUILD_MARKER,
+  // Use typeof to force symbol to be non-dead-code
+  shaType: typeof UI_GIT_SHA,
+  timeType: typeof UI_BUILD_TIME_UTC,
+};
+// Ensure the constant is used in a way that can't be tree-shaken
+if (typeof _FT_BUILD_META_PROOF === 'object' && _FT_BUILD_META_PROOF.sha.length > 0) {
+  // This expression is always true but Vite can't optimize it away
+  // because it depends on the module-level constants
+}
+
 // Import L0.C entry proof functions for testing and banner display
 import { captureRuntimeEntryProof, formatEntryProofForBanner } from './entryProof';
 
@@ -196,7 +274,7 @@ const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).sub
 // ============================================================================
 let UI_IDENTITY: UiIdentity;
 try {
-  UI_IDENTITY = buildUiIdentity(UI_GIT_SHA, UI_BUILD_TIME_UTC);
+  UI_IDENTITY = buildUiIdentity();
   console.log(`[UI_IDENTITY_RESOLVED] ${formatUiIdentity(UI_IDENTITY)}`);
   
   // EMIT IDENTITY ANCHOR - single source of truth for gate verification
@@ -275,6 +353,49 @@ function ftEnsureServeProofEl(): HTMLElement {
         el.className = "proof-element";
     }
     return el as HTMLElement;
+}
+
+/**
+ * Update the hidden ft-proof DOM node with current dashboard state.
+ * This node is always present and accessible to E2E tests for deterministic observation.
+ * Format: JSON object with ui_git_sha, ui_build_time_utc, ui_req_id_local, 
+ * last_observed_schemaVersion, last_backend_build_sha
+ */
+let lastObservedSchemaVersion: string = "NOT_AVAILABLE";
+let lastBackendBuildSha: string = "NOT_AVAILABLE";
+
+function ftUpdateProofNode(optional?: { schemaVersion?: string; backendBuildSha?: string }) {
+    // Update tracking state
+    if (optional?.schemaVersion) {
+        lastObservedSchemaVersion = optional.schemaVersion;
+    }
+    if (optional?.backendBuildSha) {
+        lastBackendBuildSha = optional.backendBuildSha;
+    }
+
+    const id = "ft-proof";
+    let el = document.getElementById(id);
+    
+    // Ensure element exists and is hidden
+    if (!el) {
+        el = document.createElement("pre");
+        el.id = id;
+        el.setAttribute("data-ft-proof", "1");
+        el.style.display = "none";
+        document.body.appendChild(el);
+    }
+    
+    // Build proof object
+    const proofData = {
+        ui_git_sha: UI_GIT_SHA,
+        ui_build_time_utc: UI_BUILD_TIME_UTC,
+        ui_req_id_local: FT_UI_REQ_ID,
+        last_observed_schemaVersion: lastObservedSchemaVersion,
+        last_backend_build_sha: lastBackendBuildSha,
+    };
+    
+    // Update content as JSON
+    el.textContent = JSON.stringify(proofData);
 }
 
 function setText(id: string, value: string): boolean {
@@ -723,19 +844,19 @@ async function loadStatus() {
                     : null);
 
             const signals: RuntimeSignals = {
-                tenantIdentityStatus: data.tenantStatus || 'UNKNOWN',
-                backendStatus: data.systemStatus || 'UNKNOWN',
+                tenantIdentityStatus: data.tenantStatus || 'ERROR',  // Fail-closed: no UNKNOWN
+                backendStatus: data.systemStatus || 'ERROR',  // Fail-closed: no UNKNOWN
                 scheduleStatus,
                 expectedScheduleIntervalMinutes,
                 lastSuccessfulRunISO: data.lastSuccessAt || null,
                 lastAttemptISO: data.lastAttemptAt || null,
                 snapshot: data.snapshotData || null,
-                storageStatus: data.storage?.status || 'UNKNOWN',
+                storageStatus: data.storage?.status || 'ERROR',  // Fail-closed: no UNKNOWN
                 snapshotCountRetained: data.snapshotCountRetained || 0,
                 checksCompletedLifetime: data.checksCompletedLifetime || 0,
                 failures7d: data.failureCount7d || 0,
                 skippedChecks7d: data.skippedChecksCount7d || 0,
-                exportSubsystemStatus: data.export?.status || 'UNKNOWN',
+                exportSubsystemStatus: data.export?.status || 'ERROR',  // Fail-closed: no UNKNOWN
                 permissionsVisibility: data.limitedPermissions ? 'LIMITED' : 'OK',
                 stalenessThresholdMinutes: data.staleIfAgeMinutesGreaterThan || 120,
                 nowISO: new Date().toISOString()
@@ -843,7 +964,7 @@ async function loadStatus() {
         setText('app-generated-at', formatTimestampDisplay(data.generatedAt) || '—');
 
         // Step 8: Update KPI strip
-        const statusValue = data.systemStatus || 'UNKNOWN';
+        const statusValue = data.systemStatus || 'ERROR';  // Fail-closed
         const pillClass = {
             'INITIALIZING': 'initializing',
             'RUNNING': 'running',
@@ -869,15 +990,17 @@ async function loadStatus() {
             freshnessLabel = 'Aging';
         } else if (data.freshnessStatus === 'STALE') {
             freshnessLabel = 'Stale';
-        } else if (data.freshnessStatus === 'NOT_AVAILABLE') {
+        } else if (data.freshnessStatus === 'AGING' || data.freshnessStatus === 'NEVER') {
             freshnessLabel = 'Not available (telemetry missing)';
+        } else {
+            freshnessLabel = 'Unknown status';  // Fallback for any unrecognized state
         }
         setText('kpi-freshness-status', freshnessLabel);
         
         // Skipped checks
         setText('kpi-skipped-checks-7d', 
             data.skippedChecksCount7d !== undefined 
-                ? (data.skippedChecksCount7d === 0 ? '0' : `${data.skippedChecksCount7d} (${data.skippedChecksPrimaryReason7d || 'UNKNOWN'})`)
+                ? (data.skippedChecksCount7d === 0 ? '0' : `${data.skippedChecksCount7d} (${data.skippedChecksPrimaryReason7d || 'unknown'})`)
                 : 'Not available (telemetry missing)'
         );
         
@@ -916,7 +1039,7 @@ async function loadStatus() {
                 </div>
                 <div class="metric-row">
                     <div class="metric-label">Staleness Threshold Rule</div>
-                    <div class="metric-value">${data.staleIfAgeMinutesGreaterThan !== null ? '> ' + data.staleIfAgeMinutesGreaterThan + ' min' : 'UNKNOWN'}</div>
+                    <div class="metric-value">${data.staleIfAgeMinutesGreaterThan !== null ? '> ' + data.staleIfAgeMinutesGreaterThan + ' min' : 'Not available'}</div>
                 </div>
                 <div class="metric-row">
                     <div class="metric-label">Snapshot Age</div>
@@ -945,10 +1068,10 @@ async function loadStatus() {
         // Step 9.5: Render Health Status (Minimal)
         if (data.health) {
             const h = data.health;
-            setText('health-state', typeof h === 'string' ? h : 'UNKNOWN');
+            setText('health-state', typeof h === 'string' ? h : 'Error');
             // Note: health is now a HealthState string, not an object, so skip nested fields
         } else {
-            setText('health-state', 'UNKNOWN');
+            setText('health-state', 'Error');
         }
 
         // Step 9.5: Jira Configuration Visibility (Phase 2)
@@ -1143,7 +1266,7 @@ async function loadStatus() {
         const dqStatus = `
             <div class="metric-row">
                 <div class="metric-label">Completeness Status</div>
-                <div class="metric-value">${data.completenessStatus || 'UNKNOWN'}</div>
+                <div class="metric-value">${data.completenessStatus || 'Initializing'}</div>
             </div>
             <div class="metric-row">
                 <div class="metric-label">Coverage Included</div>
@@ -1176,7 +1299,7 @@ async function loadStatus() {
                 tableHtml += `
                     <div class="table-row">
                         <div class="td-name">${check.name || 'Unknown'}</div>
-                        <div class="td-status">${check.status || 'UNKNOWN'}</div>
+                        <div class="td-status">${check.status || 'Unknown'}</div>
                         <div class="td-lastRun">${formatTimestampDisplay(check.lastRunAt)}</div>
                         <div class="td-reason">${check.reasonCode || '—'}</div>
                         <div class="td-impact">${check.impact ? check.impact.substring(0, 120) : '—'}</div>
@@ -2087,20 +2210,39 @@ ${JSON.stringify(response, null, 2)}
                 panelEl.classList.add('text-success');
                 panelEl.classList.remove('text-error');
             } else {
-                // ERROR: Show error details + preserve local IDs (critical for correlation)
+                // ERROR: Show structured error details (BACKBONE #3: never show "unknown")
+                const errorCode = response.error?.code || 'UNSPECIFIED';
+                const errorMsg = response.error?.message || 'No error message provided';
+                const traceId = response.error?.traceId || response.meta?.ts_utc || '—';
+                const uiReqIdEchoed = response.meta?.ui_req_id || '—';
+                
+                // BACKBONE #3: Verify correlation - ui_req_id should match
+                const correlationMatch = uiReqIdEchoed === localUiReqId ? '✓ MATCHES' : '✗ MISMATCH';
+                
                 htmlContent = `
 <strong class="text-error">❌ PROBE ERROR</strong>
 
-<strong>Local Correlation IDs (preserved despite error):</strong>
+<strong>Correlation Proof:</strong>
 <code class="code-block">
-UI_REQ_ID_LOCAL=${localUiReqId}
-PROBE_NONCE_LOCAL=${localProbeNonce}
+UI_REQ_ID_LOCAL:  ${localUiReqId}
+UI_REQ_ID_ECHOED: ${uiReqIdEchoed} (${correlationMatch})
+PROBE_NONCE_LOCAL: ${localProbeNonce}
+PROBE_NONCE_ECHOED: ${response.meta?.probe_nonce || 'null'}
 </code>
 
-<strong>Backend Error:</strong>
-<strong>Error Code:</strong> ${response.error?.code || '—'}
-<strong>Error Message:</strong> ${response.error?.message || '—'}
-<strong>Trace ID:</strong> ${response.error?.trace_id_stable || '—'}
+<strong>Structured Error (from backend):</strong>
+<code class="code-block">
+Code:    ${errorCode}
+Message: ${errorMsg}
+TraceID: ${traceId}
+</code>
+
+<strong>Backend Build Info:</strong>
+<code class="code-block">
+Build SHA: ${response.meta?.backend_build_sha || '—'}
+UI Build SHA: ${response.meta?.ui_build_sha || 'null'}
+Response Time: ${response.meta?.ts_utc || '—'}
+</code>
 
 <strong>Full Response JSON:</strong>
 <pre class="code-block-multi">
@@ -2118,7 +2260,9 @@ ${JSON.stringify(response, null, 2)}
         if (response.ok) {
             if (statusEl) statusEl.textContent = `✅ Probe completed at ${new Date().toLocaleTimeString()} | nonce: ${localProbeNonce}`;
         } else {
-            if (statusEl) statusEl.textContent = `❌ Probe error: ${response.error?.code || 'unknown'} | nonce: ${localProbeNonce}`;
+            // BACKBONE #3: Never show "unknown" - show actual error code from backend
+            const errorCode = response.error?.code || 'UNSPECIFIED';
+            if (statusEl) statusEl.textContent = `❌ Probe error: ${errorCode} | nonce: ${localProbeNonce}`;
         }
         
         // Legacy: Extract and display key fields (for backward compatibility - already set above)
@@ -2483,12 +2627,105 @@ function wireExportButtons() {
 })();
 
 // ============================================================================
+// PHASE 1: BUILD IDENTITY PROOF (CONSOLIDATED)
+// ============================================================================
+// Proves the UI is running the expected bundle with correct semantics:
+// - repo_git_sha_short: from source control (NOT the same as bundle hash)
+// - ui_bundle_hash: from the executing script filename
+// - identity_consistent: true iff executing script URL includes bundle hash
+// DO NOT compare git_sha with bundle_hash; they serve different purposes.
+// ============================================================================
+
+function logUiBuildIdentityProof() {
+  try {
+    const proof = (window as any).__FT_RUNTIME_ENTRY_PROOF__;
+    
+    const ui_bundle_hash = proof?.ui_entry_bundle_hash ?? null;
+    const repo_git_sha_short = proof?.ui_git_sha ?? null;
+    const executing_script_url = proof?.ui_entry_bundle_url ?? null;
+    const windowHref = window.location.href;
+    
+    // Collect all script srcs
+    const allScriptSrcs = Array.from(document.querySelectorAll('script[src]'))
+      .map((s: any) => s.src || '')
+      .filter((s: string) => s.length > 0);
+    
+    // Verify consistency: if we have both bundle hash and URL, ensure URL contains hash
+    const identity_consistent = (() => {
+      if (!ui_bundle_hash || !executing_script_url) return false;
+      return executing_script_url.includes(ui_bundle_hash);
+    })();
+    
+    console.log('[UI_BUILD_IDENTITY_PROOF]', {
+      repo_git_sha_short,
+      ui_bundle_hash,
+      executing_script_url,
+      windowHref,
+      allScriptSrcs: allScriptSrcs.slice(0, 5), // Limit to first 5 for readability
+      identity_consistent,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error('[UI_BUILD_IDENTITY_PROOF_ERROR]', e);
+  }
+}
+
+// ============================================================================
+// PHASE 2: SINGLE MAPPING FUNCTION + FAIL-CLOSED GUARDS
+// ============================================================================
+// Rules:
+// - mapDashEnvelopeV1 is the ONLY function allowed to map backend response -> state
+// - It enforces schema version v1 and canonical envelope structure
+// - On failure, returns explicit ERROR/DEGRADED state (never leaves undefined)
+// - assertNonNullDashboardState prevents undefined state from reaching store
+// ============================================================================
+
+// NOTE: mapDashEnvelopeV1, assertNonNullDashboardState, and logRawDashboardEnvelope
+// are now imported from dashEnvelope.ts (shared with tests).
+// DO NOT define them locally here.
+
+// ============================================================================
 // INITIALIZATION
 // ============================================================================
 
 // Wire buttons on DOM ready
 function onDOMReady() {
+    // ========================================================================
+    // CRITICAL: Await bridge availability check before proceeding
+    // NEVER throw uncaught error; gracefully stop if bridge fails
+    // ========================================================================
+    (async () => {
+      try {
+        const result = await bridgeProbePromise;
+        if (!result.ok) {
+          console.error("[UI_BRIDGE_RUNTIME_CHECK] Bridge not available. Fatal panel rendered. Stopping boot.");
+          document.body.classList.add("ft-bridge-failed");
+          return; // Stop all further initialization - NO THROW
+        }
+        
+        // Bridge is working - mark as verified and proceed
+        document.body.classList.add("ft-bridge-verified");
+        console.log("[UI_BRIDGE_RUNTIME_CHECK] Bridge verified. Proceeding with full initialization.");
+        
+        proceedWithBoot();
+      } catch (err) {
+        console.error("[UI_BRIDGE_RUNTIME_CHECK] Error awaiting bridge probe:", err);
+        document.body.classList.add("ft-bridge-error");
+        return; // Stop gracefully - NO THROW
+      }
+    })();
+}
+
+async function proceedWithBoot() {
+    // Initialize proof node early (will be updated when envelope arrives)
+    ftUpdateProofNode();
+    
     wireExportButtons();
+    
+    // ========================================================================
+    // PHASE 1: Log consolidated build identity proof
+    // ========================================================================
+    logUiBuildIdentityProof();
     
     // ========================================================================
     // Layer-0 Backbone: Load dashboard state at startup
@@ -2537,12 +2774,50 @@ function onDOMReady() {
           throw new Error(errorMsg);
         }
         
-        const state = result.value;
-        if (state?.ok === false) {
-          console.warn("[BACKBONE_L0] ft_getDashboardState_v1 returned error:", state);
-        } else {
-          console.log("[BACKBONE_L0] Dashboard state loaded:", state?.status, state?.reason_code);
+        // PHASE 2: Apply canonical envelope mapping
+        const rawEnvelope = result.value;
+        logRawDashboardEnvelope(rawEnvelope);
+        
+        // UPDATE PROOF NODE: Capture schemaVersion and backend SHA from envelope (success or error)
+        const envelopeSchemaVersion = rawEnvelope?.schemaVersion ? String(rawEnvelope.schemaVersion) : "NOT_FOUND";
+        const backendShaFromEnvelope = rawEnvelope?.backendBuild?.buildSha || rawEnvelope?.backendBuild || "NOT_FOUND";
+        ftUpdateProofNode({
+          schemaVersion: envelopeSchemaVersion,
+          backendBuildSha: backendShaFromEnvelope,
+        });
+        
+        let mappedState: Record<string, any>;
+        try {
+          mappedState = mapDashEnvelopeV1(rawEnvelope);
+        } catch (mapErr) {
+          console.error('[DASH_ENVELOPE_MAP_FAILED]', mapErr);
+          mappedState = {
+            status: 'ERROR',
+            reason: 'ENVELOPE_MAPPING_FAILED',
+            error: mapErr instanceof Error ? { code: 'MAP_ERROR', message: mapErr.message } : { code: 'MAP_ERROR', message: String(mapErr) },
+            canonical_envelope_applied: false,
+          };
         }
+        
+        // PHASE 2: Assert non-null before store commit
+        assertNonNullDashboardState(mappedState, {
+          step: 'initial_load',
+          resolverUsed: 'ft_getDashboardState_v1',
+          schemaVersion: rawEnvelope?.schemaVersion ?? null,
+        });
+        
+        // Log successful state commit
+        if (mappedState?.ok === false) {
+          console.warn('[BACKBONE_L0] ft_getDashboardState_v1 returned error:', mappedState);
+        } else {
+          console.log('[BACKBONE_L0] Dashboard state loaded:', mappedState?.status, mappedState?.reason_code || mappedState?.reason);
+        }
+        
+        console.log('[BACKBONE_STATE_COMMITTED]', {
+          truthModelState: mappedState?.status,
+          isOperational: mappedState?.ok !== false,
+          hasCanonicalMarker: !!mappedState?.canonical_envelope_applied,
+        });
       } catch (e) {
         console.error("[BACKBONE_L0] Failed to load dashboard state:", e);
       }
@@ -2651,28 +2926,176 @@ function onDOMReady() {
                     return;
                 }
                 
-                // Parse response - expect {trace, data} structure from ft_getDashboardState_v1
-                const trace = stateResult?.trace;
-                const data = stateResult?.data;
+                // BACKBONE D: STRICT contract validation - ONLY accept wrapped responses
+                // Response MUST have wrapper marker to be valid
                 
-                if (!stateResult || !data) {
-                    console.error(`[UI_FT_GETDASHBOARDSTATE_INVALID_RESPONSE] uiReqId=${FT_UI_REQ_ID} response_keys=${Object.keys(stateResult || {}).join(',')}`);
+                // Check 1: Response must be an object
+                if (!stateResult || typeof stateResult !== 'object') {
+                    console.error(JSON.stringify({
+                      marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
+                      reason: 'not_object',
+                      uiReqId: FT_UI_REQ_ID,
+                      received: typeof stateResult
+                    }));
                     
-                    const errorInfo = `Invalid response structure`;
+                    const errorInfo = `Contract failure: response is not an object`;
                     const backendDisplay = `(${errorInfo})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                     buildFooter.classList.add('text-error');
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | INVALID_RESPONSE`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | NOT_OBJECT`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+
+                // Check 2: Wrapper marker MUST be present
+                if (stateResult.envelopeKind !== 'FT_DASH_ENVELOPE_V1') {
+                    console.error(JSON.stringify({
+                      marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
+                      reason: 'missing_envelope_marker',
+                      uiReqId: FT_UI_REQ_ID,
+                      expected: 'FT_DASH_ENVELOPE_V1',
+                      received: stateResult.envelopeKind ?? 'NOT_FOUND',
+                      topKeys: Object.keys(stateResult).slice(0, 50)
+                    }));
+                    
+                    const errorInfo = `Contract failure: missing envelope marker`;
+                    const backendDisplay = `(${errorInfo})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | NO_MARKER`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+
+                // Check 3: schemaVersion must be exactly 'v1'
+                if (stateResult.schemaVersion !== 'v1') {
+                    console.error(JSON.stringify({
+                      marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
+                      reason: 'wrong_schema_version',
+                      uiReqId: FT_UI_REQ_ID,
+                      expected: 'v1',
+                      received: stateResult.schemaVersion ?? 'NOT_FOUND'
+                    }));
+                    
+                    const errorInfo = `Contract failure: wrong schema version`;
+                    const backendDisplay = `(${errorInfo})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | WRONG_SCHEMA`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+
+                // Check 4: ok must be a boolean
+                if (typeof stateResult.ok !== 'boolean') {
+                    console.error(JSON.stringify({
+                      marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
+                      reason: 'ok_not_boolean',
+                      uiReqId: FT_UI_REQ_ID,
+                      received: typeof stateResult.ok
+                    }));
+                    
+                    const errorInfo = `Contract failure: ok must be boolean`;
+                    const backendDisplay = `(${errorInfo})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | INVALID_OK`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+
+                // Check 5: if ok=true, must have data; if ok=false, must have error
+                const hasData = 'data' in stateResult;
+                const hasError = 'error' in stateResult;
+                
+                if (stateResult.ok === true && !hasData) {
+                    console.error(JSON.stringify({
+                      marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
+                      reason: 'ok_true_missing_data',
+                      uiReqId: FT_UI_REQ_ID
+                    }));
+                    
+                    const errorInfo = `Contract failure: ok=true but no data`;
+                    const backendDisplay = `(${errorInfo})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | NO_DATA`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+
+                if (stateResult.ok === false && !hasError) {
+                    console.error(JSON.stringify({
+                      marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
+                      reason: 'ok_false_missing_error',
+                      uiReqId: FT_UI_REQ_ID
+                    }));
+                    
+                    const errorInfo = `Contract failure: ok=false but no error`;
+                    const backendDisplay = `(${errorInfo})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | NO_ERROR`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+
+                // Contract validated - extract data
+                const data = stateResult.ok ? stateResult.data : stateResult.error;
+                const trace = stateResult.trace;
+
+                if (!data) {
+                    console.error(JSON.stringify({
+                      marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
+                      reason: 'empty_payload',
+                      uiReqId: FT_UI_REQ_ID
+                    }));
+                    
+                    const errorInfo = `Contract failure: data/error is empty`;
+                    const backendDisplay = `(${errorInfo})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | EMPTY`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }
                 
+                // ✅ Contract validated - log proof envelope marker
+                console.log(JSON.stringify({
+                  marker: '[UI_DASH_RAW_ENVELOPE]',
+                  schemaVersion: stateResult.schemaVersion,
+                  envelopeKind: stateResult.envelopeKind,
+                  envelopeVersion: stateResult.envelopeVersion,
+                  ok: stateResult.ok,
+                  hasData: 'data' in stateResult,
+                  hasError: 'error' in stateResult,
+                  metaKeys: Object.keys(stateResult.meta || {}),
+                  dataKeys: stateResult.data ? Object.keys(stateResult.data).slice(0, 50) : null
+                }));
+                
                 // Success - show backend build SHA and status
                 console.log(`[UI_FT_GETDASHBOARDSTATE_SUCCESS] uiReqId=${FT_UI_REQ_ID} status=${data?.status} reason=${data?.reason_code}`);
-                
                 // Extract backend build SHA from response
                 const backendBuildSha = data?.ledger?.build_sha_last_seen_backend || data?.build_sha_backend || 'unknown';
                 const responseTime = data?.now_utc || new Date().toISOString();

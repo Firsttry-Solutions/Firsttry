@@ -37,15 +37,35 @@ jobs:
           cache: "npm"
           cache-dependency-path: "atlassian/forge-app/package-lock.json"
 
-      - name: Install dependencies (forge-app)
+      - name: Verify lockfile exists (fast fail)
         working-directory: atlassian/forge-app
         run: |
           set -euo pipefail
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
+          test -f package-lock.json || {
+            echo "ERROR: package-lock.json missing"
+            echo "Reproducible installs require a lockfile."
+            echo "Run: npm install (to generate lockfile)"
+            exit 1
+          }
+
+      - name: Run cold-install proof (deterministic validation - single source)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/prove_clean_install.sh
+
+      - name: Verify repo clean after proof (must not dirty working tree)
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE:-.}"
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "ERROR: Working tree dirty after CI proof run"
+            echo "Changes detected:"
+            git status --porcelain
+            git diff || true
+            exit 1
           fi
+          echo "OK: repo clean after proof"
 
       - name: Verify UI naming contract (enforce non-bypassable)
         working-directory: atlassian/forge-app

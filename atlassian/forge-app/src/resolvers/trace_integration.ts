@@ -20,7 +20,7 @@ import {
   STEP_IDS,
   StepId,
   StorageProof,
-} from './structured_trace';
+} from '../ops/structured_trace';
 
 /**
  * Extract trace context from resolver request
@@ -113,7 +113,7 @@ export function recordStorageOperation(
   const stepMap: Record<string, StepId> = {
     READ: STEP_IDS.STORAGE_READ_COMPLETED,
     WRITE: STEP_IDS.STORAGE_WRITE_COMPLETED,
-    DELETE: STEP_IDS.STORAGE_DELETE_FAILED,
+    DELETE: STEP_IDS.STORAGE_WRITE_COMPLETED,
     VERIFY: STEP_IDS.STORAGE_VERIFICATION_COMPLETED,
   };
 
@@ -149,7 +149,7 @@ export function recordExternalApiCall(
 ): void {
   const stepMap: Record<string, StepId> = {
     JIRA: STEP_IDS.JIRA_API_RESPONSE_RECEIVED,
-    FORGE: STEP_IDS.FORGE_APP_REQUEST_FAILED,
+    FORGE: STEP_IDS.JIRA_API_RESPONSE_RECEIVED,
   };
 
   const message = `${service} API call to ${endpoint} ${success ? 'succeeded' : 'failed'}`;

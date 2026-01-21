@@ -58,12 +58,13 @@ describe('UI build metadata (no env fallback)', () => {
     if (fs.existsSync(uiBuildMetaPath)) {
       const content = fs.readFileSync(uiBuildMetaPath, 'utf8');
       const parsed = JSON.parse(content); // Will throw if invalid JSON
-      expect(parsed).toHaveProperty('FT_BUILD_SHA');
-      expect(parsed).toHaveProperty('FT_BUILD_TIME_UTC');
       
-      // SHA should be 7-40 hex chars
-      const hexRegex = /^[0-9a-f]{7,40}$/;
-      expect(parsed.FT_BUILD_SHA).toMatch(hexRegex);
+      // NEW CONTRACT: UI_GIT_SHA must be exactly 40 hex chars (full git SHA)
+      expect(parsed).toHaveProperty('UI_GIT_SHA');
+      expect(parsed.UI_GIT_SHA).toMatch(/^[0-9a-f]{40}$/);
+      
+      // UI_GIT_TIME must exist
+      expect(parsed).toHaveProperty('UI_GIT_TIME');
     }
     // If file doesn't exist yet, that's OK (test will be run after build_meta.mjs)
   });

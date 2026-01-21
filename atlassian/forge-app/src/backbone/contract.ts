@@ -44,6 +44,7 @@ export interface FtResolverResponseV1 {
   storage_state: FtStorageState;
   status: FtStatus;
   reason_code: FtReasonCode;
+  mode?: string | null;
 
   ledger: FtLedgerV1;
 }

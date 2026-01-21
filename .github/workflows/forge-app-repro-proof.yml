@@ -1,0 +1,78 @@
+name: Forge App Repro Proof
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repro-proof:
+    name: Reproducible Cold Install Proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "atlassian/forge-app/package-lock.json"
+
+      - name: Detect relevant changes
+        id: changes
+        run: |
+          set -euo pipefail
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.sha }}"
+          if [ -z "$BASE" ]; then
+            # Not a PR; check HEAD~1 vs HEAD for push events
+            BASE="HEAD~1"
+            HEAD="HEAD"
+          fi
+          echo "BASE=$BASE"
+          echo "HEAD=$HEAD"
+          git fetch --no-tags --prune --depth=50 origin "$BASE" 2>/dev/null || true
+          CHANGED="$(git diff --name-only "$BASE" "$HEAD" 2>/dev/null || echo "")"
+          echo "$CHANGED" | tee /tmp/changed_files.txt
+          if echo "$CHANGED" | grep -E '^(atlassian/forge-app/|\.github/workflows/)' >/dev/null 2>&1; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run Forge App Repro Proof
+        if: steps.changes.outputs.relevant == 'true'
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/prove_clean_install.sh
+
+      - name: Skip (not relevant)
+        if: steps.changes.outputs.relevant != 'true'
+        run: |
+          echo "✓ No relevant changes in atlassian/forge-app or .github/workflows; skipping proof."
+
+      - name: Verify lockfile exists (fast fail)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          test -f package-lock.json || {
+            echo "ERROR: package-lock.json missing"
+            echo "Reproducible installs require a lockfile."
+            exit 1
+          }
+
+      - name: Repo cleanliness check
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE:-.}"
+          test -z "$(git status --porcelain)" || { echo "ERROR: repo dirty after proof"; git status --porcelain; git diff || true; exit 1; }
+          echo "✓ repo clean"
