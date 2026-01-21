@@ -92,7 +92,7 @@
                     - strong [ref=f1e4]: "[UI_ENTRY_RUNTIME_PROOF]"
                     - text: UI_ENTRY_BUNDLE_HASH=79717d846c03e8095cbd88c8c34c27b655ad7817 | UI_GIT_SHA=79717d846c03e8095cbd88c8c34c27b655ad7817 | ENTRY=NONE
                     - text: "Scripts: https://forge.cdn.prod.atlassian-dev.net/global-bridge.js | https://forge.cdn.prod.atlassian-dev.net/iframeResizer.contentWindow.min.js | https://c4l4ns-2q1uv18efz-sh1kwc1nv--oxfszm-23it7npwcb-177z97oqnw.cdn.prod.atlassian-dev.net/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc/136e862e-e5be-4815-b5f5-386a2ead851f/65805ef2-2201-429b-8810-43e66077410e/govGadget2141/_ctx_H4sIAAAAAAACAwVAMQqAMAz8y82lD-jqM8QhQ1oDMYXmHET8u7zQsTQTbT8KzpkMuRQN3VaS66lCl0yTqKFEgUVS3IU2Y5vRbaDF7f79yT7b20sAAAA/app.79717d846c03e8095cbd88c8c34c27b655ad7817.js"
-                  - generic [ref=f1e5]: "[UI_SERVE_OK] runtime=79717d846c03e8095cbd88c8c34c27b655ad7817 loaded=79717d846c03e8095cbd88c8c34c27b655ad7817 url=https://c4l4ns-2q1uv18efz-sh1kwc1nv--oxfszm-23it7npwcb-177z97oqnw.cdn.prod.atlassian-dev.net/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc/136e862e-e5be-4815-b5f5-386a2ead851f/65805ef2-2201-429b-8810-43e66077410e/govGadget2141/_ctx_H4sIAAAAAAACAwVAMQqAMAz8y82lD-jqM8QhQ1oDMYXmHET8u7zQsTQTbT8KzpkMuRQN3VaS66lCl0yTqKFEgUVS3IU2Y5vRbaDF7f79yT7b20sAAAA/app.79717d846c03e8095cbd88c8c34c27b655ad7817.js uiReqId=ui_1769013008119_0627c5ee"
+                  - generic [ref=f1e5]: "[UI_SERVE_OK] runtime=79717d846c03e8095cbd88c8c34c27b655ad7817 loaded=79717d846c03e8095cbd88c8c34c27b655ad7817 url=https://c4l4ns-2q1uv18efz-sh1kwc1nv--oxfszm-23it7npwcb-177z97oqnw.cdn.prod.atlassian-dev.net/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc/136e862e-e5be-4815-b5f5-386a2ead851f/65805ef2-2201-429b-8810-43e66077410e/govGadget2141/_ctx_H4sIAAAAAAACAwVAMQqAMAz8y82lD-jqM8QhQ1oDMYXmHET8u7zQsTQTbT8KzpkMuRQN3VaS66lCl0yTqKFEgUVS3IU2Y5vRbaDF7f79yT7b20sAAAA/app.79717d846c03e8095cbd88c8c34c27b655ad7817.js uiReqId=ui_1769013027764_03a386d2"
                   - generic [ref=f1e6]:
                     - strong [ref=f1e7]: "[UI_SERVE_PROOF]"
                     - text: UI_GIT_SHA=
@@ -102,7 +102,7 @@
                     - text: SCRIPT_SRC=
                     - code [ref=f1e10]: https://forge.cdn.prod.atlassian-dev.net/global-bridge.js | https://forge.cdn.prod.atlassian-dev.net/iframeResizer.contentWindow.min.js | https://c4l4ns-2q1uv18efz-sh1kwc1nv--oxfszm-23it7npwcb-177z97oqnw.cdn.prod.atlassian-dev.net/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc/136e862e-e5be-4815-b5f5-386a2ead851f/65805ef2-2201-429b-8810-43e66077410e/govGadget2141/_ctx_H4sIAAAAAAACAwVAMQqAMAz8y82lD-jqM8QhQ1oDMYXmHET8u7zQsTQTbT8KzpkMuRQN3VaS66lCl0yTqKFEgUVS3IU2Y5vRbaDF7f79yT7b20sAAAA/app.79717d846c03e8095cbd88c8c34c27b655ad7817.js
                     - text: UI_REQ_ID=
-                    - code [ref=f1e11]: ui_1769013008119_0627c5ee
+                    - code [ref=f1e11]: ui_1769013027764_03a386d2
                   - generic [ref=f1e13]:
                     - 'heading "Firsttry: Audit Evidence for Jira" [level=1] [ref=f1e14]'
                     - paragraph [ref=f1e15]: Real-time operational visibility. Read-only monitoring of platform configuration and data quality.
@@ -246,7 +246,7 @@
                           - generic [ref=f1e161]: Not available yet
                         - generic [ref=f1e162]:
                           - generic [ref=f1e163]: Generated At
-                          - generic [ref=f1e164]: Jan 21, 2026, 04:30:09 PM UTC
+                          - generic [ref=f1e164]: Jan 21, 2026, 04:30:28 PM UTC
                     - generic [ref=f1e165]:
                       - generic [ref=f1e166]: Operational Boundaries
                       - generic [ref=f1e167]:
@@ -394,7 +394,7 @@
                           - text: If this dashboard does not reflect the latest version shown above, remove and re-add the gadget to force a UI cache refresh.
                       - generic [ref=f1e312]:
                         - text: "UI: Build: 79717d846c03e8095cbd88c8c34c27b655ad7817 • 2026-01-21T16:23:39Z | Backend: (Contract failure: missing envelope marker)"
-                        - generic [ref=f1e313]: "SERVE_PROOF: cdfa04fba064__20260115T120000Z | UI_REQ_ID:ui_1769013008119_0627c5ee | NO_MARKER"
+                        - generic [ref=f1e313]: "SERVE_PROOF: cdfa04fba064__20260115T120000Z | UI_REQ_ID:ui_1769013027764_03a386d2 | NO_MARKER"
   - button "Rovo Button" [ref=e152] [cursor=pointer]:
     - generic [ref=e153]: Rovo Button
     - img [ref=e154]
