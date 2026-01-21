@@ -28,7 +28,7 @@ import { ping } from "./ping";
 import { ensureFirstSnapshot } from "./ensureFirstSnapshot";
 import { probe } from "./probe"; // FORENSIC_PROBE
 import { exportTrustSnapshot as exportTrustSnapshot_resolver } from "./audit_snapshot_export";
-import { ft_getDashboardState_v1 } from "../gadget-resolver";
+import { ft_getDashboardState_v1, ft_contractProof_dashEnvelope_v1 } from "../gadget-resolver";
 import { BACKEND_BUILD_SHA } from "../build/backend_build";
 
 // ============================================================================
@@ -206,6 +206,8 @@ const ALLOWED_RESOLVERS: Record<string, (req: any) => Promise<any>> = {
   getSnapshotDebug: getSnapshotDebug_resolver,
   // BACKBONE LAYER-0: Dashboard envelope with marker (replaces old getStatusSnapshot)
   getStatusSnapshot: ft_getDashboardState_v1,
+  // BACKBONE CONTRACT PROOF: Read-only production envelope verification (no tenant data)
+  ft_contractProof_dashEnvelope_v1: ft_contractProof_dashEnvelope_v1,
   exportTrustSnapshot: exportTrustSnapshot_resolver
 };
 
