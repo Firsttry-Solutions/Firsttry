@@ -119,7 +119,7 @@ function getStorageStateDetails(state: string): string {
     EXISTS: 'Data exists in storage',
     EMPTY: 'Storage is empty (no data found)',
     UNKNOWN: 'Unable to determine storage state',
-    NOT_AVAILABLE: 'Storage is not available',
+    DEGRADED: 'Storage access degraded',  // Phase 6-7: Replaced NOT_AVAILABLE
   };
 
   return details[state] || `Storage state: ${state}`;

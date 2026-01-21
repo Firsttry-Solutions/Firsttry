@@ -28,6 +28,8 @@ describe('P1: Dashboard State Contract', () => {
   describe('mapDashEnvelopeV1 success cases', () => {
     it('should map valid v1 envelope with data', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
         data: { status: 'OK', reason_code: 'OK' }
@@ -44,6 +46,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should preserve all data fields when mapping', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
         data: {
@@ -66,6 +70,8 @@ describe('P1: Dashboard State Contract', () => {
   describe('mapDashEnvelopeV1 error cases', () => {
     it('should return ERROR state when ok=false', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: false,
         schemaVersion: 'v1',
         error: { code: 'STORAGE_ERROR', message: 'Storage unavailable' }
@@ -81,6 +87,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should handle missing error details gracefully', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: false,
         schemaVersion: 'v1',
       };
@@ -93,6 +101,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should NOT be in BOOTING state on error', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: false,
         schemaVersion: 'v1',
         error: { code: 'BACKEND_UNAVAILABLE', message: 'Cannot reach backend' }
@@ -123,6 +133,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should throw on wrong schema version (v2)', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v2',
         data: { status: 'OK' }
@@ -133,6 +145,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should throw on missing schemaVersion', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         data: { status: 'OK' }
       };
@@ -142,6 +156,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should throw on missing data field when ok=true', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
       };
@@ -151,6 +167,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should throw on null data field when ok=true', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
         data: null
@@ -161,6 +179,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should throw on non-object data field when ok=true', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
         data: "string data"
@@ -208,6 +228,8 @@ describe('P1: Dashboard State Contract', () => {
   describe('Integration: End-to-end state mapping flow', () => {
     it('should handle success path: envelope -> map -> assert -> ready to commit', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
         data: { status: 'OK', reason_code: 'OK', ledger: { snapshot_count: 5 } }
@@ -223,6 +245,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should handle error path: envelope -> map -> assert -> explicit ERROR ready to commit', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: false,
         schemaVersion: 'v1',
         error: { code: 'STORAGE_ERROR', message: 'DB unavailable' }
@@ -239,6 +263,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should handle degraded path: envelope with degraded state', () => {
       const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
         data: { status: 'DEGRADED', reason_code: 'NO_SNAPSHOT_YET', ledger: { snapshot_count: 0 } }
@@ -254,6 +280,8 @@ describe('P1: Dashboard State Contract', () => {
     it('should prevent undefined state from bootstrap -> cache miss scenario', () => {
       // Scenario: Backend returns empty/missing data
       const badEnvelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
         // Missing data field
@@ -267,9 +295,9 @@ describe('P1: Dashboard State Contract', () => {
   describe('Regression: Prevent BOOTING forever', () => {
     it('should never map to state with undefined status', () => {
       const envelopes = [
-        { ok: true, schemaVersion: 'v1', data: { status: 'OK' } },
-        { ok: false, schemaVersion: 'v1', error: { code: 'ERR' } },
-        { ok: true, schemaVersion: 'v1', data: { status: 'BOOTSTRAP', reason_code: 'INIT' } },
+        { envelopeKind: 'FT_DASH_ENVELOPE_V1', envelopeVersion: 1, ok: true, schemaVersion: 'v1', data: { status: 'OK' } },
+        { envelopeKind: 'FT_DASH_ENVELOPE_V1', envelopeVersion: 1, ok: false, schemaVersion: 'v1', error: { code: 'ERR' } },
+        { envelopeKind: 'FT_DASH_ENVELOPE_V1', envelopeVersion: 1, ok: true, schemaVersion: 'v1', data: { status: 'BOOTSTRAP', reason_code: 'INIT' } },
       ];
 
       for (const env of envelopes) {
@@ -282,6 +310,8 @@ describe('P1: Dashboard State Contract', () => {
     it('should never allow unmapped envelope to reach store', () => {
       // Simulate the bug: what if raw envelope was committed?
       const rawEnvelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
         data: undefined  // Invalid
@@ -293,6 +323,8 @@ describe('P1: Dashboard State Contract', () => {
 
     it('should provide explicit DEGRADED state on bootstrap', () => {
       const bootstrapEnvelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        envelopeVersion: 1,
         ok: true,
         schemaVersion: 'v1',
         data: {

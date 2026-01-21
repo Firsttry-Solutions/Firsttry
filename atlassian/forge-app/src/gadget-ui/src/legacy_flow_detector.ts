@@ -1,6 +1,12 @@
 /**
  * Legacy flow detector - FAIL CLOSED
  * Prevents any legacy invoke patterns from executing in production
+ * 
+ * CRITICAL: After Phase 6-7 fixes:
+ * - ping, ensureFirstSnapshot, getBuildInfo, getSnapshotDebug are FORBIDDEN
+ * - Only ft_getDashboardState_v1 is allowed
+ * - UNKNOWN and NOT_AVAILABLE strings must NOT appear in dist bundle
+ * - INITIALIZING is allowed temporarily during startup
  */
 
 export function validateNonLegacyFlow(resolverName: string): void {
@@ -32,12 +38,15 @@ export function validateResponseNoLegacyMode(response: any): void {
 }
 
 export function validateNoUnknownState(state: any): void {
-  const FORBIDDEN_STATES = ['UNKNOWN', 'INITIALIZING', 'NOT_AVAILABLE'];
+  // CRITICAL: Only reject UNKNOWN and NOT_AVAILABLE
+  // INITIALIZING is allowed as a temporary startup state
+  const FORBIDDEN_STATES = ['UNKNOWN', 'NOT_AVAILABLE'];
   
   if (typeof state === 'string' && FORBIDDEN_STATES.includes(state)) {
     throw new Error(
-      `[FATAL_UI_UNKNOWN_STATE] Attempted to render forbidden UI state "${state}". ` +
-      `The UI should only render valid states from ft_getDashboardState_v1 or error panels.`
+      `[FATAL_UI_LEGACY_STATE] Attempted to render forbidden UI state "${state}". ` +
+      `The UI should only render valid states from ft_getDashboardState_v1 or error panels. ` +
+      `UNKNOWN and NOT_AVAILABLE must be normalized to other states before rendering.`
     );
   }
 }

@@ -31,12 +31,21 @@ export function mapDashEnvelopeV1(resp: any): Record<string, any> {
     throw new Error('DASH_ENVELOPE_INVALID_FAIL_CLOSED: resp must be object');
   }
 
-  // FAIL-CLOSED: Wrong schema version
+  // FAIL-CLOSED: Wrong schema version - STRICT, no normalization
   if (resp.schemaVersion !== 'v1') {
     console.error('[DASH_SCHEMA_VERSION_UNSUPPORTED_FAIL_CLOSED]', { 
       schemaVersion: resp.schemaVersion 
     });
     throw new Error(`DASH_SCHEMA_VERSION_UNSUPPORTED_FAIL_CLOSED: expected v1, got ${resp.schemaVersion}`);
+  }
+
+  // FAIL-CLOSED: Missing wrapper-only marker
+  if (resp.envelopeKind !== 'FT_DASH_ENVELOPE_V1') {
+    console.error('[DASH_ENVELOPE_MARKER_MISSING]', { 
+      envelopeKind: resp.envelopeKind,
+      expectedMarker: 'FT_DASH_ENVELOPE_V1'
+    });
+    throw new Error(`DASH_ENVELOPE_MARKER_MISSING: expected FT_DASH_ENVELOPE_V1, got ${resp.envelopeKind}`);
   }
 
   // FAIL-CLOSED: Backend reported error
