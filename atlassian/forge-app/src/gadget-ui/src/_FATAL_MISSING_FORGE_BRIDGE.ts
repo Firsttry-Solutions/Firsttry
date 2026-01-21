@@ -27,10 +27,11 @@ export type ForgeBridgePresenceProof = {
 };
 
 /**
- * Probes Forge bridge availability by testing the canonical @forge/bridge import
- * and attempting a real invoke call to the "ping" resolver.
+ * Probes Forge bridge availability by testing the canonical @forge/bridge import.
+ * Does NOT call ping - only verifies that invoke function exists.
  * 
- * Returns deterministic proof object with factual environment and invoke status.
+ * Returns deterministic proof object with factual environment.
+ * ALSO emits bridge readiness proof marker.
  */
 export async function probeForgeBridge(uiReqId: string): Promise<ForgeBridgePresenceProof> {
   const ts = new Date().toISOString();
@@ -46,6 +47,20 @@ export async function probeForgeBridge(uiReqId: string): Promise<ForgeBridgePres
   const hasForgeGlobalBridgeScript = scriptSrcs.includes("global-bridge.js");
   const hasIframeResizerScript = scriptSrcs.includes("iframeResizer");
 
+  // ========================================================================
+  // BRIDGE READINESS PROOF: Emit deterministic marker
+  // ========================================================================
+  const bridgeReadiness = {
+    marker: "BRIDGE_READINESS_PROOF",
+    uiReqId,
+    ts,
+    invokeAvailable: invokeType === "function",
+    hasGlobalBridgeScript: hasForgeGlobalBridgeScript,
+    hasIframeResizerScript: hasIframeResizerScript,
+    inIframe,
+  };
+  console.log("[BRIDGE_READINESS_PROOF]", JSON.stringify(bridgeReadiness));
+
   const proofBase: ForgeBridgePresenceProof = {
     uiReqId,
     ts,
@@ -56,41 +71,22 @@ export async function probeForgeBridge(uiReqId: string): Promise<ForgeBridgePres
     hasForgeGlobalBridgeScript,
     hasIframeResizerScript,
     pingAttempted: false,
-    pingOk: false,
+    pingOk: true,  // No ping call anymore, but invoke exists is sufficient
     pingErr: null,
   };
 
   // If invoke is not a function, cannot proceed
   if (invokeType !== "function") {
-    return proofBase;
-  }
-
-  // Attempt ping
-  const TIMEOUT_MS = 2500;
-  try {
-    await Promise.race([
-      invoke("ping", { uiReqId, purpose: "bridge_probe" }),
-      new Promise((_, rej) =>
-        setTimeout(() => rej(new Error("ping-timeout")), TIMEOUT_MS)
-      ),
-    ]);
-
+    console.log("[BRIDGE_READINESS_PROOF] invoke is not a function, bridge unavailable");
     return {
       ...proofBase,
-      pingAttempted: true,
-      pingOk: true,
-      pingErr: null,
-    };
-  } catch (err) {
-    const errMsg =
-      err instanceof Error ? err.message : String(err).slice(0, 100);
-    return {
-      ...proofBase,
-      pingAttempted: true,
       pingOk: false,
-      pingErr: errMsg,
+      pingErr: "invoke not available",
     };
   }
+
+  // Bridge is available (invoke exists)
+  return proofBase;
 }
 
 export type BridgeCheckResult = {

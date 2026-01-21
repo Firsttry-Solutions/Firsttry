@@ -116,7 +116,8 @@ describe('BACKBONE_LAYER_0: Resolver Registry Matches UI Invokes', () => {
 
     if (shaMatch) {
       const injectedSha = shaMatch[1];
-      const shaFormatOk = /^[0-9a-f]{7}$/.test(injectedSha) || injectedSha === '<INJECTED_GIT_SHA>';
+      // Allow 7-12 hex chars (short SHA formats)
+      const shaFormatOk = /^[0-9a-f]{7,12}$/.test(injectedSha) || injectedSha === '<INJECTED_GIT_SHA>';
 
       expect(shaFormatOk).toBe(true);
 

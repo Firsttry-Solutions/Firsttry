@@ -47,13 +47,14 @@ describe('Bridge Runtime Probe (Phase 3 - No require)', () => {
   });
 
   /**
-   * TEST 3: probeForgeBridge() must exist and perform real invoke ping
-   * This function probes the actual bridge capability.
+   * TEST 3: probeForgeBridge() must exist and verify invoke availability
+   * Does NOT call ping - only checks that invoke function exists (Phase 6-7 fix)
    */
   it('must export probeForgeBridge() function with correct signature', () => {
     const fileContent = fs.readFileSync(bridgeCheckFile, 'utf-8');
     expect(fileContent).toContain('export async function probeForgeBridge');
-    expect(fileContent).toContain('invoke("ping"');
+    // Ping call removed in Phase 6-7, so check for bridge availability check instead
+    expect(fileContent).toContain('invokeType === "function"');
   });
 
   /**
@@ -108,11 +109,12 @@ describe('Bridge Runtime Probe (Phase 3 - No require)', () => {
   });
 
   /**
-   * TEST 8: Ping resolver name must be "ping" (not invented)
-   * Using the existing resolver contract.
+   * TEST 8: Bridge probe must NOT call ping resolver (Phase 6-7 fix)
+   * Only checks that invoke function exists, doesn't make ping calls.
    */
-  it('must use existing "ping" resolver for probe', () => {
+  it('must NOT invoke ping resolver (removed in Phase 6-7)', () => {
     const fileContent = fs.readFileSync(bridgeCheckFile, 'utf-8');
-    expect(fileContent).toContain('invoke("ping"');
+    // Ping call should be removed, so this should NOT contain the invoke("ping" pattern
+    expect(fileContent).not.toContain('invoke("ping"');
   });
 });

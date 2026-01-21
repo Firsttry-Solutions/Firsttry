@@ -40,6 +40,7 @@ import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
 import { nowUtcIso } from './backbone/time';
+import { dashOk, dashErr } from './shared/dashEnvelopeV1';
 
 // Create single canonical resolver instance
 const resolver = new Resolver();
@@ -115,7 +116,7 @@ async function ft_getDashboardState_v1(request: any): Promise<any> {
     
     assertNoUnknownStrings(dashboardData);
     
-    // PHASE 4: Backend canonical envelope (v1)
+    // BACKBONE #2: Use dashEnvelopeV1 to guarantee schemaVersion='v1'
     console.log('[BACKEND_DASH_STATE_ENVELOPE]', {
       ok: true,
       schemaVersion: 'v1',
@@ -123,60 +124,40 @@ async function ft_getDashboardState_v1(request: any): Promise<any> {
       mode: dashboardData.mode ?? null,
     });
     
-    return {
-      ok: true,
-      schemaVersion: 'v1',
+    return dashOk({
       data: dashboardData,
-    };
+      meta: {
+        backend_build_sha: undefined, // Will use BACKEND_BUILD_SHA
+        ui_build_sha: null,
+        ui_req_id: requestId || 'UNSET',
+        probe_nonce: null,
+        ts_utc: now,
+      },
+    });
   } catch (e) {
     const now_error = nowUtcIso();
-    const errorData = {
-      ok: false,
-      resolver: "ft_getDashboardState_v1",
-      step: "storage_error",
-      now_utc: now_error,
-      request_id: requestId,
-      build_sha_backend: null,
-      storage_state: "ERROR" as const,
-      status: "FAILED" as const,
-      reason_code: FtReasonCode.NO_LEDGER,
-      ledger: {
-        version: 1 as const,
-        install_id: "ERROR",
-        installed_at_utc: now_error,
-        build_sha_last_seen_ui: null,
-        build_sha_last_seen_backend: null,
-        storage_verified_at_utc: null,
-        scheduler_last_attempt_at_utc: null,
-        scheduler_last_success_at_utc: null,
-        scheduler_consecutive_failures: 0,
-        scheduler_last_error: {
-          code: FtErrorCode.STORAGE_READ_FAILED,
-          step: "loadOrInitLedger",
-          message_short: e instanceof Error ? e.message.slice(0, 180) : String(e).slice(0, 180),
-          request_id: requestId,
-          at_utc: now_error,
-        },
-        snapshot_count: 0,
-        snapshot_last_id: null,
-        snapshot_last_at_utc: null,
-        snapshot_last_build_sha: null,
-        snapshot_last_hash: null,
-      },
-    };
+    const errorMessage = e instanceof Error ? e.message : String(e);
     
-    // PHASE 4: Backend canonical envelope for errors
+    // BACKBONE #2: Use dashEnvelopeV1 to guarantee schemaVersion='v1' even on error
     console.log('[BACKEND_DASH_STATE_ENVELOPE_ERROR]', {
       ok: false,
       schemaVersion: 'v1',
       error: { code: FtErrorCode.STORAGE_READ_FAILED, message: 'Storage error' },
     });
     
-    return {
-      ok: false,
-      schemaVersion: 'v1',
-      error: { code: FtErrorCode.STORAGE_READ_FAILED, message: e instanceof Error ? e.message : String(e) },
-    };
+    return dashErr({
+      error: {
+        code: FtErrorCode.STORAGE_READ_FAILED,
+        message: errorMessage.slice(0, 180),
+      },
+      meta: {
+        backend_build_sha: undefined,
+        ui_build_sha: null,
+        ui_req_id: requestId || 'UNSET',
+        probe_nonce: null,
+        ts_utc: now_error,
+      },
+    });
   }
 }
 

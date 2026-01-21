@@ -16,8 +16,9 @@
     "verify:source:anchor-unique": "bash tools/verify_source_identity_anchor_unique.sh",
     "verify:bundle:integrity": "bash tools/verify_bundle_integrity.sh --bundle-file src/gadget-ui/dist/app.*.js",
     "verify:gates:selftest": "bash tools/test_gates_selftest.sh",
-    "build:gadget": "npm run verify:bridge-installed && npm run verify:required-files && node tools/build_meta.mjs && cd src/gadget-ui && npm install && npm run build && cd ../.. && npm run verify:ui:no-fatal-dist && npm run verify:ui:no-top-level-throw && npm run verify:ui:no-legacy-states && npm run verify:dist:invoke-allowlist && npm run verify:dist:identity-labels && npm run verify:source:anchor-unique && npm run verify:bundle:integrity && npm run verify:gates:selftest && npm run verify:lockfile:clean",
-    "test": "vitest run",
+    "verify:ui:no-runtime-meta": "bash tools/verify_no_runtime_build_meta_import.sh",
+    "build:gadget": "npm run verify:bridge-installed && npm run verify:required-files && npm run verify:ui:no-runtime-meta && node tools/build_meta.mjs && node tools/gen_ui_build_meta.mjs && cd src/gadget-ui && npm ci && npm run build && cd ../.. && npm run verify:ui:no-fatal-dist && npm run verify:ui:no-top-level-throw && npm run verify:ui:no-legacy-states && npm run verify:dist:invoke-allowlist && npm run verify:dist:identity-labels && npm run verify:source:anchor-unique && npm run verify:bundle:integrity && npm run verify:gates:selftest && npm run verify:lockfile:clean",
+    "test": "npm run verify:ui:no-runtime-meta && vitest run",
     "test:watch": "vitest",
     "test:operator:full": "vitest run tests/operator_verification/ov_runner.test.ts && npx ts-node tests/operator_verification/ov_report_gen.ts",
     "test:credibility": "vitest run tests/credibility/gap1_pii_logging.test.ts tests/credibility/gap2_tenant_isolation_adversarial.test.ts tests/credibility/gap3_egress_static_and_runtime.test.ts tests/credibility/gap4_concurrency_idempotency.test.ts tests/credibility/gap5_determinism_10_runs.test.ts tests/credibility/gap6_storage_growth_quota_behavior.test.ts tests/credibility/gap7_support_incident_reality.test.ts",
@@ -42,7 +43,11 @@
     "csp:lint": "node tools/csp_forbid_check.js",
     "csp:gate": "bash tools/csp_static_gate.sh",
     "verify:backbone:l0": "bash tools/proof_backbone_l0.sh",
-    "verify:lockfile:clean": "git diff --exit-code package-lock.json || (echo 'ERROR: package-lock.json has uncommitted changes (lockfile drift detected)' && exit 1)"
+    "verify:lockfile:clean": "git diff --exit-code package-lock.json || (echo 'ERROR: package-lock.json has uncommitted changes (lockfile drift detected)' && exit 1)",
+    "diag:dashboard": "node e2e/scripts/phase5_dashboard_diagnose.mjs",
+    "prod:deploy-and-upgrade": "bash tools/prod_deploy_and_upgrade.sh",
+    "test:prod-dashboard": "cd ../../e2e && xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24' npx playwright test tests/prod_dashboard_green.spec.ts",
+    "prod:ship-and-verify": "npm run prod:deploy-and-upgrade && npm run test:prod-dashboard"
   },
   "devDependencies": {
     "@types/node": "^20.19.30",

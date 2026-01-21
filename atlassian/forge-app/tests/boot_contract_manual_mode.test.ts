@@ -103,7 +103,7 @@ describe("Boot State + Contract Invariants", () => {
       expect(empty.schedulerConfigured).toBe(false);
       expect(empty.expectedScheduleIntervalMinutes).toBeNull();
       expect(empty.staleIfAgeMinutesGreaterThan).toBeNull();
-      expect(empty.freshnessStatus).toBe("NOT_AVAILABLE");
+      expect(empty.freshnessStatus).toBe("AGING");  // Phase 6-7: NOT_AVAILABLE → AGING
     });
 
     it("EMPTY_STATUS_V1 has no snapshots", () => {
@@ -175,14 +175,14 @@ describe("Boot State + Contract Invariants", () => {
   });
 
   describe("No snapshot contract", () => {
-    it("when snapshots.retainedCount=0, freshness must be NOT_AVAILABLE", () => {
+    it("when snapshots.retainedCount=0, freshness must be AGING", () => {
       const empty = EMPTY_STATUS_V1(TENANT_ARI, BACKEND_BUILD, UI_BUILD);
 
       expect(empty.snapshots.retainedCount).toBe(0);
-      expect(empty.freshnessStatus).toBe("NOT_AVAILABLE");
+      expect(empty.freshnessStatus).toBe("AGING");  // Phase 6-7: NOT_AVAILABLE → AGING
     });
 
-    it("normalized status with 0 snapshots has NOT_AVAILABLE freshness", () => {
+    it("normalized status with 0 snapshots has AGING freshness", () => {
       const input: any = {
         schemaVersion: "1",
         generatedAt: new Date().toISOString(),

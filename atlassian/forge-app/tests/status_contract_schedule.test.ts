@@ -100,6 +100,6 @@ describe("Scheduler Contract (UI/Backend Consistency)", () => {
     // Should return EMPTY_STATUS_V1-like safe defaults
     expect(normalized.schedulerConfigured).toBe(false);
     expect(normalized.expectedScheduleIntervalMinutes).toBeNull();
-    expect(normalized.health).toBe("UNKNOWN");
+    expect(normalized.health).toBe("ERROR");  // Phase 6-7: Fail-closed (no UNKNOWN)
   });
 });

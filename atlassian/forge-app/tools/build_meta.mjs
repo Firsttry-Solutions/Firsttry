@@ -3,10 +3,11 @@
  * build_meta.mjs — Compute build metadata (cross-platform, no bash dependency)
  *
  * Computes:
- *  - FT_BUILD_SHA: git commit short SHA (7 chars)
+ *  - FT_BUILD_SHA: git commit short SHA (12 chars for backward compat)
+ *  - UI_GIT_SHA: full git commit SHA (40 chars for UI runtime identity)
  *  - FT_BUILD_TIME_UTC: ISO 8601 timestamp (UTC, no milliseconds)
  *
- * Exports to: tools/.build_meta.json
+ * Exports to: tools/.build_meta.json (backend) and src/gadget-ui/src/build/ui_build_meta.json (UI)
  * Usage: node tools/build_meta.mjs && source tools/.build_meta.sh
  *        (or read .build_meta.json for programmatic access)
  */
@@ -20,9 +21,23 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function gitShaShort() {
   try {
-    return execSync('git rev-parse --short=7 HEAD', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+    return execSync('git rev-parse --short=12 HEAD', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
   } catch (e) {
-    console.error('❌ Failed to compute git SHA:', e.message);
+    console.error('❌ Failed to compute git SHA (short):', e.message);
+    process.exit(1);
+  }
+}
+
+function gitShaFull() {
+  try {
+    const sha = execSync('git rev-parse HEAD', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+    if (!sha || sha.length !== 40) {
+      console.error(`❌ Failed to compute full git SHA: expected 40 chars, got ${sha ? sha.length : 0}`);
+      process.exit(1);
+    }
+    return sha;
+  } catch (e) {
+    console.error('❌ Failed to compute git SHA (full):', e.message);
     process.exit(1);
   }
 }
@@ -35,6 +50,7 @@ function utcIsoNoMillis() {
 
 const meta = {
   FT_BUILD_SHA: gitShaShort(),
+  UI_GIT_SHA: gitShaFull(),
   FT_BUILD_TIME_UTC: utcIsoNoMillis(),
 };
 
@@ -43,6 +59,7 @@ const jsonPath = path.join(__dirname, '.build_meta.json');
 fs.writeFileSync(jsonPath, JSON.stringify(meta, null, 2));
 console.log(`✅ Wrote metadata to ${jsonPath}`);
 console.log(`   FT_BUILD_SHA=${meta.FT_BUILD_SHA}`);
+console.log(`   UI_GIT_SHA=${meta.UI_GIT_SHA}`);
 console.log(`   FT_BUILD_TIME_UTC=${meta.FT_BUILD_TIME_UTC}`);
 
 // Write shell script (for cross-env/shell compatibility)
@@ -168,7 +185,7 @@ try {
 // UI LAYER 0: Write ui_build_meta.json with build metadata for Vite
 // ============================================================================
 // File: src/gadget-ui/src/build/ui_build_meta.json
-// This ensures UI build SHA is available at Vite config time (not runtime)
+// This ensures UI_GIT_SHA is available at Vite config time (not runtime)
 // and is fail-closed in production (throws if missing or invalid)
 
 const uiBuildDir = path.join(__dirname, '..', 'src', 'gadget-ui', 'src', 'build');
@@ -180,8 +197,8 @@ if (!fs.existsSync(uiBuildDir)) {
 }
 
 const uiBuildMeta = {
-  FT_BUILD_SHA: meta.FT_BUILD_SHA,
-  FT_BUILD_TIME_UTC: meta.FT_BUILD_TIME_UTC,
+  UI_GIT_SHA: meta.UI_GIT_SHA,
+  UI_GIT_TIME: meta.FT_BUILD_TIME_UTC,
 };
 
 fs.writeFileSync(uiBuildMetaPath, JSON.stringify(uiBuildMeta, null, 2));
@@ -192,32 +209,31 @@ try {
   const writtenJson = fs.readFileSync(uiBuildMetaPath, 'utf8');
   const parsed = JSON.parse(writtenJson);
   
-  // Check 1: FT_BUILD_SHA must exist in parsed JSON
-  if (!parsed.FT_BUILD_SHA) {
-    console.error('❌ UI INJECTION FAILED: FT_BUILD_SHA missing from ui_build_meta.json');
+  // Check 1: UI_GIT_SHA must exist and be exactly 40 hex chars
+  if (!parsed.UI_GIT_SHA) {
+    console.error('❌ UI INJECTION FAILED: UI_GIT_SHA missing from ui_build_meta.json');
     process.exit(1);
   }
   
-  // Check 2: FT_BUILD_SHA must match hex regex (same as backend: 7-40 hex chars)
-  const hexRegex = /^[0-9a-f]{7,40}$/;
-  if (!hexRegex.test(parsed.FT_BUILD_SHA)) {
-    console.error(`❌ UI INJECTION FAILED: FT_BUILD_SHA "${parsed.FT_BUILD_SHA}" does not match /^[0-9a-f]{7,40}$/`);
+  const fullShaRegex = /^[0-9a-f]{40}$/;
+  if (!fullShaRegex.test(parsed.UI_GIT_SHA)) {
+    console.error(`❌ UI INJECTION FAILED: UI_GIT_SHA "${parsed.UI_GIT_SHA}" must be exactly 40 hex chars, got ${parsed.UI_GIT_SHA.length}`);
     process.exit(1);
   }
   
-  // Check 3: Verify it matches what we wrote
-  if (parsed.FT_BUILD_SHA !== meta.FT_BUILD_SHA) {
-    console.error(`❌ UI INJECTION FAILED: Mismatch. Expected ${meta.FT_BUILD_SHA}, got ${parsed.FT_BUILD_SHA}`);
+  // Check 2: Verify it matches what we wrote
+  if (parsed.UI_GIT_SHA !== meta.UI_GIT_SHA) {
+    console.error(`❌ UI INJECTION FAILED: Mismatch. Expected ${meta.UI_GIT_SHA}, got ${parsed.UI_GIT_SHA}`);
     process.exit(1);
   }
   
-  // Check 4: FT_BUILD_TIME_UTC must also exist
-  if (!parsed.FT_BUILD_TIME_UTC) {
-    console.error('❌ UI INJECTION FAILED: FT_BUILD_TIME_UTC missing from ui_build_meta.json');
+  // Check 3: UI_GIT_TIME must also exist
+  if (!parsed.UI_GIT_TIME) {
+    console.error('❌ UI INJECTION FAILED: UI_GIT_TIME missing from ui_build_meta.json');
     process.exit(1);
   }
   
-  console.log(`✅ Verified ui_build_meta.json with FT_BUILD_SHA="${parsed.FT_BUILD_SHA}" (verified)`);
+  console.log(`✅ Verified ui_build_meta.json with UI_GIT_SHA="${parsed.UI_GIT_SHA}" (40-hex confirmed)`);
 } catch (err) {
   console.error(`❌ UI VERIFICATION FAILED: Could not verify ui_build_meta.json injection: ${err.message}`);
   process.exit(1);
