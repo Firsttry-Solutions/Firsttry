@@ -1,0 +1,95 @@
+name: CI Core - Forge App Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "atlassian/forge-app/**"
+      - "tools/**"
+      - "docs/**"
+      - ".github/workflows/**"
+      - ".github/scripts/**"
+  push:
+    paths:
+      - "atlassian/forge-app/**"
+      - "tools/**"
+      - "docs/**"
+      - ".github/workflows/**"
+      - ".github/scripts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forge-app-tests:
+    name: Forge App Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "atlassian/forge-app/package-lock.json"
+
+      - name: Install dependencies (forge-app)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          if [ ! -f package-lock.json ]; then
+            echo "ERROR: package-lock.json not found"
+            echo "Reproducible installs require a lockfile."
+            echo "Run: npm install (to generate lockfile)"
+            exit 1
+          fi
+          npm ci
+
+      - name: Run cold-install proof (deterministic validation)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/prove_clean_install.sh
+
+      - name: Verify lockfile integrity (detect drift)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          git diff --exit-code package-lock.json || {
+            echo "ERROR: package-lock.json has uncommitted changes (lockfile drift detected)"
+            echo "This typically happens when npm ci or gadget-ui npm install modifies the lockfile."
+            echo "Fix: Review the diff and commit the updated lockfile if intentional."
+            git diff package-lock.json
+            exit 1
+          }
+
+      - name: Verify UI naming contract (enforce non-bypassable)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/verify_ui_naming_contract.sh
+
+      - name: Verify Layer-0 Backbone infrastructure (non-bypassable gate)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          npm run verify:backbone:l0
+
+      - name: Run tests (forge-app)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          npm test
+
+      - name: Validate docs (optional)
+        run: |
+          set -euo pipefail
+          if [ -f tools/validate_docs.sh ]; then
+            bash tools/validate_docs.sh
+          else
+            echo "[SKIP] tools/validate_docs.sh not found"
+          fi

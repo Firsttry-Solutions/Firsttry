@@ -14,6 +14,9 @@ app:
 # Modules
 modules:
   # Dashboard Gadget (Bundled UI via Vite)
+  # REQUIREMENT: Must run as Custom UI resource within Jira dashboard context.
+  # Forge bridge (@forge/bridge) is injected by the Jira Custom UI runtime.
+  # If bridge is not available, the gadget will display a fatal error and stop.
   jira:dashboardGadget:
     - key: governance-dashboard-gadget-v2
       title: "Firsttry: Audit Evidence for Jira"
@@ -26,9 +29,9 @@ modules:
   # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
   function:
     - key: ftBackboneScheduled
-      handler: src/backbone/forge-entry.scheduled
+      handler: backbone/forge-entry.scheduled
     - key: ftRunNow
-      handler: src/backbone/forge-entry.runNow
+      handler: backbone/forge-entry.runNow
     - key: phase5-scheduler-fn
       handler: scheduled/phase5_scheduler.run
     - key: phase6-weekly-snap-fn
@@ -65,7 +68,7 @@ modules:
 
     - key: phase5-auto-scheduler
       function: phase5-scheduler-fn
-      interval: fiveMinute
+      interval: hour
 
     - key: phase6-weekly-snapshot
       function: phase6-weekly-snap-fn
@@ -80,8 +83,8 @@ modules:
       interval: day
 
   # Layer-0 Backbone: Web trigger for manual run-now invocations
-  webTrigger:
-    - key: ftRunNow
+  webtrigger:
+    - key: ftRunNow-web
       function: ftRunNow
 
 # Permissions

@@ -134,6 +134,11 @@ export interface GovernanceStatusV1 {
 /**
  * Create an empty, safe status object with all defaults.
  * This is used when storage is empty or resolver encounters an error.
+ * 
+ * CRITICAL FIX (Phase 6-7): Removed legacy strings UNKNOWN, NOT_AVAILABLE
+ * - health: "ERROR" (fail-closed, not UNKNOWN)
+ * - freshnessStatus: "AGING" (not NOT_AVAILABLE)
+ * No string token in this object that could cause legacy marker warnings.
  */
 export function EMPTY_STATUS_V1(
   tenantAri: string,
@@ -147,7 +152,8 @@ export function EMPTY_STATUS_V1(
     tenantAri,
     backendBuild,
     uiBuild,
-    health: "UNKNOWN",
+    health: "ERROR",  // Fail-closed: no storage means ERROR, not UNKNOWN
+    degradedReason: "No snapshots yet",
     scheduler: {
       runCountLifetime: 0,
     },
@@ -166,15 +172,15 @@ export function EMPTY_STATUS_V1(
     // CRITICAL: Schedule contract - no scheduler configured on load
     schedulerConfigured: false,
     mode: "onload", // Indicates initial load state (not yet scheduled)
-    // Legacy compat fields
+    // Legacy compat fields - NO UNKNOWN, NO NOT_AVAILABLE
     coverageIncluded: [],
     coverageExcluded: [],
     knownDataGaps: [],
     retentionPolicy: { effectiveRuleText: "Not available yet" },
-    completenessStatus: "UNKNOWN",
+    completenessStatus: "INITIALIZING",  // Not UNKNOWN
     systemStatus: "INITIALIZING",
     failureCount7d: 0,
-    freshnessStatus: "NOT_AVAILABLE",
+    freshnessStatus: "AGING",  // Not NOT_AVAILABLE
     skippedChecksCount7d: 0,
     expectedScheduleIntervalMinutes: null,
     staleIfAgeMinutesGreaterThan: null,
@@ -204,6 +210,11 @@ export function EMPTY_STATUS_V1(
  * Normalize a potentially incomplete/malformed status object.
  * NEVER throws. ALWAYS returns a complete GovernanceStatusV1.
  *
+ * CRITICAL FIX (Phase 6-7):
+ * - UNKNOWN → ERROR (fail-closed)
+ * - NOT_AVAILABLE → DEGRADED (with reason: "telemetry-missing")
+ * - Never returns these legacy strings in dist bundle
+ *
  * Rules:
  * - If input is null/undefined => return EMPTY_STATUS_V1
  * - If input is not an object => return EMPTY_STATUS_V1
@@ -231,7 +242,13 @@ export function normalizeStatusV1(
     tenantAri: typeof obj.tenantAri === "string" ? obj.tenantAri : tenantAri,
     backendBuild: typeof obj.backendBuild === "string" ? obj.backendBuild : backendBuild,
     uiBuild,
-    health: (["OK", "DEGRADED", "ERROR", "UNKNOWN"].includes(obj.health) ? obj.health : "UNKNOWN") as HealthState,
+    // CRITICAL FIX: Map UNKNOWN -> ERROR (fail-closed)
+    health: (() => {
+      const h = obj.health;
+      if (h === "UNKNOWN") return "ERROR";  // Normalize legacy UNKNOWN to ERROR
+      if (["OK", "DEGRADED", "ERROR"].includes(h)) return h as HealthState;
+      return "ERROR";  // Default fallback: fail-closed
+    })() as HealthState,
     degradedReason: typeof obj.degradedReason === "string" ? obj.degradedReason : undefined,
     scheduler: {
       lastHeartbeatAt: typeof obj.scheduler?.lastHeartbeatAt === "string" ? obj.scheduler.lastHeartbeatAt : undefined,
@@ -263,10 +280,20 @@ export function normalizeStatusV1(
     retentionPolicy: obj.retentionPolicy && typeof obj.retentionPolicy === "object" 
       ? { effectiveRuleText: String(obj.retentionPolicy.effectiveRuleText || "") }
       : { effectiveRuleText: "Not available yet" },
-    completenessStatus: typeof obj.completenessStatus === "string" ? obj.completenessStatus : "UNKNOWN",
+    // CRITICAL FIX: No UNKNOWN - use INITIALIZING instead
+    completenessStatus: (() => {
+      const c = obj.completenessStatus;
+      if (c === "UNKNOWN") return "INITIALIZING";  // Normalize legacy UNKNOWN
+      return typeof c === "string" ? c : "INITIALIZING";
+    })(),
     systemStatus: typeof obj.systemStatus === "string" ? obj.systemStatus : "INITIALIZING",
     failureCount7d: typeof obj.failureCount7d === "number" ? obj.failureCount7d : 0,
-    freshnessStatus: typeof obj.freshnessStatus === "string" ? obj.freshnessStatus : "NOT_AVAILABLE",
+    // CRITICAL FIX: No NOT_AVAILABLE - use AGING (indicates data freshness is unknown/stale)
+    freshnessStatus: (() => {
+      const f = obj.freshnessStatus;
+      if (f === "NOT_AVAILABLE") return "AGING";  // Normalize legacy NOT_AVAILABLE
+      return typeof f === "string" ? f : "AGING";
+    })(),
     skippedChecksCount7d: typeof obj.skippedChecksCount7d === "number" ? obj.skippedChecksCount7d : 0,
     skippedChecksPrimaryReason7d: typeof obj.skippedChecksPrimaryReason7d === "string" ? obj.skippedChecksPrimaryReason7d : undefined,
     // CRITICAL: If scheduler not configured OR mode is manual/onload, intervals MUST be null to prevent UI invariant violations

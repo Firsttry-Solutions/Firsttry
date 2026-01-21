@@ -1,0 +1,5 @@
+f83a0d90 ci(proof): failure injection to confirm STEP PD blocks merges (TEMP)
+1ce1fd96 ci: restore policy drift enforcement to root CI
+10fc89a9 ci: enforce reproducible forge-app installs - single source of truth (prove_clean_install.sh) + root workflows only + orphaned nested workflows removed
+0eebbea2 ci: enforce forge-app reproducible installs via prove_clean_install.sh (npm ci + lockfile drift)
+5ea36cc0 hardening: reproducible cold install (npm ci) + CI enforcement + lockfile drift gate + proof script

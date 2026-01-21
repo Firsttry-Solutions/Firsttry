@@ -9,8 +9,6 @@
  * 5. Confidence signal absence (completeness%, window, confidence on all metrics)
  */
 
-import { describe, it, expect } from 'vitest';
-
 // ============================================================================
 // INLINED TYPES (No imports to avoid dependency issues)
 // ============================================================================
@@ -424,14 +422,23 @@ gaps.forEach((gap) => {
 
 console.log('\n' + '='.repeat(80) + '\n');
 
+
 if (failedTests.length > 0) {
   throw new Error(`${failedTests.length} disclosure hardening tests failed`);
 }
 
-describe('Phase 4 - Disclosure Hardening Tests', () => {
-  it('validates all disclosure hardening tests pass', () => {
-    // All tests have already run at module load time and passed
-    // This wrapper test exists to satisfy vitest's requirement for test suites
-    expect(failedTests.length).toBe(0);
-  });
-});
+// Standalone mode: run immediately and exit
+(async () => {
+  try {
+    if (failedTests.length === 0) {
+      console.log('\n✅ DISCLOSURE HARDENING: ALL TESTS PASSED');
+      process.exit(0);
+    } else {
+      throw new Error(`${failedTests.length} tests failed`);
+    }
+  } catch (err) {
+    console.error('\n❌ DISCLOSURE HARDENING: TEST FAILED');
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+})();

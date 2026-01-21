@@ -1,0 +1,60 @@
+[1;33m[COLD_INSTALL_PROOF][0m Starting deterministic cold install...
+[1;33m[COLD_INSTALL_PROOF][0m Working directory: /workspaces/Firsttry/atlassian/forge-app
+
+[1;33m[ENVIRONMENT][0m Node version: v20.20.0
+[1;33m[ENVIRONMENT][0m npm version: 10.8.2
+
+[1;33m[STEP 1][0m Removing node_modules...
+[0;32m✓[0m node_modules removed
+
+[1;33m[STEP 2][0m Clearing npm cache...
+npm warn using --force Recommended protections disabled.
+[0;32m✓[0m npm cache cleared
+
+[1;33m[STEP 3][0m Verifying package-lock.json exists...
+[0;32m✓[0m package-lock.json found (125052 bytes)
+
+[1;33m[STEP 4][0m Running 'npm ci' (deterministic install from lockfile)...
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+npm warn deprecated jpeg-exif@1.1.4: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+
+added 224 packages, and audited 225 packages in 4s
+
+52 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+[0;32m✓[0m npm ci succeeded (1360 directories)
+
+[1;33m[STEP 5][0m Running 'npm test' (full test suite)...
+[31m+ false[39m
+
+[36m [2m❯[22m tests/p1_policy_drift.test.ts:[2m509:43[22m[39m
+    [90m507| [39m    [34mit[39m([32m'should have GitHub Actions workflow configured'[39m[33m,[39m () [33m=>[39m {
+    [90m508| [39m      const workflowPath = path.join(__dirname, '../.github/workflows/…
+    [90m509| [39m      [34mexpect[39m(fs[33m.[39m[34mexistsSync[39m(workflowPath))[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                          [31m^[39m
+    [90m510| [39m
+    [90m511| [39m      [35mconst[39m content [33m=[39m fs[33m.[39m[34mreadFileSync[39m(workflowPath[33m,[39m [32m'utf8'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/p1_policy_drift.test.ts[2m > [22mP1.5: Policy Drift Protection (Negative Validation)[2m > [22mCI Integration Validation[2m > [22mshould require documentation update when baseline changes
+[31m[1mError[22m: ENOENT: no such file or directory, open '/workspaces/Firsttry/atlassian/forge-app/.github/workflows/policy-drift-gate.yml'[39m
+[36m [2m❯[22m tests/p1_policy_drift.test.ts:[2m520:26[22m[39m
+    [90m518| [39m    it('should require documentation update when baseline changes', ()…
+    [90m519| [39m      const workflowPath = path.join(__dirname, '../.github/workflows/…
+    [90m520| [39m      [35mconst[39m content [33m=[39m fs[33m.[39m[34mreadFileSync[39m(workflowPath[33m,[39m [32m'utf8'[39m)[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m521| [39m
+    [90m522| [39m      [34mexpect[39m(content)[33m.[39m[34mtoContain[39m([32m'baseline_modified'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m139 passed[39m[22m[90m (140)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m1714 passed[39m[22m[90m (1716)[39m
+[2m   Start at [22m 17:17:30
+[2m   Duration [22m 26.18s[2m (transform 1.93s, setup 1.20s, import 3.30s, tests 4.00s, environment 19ms)[22m
+
+[0;31m✗ FAIL: npm test failed[0m

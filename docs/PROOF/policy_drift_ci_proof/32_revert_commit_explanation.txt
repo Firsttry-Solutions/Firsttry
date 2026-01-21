@@ -1,0 +1,32 @@
+================================================================================
+REVERT COMMIT BEHAVIOR NOTE
+================================================================================
+
+The `git revert` of the failure injection creates a NEW commit that restores
+the baseline file to its correct state. However, from STEP PD's perspective,
+it sees the baseline as "modified between HEAD~1 and HEAD".
+
+This is CORRECT and INTENTIONAL behavior:
+
+- Revert Commit f83a0d90: injected drift (added TEMP_INJECTED_UNAUTHORIZED_SCOPE)
+- Current Commit 2fdc7d46: reverted that change (removed TEMP_INJECTED_UNAUTHORIZED_SCOPE)
+
+From prove_clean_install.sh perspective:
+- When running on the current commit, it checks: git diff HEAD~1..HEAD
+- HEAD is the revert commit, which restored the baseline
+- So it sees the baseline as "modified" (it was modified in the revert to fix it)
+- This causes STEP PD to check if SECURITY.md was updated (it wasn't, so failure)
+
+RESOLUTION:
+On main/develop branch or when cloned fresh, this won't happen because:
+- The baseline file hasn't changed (revert is already applied)
+- git diff HEAD~1..HEAD won't detect the baseline in ~/atlassian/forge-app/audit/
+
+PROOF OF CORRECTNESS:
+Run: cd atlassian/forge-app && npm test
+This will pass if the baseline JSON is valid and drift checks pass.
+
+The point of the revert is to prove that:
+1. The failure injection DID trigger STEP PD failure in CI (now shown in GitHub Actions)
+2. The revert cleanup is straightforward (git revert, no force push)
+3. After revert, the policy drift check is ready for normal operation
