@@ -134,13 +134,12 @@ describe('Probe Logging Contract (L1)', () => {
       }
     };
     
-    const response: any = await probe(req);
+    const response: TruthEnvelope<ProbeData> = await probe(req);
     
     expect(response.ok).toBe(true);
-    // BACKBONE #3: dashEnvelopeV1 structure has meta.backend_build_sha
-    expect(response.meta.backend_build_sha).toBeDefined();
-    expect(response.meta.backend_build_sha).not.toBe('unknown');
-    expect(response.meta.backend_build_sha.length).toBeGreaterThan(0);
+    expect(response.build.backendSha).toBeDefined();
+    expect(response.build.backendSha).not.toBe('unknown');
+    expect(response.build.backendSha.length).toBeGreaterThan(0);
   });
   
   it('should include backend probe nonce (server-side entropy)', async () => {
@@ -153,7 +152,7 @@ describe('Probe Logging Contract (L1)', () => {
       }
     };
     
-    const response: any = await probe(req);
+    const response: TruthEnvelope<ProbeData> = await probe(req);
     
     expect(response.ok).toBe(true);
     // Backend nonce is in logs (FT_PROBE_MARKER contains backend_probe_nonce)
@@ -188,36 +187,34 @@ describe('Probe Logging Contract (L1)', () => {
     
     for (const req of variants) {
       capturedLogs = [];
-      const response: any = await probe(req as any);
+      const response = await probe(req as any);
       expect(response.ok).toBe(true);
-      // BACKBONE #3: dashEnvelopeV1 structure has meta.ui_req_id (echoed back)
-      expect(response.meta.ui_req_id).toBeDefined();
+      expect(response.correlation.uiReqId).toBeDefined();
     }
   });
   
-  it('should include backend_build_sha in meta on error (with invalid context)', async () => {
+  it('should include backend_build_sha in build on error (with invalid context)', async () => {
     // Valid request but with invalid payload structure
     const req = { context: {} };
     
-    const response: any = await probe(req as any);
+    const response = await probe(req as any);
     // Note: probe might fail with MISSING_UI_REQ_ID or succeed with partial context
     if (!response.ok && response.error) {
-      expect(response.meta.backend_build_sha).toBeDefined();
-      expect(response.meta.backend_build_sha).not.toBe('unknown');
+      expect(response.build.backendSha).toBeDefined();
+      expect(response.build.backendSha).not.toBe('unknown');
     }
   });
   
-  it('should include trace_id on error', async () => {
+  it('should include trace_id_stable on error', async () => {
     const req = null;
     
-    const response: any = await probe(req as any);
+    const response: TruthEnvelope<ProbeData> = await probe(req as any);
     
     if (!response.ok && response.error) {
-      // BACKBONE #3: dashEnvelopeV1 error has structured error with traceId
-      expect(response.error.traceId).toBeDefined();
-      expect(response.error.traceId.length).toBeGreaterThan(0);
-      expect(response.error.traceId).not.toContain('UNSET');
-      expect(response.error.traceId).not.toContain('unknown');
+      expect(response.trace.traceId).toBeDefined();
+      expect(response.trace.traceId.length).toBeGreaterThan(0);
+      expect(response.trace.traceId).not.toContain('UNSET');
+      expect(response.trace.traceId).not.toContain('unknown');
     }
   });
   
