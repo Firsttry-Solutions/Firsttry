@@ -67,7 +67,7 @@ export const handler = resolver.getDefinitions();
 // LAYER-0 BACKBONE RESOLVERS (NEW)
 // ============================================================================
 
-async function ft_getDashboardState_v1(request: any): Promise<any> {
+export async function ft_getDashboardState_v1(request: any): Promise<any> {
   const event = request?.payload || {};
   const context = request?.context || {};
   const now = nowUtcIso();

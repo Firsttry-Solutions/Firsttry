@@ -28,6 +28,7 @@ import { ping } from "./ping";
 import { ensureFirstSnapshot } from "./ensureFirstSnapshot";
 import { probe } from "./probe"; // FORENSIC_PROBE
 import { exportTrustSnapshot as exportTrustSnapshot_resolver } from "./audit_snapshot_export";
+import { ft_getDashboardState_v1 } from "../gadget-resolver";
 import { BACKEND_BUILD_SHA } from "../build/backend_build";
 
 // ============================================================================
@@ -203,7 +204,8 @@ const ALLOWED_RESOLVERS: Record<string, (req: any) => Promise<any>> = {
   refreshNow: refreshNow_resolver,
   getBuildInfo: getBuildInfo_resolver,
   getSnapshotDebug: getSnapshotDebug_resolver,
-  getStatusSnapshot: getStatusSnapshot_resolver,
+  // BACKBONE LAYER-0: Dashboard envelope with marker (replaces old getStatusSnapshot)
+  getStatusSnapshot: ft_getDashboardState_v1,
   exportTrustSnapshot: exportTrustSnapshot_resolver
 };
 
