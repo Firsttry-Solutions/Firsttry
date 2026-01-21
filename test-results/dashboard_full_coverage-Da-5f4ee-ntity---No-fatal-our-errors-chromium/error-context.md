@@ -1,0 +1,254 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic:
+    - generic: "Skip to:"
+    - list:
+      - listitem:
+        - link "Top Bar":
+          - /url: "#_r0_"
+      - listitem:
+        - link "Sidebar":
+          - /url: "#_r3_"
+      - listitem:
+        - link "Main Content":
+          - /url: "#_r4_"
+  - generic [ref=e3]:
+    - banner:
+      - generic:
+        - generic [ref=e4]:
+          - button "Expand sidebar" [ref=e6] [cursor=pointer]:
+            - generic [ref=e8]: Expand sidebar
+          - generic [ref=e9]:
+            - button "Switch sites or apps" [ref=e11] [cursor=pointer]:
+              - generic [ref=e14]: Switch sites or apps
+            - link "Go to your Jira homepage" [ref=e16] [cursor=pointer]:
+              - /url: /jira
+              - generic [ref=e17]:
+                - img [ref=e20]
+                - generic [ref=e25]: Jira
+        - generic [ref=e26]:
+          - button [ref=e27] [cursor=pointer]:
+            - search [ref=e28]:
+              - combobox "Search, press enter to navigate to advanced search with your text query" [ref=e31]
+          - button "Create" [ref=e34] [cursor=pointer]:
+            - generic [ref=e37]: Create
+        - navigation "Actions" [ref=e38]:
+          - list [ref=e39]:
+            - listitem [ref=e40]:
+              - button "Rovo Ask Rovo" [ref=e41] [cursor=pointer]:
+                - img "Rovo" [ref=e43]:
+                  - img [ref=e44]
+                - generic [ref=e49]: Ask Rovo
+            - listitem [ref=e50]:
+              - button "Notifications" [ref=e53] [cursor=pointer]:
+                - generic [ref=e56]: Notifications
+            - listitem [ref=e59]:
+              - button "Help" [ref=e60] [cursor=pointer]:
+                - generic [ref=e63]: Help
+            - listitem [ref=e65]:
+              - button "Settings" [ref=e66] [cursor=pointer]:
+                - generic [ref=e69]: Settings
+            - listitem [ref=e70]:
+              - button "contact@firsttry.run" [ref=e71] [cursor=pointer]:
+                - img "Account" [ref=e73]
+    - main [ref=e74]:
+      - generic [ref=e78]:
+        - generic [ref=e80]:
+          - heading "FirstTry Solutions" [level=1] [ref=e85]
+          - generic [ref=e87]:
+            - button "Star FirstTry Solutions" [pressed] [ref=e90] [cursor=pointer]:
+              - img "Remove from Starred" [ref=e93]
+            - generic [ref=e94]:
+              - textbox [ref=e95]
+              - button "Copy link" [ref=e96] [cursor=pointer]
+            - button "Refresh" [ref=e99] [cursor=pointer]:
+              - generic [ref=e100]: Refresh
+            - link "Edit" [ref=e103] [cursor=pointer]:
+              - /url: /jira/dashboards/10102/edit
+              - generic [ref=e104]: Edit
+            - button "More dashboard actions" [ref=e107] [cursor=pointer]:
+              - img "More dashboard actions" [ref=e109]
+        - main [ref=e110]:
+          - generic [ref=e116]:
+            - generic [ref=e118]:
+              - 'heading "Firsttry: Audit Evidence for Jira" [level=2] [ref=e121]':
+                - generic [ref=e122]: "Firsttry: Audit Evidence for Jira"
+              - generic [ref=e123]:
+                - 'button "Minimize Firsttry: Audit Evidence for Jira" [ref=e124] [cursor=pointer]':
+                  - generic [ref=e127]: "Minimize Firsttry: Audit Evidence for Jira"
+                - 'button "Maximize Firsttry: Audit Evidence for Jira" [ref=e128] [cursor=pointer]':
+                  - generic [ref=e131]: "Maximize Firsttry: Audit Evidence for Jira"
+                - 'button "Refresh Firsttry: Audit Evidence for Jira" [ref=e132] [cursor=pointer]':
+                  - generic [ref=e135]: "Refresh Firsttry: Audit Evidence for Jira"
+                - generic [ref=e136]:
+                  - textbox [ref=e137]
+                  - button "Copy link" [ref=e138] [cursor=pointer]
+            - 'region "Firsttry: Audit Evidence for Jira Minimize Firsttry: Audit Evidence for Jira Maximize Firsttry: Audit Evidence for Jira Refresh Firsttry: Audit Evidence for Jira Copy link" [ref=e141]':
+              - iframe [ref=e147]:
+                - generic [active] [ref=f1e1]:
+                  - generic [ref=f1e3]:
+                    - strong [ref=f1e4]: "[UI_ENTRY_RUNTIME_PROOF]"
+                    - text: UI_ENTRY_BUNDLE_HASH=bccc32bd533ebd9ba43a858ab9288f4930bb1ff7 | UI_GIT_SHA=bccc32bd533ebd9ba43a858ab9288f4930bb1ff7 | ENTRY=NONE
+                    - text: "Scripts: https://forge.cdn.prod.atlassian-dev.net/global-bridge.js | https://forge.cdn.prod.atlassian-dev.net/iframeResizer.contentWindow.min.js | https://c4l4ns-2q1uv18efz-sh1kwc1nv--oxfszm-23it7npwcb-177z97oqnw.cdn.prod.atlassian-dev.net/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc/136e862e-e5be-4815-b5f5-386a2ead851f/32c6ab59-4e41-44d7-90de-df312cc16740/govGadget2141/_ctx_H4sIAAAAAAACAwVAMQqAMAz8y82lD-jqM8QhQ1oDMYXmHET8u7zQsTQTbT8KzpkMuRQN3VaS66lCl0yTqKFEgUVS3IU2Y5vRbaDF7f79yT7b20sAAAA/app.bccc32bd533ebd9ba43a858ab9288f4930bb1ff7.js"
+                  - generic [ref=f1e5]: "[UI_SERVE_OK] runtime=bccc32bd533ebd9ba43a858ab9288f4930bb1ff7 loaded=bccc32bd533ebd9ba43a858ab9288f4930bb1ff7 url=https://c4l4ns-2q1uv18efz-sh1kwc1nv--oxfszm-23it7npwcb-177z97oqnw.cdn.prod.atlassian-dev.net/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc/136e862e-e5be-4815-b5f5-386a2ead851f/32c6ab59-4e41-44d7-90de-df312cc16740/govGadget2141/_ctx_H4sIAAAAAAACAwVAMQqAMAz8y82lD-jqM8QhQ1oDMYXmHET8u7zQsTQTbT8KzpkMuRQN3VaS66lCl0yTqKFEgUVS3IU2Y5vRbaDF7f79yT7b20sAAAA/app.bccc32bd533ebd9ba43a858ab9288f4930bb1ff7.js uiReqId=ui_1769011683871_44b1de11"
+                  - generic [ref=f1e8]:
+                    - 'heading "Firsttry: Audit Evidence for Jira" [level=1] [ref=f1e9]'
+                    - paragraph [ref=f1e10]: Real-time operational visibility. Read-only monitoring of platform configuration and data quality.
+                    - generic [ref=f1e11]:
+                      - generic [ref=f1e12]: 📋 Scope Boundaries & Explicit Non-Goals
+                      - paragraph [ref=f1e13]: "This application is intentionally limited in scope. It does NOT:"
+                      - list [ref=f1e14]:
+                        - listitem [ref=f1e15]: Trigger background jobs
+                        - listitem [ref=f1e16]: Ingest external events
+                        - listitem [ref=f1e17]: Execute pipelines
+                        - listitem [ref=f1e18]: Mutate Jira or host product data
+                        - listitem [ref=f1e19]: Maintain audit trails or compliance snapshots
+                        - listitem [ref=f1e20]: Export trust, audit, or PDF artifacts
+                        - listitem [ref=f1e21]: Perform alerting, automation, or notifications
+                      - paragraph [ref=f1e22]: Any expansion of scope, if ever considered, would require explicit versioning, full disclosure, and re-review.
+                    - generic [ref=f1e23]:
+                      - button "Refresh now" [ref=f1e24] [cursor=pointer]
+                      - generic [ref=f1e25]: "Last: —"
+                    - group [ref=f1e27]:
+                      - generic "🔧 Diagnostics (UI Self-Test)" [ref=f1e28] [cursor=pointer]
+                    - generic [ref=f1e29]:
+                      - generic [ref=f1e30]: 🔬 Forensic Probe (Production Correlation Proof)
+                      - generic [ref=f1e31]:
+                        - button "Run Probe" [ref=f1e32] [cursor=pointer]
+                        - generic [ref=f1e33]: Ready
+                      - generic [ref=f1e34]: "[UNHANDLED_REJECTION] UI_BUILD_TIME_UTC is not defined ReferenceError: UI_BUILD_TIME_UTC is not defined at go (https://c4l4ns-2q1uv18efz-sh1kwc1nv--oxfszm-23it7npwcb-177z97oqnw.cdn.prod.atlassian-dev.net/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc/136e862e-e"
+                      - generic [ref=f1e35]:
+                        - generic [ref=f1e36]:
+                          - generic [ref=f1e37]: UI Req ID
+                          - generic [ref=f1e38]: —
+                        - generic [ref=f1e39]:
+                          - generic [ref=f1e40]: Probe Nonce
+                          - generic [ref=f1e41]: —
+                        - generic [ref=f1e42]:
+                          - generic [ref=f1e43]: Backend Build SHA
+                          - generic [ref=f1e44]: —
+                        - generic [ref=f1e45]:
+                          - generic [ref=f1e46]: Forge Env
+                          - generic [ref=f1e47]: —
+                        - generic [ref=f1e48]:
+                          - generic [ref=f1e49]: Grep Commands (Copy-Paste for Manual Verification)
+                          - generic [ref=f1e50]:
+                            - strong [ref=f1e52]: "UI Req ID Grep:"
+                            - code [ref=f1e53]: —
+                          - generic [ref=f1e54]:
+                            - strong [ref=f1e56]: "Nonce Grep (Definitive):"
+                            - code [ref=f1e57]: —
+                      - generic [ref=f1e58]:
+                        - strong [ref=f1e59]: "How to use:"
+                        - text: 1. Click "Run Probe" button above
+                        - text: 2. Copy the nonce grep command
+                        - text: "3. Run in terminal:"
+                        - code [ref=f1e60]: bash tools/probe_prod.sh --nonce <nonce>
+                        - text: 4. Script will output PASS (nonce found in logs) or FAIL (with diagnosis)
+                        - strong [ref=f1e61]: "Note:"
+                        - text: Nonce grep is definitive proof that backend processed the probe invocation.
+                    - generic [ref=f1e62]:
+                      - generic [ref=f1e63]: System Overview
+                      - generic [ref=f1e64]:
+                        - generic [ref=f1e65]:
+                          - generic [ref=f1e66]: System Status
+                          - generic [ref=f1e68]: INITIALIZING
+                        - generic [ref=f1e69]:
+                          - generic [ref=f1e70]: Mode
+                          - generic [ref=f1e71]: Scheduled monitoring (read-only)
+                        - generic [ref=f1e72]:
+                          - generic [ref=f1e73]: Last Successful Run
+                          - generic [ref=f1e74]: Awaiting first successful run
+                        - generic [ref=f1e75]:
+                          - generic [ref=f1e76]: Days of Continuous Operation
+                          - generic [ref=f1e77]: "0"
+                        - generic [ref=f1e78]:
+                          - generic [ref=f1e79]: Failures (7d)
+                          - generic [ref=f1e80]: —
+                        - generic [ref=f1e81]:
+                          - generic [ref=f1e82]: Freshness
+                          - generic [ref=f1e83]: —
+                        - generic [ref=f1e84]:
+                          - generic [ref=f1e85]: Skipped Checks (7d)
+                          - generic [ref=f1e86]: —
+                        - generic [ref=f1e88]: Degraded Reason
+                    - generic [ref=f1e89]:
+                      - generic [ref=f1e90]: Operational Metrics
+                      - generic [ref=f1e91]:
+                        - generic [ref=f1e92]:
+                          - generic [ref=f1e93]: Checks Completed (Lifetime)
+                          - generic [ref=f1e94]: "0"
+                        - generic [ref=f1e95]:
+                          - generic [ref=f1e96]: Snapshot Count (Retained)
+                          - generic [ref=f1e97]: "0"
+                        - generic [ref=f1e98]:
+                          - generic [ref=f1e99]: Last Check
+                          - generic [ref=f1e100]: Awaiting first check
+                        - generic [ref=f1e101]:
+                          - generic [ref=f1e102]: Generated At
+                          - generic [ref=f1e103]: —
+                    - generic [ref=f1e105]: Operational Boundaries
+                    - generic [ref=f1e107]: Operational Status
+                    - generic [ref=f1e108]:
+                      - generic [ref=f1e109]: Health Status
+                      - generic [ref=f1e110]:
+                        - generic [ref=f1e111]:
+                          - generic [ref=f1e112]: State
+                          - generic [ref=f1e113]: INITIALIZING
+                        - generic [ref=f1e114]:
+                          - generic [ref=f1e115]: Last Successful Run
+                          - generic [ref=f1e116]: Not available yet
+                        - generic [ref=f1e117]:
+                          - generic [ref=f1e118]: Last Attempt
+                          - generic [ref=f1e119]: Not available yet
+                        - generic [ref=f1e120]:
+                          - generic [ref=f1e121]: Data Freshness
+                          - generic [ref=f1e122]: UNKNOWN
+                    - generic [ref=f1e126]: Jira Configuration Visibility (Read-only)
+                    - generic [ref=f1e127]:
+                      - generic [ref=f1e128]: Change Awareness Timeline (Phase 4)
+                      - generic [ref=f1e130]: Timeline shows changes in Jira settings detected daily. Append-only, read-only record of configuration changes.
+                    - generic [ref=f1e131]:
+                      - generic [ref=f1e132]: Audit Evidence Export
+                      - button "Export Trust Snapshot" [ref=f1e134] [cursor=pointer]
+                    - generic [ref=f1e136]: Data Quality & Coverage
+                    - generic [ref=f1e137]:
+                      - generic [ref=f1e138]: 🔐 Snapshot Proof & Verification
+                      - generic [ref=f1e139]:
+                        - generic [ref=f1e141]: UI Request ID (Nonce)
+                        - generic [ref=f1e143]: UI Build SHA
+                        - generic [ref=f1e145]: Backend Build SHA
+                        - generic [ref=f1e147]: Snapshot Count
+                        - generic [ref=f1e149]: Last Snapshot ID
+                        - generic [ref=f1e151]: Last Snapshot At (UTC)
+                        - generic [ref=f1e153]: Last Success At (UTC)
+                        - generic [ref=f1e155]: Storage State
+                      - generic [ref=f1e156]:
+                        - strong [ref=f1e157]: "Note:"
+                        - text: This panel displays snapshot persistence proof. The UI Request ID (nonce) uniquely correlates this dashboard load with backend logs. Snapshot Count and timestamps verify persistence.
+                    - generic [ref=f1e159]: Availability Signals
+                    - generic [ref=f1e160]:
+                      - generic [ref=f1e161]: Report & Export
+                      - paragraph [ref=f1e162]: Download or copy governance status data for external review or records.
+                      - generic [ref=f1e163]:
+                        - button "Copy Summary to Clipboard" [ref=f1e164] [cursor=pointer]
+                        - button "Download JSON" [ref=f1e165] [cursor=pointer]
+                        - button "Download CSV" [ref=f1e166] [cursor=pointer]
+                      - group [ref=f1e167]:
+                        - generic "Export Output (for manual copy)" [ref=f1e168] [cursor=pointer]
+                      - generic [ref=f1e169]: "Exports always produce a result: download (if allowed) or manual copy panel."
+                    - generic [ref=f1e170]:
+                      - paragraph [ref=f1e171]: This dashboard is a read-only operational visibility surface. It exists to provide transparency into app activity and data quality.
+                      - generic [ref=f1e172]:
+                        - generic [ref=f1e173]:
+                          - strong [ref=f1e174]: "Note:"
+                          - text: This gadget does not trigger background jobs. All checks run via scheduled triggers.
+                        - generic [ref=f1e175]:
+                          - strong [ref=f1e176]: "Cache Refresh:"
+                          - text: If this dashboard does not reflect the latest version shown above, remove and re-add the gadget to force a UI cache refresh.
+  - button "Rovo Button" [ref=e152] [cursor=pointer]:
+    - generic [ref=e153]: Rovo Button
+    - img [ref=e154]
+```

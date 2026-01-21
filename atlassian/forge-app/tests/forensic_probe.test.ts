@@ -139,11 +139,11 @@ describe("FORENSIC_PROBE: registration", () => {
 // Test 4: Probe is callable and returns TruthEnvelope
 // ============================================================================
 
-describe("FORENSIC_PROBE: callable - returns DashEnvelopeV1 (BACKBONE #3)", () => {
-  it("probe can be invoked with ui_req_id and returns structured response", async () => {
+describe("FORENSIC_PROBE: callable - returns TruthEnvelope<ProbeData>", () => {
+  it("probe can be invoked with ui_req_id and returns TruthEnvelope", async () => {
     const { probe: probeResolver } = await import("../src/resolvers/probe");
     
-    const result: any = await probeResolver({
+    const result = await probeResolver({
       payload: {
         ui_req_id: "ui_test_callable",
         meta: { 
@@ -152,40 +152,40 @@ describe("FORENSIC_PROBE: callable - returns DashEnvelopeV1 (BACKBONE #3)", () =
       }
     });
 
-    // CRITICAL: dashEnvelopeV1 structure (BACKBONE #3)
+    // CRITICAL: TruthEnvelope structure
     expect(result.ok).toBe(true);
-    expect(result.schemaVersion).toBe("v1"); // ALWAYS "v1", never "1"
+    expect(result.kind).toBeTruthy();
     
-    // Meta includes correlation fields
-    expect(result.meta).toBeTruthy();
-    expect(result.meta.ui_req_id).toBe("ui_test_callable"); // ECHO back exact ui_req_id
-    expect(result.meta.probe_nonce).toBe("probe_test_ui_local_123"); // ECHO back nonce
+    // Correlation echoes back exactly
+    expect(result.correlation).toBeTruthy();
+    expect(result.correlation.uiReqId).toBe("ui_test_callable");
+    expect(result.correlation.probeNonce).toBe("probe_test_ui_local_123");
     
-    // Build metadata is present in meta
-    expect(result.meta.backend_build_sha).toBeTruthy();
+    // Build metadata is present
+    expect(result.build).toBeTruthy();
+    expect(result.build.backendSha).toBeTruthy();
   });
 
   it("probe with FAIL CLOSED: missing uiReqId returns error envelope", async () => {
     const { probe: probeResolver } = await import("../src/resolvers/probe");
     
-    const result: any = await probeResolver({
+    const result = await probeResolver({
       payload: {
         // No ui_req_id - FAIL CLOSED
         randomField: "value"
       }
     });
 
-    // Should return error envelope with ok=false (dashEnvelopeV1)
+    // Should return error envelope with ok=false
     expect(result.ok).toBe(false);
-    expect(result.schemaVersion).toBe("v1"); // BACKBONE #3: ALWAYS v1 even on error
     expect(result.error).toBeTruthy();
     expect(result.error.code).toBe("MISSING_UI_REQ_ID");
   });
 
-  it("probe echoes correlation fields in meta", async () => {
+  it("probe echoes correlation fields in TruthEnvelope", async () => {
     const { probe: probeResolver } = await import("../src/resolvers/probe");
     
-    const result: any = await probeResolver({
+    const result = await probeResolver({
       payload: {
         ui_req_id: "ui_correlation_test",
         uiReqId: "ui_compat",
@@ -196,16 +196,16 @@ describe("FORENSIC_PROBE: callable - returns DashEnvelopeV1 (BACKBONE #3)", () =
       }
     });
 
-    // Precedence: ui_req_id wins (extracted in correct order)
+    // Precedence: ui_req_id wins
     expect(result.ok).toBe(true);
-    expect(result.meta.ui_req_id).toBe("ui_correlation_test"); // Echoed back from request
-    expect(result.meta.probe_nonce).toBe("test_nonce_456"); // Echoed back from request
+    expect(result.correlation.uiReqId).toBe("ui_correlation_test");
+    expect(result.correlation.probeNonce).toBe("test_nonce_456");
   });
 
-  it("probe returns backend build SHA in meta", async () => {
+  it("probe returns backend build SHA in TruthEnvelope.build", async () => {
     const { probe: probeResolver } = await import("../src/resolvers/probe");
     
-    const result: any = await probeResolver({
+    const result = await probeResolver({
       payload: {
         ui_req_id: "ui_build_sha_test",
         meta: { local_probe_nonce: "build_test" }
@@ -213,8 +213,7 @@ describe("FORENSIC_PROBE: callable - returns DashEnvelopeV1 (BACKBONE #3)", () =
     });
 
     expect(result.ok).toBe(true);
-    expect(result.meta.backend_build_sha).toBeTruthy();
-    expect(typeof result.meta.backend_build_sha).toBe("string");
+    expect(result.build.backendSha).toBeTruthy();
+    expect(typeof result.build.backendSha).toBe("string");
   });
 });
-
