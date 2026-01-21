@@ -41,6 +41,7 @@ import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './back
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
 import { nowUtcIso } from './backbone/time';
 import { dashOk, dashErr } from './shared/dashEnvelopeV1';
+import { BACKEND_BUILD_SHA } from './build/backend_build';
 
 // Create single canonical resolver instance
 const resolver = new Resolver();
@@ -59,6 +60,7 @@ resolver.define('probe', probe);  // FORENSIC_PROBE
 // Layer-0 Backbone resolvers
 resolver.define('ft_getDashboardState_v1', ft_getDashboardState_v1);
 resolver.define('ft_setUiBuildSha_v1', ft_setUiBuildSha_v1);
+resolver.define('ft_contractProof_dashEnvelope_v1', ft_contractProof_dashEnvelope_v1);
 
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
@@ -171,5 +173,76 @@ async function ft_setUiBuildSha_v1(request: any): Promise<{ ok: boolean; error?:
     return { ok: true };
   } catch (e) {
     return { ok: false, error: FtErrorCode.STORAGE_WRITE_FAILED };
+  }
+}
+
+/**
+ * BACKBONE CONTRACT PROOF RESOLVER
+ * Returns ONLY envelope structure proof (no tenant data, read-only).
+ * Used for non-interactive CLI verification of production envelope shape.
+ */
+export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<any> {
+  try {
+    const now = nowUtcIso();
+    
+    // Build the proof data - no tenant secrets, only structure
+    const proofData = {
+      proofName: "ft_contractProof_dashEnvelope_v1",
+      envelopeKind: "FT_DASH_ENVELOPE_V1",
+      envelopeVersion: 1,
+      schemaVersion: "v1",
+      okType: "boolean",
+      hasMeta: true,
+      hasData: true,
+      hasError: false,
+      dataKeys: ["proofName", "envelopeKind", "envelopeVersion", "schemaVersion", "okType", "hasMeta", "hasData", "hasError", "dataKeys", "metaKeys"],
+      metaKeys: ["backend_build_sha", "ui_build_sha", "ui_req_id", "probe_nonce", "ts_utc"],
+      timestampUtc: now,
+      build: {
+        backendBuild: BACKEND_BUILD_SHA || undefined,
+        uiBuild: undefined
+      }
+    };
+
+    // Return wrapped in proper envelope using dashOk
+    const envelope = dashOk({
+      data: proofData,
+      meta: {
+        backend_build_sha: undefined,
+        ui_build_sha: null,
+        ui_req_id: "contract-proof",
+        probe_nonce: null,
+        ts_utc: now
+      }
+    });
+
+    // Log proof marker (non-secret, deterministic)
+    console.log(JSON.stringify({
+      marker: "FT_CONTRACT_PROOF",
+      envelopeKind: envelope.envelopeKind,
+      envelopeVersion: envelope.envelopeVersion,
+      schemaVersion: envelope.schemaVersion,
+      ok: envelope.ok,
+      ts_utc: now
+    }));
+
+    return envelope;
+  } catch (e) {
+    const now = nowUtcIso();
+    const errorMessage = e instanceof Error ? e.message : String(e);
+
+    return dashErr({
+      error: {
+        code: "CONTRACT_PROOF_FAILED",
+        message: errorMessage.slice(0, 180)
+      },
+      meta: {
+        backend_build_sha: undefined,
+        ui_build_sha: null,
+        ui_req_id: "contract-proof",
+        probe_nonce: null,
+        ts_utc: now
+      }
+    });
   }
 }
