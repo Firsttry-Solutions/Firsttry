@@ -42,9 +42,9 @@ modules:
       handler: scheduled/scheduler_daily_dispatcher.runDailyDispatch
     - key: status-resolver-fn
       handler: resolvers/governance_status.get
-    # BACKBONE CONTRACT PROOF: Read-only function for production envelope verification
-    - key: contract-proof-fn
-      handler: resolvers/gadget-handlers.handler
+    # BACKBONE CONTRACT PROOF: Read-only webtrigger for production envelope verification
+    - key: ft-contract-proof
+      handler: webtriggers/contract-proof.run
     # Canonical gadget handler: Single dispatcher for all UI invocations (with allowlist)
     - key: get-status-snapshot-fn
       handler: resolvers/gadget-handlers.handler
@@ -90,8 +90,8 @@ modules:
     - key: ftRunNow-web
       function: ftRunNow
     # BACKBONE CONTRACT PROOF: Read-only webtrigger for production envelope verification
-    - key: ft-contract-proof-web
-      function: contract-proof-fn
+    - key: ft-contract-proof-trigger
+      function: ft-contract-proof
 
 # Permissions
 permissions:
