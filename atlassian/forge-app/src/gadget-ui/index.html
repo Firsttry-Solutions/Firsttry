@@ -9,13 +9,53 @@
 </head>
 <body>
     <!-- Diagnostics markers (hidden by default, shown in debug panel) -->
-    <div id="ui-serve-proof-banner" class="is-hidden"></div>
+    <div id="ui-serve-proof-banner" class="is-hidden" data-ft-debug="1"></div>
     <div id="ui-js-boot" class="is-hidden">JS_BOOT: RUNNING</div>
     <div id="ui-css-canary" class="status-pill running is-hidden"></div>
 
     <div class="container">
         <h1>Firsttry: Audit Evidence for Jira</h1>
         <p class="title-description">Real-time operational visibility. Read-only monitoring of platform configuration and data quality.</p>
+        
+        <!-- IDENTITY & DEPLOYMENT PROOF PANEL (NEW - STEP 3) -->
+        <div class="section section--proof-panel" id="identity-proof-panel" data-ft-debug="1">
+            <div class="section-title section-title--proof">✓ Identity & Deployment Proof</div>
+            <div class="proof-grid">
+                <div class="proof-item">
+                    <div class="proof-item-label">Envelope Kind</div>
+                    <div id="proof-envelope-kind" class="proof-item-value">UNSET</div>
+                </div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Schema Version</div>
+                    <div id="proof-schema-version" class="proof-item-value">UNSET</div>
+                </div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Correlation ID</div>
+                    <div id="proof-correlation-id" class="proof-item-value font-monospace">UNSET</div>
+                </div>
+                <div class="proof-item">
+                    <div class="proof-item-label">UI Build SHA</div>
+                    <div id="proof-ui-build-sha" class="proof-item-value font-monospace">UNSET</div>
+                </div>
+                <div class="proof-item">
+                    <div class="proof-item-label">UI Build Time (UTC)</div>
+                    <div id="proof-ui-build-time" class="proof-item-value">UNSET</div>
+                </div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Backend Build SHA</div>
+                    <div id="proof-backend-build-sha" class="proof-item-value font-monospace">UNSET</div>
+                </div>
+                <div class="proof-item">
+                    <div class="proof-item-label">Backend Build Time (UTC)</div>
+                    <div id="proof-backend-build-time" class="proof-item-value">UNSET</div>
+                </div>
+            </div>
+            <div class="proof-text">
+                <strong>ⓘ Proof Panel:</strong> This panel displays the identity/proof contract returned by the backend.
+                All fields must be present (or marked "UNSET" with visible warning).
+                Correlation ID proves round-trip through UI → backend → UI.
+            </div>
+        </div>
         
         <!-- Scope Boundaries & Non-Goals -->
         <div class="section section--gray">
@@ -88,7 +128,7 @@
         </details>
 
         <!-- FORENSIC_PROBE Diagnostics Widget (Always Visible) -->
-        <div class="section">
+        <div class="section" data-ft-debug="1">
             <div class="section-title">🔬 Forensic Probe (Production Correlation Proof)</div>
             
             <div class="flex gap-8 mb-16">

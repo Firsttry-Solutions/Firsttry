@@ -124,6 +124,30 @@ setTimeout(() => {
 }, 3000);
 
 // ============================================================================
+// DEBUG MODE TOGGLE (URL param or localStorage)
+// Enable debug UI visibility: ?ft_debug=1 or localStorage.FT_DEBUG === "1"
+// Fail-closed: any error -> debug mode is OFF
+// ============================================================================
+function ftIsDebugMode(): boolean {
+  try {
+    const qs = new URLSearchParams(window.location.search);
+    if (qs.get("ft_debug") === "1") return true;
+    if (window.localStorage?.getItem("FT_DEBUG") === "1") return true;
+  } catch {
+    // fail-closed
+  }
+  return false;
+}
+
+function ftApplyDebugModeClass(): void {
+  const root = document.documentElement;
+  if (ftIsDebugMode()) root.classList.add("ft-debug");
+  else root.classList.remove("ft-debug");
+}
+
+ftApplyDebugModeClass();
+
+// ============================================================================
 // L0.C: UI ENTRY RUNTIME PROOF - IIFE (runs immediately before any other code)
 // Must run before importing build_meta so we capture globals at their actual load time
 // ============================================================================
@@ -268,6 +292,13 @@ const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
 // UI_REQ_ID: Unique per page load. Used to correlate UI invoke calls with resolver logs.
 const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).substring(0, 8)}`;
 
+// STEP 3: CORRELATION_ID NONCE - Unique per page load, sent to backend, echoed back
+// This proves round-trip: UI generates → sends to backend → backend echoes → UI displays
+// Format: correlation_<timestamp>_<random>
+const FT_CORRELATION_ID_NONCE = `correlation_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+
+console.log(`[UI_CORRELATION_ID] nonce=${FT_CORRELATION_ID_NONCE}`);
+
 // ============================================================================
 // PHASE 2: UI IDENTITY INITIALIZATION (STRICT TYPES)
 // Build identity distinguishing git SHA from bundle hash at runtime
@@ -399,6 +430,33 @@ function ftUpdateProofNode(optional?: { schemaVersion?: string; backendBuildSha?
     
     // Update content as JSON
     el.textContent = JSON.stringify(proofData);
+}
+
+/**
+ * STEP 3: Render the Identity/Deployment Proof Panel
+ * Displays backend proof contract fields to prove deployment identity
+ */
+function renderIdentityProofPanel(data: GovernanceStatusV1) {
+    // Extract proof fields from backend response
+    const envelopeKind = data.envelopeKind || "UNSET";
+    const schemaVersion = data.schemaVersion || "UNSET";
+    const correlationId = data.correlation_id || "UNSET";
+    const uiBuildSha = data.ui_build_sha || "UNSET";
+    const uiBuildTime = data.ui_build_time_utc || "UNSET";
+    const backendBuildSha = data.backend_build_sha || "UNSET";
+    const backendBuildTime = data.backend_build_time_utc || "UNSET";
+    
+    // Log the proof panel values for E2E assertion
+    console.log(`[UI_IDENTITY_PROOF_PANEL] envelopeKind=${envelopeKind} schemaVersion=${schemaVersion} correlationId=${correlationId} backendSha=${backendBuildSha}`);
+    
+    // Update each proof field in the DOM
+    setText('proof-envelope-kind', envelopeKind);
+    setText('proof-schema-version', schemaVersion);
+    setText('proof-correlation-id', correlationId);
+    setText('proof-ui-build-sha', uiBuildSha);
+    setText('proof-ui-build-time', uiBuildTime);
+    setText('proof-backend-build-sha', backendBuildSha);
+    setText('proof-backend-build-time', backendBuildTime);
 }
 
 function setText(id: string, value: string): boolean {
@@ -692,7 +750,8 @@ async function invokeWithUiReqId<T>(
   // Always inject ui_req_id using CURRENT_UI_REQ_ID (single source of truth)
   const enrichedPayload = {
     ...(payload || {}),
-    ui_req_id: FT_UI_REQ_ID
+    ui_req_id: FT_UI_REQ_ID,
+    correlation_id: FT_CORRELATION_ID_NONCE  // STEP 3: Send correlation nonce to backend
   };
   
   // Call Forge bridge with enriched payload
@@ -829,6 +888,9 @@ async function loadStatus() {
         data = normalizeStatusV1(rawData, rawData.tenantAri || "UNKNOWN", rawData.backendBuild || "unknown", UI_BUILD_VERSION);
         lastPayload = data;
         setText('ui-selftest-invoke', 'OK (resolver responded)');
+        
+        // STEP 3: Render the identity/proof panel from backend envelope
+        renderIdentityProofPanel(data);
 
         // PHASE 4: Compute deterministic view model from resolver payload
         // This is the SINGLE SOURCE OF TRUTH for all UI state across all widgets
