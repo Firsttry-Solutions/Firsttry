@@ -1,6 +1,8 @@
 /**
  * E2E: Dashboard Acceptance Test (Full Feature Coverage)
  *
+ * CRITICAL: This test MUST fail fast if Jira redirects to id.atlassian.com
+ *
  * Validates every dashboard feature in both normal and debug modes:
  * - Normal mode: debug sections hidden
  * - Core tiles/labels present
@@ -9,16 +11,26 @@
  * - Refresh: correlation_id changes
  * - Snapshot/export: conditional validation
  *
- * Uses persistent Chromium profile for real Jira session.
+ * Uses persistent Chromium profile + real Jira UI session.
  */
 
 import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
-const STORAGE_STATE = path.join(process.cwd(), 'e2e', '.auth', 'storageState.persistent.json');
-const JIRA_DASHBOARD_URL = process.env.JIRA_DASHBOARD_URL || 'https://firsttry.atlassian.net/jira/dashboards/10102';
+// REQUIRED ENVIRONMENT VARIABLES
+const STORAGE_STATE = process.env.STORAGE_STATE || path.join(process.cwd(), 'e2e', '.auth', 'storageState.persistent.json');
+const JIRA_DASHBOARD_URL = process.env.JIRA_DASHBOARD_URL;
 const RUN_DIR = process.env.FT_RUN_DIR || '/tmp/ft_pw_dashboard_acceptance';
+
+// Validate required env vars
+if (!JIRA_DASHBOARD_URL) {
+  throw new Error('JIRA_DASHBOARD_URL environment variable is required');
+}
+
+if (!fs.existsSync(STORAGE_STATE)) {
+  throw new Error(`StorageState file not found: ${STORAGE_STATE}`);
+}
 
 // Ensure RUN_DIR exists
 if (!fs.existsSync(RUN_DIR)) {
@@ -31,7 +43,26 @@ test.use({
   trace: 'on',
   screenshot: 'on',
   video: 'off',
+  navigationTimeout: 120_000, // 120 seconds
 });
+
+// ============================================================================
+// HELPER: Detect and fail on auth redirects
+// ============================================================================
+async function detectAndFailOnAuthRedirect(page) {
+  const currentUrl = page.url();
+  
+  if (currentUrl.includes('id.atlassian.com') || currentUrl.includes('auth.atlassian.com')) {
+    console.error(`❌ DETECTED AUTH REDIRECT: ${currentUrl}`);
+    console.error('   This means storageState is NOT valid for UI navigation.');
+    console.error('   The session likely expired or Jira requires fresh SSO/MFA.');
+    
+    // Take diagnostic screenshot
+    await page.screenshot({ path: `${RUN_DIR}/redirect_detected.png` });
+    
+    throw new Error(`Auth domain redirect detected: ${currentUrl}`);
+  }
+}
 
 // ============================================================================
 // HELPER: Find the gadget frame by searching for known headers
@@ -63,6 +94,31 @@ async function findGadgetFrame(page) {
     }
   } catch {}
 
+  // DIAGNOSTIC: Dump frame info to file
+  console.error('❌ Could not find gadget frame with any known header text');
+  console.error(`   Found ${frames.length} frames:`);
+  
+  const frameDump: string[] = [];
+  frameDump.push(`Total frames: ${frames.length}`);
+  frameDump.push('');
+  
+  for (let i = 0; i < frames.length; i++) {
+    const frame = frames[i];
+    try {
+      const url = frame.url();
+      const titleLocator = frame.locator('title').first();
+      const title = await titleLocator.textContent().catch(() => 'N/A');
+      frameDump.push(`Frame ${i}: ${url}`);
+      frameDump.push(`  Title: ${title}`);
+    } catch (e) {
+      frameDump.push(`Frame ${i}: (error reading frame)`);
+    }
+  }
+
+  const dumpPath = path.join(RUN_DIR, 'frame_dump.txt');
+  fs.writeFileSync(dumpPath, frameDump.join('\n'));
+  console.error(`   Dumped to: ${dumpPath}`);
+
   throw new Error('Could not find gadget frame with any known header text');
 }
 
@@ -70,8 +126,8 @@ async function findGadgetFrame(page) {
 // HELPER: Collect console and page error logs
 // ============================================================================
 async function setupErrorLogging(page, testInfo) {
-  const consoleLogs = [];
-  const pageErrors = [];
+  const consoleLogs: string[] = [];
+  const pageErrors: string[] = [];
 
   page.on('console', (msg) => {
     consoleLogs.push(`[${msg.type()}] ${msg.text()}`);
@@ -105,7 +161,15 @@ test('Dashboard: Normal Mode - Debug sections hidden', async ({ page, context },
 
   // Navigate to dashboard
   console.log(`📍 Navigating to: ${JIRA_DASHBOARD_URL}`);
-  await page.goto(JIRA_DASHBOARD_URL, { waitUntil: 'networkidle' });
+  try {
+    await page.goto(JIRA_DASHBOARD_URL, { waitUntil: 'networkidle', timeout: 120_000 });
+  } catch (e) {
+    console.log(`  Navigation timeout/error (may be auth redirect): ${e.message}`);
+  }
+
+  // CRITICAL: Check for auth redirect IMMEDIATELY after navigation
+  await detectAndFailOnAuthRedirect(page);
+  
   await page.waitForLoadState('domcontentloaded');
 
   // Take screenshot
@@ -190,7 +254,15 @@ test('Dashboard: Debug Mode - Proof panel populated', async ({ page, context }, 
   const debugUrl = new URL(JIRA_DASHBOARD_URL);
   debugUrl.searchParams.set('ft_debug', '1');
   console.log(`📍 Navigating to (debug): ${debugUrl.toString()}`);
-  await page.goto(debugUrl.toString(), { waitUntil: 'networkidle' });
+  try {
+    await page.goto(debugUrl.toString(), { waitUntil: 'networkidle', timeout: 120_000 });
+  } catch (e) {
+    console.log(`  Navigation timeout/error (may be auth redirect): ${e.message}`);
+  }
+
+  // CRITICAL: Check for auth redirect IMMEDIATELY after navigation
+  await detectAndFailOnAuthRedirect(page);
+
   await page.waitForLoadState('domcontentloaded');
 
   // Take screenshot
@@ -259,7 +331,15 @@ test('Dashboard: Refresh correctness - correlation_id changes', async ({ page, c
   const debugUrl = new URL(JIRA_DASHBOARD_URL);
   debugUrl.searchParams.set('ft_debug', '1');
   console.log(`📍 Navigating to (debug): ${debugUrl.toString()}`);
-  await page.goto(debugUrl.toString(), { waitUntil: 'networkidle' });
+  try {
+    await page.goto(debugUrl.toString(), { waitUntil: 'networkidle', timeout: 120_000 });
+  } catch (e) {
+    console.log(`  Navigation timeout/error (may be auth redirect): ${e.message}`);
+  }
+
+  // CRITICAL: Check for auth redirect IMMEDIATELY after navigation
+  await detectAndFailOnAuthRedirect(page);
+
   await page.waitForLoadState('domcontentloaded');
 
   // Find gadget frame
@@ -317,7 +397,15 @@ test('Dashboard: Snapshot & export surface sanity', async ({ page, context }, te
 
   // Navigate to dashboard
   console.log(`📍 Navigating to: ${JIRA_DASHBOARD_URL}`);
-  await page.goto(JIRA_DASHBOARD_URL, { waitUntil: 'networkidle' });
+  try {
+    await page.goto(JIRA_DASHBOARD_URL, { waitUntil: 'networkidle', timeout: 120_000 });
+  } catch (e) {
+    console.log(`  Navigation timeout/error (may be auth redirect): ${e.message}`);
+  }
+
+  // CRITICAL: Check for auth redirect IMMEDIATELY after navigation
+  await detectAndFailOnAuthRedirect(page);
+
   await page.waitForLoadState('domcontentloaded');
 
   // Find gadget frame
