@@ -150,7 +150,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<any> {
     return dashOk({
       data: dashboardData,
       meta: {
-        backend_build_sha: undefined, // Will use BACKEND_BUILD_SHA
+        backend_build_sha: BACKEND_BUILD_SHA, // BACKBONE FIX D: Always provide backend build SHA
         ui_build_sha: null,
         ui_req_id: ui_req_id, // BACKBONE FIX A: Use extracted ui_req_id from payload
         probe_nonce: null,
@@ -174,7 +174,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<any> {
         message: errorMessage.slice(0, 180),
       },
       meta: {
-        backend_build_sha: undefined,
+        backend_build_sha: BACKEND_BUILD_SHA, // BACKBONE FIX D: Always provide backend build SHA even on error
         ui_build_sha: null,
         ui_req_id: ui_req_id, // BACKBONE FIX A: Use extracted ui_req_id from payload
         probe_nonce: null,
@@ -229,7 +229,7 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<an
     const envelope = dashOk({
       data: proofData,
       meta: {
-        backend_build_sha: undefined,
+        backend_build_sha: BACKEND_BUILD_SHA, // BACKBONE FIX D: Always provide backend build SHA
         ui_build_sha: null,
         ui_req_id: "contract-proof",
         probe_nonce: null,
@@ -258,7 +258,7 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<an
         message: errorMessage.slice(0, 180)
       },
       meta: {
-        backend_build_sha: undefined,
+        backend_build_sha: BACKEND_BUILD_SHA, // BACKBONE FIX D: Always provide backend build SHA even on error
         ui_build_sha: null,
         ui_req_id: "contract-proof",
         probe_nonce: null,
