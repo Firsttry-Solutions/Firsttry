@@ -13,6 +13,15 @@
 
 set -euo pipefail
 
+# ============================================================================
+# HEADLESS/NON-INTERACTIVE DETECTION (FAIL-CLOSED GATE)
+# ============================================================================
+# Detect if running in non-interactive environment (no GUI for auth)
+NON_INTERACTIVE=0
+if [ -z "${DISPLAY:-}" ] && ([ -n "${CI:-}" ] || [ ! -t 0 ]); then
+  NON_INTERACTIVE=1
+fi
+
 # Use provided RUN_DIR or create new one
 if [ -z "${FT_RUN_DIR:-}" ]; then
   RUN_DIR="/tmp/ft_pw_dashboard_acceptance_$(date -u +%Y%m%dT%H%M%SZ)"
@@ -100,23 +109,21 @@ fi
 echo ""
 
 # ============================================================================
-# STEP 3: Perform auth only if needed
+# STEP 3: Perform auth only if needed (FAIL-CLOSED IN HEADLESS MODE)
 # ============================================================================
 if [ $AUTH_NEEDED -eq 1 ]; then
   echo "[STEP 3] Real Jira UI session required (headed browser with SSO/MFA)..."
   echo ""
   
-  # Check for interactive environment
-  if [ -z "${DISPLAY:-}" ]; then
-    echo "  ❌ Environment not interactive (DISPLAY empty)"
-    echo "  Cannot complete interactive SSO login in this environment."
-    echo "  Please:"
-    echo "    1. Run this on a machine with a GUI display"
-    echo "    2. Execute: npm run dashboard:auth"
-    echo "    3. Copy the storageState to: $STORAGE_STATE"
-    echo "    4. Re-run: npm run dashboard:playwright"
+  # FAIL-CLOSED GATE: Reject auth in non-interactive environments
+  if [ $NON_INTERACTIVE -eq 1 ]; then
+    echo "  ❌ FAIL-CLOSED: Non-interactive environment detected"
+    echo "  ❌ Cannot complete interactive SSO login in headless/CI environment"
     echo ""
     echo "[AUTH_ENV_NOT_INTERACTIVE]"
+    echo "[AUTH_REQUIRED_STORAGESTATE_INVALID]"
+    echo "[ACTION_REQUIRED] Run npm run dashboard:auth on GUI machine and copy storageState into e2e/.auth/"
+    echo ""
     exit 1
   fi
   
@@ -175,17 +182,25 @@ fi
 echo "[STEP 4] Final validation of storageState for UI navigation..."
 echo ""
 
-# ============================================================================
-# STEP 4: Final validation of storageState before tests
-# ============================================================================
-echo "[STEP 4] Final validation of storageState for UI navigation..."
-echo ""
-
 if node e2e/scripts/validate_storage_state_ui.mjs 2>&1 | tee "$RUN_DIR/12_validate_final.log"; then
   echo ""
   echo "  ✅ STORAGESTATE_UI_OK: Ready for test execution"
 else
   echo ""
+  
+  # FAIL-CLOSED in non-interactive: reject invalid storageState
+  if [ $NON_INTERACTIVE -eq 1 ]; then
+    echo "  ❌ FAIL-CLOSED: storageState validation failed in non-interactive environment"
+    echo "  Cannot proceed without valid session in headless mode"
+    echo ""
+    echo "[STORAGESTATE_UI_FAIL]"
+    echo "[ACTION_REQUIRED] Run npm run dashboard:auth on GUI machine and copy fresh storageState into e2e/.auth/"
+    echo ""
+    echo "See details in: $RUN_DIR/12_validate_final.log"
+    tail -50 "$RUN_DIR/12_validate_final.log" || true
+    exit 1
+  fi
+  
   echo "  ❌ STORAGESTATE_UI_FAIL: Cannot proceed with tests"
   echo ""
   echo "See details in: $RUN_DIR/12_validate_final.log"
