@@ -17,7 +17,8 @@
     "e2e:coverage": "bash e2e/scripts/run_full_coverage_with_truth.sh",
     "e2e:deps": "bash e2e/scripts/ensure_playwright_deps.sh",
     "e2e:boot": "npm run e2e:deps && cd e2e && npx playwright test tests/dashboard_full_coverage.spec.ts -g \"Boot & Identity\" --reporter=line",
-    "dashboard:audit": "bash tools/dashboard_audit/run.sh"
+    "dashboard:audit": "bash tools/dashboard_audit/run.sh",
+    "dashboard:playwright": "bash e2e/scripts/run_dashboard_acceptance.sh"
   },
   "keywords": [],
   "author": "",
