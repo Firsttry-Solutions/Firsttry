@@ -36,6 +36,10 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: process.env.STORAGE_STATE === '__NONE__' ? undefined : (process.env.STORAGE_STATE || './.auth/storageState.json'),
+        // NOTE: Authorization headers are NO LONGER injected globally.
+        // Safe, domain-allowlisted header injection is done per-route in test files
+        // via createAuthRouteHandler() from e2e/scripts/_auth_headers.mjs.
+        // This prevents accidental token leakage to non-Jira domains.
         // Stable launch options for headless Chromium in CI/container environments
         launchOptions: {
           args: [

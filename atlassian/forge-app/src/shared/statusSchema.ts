@@ -4,6 +4,21 @@
  * Used by BOTH resolver and UI to ensure type safety and prevent crashes.
  * This is the single source of truth for the governance status payload.
  *
+ * CRITICAL: IDENTITY/PROOF CONTRACT
+ * ==================================
+ * Every response MUST include the following fields to prove deployment identity:
+ * - envelopeKind: "FT_DASH_ENVELOPE_V1" (marker)
+ * - schemaVersion: "v1" (strict version)
+ * - ui_build_sha: UI git SHA (from build metadata)
+ * - ui_build_time_utc: UI build timestamp
+ * - backend_build_sha: Backend (forge-app) git SHA
+ * - backend_build_time_utc: Backend build timestamp
+ * - correlation_id: Request identifier (UI -> backend -> UI)
+ * - installationId: Optional, Forge installation ID
+ *
+ * These fields are NOT optional. If unavailable, use explicit "UNSET" value.
+ * UI must ALWAYS render these values (or UNSET marker) in proof panel.
+ *
  * Rules:
  * - ALWAYS return this type from resolver
  * - ALWAYS validate/normalize on UI before rendering
@@ -18,12 +33,23 @@ export type HealthState = "OK" | "DEGRADED" | "ERROR" | "UNKNOWN";
  * Every field is optional in runtime, but normalizeStatusV1 guarantees a complete object.
  */
 export interface GovernanceStatusV1 {
+  // ═════════════════════════════════════════════════════════════════════
+  // IDENTITY/PROOF CONTRACT (CRITICAL: MUST be present in every response)
+  // ═════════════════════════════════════════════════════════════════════
+  envelopeKind?: "FT_DASH_ENVELOPE_V1"; // Marker for proof contract compliance
+  ui_build_sha?: string; // UI git SHA (40-hex or "UNSET")
+  ui_build_time_utc?: string; // ISO 8601 or "UNSET"
+  backend_build_sha?: string; // Backend (forge-app) git SHA (40-hex or "UNSET")
+  backend_build_time_utc?: string; // ISO 8601 or "UNSET"
+  correlation_id?: string; // Request ID for round-tripping (UUID or similar)
+  installationId?: string; // Forge installation ID (optional)
+
   // Core metadata
-  schemaVersion: "1";
+  schemaVersion: "v1" | "1"; // STRICT: must be exactly "v1" for new contract, "1" for legacy
   generatedAt: string; // ISO 8601
   tenantAri: string;
-  backendBuild: string;
-  uiBuild?: string;
+  backendBuild: string; // LEGACY: deprecated in favor of backend_build_sha
+  uiBuild?: string; // LEGACY: deprecated in favor of ui_build_sha
 
   // Health
   health: HealthState;
@@ -147,7 +173,17 @@ export function EMPTY_STATUS_V1(
 ): GovernanceStatusV1 {
   const now = new Date().toISOString();
   return {
-    schemaVersion: "1",
+    // ═════════════════════════════════════════════════════════════════════
+    // IDENTITY/PROOF CONTRACT FIELDS (MUST be present in every response)
+    // ═════════════════════════════════════════════════════════════════════
+    envelopeKind: "FT_DASH_ENVELOPE_V1", // Marker for proof contract
+    ui_build_sha: uiBuild && uiBuild !== "UI_v2.14.0" ? uiBuild : "UNSET", // Explicit UNSET if not available
+    ui_build_time_utc: "UNSET", // Will be set by normalizeStatusV1
+    backend_build_sha: backendBuild || "UNSET", // Will be set by normalizeStatusV1
+    backend_build_time_utc: "UNSET", // Will be set by normalizeStatusV1
+    correlation_id: `ft-proof-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Generate unique ID
+    
+    schemaVersion: "v1", // STRICT: must be exactly "v1" for new contract
     generatedAt: now,
     tenantAri,
     backendBuild,
@@ -237,7 +273,23 @@ export function normalizeStatusV1(
 
   // Build the normalized object step-by-step
   const normalized: GovernanceStatusV1 = {
-    schemaVersion: "1",
+    // ═════════════════════════════════════════════════════════════════════
+    // IDENTITY/PROOF CONTRACT FIELDS (MUST be present in every response)
+    // ═════════════════════════════════════════════════════════════════════
+    envelopeKind: obj.envelopeKind === "FT_DASH_ENVELOPE_V1" ? "FT_DASH_ENVELOPE_V1" : "FT_DASH_ENVELOPE_V1", // Always present
+    ui_build_sha: typeof obj.ui_build_sha === "string" ? obj.ui_build_sha : (typeof obj.uiBuild === "string" ? obj.uiBuild : "UNSET"),
+    ui_build_time_utc: typeof obj.ui_build_time_utc === "string" ? obj.ui_build_time_utc : "UNSET",
+    backend_build_sha: typeof obj.backend_build_sha === "string" ? obj.backend_build_sha : (typeof obj.backendBuild === "string" ? obj.backendBuild : "UNSET"),
+    backend_build_time_utc: typeof obj.backend_build_time_utc === "string" ? obj.backend_build_time_utc : "UNSET",
+    correlation_id: typeof obj.correlation_id === "string" ? obj.correlation_id : `ft-proof-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    installationId: typeof obj.installationId === "string" ? obj.installationId : undefined,
+    
+    schemaVersion: (() => {
+      const s = obj.schemaVersion;
+      // STRICT: Accept "v1" or "1" for backward compat
+      if (s === "v1" || s === "1") return s;
+      return "v1"; // Default to new contract version
+    })() as "v1" | "1",
     generatedAt: typeof obj.generatedAt === "string" ? obj.generatedAt : new Date().toISOString(),
     tenantAri: typeof obj.tenantAri === "string" ? obj.tenantAri : tenantAri,
     backendBuild: typeof obj.backendBuild === "string" ? obj.backendBuild : backendBuild,

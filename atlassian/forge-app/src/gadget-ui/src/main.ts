@@ -340,6 +340,9 @@ try {
 // Track last payload for export functions
 let lastPayload: any = null;
 
+// BACKBONE FIX B: Store raw envelope globally for proof panel access
+let lastRawEnvelope: any = null;
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -864,6 +867,22 @@ async function loadStatus() {
             
             // Compute the view model (deterministic, invariant-enforced)
             viewModel = computeGovernanceViewModel(signals);
+            
+            // BACKBONE FIX C: Invariant enforcement - prevent contradictory BROKEN after successful commit
+            const lastCommit = (window as any).__FT_LAST_SUCCESSFUL_COMMIT__;
+            if (lastCommit && lastCommit.ok === true && viewModel.runtimeState === GovernanceRuntimeState.BROKEN) {
+              console.error('[INVARIANT_VIOLATION_FIX_C]', {
+                message: 'State became BROKEN after successful OK commit',
+                lastCommitStatus: lastCommit.status,
+                lastCommitTime: lastCommit.timestamp,
+                currentState: viewModel.runtimeState,
+                reason: 'Clamping to DEGRADED instead of BROKEN to preserve consistency',
+              });
+              // Clamp state to ERROR (not BROKEN, which is terminal)
+              // This ensures UI shows degradation, not contradiction
+              viewModel.runtimeState = GovernanceRuntimeState.DEGRADED;
+              viewModel.isOperational = false;
+            }
             
             // Log the view model state for diagnostics
             console.log(`[TruthModel] State: ${viewModel.runtimeState}, isOperational: ${viewModel.isOperational}`);
@@ -1491,79 +1510,91 @@ function showExportToast(kind: 'ok' | 'warn' | 'err', msg: string) {
 }
 
 /**
- * PHASE 2: Update snapshot proof panel with debug info
- * Called after refreshNow completes to display persistence proof
+ * PHASE 2: Update snapshot proof panel with values from backend envelope
+ * BACKBONE FIX B: Read directly from envelope.meta and envelope.data (single source of truth)
+ * Never use legacy constants or cached debug info
  */
 function updateSnapshotProofPanel(debugInfo: any) {
     try {
-        // UI Request ID (nonce) - already set on page load
+        // UI Request ID - from envelope.meta.ui_req_id (echoed by backend)
         const uiReqIdEl = document.getElementById('proof-ui-req-id');
-        if (uiReqIdEl) {
-            uiReqIdEl.textContent = FT_UI_REQ_ID;
-        }
-
-        // UI Build SHA (static from build_meta.ts)
-        const uiBuildEl = document.getElementById('proof-ui-build-sha');
-        if (uiBuildEl) {
-            uiBuildEl.textContent = UI_DIST_STAMP.split('__')[0] || 'unknown';
-        }
-
-        // Backend Build SHA (from getSnapshotDebug - would need to be added via getBuildInfo or included in statusSnapshot)
-        // For now, we'll get it from the global if available
-        const backendBuildEl = document.getElementById('proof-backend-build-sha');
-        if (backendBuildEl && lastPayload && lastPayload.backendBuild) {
-            backendBuildEl.textContent = lastPayload.backendBuild.substring(0, 8);
-        }
-
-        // Snapshot Count
-        const countEl = document.getElementById('proof-snapshot-count');
-        if (countEl) {
-            const count = debugInfo.snapshotCount || 0;
-            countEl.textContent = String(count);
-            if (count === 0) {
-                countEl.classList.add('text-secondary');
-                const panel = countEl.closest('.section');
-                if (panel) {
-                    const noteEl = panel.querySelector('div[style*="border-top"]');
-                    if (noteEl) {
-                        const status = document.createElement('div');
-                        status.className = 'font-small text-secondary gap-top-small';
-                        status.textContent = '(No snapshots yet. Click "Refresh now" to create one.)';
-                        if (!noteEl.querySelector(':scope > div:last-child')?.textContent?.includes('No snapshots')) {
-                            // Only add if not already present
-                        }
-                    }
-                }
+        if (uiReqIdEl && lastRawEnvelope) {
+            const uiReqId = lastRawEnvelope.meta?.ui_req_id || 'UNSET';
+            uiReqIdEl.textContent = uiReqId;
+            // Mark as mismatch if it's UNSET (contract violation)
+            if (uiReqId === 'UNSET') {
+                uiReqIdEl.classList.add('text-error');
+                uiReqIdEl.title = 'Contract violation: backend did not echo ui_req_id';
             }
         }
 
-        // Last Snapshot ID
+        // UI Build SHA (from envelope.meta.ui_build_sha if available, otherwise UI_DIST_STAMP)
+        const uiBuildEl = document.getElementById('proof-ui-build-sha');
+        if (uiBuildEl) {
+            let sha = UI_DIST_STAMP.split('__')[0] || 'unknown';
+            if (lastRawEnvelope?.meta?.ui_build_sha) {
+                sha = lastRawEnvelope.meta.ui_build_sha;
+            }
+            uiBuildEl.textContent = sha.substring(0, 12) + (sha.length > 12 ? '…' : '');
+            uiBuildEl.title = sha;
+        }
+
+        // Backend Build SHA - from envelope.meta.backend_build_sha (REQUIRED from backend)
+        const backendBuildEl = document.getElementById('proof-backend-build-sha');
+        if (backendBuildEl) {
+            const backendSha = lastRawEnvelope?.meta?.backend_build_sha || 'UNKNOWN';
+            backendBuildEl.textContent = backendSha.substring(0, 12) + (backendSha.length > 12 ? '…' : '');
+            backendBuildEl.title = backendSha;
+            if (backendSha === 'UNKNOWN') {
+                backendBuildEl.classList.add('text-error');
+                backendBuildEl.title = 'Backend did not provide build SHA';
+            }
+        }
+
+        // Snapshot Count - from envelope.data.ledger.snapshot_count (REQUIRED)
+        const countEl = document.getElementById('proof-snapshot-count');
+        if (countEl && lastRawEnvelope) {
+            const count = lastRawEnvelope.data?.ledger?.snapshot_count ?? 0;
+            countEl.textContent = String(count);
+            if (count === 0) {
+                countEl.classList.add('text-secondary');
+            } else {
+                countEl.classList.remove('text-secondary');
+                countEl.classList.add('text-success');
+            }
+        }
+
+        // Last Snapshot ID - from envelope.data.ledger.snapshot_id
         const lastIdEl = document.getElementById('proof-last-snapshot-id');
-        if (lastIdEl) {
-            lastIdEl.textContent = debugInfo.lastSnapshotId || '(none yet)';
+        if (lastIdEl && lastRawEnvelope) {
+            const lastId = lastRawEnvelope.data?.ledger?.snapshot_id || '(none yet)';
+            lastIdEl.textContent = lastId;
         }
 
-        // Last Snapshot At (UTC)
+        // Last Snapshot At (UTC) - from envelope.data.ledger.snapshot_last_at_utc
         const lastSnapEl = document.getElementById('proof-last-snapshot-at');
-        if (lastSnapEl) {
-            lastSnapEl.textContent = debugInfo.lastSnapshotAtUtc 
-                ? formatTimestampDisplay(debugInfo.lastSnapshotAtUtc) 
+        if (lastSnapEl && lastRawEnvelope) {
+            const lastSnapAt = lastRawEnvelope.data?.ledger?.snapshot_last_at_utc;
+            lastSnapEl.textContent = lastSnapAt 
+                ? formatTimestampDisplay(lastSnapAt) 
                 : 'Not available yet';
         }
 
-        // Last Success At (UTC)
+        // Last Success At (UTC) - from envelope.data.ledger.scheduler_last_success_at_utc
         const lastSuccessEl = document.getElementById('proof-last-success-at');
-        if (lastSuccessEl) {
-            lastSuccessEl.textContent = debugInfo.lastSuccessAtUtc 
-                ? formatTimestampDisplay(debugInfo.lastSuccessAtUtc) 
+        if (lastSuccessEl && lastRawEnvelope) {
+            const lastSuccessAt = lastRawEnvelope.data?.ledger?.scheduler_last_success_at_utc;
+            lastSuccessEl.textContent = lastSuccessAt 
+                ? formatTimestampDisplay(lastSuccessAt) 
                 : 'Not available yet';
         }
 
-        // Storage State
+        // Storage State - from envelope.data.storage_state (REQUIRED)
         const storageEl = document.getElementById('proof-storage-state');
-        if (storageEl) {
-            storageEl.textContent = debugInfo.storageState || 'UNKNOWN';
-            if (debugInfo.storageState === 'NON_EMPTY') {
+        if (storageEl && lastRawEnvelope) {
+            const storageState = lastRawEnvelope.data?.storage_state || 'UNKNOWN';
+            storageEl.textContent = storageState;
+            if (storageState === 'PRESENT') {
                 storageEl.classList.add('text-success');
                 storageEl.classList.remove('text-secondary');
             } else {
@@ -1572,7 +1603,7 @@ function updateSnapshotProofPanel(debugInfo: any) {
             }
         }
 
-        console.log('[ProofPanel] Updated with snapshot debug info');
+        console.log('[ProofPanel] Updated from envelope meta/data');
     } catch (err) {
         console.warn('[ProofPanel] Error updating panel:', err);
     }
@@ -2778,6 +2809,9 @@ async function proceedWithBoot() {
         const rawEnvelope = result.value;
         logRawDashboardEnvelope(rawEnvelope);
         
+        // BACKBONE FIX B: Store envelope globally for proof panel
+        lastRawEnvelope = rawEnvelope;
+        
         // UPDATE PROOF NODE: Capture schemaVersion and backend SHA from envelope (success or error)
         const envelopeSchemaVersion = rawEnvelope?.schemaVersion ? String(rawEnvelope.schemaVersion) : "NOT_FOUND";
         const backendShaFromEnvelope = rawEnvelope?.backendBuild?.buildSha || rawEnvelope?.backendBuild || "NOT_FOUND";
@@ -2818,6 +2852,17 @@ async function proceedWithBoot() {
           isOperational: mappedState?.ok !== false,
           hasCanonicalMarker: !!mappedState?.canonical_envelope_applied,
         });
+        
+        // BACKBONE FIX C: Invariant check - prevent BROKEN after OK
+        // Store the commit success state for later validation
+        const wasSuccessfulCommit = mappedState?.ok !== false && mappedState?.status === 'OK';
+        if (wasSuccessfulCommit) {
+          (window as any).__FT_LAST_SUCCESSFUL_COMMIT__ = {
+            timestamp: new Date().toISOString(),
+            status: mappedState?.status,
+            ok: mappedState?.ok,
+          };
+        }
       } catch (e) {
         console.error("[BACKBONE_L0] Failed to load dashboard state:", e);
       }

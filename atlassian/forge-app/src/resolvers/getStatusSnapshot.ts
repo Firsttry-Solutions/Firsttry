@@ -7,11 +7,16 @@
  * - On any error: returns normalized error status with stable error_code and deterministic trace_id
  * - Emits single-line JSON log on failure with trace_id and ui_req_id
  *
+ * IDENTITY/PROOF CONTRACT:
+ * - Every response includes: envelopeKind, ui_build_sha, backend_build_sha, correlation_id, schema_version
+ * - These fields prove deployment identity and round-trip through browser
+ * - UI must render these fields in proof panel
+ *
  * Logic:
  * 1. Resolve tenant key
  * 2. Read snapshot
  * 3. If null: create on-load snapshot with ERROR and store it
- * 4. Return snapshot NORMALIZED to GovernanceStatusV1
+ * 4. Return snapshot NORMALIZED to GovernanceStatusV1 with identity/proof fields
  *
  * PHASE 2 FIX: Also exports getBuildInfo resolver so gadget can invoke both
  * resolvers from the same handler function.
@@ -103,6 +108,7 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
     const errorStatus = EMPTY_STATUS_V1("UNKNOWN", FT_BUILD_SHA, "UI_v2.14.0");
     errorStatus.health = "ERROR";
     errorStatus.degradedReason = "Could not resolve tenant context";
+    // CRITICAL: Populate identity/proof fields in error response
     return normalizeStatusV1(errorStatus, "UNKNOWN", FT_BUILD_SHA, "UI_v2.14.0");
   }
 
@@ -134,8 +140,8 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
       ts: new Date().toISOString()
     }));
 
-    // CRITICAL: Normalize the snapshot to GovernanceStatusV1
-    // This guarantees UI never receives malformed data
+    // CRITICAL: Normalize the snapshot to GovernanceStatusV1 with identity/proof contract
+    // This guarantees UI never receives malformed data AND gets proof fields
     
     // FT_STATUS_OK: Resolver executed successfully
     console.log(`FT_STATUS_OK ${JSON.stringify({
@@ -143,10 +149,19 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
       resolver: "getStatusSnapshot",
       ui_req_id: uiReqId || "ui_missing",
       backend_build_sha: FT_BUILD_SHA,
+      backend_build_time_utc: FT_BUILD_TIME_UTC,
       ts: new Date().toISOString()
     })}`);
     
-    return normalizeStatusV1(snapshot, tenantAri, backendBuild, uiBuild);
+    // Normalize and populate identity/proof fields
+    const normalized = normalizeStatusV1(snapshot, tenantAri, backendBuild, uiBuild);
+    // Explicit assignment to ensure proof fields are set
+    normalized.envelopeKind = "FT_DASH_ENVELOPE_V1";
+    normalized.backend_build_sha = FT_BUILD_SHA;
+    normalized.backend_build_time_utc = FT_BUILD_TIME_UTC;
+    normalized.schemaVersion = "v1"; // STRICT: enforce new contract version
+    
+    return normalized;
   } catch (err) {
     // Error reading or storing snapshot - return error status instead of throwing
     const errorCode = classifyError(err, "getStatusSnapshot");
@@ -180,7 +195,12 @@ export async function getStatusSnapshot_resolver(req: any): Promise<GovernanceSt
     const errorStatus = EMPTY_STATUS_V1(tenantAri, backendBuild, uiBuild);
     errorStatus.health = "ERROR";
     errorStatus.degradedReason = err instanceof Error ? err.message : String(err);
-    return normalizeStatusV1(errorStatus, tenantAri, backendBuild, uiBuild);
+    // CRITICAL: Populate identity/proof fields in error response
+    const normalized = normalizeStatusV1(errorStatus, tenantAri, backendBuild, uiBuild);
+    normalized.backend_build_sha = FT_BUILD_SHA;
+    normalized.backend_build_time_utc = FT_BUILD_TIME_UTC;
+    normalized.schemaVersion = "v1";
+    return normalized;
   }
 }
 

@@ -73,6 +73,27 @@ export async function ft_getDashboardState_v1(request: any): Promise<any> {
   const event = request?.payload || {};
   const context = request?.context || {};
   const now = nowUtcIso();
+  
+  // BACKBONE FIX A: Extract ui_req_id from payload (passed by UI via invokeWithUiReqId)
+  // Fallback chain: payload.ui_req_id → context.requestId → null
+  let ui_req_id = event?.ui_req_id ?? null;
+  if (!ui_req_id && context?.requestId) {
+    ui_req_id = context.requestId;
+  }
+  
+  // Fail-closed: if ui_req_id is missing, this is a contract violation
+  // (UI MUST always pass ui_req_id via invokeWithUiReqId wrapper)
+  if (!ui_req_id) {
+    console.warn('[BACKBONE_FIX_A_MISSING_UI_REQ_ID]', {
+      marker: 'MISSING_UI_REQ_ID',
+      hasPayloadUiReqId: !!event?.ui_req_id,
+      hasContextRequestId: !!context?.requestId,
+      ts: now,
+    });
+    // Still set to UNSET for downstream logging; backend doesn't fail here (fail-closed at UI)
+    ui_req_id = 'UNSET';
+  }
+  
   const requestId = context?.requestId ?? null;
   
   try {
@@ -131,7 +152,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<any> {
       meta: {
         backend_build_sha: undefined, // Will use BACKEND_BUILD_SHA
         ui_build_sha: null,
-        ui_req_id: requestId || 'UNSET',
+        ui_req_id: ui_req_id, // BACKBONE FIX A: Use extracted ui_req_id from payload
         probe_nonce: null,
         ts_utc: now,
       },
@@ -155,7 +176,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<any> {
       meta: {
         backend_build_sha: undefined,
         ui_build_sha: null,
-        ui_req_id: requestId || 'UNSET',
+        ui_req_id: ui_req_id, // BACKBONE FIX A: Use extracted ui_req_id from payload
         probe_nonce: null,
         ts_utc: now_error,
       },
