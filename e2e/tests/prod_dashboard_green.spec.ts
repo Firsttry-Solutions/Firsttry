@@ -70,6 +70,18 @@ function isoNow(): string {
   return new Date().toISOString();
 }
 
+// E2E determinism: Append ft_debug=1 to URLs (E2E only, enables debug sections for stable DOM access)
+function appendFtDebugParam(url: string): string {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    u.searchParams.set('ft_debug', '1');
+    return u.toString();
+  } catch {
+    return url; // If URL parse fails, return unchanged
+  }
+}
+
 function isAuthUrl(u: string): boolean {
   const s = (u || "").toLowerCase();
   if (!s) return false;
@@ -695,10 +707,12 @@ test.describe('PROD DASHBOARD GREEN: New 40-hex Bundle Deployed', () => {
       }
 
       const jiraDashboardUrl = getJiraDashboardUrl()!; // guaranteed by beforeAll
-      console.log(`[PROD_GREEN] Navigating to ${jiraDashboardUrl}`);
+      const dashboardUrlWithDebug = appendFtDebugParam(jiraDashboardUrl);
+      console.log(`[PROD_GREEN] Navigating to ${dashboardUrlWithDebug}`);
       
       // STEP 4: Navigate with domcontentloaded (NOT networkidle)
-      await page.goto(jiraDashboardUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
+      // ft_debug=1 appended: E2E always enables debug mode to ensure DOM stability
+      await page.goto(dashboardUrlWithDebug, { waitUntil: 'domcontentloaded', timeout: 90000 });
       await page.waitForLoadState('domcontentloaded').catch(() => {});
       console.log(`[PROD_GREEN] Page domcontentloaded complete`);
 
