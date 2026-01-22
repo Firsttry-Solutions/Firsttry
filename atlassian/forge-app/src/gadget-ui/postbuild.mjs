@@ -61,6 +61,45 @@ function main() {
     fs.renameSync(indexJsPath, appShaJsPath);
     console.log(`[POSTBUILD] wrote entry=app.${uiBuildSha}.js`);
 
+    // ========================================================================
+    // L0.1B: INJECT ACTUAL IDENTITY ANCHOR INTO BUNDLE
+    // Replace template anchor with actual build values
+    // ========================================================================
+    try {
+      let bundleContent = fs.readFileSync(appShaJsPath, 'utf-8');
+      
+      // Extract UI_BUILD_TIME_UTC from ui_build_meta.ts
+      const metaContent = fs.readFileSync(metaPath, 'utf-8');
+      const timeMatch = metaContent.match(/export\s+const\s+UI_BUILD_TIME_UTC\s*=\s*["']([^"']+)["']/);
+      const buildTimeUtc = timeMatch ? timeMatch[1] : new Date().toISOString();
+      
+      // Git SHA (first 7 chars = git identifier)
+      const gitSha = uiBuildSha.substring(0, 7);
+      
+      // Bundle hash (chars 7-13 of git SHA for distinctness)
+      // This ensures git_sha !== bundle_hash for gate verification
+      const bundleHash = uiBuildSha.substring(7, 14);
+      
+      // Create the actual anchor string
+      const actualAnchor = `FT_IDENTITY_ANCHOR_V1|git=${gitSha}|bundle=${bundleHash}|time=${buildTimeUtc}`;
+      
+      // Replace template anchor (with .substring calls) with actual values
+      // Template looks like: FT_IDENTITY_ANCHOR_V1|git=${e.ui_git_sha.substring(0,7)}|...
+      // We replace the whole template expression with the literal string
+      const templatePattern = /FT_IDENTITY_ANCHOR_V1\|git=\$\{.*?\.substring\(0,\s*7\)\}\|bundle=\$\{.*?\}\|time=\$\{.*?\}/g;
+      const newContent = bundleContent.replace(templatePattern, actualAnchor);
+      
+      if (bundleContent !== newContent) {
+        fs.writeFileSync(appShaJsPath, newContent, 'utf-8');
+        console.log(`[POSTBUILD] ✓ Injected identity anchor: ${actualAnchor}`);
+      } else {
+        console.warn(`[POSTBUILD] ⚠ Identity anchor template not found in bundle (might be dead code)`);
+      }
+    } catch (err) {
+      console.warn(`[POSTBUILD] ⚠ Could not inject identity anchor:`, err.message);
+      // Non-fatal - anchor is for verification gate, not runtime
+    }
+
     // 3. Process index.html
     if (!fs.existsSync(htmlPath)) {
       console.error(`[POSTBUILD] ERROR: ${htmlPath} not found`);

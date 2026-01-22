@@ -26,9 +26,10 @@ fi
 if command -v rg &>/dev/null; then
   # ripgrep version (faster, more flexible)
   # Exclude runtime/ directory itself, and common excluded patterns
+  # NOTE: Use --type ts (which includes *.ts and *.tsx); --type tsx is not a separate type in rg
+  # GATE: Match ONLY runtime/ui_build_meta imports (the forbidden pattern)
   VIOLATIONS=$(rg \
     --type ts \
-    --type tsx \
     --type js \
     --glob '!node_modules' \
     --glob '!dist' \
@@ -37,10 +38,11 @@ if command -v rg &>/dev/null; then
     --glob '!.git' \
     --glob '!__tests__' \
     --glob '!runtime/**' \
-    'from\s+['"'"'"]\./?(runtime/)?ui_build_meta' \
+    'from\s+['"'"'"](\.?/?)?runtime/ui_build_meta' \
     "$UI_SRC_DIR" || true)
 else
   # grep version (slower, but portable)
+  # GATE: Match ONLY runtime/ui_build_meta imports (the forbidden pattern)
   VIOLATIONS=$(find "$UI_SRC_DIR" \
     -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
     ! -path "*/node_modules/*" \
@@ -50,7 +52,7 @@ else
     ! -path "*/.git/*" \
     ! -path "*/__tests__/*" \
     ! -path "*/runtime/*" \
-    -exec grep -l 'from\s\+['"'"'"]\./\?runtime/ui_build_meta' {} \; || true)
+    -exec grep -l 'from\s\+['"'"'"].*runtime/ui_build_meta' {} \; || true)
 fi
 
 if [ -n "$VIOLATIONS" ]; then

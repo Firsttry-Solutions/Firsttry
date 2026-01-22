@@ -142,7 +142,7 @@ describe("Boot State + Contract Invariants", () => {
     it("normalizeStatusV1 handles null input gracefully", () => {
       const normalized = normalizeStatusV1(null, TENANT_ARI, BACKEND_BUILD, UI_BUILD);
 
-      expect(normalized.schemaVersion).toBe("1");
+      expect(normalized.schemaVersion).toBe("v1");  // Canonical contract: "v1" (not "1")
       // When null input, EMPTY_STATUS_V1 is called which sets mode="onload"
       expect(normalized.mode).toBe("onload");
       expect(normalized.snapshots.retainedCount).toBe(0);
