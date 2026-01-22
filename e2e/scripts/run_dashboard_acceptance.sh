@@ -24,96 +24,181 @@ mkdir -p "$RUN_DIR"
 cd /workspaces/Firsttry
 
 echo "================================================================================"
-echo "DASHBOARD ACCEPTANCE TEST: REAL JIRA UI AUTH"
+echo "DASHBOARD ACCEPTANCE TEST: SMART STORAGE-FIRST PIPELINE"
 echo "================================================================================"
 echo "RUN_DIR: $RUN_DIR"
 echo ""
 
+# ============================================================================
+# STEP 0: PRECONDITION CHECK
+# ============================================================================
+echo "[STEP 0] Validating preconditions..."
+
+if [ -z "${JIRA_DASHBOARD_URL:-}" ]; then
+  echo "  ❌ JIRA_DASHBOARD_URL not set"
+  echo "[PRECONDITION_FAIL]"
+  exit 1
+fi
+
+echo "  ✅ JIRA_DASHBOARD_URL set: $JIRA_DASHBOARD_URL"
+
 # Setup environment
-export JIRA_DASHBOARD_URL="${JIRA_DASHBOARD_URL:-https://firsttry.atlassian.net/jira/dashboards/10102}"
+export JIRA_DASHBOARD_URL
 export FT_RUN_DIR="$RUN_DIR"
 
 AUTH_DIR="./e2e/.auth"
-STORAGE_STATE="$AUTH_DIR/storageState.persistent.json"
+STORAGE_STATE="${STORAGE_STATE:-$AUTH_DIR/storageState.persistent.json}"
 PROFILE_DIR="$AUTH_DIR/pw_profile"
 
+echo "  ✅ STORAGE_STATE: $STORAGE_STATE"
+
 mkdir -p "$AUTH_DIR"
-
-# ============================================================================
-# STEP 1: Persistent Login (Real Jira UI Session)
-# ============================================================================
-echo "[STEP 1] Establishing REAL Jira UI session (headed browser with SSO/MFA)..."
 echo ""
 
-# Always create fresh session (don't reuse old profile)
-if [ -d "$PROFILE_DIR" ]; then
-  echo "  Removing old profile: $PROFILE_DIR"
-  rm -rf "$PROFILE_DIR"
-fi
+# ============================================================================
+# STEP 1: Check if existing storageState is valid (storage-first strategy)
+# ============================================================================
+echo "[STEP 1] Checking for existing valid storageState..."
+echo ""
 
+STORAGE_EXISTS=0
 if [ -f "$STORAGE_STATE" ]; then
-  echo "  Removing old storageState: $STORAGE_STATE"
-  rm -f "$STORAGE_STATE"
+  STORAGE_EXISTS=1
+  size=$(wc -c < "$STORAGE_STATE")
+  echo "  ✅ StorageState exists: $size bytes"
+  ls -lah "$STORAGE_STATE" | tee "$RUN_DIR/00_storage_ls.txt"
+else
+  echo "  ℹ️  StorageState not found, will attempt auth if needed"
 fi
 
-echo "  Running auth under Xvfb (visible display for user to interact)..."
-echo "  Please log in with your Jira credentials when the browser opens."
 echo ""
 
-if xvfb-run -a node e2e/scripts/auth_login_persistent.mjs 2>&1 | tee "$RUN_DIR/10_auth.log"; then
+# ============================================================================
+# STEP 2: Validate existing storageState (if present)
+# ============================================================================
+if [ $STORAGE_EXISTS -eq 1 ]; then
+  echo "[STEP 2] Validating existing storageState for UI navigation..."
   echo ""
-  echo "  ✅ PERSISTENT_AUTH_OK: Real Jira session established"
+  
+  if node e2e/scripts/validate_storage_state_ui.mjs 2>&1 | tee "$RUN_DIR/10_validate_existing.log"; then
+    echo ""
+    echo "  ✅ STORAGESTATE_UI_OK: Existing session is still valid"
+    echo "[AUTH_SKIPPED_STORAGESTATE_VALID]"
+    AUTH_NEEDED=0
+  else
+    echo ""
+    echo "  ℹ️  Existing storageState expired or invalid"
+    echo "[AUTH_REQUIRED_STORAGESTATE_INVALID]"
+    AUTH_NEEDED=1
+  fi
+else
+  echo "[STEP 2] Skipping validation (no existing storageState)"
+  echo "[AUTH_REQUIRED_STORAGESTATE_INVALID]"
+  AUTH_NEEDED=1
+fi
+
+echo ""
+
+# ============================================================================
+# STEP 3: Perform auth only if needed
+# ============================================================================
+if [ $AUTH_NEEDED -eq 1 ]; then
+  echo "[STEP 3] Real Jira UI session required (headed browser with SSO/MFA)..."
+  echo ""
+  
+  # Check for interactive environment
+  if [ -z "${DISPLAY:-}" ]; then
+    echo "  ❌ Environment not interactive (DISPLAY empty)"
+    echo "  Cannot complete interactive SSO login in this environment."
+    echo "  Please:"
+    echo "    1. Run this on a machine with a GUI display"
+    echo "    2. Execute: npm run dashboard:auth"
+    echo "    3. Copy the storageState to: $STORAGE_STATE"
+    echo "    4. Re-run: npm run dashboard:playwright"
+    echo ""
+    echo "[AUTH_ENV_NOT_INTERACTIVE]"
+    exit 1
+  fi
+  
+  echo "  DISPLAY is set ($DISPLAY), attempting interactive auth..."
+  echo "  Please log in with your Jira credentials when the browser opens."
+  echo ""
+  
+  # Clean old artifacts before auth attempt
+  if [ -d "$PROFILE_DIR" ]; then
+    echo "  Removing old profile: $PROFILE_DIR"
+    rm -rf "$PROFILE_DIR"
+  fi
+  
+  if [ -f "$STORAGE_STATE" ]; then
+    echo "  Removing invalid storageState: $STORAGE_STATE"
+    rm -f "$STORAGE_STATE"
+  fi
+  
+  # Run auth
+  if xvfb-run -a node e2e/scripts/auth_login_persistent.mjs 2>&1 | tee "$RUN_DIR/11_auth_new.log"; then
+    echo ""
+    echo "  ✅ PERSISTENT_AUTH_OK: Real Jira session established"
+  else
+    echo ""
+    echo "  ❌ PERSISTENT_AUTH_FAIL: Could not establish Jira session"
+    echo ""
+    echo "See details in: $RUN_DIR/11_auth_new.log"
+    tail -50 "$RUN_DIR/11_auth_new.log" || true
+    exit 1
+  fi
+  
+  echo ""
+  
+  # Verify storage file created
+  if [ ! -f "$STORAGE_STATE" ]; then
+    echo "  ❌ Storage file not created: $STORAGE_STATE"
+    exit 1
+  fi
+  
+  local_size=$(wc -c < "$STORAGE_STATE")
+  if [ "$local_size" -lt 100 ]; then
+    echo "  ❌ Storage file too small ($local_size bytes, expected >= 100)"
+    exit 1
+  fi
+  
+  echo "  ✅ StorageState verified: $local_size bytes"
+  echo ""
+else
+  echo "[STEP 3] Skipping auth (existing storageState is valid)"
+  echo ""
+fi
+
+# ============================================================================
+# STEP 4: Final validation of storageState before tests
+# ============================================================================
+echo "[STEP 4] Final validation of storageState for UI navigation..."
+echo ""
+
+# ============================================================================
+# STEP 4: Final validation of storageState before tests
+# ============================================================================
+echo "[STEP 4] Final validation of storageState for UI navigation..."
+echo ""
+
+if node e2e/scripts/validate_storage_state_ui.mjs 2>&1 | tee "$RUN_DIR/12_validate_final.log"; then
+  echo ""
+  echo "  ✅ STORAGESTATE_UI_OK: Ready for test execution"
 else
   echo ""
-  echo "  ❌ PERSISTENT_AUTH_FAIL: Could not establish Jira session"
+  echo "  ❌ STORAGESTATE_UI_FAIL: Cannot proceed with tests"
   echo ""
-  echo "See details in: $RUN_DIR/10_auth.log"
-  tail -50 "$RUN_DIR/10_auth.log" || true
-  exit 1
-fi
-
-echo ""
-
-# Verify storage file
-if [ ! -f "$STORAGE_STATE" ]; then
-  echo "  ❌ Storage file not created: $STORAGE_STATE"
-  exit 1
-fi
-
-local_size=$(wc -c < "$STORAGE_STATE")
-if [ "$local_size" -lt 100 ]; then
-  echo "  ❌ Storage file too small ($local_size bytes, expected >= 100)"
-  exit 1
-fi
-
-echo "  ✅ StorageState verified: $local_size bytes"
-ls -lah "$STORAGE_STATE" | tee "$RUN_DIR/10a_storage_ls.txt"
-echo ""
-
-# ============================================================================
-# STEP 2: Validate StorageState is Usable for UI Navigation
-# ============================================================================
-echo "[STEP 2] PROOF: Validating storageState can navigate Jira dashboard (no auth redirect)..."
-echo ""
-
-if node e2e/scripts/validate_storage_state_ui.mjs 2>&1 | tee "$RUN_DIR/11_validate.log"; then
-  echo ""
-  echo "  ✅ STORAGESTATE_UI_OK: StorageState is valid for UI navigation"
-else
-  echo ""
-  echo "  ❌ STORAGESTATE_UI_FAIL: StorageState cannot navigate without auth redirect"
-  echo ""
-  echo "See details in: $RUN_DIR/11_validate.log"
-  tail -50 "$RUN_DIR/11_validate.log" || true
+  echo "See details in: $RUN_DIR/12_validate_final.log"
+  tail -50 "$RUN_DIR/12_validate_final.log" || true
   exit 1
 fi
 
 echo ""
 
 # ============================================================================
-# STEP 3: Run Playwright Dashboard Acceptance Test
+# STEP 5: Run Playwright Dashboard Acceptance Test
 # ============================================================================
-echo "[STEP 3] Running Playwright dashboard acceptance tests..."
+echo "[STEP 5] Running Playwright dashboard acceptance tests..."
 echo "  (Tests will fail fast if they encounter id.atlassian.com redirects)"
 echo ""
 
@@ -143,9 +228,9 @@ fi
 echo ""
 
 # ============================================================================
-# STEP 4: Collect Artifacts
+# STEP 6: Collect Artifacts
 # ============================================================================
-echo "[STEP 4] Collecting test artifacts..."
+echo "[STEP 6] Collecting test artifacts..."
 
 # Copy playwright test results
 if [ -d "test-results" ]; then
@@ -158,6 +243,26 @@ if [ -d "playwright-report" ]; then
   echo "  Copying Playwright report..."
   cp -r playwright-report/* "$RUN_DIR/" 2>/dev/null || true
 fi
+
+# Copy auth artifacts if they exist
+if [ -f "e2e/.auth/auth_fail.png" ]; then
+  echo "  Copying auth failure screenshot..."
+  cp -v e2e/.auth/auth_fail.png "$RUN_DIR/" 2>/dev/null || true
+fi
+
+if [ -f "e2e/.auth/validate_fail.png" ]; then
+  echo "  Copying validate failure screenshot..."
+  cp -v e2e/.auth/validate_fail.png "$RUN_DIR/" 2>/dev/null || true
+fi
+
+if [ -f "$STORAGE_STATE" ]; then
+  echo "  Copying storageState..."
+  cp -v "$STORAGE_STATE" "$RUN_DIR/storageState.persistent.json" 2>/dev/null || true
+fi
+
+# Create artifact tree listing
+echo "  Creating artifact tree listing..."
+ls -R "$RUN_DIR" > "$RUN_DIR/90_artifact_tree.txt" 2>&1 || true
 
 echo "  ✅ Artifacts collected"
 echo ""
@@ -172,16 +277,20 @@ echo ""
 echo "Evidence saved to: $RUN_DIR"
 echo ""
 echo "Key artifacts:"
-echo "  - 10_auth.log          (Real Jira UI auth session establishment)"
-echo "  - 11_validate.log      (StorageState UI validation proof)"
-echo "  - 20_test.log          (Playwright test execution)"
-echo "  - auth_success.png     (Auth success screenshot)"
-echo "  - validate_ok.png      (Validation proof screenshot)"
+echo "  - 10_validate_existing.log     (Existing storageState validation)"
+echo "  - 11_auth_new.log              (Real Jira UI auth, if performed)"
+echo "  - 12_validate_final.log        (Final storageState validation)"
+echo "  - 20_test.log                  (Playwright test execution)"
+echo "  - 90_artifact_tree.txt         (Complete artifact listing)"
 echo ""
 echo "Markers:"
-echo "  [PERSISTENT_AUTH_OK]"
-echo "  [STORAGESTATE_UI_OK]"
-echo "  Tests PASSED"
+echo "  [AUTH_SKIPPED_STORAGESTATE_VALID]  (existing session reused)"
+echo "  [AUTH_REQUIRED_STORAGESTATE_INVALID] (new session needed)"
+echo "  [AUTH_ENV_NOT_INTERACTIVE]         (DISPLAY empty, cannot auth)"
+echo "  [PERSISTENT_AUTH_OK]               (auth succeeded)"
+echo "  [PERSISTENT_AUTH_FAIL]             (auth failed)"
+echo "  [STORAGESTATE_UI_OK]               (session valid for UI)"
+echo "  [STORAGESTATE_UI_FAIL]             (session invalid for UI)"
 echo ""
 echo "[DASHBOARD_ACCEPTANCE_OK]"
 echo ""
