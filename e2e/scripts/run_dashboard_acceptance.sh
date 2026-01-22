@@ -1,8 +1,13 @@
 #!/bin/bash
 #
-# E2E: Run Dashboard Acceptance Test with Evidence Collection
+# E2E: Run Dashboard Acceptance Test with Real Jira UI Auth
 #
-# Coordinates: persistent auth login, Playwright test run, and artifact collection.
+# Coordinates:
+# 1. Real browser login (launchPersistentContext + user SSO/MFA)
+# 2. Validate storageState works for UI navigation (not just REST)
+# 3. Run Playwright tests with fail-fast redirect detection
+# 4. Collect artifacts and evidence
+#
 # Exits: 0 (all pass), 1 (any failure)
 #
 
@@ -19,7 +24,7 @@ mkdir -p "$RUN_DIR"
 cd /workspaces/Firsttry
 
 echo "================================================================================"
-echo "DASHBOARD ACCEPTANCE TEST"
+echo "DASHBOARD ACCEPTANCE TEST: REAL JIRA UI AUTH"
 echo "================================================================================"
 echo "RUN_DIR: $RUN_DIR"
 echo ""
@@ -35,47 +40,81 @@ PROFILE_DIR="$AUTH_DIR/pw_profile"
 mkdir -p "$AUTH_DIR"
 
 # ============================================================================
-# STEP 1: Persistent Login (if storage doesn't exist)
+# STEP 1: Persistent Login (Real Jira UI Session)
 # ============================================================================
-if [ ! -f "$STORAGE_STATE" ]; then
-  echo "[STEP 1] Establishing persistent Jira session..."
-  echo "  Note: Browser window will open. Please log in manually if needed."
+echo "[STEP 1] Establishing REAL Jira UI session (headed browser with SSO/MFA)..."
+echo ""
+
+# Always create fresh session (don't reuse old profile)
+if [ -d "$PROFILE_DIR" ]; then
+  echo "  Removing old profile: $PROFILE_DIR"
+  rm -rf "$PROFILE_DIR"
+fi
+
+if [ -f "$STORAGE_STATE" ]; then
+  echo "  Removing old storageState: $STORAGE_STATE"
+  rm -f "$STORAGE_STATE"
+fi
+
+echo "  Running auth under Xvfb (visible display for user to interact)..."
+echo "  Please log in with your Jira credentials when the browser opens."
+echo ""
+
+if xvfb-run -a node e2e/scripts/auth_login_persistent.mjs 2>&1 | tee "$RUN_DIR/10_auth.log"; then
   echo ""
-
-  if xvfb-run -a node e2e/scripts/auth_login_persistent.mjs 2>&1 | tee "$RUN_DIR/20_auth_persistent.log"; then
-    echo "  ✅ Persistent auth successful"
-  else
-    echo "  ❌ Persistent auth failed"
-    echo "See: $RUN_DIR/20_auth_persistent.log"
-    exit 1
-  fi
-  echo ""
-
-  # Verify storage file
-  if [ ! -f "$STORAGE_STATE" ]; then
-    echo "  ❌ Storage file not created: $STORAGE_STATE"
-    exit 1
-  fi
-
-  local_size=$(wc -c < "$STORAGE_STATE")
-  if [ "$local_size" -lt 100 ]; then
-    echo "  ❌ Storage file too small ($local_size bytes, expected >= 100)"
-    exit 1
-  fi
-
-  echo "  ✅ Storage verified: $local_size bytes"
-  ls -lah "$STORAGE_STATE" | tee "$RUN_DIR/21_storage_ls.txt"
+  echo "  ✅ PERSISTENT_AUTH_OK: Real Jira session established"
 else
-  echo "[STEP 1] Using existing persistent session:"
-  ls -lah "$STORAGE_STATE" | tee "$RUN_DIR/21_storage_ls_existing.txt"
+  echo ""
+  echo "  ❌ PERSISTENT_AUTH_FAIL: Could not establish Jira session"
+  echo ""
+  echo "See details in: $RUN_DIR/10_auth.log"
+  tail -50 "$RUN_DIR/10_auth.log" || true
+  exit 1
+fi
+
+echo ""
+
+# Verify storage file
+if [ ! -f "$STORAGE_STATE" ]; then
+  echo "  ❌ Storage file not created: $STORAGE_STATE"
+  exit 1
+fi
+
+local_size=$(wc -c < "$STORAGE_STATE")
+if [ "$local_size" -lt 100 ]; then
+  echo "  ❌ Storage file too small ($local_size bytes, expected >= 100)"
+  exit 1
+fi
+
+echo "  ✅ StorageState verified: $local_size bytes"
+ls -lah "$STORAGE_STATE" | tee "$RUN_DIR/10a_storage_ls.txt"
+echo ""
+
+# ============================================================================
+# STEP 2: Validate StorageState is Usable for UI Navigation
+# ============================================================================
+echo "[STEP 2] PROOF: Validating storageState can navigate Jira dashboard (no auth redirect)..."
+echo ""
+
+if node e2e/scripts/validate_storage_state_ui.mjs 2>&1 | tee "$RUN_DIR/11_validate.log"; then
+  echo ""
+  echo "  ✅ STORAGESTATE_UI_OK: StorageState is valid for UI navigation"
+else
+  echo ""
+  echo "  ❌ STORAGESTATE_UI_FAIL: StorageState cannot navigate without auth redirect"
+  echo ""
+  echo "See details in: $RUN_DIR/11_validate.log"
+  tail -50 "$RUN_DIR/11_validate.log" || true
+  exit 1
 fi
 
 echo ""
 
 # ============================================================================
-# STEP 2: Run Playwright Dashboard Acceptance Test
+# STEP 3: Run Playwright Dashboard Acceptance Test
 # ============================================================================
-echo "[STEP 2] Running Playwright dashboard acceptance test..."
+echo "[STEP 3] Running Playwright dashboard acceptance tests..."
+echo "  (Tests will fail fast if they encounter id.atlassian.com redirects)"
 echo ""
 
 export STORAGE_STATE
@@ -83,19 +122,20 @@ export JIRA_DASHBOARD_URL
 export FT_RUN_DIR
 
 if npx playwright test e2e/tests/dashboard_acceptance_full.spec.ts \
-  --reporter=line 2>&1 | tee "$RUN_DIR/30_pw_run.log"; then
+  --reporter=line 2>&1 | tee "$RUN_DIR/20_test.log"; then
   
   echo ""
-  echo "  ✅ All Playwright tests passed"
+  echo "  ✅ All Playwright tests PASSED"
 else
   echo ""
-  echo "  ❌ Playwright test failed"
-  echo "See: $RUN_DIR/30_pw_run.log"
-  
-  # Print last 100 lines of log for debugging
+  echo "  ❌ Playwright tests FAILED"
   echo ""
-  echo "[DEBUG] Last 100 lines of Playwright log:"
-  tail -100 "$RUN_DIR/30_pw_run.log" || true
+  echo "See details in: $RUN_DIR/20_test.log"
+  
+  # Print last 150 lines of log for debugging
+  echo ""
+  echo "[DEBUG] Last 150 lines of test log:"
+  tail -150 "$RUN_DIR/20_test.log" || true
   
   exit 1
 fi
@@ -103,36 +143,45 @@ fi
 echo ""
 
 # ============================================================================
-# STEP 3: Collect Artifacts
+# STEP 4: Collect Artifacts
 # ============================================================================
-echo "[STEP 3] Collecting artifacts..."
+echo "[STEP 4] Collecting test artifacts..."
 
-if [ -d "$RUN_DIR/playwright" ]; then
-  echo "  Copying traces, screenshots, etc..."
-  cp -r "$RUN_DIR/playwright"/* "$RUN_DIR/" 2>/dev/null || true
-  echo "  ✅ Artifacts collected"
+# Copy playwright test results
+if [ -d "test-results" ]; then
+  echo "  Copying Playwright test results..."
+  cp -r test-results/* "$RUN_DIR/" 2>/dev/null || true
 fi
 
+# Copy playwright report traces
+if [ -d "playwright-report" ]; then
+  echo "  Copying Playwright report..."
+  cp -r playwright-report/* "$RUN_DIR/" 2>/dev/null || true
+fi
+
+echo "  ✅ Artifacts collected"
 echo ""
 
 # ============================================================================
-# FINAL: Report
+# FINAL: Report Success
 # ============================================================================
 echo "================================================================================"
-echo "✅ DASHBOARD ACCEPTANCE TEST PASSED"
+echo "✅ DASHBOARD ACCEPTANCE TEST COMPLETE"
 echo "================================================================================"
 echo ""
 echo "Evidence saved to: $RUN_DIR"
 echo ""
-echo "Contents:"
-ls -lah "$RUN_DIR" | grep -v '^d' | tail -20
-echo ""
 echo "Key artifacts:"
-echo "  - 20_auth_persistent.log      (auth session establishment)"
-echo "  - 30_pw_run.log               (Playwright test output)"
-echo "  - 10_normal_mode.png          (screenshot: normal mode)"
-echo "  - 11_debug_mode.png           (screenshot: debug mode)"
-echo "  - 12_after_refresh.png        (screenshot: after refresh)"
+echo "  - 10_auth.log          (Real Jira UI auth session establishment)"
+echo "  - 11_validate.log      (StorageState UI validation proof)"
+echo "  - 20_test.log          (Playwright test execution)"
+echo "  - auth_success.png     (Auth success screenshot)"
+echo "  - validate_ok.png      (Validation proof screenshot)"
+echo ""
+echo "Markers:"
+echo "  [PERSISTENT_AUTH_OK]"
+echo "  [STORAGESTATE_UI_OK]"
+echo "  Tests PASSED"
 echo ""
 echo "[DASHBOARD_ACCEPTANCE_OK]"
 echo ""
