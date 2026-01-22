@@ -35,7 +35,7 @@ import { mapDashEnvelopeV1, assertNonNullDashboardState, logRawDashboardEnvelope
 // ============================================================================
 // IDENTITY ANCHOR CONSTANT (FOR GATE VERIFICATION)
 // ============================================================================
-import { IDENTITY_ANCHOR_V1 } from "./entryProof";
+// Removed: stale static anchor - use dynamically constructed identityAnchor instead
 
 // ============================================================================
 // UI INVOKE WIRING PROOF
@@ -314,9 +314,8 @@ try {
   const identityAnchor = createIdentityAnchor(UI_IDENTITY);
   console.log(`[FT_IDENTITY_ANCHOR] ${identityAnchor}`);
   
-  // CRITICAL: Output anchor constant for gate verification
-  // This must be a literal string that survives minification
-  console.log(IDENTITY_ANCHOR_V1);
+  // NOTE: Only ONE identity anchor in source (the dynamic one above)
+  // Gate verification will scan dist bundle for this exact string
   
 } catch (err) {
   console.error('[FATAL_UI_IDENTITY]', err instanceof Error ? err.message : String(err));

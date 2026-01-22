@@ -220,7 +220,7 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<an
       metaKeys: ["backend_build_sha", "ui_build_sha", "ui_req_id", "probe_nonce", "ts_utc"],
       timestampUtc: now,
       build: {
-        backendBuild: BACKEND_BUILD_SHA || undefined,
+        backendBuild: BACKEND_BUILD_SHA, // BACKBONE FIX D: Always provide backend build SHA (no || undefined fallback)
         uiBuild: undefined
       }
     };
