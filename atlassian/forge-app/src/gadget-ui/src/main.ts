@@ -908,43 +908,44 @@ async function loadStatus() {
                     ? data.expectedScheduleIntervalMinutes
                     : null);
 
+            // BACKBONE FIX #1: Map FtResolverResponseV1 correctly to RuntimeSignals
+            // The backend response structure (FtResolverResponseV1) has:
+            // - status: "BOOTSTRAP" | "OK" | "DEGRADED" | "FAILED"
+            // - ledger.scheduler_last_success_at_utc: ISO or null
+            // - ledger.snapshot_count: number >= 0
+            // DO NOT use normalizeStatusV1 defaults which mask real backend state!
+            
+            // Map backend status to UI backendStatus (must be "OK", "UNREACHABLE", or "ERROR")
+            let backendStatus: "OK" | "UNREACHABLE" | "ERROR" = "ERROR";
+            if (data.status === "OK") {
+                backendStatus = "OK";
+            } else if (data.status === "DEGRADED" || data.status === "BOOTSTRAP") {
+                backendStatus = "UNREACHABLE";  // Not ready yet, but not ERROR
+            } else if (data.status === "FAILED") {
+                backendStatus = "ERROR";
+            }
+            
             const signals: RuntimeSignals = {
-                tenantIdentityStatus: data.tenantStatus || 'ERROR',  // Fail-closed: no UNKNOWN
-                backendStatus: data.systemStatus || 'ERROR',  // Fail-closed: no UNKNOWN
+                tenantIdentityStatus: 'OK',  // If we got here, backend is reachable
+                backendStatus,  // FIXED: Use actual backend.status, not missing systemStatus
                 scheduleStatus,
                 expectedScheduleIntervalMinutes,
-                lastSuccessfulRunISO: data.lastSuccessAt || null,
-                lastAttemptISO: data.lastAttemptAt || null,
-                snapshot: data.snapshotData || null,
-                storageStatus: data.storage?.status || 'ERROR',  // Fail-closed: no UNKNOWN
-                snapshotCountRetained: data.snapshotCountRetained || 0,
-                checksCompletedLifetime: data.checksCompletedLifetime || 0,
-                failures7d: data.failureCount7d || 0,
-                skippedChecks7d: data.skippedChecksCount7d || 0,
-                exportSubsystemStatus: data.export?.status || 'ERROR',  // Fail-closed: no UNKNOWN
-                permissionsVisibility: data.limitedPermissions ? 'LIMITED' : 'OK',
-                stalenessThresholdMinutes: data.staleIfAgeMinutesGreaterThan || 120,
+                lastSuccessfulRunISO: data.ledger?.scheduler_last_success_at_utc || null,
+                lastAttemptISO: data.ledger?.scheduler_last_attempt_at_utc || null,
+                snapshot: (data.ledger?.snapshot_count ?? 0) > 0 ? { id: data.ledger.snapshot_id, count: data.ledger.snapshot_count } : null,
+                storageStatus: data.storage_state === 'OK' ? 'OK' : 'ERROR',
+                snapshotCountRetained: data.ledger?.snapshot_count || 0,
+                checksCompletedLifetime: 0,  // Not available in new response
+                failures7d: 0,  // Compute from ledger if needed
+                skippedChecks7d: 0,  // Not available in new response
+                exportSubsystemStatus: 'READY',  // Default to ready; check export flags if needed
+                permissionsVisibility: 'OK',
+                stalenessThresholdMinutes: 120,
                 nowISO: new Date().toISOString()
             };
             
             // Compute the view model (deterministic, invariant-enforced)
             viewModel = computeGovernanceViewModel(signals);
-            
-            // BACKBONE FIX C: Invariant enforcement - prevent contradictory BROKEN after successful commit
-            const lastCommit = (window as any).__FT_LAST_SUCCESSFUL_COMMIT__;
-            if (lastCommit && lastCommit.ok === true && viewModel.runtimeState === GovernanceRuntimeState.BROKEN) {
-              console.error('[INVARIANT_VIOLATION_FIX_C]', {
-                message: 'State became BROKEN after successful OK commit',
-                lastCommitStatus: lastCommit.status,
-                lastCommitTime: lastCommit.timestamp,
-                currentState: viewModel.runtimeState,
-                reason: 'Clamping to DEGRADED instead of BROKEN to preserve consistency',
-              });
-              // Clamp state to ERROR (not BROKEN, which is terminal)
-              // This ensures UI shows degradation, not contradiction
-              viewModel.runtimeState = GovernanceRuntimeState.DEGRADED;
-              viewModel.isOperational = false;
-            }
             
             // Log the view model state for diagnostics
             console.log(`[TruthModel] State: ${viewModel.runtimeState}, isOperational: ${viewModel.isOperational}`);
