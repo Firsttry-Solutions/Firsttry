@@ -1337,5 +1337,6 @@ p {
 
 /* Reactivate debug UI when support/debug mode is enabled. */
 html.ft-debug [data-ft-debug="1"] {
-  display: block !important;
+  display: revert !important;
+  display: unset !important; /* Fallback for browsers without revert support */
 }
