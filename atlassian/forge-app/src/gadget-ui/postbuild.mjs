@@ -16,6 +16,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -62,42 +63,62 @@ function main() {
     console.log(`[POSTBUILD] wrote entry=app.${uiBuildSha}.js`);
 
     // ========================================================================
-    // L0.1B: INJECT ACTUAL IDENTITY ANCHOR INTO BUNDLE
-    // Replace template anchor with actual build values
+    // L0.1B: INJECT ACTUAL IDENTITY ANCHOR WITH REAL BUNDLE HASH
+    // git= first 7 hex of git SHA (commit identifier)
+    // bundle= first 7 hex of SHA-256 of FINAL JS FILE CONTENT (real provenance)
+    // time= build time ISO string
     // ========================================================================
     try {
-      let bundleContent = fs.readFileSync(appShaJsPath, 'utf-8');
+      const bundleContent = fs.readFileSync(appShaJsPath, 'utf-8');
       
       // Extract UI_BUILD_TIME_UTC from ui_build_meta.ts
       const metaContent = fs.readFileSync(metaPath, 'utf-8');
       const timeMatch = metaContent.match(/export\s+const\s+UI_BUILD_TIME_UTC\s*=\s*["']([^"']+)["']/);
       const buildTimeUtc = timeMatch ? timeMatch[1] : new Date().toISOString();
       
-      // Git SHA (first 7 chars = git identifier)
+      // Git SHA: first 7 chars (git commit identifier)
       const gitSha = uiBuildSha.substring(0, 7);
       
-      // Bundle hash (chars 7-13 of git SHA for distinctness)
-      // This ensures git_sha !== bundle_hash for gate verification
-      const bundleHash = uiBuildSha.substring(7, 14);
+      // Bundle hash: SHA-256 of final file CONTENT (not derived from git SHA)
+      // This provides REAL provenance - bundle hash cannot be predicted from git SHA
+      const bundleHashFull = crypto.createHash('sha256').update(bundleContent).digest('hex');
+      const bundleShort = bundleHashFull.substring(0, 7);
       
-      // Create the actual anchor string
-      const actualAnchor = `FT_IDENTITY_ANCHOR_V1|git=${gitSha}|bundle=${bundleHash}|time=${buildTimeUtc}`;
+      // Create the actual anchor string with REAL distinctness
+      const actualAnchor = `FT_IDENTITY_ANCHOR_V1|git=${gitSha}|bundle=${bundleShort}|time=${buildTimeUtc}`;
       
-      // Replace template anchor (with .substring calls) with actual values
-      // Template looks like: FT_IDENTITY_ANCHOR_V1|git=${e.ui_git_sha.substring(0,7)}|...
-      // We replace the whole template expression with the literal string
+      // INVARIANT CHECK: git and bundle must be different (real distinctness)
+      if (gitSha === bundleShort) {
+        console.error(`[POSTBUILD] FATAL: git SHA === bundle hash (${gitSha}). This violates distinctness!`);
+        console.error(`[POSTBUILD] git (first 7 of commit): ${gitSha}`);
+        console.error(`[POSTBUILD] bundle (first 7 of sha256(content)): ${bundleShort}`);
+        process.exit(1);
+      }
+      
+      console.log(`[POSTBUILD] ✓ Anchor components:`);
+      console.log(`[POSTBUILD]   git=${gitSha} (from UI_GIT_SHA.slice(0,7))`);
+      console.log(`[POSTBUILD]   bundle=${bundleShort} (from sha256(content).slice(0,7))`);
+      console.log(`[POSTBUILD]   time=${buildTimeUtc}`);
+      console.log(`[POSTBUILD]   Anchor: ${actualAnchor}`);
+      
+      // Try to replace template anchor if it exists
       const templatePattern = /FT_IDENTITY_ANCHOR_V1\|git=\$\{.*?\.substring\(0,\s*7\)\}\|bundle=\$\{.*?\}\|time=\$\{.*?\}/g;
-      const newContent = bundleContent.replace(templatePattern, actualAnchor);
+      let newContent = bundleContent.replace(templatePattern, actualAnchor);
       
       if (bundleContent !== newContent) {
         fs.writeFileSync(appShaJsPath, newContent, 'utf-8');
-        console.log(`[POSTBUILD] ✓ Injected identity anchor: ${actualAnchor}`);
+        console.log(`[POSTBUILD] ✓ Replaced template anchor with literal`);
       } else {
-        console.warn(`[POSTBUILD] ⚠ Identity anchor template not found in bundle (might be dead code)`);
+        // Template not found - append anchor as a comment (deterministic, appears once)
+        // Use marker comment that is grep-able and won't interfere with code
+        const anchorComment = `/*\n * FT_IDENTITY_ANCHOR_V1|git=${gitSha}|bundle=${bundleShort}|time=${buildTimeUtc}\n */`;
+        const finalContent = bundleContent + '\n' + anchorComment;
+        fs.writeFileSync(appShaJsPath, finalContent, 'utf-8');
+        console.log(`[POSTBUILD] ✓ Appended anchor as comment (template not found in bundle)`);
       }
     } catch (err) {
-      console.warn(`[POSTBUILD] ⚠ Could not inject identity anchor:`, err.message);
-      // Non-fatal - anchor is for verification gate, not runtime
+      console.error(`[POSTBUILD] ERROR during anchor injection: ${err.message}`);
+      process.exit(1);
     }
 
     // 3. Process index.html
