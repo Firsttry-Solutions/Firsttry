@@ -1,11 +1,8 @@
 /**
- * Unit Test: Contract Proof Webtrigger Handler - WITH TOKEN AUTHENTICATION
+ * Unit Test: Contract Proof Webtrigger Handler - TOKEN AUTHENTICATION + RESPONSE FORMAT
  * 
- * Tests the webtrigger response shape and token validation.
- * Verifies that:
- * - Missing token returns 401
- * - Wrong token returns 401
- * - Correct token returns 200 + valid envelope
+ * Tests the webtrigger token validation and response format.
+ * Forge webtriggers return { statusCode, headers?, body? } format.
  * 
  * file: atlassian/forge-app/tests/p1_contract_proof_webtrigger.test.ts
  * run: npm test
@@ -16,7 +13,7 @@ import { run as contractProofHandler } from "../src/webtriggers/contract-proof";
 
 const TEST_TOKEN = "test-token-12345678901234567890";
 
-describe("Contract Proof Webtrigger - Token Authentication", () => {
+describe("Contract Proof Webtrigger - Token Authentication + Response Format", () => {
   beforeEach(() => {
     // Set test token in environment
     process.env.FT_CONTRACT_PROOF_TOKEN = TEST_TOKEN;
@@ -27,19 +24,58 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
     delete process.env.FT_CONTRACT_PROOF_TOKEN;
   });
 
+  // ===== RESPONSE FORMAT TESTS =====
+
+  it("should return response object with statusCode", async () => {
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
+    const response = await contractProofHandler(req);
+
+    expect(response).toBeDefined();
+    expect(typeof response).toBe("object");
+    expect(response).toHaveProperty("statusCode");
+    expect(typeof response.statusCode).toBe("number");
+  });
+
+  it("should return response with body as string", async () => {
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
+    const response = await contractProofHandler(req);
+
+    expect(response).toHaveProperty("body");
+    expect(typeof response.body).toBe("string");
+  });
+
+  it("should have application/json content-type header", async () => {
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
+    const response = await contractProofHandler(req);
+
+    expect(response.headers).toBeDefined();
+    expect(response.headers["content-type"]).toBe("application/json");
+  });
+
   // ===== TOKEN VALIDATION TESTS =====
 
   it("should return 401 when x-ft-proof-token header is missing", async () => {
     const req = {
       headers: {}
     };
-    const res = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
 
-    expect(res).toBeDefined();
-    expect(res.ok).toBe(false);
-    expect(res.error).toBeDefined();
-    expect(res.error.code).toBe("UNAUTHORIZED");
-    expect(res.error.message).toContain("x-ft-proof-token");
+    expect(response.statusCode).toBe(401);
+    const parsed = JSON.parse(response.body);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.error).toBe("unauthorized");
   });
 
   it("should return 401 when x-ft-proof-token is incorrect", async () => {
@@ -48,26 +84,29 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
         "x-ft-proof-token": "wrong-token"
       }
     };
-    const res = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
 
-    expect(res.ok).toBe(false);
-    expect(res.error.code).toBe("UNAUTHORIZED");
+    expect(response.statusCode).toBe(401);
+    const parsed = JSON.parse(response.body);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.error).toBe("unauthorized");
   });
 
-  it("should return valid envelope when x-ft-proof-token is correct", async () => {
+  it("should return 200 when x-ft-proof-token is correct", async () => {
     const req = {
       headers: {
         "x-ft-proof-token": TEST_TOKEN
       }
     };
-    const envelope = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
 
-    // Should return envelope, not error
+    expect(response.statusCode).toBe(200);
+    const envelope = JSON.parse(response.body);
     expect(envelope.ok).toBe(true);
     expect(envelope.envelopeKind).toBe("FT_DASH_ENVELOPE_V1");
   });
 
-  it("should return 401 when FT_CONTRACT_PROOF_TOKEN env var is not set", async () => {
+  it("should return 500 when FT_CONTRACT_PROOF_TOKEN env var is not configured", async () => {
     delete process.env.FT_CONTRACT_PROOF_TOKEN;
     
     const req = {
@@ -75,21 +114,26 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
         "x-ft-proof-token": "any-token"
       }
     };
-    const res = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
 
-    expect(res.ok).toBe(false);
-    expect(res.error.code).toBe("UNAUTHORIZED");
+    expect(response.statusCode).toBe(500);
+    const parsed = JSON.parse(response.body);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.error).toBe("misconfigured");
   });
 
   // ===== ENVELOPE CONTRACT TESTS (only with valid token) =====
 
-  it("should return JSON with correct envelope structure", async () => {
+  it("should return JSON with correct envelope structure on 200", async () => {
     const req = {
       headers: {
         "x-ft-proof-token": TEST_TOKEN
       }
     };
-    const envelope = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
+    expect(response.statusCode).toBe(200);
+
+    const envelope = JSON.parse(response.body);
 
     // Contract: Envelope shape
     expect(envelope).toHaveProperty("envelopeKind");
@@ -106,7 +150,8 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
         "x-ft-proof-token": TEST_TOKEN
       }
     };
-    const envelope = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
+    const envelope = JSON.parse(response.body);
 
     // Contract: Specific values
     expect(envelope.envelopeKind).toBe("FT_DASH_ENVELOPE_V1");
@@ -120,7 +165,8 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
         "x-ft-proof-token": TEST_TOKEN
       }
     };
-    const envelope = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
+    const envelope = JSON.parse(response.body);
 
     // Contract: ok field type
     expect(typeof envelope.ok).toBe("boolean");
@@ -132,7 +178,8 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
         "x-ft-proof-token": TEST_TOKEN
       }
     };
-    const envelope = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
+    const envelope = JSON.parse(response.body);
 
     // Contract: ok=true => data exists
     if (envelope.ok === true) {
@@ -147,7 +194,8 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
         "x-ft-proof-token": TEST_TOKEN
       }
     };
-    const envelope = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
+    const envelope = JSON.parse(response.body);
 
     // Contract: meta structure
     expect(envelope.meta).toBeDefined();
@@ -164,10 +212,11 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
         "x-ft-proof-token": TEST_TOKEN
       }
     };
-    const envelope = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
+    const envelope = JSON.parse(response.body);
     const { meta } = envelope;
 
-    // Contract: meta fields (not strict - some may be null/undefined but must exist)
+    // Contract: meta fields
     expect(meta).toHaveProperty("backend_build_sha");
     expect(meta).toHaveProperty("ui_build_sha");
     expect(meta).toHaveProperty("ui_req_id");
@@ -187,12 +236,10 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
         "x-ft-proof-token": TEST_TOKEN
       }
     };
-    const envelope = await contractProofHandler(req);
-
-    const bodyStr = JSON.stringify(envelope).toLowerCase();
+    const response = await contractProofHandler(req);
+    const bodyStr = response.body.toLowerCase();
 
     // Proof should not contain tenant identifiers
-    // (This is a basic sanity check; actual secrets validation is deeper)
     expect(bodyStr).not.toContain("tenant");
     expect(bodyStr).not.toContain("apikey");
   });
@@ -203,10 +250,64 @@ describe("Contract Proof Webtrigger - Token Authentication", () => {
         "x-ft-proof-token": TEST_TOKEN
       }
     };
-    const envelope = await contractProofHandler(req);
+    const response = await contractProofHandler(req);
+    const envelope = JSON.parse(response.body);
 
     // The data object should identify itself as proof
     expect(envelope.data).toHaveProperty("proofName");
     expect(envelope.data.proofName).toBe("ft_contractProof_dashEnvelope_v1");
+  });
+
+  // ===== SERIALIZATION TESTS =====
+
+  it("should have body that is valid JSON", async () => {
+    const req = {
+      headers: {
+        "x-ft-proof-token": TEST_TOKEN
+      }
+    };
+    const response = await contractProofHandler(req);
+
+    // CRITICAL: JSON.parse must not throw
+    let parsed: any;
+    expect(() => {
+      parsed = JSON.parse(response.body);
+    }).not.toThrow();
+
+    expect(typeof parsed).toBe("object");
+  });
+
+  it("should have correlationId in error responses", async () => {
+    const req = {
+      headers: {} // Missing token
+    };
+    const response = await contractProofHandler(req);
+    const parsed = JSON.parse(response.body);
+
+    if (response.statusCode !== 200) {
+      expect(parsed.correlationId).toBeDefined();
+      expect(typeof parsed.correlationId).toBe("string");
+      // Format: cp_<timestamp>_<random>
+      expect(parsed.correlationId).toMatch(/^cp_/);
+    }
+  });
+
+  it("should handle case-insensitive header names", async () => {
+    // Try with different case variations
+    const testCases = [
+      { "x-ft-proof-token": TEST_TOKEN },
+      { "X-FT-PROOF-TOKEN": TEST_TOKEN },
+      { "X-ft-Proof-Token": TEST_TOKEN }
+    ];
+
+    for (const headers of testCases) {
+      const req = { headers };
+      const response = await contractProofHandler(req);
+      
+      // Should succeed with any case
+      expect(response.statusCode).toBe(200);
+      const parsed = JSON.parse(response.body);
+      expect(parsed.ok).toBe(true);
+    }
   });
 });
