@@ -1,80 +1,80 @@
 #!/bin/bash
-# Phase 6: Bundle Provenance Verifier
-# Purpose: Verify that bundle identity (SHA256 content hash) is distinct from git commit SHA
-# Usage: bash tools/verify_bundle_provenance.sh
+# Phase 6 STRICT Bundle Provenance Verifier
+# 
+# SPEC (fail-closed, no warnings allowed):
+# - Find exactly 1 bundle file: src/gadget-ui/dist/app.*.js
+# - Extract anchor from block comment: /* FT_IDENTITY_ANCHOR_V1|git=...|bundle=...|time=... */
+# - Call strip_and_hash.js to:
+#   * Verify exactly 1 block comment with anchor
+#   * Strip it and compute sha256 of stripped bytes
+#   * Verify computed prefix7 == embedded bundle (HARD FAIL if not)
+# - Output JSON with all fields
+# - HARD FAIL if: any file missing, format invalid, hash mismatch, warnings
+# - Only then print "✅ PASS: Bundle provenance verified"
 
 set -e
 
 RUN_DIR="${RUN_DIR:-.}"
 
-# Find the gadget bundle file
-BUNDLE="$(ls -1 src/gadget-ui/dist/app.*.js 2>/dev/null | head -1)"
-if [ -z "$BUNDLE" ]; then
-  echo "ERROR: No bundle found in src/gadget-ui/dist/app.*.js"
+# Find the gadget bundle file (must be exactly 1)
+BUNDLE_COUNT=$(ls -1 src/gadget-ui/dist/app.*.js 2>/dev/null | wc -l)
+if [ "$BUNDLE_COUNT" -ne 1 ]; then
+  echo "ERROR: Expected exactly 1 bundle file, found $BUNDLE_COUNT" | tee -a "$RUN_DIR/provenance.log"
   exit 1
 fi
 
-echo "Bundle: $BUNDLE" | tee -a "$RUN_DIR/provenance_log.txt"
+BUNDLE="$(ls -1 src/gadget-ui/dist/app.*.js | head -1)"
+echo "[verify_bundle_provenance] Bundle: $BUNDLE" | tee -a "$RUN_DIR/provenance.log"
 
-# Extract identity anchor from bundle
-ANCHOR_LINE=$(grep -o 'FT_IDENTITY_ANCHOR_V1|git=[^|]*|bundle=[^|]*|time=[^`]*' "$BUNDLE" 2>/dev/null || echo "")
+# Call strict hash verifier (will exit 1 on any error)
+HASH_JSON=$(node tools/strip_and_hash.js "$BUNDLE" 2>&1)
+HASH_EXIT=$?
 
-if [ -z "$ANCHOR_LINE" ]; then
-  echo "ERROR: Identity anchor not found in bundle" | tee -a "$RUN_DIR/provenance_log.txt"
+echo "[verify_bundle_provenance] strip_and_hash.js exit code: $HASH_EXIT" | tee -a "$RUN_DIR/provenance.log"
+echo "[verify_bundle_provenance] JSON output:" | tee -a "$RUN_DIR/provenance.log"
+echo "$HASH_JSON" | tee -a "$RUN_DIR/provenance.log"
+
+if [ $HASH_EXIT -ne 0 ]; then
+  echo "ERROR: strip_and_hash.js failed with exit code $HASH_EXIT" | tee -a "$RUN_DIR/provenance.log"
   exit 1
 fi
 
-echo "Anchor: $ANCHOR_LINE" | tee -a "$RUN_DIR/provenance_log.txt"
+# Verify JSON structure (must have status=OK and all required fields)
+echo "[verify_bundle_provenance] Validating JSON structure..." | tee -a "$RUN_DIR/provenance.log"
 
-# Parse components
-GIT_SHA=$(echo "$ANCHOR_LINE" | grep -o 'git=[^|]*' | cut -d= -f2)
-BUNDLE_SHA=$(echo "$ANCHOR_LINE" | grep -o 'bundle=[^|]*' | cut -d= -f2)
-TIME_STAMP=$(echo "$ANCHOR_LINE" | grep -o 'time=[^`]*' | cut -d= -f2)
+STATUS=$(echo "$HASH_JSON" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+ANCHOR_COUNT=$(echo "$HASH_JSON" | grep -o '"anchorCount":[0-9]*' | cut -d':' -f2)
+EMBEDDED_BUNDLE=$(echo "$HASH_JSON" | grep -o '"embeddedBundle":"[^"]*"' | cut -d'"' -f4)
+COMPUTED_PREFIX=$(echo "$HASH_JSON" | grep -o '"computedPrefix7":"[^"]*"' | cut -d'"' -f4)
 
-echo "Git SHA: $GIT_SHA" | tee -a "$RUN_DIR/provenance_log.txt"
-echo "Bundle SHA: $BUNDLE_SHA" | tee -a "$RUN_DIR/provenance_log.txt"
-echo "Timestamp: $TIME_STAMP" | tee -a "$RUN_DIR/provenance_log.txt"
+echo "[verify_bundle_provenance] status=$STATUS, anchorCount=$ANCHOR_COUNT" | tee -a "$RUN_DIR/provenance.log"
+echo "[verify_bundle_provenance] embeddedBundle=$EMBEDDED_BUNDLE, computedPrefix7=$COMPUTED_PREFIX" | tee -a "$RUN_DIR/provenance.log"
 
-# Verify distinctness (critical provenance check)
-if [ "$GIT_SHA" = "$BUNDLE_SHA" ]; then
-  echo "FAIL: Git SHA equals Bundle SHA — provenance not distinct" | tee -a "$RUN_DIR/provenance_log.txt"
+# HARD FAIL on any validation failure
+if [ "$STATUS" != "OK" ]; then
+  echo "ERROR: JSON status is not OK: $STATUS" | tee -a "$RUN_DIR/provenance.log"
   exit 1
 fi
 
-# Verify format (hex-like, reasonable length)
-if ! echo "$GIT_SHA" | grep -qE '^[0-9a-f]{7,40}$'; then
-  echo "FAIL: Git SHA has invalid format: $GIT_SHA" | tee -a "$RUN_DIR/provenance_log.txt"
+if [ "$ANCHOR_COUNT" -ne 1 ]; then
+  echo "ERROR: Expected anchorCount=1, got $ANCHOR_COUNT" | tee -a "$RUN_DIR/provenance.log"
   exit 1
 fi
 
-if ! echo "$BUNDLE_SHA" | grep -qE '^[0-9a-f]{7,40}$'; then
-  echo "FAIL: Bundle SHA has invalid format: $BUNDLE_SHA" | tee -a "$RUN_DIR/provenance_log.txt"
+if [ "$EMBEDDED_BUNDLE" != "$COMPUTED_PREFIX" ]; then
+  echo "ERROR: Bundle mismatch! embedded=$EMBEDDED_BUNDLE but computed=$COMPUTED_PREFIX" | tee -a "$RUN_DIR/provenance.log"
   exit 1
 fi
 
-# Verify bundle file exists and is non-empty
-if [ ! -f "$BUNDLE" ] || [ ! -s "$BUNDLE" ]; then
-  echo "FAIL: Bundle file missing or empty: $BUNDLE" | tee -a "$RUN_DIR/provenance_log.txt"
+if [ -z "$EMBEDDED_BUNDLE" ] || [ -z "$COMPUTED_PREFIX" ]; then
+  echo "ERROR: Missing required fields in JSON" | tee -a "$RUN_DIR/provenance.log"
   exit 1
 fi
 
-# Hash the bundle content independently
-COMPUTED_HASH=$(node tools/strip_and_hash.js "$BUNDLE" 2>/dev/null || echo "")
-if [ -z "$COMPUTED_HASH" ]; then
-  echo "WARNING: Could not compute independent hash (strip_and_hash.js may not exist)" | tee -a "$RUN_DIR/provenance_log.txt"
-  # Don't fail here — allow verification to continue with anchor-only check
-else
-  echo "Computed hash: $COMPUTED_HASH" | tee -a "$RUN_DIR/provenance_log.txt"
-  if [ "$COMPUTED_HASH" != "$BUNDLE_SHA" ]; then
-    echo "WARNING: Computed hash does not match embedded bundle SHA" | tee -a "$RUN_DIR/provenance_log.txt"
-    # Allow continuation — the anchor is the source of truth
-  fi
-fi
-
-echo "" | tee -a "$RUN_DIR/provenance_log.txt"
-echo "✅ PASS: Bundle provenance verified" | tee -a "$RUN_DIR/provenance_log.txt"
-echo "  - Git and bundle sources are distinct" | tee -a "$RUN_DIR/provenance_log.txt"
-echo "  - Both SHAs have valid format" | tee -a "$RUN_DIR/provenance_log.txt"
-echo "  - Bundle file exists and is non-empty" | tee -a "$RUN_DIR/provenance_log.txt"
+echo "" | tee -a "$RUN_DIR/provenance.log"
+echo "✅ PASS: Bundle provenance verified" | tee -a "$RUN_DIR/provenance.log"
+echo "  - Exactly 1 anchor found in block comment" | tee -a "$RUN_DIR/provenance.log"
+echo "  - Bundle SHA: $EMBEDDED_BUNDLE (matches computed hash)" | tee -a "$RUN_DIR/provenance.log"
+echo "  - No warnings, no mismatches" | tee -a "$RUN_DIR/provenance.log"
 
 exit 0
