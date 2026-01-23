@@ -191,6 +191,7 @@ done < "$RUN_DIR/25_git_status_postbuild.txt"
 echo "✓ Post-build dirty files within whitelist" | tee "$RUN_DIR/25_whitelist_ok.txt"
 
 # === STEP 10: Cleanup (revert generated, don't delete) ===
+cd /workspaces/Firsttry
 git checkout -- atlassian/forge-app/tools/.build_meta.json atlassian/forge-app/tools/.build_meta.sh atlassian/forge-app/tools/.build_meta.env atlassian/forge-app/src/backend_build.ts atlassian/forge-app/src/gadget-ui/src/ui_build_meta.ts atlassian/forge-app/src/gadget-ui/src/build/ui_build_meta.json || true
 rm -rf atlassian/forge-app/src/gadget-ui/dist || true
 
@@ -207,6 +208,9 @@ if [ -s "$RUN_DIR/26_git_status_after_revert.txt" ]; then
 fi
 
 echo "✓ Tree clean after revert" | tee "$RUN_DIR/26_clean_ok.txt"
+
+# Return to forge-app directory
+cd "$FORGE_APP"
 
 # === STEP 11: Runtime prechecks ===
 if [ ! -f "$STORAGE_STATE" ]; then
