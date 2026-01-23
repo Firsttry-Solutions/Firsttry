@@ -230,10 +230,60 @@ echo "✓ Tree clean after revert" | tee "$RUN_DIR/26_clean_ok.txt"
 # Return to forge-app directory
 cd "$FORGE_APP"
 
-# === STEP 11: Runtime prechecks ===
+# === STEP 11: Runtime prechecks - FAIL-CLOSED storageState validation ===
+
+# Default STORAGE_STATE if not set
+if [ -z "$STORAGE_STATE" ]; then
+  STORAGE_STATE="/workspaces/Firsttry/e2e/.auth/storageState.json"
+fi
+
+# Layer 1: File must exist
 if [ ! -f "$STORAGE_STATE" ]; then
   {
-    echo "STOP: STORAGE_STATE_NOT_FOUND: $STORAGE_STATE"
+    echo "STOP: STORAGE_STATE_MISSING"
+  } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
+  exit 1
+fi
+
+# Layer 2: File must be > 2000 bytes
+FILE_SIZE=$(stat -c%s "$STORAGE_STATE" 2>/dev/null || stat -f%z "$STORAGE_STATE" 2>/dev/null || echo 0)
+if [ "$FILE_SIZE" -le 2000 ]; then
+  {
+    echo "STOP: STORAGE_STATE_TOO_SMALL"
+    echo "File: $STORAGE_STATE"
+    echo "Size: $FILE_SIZE bytes (expected > 2000)"
+  } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
+  exit 1
+fi
+
+# Layer 3: JSON must parse and have >= 5 cookies
+COOKIE_COUNT=$(node -e "
+try {
+  const fs = require('fs');
+  const data = JSON.parse(fs.readFileSync('$STORAGE_STATE', 'utf-8'));
+  console.log((data.cookies || []).length);
+} catch (e) {
+  console.log('0');
+}
+" 2>/dev/null || echo 0)
+
+if [ -z "$COOKIE_COUNT" ] || [ "$COOKIE_COUNT" -eq 0 ]; then
+  {
+    echo "STOP: STORAGE_STATE_INVALID_OR_NO_COOKIES"
+    echo "File: $STORAGE_STATE"
+    echo "Could not parse JSON or extract cookies"
+  } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
+  exit 1
+fi
+
+if [ "$COOKIE_COUNT" -lt 5 ]; then
+  {
+    echo "STOP: STORAGE_STATE_TOO_FEW_COOKIES"
+    echo "File: $STORAGE_STATE"
+    echo "Cookies: $COOKIE_COUNT (expected >= 5)"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
   echo "RUN_DIR=$RUN_DIR"
   exit 1
@@ -241,7 +291,7 @@ fi
 
 echo "$JIRA_DASHBOARD_URL" | tee "$RUN_DIR/40_dashboard_url.txt"
 echo "$STORAGE_STATE" | tee "$RUN_DIR/41_storage_state.txt"
-echo "✓ Runtime prechecks passed" | tee "$RUN_DIR/42_prechecks_ok.txt"
+echo "✓ Runtime prechecks passed (storageState: $FILE_SIZE bytes, $COOKIE_COUNT cookies)" | tee "$RUN_DIR/42_prechecks_ok.txt"
 
 # === STEP 12: Real runtime probe ===
 cd "$FORGE_APP"
