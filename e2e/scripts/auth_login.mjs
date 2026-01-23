@@ -155,12 +155,11 @@ async function authenticate() {
     process.exit(1);
   }
 
-  // Check for auth redirect
-  if (finalUrl.includes('id.atlassian.com/login') || finalUrl.includes('id.atlassian.com') && finalUrl.includes('/login')) {
-    console.error(`[AUTH] ✗ FATAL: Redirected to auth page: ${finalUrl}`);
-    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, finalUrl, title, false, false, 'AUTH_REDIRECT', page);
-    await browser.close();
-    process.exit(1);
+  // Check for auth redirect - but ALLOW it (don't hard fail)
+  // Login redirect is expected and normal
+  if (finalUrl.includes('id.atlassian.com/login') || (finalUrl.includes('id.atlassian.com') && finalUrl.includes('/login'))) {
+    console.log(`[AUTH] Login redirect detected: ${finalUrl}`);
+    console.log(`[AUTH] Waiting for manual login completion (up to 5 minutes)...`);
   }
 
   console.log('[AUTH] Browser opened - URL is valid, please log in manually');
@@ -228,9 +227,9 @@ async function authenticate() {
   }
 
   if (!authenticated || !jiraShellVerified) {
-    console.error('[AUTH] ✗ Authentication or Jira shell verification failed after 5 minutes');
+    console.error('[AUTH] ✗ Login not completed or Jira shell not verified after 5 minutes');
     
-    const failureReason = !authenticated ? 'header not detected' : 'jira shell selectors not found';
+    const failureReason = 'LOGIN_NOT_COMPLETED_TIMEOUT';
     await writeFailureProof(jiraSiteInput, jiraSiteNormalized, page.url(), await page.title().catch(() => ''), authenticated, jiraShellVerified, failureReason, page);
     
     await browser.close();
