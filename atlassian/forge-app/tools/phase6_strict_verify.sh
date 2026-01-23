@@ -59,21 +59,21 @@ done
 echo "✓ All required tools exist and tracked" | tee "$RUN_DIR/02_tools_ok.txt"
 
 # === STEP 3: Verify wiring in package.json ===
-if ! grep -q '"verify:bundle:provenance"' package.json; then
+if ! grep -q '"verify:bundle:provenance"' "$FORGE_APP/package.json"; then
   {
     echo "STOP: PROVENANCE_SCRIPT_NOT_IN_PACKAGE_JSON"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
   exit 1
 fi
-grep '"verify:bundle:provenance"' package.json | tee "$RUN_DIR/03_package_json_extract.txt"
+grep '"verify:bundle:provenance"' "$FORGE_APP/package.json" | tee "$RUN_DIR/03_package_json_extract.txt"
 
-if ! grep -q 'npm run verify:bundle:provenance' package.json; then
+if ! grep -q 'npm run verify:bundle:provenance' "$FORGE_APP/package.json"; then
   {
     echo "STOP: PROVENANCE_NOT_WIRED_INTO_BUILD_GADGET"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
   exit 1
 fi
-grep 'npm run verify:bundle:provenance' package.json | tee "$RUN_DIR/04_build_gadget_script.txt"
+grep 'npm run verify:bundle:provenance' "$FORGE_APP/package.json" | tee "$RUN_DIR/04_build_gadget_script.txt"
 
 # === STEP 4: Run tests ===
 if ! npm test > "$RUN_DIR/10_npm_test_full.txt" 2>&1; then
@@ -130,6 +130,7 @@ fi
 echo "✓ No warnings in provenance flow" | tee "$RUN_DIR/22_build_clean.txt"
 
 # === STEP 8: Standalone provenance verification ===
+cd "$FORGE_APP"
 BUNDLE="$(ls -1 src/gadget-ui/dist/app.*.js | head -1)"
 if [ -z "$BUNDLE" ] || [ ! -f "$BUNDLE" ]; then
   {
@@ -220,6 +221,7 @@ echo "$STORAGE_STATE" | tee "$RUN_DIR/41_storage_state.txt"
 echo "✓ Runtime prechecks passed" | tee "$RUN_DIR/42_prechecks_ok.txt"
 
 # === STEP 12: Real runtime probe ===
+cd "$FORGE_APP"
 export RUN_DIR STORAGE_STATE JIRA_DASHBOARD_URL
 if ! node e2e/phase6_runtime_probe.mjs > "$RUN_DIR/46_probe_run.txt" 2>&1; then
   {
