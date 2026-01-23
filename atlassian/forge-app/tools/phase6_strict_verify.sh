@@ -10,6 +10,11 @@ JIRA_DASHBOARD_URL="${JIRA_DASHBOARD_URL:-https://firsttry.atlassian.net/jira/da
 STORAGE_STATE="${STORAGE_STATE:-/workspaces/Firsttry/e2e/.auth/storageState.json}"
 FORGE_APP="${FORGE_APP:-.}"
 
+# Make FORGE_APP absolute
+if [[ ! "$FORGE_APP" = /* ]]; then
+  FORGE_APP="$(cd "$FORGE_APP" && pwd)"
+fi
+
 # Create RUN_DIR and record it (single source of truth)
 RUN_DIR="/tmp/ft_phase6_strict_$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$RUN_DIR"
