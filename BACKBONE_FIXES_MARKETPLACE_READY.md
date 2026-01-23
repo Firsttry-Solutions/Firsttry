@@ -268,3 +268,120 @@ All 3 critical bugs fixed and verified. Dashboard backbone state management is n
 - ✅ Fail-closed (never UNKNOWN/NONE, always explicit values)
 - ✅ Tested (11 regression tests + 1804+ suite tests)
 - ✅ Auditable (identity/proof markers present in all responses)
+
+---
+
+## Phase 6: Runtime Verification Framework - COMPLETE
+
+### A) Runtime Probe Rewrite (Deterministic & Fail-Closed)
+
+**File:** [e2e/phase6_runtime_probe.mjs](atlassian/forge-app/e2e/phase6_runtime_probe.mjs)
+
+**Key Improvements:**
+- ✅ **Deterministic**: Always produces artifacts, explicit exit codes
+- ✅ **Fail-closed**: No "best effort" passes, marker-based truth extraction
+- ✅ **Auditable**: Console capture, page HTML, screenshot, trace
+
+**Artifacts (ALWAYS written):**
+```
+50_runtime_console.log       - All console/error/request-failed messages
+52_runtime_page.html          - Full page HTML at probe time
+53_runtime_screenshot.png    - Visual state screenshot
+54_runtime_trace.zip         - Playwright trace
+46_runtime_probe_run.txt     - STOP reason code (on failure)
+51_runtime_truth.json        - Extracted truth table (on success)
+```
+
+**Explicit STOP Codes:**
+- `ENV_MISSING` - Missing RUN_DIR, STORAGE_STATE, JIRA_DASHBOARD_URL
+- `NAVIGATION_FAILED` - Page navigation timeout/error
+- `AUTH_REDIRECT` - Auth redirects detected
+- `DASHBOARD_NOT_REACHED` - Jira dashboard UI not found
+- `GADGET_FRAME_NOT_FOUND` - Forge gadget iframe not detected
+- `REQUIRED_MARKERS_MISSING` - Console markers not present
+- `TRUTH_FIELDS_MISSING` - Truth table extraction incomplete
+- `PROBE_ERROR` - Unexpected runtime errors
+
+**Marker-Based Truth Extraction:**
+```
+Requires three markers:
+  [UI_ENTRY_RUNTIME_PROOF]        - Entry proof from UI
+  [UI_FT_GETDASHBOARDSTATE_SUCCESS] - Dashboard state fetch
+  [BACKBONE_STATE_COMMITTED]       - State persistence
+```
+
+### B) Auth Script Normalization (Phase 6 Alignment)
+
+**File:** [e2e/scripts/auth_login.mjs](e2e/scripts/auth_login.mjs)
+
+**Key Fixes:**
+
+1. **URL Normalization Function**
+   ```javascript
+   function normalizeJiraBase(input) {
+     if (!input) return 'https://firsttry.atlassian.net';
+     let normalized = input.trim();
+     if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+       normalized = 'https://' + normalized;
+     }
+     return normalized.replace(/\/$/, '');
+   }
+   ```
+   - Accepts both "firsttry.atlassian.net" and "https://firsttry.atlassian.net"
+   - Always returns proper scheme
+   - Removes trailing slashes
+
+2. **Navigation Validation (HARD FAIL)**
+   - After goto(), verify: `finalUrl !== 'about:blank'`
+   - Verify: `finalUrl.startsWith('https://') || finalUrl.startsWith('http://')`
+   - Check: Not redirected to `id.atlassian.com/login`
+   - Write failure proof if any validation fails
+
+3. **StorageState Path Alignment (Phase 6)**
+   - Changed from: `/workspaces/Firsttry/.auth/storageState.json`
+   - Changed to: `/workspaces/Firsttry/e2e/.auth/storageState.json`
+   - Matches Phase 6 probe expectations
+   - Allows override via `STORAGE_STATE` env var
+
+4. **Fail-Closed Proof JSON**
+   ```json
+   {
+     "ts": "2026-01-23T10:25:00.000Z",
+     "attemptedUrl": "firsttry.atlassian.net",
+     "normalizedUrl": "https://firsttry.atlassian.net",
+     "finalUrl": "https://id.atlassian.com/login?...",
+     "title": "Log in",
+     "authenticated": false,
+     "jiraShellVerified": false,
+     "reason": "AUTH_REDIRECT",
+     "htmlLen": 42000
+   }
+   ```
+
+**Benefits:**
+- ✅ No more silent navigation failures
+- ✅ Explicit STOP reasons for debugging
+- ✅ Normalized URLs prevent typos
+- ✅ Phase 6 probe finds storageState automatically
+- ✅ Proof artifacts for forensics
+
+---
+
+## Complete Backbone Fix Summary
+
+**All Components Fixed (4 areas):**
+1. ✅ Backend state mapping (TruthModel)
+2. ✅ Proof panel fields (backend_build_sha)
+3. ✅ Entry detection fallbacks (ENTRY=UNKNOWN)
+4. ✅ Runtime verification (fail-closed probe + auth normalization)
+
+**Commit History:**
+```
+2edb54ea Backbone fix: auth_login.mjs normalize URL scheme + align storageState path for Phase 6
+1d06fc66 Fix: await context.newPage()
+5e7f199a Phase 6: Make runtime probe fail-closed with marker-based truth extraction
+943a0507 Fix: make FORGE_APP absolute path
+...
+```
+
+**Status: MARKETPLACE READY ✅**
