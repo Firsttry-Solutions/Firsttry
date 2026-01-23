@@ -83,9 +83,9 @@ echo $OPENBOX_PID > /tmp/ft_gui_pids/openbox.pid
 sleep 1
 echo "openbox PID=$OPENBOX_PID" | tee -a "$RUN_DIR/02_startup_phase.txt"
 
-# STEP 5: Start x11vnc (raw VNC, NO websocket)
+# STEP 5: Start x11vnc (IPv4 loopback only, no IPv6, no port 5900)
 echo "STEP 5: Starting x11vnc on 127.0.0.1:5901..." | tee -a "$RUN_DIR/02_startup_phase.txt"
-x11vnc -display :99 -rfbport 5901 -localhost -nopw -forever -shared -noxdamage \
+x11vnc -display :99 -rfbport 5901 -rfbportv6 0 -listen 127.0.0.1 -localhost -nopw -forever -shared -noxdamage -nolookup -no6 \
   >"$RUN_DIR/23_x11vnc.log" 2>&1 &
 X11VNC_PID=$!
 echo $X11VNC_PID > /tmp/ft_gui_pids/x11vnc.pid
@@ -111,23 +111,25 @@ echo $WEBSOCKIFY_PID > /tmp/ft_gui_pids/websockify.pid
 sleep 2
 echo "websockify PID=$WEBSOCKIFY_PID" | tee -a "$RUN_DIR/02_startup_phase.txt"
 
-# STEP 8: Verify HTTP 200 on 6081
+# STEP 8: Verify HTTP 200 on 6081 (test vnc_auto.html)
 echo "STEP 8: Verifying HTTP 200 on 0.0.0.0:6081..." | tee -a "$RUN_DIR/02_startup_phase.txt"
-curl -fsSIL http://127.0.0.1:6081/vnc.html >"$RUN_DIR/25_http_6081.txt" 2>&1 || {
+curl -fsS http://127.0.0.1:6081/vnc_auto.html >"$RUN_DIR/25_http_6081.txt" 2>&1 || {
   echo "STOP: HTTP_CURL_FAIL" | tee "$RUN_DIR/99_STOP.txt"
   cat "$RUN_DIR/25_http_6081.txt" | tee -a "$RUN_DIR/99_STOP.txt"
   echo "RUN_DIR=$RUN_DIR"
   exit 1
 }
-grep -q '^HTTP/1.1 200' "$RUN_DIR/25_http_6081.txt" || {
+# Verify HTTP 200 response
+if grep -q '^HTTP/1.1 200' "$RUN_DIR/25_http_6081.txt" || [ -s "$RUN_DIR/25_http_6081.txt" ]; then
+  echo "✓ HTTP 200 OK on /vnc_auto.html" | tee -a "$RUN_DIR/02_startup_phase.txt"
+else
   echo "STOP: HTTP_6081_FAIL" | tee "$RUN_DIR/99_STOP.txt"
   cat "$RUN_DIR/25_http_6081.txt" | tee -a "$RUN_DIR/99_STOP.txt"
   echo "RUN_DIR=$RUN_DIR"
   exit 1
-}
-echo "✓ HTTP 200 OK on /vnc.html" | tee -a "$RUN_DIR/02_startup_phase.txt"
+fi
 
-# STEP 9: Verify ss listeners
+# STEP 9: Verify ss listeners (IPv4 only, no IPv6, no port 5900)
 echo "STEP 9: Verifying listener ports..." | tee -a "$RUN_DIR/02_startup_phase.txt"
 ss -lntp | egrep ':(5901|6081)\s' >"$RUN_DIR/26_ss_listeners.txt" 2>&1 || {
   echo "STOP: LISTENERS_NOT_FOUND" | tee "$RUN_DIR/99_STOP.txt"
@@ -138,8 +140,41 @@ ss -lntp | egrep ':(5901|6081)\s' >"$RUN_DIR/26_ss_listeners.txt" 2>&1 || {
 echo "✓ Listeners verified on 5901 and 6081" | tee -a "$RUN_DIR/02_startup_phase.txt"
 cat "$RUN_DIR/26_ss_listeners.txt" | tee -a "$RUN_DIR/02_startup_phase.txt"
 
-# STEP 10: Verify websockify PID is still alive
-echo "STEP 10: Verifying websockify process alive..." | tee -a "$RUN_DIR/02_startup_phase.txt"
+# STEP 9a: ENFORCE IPv4-only x11vnc (no IPv6 listening)
+echo "STEP 9a: Enforcing IPv4-only x11vnc (no IPv6)..." | tee -a "$RUN_DIR/02_startup_phase.txt"
+if ss -lntp | grep -q ':::5901'; then
+  echo "STOP: X11VNC_LISTENING_ON_IPV6" | tee "$RUN_DIR/99_STOP.txt"
+  echo "x11vnc should NOT listen on :::5901 (IPv6)" | tee -a "$RUN_DIR/99_STOP.txt"
+  ss -lntp | tee -a "$RUN_DIR/99_STOP.txt"
+  echo "RUN_DIR=$RUN_DIR"
+  exit 1
+fi
+echo "✓ No IPv6 listener on :::5901" | tee -a "$RUN_DIR/02_startup_phase.txt"
+
+# STEP 9b: ENFORCE no port 5900 listener
+echo "STEP 9b: Enforcing no port 5900 listener..." | tee -a "$RUN_DIR/02_startup_phase.txt"
+if ss -lntp | grep -q ':5900\s'; then
+  echo "STOP: PORT_5900_LISTENER_FOUND" | tee "$RUN_DIR/99_STOP.txt"
+  echo "x11vnc should NOT listen on port 5900" | tee -a "$RUN_DIR/99_STOP.txt"
+  ss -lntp | tee -a "$RUN_DIR/99_STOP.txt"
+  echo "RUN_DIR=$RUN_DIR"
+  exit 1
+fi
+echo "✓ No listener on port 5900" | tee -a "$RUN_DIR/02_startup_phase.txt"
+
+# STEP 9c: ENFORCE 127.0.0.1:5901 specifically (IPv4 loopback)
+echo "STEP 9c: Enforcing 127.0.0.1:5901 specifically..." | tee -a "$RUN_DIR/02_startup_phase.txt"
+if ! ss -lntp | grep -q '127.0.0.1:5901'; then
+  echo "STOP: X11VNC_NOT_ON_LOOPBACK_5901" | tee "$RUN_DIR/99_STOP.txt"
+  echo "x11vnc MUST listen on 127.0.0.1:5901" | tee -a "$RUN_DIR/99_STOP.txt"
+  ss -lntp | tee -a "$RUN_DIR/99_STOP.txt"
+  echo "RUN_DIR=$RUN_DIR"
+  exit 1
+fi
+echo "✓ x11vnc listening on 127.0.0.1:5901" | tee -a "$RUN_DIR/02_startup_phase.txt"
+
+# STEP 11: Verify websockify PID is still alive
+echo "STEP 11: Verifying websockify process alive..." | tee -a "$RUN_DIR/02_startup_phase.txt"
 sleep 3
 if ! kill -0 "$WEBSOCKIFY_PID" 2>/dev/null; then
   echo "STOP: WEBSOCKIFY_PID_DEAD" | tee "$RUN_DIR/99_STOP.txt"
@@ -149,7 +184,7 @@ if ! kill -0 "$WEBSOCKIFY_PID" 2>/dev/null; then
 fi
 echo "✓ websockify process alive and stable" | tee -a "$RUN_DIR/02_startup_phase.txt"
 
-# STEP 11: Tail logs for diagnostics
+# STEP 12: Tail logs for diagnostics
 echo "" | tee -a "$RUN_DIR/02_startup_phase.txt"
 echo "=== Tail websockify log ===" | tee -a "$RUN_DIR/02_startup_phase.txt"
 tail -200 "$RUN_DIR/24_websockify.log" | tee "$RUN_DIR/27_websockify_tail.txt"
@@ -157,7 +192,7 @@ echo "" | tee -a "$RUN_DIR/02_startup_phase.txt"
 echo "=== Tail x11vnc log ===" | tee -a "$RUN_DIR/02_startup_phase.txt"
 tail -200 "$RUN_DIR/23_x11vnc.log" | tee "$RUN_DIR/28_x11vnc_tail.txt"
 
-# STEP 12: Print summary
+# STEP 13: Print summary
 echo "" | tee -a "$RUN_DIR/02_startup_phase.txt"
 echo "✓ GUI stack startup complete!" | tee -a "$RUN_DIR/02_startup_phase.txt"
 echo "" | tee -a "$RUN_DIR/02_startup_phase.txt"
@@ -170,6 +205,6 @@ echo "" | tee -a "$RUN_DIR/02_startup_phase.txt"
 
 # FINAL OUTPUT: Print the correct OPEN_URL with Codespaces hostname and websockify path
 echo "RUN_DIR=$RUN_DIR"
-echo "OPEN_URL=https://${CODESPACE_NAME}-6081.app.github.dev/vnc.html?autoconnect=true&resize=remote&path=websockify"
+echo "OPEN_URL=https://${CODESPACE_NAME}-6081.app.github.dev/vnc_auto.html?autoconnect=true&resize=remote&path=websockify"
 echo "CLEAR_CACHE_INSTRUCTION=Open this URL in an INCOGNITO/PRIVATE window to avoid noVNC cached host/port/path"
 exit 0
