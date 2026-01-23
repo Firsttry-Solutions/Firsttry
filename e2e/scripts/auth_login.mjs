@@ -1,49 +1,113 @@
 #!/usr/bin/env node
 /**
  * PHASE 3: ONE-TIME AUTHENTICATION SCRIPT
+ * BACKBONE FIX: URL normalization + Phase 6 storageState path alignment
  * 
  * Purpose: Establish user authentication with Jira and save credentials to storageState.json
  * ONLY saves storage state after verifying Jira shell loads (not a redirect).
  * 
  * Usage:
- *   export JIRA_SITE="https://firsttry.atlassian.net"
+ *   export JIRA_SITE="firsttry.atlassian.net"  (or "https://firsttry.atlassian.net")
  *   node e2e/scripts/auth_login.mjs
  * 
  * Output:
- *   - /workspaces/Firsttry/.auth/storageState.json (gitignored - contains cookies + tokens)
+ *   - /workspaces/Firsttry/e2e/.auth/storageState.json (Phase 6 compatible path)
  * 
  * Mechanism:
  *   1. Launch browser in HEADED mode (not headless)
- *   2. Navigate to Jira site
- *   3. Wait for user to authenticate manually
- *   4. Detect successful login (look for Atlassian navigation header)
- *   5. Verify Jira shell is present (not redirected to id.atlassian.com)
- *   6. ONLY then save storageState to canonical location
- *   7. Exit
+ *   2. Normalize Jira URL (add https:// if missing)
+ *   3. Navigate to Jira site - verify not about:blank
+ *   4. Wait for user to authenticate manually
+ *   5. Detect successful login (look for Atlassian navigation header)
+ *   6. Verify Jira shell is present (not redirected to id.atlassian.com)
+ *   7. ONLY then save storageState to canonical location (Phase 6 path)
+ *   8. Exit
  * 
  * Hard Rules:
  *   - NEVER print credentials to console
  *   - NEVER save credentials in repo (only to .auth/storageState.json which is gitignored)
  *   - REQUIRE user to manually login (headed browser)
  *   - ONLY save after Jira shell verified to prevent invalid auth states
+ *   - Final URL must never be about:blank - validate after goto()
+ *   - Path MUST be /workspaces/Firsttry/e2e/.auth/storageState.json (Phase 6 alignment)
  */
 
 import { chromium } from 'playwright';
-import { writeFileSync, mkdirSync, writeFile } from 'fs';
+import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const jiravSite = process.env.JIRA_SITE || 'https://firsttry.atlassian.net';
 const REPO_ROOT = '/workspaces/Firsttry';
-const authDir = join(REPO_ROOT, '.auth');
-const storageStatePath = join(authDir, 'storageState.json');
+const AUTH_DIR = join(REPO_ROOT, 'e2e', '.auth');
+const STORAGE_STATE_PATH = join(AUTH_DIR, 'storageState.json');
+
+/**
+ * Normalize Jira base URL: add https:// if missing, remove trailing slash
+ * @param {string} input - Input URL or domain (e.g., "firsttry.atlassian.net" or "https://firsttry.atlassian.net")
+ * @returns {string} Normalized URL starting with https:// (e.g., "https://firsttry.atlassian.net")
+ */
+function normalizeJiraBase(input) {
+  if (!input) return 'https://firsttry.atlassian.net';
+  
+  // Trim whitespace
+  let normalized = input.trim();
+  
+  // Add https:// if no scheme
+  if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+    normalized = 'https://' + normalized;
+  }
+  
+  // Remove trailing slash
+  normalized = normalized.replace(/\/$/, '');
+  
+  return normalized;
+}
+
+/**
+ * Write proof of authentication failure for diagnostics
+ */
+async function writeFailureProof(attemptedUrl, normalizedUrl, finalUrl, title, authenticated, jiraShellVerified, reason, page) {
+  let htmlLen = 0;
+  try {
+    if (page) {
+      htmlLen = (await page.content()).length;
+    }
+  } catch (e) {
+    // Ignore
+  }
+  
+  const failedProof = {
+    ts: new Date().toISOString(),
+    attemptedUrl,
+    normalizedUrl,
+    finalUrl,
+    title,
+    authenticated,
+    jiraShellVerified,
+    reason,
+    htmlLen,
+  };
+  
+  try {
+    writeFileSync('/tmp/auth_login_failed_proof.json', JSON.stringify(failedProof, null, 2));
+    console.error('[AUTH] Proof written to: /tmp/auth_login_failed_proof.json');
+  } catch (e) {
+    console.error('[AUTH] Could not write proof:', e.message);
+  }
+}
+
+const jiraSiteInput = process.env.JIRA_SITE || 'firsttry.atlassian.net';
+const jiraSiteNormalized = normalizeJiraBase(jiraSiteInput);
+const storageStateOverride = process.env.STORAGE_STATE;
+const storageStatePath = storageStateOverride || STORAGE_STATE_PATH;
 
 console.log('');
 console.log('╔═══════════════════════════════════════════════════════════════╗');
-console.log('║  PHASE 3: ONE-TIME JIRA AUTHENTICATION                        ║');
+console.log('║  PHASE 3: ONE-TIME JIRA AUTHENTICATION (URL NORMALIZED)       ║');
 console.log('╚═══════════════════════════════════════════════════════════════╝');
 console.log('');
-console.log(`Jira Site: ${jiravSite}`);
-console.log(`Auth Dir: ${authDir}`);
+console.log(`Input Site: ${jiraSiteInput}`);
+console.log(`Normalized Site: ${jiraSiteNormalized}`);
+console.log(`Auth Dir: ${AUTH_DIR}`);
 console.log(`Storage State: ${storageStatePath}`);
 console.log('');
 console.log('Instructions:');
@@ -57,7 +121,7 @@ console.log('Waiting 3 seconds before launching browser...');
 console.log('');
 
 // Create auth directory if needed
-mkdirSync(authDir, { recursive: true });
+mkdirSync(AUTH_DIR, { recursive: true });
 
 async function authenticate() {
   const browser = await chromium.launch({
@@ -68,15 +132,38 @@ async function authenticate() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  console.log(`[${new Date().toISOString()}] Navigating to: ${jiravSite}`);
+  console.log(`[${new Date().toISOString()}] Navigating to: ${jiraSiteNormalized}`);
   
   try {
-    await page.goto(jiravSite, { waitUntil: 'load' });
+    await page.goto(jiraSiteNormalized, { waitUntil: 'load', timeout: 30000 });
   } catch (e) {
     console.log(`Navigation load timeout (expected for some Jira instances), continuing...`);
   }
 
-  console.log('[AUTH] Browser opened - please log in manually');
+  // === VALIDATION: URL must not be about:blank ===
+  const finalUrl = page.url();
+  const title = await page.title().catch(() => '');
+  
+  console.log(`[${new Date().toISOString()}] Final URL: ${finalUrl}`);
+  console.log(`[${new Date().toISOString()}] Page Title: ${title}`);
+  
+  // HARD FAIL: If URL is about:blank or doesn't have proper scheme
+  if (!finalUrl || finalUrl === 'about:blank' || (!finalUrl.startsWith('https://') && !finalUrl.startsWith('http://'))) {
+    console.error(`[AUTH] ✗ FATAL: Navigation resulted in invalid URL: ${finalUrl}`);
+    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, finalUrl, title, false, false, 'NAVIGATION_FAILED_OR_NO_SCHEME', page);
+    await browser.close();
+    process.exit(1);
+  }
+
+  // Check for auth redirect
+  if (finalUrl.includes('id.atlassian.com/login') || finalUrl.includes('id.atlassian.com') && finalUrl.includes('/login')) {
+    console.error(`[AUTH] ✗ FATAL: Redirected to auth page: ${finalUrl}`);
+    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, finalUrl, title, false, false, 'AUTH_REDIRECT', page);
+    await browser.close();
+    process.exit(1);
+  }
+
+  console.log('[AUTH] Browser opened - URL is valid, please log in manually');
   console.log('[AUTH] Waiting for Jira shell + verified authentication...');
   console.log('');
 
@@ -92,9 +179,9 @@ async function authenticate() {
   while ((!authenticated || !jiraShellVerified) && (Date.now() - startTime) < maxWaitTime) {
     try {
       // Check current URL for auth redirects
-      const url = page.url();
-      if (url.includes('id.atlassian.com') || url.includes('auth.atlassian.com')) {
-        console.log(`[AUTH] Still on auth domain: ${url.substring(0, 80)}...`);
+      const currentUrl = page.url();
+      if (currentUrl.includes('id.atlassian.com') || currentUrl.includes('auth.atlassian.com')) {
+        console.log(`[AUTH] Still on auth domain: ${currentUrl.substring(0, 80)}...`);
       } else {
         // Look for Atlassian header (appears when user logs in)
         const headerVisible = await page.evaluate(() => {
@@ -143,28 +230,14 @@ async function authenticate() {
   if (!authenticated || !jiraShellVerified) {
     console.error('[AUTH] ✗ Authentication or Jira shell verification failed after 5 minutes');
     
-    // Write failed proof artifact
-    const failedProof = {
-      ts: new Date().toISOString(),
-      finalUrl: page.url(),
-      title: await page.title().catch(() => ''),
-      authenticated,
-      jiraShellVerified,
-      reason: !authenticated ? 'header not detected' : 'jira shell selectors not found',
-    };
-    
-    try {
-      writeFileSync('/tmp/auth_login_failed_proof.json', JSON.stringify(failedProof, null, 2));
-      console.error('[AUTH] Proof written to: /tmp/auth_login_failed_proof.json');
-    } catch (e) {
-      // Ignore
-    }
+    const failureReason = !authenticated ? 'header not detected' : 'jira shell selectors not found';
+    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, page.url(), await page.title().catch(() => ''), authenticated, jiraShellVerified, failureReason, page);
     
     await browser.close();
     process.exit(6); // Auth failed exit code
   }
 
-  // ONLY save storageState after BOTH authenticated AND jira shell verified
+  // === PHASE 6 ALIGNMENT: Save storageState to standard path ===
   console.log('[AUTH] Saving authentication state to canonical location...');
   const storageState = await context.storageState();
   writeFileSync(storageStatePath, JSON.stringify(storageState, null, 2));
