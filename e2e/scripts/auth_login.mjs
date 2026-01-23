@@ -65,7 +65,7 @@ function normalizeJiraBase(input) {
 /**
  * Write proof of authentication failure for diagnostics
  */
-async function writeFailureProof(attemptedUrl, normalizedUrl, finalUrl, title, authenticated, jiraShellVerified, reason, page) {
+async function writeFailureProof(attemptedUrl, normalizedUrl, finalUrl, title, restStatus, restBodySnippet, cookiesCount, reason, page) {
   let htmlLen = 0;
   try {
     if (page) {
@@ -81,8 +81,9 @@ async function writeFailureProof(attemptedUrl, normalizedUrl, finalUrl, title, a
     normalizedUrl,
     finalUrl,
     title,
-    authenticated,
-    jiraShellVerified,
+    restStatus: restStatus || null,
+    restBodySnippet: restBodySnippet || null,
+    cookiesCount,
     reason,
     htmlLen,
   };
@@ -150,7 +151,7 @@ async function authenticate() {
   // HARD FAIL: If URL is about:blank or doesn't have proper scheme
   if (!finalUrl || finalUrl === 'about:blank' || (!finalUrl.startsWith('https://') && !finalUrl.startsWith('http://'))) {
     console.error(`[AUTH] ✗ FATAL: Navigation resulted in invalid URL: ${finalUrl}`);
-    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, finalUrl, title, false, false, 'NAVIGATION_FAILED_OR_NO_SCHEME', page);
+    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, finalUrl, title, null, null, 0, 'NAVIGATION_FAILED_OR_NO_SCHEME', page);
     await browser.close();
     process.exit(1);
   }
@@ -159,89 +160,157 @@ async function authenticate() {
   // Login redirect is expected and normal
   if (finalUrl.includes('id.atlassian.com/login') || (finalUrl.includes('id.atlassian.com') && finalUrl.includes('/login'))) {
     console.log(`[AUTH] Login redirect detected: ${finalUrl}`);
-    console.log(`[AUTH] Waiting for manual login completion (up to 5 minutes)...`);
+    console.log(`[AUTH] Waiting for manual login completion (up to 8 minutes via REST verification)...`);
   }
 
   console.log('[AUTH] Browser opened - URL is valid, please log in manually');
-  console.log('[AUTH] Waiting for Jira shell + verified authentication...');
+  console.log('[AUTH] Verifying login via Jira REST API...');
   console.log('');
 
-  // Wait for successful authentication by looking for Atlassian nav header
-  // AND verify Jira shell selectors exist
-  // This ensures we're not just at a redirect page
-  const maxWaitTime = 5 * 60 * 1000; // 5 minutes max wait
+  // REST API verification: prove authentication by calling /rest/api/3/myself
+  // This requires real login credentials in cookies
+  const maxWaitTime = 8 * 60 * 1000; // 8 minutes max wait
   const startTime = Date.now();
   
-  let authenticated = false;
-  let jiraShellVerified = false;
+  let restSuccess = false;
+  let lastRestStatus = null;
+  let lastRestBody = null;
   
-  while ((!authenticated || !jiraShellVerified) && (Date.now() - startTime) < maxWaitTime) {
+  while (!restSuccess && (Date.now() - startTime) < maxWaitTime) {
     try {
-      // Check current URL for auth redirects
-      const currentUrl = page.url();
-      if (currentUrl.includes('id.atlassian.com') || currentUrl.includes('auth.atlassian.com')) {
-        console.log(`[AUTH] Still on auth domain: ${currentUrl.substring(0, 80)}...`);
-      } else {
-        // Look for Atlassian header (appears when user logs in)
-        const headerVisible = await page.evaluate(() => {
-          const header = document.querySelector('[data-testid="atlassian-navigation--header"]');
-          return header && header.offsetHeight > 0;
-        });
-
-        if (headerVisible && !authenticated) {
-          authenticated = true;
-          console.log('[AUTH] ✓ Authenticated successfully!');
-        }
-
-        // Verify Jira shell (ensures we're in a real Jira page, not a redirect)
-        if (authenticated && !jiraShellVerified) {
-          const shellFound = await page.evaluate(() => {
-            // Multiple selector checks for different Jira versions
-            const selectors = [
-              '#ak-main-content',
-              '[data-testid="ak-main-content"]',
-              '[data-testid="dashboard-content"]',
-              '[role="main"]',
-              'main',
-            ];
-            return selectors.some(sel => {
-              const elem = document.querySelector(sel);
-              return elem && elem.offsetHeight > 0;
-            });
+      // Call REST API from page context (credentials: include sends cookies)
+      const result = await page.evaluate(async () => {
+        try {
+          const response = await fetch('https://firsttry.atlassian.net/rest/api/3/myself', {
+            credentials: 'include',
+            headers: { 'Accept': 'application/json' }
           });
+          const body = await response.text();
+          return {
+            status: response.status,
+            body: body
+          };
+        } catch (e) {
+          return {
+            status: null,
+            body: e.message
+          };
+        }
+      });
 
-          if (shellFound) {
-            jiraShellVerified = true;
-            console.log('[AUTH] ✓ Jira shell verified!');
-            console.log('[AUTH] Ready to save authentication state...');
+      lastRestStatus = result.status;
+      lastRestBody = result.body;
+
+      if (result.status === 200) {
+        // Try to parse as JSON
+        try {
+          const parsed = JSON.parse(result.body);
+          if (parsed.accountId) {
+            restSuccess = true;
+            console.log(`[AUTH] ✓ REST API verified! accountId: ${parsed.accountId}`);
             break;
           }
+        } catch (parseErr) {
+          // Ignore parse errors
         }
+      } else {
+        console.log(`[AUTH] REST status: ${result.status} (waiting for 200 OK...)`);
       }
     } catch (e) {
-      // Page not ready yet
+      console.log(`[AUTH] REST check error: ${e.message}`);
     }
 
-    // Wait 1 second before retrying
-    await page.waitForTimeout(1000);
+    // Wait 2 seconds before retrying
+    await page.waitForTimeout(2000);
   }
 
-  if (!authenticated || !jiraShellVerified) {
-    console.error('[AUTH] ✗ Login not completed or Jira shell not verified after 5 minutes');
+  if (!restSuccess) {
+    console.error('[AUTH] ✗ REST API verification failed after 8 minutes');
     
-    const failureReason = 'LOGIN_NOT_COMPLETED_TIMEOUT';
-    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, page.url(), await page.title().catch(() => ''), authenticated, jiraShellVerified, failureReason, page);
+    const currentUrl = page.url();
+    const currentTitle = await page.title().catch(() => '');
+    const cookiesCount = (await context.cookies()).length;
+    
+    const bodySnippet = lastRestBody ? lastRestBody.substring(0, 200) : null;
+    
+    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, currentUrl, currentTitle, lastRestStatus, bodySnippet, cookiesCount, 'LOGIN_NOT_COMPLETED_TIMEOUT', page);
     
     await browser.close();
-    process.exit(6); // Auth failed exit code
+    process.exit(1);
   }
 
-  // === PHASE 6 ALIGNMENT: Save storageState to standard path ===
+  // Wait for URL to resolve to firsttry.atlassian.net domain OR just proceed after REST success
+  let finalUrlResolved = page.url();
+  console.log(`[AUTH] Final URL after REST success: ${finalUrlResolved}`);
+  console.log(`[AUTH] Ready to save authentication state...`);
+
+  // === PHASE 6 ALIGNMENT: Save and verify storageState to standard path ===
   console.log('[AUTH] Saving authentication state to canonical location...');
   const storageState = await context.storageState();
-  writeFileSync(storageStatePath, JSON.stringify(storageState, null, 2));
   
+  // Strict validation: require meaningful cookies
+  const cookies = storageState.cookies || [];
+  if (cookies.length < 5) {
+    console.error(`[AUTH] ✗ FATAL: Not enough cookies (${cookies.length}), expected >= 5 for real login`);
+    
+    const currentUrl = page.url();
+    const currentTitle = await page.title().catch(() => '');
+    
+    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, currentUrl, currentTitle, 200, 'accountId present but insufficient cookies', cookies.length, 'INSUFFICIENT_COOKIES_FOR_REAL_LOGIN', page);
+    
+    await browser.close();
+    process.exit(1);
+  }
+  
+  writeFileSync(storageStatePath, JSON.stringify(storageState, null, 2));
   console.log(`[AUTH] ✓ storageState saved to: ${storageStatePath}`);
+  
+  // === DISK VALIDATION: Ensure file is valid on disk ===
+  try {
+    const fs = require('fs');
+    const stat = fs.statSync(storageStatePath);
+    
+    if (stat.size < 2000) {
+      console.error(`[AUTH] ✗ FATAL: storageState file too small (${stat.size} bytes), expected > 2000`);
+      
+      const currentUrl = page.url();
+      const currentTitle = await page.title().catch(() => '');
+      
+      await writeFailureProof(jiraSiteInput, jiraSiteNormalized, currentUrl, currentTitle, 200, 'accountId present', cookies.length, 'STORAGE_STATE_TOO_SMALL', page);
+      
+      await browser.close();
+      process.exit(1);
+    }
+    
+    // Verify JSON parse
+    const diskContent = fs.readFileSync(storageStatePath, 'utf-8');
+    const diskJson = JSON.parse(diskContent);
+    
+    const diskCookies = diskJson.cookies || [];
+    if (diskCookies.length < 5) {
+      console.error(`[AUTH] ✗ FATAL: Disk cookies count (${diskCookies.length}) < 5, invalid login state`);
+      
+      const currentUrl = page.url();
+      const currentTitle = await page.title().catch(() => '');
+      
+      await writeFailureProof(jiraSiteInput, jiraSiteNormalized, currentUrl, currentTitle, 200, 'accountId present', diskCookies.length, 'DISK_INSUFFICIENT_COOKIES', page);
+      
+      await browser.close();
+      process.exit(1);
+    }
+    
+    console.log(`[AUTH] ✓ Disk validation passed: ${diskCookies.length} cookies, ${stat.size} bytes`);
+  } catch (e) {
+    console.error(`[AUTH] ✗ FATAL: Disk validation error: ${e.message}`);
+    
+    const currentUrl = page.url();
+    const currentTitle = await page.title().catch(() => '');
+    
+    await writeFailureProof(jiraSiteInput, jiraSiteNormalized, currentUrl, currentTitle, 200, 'accountId present', 0, 'DISK_VALIDATION_ERROR', page);
+    
+    await browser.close();
+    process.exit(1);
+  }
   console.log('');
   console.log('╔═══════════════════════════════════════════════════════════════╗');
   console.log('║  AUTHENTICATION COMPLETE & VERIFIED                           ║');
