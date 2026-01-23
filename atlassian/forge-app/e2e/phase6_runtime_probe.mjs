@@ -112,7 +112,7 @@ async function exitWithStop(reason, consoleLines = [], details = '') {
     // Start tracing
     await context.tracing.start({ screenshots: true, snapshots: true });
 
-    page = context.newPage();
+    page = await context.newPage();
 
     // Collect console messages
     page.on('console', (msg) => {
