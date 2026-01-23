@@ -205,6 +205,7 @@ echo "" | tee -a "$RUN_DIR/02_startup_phase.txt"
 
 # FINAL OUTPUT: Print the correct OPEN_URL with Codespaces hostname and websockify path
 echo "RUN_DIR=$RUN_DIR"
-echo "OPEN_URL=https://${CODESPACE_NAME}-6081.app.github.dev/vnc_auto.html?autoconnect=true&resize=remote&path=websockify"
+OPEN_URL="https://${CODESPACE_NAME}-6081.app.github.dev/vnc_auto.html?autoconnect=1&resize=remote&path=websockify&encrypt=1&host=${CODESPACE_NAME}-6081.app.github.dev&port=443"
+echo "OPEN_URL=$OPEN_URL"
 echo "CLEAR_CACHE_INSTRUCTION=Open this URL in an INCOGNITO/PRIVATE window to avoid noVNC cached host/port/path"
 exit 0
