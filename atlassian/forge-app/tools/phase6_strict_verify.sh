@@ -16,7 +16,7 @@ if [[ ! "$FORGE_APP" = /* ]]; then
 fi
 
 # Create RUN_DIR and record it (single source of truth)
-RUN_DIR="/tmp/ft_phase6_strict_$(date -u +%Y%m%dT%H%M%SZ)"
+RUN_DIR="/tmp/ft_phase6_strict_runtime_verify_$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$RUN_DIR"
 echo "$RUN_DIR" | tee "$RUN_DIR/00_run_dir.txt" > /tmp/ft_phase6_run_dir_current.txt
 
@@ -33,6 +33,7 @@ if [ -s "$RUN_DIR/01_git_status_start.txt" ]; then
     echo "Git status:"
     cat "$RUN_DIR/01_git_status_start.txt"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
@@ -51,6 +52,7 @@ for tool in "${REQUIRED_TOOLS[@]}"; do
     {
       echo "STOP: TOOL_FILE_MISSING: $tool"
     } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+    echo "RUN_DIR=$RUN_DIR"
     exit 1
   fi
   
@@ -58,6 +60,7 @@ for tool in "${REQUIRED_TOOLS[@]}"; do
     {
       echo "STOP: TOOL_NOT_TRACKED: $tool"
     } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+    echo "RUN_DIR=$RUN_DIR"
     exit 1
   fi
 done
@@ -68,6 +71,7 @@ if ! grep -q '"verify:bundle:provenance"' "$FORGE_APP/package.json"; then
   {
     echo "STOP: PROVENANCE_SCRIPT_NOT_IN_PACKAGE_JSON"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 grep '"verify:bundle:provenance"' "$FORGE_APP/package.json" | tee "$RUN_DIR/03_package_json_extract.txt"
@@ -76,6 +80,7 @@ if ! grep -q 'npm run verify:bundle:provenance' "$FORGE_APP/package.json"; then
   {
     echo "STOP: PROVENANCE_NOT_WIRED_INTO_BUILD_GADGET"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 grep 'npm run verify:bundle:provenance' "$FORGE_APP/package.json" | tee "$RUN_DIR/04_build_gadget_script.txt"
@@ -88,6 +93,7 @@ if ! npm test > "$RUN_DIR/10_npm_test_full.txt" 2>&1; then
     echo "Last 120 lines of output:"
     tail -120 "$RUN_DIR/10_npm_test_full.txt"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
@@ -99,6 +105,7 @@ if ! npm run build:gadget > "$RUN_DIR/20_build_gadget_full.txt" 2>&1; then
     echo "Last 120 lines of output:"
     tail -120 "$RUN_DIR/20_build_gadget_full.txt"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
@@ -112,6 +119,7 @@ if [ -z "$PASS_LINE" ]; then
     echo "But build output contains:"
     grep -i "provenance" "$RUN_DIR/20_build_gadget_full.txt" || echo "(no provenance mentions)"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 echo "$PASS_LINE" | tee "$RUN_DIR/21_provenance_pass_in_build.txt"
@@ -130,6 +138,7 @@ if [ -n "$PROVENANCE_WARNINGS" ]; then
     echo "Warnings in provenance layer:"
     echo "$PROVENANCE_WARNINGS"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 echo "✓ No warnings in provenance flow" | tee "$RUN_DIR/22_build_clean.txt"
@@ -141,6 +150,7 @@ if [ -z "$BUNDLE" ] || [ ! -f "$BUNDLE" ]; then
   {
     echo "STOP: BUNDLE_FILE_NOT_FOUND"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 echo "$BUNDLE" | tee "$RUN_DIR/23_bundle_path.txt"
@@ -152,6 +162,7 @@ if ! bash tools/verify_bundle_provenance.sh > "$RUN_DIR/24_provenance_standalone
     echo "Output:"
     cat "$RUN_DIR/24_provenance_standalone.txt" | tail -40
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
@@ -189,6 +200,7 @@ while IFS= read -r line || [ -n "$line" ]; do
         echo "  $p"
       done
     } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+    echo "RUN_DIR=$RUN_DIR"
     exit 1
   fi
 done < "$RUN_DIR/25_git_status_postbuild.txt"
@@ -209,6 +221,7 @@ if [ -s "$RUN_DIR/26_git_status_after_revert.txt" ]; then
     echo "Remaining dirty files:"
     cat "$RUN_DIR/26_git_status_after_revert.txt"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
@@ -222,6 +235,7 @@ if [ ! -f "$STORAGE_STATE" ]; then
   {
     echo "STOP: STORAGE_STATE_NOT_FOUND: $STORAGE_STATE"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
@@ -239,6 +253,7 @@ if ! node e2e/phase6_runtime_probe.mjs > "$RUN_DIR/46_probe_run.txt" 2>&1; then
     echo "Last 120 lines of probe output:"
     tail -120 "$RUN_DIR/46_probe_run.txt"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
@@ -258,6 +273,7 @@ for artifact in "${REQUIRED_ARTIFACTS[@]}"; do
     {
       echo "STOP: RUNTIME_ARTIFACT_MISSING: $artifact"
     } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+    echo "RUN_DIR=$RUN_DIR"
     exit 1
   fi
 done
@@ -272,6 +288,7 @@ if ! bash tools/verify_runtime_acceptance_gate.sh --log-file "$RUN_DIR/50_runtim
     echo "Last 80 lines of gate output:"
     tail -80 "$RUN_DIR/60_acceptance_gate.txt"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
@@ -285,6 +302,7 @@ if ! node tools/truth_table_check.mjs "$RUN_DIR/51_runtime_truth.json" > "$RUN_D
     echo "Last 80 lines of truth table output:"
     tail -80 "$RUN_DIR/70_truth_table.txt"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
