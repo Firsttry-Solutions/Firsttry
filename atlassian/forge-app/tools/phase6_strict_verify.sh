@@ -43,6 +43,7 @@ REQUIRED_TOOLS=(
   "tools/strip_and_hash.js"
   "tools/verify_runtime_acceptance_gate.sh"
   "tools/truth_table_check.mjs"
+  "tools/verify_storage_state_rest_proof.mjs"
   "e2e/phase6_runtime_probe.mjs"
 )
 
@@ -66,6 +67,54 @@ for tool in "${REQUIRED_TOOLS[@]}"; do
 done
 echo "✓ All required tools exist and tracked" | tee "$RUN_DIR/02_tools_ok.txt"
 
+# === STEP 3a: Validate auth via REST proof (FAIL-FAST before build/test) ===
+# Defaults
+STORAGE_STATE="${STORAGE_STATE:-/workspaces/Firsttry/e2e/.auth/storageState.json}"
+JIRA_SITE="${JIRA_SITE:-https://firsttry.atlassian.net}"
+
+# Normalize JIRA_SITE (ensure https:// prefix, remove trailing slash)
+if [[ ! "$JIRA_SITE" = https://* ]] && [[ ! "$JIRA_SITE" = http://* ]]; then
+  JIRA_SITE="https://$JIRA_SITE"
+fi
+JIRA_SITE="${JIRA_SITE%/}"
+
+# Layer 1: storageState file must exist (quick fail)
+if [ ! -f "$STORAGE_STATE" ]; then
+  {
+    echo "STOP: STORAGE_STATE_REST_PROOF_FAILED"
+    echo "Reason: File not found"
+    echo "File: $STORAGE_STATE"
+  } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
+  exit 1
+fi
+
+# Layer 2: Run REST proof verification
+DIAG_OUT="$RUN_DIR/41_myself_diag.json"
+if ! node tools/verify_storage_state_rest_proof.mjs \
+  --storage-state "$STORAGE_STATE" \
+  --site "$JIRA_SITE" \
+  --out "$DIAG_OUT" > "$RUN_DIR/03_rest_proof_result.txt" 2>&1; then
+  {
+    echo "STOP: STORAGE_STATE_REST_PROOF_FAILED"
+    echo "Reason: REST API verification failed (HTTP 200 + accountId required)"
+    echo "Diagnostics: $DIAG_OUT"
+    echo ""
+    if [ -f "$DIAG_OUT" ]; then
+      echo "Diagnostic output:"
+      cat "$DIAG_OUT"
+    fi
+    echo ""
+    echo "Verification output:"
+    cat "$RUN_DIR/03_rest_proof_result.txt"
+  } | tee "$RUN_DIR/99_STOP_REPORT.txt"
+  echo "RUN_DIR=$RUN_DIR"
+  exit 1
+fi
+
+echo "✓ REST API proof successful (accountId verified)" | tee "$RUN_DIR/03_rest_proof_ok.txt"
+cat "$DIAG_OUT" | tee "$RUN_DIR/41_myself_diag_display.txt"
+
 # === STEP 3: Verify wiring in package.json ===
 if ! grep -q '"verify:bundle:provenance"' "$FORGE_APP/package.json"; then
   {
@@ -74,7 +123,7 @@ if ! grep -q '"verify:bundle:provenance"' "$FORGE_APP/package.json"; then
   echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
-grep '"verify:bundle:provenance"' "$FORGE_APP/package.json" | tee "$RUN_DIR/03_package_json_extract.txt"
+grep '"verify:bundle:provenance"' "$FORGE_APP/package.json" | tee "$RUN_DIR/04_package_json_extract.txt"
 
 if ! grep -q 'npm run verify:bundle:provenance' "$FORGE_APP/package.json"; then
   {
@@ -83,7 +132,7 @@ if ! grep -q 'npm run verify:bundle:provenance' "$FORGE_APP/package.json"; then
   echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
-grep 'npm run verify:bundle:provenance' "$FORGE_APP/package.json" | tee "$RUN_DIR/04_build_gadget_script.txt"
+grep 'npm run verify:bundle:provenance' "$FORGE_APP/package.json" | tee "$RUN_DIR/05_build_gadget_script.txt"
 
 # === STEP 4: Run tests ===
 if ! npm test > "$RUN_DIR/10_npm_test_full.txt" 2>&1; then
@@ -230,68 +279,21 @@ echo "✓ Tree clean after revert" | tee "$RUN_DIR/26_clean_ok.txt"
 # Return to forge-app directory
 cd "$FORGE_APP"
 
-# === STEP 11: Runtime prechecks - FAIL-CLOSED storageState validation ===
-
-# Default STORAGE_STATE if not set
-if [ -z "$STORAGE_STATE" ]; then
-  STORAGE_STATE="/workspaces/Firsttry/e2e/.auth/storageState.json"
-fi
-
-# Layer 1: File must exist
+# === STEP 11: Runtime prechecks - Verify storageState still exists ===
+# (REST proof was done in STEP 3a; this is a sanity check before probe)
 if [ ! -f "$STORAGE_STATE" ]; then
   {
-    echo "STOP: STORAGE_STATE_MISSING"
+    echo "STOP: STORAGE_STATE_MISSING_AT_PROBE_TIME"
+    echo "File: $STORAGE_STATE"
   } | tee "$RUN_DIR/99_STOP_REPORT.txt"
   echo "RUN_DIR=$RUN_DIR"
   exit 1
 fi
 
-# Layer 2: File must be > 2000 bytes
 FILE_SIZE=$(stat -c%s "$STORAGE_STATE" 2>/dev/null || stat -f%z "$STORAGE_STATE" 2>/dev/null || echo 0)
-if [ "$FILE_SIZE" -le 2000 ]; then
-  {
-    echo "STOP: STORAGE_STATE_TOO_SMALL"
-    echo "File: $STORAGE_STATE"
-    echo "Size: $FILE_SIZE bytes (expected > 2000)"
-  } | tee "$RUN_DIR/99_STOP_REPORT.txt"
-  echo "RUN_DIR=$RUN_DIR"
-  exit 1
-fi
-
-# Layer 3: JSON must parse and have >= 5 cookies
-COOKIE_COUNT=$(node -e "
-try {
-  const fs = require('fs');
-  const data = JSON.parse(fs.readFileSync('$STORAGE_STATE', 'utf-8'));
-  console.log((data.cookies || []).length);
-} catch (e) {
-  console.log('0');
-}
-" 2>/dev/null || echo 0)
-
-if [ -z "$COOKIE_COUNT" ] || [ "$COOKIE_COUNT" -eq 0 ]; then
-  {
-    echo "STOP: STORAGE_STATE_INVALID_OR_NO_COOKIES"
-    echo "File: $STORAGE_STATE"
-    echo "Could not parse JSON or extract cookies"
-  } | tee "$RUN_DIR/99_STOP_REPORT.txt"
-  echo "RUN_DIR=$RUN_DIR"
-  exit 1
-fi
-
-if [ "$COOKIE_COUNT" -lt 5 ]; then
-  {
-    echo "STOP: STORAGE_STATE_TOO_FEW_COOKIES"
-    echo "File: $STORAGE_STATE"
-    echo "Cookies: $COOKIE_COUNT (expected >= 5)"
-  } | tee "$RUN_DIR/99_STOP_REPORT.txt"
-  echo "RUN_DIR=$RUN_DIR"
-  exit 1
-fi
-
 echo "$JIRA_DASHBOARD_URL" | tee "$RUN_DIR/40_dashboard_url.txt"
-echo "$STORAGE_STATE" | tee "$RUN_DIR/41_storage_state.txt"
-echo "✓ Runtime prechecks passed (storageState: $FILE_SIZE bytes, $COOKIE_COUNT cookies)" | tee "$RUN_DIR/42_prechecks_ok.txt"
+echo "$STORAGE_STATE" | tee "$RUN_DIR/42_storage_state_probe.txt"
+echo "✓ StorageState exists and ready for probe (size: $FILE_SIZE bytes)" | tee "$RUN_DIR/42_prechecks_ok.txt"
 
 # === STEP 12: Real runtime probe ===
 cd "$FORGE_APP"
