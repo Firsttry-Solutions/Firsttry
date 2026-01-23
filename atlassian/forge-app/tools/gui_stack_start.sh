@@ -129,6 +129,37 @@ else
   exit 1
 fi
 
+# STEP 8b: Prove WebSocket upgrade (HTTP 101) on /websockify
+echo "STEP 8b: Proving WebSocket upgrade (HTTP 101) on /websockify..." | tee -a "$RUN_DIR/02_startup_phase.txt"
+
+WS_OUT="$RUN_DIR/25_ws_upgrade.txt"
+
+# Use timeout so this can NEVER hang.
+# Important: after HTTP 101, the connection stays open. We only need the headers.
+set +e
+timeout 5 curl -s -i --http1.1 \
+  --max-time 3 \
+  -H 'Connection: Upgrade' \
+  -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Version: 13' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  "http://127.0.0.1:6081/websockify" \
+  >"$WS_OUT" 2>&1
+CURL_RC=$?
+set -e
+
+# timeout returns 124; curl itself returns 28 for --max-time. Both are acceptable here.
+if ! grep -qE '^HTTP/1\.1 101 ' "$WS_OUT"; then
+  echo "STOP: WebSocket upgrade failed (expected HTTP 101). See $WS_OUT" | tee "$RUN_DIR/99_STOP.txt"
+  echo "---- response (first 40 lines) ----" | tee -a "$RUN_DIR/99_STOP.txt"
+  sed -n '1,40p' "$WS_OUT" | tee -a "$RUN_DIR/99_STOP.txt"
+  echo "curl_rc=$CURL_RC" | tee -a "$RUN_DIR/99_STOP.txt"
+  echo "RUN_DIR=$RUN_DIR"
+  exit 1
+fi
+
+echo "✓ WebSocket upgrade returned HTTP 101" | tee -a "$RUN_DIR/02_startup_phase.txt"
+
 # STEP 9: Verify ss listeners (IPv4 only, no IPv6, no port 5900)
 echo "STEP 9: Verifying listener ports..." | tee -a "$RUN_DIR/02_startup_phase.txt"
 ss -lntp | egrep ':(5901|6081)\s' >"$RUN_DIR/26_ss_listeners.txt" 2>&1 || {
