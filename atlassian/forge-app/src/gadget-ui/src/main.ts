@@ -308,14 +308,9 @@ try {
   UI_IDENTITY = buildUiIdentity();
   console.log(`[UI_IDENTITY_RESOLVED] ${formatUiIdentity(UI_IDENTITY)}`);
   
-  // EMIT IDENTITY ANCHOR - single source of truth for gate verification
-  // This literal string will be parsed by Gate 2 (verify_dist_identity_labels.sh)
-  // It MUST appear exactly once in the bundle as a literal string constant
-  const identityAnchor = createIdentityAnchor(UI_IDENTITY);
-  console.log(`[FT_IDENTITY_ANCHOR] ${identityAnchor}`);
-  
-  // NOTE: Only ONE identity anchor in source (the dynamic one above)
-  // Gate verification will scan dist bundle for this exact string
+  // NOTE: Identity anchor is now embedded via block comment appended by postbuild.mjs
+  // This ensures all anchor verification happens via provenance gates (strip_and_hash.js)
+  // No inline anchor needed
   
 } catch (err) {
   console.error('[FATAL_UI_IDENTITY]', err instanceof Error ? err.message : String(err));
