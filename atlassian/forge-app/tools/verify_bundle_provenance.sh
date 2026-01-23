@@ -42,10 +42,29 @@ fi
 # Verify JSON structure (must have status=OK and all required fields)
 echo "[verify_bundle_provenance] Validating JSON structure..." | tee -a "$RUN_DIR/provenance.log"
 
-STATUS=$(echo "$HASH_JSON" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
-ANCHOR_COUNT=$(echo "$HASH_JSON" | grep -o '"anchorCount":[0-9]*' | cut -d':' -f2)
-EMBEDDED_BUNDLE=$(echo "$HASH_JSON" | grep -o '"embeddedBundle":"[^"]*"' | cut -d'"' -f4)
-COMPUTED_PREFIX=$(echo "$HASH_JSON" | grep -o '"computedPrefix7":"[^"]*"' | cut -d'"' -f4)
+# Use Node to parse JSON robustly (avoid grep fragility on multiline JSON)
+PARSE_RESULT=$(node -e "
+try {
+  const json = JSON.parse(process.argv[1]);
+  console.log(json.status || 'MISSING');
+  console.log(json.anchorCount || '0');
+  console.log(json.embeddedBundle || 'MISSING');
+  console.log(json.computedPrefix7 || 'MISSING');
+} catch (err) {
+  console.error('JSON_PARSE_ERROR');
+  process.exit(1);
+}
+" "$HASH_JSON" 2>&1)
+
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to parse JSON: $PARSE_RESULT" | tee -a "$RUN_DIR/provenance.log"
+  exit 1
+fi
+
+STATUS=$(echo "$PARSE_RESULT" | sed -n '1p')
+ANCHOR_COUNT=$(echo "$PARSE_RESULT" | sed -n '2p')
+EMBEDDED_BUNDLE=$(echo "$PARSE_RESULT" | sed -n '3p')
+COMPUTED_PREFIX=$(echo "$PARSE_RESULT" | sed -n '4p')
 
 echo "[verify_bundle_provenance] status=$STATUS, anchorCount=$ANCHOR_COUNT" | tee -a "$RUN_DIR/provenance.log"
 echo "[verify_bundle_provenance] embeddedBundle=$EMBEDDED_BUNDLE, computedPrefix7=$COMPUTED_PREFIX" | tee -a "$RUN_DIR/provenance.log"
@@ -56,7 +75,7 @@ if [ "$STATUS" != "OK" ]; then
   exit 1
 fi
 
-if [ "$ANCHOR_COUNT" -ne 1 ]; then
+if [ "$ANCHOR_COUNT" != "1" ]; then
   echo "ERROR: Expected anchorCount=1, got $ANCHOR_COUNT" | tee -a "$RUN_DIR/provenance.log"
   exit 1
 fi
@@ -66,7 +85,7 @@ if [ "$EMBEDDED_BUNDLE" != "$COMPUTED_PREFIX" ]; then
   exit 1
 fi
 
-if [ -z "$EMBEDDED_BUNDLE" ] || [ -z "$COMPUTED_PREFIX" ]; then
+if [ -z "$EMBEDDED_BUNDLE" ] || [ "$EMBEDDED_BUNDLE" = "MISSING" ] || [ -z "$COMPUTED_PREFIX" ] || [ "$COMPUTED_PREFIX" = "MISSING" ]; then
   echo "ERROR: Missing required fields in JSON" | tee -a "$RUN_DIR/provenance.log"
   exit 1
 fi

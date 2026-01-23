@@ -63,9 +63,12 @@ function main() {
     console.log(`[POSTBUILD] wrote entry=app.${uiBuildSha}.js`);
 
     // ========================================================================
-    // L0.1B: INJECT ACTUAL IDENTITY ANCHOR WITH REAL BUNDLE HASH
+    // L0.1B: INJECT ACTUAL IDENTITY ANCHOR VIA BLOCK COMMENT ONLY
+    // APPROACH: Keep original file unchanged, append block comment with anchor
+    // This way, hash of (original content) is stable and matches anchor
+    //
     // git= first 7 hex of git SHA (commit identifier)
-    // bundle= first 7 hex of SHA-256 of FINAL JS FILE CONTENT (real provenance)
+    // bundle= first 7 hex of SHA-256 of ORIGINAL Vite output (unchanged code)
     // time= build time ISO string
     // ========================================================================
     try {
@@ -79,43 +82,36 @@ function main() {
       // Git SHA: first 7 chars (git commit identifier)
       const gitSha = uiBuildSha.substring(0, 7);
       
-      // Bundle hash: SHA-256 of final file CONTENT (not derived from git SHA)
-      // This provides REAL provenance - bundle hash cannot be predicted from git SHA
+      // Bundle hash: SHA-256 of ORIGINAL Vite output (unchanged, with placeholder function)
+      // strip_and_hash.js will strip the block comment and re-compute this exact value
       const bundleHashFull = crypto.createHash('sha256').update(bundleContent).digest('hex');
       const bundleShort = bundleHashFull.substring(0, 7);
       
-      // Create the actual anchor string with REAL distinctness
+      // Create the actual anchor string
       const actualAnchor = `FT_IDENTITY_ANCHOR_V1|git=${gitSha}|bundle=${bundleShort}|time=${buildTimeUtc}`;
       
       // INVARIANT CHECK: git and bundle must be different (real distinctness)
       if (gitSha === bundleShort) {
         console.error(`[POSTBUILD] FATAL: git SHA === bundle hash (${gitSha}). This violates distinctness!`);
         console.error(`[POSTBUILD] git (first 7 of commit): ${gitSha}`);
-        console.error(`[POSTBUILD] bundle (first 7 of sha256(content)): ${bundleShort}`);
+        console.error(`[POSTBUILD] bundle (first 7 of sha256(vite_output)): ${bundleShort}`);
         process.exit(1);
       }
       
       console.log(`[POSTBUILD] ✓ Anchor components:`);
       console.log(`[POSTBUILD]   git=${gitSha} (from UI_GIT_SHA.slice(0,7))`);
-      console.log(`[POSTBUILD]   bundle=${bundleShort} (from sha256(content).slice(0,7))`);
+      console.log(`[POSTBUILD]   bundle=${bundleShort} (from sha256(vite_output).slice(0,7))`);
       console.log(`[POSTBUILD]   time=${buildTimeUtc}`);
       console.log(`[POSTBUILD]   Anchor: ${actualAnchor}`);
       
-      // Try to replace template anchor if it exists
-      const templatePattern = /FT_IDENTITY_ANCHOR_V1\|git=\$\{.*?\.substring\(0,\s*7\)\}\|bundle=\$\{.*?\}\|time=\$\{.*?\}/g;
-      let newContent = bundleContent.replace(templatePattern, actualAnchor);
+      // Append block comment for provenance verification (do NOT modify the code)
+      // strip_and_hash.js will strip this exact comment and re-compute the hash
+      // NOTE: Do NOT add newline before comment - strip_and_hash removes exactly this string
+      const anchorComment = `/*\n * FT_IDENTITY_ANCHOR_V1|git=${gitSha}|bundle=${bundleShort}|time=${buildTimeUtc}\n */`;
+      const finalContent = bundleContent + anchorComment;
+      fs.writeFileSync(appShaJsPath, finalContent, 'utf-8');
       
-      if (bundleContent !== newContent) {
-        fs.writeFileSync(appShaJsPath, newContent, 'utf-8');
-        console.log(`[POSTBUILD] ✓ Replaced template anchor with literal`);
-      } else {
-        // Template not found - append anchor as a comment (deterministic, appears once)
-        // Use marker comment that is grep-able and won't interfere with code
-        const anchorComment = `/*\n * FT_IDENTITY_ANCHOR_V1|git=${gitSha}|bundle=${bundleShort}|time=${buildTimeUtc}\n */`;
-        const finalContent = bundleContent + '\n' + anchorComment;
-        fs.writeFileSync(appShaJsPath, finalContent, 'utf-8');
-        console.log(`[POSTBUILD] ✓ Appended anchor as comment (template not found in bundle)`);
-      }
+      console.log(`[POSTBUILD] ✓ Appended anchor block comment (no code modifications)`);
     } catch (err) {
       console.error(`[POSTBUILD] ERROR during anchor injection: ${err.message}`);
       process.exit(1);
