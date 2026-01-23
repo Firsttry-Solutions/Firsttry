@@ -154,11 +154,11 @@ fi
 git status --porcelain=v1 > "$RUN_DIR/25_git_status_postbuild.txt"
 
 ALLOWED_PATTERNS=(
-  "^.. tools/\.build_meta\."
-  "^.. src/backend_build\.ts"
-  "^.. src/gadget-ui/src/ui_build_meta\.ts"
-  "^.. src/gadget-ui/src/build/ui_build_meta\.json"
-  "^.. src/gadget-ui/dist/"
+  "^.. atlassian/forge-app/tools/\.build_meta\."
+  "^.. atlassian/forge-app/src/backend_build\.ts"
+  "^.. atlassian/forge-app/src/gadget-ui/src/ui_build_meta\.ts"
+  "^.. atlassian/forge-app/src/gadget-ui/src/build/ui_build_meta\.json"
+  "^.. atlassian/forge-app/src/gadget-ui/dist/"
 )
 
 while IFS= read -r line || [ -n "$line" ]; do
@@ -191,8 +191,8 @@ done < "$RUN_DIR/25_git_status_postbuild.txt"
 echo "✓ Post-build dirty files within whitelist" | tee "$RUN_DIR/25_whitelist_ok.txt"
 
 # === STEP 10: Cleanup (revert generated, don't delete) ===
-git checkout -- tools/.build_meta.json tools/.build_meta.sh tools/.build_meta.env src/backend_build.ts src/gadget-ui/src/ui_build_meta.ts src/gadget-ui/src/build/ui_build_meta.json || true
-rm -rf src/gadget-ui/dist || true
+git checkout -- atlassian/forge-app/tools/.build_meta.json atlassian/forge-app/tools/.build_meta.sh atlassian/forge-app/tools/.build_meta.env atlassian/forge-app/src/backend_build.ts atlassian/forge-app/src/gadget-ui/src/ui_build_meta.ts atlassian/forge-app/src/gadget-ui/src/build/ui_build_meta.json || true
+rm -rf atlassian/forge-app/src/gadget-ui/dist || true
 
 # Verify clean tree after revert
 git status --porcelain=v1 > "$RUN_DIR/26_git_status_after_revert.txt"
