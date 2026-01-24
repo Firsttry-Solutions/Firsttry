@@ -269,12 +269,12 @@ import {
   type RuntimeSignals
 } from './truthModel';
 
-// Import enterprise UI renderers (vanilla DOM, accessibility-safe)
-import { renderKpiTiles } from './enterprise/renderKpiTiles';
-import { renderStatusBanner } from './enterprise/renderStatusBanner';
-import { renderTrustSection } from './enterprise/renderTrustSection';
-import { applyExportPolicy } from './enterprise/applyExportPolicy';
-import './enterprise/enterprise.css';
+// Import snapshot UI renderers (vanilla DOM, accessibility-safe)
+import { renderKpiTiles } from './snapshot_ui/renderKpiTiles';
+import { renderStatusBanner } from './snapshot_ui/renderStatusBanner';
+import { renderTrustSection } from './snapshot_ui/renderTrustSection';
+import { applyExportPolicy } from './snapshot_ui/applyExportPolicy';
+import './snapshot_ui/snapshot_ui.css';
 
 // Import shared status schema and normalizer (CRITICAL to prevent UI crashes)
 import { normalizeStatusV1, EMPTY_STATUS_V1, GovernanceStatusV1 } from '../../shared/statusSchema';
@@ -969,7 +969,7 @@ async function loadStatus() {
             } as any;
         }
 
-        // ===== ENTERPRISE UI RENDERING (KPI Tiles, Status Banner, Progress Tracker) =====
+        // ===== SNAPSHOT UI RENDERING (KPI Tiles, Status Banner, Progress Tracker) =====
         // These are vanilla DOM renderers that integrate with existing UI
         // They use viewModel as the single source of truth (not legacy data)
         try {
@@ -1000,11 +1000,11 @@ async function loadStatus() {
                 legacyData: data,
                 unifiedStatus
             });
-        } catch (enterpriseError) {
-            console.warn('[Enterprise UI] Rendering error:', enterpriseError);
+        } catch (snapshotUiError) {
+            console.warn('[Snapshot UI] Rendering error:', snapshotUiError);
             // Non-fatal: continue with legacy UI
         }
-        // ===== END ENTERPRISE UI RENDERING =====
+        // ===== END SNAPSHOT UI RENDERING =====
 
         // Step 4: Update SERVE_PROOF banner (hidden; for diagnostics only)
         const banner = document.getElementById('ui-serve-proof-banner');
@@ -1890,7 +1890,7 @@ window.refreshNow = async function() {
 
         showExportToast('ok', '✓ Refreshed successfully');
         
-        // Re-render enterprise UI components
+        // Re-render snapshot UI components
         try {
             const unifiedStatus = newSnapshot || null;
             renderKpiTiles({

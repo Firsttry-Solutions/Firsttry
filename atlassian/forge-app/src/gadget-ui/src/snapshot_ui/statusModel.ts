@@ -1,5 +1,5 @@
 /**
- * Normalized Status Model for Enterprise Dashboard
+ * Normalized Status Model for Dashboard
  *
  * All system states map to one of 5 severity levels:
  * OK | WARNING | DEGRADED | ERROR | UNKNOWN
