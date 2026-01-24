@@ -115,13 +115,26 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       const snapshot = await (async () => {
         try {
           const api_imported = require("@forge/api");
+          // Capture API shape before calling asApp()
+          console.log("[FT_L0_DASHBOARD] API_SHAPE_PROOF", {
+            hasApi: typeof api_imported !== "undefined",
+            apiType: typeof api_imported,
+            hasAsApp: !!(api_imported as any)?.asApp,
+            keys: api_imported ? Object.keys(api_imported as any).slice(0, 20) : [],
+          });
           let storedSnapshot: any = null;
           await api_imported.asApp().requestStorage(async (storage: any) => {
             storedSnapshot = await storage.get("ft:snapshot:last:v1");
           });
           return storedSnapshot;
         } catch (e) {
-          console.error("[FT_L0_DASHBOARD] Storage read failed:", e instanceof Error ? e.message : String(e));
+          console.error("[FT_L0_DASHBOARD] Storage read failed", {
+            name: (e as any)?.name,
+            message: (e as any)?.message,
+            stack: (e as any)?.stack,
+            typeof: typeof e,
+            raw: e,
+          });
           return null;
         }
       })();
