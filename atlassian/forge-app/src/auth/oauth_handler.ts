@@ -12,7 +12,7 @@
  * - Silent logging (no notifications)
  */
 
-import { api } from '@forge/api';
+import api from '@forge/api';
 
 /**
  * OAuth token structure

@@ -15,7 +15,7 @@
  * - Automation definitions
  */
 
-import { api } from '@forge/api';
+import api from '@forge/api';
 import {
   Snapshot,
   SnapshotRun,

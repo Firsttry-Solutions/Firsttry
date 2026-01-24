@@ -15,7 +15,7 @@
  * - P2: Audit event recording for export operations
  */
 
-import { api } from '@forge/api';
+import api from '@forge/api';
 import {
   SnapshotStorage,
   SnapshotRunStorage,

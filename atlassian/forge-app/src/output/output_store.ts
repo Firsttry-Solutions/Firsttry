@@ -5,7 +5,7 @@
  * All records are immutable once created.
  */
 
-import { api } from '@forge/api';
+import api from '@forge/api';
 import { OutputTruthMetadata } from './output_contract';
 
 /**

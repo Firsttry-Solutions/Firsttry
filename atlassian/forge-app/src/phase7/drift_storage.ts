@@ -12,7 +12,7 @@
  * SEV-2-002: Uses memory-safe pagination utilities to avoid loading all events into memory
  */
 
-import { api } from '@forge/api';
+import api from '@forge/api';
 import { DriftEvent, DriftEventListResponse, DriftListFilters } from './drift_model';
 import { MemorySafePaginator } from './pagination_utils';
 

@@ -9,7 +9,7 @@
  * - NO retries
  */
 
-import { api } from "@forge/api";
+import api from "@forge/api";
 import { FT_SNAPSHOT_LAST_KEY, FT_INSTALL_MARKER_KEY } from "../backbone/keys";
 
 /**

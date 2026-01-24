@@ -14,7 +14,7 @@
  * Reuses Phase P1 logging safety patterns (no PII in events).
  */
 
-import { api } from '@forge/api';
+import api from '@forge/api';
 import { randomUUID } from 'crypto';
 
 /**
