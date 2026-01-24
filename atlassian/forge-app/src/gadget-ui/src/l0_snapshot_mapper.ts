@@ -35,6 +35,7 @@ export interface L0DashboardState {
  * Map L0 resolver response to dashboard state
  */
 export function mapL0SnapshotResponse(response: any): L0DashboardState {
+  // CONTRACT ENFORCEMENT: Fail closed if response is invalid
   if (!response || typeof response !== 'object') {
     return {
       status: "HARD ERROR",
@@ -46,17 +47,23 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
     };
   }
 
+  // AVAILABLE path: Resolver succeeded and has snapshot data
   if (response.status === "AVAILABLE") {
+    // Validate required fields are present
+    const snapshotId = response.snapshotId || null;
+    const createdAtUtc = response.createdAtUtc || null;
+    
     return {
       status: "AVAILABLE",
-      snapshotId: response.snapshotId || null,
-      createdAtUtc: response.createdAtUtc || null,
+      snapshotId,
+      createdAtUtc,
       schemaVersion: response.schemaVersion || "L0",
       error: null,
       note: response.containsText || "Jira governance evidence snapshot (export for full details).",
     };
   }
 
+  // HARD ERROR path: Resolver returned explicit error (no FT_UNKNOWN_STATUS possible)
   if (response.status === "HARD ERROR") {
     return {
       status: "HARD ERROR",
@@ -64,18 +71,19 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
       createdAtUtc: null,
       schemaVersion: response.schemaVersion || "L0",
       error: response.error || "FT_UNKNOWN_ERROR",
-      note: response.containsText || "Unable to load governance snapshot",
+      note: response.note || response.containsText || "Unable to load governance snapshot",
     };
   }
 
-  // Unknown status
+  // FALLBACK: If status field missing or unexpected value, fail-closed with explicit error
+  // This should never happen if resolver is correct, but catch it anyway
   return {
     status: "HARD ERROR",
     snapshotId: null,
     createdAtUtc: null,
     schemaVersion: "L0",
-    error: "FT_UNKNOWN_STATUS",
-    note: `Unknown status: ${response.status}`,
+    error: response.status ? "FT_INVALID_STATUS" : "FT_STATUS_MISSING",
+    note: `Response validation failed: status=${response.status}`,
   };
 }
 
