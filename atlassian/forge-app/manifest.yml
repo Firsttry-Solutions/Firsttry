@@ -99,7 +99,8 @@ modules:
   # Layer-0 Marketplace: Install trigger creates snapshot anchor
   trigger:
     - key: ft-installed-trigger
-      event: avi:forge:installed:app
+      events:
+        - avi:forge:installed:app
       function: ft-installed-handler
 
 # Permissions
