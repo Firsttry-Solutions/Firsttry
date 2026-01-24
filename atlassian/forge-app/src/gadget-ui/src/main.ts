@@ -6,6 +6,11 @@
  */
 
 // ============================================================================
+// L0 DUMB-READER MODE ENFORCEMENT (STRICT SINGLE-INVOKE)
+// ============================================================================
+const FT_L0_MODE = true;
+
+// ============================================================================
 // FORGE BRIDGE RUNTIME CHECK (NO TOP-LEVEL THROW)
 // Detects bridge at runtime and renders fail-closed panel if missing
 // ============================================================================
@@ -3171,29 +3176,32 @@ async function proceedWithBoot() {
         })();
     }
     
-    try {
-        loadStatus();
-    } catch (fatalError) {
-        // ErrorBoundary: if anything throws, render a safe fallback
-        console.error('[FATAL UI ERROR]', fatalError);
-        const errorPanel = document.getElementById('operational-status');
-        if (errorPanel) {
-            errorPanel.innerHTML = `
-                <div class="error-panel error-panel.error">
-                    <div class="error-panel-section">Dashboard Encountered an Error</div>
-                    <div class="error-panel-details">
-                        The dashboard UI encountered an unexpected error. Please try:
-                        <ul>
-                            <li>Refresh the page</li>
-                            <li>Remove and re-add the gadget</li>
-                            <li>Contact support if the issue persists</li>
-                        </ul>
-                        <div class="error-panel-trace text-error">
-                            ${String(fatalError).substring(0, 200)}
+    if (!FT_L0_MODE) {
+        // Legacy mode: disabled in L0 strict mode
+        try {
+            loadStatus();
+        } catch (fatalError) {
+            // ErrorBoundary: if anything throws, render a safe fallback
+            console.error('[FATAL UI ERROR]', fatalError);
+            const errorPanel = document.getElementById('operational-status');
+            if (errorPanel) {
+                errorPanel.innerHTML = `
+                    <div class="error-panel error-panel.error">
+                        <div class="error-panel-section">Dashboard Encountered an Error</div>
+                        <div class="error-panel-details">
+                            The dashboard UI encountered an unexpected error. Please try:
+                            <ul>
+                                <li>Refresh the page</li>
+                                <li>Remove and re-add the gadget</li>
+                                <li>Contact support if the issue persists</li>
+                            </ul>
+                            <div class="error-panel-trace text-error">
+                                ${String(fatalError).substring(0, 200)}
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         }
     }
 }
