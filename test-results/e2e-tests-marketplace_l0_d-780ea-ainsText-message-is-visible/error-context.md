@@ -1,0 +1,118 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e6]:
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - img [ref=e11]
+        - img [ref=e12]
+        - img [ref=e14]:
+          - img [ref=e15]
+      - img [ref=e20]
+      - generic [ref=e23]:
+        - img [ref=e25]:
+          - img [ref=e26]
+        - img [ref=e31]
+        - img [ref=e32]
+        - img [ref=e33]
+        - img [ref=e34]
+    - generic [ref=e35]:
+      - img [ref=e38]
+      - generic [ref=e81]:
+        - generic [ref=e82]:
+          - img [ref=e84]
+          - generic [ref=e88]:
+            - img [ref=e89]
+            - img [ref=e90]
+            - img [ref=e91]
+            - img [ref=e92]
+            - img [ref=e93]
+        - generic [ref=e94]:
+          - img [ref=e96]
+          - img [ref=e127]
+  - generic [ref=e164]:
+    - main [ref=e165]:
+      - generic [ref=e166]:
+        - img "Jira" [ref=e167]:
+          - img [ref=e168]
+        - heading "Log in to continue" [level=1] [ref=e173]
+      - generic [ref=e175]:
+        - generic [ref=e176]:
+          - generic [ref=e178]:
+            - generic [ref=e179]: Email*
+            - textbox "Email" [active] [ref=e181]:
+              - /placeholder: Enter your email
+          - generic [ref=e183]:
+            - generic [ref=e184]:
+              - checkbox "Remember me" [ref=e185]
+              - generic [ref=e186]: Remember me
+            - button "More info about Remember Me." [ref=e188] [cursor=pointer]:
+              - img "More info about Remember Me." [ref=e191]
+        - button "Continue" [ref=e192] [cursor=pointer]:
+          - generic [ref=e193]: Continue
+      - list [ref=e194]:
+        - text: "Or login with:"
+        - listitem [ref=e196]:
+          - button "Passkey" [ref=e197] [cursor=pointer]:
+            - generic [ref=e199]: Passkey
+      - list [ref=e200]:
+        - text: "Or continue with:"
+        - generic [ref=e201]:
+          - listitem [ref=e202]:
+            - button "Google" [ref=e203] [cursor=pointer]:
+              - generic [ref=e205]: Google
+          - listitem [ref=e206]:
+            - button "Microsoft" [ref=e207] [cursor=pointer]:
+              - generic [ref=e209]: Microsoft
+        - generic [ref=e210]:
+          - listitem [ref=e211]:
+            - button "Apple" [ref=e212] [cursor=pointer]:
+              - generic [ref=e214]: Apple
+          - listitem [ref=e215]:
+            - button "Slack" [ref=e216] [cursor=pointer]:
+              - generic [ref=e218]: Slack
+      - list [ref=e220]:
+        - listitem [ref=e221]:
+          - link "Can't log in?" [ref=e222] [cursor=pointer]:
+            - /url: /login/resetpassword?continue=https%3A%2F%2Fid.atlassian.com%2Fjoin%2Fuser-access%3Fresource%3Dari%253Acloud%253Ajira%253A%253Asite%252Fc5b189a5-7cea-4038-9941-d30d5b6c3071%26continue%3Dhttps%253A%252F%252Ffirsttry.atlassian.net%252Fjira%252Fdashboards%252F10102&application=jira&orgId=4ce1f04e-ad3c-4834-8278-c9557ca03c38
+        - text: •
+        - listitem [ref=e223]:
+          - link "Create an account" [ref=e224] [cursor=pointer]:
+            - /url: /signup?continue=https%3A%2F%2Fid.atlassian.com%2Fjoin%2Fuser-access%3Fresource%3Dari%253Acloud%253Ajira%253A%253Asite%252Fc5b189a5-7cea-4038-9941-d30d5b6c3071%26continue%3Dhttps%253A%252F%252Ffirsttry.atlassian.net%252Fjira%252Fdashboards%252F10102&application=jira&orgId=4ce1f04e-ad3c-4834-8278-c9557ca03c38
+    - contentinfo [ref=e225]:
+      - generic [ref=e226]:
+        - img "Atlassian" [ref=e227]:
+          - img [ref=e228]
+        - generic [ref=e231]:
+          - text: One account for Jira, Confluence, Trello and
+          - link "Learn more about Atlassian Account , (opens new window)" [ref=e232] [cursor=pointer]:
+            - /url: https://support.atlassian.com/atlassian-account/docs/what-is-an-atlassian-account/
+            - text: more
+            - img [ref=e234]
+          - text: .
+      - list [ref=e237]:
+        - listitem [ref=e238]:
+          - link "Atlassian Privacy Policy , (opens new window)" [ref=e239] [cursor=pointer]:
+            - /url: https://www.atlassian.com/legal/privacy-policy
+            - text: Privacy Policy
+            - img [ref=e241]
+        - text: •
+        - listitem [ref=e244]:
+          - link "Atlassian User Notice , (opens new window)" [ref=e245] [cursor=pointer]:
+            - /url: https://www.atlassian.com/legal/user-notice
+            - text: User Notice
+            - img [ref=e247]
+      - generic [ref=e250]:
+        - text: This site is protected by reCAPTCHA and the Google
+        - link "Google Privacy Policy , (opens new window)" [ref=e251] [cursor=pointer]:
+          - /url: https://policies.google.com/privacy
+          - text: Privacy Policy
+          - img [ref=e253]
+        - text: and
+        - link "Google Terms of Service , (opens new window)" [ref=e256] [cursor=pointer]:
+          - /url: https://policies.google.com/terms
+          - text: Terms of Service
+          - img [ref=e258]
+        - text: apply.
+```
