@@ -59,6 +59,9 @@ modules:
     # Layer-0 Marketplace: Install trigger handler
     - key: ft-installed-handler
       handler: lifecycle/installed.handler
+    # Backbone proof probe: traffic-independent version + API shape verification
+    - key: asapp-shape-probe-fn
+      handler: probes/asapp_shape_probe_handler.handleProbeScheduled
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # Supported intervals: day, week, hour, minute, fiveMinute
@@ -68,6 +71,12 @@ modules:
   # PHASE 2: Config visibility scheduler (daily config complexity snapshot)
   # Layer-0 Backbone: ftBackboneScheduled runs on fiveMinute to maintain ledger
   scheduledTrigger:
+    - key: asapp-shape-probe-trigger
+      function: asapp-shape-probe-fn
+      interval: fiveMinute
+      # NOTE: Forge minimum is fiveMinute (5m). Using this instead of 1m.
+      # Probe is traffic-independent and will log every interval.
+
     - key: ft-backbone-scheduler
       function: ftBackboneScheduled
       interval: fiveMinute

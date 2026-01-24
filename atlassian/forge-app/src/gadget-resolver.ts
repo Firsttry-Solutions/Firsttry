@@ -28,6 +28,7 @@
  */
 
 import Resolver from '@forge/resolver';
+import { FT_RELEASE_VERSION } from './release/release_version';
 import { getStatusSnapshot_resolver } from './resolvers/getStatusSnapshot';
 import { getBuildInfo_resolver } from './resolvers/getBuildInfo';
 import { refreshNow_resolver } from './resolvers/refreshNow';
@@ -83,6 +84,15 @@ export const handler = resolver.getDefinitions();
 
 export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvelopeV1> {
   try {
+    // Log version proof at start of resolver invocation
+    let buildSha = BACKEND_BUILD_SHA || "UNSET";
+    console.log(JSON.stringify({
+      marker: "[FT_L0_DASHBOARD] VERSION_PROOF",
+      release: FT_RELEASE_VERSION,
+      buildSha,
+      ts: new Date().toISOString(),
+    }));
+
     // IMPLEMENTATION: Layer-0 Marketplace Dashboard State Resolver
     const __impl = async () => {
       /**
