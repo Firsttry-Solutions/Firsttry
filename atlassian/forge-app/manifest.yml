@@ -59,6 +59,9 @@ modules:
     # Layer-0 Marketplace: Install trigger handler
     - key: ft-installed-handler
       handler: lifecycle/installed.handler
+    # Layer-0 Backbone: Runtime version proof (token-gated webtrigger)
+    - key: ft-runtime-proof-fn
+      handler: webtriggers/runtime_proof.handler
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # Supported intervals: day, week, hour, minute, fiveMinute
@@ -95,6 +98,9 @@ modules:
     # BACKBONE CONTRACT PROOF: Read-only webtrigger for production envelope verification
     - key: ft-contract-proof-trigger
       function: ft-contract-proof
+    # BACKBONE RUNTIME PROOF: Token-gated endpoint for deterministic release validation
+    - key: ft-runtime-proof
+      function: ft-runtime-proof-fn
 
   # Layer-0 Marketplace: Install trigger creates snapshot anchor
   trigger:
