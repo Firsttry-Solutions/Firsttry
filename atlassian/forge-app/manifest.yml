@@ -45,9 +45,9 @@ modules:
     # BACKBONE CONTRACT PROOF: Read-only webtrigger for production envelope verification
     - key: ft-contract-proof
       handler: webtriggers/contract-proof.run
-    # Canonical gadget handler: Single dispatcher for all UI invocations (with allowlist)
+    # Canonical gadget handler: Forge Resolver for all UI invocations (gadget-resolver.ts)
     - key: get-status-snapshot-fn
-      handler: resolvers/gadget-handlers.handler
+      handler: gadget-resolver.handler
     - key: refresh-now-fn
       handler: resolvers/gadget-handlers.handler
     - key: get-build-info-fn
