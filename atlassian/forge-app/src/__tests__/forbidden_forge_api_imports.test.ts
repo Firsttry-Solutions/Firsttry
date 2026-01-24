@@ -30,7 +30,18 @@ test("FORBID named import { api } from '@forge/api' (causes api.asApp undefined)
   const bad: string[] = [];
   for (const f of files) {
     const txt = fs.readFileSync(f, "utf8");
-    if (txt.match(/import\s*\{\s*api\s*\}\s*from\s*['"]@forge\/api['"]/)) bad.push(f);
+    // Forbidden ES6 named import pattern
+    if (txt.match(/import\s*\{\s*api\s*\}\s*from\s*['"]@forge\/api['"]/)) {
+      bad.push(`${f}: forbidden named import { api }`);
+    }
+    // Forbidden require(.api) pattern  
+    if (txt.match(/require\(['"]@forge\/api['"]\)\s*\.\s*api/)) {
+      bad.push(`${f}: forbidden require(...).api pattern`);
+    }
+    // Forbidden const { api } = require(...) pattern
+    if (txt.match(/const\s*\{\s*api\s*\}\s*=\s*require\(['"]@forge\/api['"]\)/)) {
+      bad.push(`${f}: forbidden const { api } = require(...) pattern`);
+    }
   }
   expect(bad).toEqual([]);
 });

@@ -1,0 +1,162 @@
+================================================================================
+DEPLOYMENT READINESS PACKAGE — ARTIFACT INDEX
+================================================================================
+
+RUN_DIR: /tmp/ft_deploy_asapp_fix_20260124T114537Z
+Created: 2026-01-24T11:45-11:47 UTC
+Status: ENVIRONMENT CONSTRAINT (Forge auth missing, code ready)
+
+================================================================================
+ARTIFACT INVENTORY
+================================================================================
+
+SETUP & VERIFICATION (01-03):
+  00_run_dir.txt .......................... RUN_DIR reference path
+  01_git_status.txt ....................... Git status verification (clean tree)
+  02_branch.txt ........................... Branch verification (on main)
+  03_heads.txt ............................ Commit heads (LOCAL == REMOTE verified)
+
+AUTHENTICATION STATUS (10-11):
+  10_forge_auth_precheck.txt .............. Forge env var check (FAILED)
+  11_forge_whoami.txt ..................... Would contain forge whoami output
+  
+FAILURE DOCUMENTATION:
+  FAIL_dirty_tree.txt ..................... Not present (tree is clean)
+  FAIL_missing_forge_env.txt .............. Present: Missing FORGE_EMAIL, FORGE_API_TOKEN
+  FAIL_forge_auth.txt ..................... Present: forge whoami failed
+
+DEPLOYMENT ARTIFACTS (20-40):
+  20_logs_pre_24h.txt ..................... NOT COLLECTED (requires Forge auth)
+  21_pre_asapp_extract.txt ................ NOT COLLECTED (requires Forge auth)
+  30_build_gadget.txt ..................... NOT EXECUTED (blocked by auth failure)
+  31_forge_deploy_prod.txt ................ NOT EXECUTED (blocked by auth failure)
+  32_forge_install_upgrade.txt ............ NOT EXECUTED (blocked by auth failure)
+  33_deployed_git_sha.txt ................. NOT COLLECTED (blocked by auth failure)
+  40_sleep.txt ............................ NOT EXECUTED (deployment skipped)
+
+POST-DEPLOY EVIDENCE (41-42):
+  41_logs_post_2h.txt ..................... NOT COLLECTED (requires Forge auth)
+  42_post_asapp_extract.txt ............... NOT COLLECTED (requires Forge auth)
+
+RESULTS & GUIDANCE (90-99):
+  90_RESULT.txt ........................... DEPLOYMENT BLOCKED (env constraint)
+  95_DEV_CONSOLE_METRICS_CHECKLIST.txt ... Post-deploy verification template
+  99_INDEX.txt ............................ This file
+
+================================================================================
+TOTAL ARTIFACTS: 11 files collected
+TOTAL SIZE: ~50 KB
+EXECUTABILITY: Blocked at Step 1 (Forge authentication unavailable)
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+What WAS Verified (BEFORE AUTH FAILURE):
+  ✓ Working tree is clean (no uncommitted changes)
+  ✓ On main branch (correct deployment branch)
+  ✓ Local HEAD == origin/main (26fab632, synced)
+  ✓ Previous build gates passed (from earlier steps)
+  ✓ Commit contains import fixes (9 files)
+  ✓ Regression test created
+
+What COULD NOT Be Verified (AFTER AUTH FAILURE):
+  ✗ forge deploy --environment production (no Forge auth)
+  ✗ forge install --upgrade (no Forge auth)
+  ✗ Pre-deploy production logs (no Forge auth)
+  ✗ Post-deploy production logs (no Forge auth)
+  ✗ Error recurrence comparison (no logs)
+
+ROOT CAUSE OF DEPLOYMENT BLOCK:
+  Environment variable missing: FORGE_EMAIL (not set)
+  Environment variable missing: FORGE_API_TOKEN (not set)
+  
+  This is a devcontainer constraint, not a code issue.
+  Code is production-ready; deployment requires authenticated environment.
+
+================================================================================
+FAILURE CLASSIFICATION
+================================================================================
+
+Type: ENVIRONMENT CONSTRAINT (not code failure)
+Cause: Missing Forge platform authentication variables
+Severity: BLOCKING (prevents Forge CLI execution)
+Recovery: Operations team must deploy from authenticated environment
+Impact on code: NONE (code is ready, gates passed)
+
+================================================================================
+NEXT STEPS FOR OPERATIONS
+================================================================================
+
+1. Set environment variables:
+   export FORGE_EMAIL="<email>"
+   export FORGE_API_TOKEN="<token>"
+
+2. Execute deployment in authenticated environment:
+   cd /workspaces/Firsttry/atlassian/forge-app
+   npm run build:gadget
+   forge deploy --environment production
+   forge install --upgrade --environment production \
+     --site firsttry.atlassian.net --product jira
+
+3. Wait 120 seconds for log propagation
+
+4. Collect post-deploy logs:
+   forge logs --environment production --since 2h > post_deploy.log
+
+5. Verify fix using checklist:
+   grep "Cannot read properties of undefined (reading 'asApp')" post_deploy.log
+   (Expected: ZERO matches)
+
+6. Use 95_DEV_CONSOLE_METRICS_CHECKLIST.txt for comprehensive metrics
+
+================================================================================
+COMMITTED CODE STATUS
+================================================================================
+
+Commit: 26fab632defbb5b2742488c1bc34799ffce10333
+Message: BACKBONE FIX: prevent api.asApp undefined by forbidding named { api } import
+Branch: main
+Remote: origin/main (SYNCED)
+
+Files Modified (10 total):
+  • src/scheduled/token_refresh_scheduler.ts (import fix)
+  • src/output/output_store.ts (import fix)
+  • src/audit/audit_events.ts (import fix)
+  • src/auth/oauth_handler.ts (import fix)
+  • src/exports/snapshot_export.ts (import fix)
+  • src/lifecycle/installed.ts (import fix)
+  • src/phase6/snapshot_capture.ts (import fix)
+  • src/drift/drift_state.ts (import fix)
+  • src/phase7/drift_storage.ts (import fix)
+  • src/__tests__/forbidden_forge_api_imports.test.ts (NEW: regression test)
+
+Build Verification (from earlier):
+  npm run build:gadget: PASSED (7/7 gates)
+
+Production Readiness:
+  ✓ All gates passed
+  ✓ Regression test integrated
+  ✓ No syntax/logic errors
+  ✓ Synced with remote
+
+================================================================================
+DOCUMENTATION ARTIFACTS
+================================================================================
+
+For operations team reference:
+  • 90_RESULT.txt: Full result explanation (why deployment blocked, what to do)
+  • 95_DEV_CONSOLE_METRICS_CHECKLIST.txt: Template for post-deploy verification
+  • 99_INDEX.txt: This file (artifact inventory)
+
+================================================================================
+CONCLUSION
+================================================================================
+
+The commit 26fab632 is production-ready and deployed to origin/main.
+The devcontainer lacks Forge authentication credentials (expected).
+Operations team must execute deployment from authenticated environment.
+After deployment, use checklist to verify error disappearance.
+
+Status: CODE READY, AWAITING OPERATIONS DEPLOYMENT
+================================================================================

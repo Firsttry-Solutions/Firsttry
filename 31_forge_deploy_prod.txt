@@ -1,0 +1,5 @@
+=== FORGE DEPLOY (production) ===
+Deploying your app to the production environment.
+Press Ctrl+C to cancel.
+
+Running forge lint...

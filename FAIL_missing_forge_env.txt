@@ -1,0 +1,3 @@
+FAIL: Missing Forge environment variables
+  FORGE_EMAIL: MISSING
+  FORGE_API_TOKEN: MISSING

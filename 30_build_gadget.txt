@@ -1,0 +1,217 @@
+=== BUILD:GADGET ===
+
+> @firstry/forge-app@2.14.0 build:gadget
+> npm run verify:bridge-installed && npm run verify:required-files && npm run verify:ui:no-runtime-meta && node tools/build_meta.mjs && node tools/gen_ui_build_meta.mjs && cd src/gadget-ui && npm ci && npm run build && cd ../.. && npm run verify:ui:no-fatal-dist && npm run verify:ui:no-top-level-throw && npm run verify:ui:no-legacy-states && npm run verify:dist:invoke-allowlist && npm run verify:dist:identity-labels && npm run verify:source:anchor-unique && npm run verify:bundle:integrity && npm run verify:bundle:provenance && npm run verify:dist:anchor-unique && npm run verify:gates:selftest && npm run verify:lockfile:clean
+
+
+> @firstry/forge-app@2.14.0 verify:bridge-installed
+> node tools/verify_forge_bridge_installed.js
+
+[BUILD_CHECK] ✓ @forge/bridge verified in dependencies
+[BUILD_CHECK] Version: ^5.11.0
+
+> @firstry/forge-app@2.14.0 verify:required-files
+> bash tools/verify_required_files_present.sh
+
+[GATE_REQUIRED_FILES] Checking required files...
+  ✓ trace_helpers.ts
+  ✓ trace_types.ts
+  ✓ ui_identity.ts
+  ✓ legacy_flow_detector.ts
+  ✓ verify_dist_invoke_allowlist.sh
+  ✓ verify_dist_identity_labels.sh
+[GATE_REQUIRED_FILES] Found: 6, Missing: 0
+[GATE_REQUIRED_FILES] PASS
+
+> @firstry/forge-app@2.14.0 verify:ui:no-runtime-meta
+> bash tools/verify_no_runtime_build_meta_import.sh
+
+[BACKBONE_GATE_OK] No runtime/ui_build_meta imports in production UI code
+✅ Wrote metadata to /workspaces/Firsttry/atlassian/forge-app/tools/.build_meta.json
+   FT_BUILD_SHA=26fab632defb
+   UI_GIT_SHA=26fab632defbb5b2742488c1bc34799ffce10333
+   FT_BUILD_TIME_UTC=2026-01-24T11:51:35Z
+✅ Wrote shell export to /workspaces/Firsttry/atlassian/forge-app/tools/.build_meta.sh
+✅ Wrote .env format to /workspaces/Firsttry/atlassian/forge-app/tools/.build_meta.env
+✅ Injected backend_build.ts with BACKEND_BUILD_SHA="26fab632defb" (verified)
+✅ Wrote UI build metadata to /workspaces/Firsttry/atlassian/forge-app/src/gadget-ui/src/build/ui_build_meta.json
+✅ Verified ui_build_meta.json with UI_GIT_SHA="26fab632defbb5b2742488c1bc34799ffce10333" (40-hex confirmed)
+✓ Generated /workspaces/Firsttry/atlassian/forge-app/src/gadget-ui/src/ui_build_meta.ts
+  UI_GIT_SHA (40-hex): 26fab632defbb5b2742488c1bc34799ffce10333
+  UI_GIT_TIME: 2026-01-24T11:51:35Z
+✓ Verified: UI_GIT_SHA correctly injected (40-hex)
+
+added 17 packages, and audited 18 packages in 942ms
+
+5 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+> @firstry/gadget-ui@2.14.0 build
+> vite build && node postbuild.mjs
+
+vite v7.3.0 building client environment for production...
+transforming...
+✓ 86 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                 10.50 kB │ gzip:  2.54 kB
+dist/assets/index.zNPU7xoQ.css  31.85 kB │ gzip:  6.03 kB
+dist/index.js                   79.27 kB │ gzip: 23.75 kB
+✓ built in 504ms
+[POSTBUILD] sha=26fab632defbb5b2742488c1bc34799ffce10333
+[POSTBUILD] wrote entry=app.26fab632defbb5b2742488c1bc34799ffce10333.js
+[POSTBUILD] ✓ Anchor components:
+[POSTBUILD]   git=26fab63 (from UI_GIT_SHA.slice(0,7))
+[POSTBUILD]   bundle=234e760 (from sha256(vite_output).slice(0,7))
+[POSTBUILD]   time=2026-01-24T11:51:35Z
+[POSTBUILD]   Anchor: FT_IDENTITY_ANCHOR_V1|git=26fab63|bundle=234e760|time=2026-01-24T11:51:35Z
+[POSTBUILD] ✓ Appended anchor block comment (no code modifications)
+[POSTBUILD] ✓ Asserts passed: no query-param cache bust, no legacy entry assets
+[POSTBUILD] index.html script=<script type="module" src="./app.26fab632defbb5b2742488c1bc34799ffce10333.js"></script>
+[POSTBUILD] wrote ENTRY_PROOF.json (build_sha=26fab632defbb5b2742488c1bc34799ffce10333)
+[POSTBUILD] ✓ Filename-based cache-bust ready
+
+> @firstry/forge-app@2.14.0 verify:ui:no-fatal-dist
+> bash tools/verify_no_fatal_ui_bridge_in_dist.sh
+
+[verify_no_fatal_ui_bridge_in_dist] Checking dist for fatal markers...
+OK: No fatal UI bridge markers in dist bundle
+
+> @firstry/forge-app@2.14.0 verify:ui:no-top-level-throw
+> bash tools/verify_no_top_level_throw_in_entry.sh
+
+[verify_no_top_level_throw_in_entry] Checking entry bundle for top-level throw...
+Checking: src/gadget-ui/dist/app.26fab632defbb5b2742488c1bc34799ffce10333.js
+OK: No top-level throw in entry bundle
+
+> @firstry/forge-app@2.14.0 verify:ui:no-legacy-states
+> bash tools/verify_no_legacy_ui_states.sh
+
+[PHASE_1_GATE] Checking for legacy UI placeholder states in dist bundle...
+✓ PASS: ping resolver removed from source
+✓ PASS: ft_getDashboardState_v1 is invoked (single source of truth)
+✓ PASS: NOT_AVAILABLE removed from traceDiagnostics
+⚠ WARNING: Could not verify error handler exit in source
+
+[PHASE_1_GATE] ✅ All legacy state checks PASSED
+
+> @firstry/forge-app@2.14.0 verify:dist:invoke-allowlist
+> bash tools/verify_dist_invoke_allowlist.sh
+
+[GATE_INVOKE_ALLOWLIST] Scanning: app.26fab632defbb5b2742488c1bc34799ffce10333.js
+[GATE_INVOKE_ALLOWLIST] total_invoke_count=2
+[GATE_INVOKE_ALLOWLIST] literal_invoke_count=0
+[GATE_INVOKE_ALLOWLIST] resolvers=(none - all invokes are dynamic)
+[GATE_INVOKE_ALLOWLIST]   ✓ No literal string invoke calls (dynamic bridge-based)
+[GATE_INVOKE_ALLOWLIST]   ✓ No literal invoke calls (all dynamic via @forge/bridge)
+[GATE_INVOKE_ALLOWLIST]   ✓ Legacy blocker marker found: FATAL_UI_LEGACY_RESOLVER
+[GATE_INVOKE_ALLOWLIST] PASS
+
+> @firstry/forge-app@2.14.0 verify:dist:identity-labels
+> bash tools/verify_dist_identity_labels.sh
+
+[GATE_IDENTITY_LABELS] Scanning: app.26fab632defbb5b2742488c1bc34799ffce10333.js
+[GATE_IDENTITY_LABELS] identity_anchors_count=1
+[GATE_IDENTITY_LABELS]   ✓ Exactly 1 anchor
+[GATE_IDENTITY_LABELS] git_sha=26fab63
+[GATE_IDENTITY_LABELS] bundle_hash=234e760
+[GATE_IDENTITY_LABELS] build_time=2026-01-24T11:51:35Z
+[GATE_IDENTITY_LABELS]   ✓ git_sha valid
+[GATE_IDENTITY_LABELS]   ✓ bundle_hash valid
+[GATE_IDENTITY_LABELS]   ✓ build_time valid
+[GATE_IDENTITY_LABELS]   ✓ git_sha != bundle_hash
+[GATE_IDENTITY_LABELS] PASS git=26fab63 bundle=234e760 time=2026-01-24T11:51:35Z
+
+> @firstry/forge-app@2.14.0 verify:source:anchor-unique
+> bash tools/verify_source_identity_anchor_unique.sh
+
+[GATE_SOURCE_ANCHOR_UNIQUE] Checking source code for anchor uniqueness
+[GATE_SOURCE_ANCHOR_UNIQUE] Source directory: /workspaces/Firsttry/atlassian/forge-app/tools/../src/gadget-ui/src
+[GATE_SOURCE_ANCHOR_UNIQUE] createIdentityAnchor_functions=1
+[GATE_SOURCE_ANCHOR_UNIQUE] stale_IDENTITY_ANCHOR_V1_exports=0
+[GATE_SOURCE_ANCHOR_UNIQUE]   ✓ Exactly 1 createIdentityAnchor function
+[GATE_SOURCE_ANCHOR_UNIQUE]   ✓ No stale static IDENTITY_ANCHOR_V1 exports
+[GATE_SOURCE_ANCHOR_UNIQUE] PASS
+
+> @firstry/forge-app@2.14.0 verify:bundle:integrity
+> bash tools/verify_bundle_integrity.sh --bundle-file src/gadget-ui/dist/app.*.js
+
+[GATE_BUNDLE_INTEGRITY] Scanning: app.26fab632defbb5b2742488c1bc34799ffce10333.js
+[GATE_BUNDLE_INTEGRITY] file_size=79349 (threshold=10240)
+[GATE_BUNDLE_INTEGRITY]   ✓ File size check passed
+[GATE_BUNDLE_INTEGRITY] Using sha256 for hashing
+[GATE_BUNDLE_INTEGRITY] hash_algo=sha256
+[GATE_BUNDLE_INTEGRITY] hash=b25f0fc8aba37a978f3aba6317e5a0d8ccda358f7beac8682fdf8c6c61c4b3a0
+[GATE_BUNDLE_INTEGRITY]   ✓ Hash is valid sha256 (64 hex)
+[GATE_BUNDLE_INTEGRITY] PASS algo=sha256 hash=b25f0fc8aba37a978f3aba6317e5a0d8ccda358f7beac8682fdf8c6c61c4b3a0 size=79349
+
+> @firstry/forge-app@2.14.0 verify:bundle:provenance
+> bash tools/verify_bundle_provenance.sh
+
+[verify_bundle_provenance] Bundle: src/gadget-ui/dist/app.26fab632defbb5b2742488c1bc34799ffce10333.js
+[verify_bundle_provenance] strip_and_hash.js exit code: 0
+[verify_bundle_provenance] JSON output:
+{
+  "bundleFile": "src/gadget-ui/dist/app.26fab632defbb5b2742488c1bc34799ffce10333.js",
+  "anchorCount": 1,
+  "embeddedGit": "26fab63",
+  "embeddedBundle": "234e760",
+  "embeddedTime": "2026-01-24T11:51:35Z",
+  "computedPrefix7": "234e760",
+  "computedFull": "234e760a7c679c70683a41ce53e98031669a533fa2b244466172a128f4bcd50e",
+  "status": "OK"
+}
+[verify_bundle_provenance] Validating JSON structure...
+[verify_bundle_provenance] status=OK, anchorCount=1
+[verify_bundle_provenance] embeddedBundle=234e760, computedPrefix7=234e760
+
+✅ PASS: Bundle provenance verified
+  - Exactly 1 anchor found in block comment
+  - Bundle SHA: 234e760 (matches computed hash)
+  - No warnings, no mismatches
+
+> @firstry/forge-app@2.14.0 verify:dist:anchor-unique
+> bash tools/verify_identity_anchor_unique.sh
+
+[GATE_IDENTITY_ANCHOR] Scanning bundle: app.26fab632defbb5b2742488c1bc34799ffce10333.js
+[GATE_IDENTITY_ANCHOR] Found 1 occurrence(s) of identity anchor
+[GATE_IDENTITY_ANCHOR] PASS: Anchor present exactly once
+
+> @firstry/forge-app@2.14.0 verify:gates:selftest
+> bash tools/test_gates_selftest.sh
+
+[SELFTEST] Phase 1: Locate real dist bundle
+[SELFTEST] PASS: Real bundle located: /workspaces/Firsttry/atlassian/forge-app/tools/../src/gadget-ui/dist/app.26fab632defbb5b2742488c1bc34799ffce10333.js
+
+[SELFTEST] Phase 2: Real bundle smoke tests (must PASS)
+[SELFTEST] Running Gate 2 on real bundle...
+[SELFTEST] PASS: Gate 2 PASSED on real bundle
+[SELFTEST] Running Gate 1 on real bundle...
+[SELFTEST] PASS: Gate 1 PASSED on real bundle
+
+[SELFTEST] Phase 3: Mutation tests on real bundle
+[SELFTEST] Mutation A: Remove anchor substring
+[SELFTEST]   ✓ Gate 2 correctly FAILED
+[SELFTEST] Mutation B: Duplicate anchor
+[SELFTEST]   ✓ Gate 2 correctly FAILED
+[SELFTEST] Mutation C: Replace time with UNSET
+[SELFTEST]   ✓ Gate 2 correctly FAILED
+[SELFTEST] Mutation D: Replace git with bundle value (no distinctness)
+[SELFTEST]   ✓ Gate 2 correctly FAILED
+[SELFTEST] Mutation E: Tiny file (Gate 1 must FAIL)
+[SELFTEST]   ✓ Gate 1 correctly FAILED
+
+[SELFTEST] ==========================================
+[SELFTEST] SELFTEST SUMMARY
+[SELFTEST] ==========================================
+[SELFTEST] Real bundle smoke tests: 2/2 PASS
+[SELFTEST] Mutation tests: 5/5 PASS
+
+[SELFTEST] PASS: ALL TESTS PASSED (7/7)
+
+> @firstry/forge-app@2.14.0 verify:lockfile:clean
+> git diff --exit-code package-lock.json || (echo 'ERROR: package-lock.json has uncommitted changes (lockfile drift detected)' && exit 1)
+
+Build exit code: 0

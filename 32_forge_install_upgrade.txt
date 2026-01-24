@@ -1,0 +1,10 @@
+=== FORGE INSTALL --UPGRADE (production) ===
+
+Upgrading your app on the Atlassian site.
+
+? Do you want to continue? (y/N) [33D[33C[2K[G? Do you want to continue? (y/N) I[34D[34C[2K[G? Do you want to continue? (y/N) IN[35D[35C[2K[G? Do you want to continue? (y/N) INS[36D[36C[2K[G? Do you want to continue? (y/N) INST[37D[37C[2K[G? Do you want to continue? (y/N) INSTA[38D[38C[2K[G? Do you want to continue? (y/N) INSTAL[39D[39C[2K[G? Do you want to continue? (y/N) INSTALL[40D[40C[2K[G? Do you want to continue? (y/N) INSTALL_[41D[41C[2K[G? Do you want to continue? (y/N) INSTALL_E[42D[42C[2K[G? Do you want to continue? (y/N) INSTALL_EX[43D[43C[2K[G? Do you want to continue? (y/N) INSTALL_EXI[44D[44C[2K[G? Do you want to continue? (y/N) INSTALL_EXIT[45D[45C[2K[G? Do you want to continue? (y/N) INSTALL_EXIT=[46D[46C[2K[G? Do you want to continue? (y/N) INSTALL_EXIT=$[47D[47C[2K[G? Do you want to continue? (y/N) INSTALL_EXIT=$?[48D[48C[2K[G? Do you want to continue? No[29D[29C
+echo "Install exit code: $INSTALL_EXIT" | tee -a "$RUN_DIR/32_forge_install_upgrade.txt"
+
+if [ $INSTALL_EXIT -ne 0 ]; then
+  echo "FAIL: forge install --upgrade failed" | tee "$RUN_DIR/FAIL_forge_install.txt"
+fi

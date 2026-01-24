@@ -114,7 +114,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       // Read snapshot from storage (single source of truth)
       const snapshot = await (async () => {
         try {
-          const api_imported = require("@forge/api").api;
+          const api_imported = require("@forge/api");
           let storedSnapshot: any = null;
           await api_imported.asApp().requestStorage(async (storage: any) => {
             storedSnapshot = await storage.get("ft:snapshot:last:v1");
