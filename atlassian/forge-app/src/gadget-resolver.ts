@@ -42,6 +42,14 @@ import { loadOrInitLedger, updateLedger } from './backbone/ledger';
 import { nowUtcIso } from './backbone/time';
 import { dashOk, dashErr } from './shared/dashEnvelopeV1';
 import { BACKEND_BUILD_SHA } from './build/backend_build';
+import {
+  FT_DASH_ENVELOPE_MARKER_V1,
+  okEnvelope,
+  notAvailableEnvelope,
+  hardErrorEnvelope,
+  normalizeFtDashEnvelopeV1,
+  FtDashEnvelopeV1,
+} from './contracts/ft_dash_envelope_v1';
 
 // Create single canonical resolver instance
 const resolver = new Resolver();
@@ -73,110 +81,119 @@ export const handler = resolver.getDefinitions();
 // LAYER-0 BACKBONE RESOLVERS (NEW)
 // ============================================================================
 
-export async function ft_getDashboardState_v1(request: any): Promise<any> {
-  /**
-   * Layer-0 Marketplace Dashboard State Resolver
-   * 
-   * Returns ONLY persisted snapshot metadata (dumb reader pattern):
-   * - Read ft:snapshot:last:v1 from storage
-   * - Validate structure
-   * - Return status + snapshotId + createdAtUtc + schemaVersion
-   * - NO state machine, NO derived logic, NO ledger
-   * 
-   * Dashboard MUST show ONLY:
-   * - AVAILABLE: if snapshot exists and is valid
-   * - HARD ERROR: if snapshot missing or invalid
-   * 
-   * Response format for UI:
-   * {
-   *   status: "AVAILABLE" | "HARD ERROR",
-   *   snapshotId: "<uuid>",
-   *   createdAtUtc: "<ISO>",
-   *   schemaVersion: "L0",
-   *   containsText: "Jira governance evidence snapshot (export for full details)."
-   * }
-   */
+export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvelopeV1> {
   try {
-    const now = nowUtcIso();
-    const context = request?.context || {};
-    const requestId = context?.requestId ?? null;
-    
-    // Read snapshot from storage (single source of truth)
-    const snapshot = await (async () => {
-      try {
-        const api_imported = require("@forge/api").api;
-        let storedSnapshot: any = null;
-        await api_imported.asApp().requestStorage(async (storage: any) => {
-          storedSnapshot = await storage.get("ft:snapshot:last:v1");
+    // IMPLEMENTATION: Layer-0 Marketplace Dashboard State Resolver
+    const __impl = async () => {
+      /**
+       * Layer-0 Marketplace Dashboard State Resolver
+       * 
+       * Returns ONLY persisted snapshot metadata (dumb reader pattern):
+       * - Read ft:snapshot:last:v1 from storage
+       * - Validate structure
+       * - Return status + snapshotId + createdAtUtc + schemaVersion
+       * - NO state machine, NO derived logic, NO ledger
+       * 
+       * Dashboard MUST show ONLY:
+       * - AVAILABLE: if snapshot exists and is valid
+       * - HARD ERROR: if snapshot missing or invalid
+       * 
+       * Response format for UI:
+       * {
+       *   status: "AVAILABLE" | "HARD ERROR",
+       *   snapshotId: "<uuid>",
+       *   createdAtUtc: "<ISO>",
+       *   schemaVersion: "L0",
+       *   containsText: "Jira governance evidence snapshot (export for full details)."
+       * }
+       */
+      const now = nowUtcIso();
+      const context = request?.context || {};
+      const requestId = context?.requestId ?? null;
+      
+      // Read snapshot from storage (single source of truth)
+      const snapshot = await (async () => {
+        try {
+          const api_imported = require("@forge/api").api;
+          let storedSnapshot: any = null;
+          await api_imported.asApp().requestStorage(async (storage: any) => {
+            storedSnapshot = await storage.get("ft:snapshot:last:v1");
+          });
+          return storedSnapshot;
+        } catch (e) {
+          console.error("[FT_L0_DASHBOARD] Storage read failed:", e instanceof Error ? e.message : String(e));
+          return null;
+        }
+      })();
+      
+      // Validate snapshot structure (fail-closed)
+      const isValid = snapshot && 
+        typeof snapshot.snapshotId === 'string' && snapshot.snapshotId.trim() &&
+        typeof snapshot.createdAtUtc === 'string' && snapshot.createdAtUtc.trim() &&
+        snapshot.schemaVersion === "L0" &&
+        typeof snapshot.data === 'object' && snapshot.data &&
+        snapshot.createdAtUtc.endsWith('Z');
+      
+      if (!isValid) {
+        console.log("[FT_L0_DASHBOARD] Snapshot invalid or missing", {
+          present: !!snapshot,
+          hasSnapshotId: snapshot?.snapshotId != null,
+          hasCreatedAt: snapshot?.createdAtUtc != null,
+          isSchemaL0: snapshot?.schemaVersion === "L0",
+          hasData: snapshot?.data != null,
         });
-        return storedSnapshot;
-      } catch (e) {
-        console.error("[FT_L0_DASHBOARD] Storage read failed:", e instanceof Error ? e.message : String(e));
-        return null;
+        
+        // Return as NOT_AVAILABLE (wrapped by outer try/catch + normalizer)
+        return {
+          status: "HARD ERROR",
+          error: "FT_SNAPSHOT_INVALID",
+          schemaVersion: "L0",
+        };
       }
-    })();
-    
-    // Validate snapshot structure (fail-closed)
-    const isValid = snapshot && 
-      typeof snapshot.snapshotId === 'string' && snapshot.snapshotId.trim() &&
-      typeof snapshot.createdAtUtc === 'string' && snapshot.createdAtUtc.trim() &&
-      snapshot.schemaVersion === "L0" &&
-      typeof snapshot.data === 'object' && snapshot.data &&
-      snapshot.createdAtUtc.endsWith('Z');
-    
-    if (!isValid) {
-      console.log("[FT_L0_DASHBOARD] Snapshot invalid or missing", {
-        present: !!snapshot,
-        hasSnapshotId: snapshot?.snapshotId != null,
-        hasCreatedAt: snapshot?.createdAtUtc != null,
-        isSchemaL0: snapshot?.schemaVersion === "L0",
-        hasData: snapshot?.data != null,
+      
+      // Return metadata only (dumb reader)
+      console.log("[FT_L0_DASHBOARD] Returning valid snapshot meta", {
+        snapshotId: snapshot.snapshotId,
+        createdAtUtc: snapshot.createdAtUtc,
+        requestId,
       });
       
       return {
-        status: "HARD ERROR",
-        error: "FT_SNAPSHOT_INVALID",
+        status: "AVAILABLE",
+        snapshotId: snapshot.snapshotId,
+        createdAtUtc: snapshot.createdAtUtc,
         schemaVersion: "L0",
-      };
-    }
-    
-    // Return metadata only (dumb reader)
-    console.log("[FT_L0_DASHBOARD] Returning valid snapshot meta", {
-      snapshotId: snapshot.snapshotId,
-      createdAtUtc: snapshot.createdAtUtc,
-      requestId,
-    });
-    
-    return {
-      status: "AVAILABLE",
-      snapshotId: snapshot.snapshotId,
-      createdAtUtc: snapshot.createdAtUtc,
-      schemaVersion: "L0",
-      containsText: "Jira governance evidence snapshot (export for full details).",
-      // Pass through metadata verbatim (dumb reader - no transforms)
-      metadata: snapshot.metadata || {
-        coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
-        integrity: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
-        provenance: { capturedBy: "UNKNOWN" },
-        export: { formats: ["JSON"], readiness: "AVAILABLE" },
-        compliance: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
-        disclaimer: {
-          doesNotMonitor: "Live Jira activity",
-          doesNotModify: "Jira data or configuration",
-          doesNotAutoFix: "Compliance issues",
-          doesNotProvide: "Compliance guarantees or substitutes for professional audit"
+        containsText: "Jira governance evidence snapshot (export for full details).",
+        // Pass through metadata verbatim (dumb reader - no transforms)
+        metadata: snapshot.metadata || {
+          coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+          integrity: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+          provenance: { capturedBy: "UNKNOWN" },
+          export: { formats: ["JSON"], readiness: "AVAILABLE" },
+          compliance: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+          disclaimer: {
+            doesNotMonitor: "Live Jira activity",
+            doesNotModify: "Jira data or configuration",
+            doesNotAutoFix: "Compliance issues",
+            doesNotProvide: "Compliance guarantees or substitutes for professional audit"
+          }
         }
-      }
+      };
     };
+
+    // WRAPPER: Execute implementation and normalize response (fail-closed)
+    const raw = await __impl();
+    return normalizeFtDashEnvelopeV1(raw);
   } catch (e) {
     const errorMsg = e instanceof Error ? e.message : String(e);
     console.error("[FT_L0_DASHBOARD] Resolver error:", errorMsg);
     
-    return {
-      status: "HARD ERROR",
-      error: "FT_META_FAILED",
-      schemaVersion: "L0",
-    };
+    // FAIL-CLOSED: Return hardErrorEnvelope with marker
+    return hardErrorEnvelope(
+      "FT_META_FAILED",
+      "Dashboard state resolver exception",
+      { error: errorMsg }
+    );
   }
 }
 
