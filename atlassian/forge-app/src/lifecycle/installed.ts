@@ -34,7 +34,7 @@ function isValidSnapshot(snapshot: any): boolean {
 }
 
 /**
- * Create minimal L0 snapshot anchor with enterprise metadata
+ * Create minimal L0 snapshot anchor with metadata declarations
  */
 function createSnapshotAnchor(): any {
   const now = new Date().toISOString();
@@ -44,7 +44,7 @@ function createSnapshotAnchor(): any {
     snapshotId,
     createdAtUtc: now,
     schemaVersion: "L0",
-    // Enterprise metadata (declared, not computed)
+    // Snapshot metadata (declared, not computed)
     metadata: {
       // A. Snapshot Existence & Freshness (MANDATORY)
       status: "AVAILABLE",

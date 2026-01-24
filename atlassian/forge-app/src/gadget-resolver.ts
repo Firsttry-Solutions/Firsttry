@@ -153,7 +153,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<any> {
       createdAtUtc: snapshot.createdAtUtc,
       schemaVersion: "L0",
       containsText: "Jira governance evidence snapshot (export for full details).",
-      // Pass through enterprise metadata verbatim (dumb reader - no transforms)
+      // Pass through metadata verbatim (dumb reader - no transforms)
       metadata: snapshot.metadata || {
         coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
         integrity: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },

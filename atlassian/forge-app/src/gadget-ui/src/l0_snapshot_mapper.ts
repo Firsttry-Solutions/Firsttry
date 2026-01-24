@@ -185,7 +185,7 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Render enterprise metadata blocks (dumb reader pattern)
+ * Render snapshot metadata blocks (dumb reader pattern)
  * Displays all metadata verbatim with "NOT_DECLARED_IN_SNAPSHOT" for missing declarations
  */
 function renderMetadataBlocks(metadata: any): HTMLElement {
@@ -193,7 +193,7 @@ function renderMetadataBlocks(metadata: any): HTMLElement {
   section.style.cssText = "margin-top: 20px; border-top: 1px solid #ccc; padding-top: 12px;";
 
   const title = document.createElement("h2");
-  title.textContent = "Enterprise Metadata";
+  title.textContent = "Snapshot Metadata";
   title.style.cssText = "font-size: 14px; font-weight: bold; margin: 0 0 12px 0; color: #333;";
   section.appendChild(title);
 
