@@ -1,0 +1,95 @@
+================================================================================
+DEPLOYMENT EXECUTION — ENVIRONMENT CONSTRAINT
+================================================================================
+
+STATUS: BLOCKED (Missing Forge Authentication Environment Variables)
+
+Reason:
+  The Forge CLI requires authentication via environment variables in devcontainer:
+  - FORGE_EMAIL: NOT_SET
+  - FORGE_API_TOKEN: NOT_SET
+
+Devcontainer Limitation:
+  This dev container is ephemeral and does not have persistent Atlassian
+  credentials configured. The following are not available:
+  - Keychain (interactive forge login)
+  - Pre-configured FORGE_EMAIL and FORGE_API_TOKEN
+  - Persistent secret store
+
+What WAS Verified (BACKBONE READY):
+  ✓ Commit 26fab632 is synced on main branch
+  ✓ Working tree is clean
+  ✓ Git sync verified (local == origin/main)
+  ✓ Build gates verified passing (from previous step)
+  ✓ Import fixes confirmed (9 files fixed)
+  ✓ Regression test added and integrated
+
+What CANNOT Be Executed Here:
+  ✗ forge deploy --environment production (requires Forge auth)
+  ✗ forge install --upgrade (requires Forge auth)
+  ✗ forge logs collection (requires Forge auth)
+  ✗ Post-deploy error verification (requires logs access)
+
+NEXT STEP FOR OPERATIONS:
+  1. Set environment variables in authenticated environment:
+     export FORGE_EMAIL="<email>"
+     export FORGE_API_TOKEN="<token>"
+  
+  2. Execute deployment script:
+     cd /workspaces/Firsttry/atlassian/forge-app
+     forge deploy --environment production
+     forge install --upgrade --environment production \
+       --site firsttry.atlassian.net --product jira
+  
+  3. Wait 120 seconds for log propagation
+  
+  4. Collect post-deploy logs:
+     forge logs --environment production --since 2h > post_deploy.log
+  
+  5. Verify error disappearance:
+     grep "Cannot read properties of undefined (reading 'asApp')" post_deploy.log
+     Expected: ZERO matches (error should be gone)
+
+COMMITTED CODE (READY FOR DEPLOY):
+  Commit: 26fab632defbb5b2742488c1bc34799ffce10333
+  Branch: main
+  Synced: YES (local == origin/main)
+  
+  Changes:
+  - 9 files: Fixed import { api } → import api (default import)
+  - 1 file: Added regression test
+  - 10 total files changed
+  - Build verification: PASSED
+
+CONFIDENCE ASSESSMENT:
+  High confidence the fix will resolve the asApp-undefined error because:
+  • Root cause is proven: named import yields undefined
+  • Fix is deterministic: default import instead
+  • Build gates verify no syntax/logic errors
+  • Regression test prevents reintroduction
+  • Only import statements changed (no logic changes)
+
+POST-DEPLOY VERIFICATION:
+  Success metric: "Cannot read properties of undefined (reading 'asApp')"
+  should disappear from production logs post-deployment.
+  
+  This DOES NOT prove:
+  - Dashboard UI renders correctly (requires UI testing)
+  - Performance is improved (requires metrics baseline + post-deploy comparison)
+  - All storage operations work (requires comprehensive functional testing)
+  
+  This ONLY evaluates:
+  - Whether the specific TypeError stops appearing in Forge logs
+  - Error recurrence rate post-deploy vs pre-deploy
+
+================================================================================
+FAILURE MODE: ENVIRONMENT CONSTRAINT (NOT CODE FAILURE)
+================================================================================
+
+The code is ready. The devcontainer lacks Forge authentication credentials.
+This is an expected limitation of ephemeral dev environments.
+
+Operations team must execute deployment with authenticated environment.
+Code is in production-ready state on main/origin/main.
+
+================================================================================
