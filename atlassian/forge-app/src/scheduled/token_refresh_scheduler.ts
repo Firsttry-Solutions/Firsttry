@@ -7,7 +7,7 @@
  * Invoked by manifest.yml scheduled trigger: token-refresh-job
  */
 
-import { api } from '@forge/api';
+import api from '@forge/api';
 import { proactiveTokenRefresh } from '../auth/oauth_handler';
 
 /**

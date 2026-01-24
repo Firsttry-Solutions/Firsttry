@@ -10,7 +10,7 @@
  * - Drift is DETECTED if snapshot fingerprint differs from current snapshot
  */
 
-import { api } from '@forge/api';
+import api from '@forge/api';
 import { DriftStatus } from '../output/output_contract';
 
 /**
