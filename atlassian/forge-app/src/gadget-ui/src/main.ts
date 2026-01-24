@@ -27,7 +27,13 @@ import { createIdentityAnchor } from "./ui_identity";
 import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownState } from "./legacy_flow_detector";
 
 // ============================================================================
+// LAYER-0 SNAPSHOT MAPPER (NEW: Dumb reader pattern for marketplace)
+// ============================================================================
+import { mapL0SnapshotResponse, renderL0Dashboard, type L0DashboardState } from "./l0_snapshot_mapper";
+
+// ============================================================================
 // DASHBOARD ENVELOPE MAPPING & VALIDATION (SHARED MODULE)
+
 // CRITICAL: Both UI and tests use these real functions (no duplicates allowed)
 // ============================================================================
 import { mapDashEnvelopeV1, assertNonNullDashboardState, logRawDashboardEnvelope } from "./dashEnvelope";
@@ -2816,112 +2822,42 @@ async function proceedWithBoot() {
     logUiBuildIdentityProof();
     
     // ========================================================================
-    // Layer-0 Backbone: Load dashboard state at startup
+    // Layer-0 Marketplace: Load dashboard state at startup (dumb reader pattern)
     // ========================================================================
     (async () => {
       try {
-        // PHASE 3: Validate resolver name
-        validateNonLegacyFlow('ft_getDashboardState_v1');
+        // STEP 1: Invoke backend resolver (single call only)
+        const response = await forgeInvoke('ft_getDashboardState_v1', {});
         
-        const result = await forgeInvoke('ft_getDashboardState_v1', {});
+        // STEP 2: Map response to dashboard state
+        const dashState = mapL0SnapshotResponse(response);
         
-        // PHASE 3: Validate response format (must not be legacy)
-        validateResponseNoLegacyMode(result);
+        // STEP 3: Render dashboard (AVAILABLE or HARD ERROR only)
+        const dashboard = renderL0Dashboard(dashState);
+        document.body.innerHTML = '';
+        document.body.appendChild(dashboard);
         
-        if (!result.ok) {
-          // FAIL-CLOSED: Do not continue on error
-          const errorMsg = `[FATAL_UI] ${result.error.code}: ${result.error.message}`;
-          console.error(errorMsg);
-          
-          // Render error panel in the gadget UI
-          const errorPanel = document.createElement('div');
-          errorPanel.id = '__ft-ui-fatal-error';
-          errorPanel.style.cssText = `
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #f3f3f3; border: 2px solid #d32f2f;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; font-family: monospace; z-index: 999999; overflow: auto;
-          `;
-          
-          const title = document.createElement('h2');
-          title.textContent = 'FATAL: UI cannot invoke backend';
-          title.style.color = '#d32f2f';
-          errorPanel.appendChild(title);
-          
-          const msg = document.createElement('p');
-          msg.textContent = result.error.message;
-          msg.style.cssText = 'color: #666; word-wrap: break-word; max-width: 100%;';
-          errorPanel.appendChild(msg);
-          
-          const notice = document.createElement('p');
-          notice.textContent = 'Legacy fallback mode is disabled. Backend must be reachable.';
-          notice.style.cssText = 'color: #999; font-size: 12px; margin-top: 20px;';
-          errorPanel.appendChild(notice);
-          
-          document.body.appendChild(errorPanel);
-          throw new Error(errorMsg);
-        }
-        
-        // PHASE 2: Apply canonical envelope mapping
-        const rawEnvelope = result.value;
-        logRawDashboardEnvelope(rawEnvelope);
-        
-        // BACKBONE FIX B: Store envelope globally for proof panel
-        lastRawEnvelope = rawEnvelope;
-        
-        // UPDATE PROOF NODE: Capture schemaVersion and backend SHA from envelope (success or error)
-        const envelopeSchemaVersion = rawEnvelope?.schemaVersion ? String(rawEnvelope.schemaVersion) : "NOT_FOUND";
-        const backendShaFromEnvelope = rawEnvelope?.backendBuild?.buildSha || rawEnvelope?.backendBuild || "NOT_FOUND";
-        ftUpdateProofNode({
-          schemaVersion: envelopeSchemaVersion,
-          backendBuildSha: backendShaFromEnvelope,
+        console.log('[L0_DASHBOARD_RENDERED]', {
+          status: dashState.status,
+          snapshotId: dashState.snapshotId,
         });
+      } catch (err) {
+        // Fatal invoke error - backend not responding
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error('[L0_DASHBOARD_FATAL]', errorMsg);
         
-        let mappedState: Record<string, any>;
-        try {
-          mappedState = mapDashEnvelopeV1(rawEnvelope);
-        } catch (mapErr) {
-          console.error('[DASH_ENVELOPE_MAP_FAILED]', mapErr);
-          mappedState = {
-            status: 'ERROR',
-            reason: 'ENVELOPE_MAPPING_FAILED',
-            error: mapErr instanceof Error ? { code: 'MAP_ERROR', message: mapErr.message } : { code: 'MAP_ERROR', message: String(mapErr) },
-            canonical_envelope_applied: false,
-          };
-        }
-        
-        // PHASE 2: Assert non-null before store commit
-        assertNonNullDashboardState(mappedState, {
-          step: 'initial_load',
-          resolverUsed: 'ft_getDashboardState_v1',
-          schemaVersion: rawEnvelope?.schemaVersion ?? null,
-        });
-        
-        // Log successful state commit
-        if (mappedState?.ok === false) {
-          console.warn('[BACKBONE_L0] ft_getDashboardState_v1 returned error:', mappedState);
-        } else {
-          console.log('[BACKBONE_L0] Dashboard state loaded:', mappedState?.status, mappedState?.reason_code || mappedState?.reason);
-        }
-        
-        console.log('[BACKBONE_STATE_COMMITTED]', {
-          truthModelState: mappedState?.status,
-          isOperational: mappedState?.ok !== false,
-          hasCanonicalMarker: !!mappedState?.canonical_envelope_applied,
-        });
-        
-        // BACKBONE FIX C: Invariant check - prevent BROKEN after OK
-        // Store the commit success state for later validation
-        const wasSuccessfulCommit = mappedState?.ok !== false && mappedState?.status === 'OK';
-        if (wasSuccessfulCommit) {
-          (window as any).__FT_LAST_SUCCESSFUL_COMMIT__ = {
-            timestamp: new Date().toISOString(),
-            status: mappedState?.status,
-            ok: mappedState?.ok,
-          };
-        }
-      } catch (e) {
-        console.error("[BACKBONE_L0] Failed to load dashboard state:", e);
+        document.body.innerHTML = '';
+        const errorPanel = document.createElement('div');
+        errorPanel.style.cssText = `
+          padding: 20px;
+          background: #fce4ec;
+          color: #d32f2f;
+          border-left: 4px solid #d32f2f;
+          font-family: monospace;
+          font-size: 12px;
+        `;
+        errorPanel.textContent = `Backend invoke failed: ${errorMsg.substring(0, 100)}`;
+        document.body.appendChild(errorPanel);
       }
     })();
     
