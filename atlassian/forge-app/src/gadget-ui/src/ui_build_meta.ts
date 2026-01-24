@@ -8,10 +8,10 @@
  * NOT recomputed. This ensures consistency across the entire build pipeline.
  */
 
-export const UI_GIT_SHA = "2590aa11761c0f37201fdcfa052254ffab7bf2dc";
-export const UI_GIT_TIME = "2026-01-24T16:44:04Z";
+export const UI_GIT_SHA = "871253c42a71db179a043b75184287d0dba88e2f";
+export const UI_GIT_TIME = "2026-01-24T16:57:11Z";
 // Backward compatibility alias for vite.config.ts and main.ts
-export const UI_BUILD_TIME_UTC = "2026-01-24T16:44:04Z";
+export const UI_BUILD_TIME_UTC = "2026-01-24T16:57:11Z";
 
 /**
  * Dynamic marker for cache-busting: proves the UI was redeployed
