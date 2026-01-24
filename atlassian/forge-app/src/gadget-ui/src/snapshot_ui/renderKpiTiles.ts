@@ -1,5 +1,5 @@
 /**
- * KPI Tiles Renderer (Enterprise v2)
+ * KPI Tiles Renderer (v2)
  * 
  * Renders 8 KPI tiles in a 2x4 responsive grid at the top of the dashboard.
  * Each tile shows a key metric with normalized status badge.

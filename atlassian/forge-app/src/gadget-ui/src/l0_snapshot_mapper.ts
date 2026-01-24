@@ -146,7 +146,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
 
     container.appendChild(details);
 
-    // Enterprise metadata blocks (if present)
+    // Snapshot metadata blocks (if present)
     if (state.metadata) {
       const metadataSection = renderMetadataBlocks(state.metadata);
       container.appendChild(metadataSection);
