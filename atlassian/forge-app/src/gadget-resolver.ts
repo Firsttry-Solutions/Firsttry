@@ -70,117 +70,95 @@ export const handler = resolver.getDefinitions();
 // ============================================================================
 
 export async function ft_getDashboardState_v1(request: any): Promise<any> {
-  const event = request?.payload || {};
-  const context = request?.context || {};
-  const now = nowUtcIso();
-  
-  // BACKBONE FIX A: Extract ui_req_id from payload (passed by UI via invokeWithUiReqId)
-  // Fallback chain: payload.ui_req_id → context.requestId → null
-  let ui_req_id = event?.ui_req_id ?? null;
-  if (!ui_req_id && context?.requestId) {
-    ui_req_id = context.requestId;
-  }
-  
-  // Fail-closed: if ui_req_id is missing, this is a contract violation
-  // (UI MUST always pass ui_req_id via invokeWithUiReqId wrapper)
-  if (!ui_req_id) {
-    console.warn('[BACKBONE_FIX_A_MISSING_UI_REQ_ID]', {
-      marker: 'MISSING_UI_REQ_ID',
-      hasPayloadUiReqId: !!event?.ui_req_id,
-      hasContextRequestId: !!context?.requestId,
-      ts: now,
-    });
-    // Still set to UNSET for downstream logging; backend doesn't fail here (fail-closed at UI)
-    ui_req_id = 'UNSET';
-  }
-  
-  const requestId = context?.requestId ?? null;
-  
+  /**
+   * Layer-0 Marketplace Dashboard State Resolver
+   * 
+   * Returns ONLY persisted snapshot metadata (dumb reader pattern):
+   * - Read ft:snapshot:last:v1 from storage
+   * - Validate structure
+   * - Return status + snapshotId + createdAtUtc + schemaVersion
+   * - NO state machine, NO derived logic, NO ledger
+   * 
+   * Dashboard MUST show ONLY:
+   * - AVAILABLE: if snapshot exists and is valid
+   * - HARD ERROR: if snapshot missing or invalid
+   * 
+   * Response format for UI:
+   * {
+   *   status: "AVAILABLE" | "HARD ERROR",
+   *   snapshotId: "<uuid>",
+   *   createdAtUtc: "<ISO>",
+   *   schemaVersion: "L0",
+   *   containsText: "Jira governance evidence snapshot (export for full details)."
+   * }
+   */
   try {
-    const { ledger, storage_state } = await loadOrInitLedger(null);
+    const now = nowUtcIso();
+    const context = request?.context || {};
+    const requestId = context?.requestId ?? null;
     
-    // Determine status based on ledger state
-    let status: "BOOTSTRAP" | "OK" | "DEGRADED" | "FAILED" = "BOOTSTRAP";
-    let reason_code: FtReasonCode = FtReasonCode.NO_LEDGER;
+    // Read snapshot from storage (single source of truth)
+    const snapshot = await (async () => {
+      try {
+        const api_imported = require("@forge/api").api;
+        let storedSnapshot: any = null;
+        await api_imported.asApp().requestStorage(async (storage: any) => {
+          storedSnapshot = await storage.get("ft:snapshot:last:v1");
+        });
+        return storedSnapshot;
+      } catch (e) {
+        console.error("[FT_L0_DASHBOARD] Storage read failed:", e instanceof Error ? e.message : String(e));
+        return null;
+      }
+    })();
     
-    if (storage_state === "ERROR") {
-      status = "FAILED";
-      reason_code = FtReasonCode.NO_LEDGER;
-    } else if (!ledger.storage_verified_at_utc) {
-      status = "BOOTSTRAP";
-      reason_code = FtReasonCode.STORAGE_UNVERIFIED;
-    } else if (!ledger.scheduler_last_attempt_at_utc) {
-      status = "BOOTSTRAP";
-      reason_code = FtReasonCode.SCHEDULER_NEVER_RAN;
-    } else if (ledger.scheduler_last_error && ledger.scheduler_consecutive_failures > 0) {
-      status = "DEGRADED";
-      reason_code = FtReasonCode.LAST_RUN_FAILED;
-    } else if (ledger.snapshot_count === 0) {
-      status = "DEGRADED";
-      reason_code = FtReasonCode.NO_SNAPSHOT_YET;
-    } else {
-      status = "OK";
-      reason_code = FtReasonCode.OK;
+    // Validate snapshot structure (fail-closed)
+    const isValid = snapshot && 
+      typeof snapshot.snapshotId === 'string' && snapshot.snapshotId.trim() &&
+      typeof snapshot.createdAtUtc === 'string' && snapshot.createdAtUtc.trim() &&
+      snapshot.schemaVersion === "L0" &&
+      typeof snapshot.data === 'object' && snapshot.data &&
+      snapshot.createdAtUtc.endsWith('Z');
+    
+    if (!isValid) {
+      console.log("[FT_L0_DASHBOARD] Snapshot invalid or missing", {
+        present: !!snapshot,
+        hasSnapshotId: snapshot?.snapshotId != null,
+        hasCreatedAt: snapshot?.createdAtUtc != null,
+        isSchemaL0: snapshot?.schemaVersion === "L0",
+        hasData: snapshot?.data != null,
+      });
+      
+      return {
+        status: "HARD ERROR",
+        error: "FT_SNAPSHOT_INVALID",
+        schemaVersion: "L0",
+      };
     }
     
-    // PHASE 4: Canonical v1 envelope structure
-    const dashboardData: FtResolverResponseV1 = {
-      ok: true,
-      resolver: "ft_getDashboardState_v1",
-      step: "success",
-      now_utc: now,
-      request_id: requestId,
-      build_sha_backend: null,
-      storage_state,
-      status,
-      reason_code,
-      ledger,
+    // Return metadata only (dumb reader)
+    console.log("[FT_L0_DASHBOARD] Returning valid snapshot meta", {
+      snapshotId: snapshot.snapshotId,
+      createdAtUtc: snapshot.createdAtUtc,
+      requestId,
+    });
+    
+    return {
+      status: "AVAILABLE",
+      snapshotId: snapshot.snapshotId,
+      createdAtUtc: snapshot.createdAtUtc,
+      schemaVersion: "L0",
+      containsText: "Jira governance evidence snapshot (export for full details).",
     };
-    
-    assertNoUnknownStrings(dashboardData);
-    
-    // BACKBONE #2: Use dashEnvelopeV1 to guarantee schemaVersion='v1'
-    console.log('[BACKEND_DASH_STATE_ENVELOPE]', {
-      ok: true,
-      schemaVersion: 'v1',
-      dataKeys: Object.keys(dashboardData).slice(0, 60),
-      mode: dashboardData.mode ?? null,
-    });
-    
-    return dashOk({
-      data: dashboardData,
-      meta: {
-        backend_build_sha: BACKEND_BUILD_SHA, // BACKBONE FIX D: Always provide backend build SHA
-        ui_build_sha: null,
-        ui_req_id: ui_req_id, // BACKBONE FIX A: Use extracted ui_req_id from payload
-        probe_nonce: null,
-        ts_utc: now,
-      },
-    });
   } catch (e) {
-    const now_error = nowUtcIso();
-    const errorMessage = e instanceof Error ? e.message : String(e);
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    console.error("[FT_L0_DASHBOARD] Resolver error:", errorMsg);
     
-    // BACKBONE #2: Use dashEnvelopeV1 to guarantee schemaVersion='v1' even on error
-    console.log('[BACKEND_DASH_STATE_ENVELOPE_ERROR]', {
-      ok: false,
-      schemaVersion: 'v1',
-      error: { code: FtErrorCode.STORAGE_READ_FAILED, message: 'Storage error' },
-    });
-    
-    return dashErr({
-      error: {
-        code: FtErrorCode.STORAGE_READ_FAILED,
-        message: errorMessage.slice(0, 180),
-      },
-      meta: {
-        backend_build_sha: BACKEND_BUILD_SHA, // BACKBONE FIX D: Always provide backend build SHA even on error
-        ui_build_sha: null,
-        ui_req_id: ui_req_id, // BACKBONE FIX A: Use extracted ui_req_id from payload
-        probe_nonce: null,
-        ts_utc: now_error,
-      },
-    });
+    return {
+      status: "HARD ERROR",
+      error: "FT_META_FAILED",
+      schemaVersion: "L0",
+    };
   }
 }
 

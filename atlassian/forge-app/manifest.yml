@@ -56,6 +56,9 @@ modules:
       handler: resolvers/gadget-handlers.handler
     - key: get-ops-state-fn
       handler: resolvers/gadget-handlers.handler
+    # Layer-0 Marketplace: Install trigger handler
+    - key: ft-installed-handler
+      handler: lifecycle/installed.handler
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # Supported intervals: day, week, hour, minute, fiveMinute
@@ -92,6 +95,12 @@ modules:
     # BACKBONE CONTRACT PROOF: Read-only webtrigger for production envelope verification
     - key: ft-contract-proof-trigger
       function: ft-contract-proof
+
+  # Layer-0 Marketplace: Install trigger creates snapshot anchor
+  trigger:
+    - key: ft-installed-trigger
+      event: avi:forge:installed:app
+      function: ft-installed-handler
 
 # Permissions
 permissions:
