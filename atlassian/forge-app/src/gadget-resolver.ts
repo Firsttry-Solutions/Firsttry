@@ -28,6 +28,7 @@
  */
 
 import Resolver from '@forge/resolver';
+import api from '@forge/api';
 import { FT_RELEASE_VERSION } from './release/release_version';
 import { getStatusSnapshot_resolver } from './resolvers/getStatusSnapshot';
 import { getBuildInfo_resolver } from './resolvers/getBuildInfo';
@@ -311,9 +312,8 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<an
  */
 async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; value: any }> {
   try {
-    const api_imported = require("@forge/api").api;
     let value: any = null;
-    await api_imported.asApp().requestStorage(async (storage: any) => {
+    await api.asApp().requestStorage(async (storage: any) => {
       value = await storage.get("ft:install:marker:v1");
     });
     return { key: "ft:install:marker:v1", value };
@@ -329,9 +329,8 @@ async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; valu
  */
 async function ft_getSnapshotAnchor_v1(request: any): Promise<{ key: string; value: any }> {
   try {
-    const api_imported = require("@forge/api").api;
     let value: any = null;
-    await api_imported.asApp().requestStorage(async (storage: any) => {
+    await api.asApp().requestStorage(async (storage: any) => {
       value = await storage.get("ft:snapshot:last:v1");
     });
     return { key: "ft:snapshot:last:v1", value };
