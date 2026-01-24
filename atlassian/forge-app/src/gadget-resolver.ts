@@ -62,6 +62,10 @@ resolver.define('ft_getDashboardState_v1', ft_getDashboardState_v1);
 resolver.define('ft_setUiBuildSha_v1', ft_setUiBuildSha_v1);
 resolver.define('ft_contractProof_dashEnvelope_v1', ft_contractProof_dashEnvelope_v1);
 
+// Storage read resolvers (production proof)
+resolver.define('ft_getInstallMarker_v1', ft_getInstallMarker_v1);
+resolver.define('ft_getSnapshotAnchor_v1', ft_getSnapshotAnchor_v1);
+
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
 
@@ -245,3 +249,40 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<an
     });
   }
 }
+
+/**
+ * Storage read resolver: ft_getInstallMarker_v1
+ * Returns ONLY the raw install marker from storage.
+ * No transforms, no writes.
+ */
+async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; value: any }> {
+  try {
+    const api_imported = require("@forge/api").api;
+    let value: any = null;
+    await api_imported.asApp().requestStorage(async (storage: any) => {
+      value = await storage.get("ft:install:marker:v1");
+    });
+    return { key: "ft:install:marker:v1", value };
+  } catch (e) {
+    throw new Error("FT_META_FAILED");
+  }
+}
+
+/**
+ * Storage read resolver: ft_getSnapshotAnchor_v1
+ * Returns ONLY the raw snapshot anchor from storage.
+ * No transforms, no writes.
+ */
+async function ft_getSnapshotAnchor_v1(request: any): Promise<{ key: string; value: any }> {
+  try {
+    const api_imported = require("@forge/api").api;
+    let value: any = null;
+    await api_imported.asApp().requestStorage(async (storage: any) => {
+      value = await storage.get("ft:snapshot:last:v1");
+    });
+    return { key: "ft:snapshot:last:v1", value };
+  } catch (e) {
+    throw new Error("FT_META_FAILED");
+  }
+}
+
