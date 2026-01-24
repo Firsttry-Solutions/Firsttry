@@ -153,6 +153,20 @@ export async function ft_getDashboardState_v1(request: any): Promise<any> {
       createdAtUtc: snapshot.createdAtUtc,
       schemaVersion: "L0",
       containsText: "Jira governance evidence snapshot (export for full details).",
+      // Pass through enterprise metadata verbatim (dumb reader - no transforms)
+      metadata: snapshot.metadata || {
+        coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+        integrity: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+        provenance: { capturedBy: "UNKNOWN" },
+        export: { formats: ["JSON"], readiness: "AVAILABLE" },
+        compliance: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+        disclaimer: {
+          doesNotMonitor: "Live Jira activity",
+          doesNotModify: "Jira data or configuration",
+          doesNotAutoFix: "Compliance issues",
+          doesNotProvide: "Compliance guarantees or substitutes for professional audit"
+        }
+      }
     };
   } catch (e) {
     const errorMsg = e instanceof Error ? e.message : String(e);

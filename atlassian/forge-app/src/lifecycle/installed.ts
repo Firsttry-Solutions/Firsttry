@@ -34,7 +34,7 @@ function isValidSnapshot(snapshot: any): boolean {
 }
 
 /**
- * Create minimal L0 snapshot anchor
+ * Create minimal L0 snapshot anchor with enterprise metadata
  */
 function createSnapshotAnchor(): any {
   const now = new Date().toISOString();
@@ -44,6 +44,52 @@ function createSnapshotAnchor(): any {
     snapshotId,
     createdAtUtc: now,
     schemaVersion: "L0",
+    // Enterprise metadata (declared, not computed)
+    metadata: {
+      // A. Snapshot Existence & Freshness (MANDATORY)
+      status: "AVAILABLE",
+      
+      // B. Coverage Declaration (READ-ONLY)
+      coverage: {
+        declaration: "NOT_DECLARED_IN_SNAPSHOT",
+        note: "Coverage counts (projects, issues, users) not computed in L0 dumb reader"
+      },
+      
+      // C. Integrity & Immutability Proof
+      integrity: {
+        declaration: "NOT_DECLARED_IN_SNAPSHOT",
+        note: "Snapshot hash and write-once semantics not yet declared at capture time"
+      },
+      
+      // D. Provenance & Chain-of-Custody
+      provenance: {
+        capturedBy: "L0_INSTALLED_HANDLER",
+        captureTrigger: "APP_INSTALLATION",
+        appVersionAtCapture: "1.0.0-L0",
+        note: "Snapshot created at app install time"
+      },
+      
+      // E. Export Readiness (DECLARATIVE ONLY)
+      export: {
+        formats: ["JSON"],
+        scope: "SNAPSHOT_METADATA",
+        readiness: "AVAILABLE"
+      },
+      
+      // F. Compliance Mapping (FACTUAL ONLY)
+      compliance: {
+        declaration: "NOT_DECLARED_IN_SNAPSHOT",
+        note: "Specific compliance mappings not declared at snapshot creation time"
+      },
+      
+      // G. Non-Claims Disclaimer
+      disclaimer: {
+        doesNotMonitor: "Live Jira activity",
+        doesNotModify: "Jira data or configuration",
+        doesNotAutoFix: "Compliance issues",
+        doesNotProvide: "Compliance guarantees or substitutes for professional audit"
+      }
+    },
     data: {
       kind: "L0",
       note: "Jira governance evidence snapshot (export for full details).",

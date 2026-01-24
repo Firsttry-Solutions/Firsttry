@@ -20,6 +20,14 @@ export interface L0SnapshotResponse {
   schemaVersion: string;
   error?: string;
   containsText?: string;
+  metadata?: {
+    coverage?: any;
+    integrity?: any;
+    provenance?: any;
+    export?: any;
+    compliance?: any;
+    disclaimer?: any;
+  };
 }
 
 export interface L0DashboardState {
@@ -29,6 +37,14 @@ export interface L0DashboardState {
   schemaVersion: string;
   error: string | null;
   note: string;
+  metadata?: {
+    coverage?: any;
+    integrity?: any;
+    provenance?: any;
+    export?: any;
+    compliance?: any;
+    disclaimer?: any;
+  };
 }
 
 /**
@@ -60,6 +76,7 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
       schemaVersion: response.schemaVersion || "L0",
       error: null,
       note: response.containsText || "Jira governance evidence snapshot (export for full details).",
+      metadata: response.metadata || {}
     };
   }
 
@@ -128,6 +145,12 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     details.appendChild(noteEl);
 
     container.appendChild(details);
+
+    // Enterprise metadata blocks (if present)
+    if (state.metadata) {
+      const metadataSection = renderMetadataBlocks(state.metadata);
+      container.appendChild(metadataSection);
+    }
   } else {
     // Hard error state
     const title = document.createElement("h1");
@@ -160,3 +183,129 @@ function escapeHtml(text: string): string {
   div.textContent = text;
   return div.innerHTML;
 }
+
+/**
+ * Render enterprise metadata blocks (dumb reader pattern)
+ * Displays all metadata verbatim with "NOT_DECLARED_IN_SNAPSHOT" for missing declarations
+ */
+function renderMetadataBlocks(metadata: any): HTMLElement {
+  const section = document.createElement("div");
+  section.style.cssText = "margin-top: 20px; border-top: 1px solid #ccc; padding-top: 12px;";
+
+  const title = document.createElement("h2");
+  title.textContent = "Enterprise Metadata";
+  title.style.cssText = "font-size: 14px; font-weight: bold; margin: 0 0 12px 0; color: #333;";
+  section.appendChild(title);
+
+  // A. Coverage Declaration
+  if (metadata.coverage) {
+    const block = renderMetadataBlock(
+      "Coverage",
+      metadata.coverage.declaration,
+      metadata.coverage.note
+    );
+    section.appendChild(block);
+  }
+
+  // B. Integrity Proof
+  if (metadata.integrity) {
+    const block = renderMetadataBlock(
+      "Integrity",
+      metadata.integrity.declaration,
+      metadata.integrity.note
+    );
+    section.appendChild(block);
+  }
+
+  // C. Provenance
+  if (metadata.provenance) {
+    const block = renderMetadataBlock(
+      "Provenance",
+      `${metadata.provenance.capturedBy} / ${metadata.provenance.captureTrigger}`,
+      metadata.provenance.note
+    );
+    section.appendChild(block);
+  }
+
+  // D. Export Readiness
+  if (metadata.export) {
+    const formats = Array.isArray(metadata.export.formats)
+      ? metadata.export.formats.join(", ")
+      : "NOT_DECLARED";
+    const block = renderMetadataBlock(
+      "Export",
+      `${metadata.export.readiness} (${formats})`,
+      metadata.export.scope
+    );
+    section.appendChild(block);
+  }
+
+  // E. Compliance Mapping
+  if (metadata.compliance) {
+    const block = renderMetadataBlock(
+      "Compliance",
+      metadata.compliance.declaration,
+      metadata.compliance.note
+    );
+    section.appendChild(block);
+  }
+
+  // F. Disclaimer (static text)
+  if (metadata.disclaimer) {
+    const disclaimerBlock = document.createElement("div");
+    disclaimerBlock.style.cssText =
+      "background: #fff3cd; border-left: 3px solid #ffc107; padding: 12px; border-radius: 3px; margin-bottom: 8px; font-size: 12px;";
+
+    const title = document.createElement("p");
+    title.style.cssText = "margin: 0 0 8px 0; font-weight: bold;";
+    title.textContent = "This dashboard does NOT:";
+    disclaimerBlock.appendChild(title);
+
+    const items = [
+      `• Monitor ${metadata.disclaimer.doesNotMonitor}`,
+      `• Modify ${metadata.disclaimer.doesNotModify}`,
+      `• Auto-fix ${metadata.disclaimer.doesNotAutoFix}`,
+      `• Provide ${metadata.disclaimer.doesNotProvide}`
+    ];
+
+    items.forEach((item) => {
+      const p = document.createElement("p");
+      p.style.cssText = "margin: 4px 0; color: #333;";
+      p.textContent = item;
+      disclaimerBlock.appendChild(p);
+    });
+
+    section.appendChild(disclaimerBlock);
+  }
+
+  return section;
+}
+
+/**
+ * Render a single metadata block
+ */
+function renderMetadataBlock(title: string, value: string, note?: string): HTMLElement {
+  const block = document.createElement("div");
+  block.style.cssText =
+    "background: #f7f8f9; border: 1px solid #ddd; padding: 8px; border-radius: 3px; margin-bottom: 8px; font-size: 12px;";
+
+  const titleEl = document.createElement("strong");
+  titleEl.textContent = title + ":";
+  titleEl.style.cssText = "color: #333;";
+  block.appendChild(titleEl);
+
+  const valueEl = document.createElement("div");
+  valueEl.style.cssText = "margin-top: 4px; color: #626f86;";
+  valueEl.textContent = value;
+  block.appendChild(valueEl);
+
+  if (note) {
+    const noteEl = document.createElement("div");
+    noteEl.style.cssText = "margin-top: 4px; color: #999; font-size: 11px;";
+    noteEl.textContent = `Note: ${note}`;
+    block.appendChild(noteEl);
+  }
+
+  return block;
+}
+
