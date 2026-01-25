@@ -1,8 +1,8 @@
 /**
- * FT_DASH_ENVELOPE_v1 - Canonical L0 Dashboard Contract
+ * FT_DASH_ENVELOPE_V1 - Canonical L0 Dashboard Contract
  * 
  * CRITICAL CONTRACT: All dashboard resolvers MUST return responses wrapped
- * with this envelope marker. The UI validates for "FT_DASH_ENVELOPE_v1" presence
+ * with this envelope marker. The UI validates for "FT_DASH_ENVELOPE_V1" presence
  * and FAIL-CLOSES if marker is missing.
  * 
  * This ensures:
@@ -11,7 +11,7 @@
  * - Error paths are always structured consistently
  */
 
-export const FT_DASH_ENVELOPE_MARKER_V1 = "FT_DASH_ENVELOPE_v1" as const;
+export const FT_DASH_ENVELOPE_MARKER_V1 = "FT_DASH_ENVELOPE_V1" as const;
 
 export type FtDashStatus =
   | "AVAILABLE"
@@ -25,7 +25,7 @@ export type FtDashErrorV1 = {
 };
 
 export interface FtDashEnvelopeV1<T = unknown> {
-  marker: typeof FT_DASH_ENVELOPE_MARKER_V1;
+  envelopeKind: typeof FT_DASH_ENVELOPE_MARKER_V1;
   schemaVersion: 1;
   status: FtDashStatus;
   data?: T;
@@ -37,7 +37,7 @@ export interface FtDashEnvelopeV1<T = unknown> {
  */
 export function okEnvelope<T>(data: T): FtDashEnvelopeV1<T> {
   return {
-    marker: FT_DASH_ENVELOPE_MARKER_V1,
+    envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
     schemaVersion: 1,
     status: "AVAILABLE",
     data,
@@ -53,7 +53,7 @@ export function notAvailableEnvelope(
   details?: unknown
 ): FtDashEnvelopeV1<null> {
   return {
-    marker: FT_DASH_ENVELOPE_MARKER_V1,
+    envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
     schemaVersion: 1,
     status: "NOT_AVAILABLE",
     data: null,
@@ -70,7 +70,7 @@ export function hardErrorEnvelope(
   details?: unknown
 ): FtDashEnvelopeV1<null> {
   return {
-    marker: FT_DASH_ENVELOPE_MARKER_V1,
+    envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
     schemaVersion: 1,
     status: "HARD_ERROR",
     data: null,
@@ -90,20 +90,20 @@ export function normalizeFtDashEnvelopeV1(raw: any): FtDashEnvelopeV1 {
     if (
       raw &&
       typeof raw === "object" &&
-      raw.marker === FT_DASH_ENVELOPE_MARKER_V1 &&
+      raw.envelopeKind === FT_DASH_ENVELOPE_MARKER_V1 &&
       raw.schemaVersion === 1
     ) {
       return raw;
     }
 
-    // Partially wrapped (has status/error but missing marker) - wrap it
+    // Partially wrapped (has status/error but missing envelopeKind) - wrap it
     if (raw && typeof raw === "object" && ("status" in raw)) {
       const status = String(raw.status || "NOT_AVAILABLE") as FtDashStatus;
       const error = (raw as any).error;
       const code = error?.code ? String(error.code) : "UNWRAPPED_RESPONSE";
       const msg = error?.message
         ? String(error.message)
-        : "Backend returned response without FT_DASH_ENVELOPE_v1 marker";
+        : "Backend returned response without FT_DASH_ENVELOPE_V1 envelopeKind";
 
       if (status === "AVAILABLE") {
         return okEnvelope((raw as any).data ?? raw);
@@ -117,14 +117,14 @@ export function normalizeFtDashEnvelopeV1(raw: any): FtDashEnvelopeV1 {
     // Completely unknown response shape - wrap as hard error (fail-closed)
     return hardErrorEnvelope(
       "INVALID_BACKEND_RESPONSE_SHAPE",
-      "Backend returned unexpected payload shape (missing marker and status)",
+      "Backend returned unexpected payload shape (missing envelopeKind and status)",
       raw
     );
   } catch (e: any) {
     // Even normalization failed - fail-closed
     return hardErrorEnvelope(
       "ENVELOPE_NORMALIZATION_FAILED",
-      "Failed to normalize backend response into FT_DASH_ENVELOPE_v1",
+      "Failed to normalize backend response into FT_DASH_ENVELOPE_V1",
       { raw, error: String(e) }
     );
   }
