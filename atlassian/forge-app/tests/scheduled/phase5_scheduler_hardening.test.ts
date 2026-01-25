@@ -14,13 +14,23 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock Forge API first (before scheduler_state imports it)
-vi.mock('@forge/api', () => ({
-  default: {
-    asApp: vi.fn(() => ({
-      requestStorage: vi.fn(),
-    })),
-  },
-}));
+vi.mock('@forge/api', () => {
+  const storage = {
+    get: vi.fn(),
+    set: vi.fn(),
+    delete: vi.fn(),
+  };
+  return {
+    default: {
+      asApp: vi.fn(() => ({
+        requestStorage: vi.fn(),
+        storage,
+      })),
+      storage,
+    },
+    storage,
+  };
+});
 
 // Mock dependencies BEFORE importing module
 vi.mock('../../src/scheduled/scheduler_state');

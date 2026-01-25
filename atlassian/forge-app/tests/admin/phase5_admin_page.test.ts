@@ -20,13 +20,23 @@ import { ConfidenceLevel } from '../../src/disclosure_hardening_gaps_a_f';
 // MOCK SETUP
 // ============================================================================
 
-vi.mock('@forge/api', () => ({
-  default: {
-    asApp: () => ({
-      requestStorage: vi.fn(),
-    }),
-  },
-}));
+vi.mock('@forge/api', () => {
+  const storage = {
+    get: vi.fn(),
+    set: vi.fn(),
+    delete: vi.fn(),
+  };
+  return {
+    default: {
+      asApp: () => ({
+        requestStorage: vi.fn(),
+        storage,
+      }),
+      storage,
+    },
+    storage,
+  };
+});
 
 vi.mock('../../src/phase5_report_generator', () => ({
   handleManualTrigger: vi.fn(),
