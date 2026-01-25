@@ -1,2 +1,9 @@
 # Build metadata (generated at build time)
 tools/.build_meta.*
+
+# Local-only proof artifacts (must not affect determinism)
+proof_artifacts/
+proof_run_*.sh
+proof_phase*.sh
+proof_run_phases_*.sh
+proof_run_basic.sh
