@@ -76,6 +76,9 @@ resolver.define('ft_contractProof_dashEnvelope_v1', ft_contractProof_dashEnvelop
 resolver.define('ft_getInstallMarker_v1', ft_getInstallMarker_v1);
 resolver.define('ft_getSnapshotAnchor_v1', ft_getSnapshotAnchor_v1);
 
+// Runtime proof resolver (admin-only)
+resolver.define('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1);
+
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
 
@@ -336,6 +339,73 @@ async function ft_getSnapshotAnchor_v1(request: any): Promise<{ key: string; val
     return { key: "ft:snapshot:last:v1", value };
   } catch (e) {
     throw new Error("FT_META_FAILED");
+  }
+}
+
+/**
+ * Admin-only runtime proof resolver: ft_getRuntimeProof_v1
+ * Returns deterministic proof of deployed release version and build SHA.
+ * Access restricted to admins only (fail-closed).
+ */
+async function ft_getRuntimeProof_v1(request: any): Promise<any> {
+  console.log("[FT_RUNTIME_PROOF_UI] INVOKED", { release: FT_RELEASE_VERSION, buildSha: BACKEND_BUILD_SHA });
+  
+  try {
+    // Fail-closed: check admin permission
+    // Use Jira REST API to verify global ADMINISTER permission
+    let isAdmin = false;
+    try {
+      const resp = await api.asUser().requestJira(async (client: any) => {
+        return await client.get('/rest/api/3/mypermissions?permissions=ADMINISTER');
+      });
+      const permissions = (resp as any)?.permissions || [];
+      isAdmin = permissions.some((p: any) => p.key === 'ADMINISTER' && p.havePermission === true);
+    } catch (e) {
+      // If permission check fails, fail closed: deny access
+      isAdmin = false;
+    }
+    
+    if (!isAdmin) {
+      return {
+        ok: false,
+        marker: "FT_RUNTIME_PROOF_UI",
+        error: "forbidden",
+      };
+    }
+    
+    // Build @forge/api introspection
+    let apiShape = {
+      type: typeof api,
+      hasAsApp: typeof api?.asApp === "function",
+      keys: [] as string[],
+    };
+    
+    try {
+      apiShape.keys = Object.keys(api as any).slice(0, 20);
+    } catch {
+      // Safe fallback
+    }
+    
+    // Return proof
+    const proof = {
+      ok: true,
+      marker: "FT_RUNTIME_PROOF_UI",
+      release: FT_RELEASE_VERSION,
+      buildSha: BACKEND_BUILD_SHA,
+      env: process.env.FORGE_ENV || "unknown",
+      tsUtc: new Date().toISOString(),
+      forgeApi: apiShape,
+    };
+    
+    console.log("[FT_RUNTIME_PROOF_UI] UI_RENDERED", { ok: proof.ok, release: proof.release, buildSha: proof.buildSha });
+    return proof;
+  } catch (e) {
+    console.error("[FT_RUNTIME_PROOF_UI] ERROR", { error: (e as any)?.message });
+    return {
+      ok: false,
+      marker: "FT_RUNTIME_PROOF_UI",
+      error: "internal_error",
+    };
   }
 }
 
