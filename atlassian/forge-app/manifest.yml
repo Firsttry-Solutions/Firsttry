@@ -42,9 +42,6 @@ modules:
       handler: scheduled/scheduler_daily_dispatcher.runDailyDispatch
     - key: status-resolver-fn
       handler: resolvers/governance_status.get
-    # BACKBONE CONTRACT PROOF: Read-only webtrigger for production envelope verification
-    - key: ft-contract-proof
-      handler: webtriggers/contract-proof.run
     # Canonical gadget handler: Forge Resolver for all UI invocations (gadget-resolver.ts)
     - key: get-status-snapshot-fn
       handler: gadget-resolver.handler
@@ -59,9 +56,6 @@ modules:
     # Layer-0 Marketplace: Install trigger handler
     - key: ft-installed-handler
       handler: lifecycle/installed.handler
-    # Layer-0 Backbone: Runtime version proof (token-gated webtrigger)
-    - key: ft-runtime-proof-fn
-      handler: webtriggers/runtime_proof.handler
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # Supported intervals: day, week, hour, minute, fiveMinute
@@ -90,17 +84,6 @@ modules:
     - key: daily-dispatcher
       function: daily-dispatcher-fn
       interval: day
-
-  # Layer-0 Backbone: Web trigger for manual run-now invocations
-  webtrigger:
-    - key: ftRunNow-web
-      function: ftRunNow
-    # BACKBONE CONTRACT PROOF: Read-only webtrigger for production envelope verification
-    - key: ft-contract-proof-trigger
-      function: ft-contract-proof
-    # BACKBONE RUNTIME PROOF: Token-gated endpoint for deterministic release validation
-    - key: ft-runtime-proof
-      function: ft-runtime-proof-fn
 
   # Layer-0 Marketplace: Install trigger creates snapshot anchor
   trigger:
