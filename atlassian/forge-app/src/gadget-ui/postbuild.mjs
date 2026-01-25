@@ -193,7 +193,6 @@ function main() {
     const entryProof = {
       build_sha: uiBuildSha,
       entry_filename: `app.${uiBuildSha}.js`,
-      time_utc: new Date().toISOString(),
       cache_bust_method: 'filename-based',
       verification: 'Filename must be unique per build; different SHA guarantees cache miss'
     };

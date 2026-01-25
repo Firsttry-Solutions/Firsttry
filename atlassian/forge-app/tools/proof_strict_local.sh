@@ -476,6 +476,50 @@ echo "✅ Git tree remains clean after build (determinism verified)"
 echo ""
 
 # ============================================================================
+# PHASE 3B: UI DIST REPEATABILITY (Artifact Determinism)
+# ============================================================================
+
+echo "=== PHASE 3B: UI DIST REPEATABILITY CHECK ==="
+
+REPEATABILITY_RC=0
+RUN_DIR="$RUN_DIR" bash tools/verify_ui_dist_repeatable.sh 2>&1 | tee -a "$RUN_DIR/40_ui_dist_repeatability_check.txt" || REPEATABILITY_RC=$?
+
+if [ $REPEATABILITY_RC -ne 0 ]; then
+  echo "❌ FAIL: UI dist repeatability test failed"
+  echo "ARTIFACT_REPEATABILITY_FAILED" > "$RUN_DIR/41_FAIL_ui_dist_not_repeatable.txt"
+  OVERALL_PASS="false"
+  FAIL_REASON="UI dist artifacts not byte-identical across repeated builds (wall-clock time issue)"
+  
+  cat > "$RUN_DIR/90_FINAL_STATUS.json" << EOF
+{
+  "tsUtc": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "runDir": "$RUN_DIR",
+  "headSha": "$(cat "$RUN_DIR/03_head_sha.txt")",
+  "branch": "$(cat "$RUN_DIR/02_branch.txt")",
+  "gitClean": true,
+  "forbiddenModules": false,
+  "forbiddenScopes": false,
+  "testsExitCode": 0,
+  "testsUnhandled": false,
+  "testsErrorsZero": true,
+  "gitCleanAfterTests": true,
+  "buildExitCode": 0,
+  "buildMarkersClean": true,
+  "buildDeterministic": true,
+  "artifactDeterministic": false,
+  "overall": "FAIL",
+  "failReason": "$FAIL_REASON"
+}
+EOF
+  ls -1 "$RUN_DIR" | sort > "$RUN_DIR/91_ARTIFACT_INDEX.txt"
+  echo ""; echo "❌ PROOF FAILED: $FAIL_REASON"; echo ""
+  exit 1
+fi
+
+echo "✅ UI dist artifacts are byte-identical across builds (determinism verified)"
+echo ""
+
+# ============================================================================
 # PHASE 4: FINAL STATUS (only reached if all passed)
 # ============================================================================
 
@@ -501,6 +545,7 @@ cat > "$RUN_DIR/90_FINAL_STATUS.json" << EOF
   "buildExitCode": 0,
   "buildMarkersClean": true,
   "buildDeterministic": true,
+  "artifactDeterministic": true,
   "overall": "PASS",
   "failReason": ""
 }
