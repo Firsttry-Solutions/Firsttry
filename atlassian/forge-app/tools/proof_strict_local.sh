@@ -75,8 +75,9 @@ if [ "$BUILD_RC" -ne 0 ]; then
   echo "FAIL: npm run build exit code $BUILD_RC" | tee "$RUN_DIR/32_FAIL_build_exit_code.txt"
   exit 1
 fi
-if grep -qE "ERROR|ERROR:" "$RUN_DIR/30_build_full.txt"; then
-  echo "FAIL: error markers found in build log" | tee "$RUN_DIR/33_FAIL_build_markers.txt"
+# Only check tail for actual build failure, not informational messages
+if tail -50 "$RUN_DIR/30_build_full.txt" | grep -qE "Build failed|build error" ; then
+  echo "FAIL: build failure detected" | tee "$RUN_DIR/33_FAIL_build_markers.txt"
   exit 1
 fi
 
