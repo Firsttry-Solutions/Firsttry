@@ -24,23 +24,33 @@ vi.mock('@forge/api', () => {
 
   const createMockStorageFn = () => vi.fn().mockResolvedValue(undefined);
 
+  // Create comprehensive mock storage object
+  const createMockStorage = () => ({
+    get: createMockStorageFn(),
+    set: createMockStorageFn(),
+    delete: createMockStorageFn(),
+    getRecordCache: vi.fn().mockResolvedValue(undefined),
+    setRecordCache: vi.fn().mockResolvedValue(undefined),
+    deleteRecordCache: vi.fn().mockResolvedValue(undefined),
+  });
+
   // API object with chainable methods
   const api = {
     asUser: vi.fn(() => ({
       requestJira: createMockRequestJira(),
       fetch: createMockFetch(),
+      requestStorage: vi.fn((callback) => callback(createMockStorage())),
+      ...createMockStorage(),
     })),
     asApp: vi.fn(() => ({
       requestJira: createMockRequestJira(),
       fetch: createMockFetch(),
+      requestStorage: vi.fn((callback) => callback(createMockStorage())),
+      ...createMockStorage(),
     })),
     requestJira: createMockRequestJira(),
     fetch: createMockFetch(),
-    storage: {
-      get: createMockStorageFn(),
-      set: createMockStorageFn(),
-      delete: createMockStorageFn(),
-    },
+    storage: createMockStorage(),
   };
 
   // Scheduled object for scheduled handlers
@@ -57,7 +67,7 @@ vi.mock('@forge/api', () => {
   };
 
   return {
-    default: { api, scheduled, storage },
+    default: api,
     api,
     scheduled,
     storage,
