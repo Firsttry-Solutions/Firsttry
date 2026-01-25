@@ -177,7 +177,7 @@ function assert(condition: boolean, message: string) {
   }
 }
 
-function test(name: string, fn: () => void) {
+function runTest(name: string, fn: () => void) {
   try {
     fn();
     results.push({ name, passed: true });
@@ -193,7 +193,7 @@ function test(name: string, fn: () => void) {
 // TESTS: Verify all 5 gaps closed
 // ============================================================================
 
-test('GAP 1.1: Insufficient window disclosure creates correct structure', () => {
+runTest('GAP 1.1: Insufficient window disclosure creates correct structure', () => {
   const disclosure = createInsufficientWindowDisclosure('Field Usage', 1);
 
   assert(disclosure.completeness_percent === 0, 'Completeness should be 0');
@@ -203,7 +203,7 @@ test('GAP 1.1: Insufficient window disclosure creates correct structure', () => 
   assert(disclosure.observation_window_days === 1, 'Window must be 1 day');
 });
 
-test('GAP 1.2: Insufficient window for different periods', () => {
+runTest('GAP 1.2: Insufficient window for different periods', () => {
   const disc7 = createInsufficientWindowDisclosure('Test', 7);
   const disc30 = createInsufficientWindowDisclosure('Test', 30);
 
@@ -213,7 +213,7 @@ test('GAP 1.2: Insufficient window for different periods', () => {
   assert(disc30.disclosure_text.includes('30 day'), 'Must mention 30 days');
 });
 
-test('GAP 2.1: Automation visibility disclosure structure complete', () => {
+runTest('GAP 2.1: Automation visibility disclosure structure complete', () => {
   const disclosure = createAutomationVisibilityDisclosure('RULE-123', 'Auto Rule', true);
 
   assert(disclosure.rule_id === 'RULE-123', 'Rule ID set');
@@ -224,21 +224,21 @@ test('GAP 2.1: Automation visibility disclosure structure complete', () => {
   assert(disclosure.execution_data.disclosure.includes('not yet available'), 'Disclosure mentions "not yet available"');
 });
 
-test('GAP 2.2: Automation disclosure for disabled rules', () => {
+runTest('GAP 2.2: Automation disclosure for disabled rules', () => {
   const disclosure = createAutomationVisibilityDisclosure('RULE-456', 'Webhook', false);
 
   assert(disclosure.rule_metadata.enabled === false, 'Disabled status shown');
   assert(disclosure.execution_data.visibility === 'NOT_YET_MEASURABLE', 'Still shows execution not measurable');
 });
 
-test('GAP 3.1: Forecast has mandatory ESTIMATED label', () => {
+runTest('GAP 3.1: Forecast has mandatory ESTIMATED label', () => {
   const forecast = createForecastWithMandatoryDisclosure(42, ConfidenceLevel.MEDIUM, 30);
 
   assert(forecast.forecast_type === 'ESTIMATED', 'Must be ESTIMATED');
   assert(forecast.value === 42, 'Value preserved');
 });
 
-test('GAP 3.2: Forecast has time window', () => {
+runTest('GAP 3.2: Forecast has time window', () => {
   const forecast = createForecastWithMandatoryDisclosure(100, ConfidenceLevel.MEDIUM, 30);
 
   assert(forecast.forecast_window.days_ahead === 30, 'Window is 30 days');
@@ -247,7 +247,7 @@ test('GAP 3.2: Forecast has time window', () => {
   assert(forecast.forecast_window.start_date < forecast.forecast_window.end_date, 'Start before end');
 });
 
-test('GAP 3.3: Forecast confidence levels work', () => {
+runTest('GAP 3.3: Forecast confidence levels work', () => {
   const low = createForecastWithMandatoryDisclosure(50, ConfidenceLevel.LOW, 14);
   const medium = createForecastWithMandatoryDisclosure(60, ConfidenceLevel.MEDIUM, 30);
 
@@ -255,7 +255,7 @@ test('GAP 3.3: Forecast confidence levels work', () => {
   assert(medium.confidence_level === ConfidenceLevel.MEDIUM, 'MEDIUM preserved');
 });
 
-test('GAP 3.4: Forecast has mandatory disclaimer', () => {
+runTest('GAP 3.4: Forecast has mandatory disclaimer', () => {
   const forecast = createForecastWithMandatoryDisclosure(75, ConfidenceLevel.LOW, 7);
 
   assert(forecast.disclaimer !== undefined, 'Disclaimer present');
@@ -267,7 +267,7 @@ test('GAP 3.4: Forecast has mandatory disclaimer', () => {
   );
 });
 
-test('GAP 4.1: Scope transparency disclosure complete', () => {
+runTest('GAP 4.1: Scope transparency disclosure complete', () => {
   const disclosure = createScopeTransparencyDisclosure();
 
   assert(disclosure.title.includes('Metadata'), 'Title mentions Metadata');
@@ -278,7 +278,7 @@ test('GAP 4.1: Scope transparency disclosure complete', () => {
   assert(disclosure.body.toLowerCase().includes('behavioral analysis'), 'Body states behavioral analysis details');
 });
 
-test('GAP 4.2: Scope transparency explains metadata-first', () => {
+runTest('GAP 4.2: Scope transparency explains metadata-first', () => {
   const disclosure = createScopeTransparencyDisclosure();
 
   assert(disclosure.why_metadata_first.length >= 4, 'At least 4 reasons');
@@ -296,14 +296,14 @@ test('GAP 4.2: Scope transparency explains metadata-first', () => {
   );
 });
 
-test('GAP 4.3: Scope transparency versioned', () => {
+runTest('GAP 4.3: Scope transparency versioned', () => {
   const disclosure = createScopeTransparencyDisclosure();
 
   assert(disclosure.version === '1.0', 'Version is 1.0');
   assert(disclosure.published_at !== undefined, 'Timestamp present');
 });
 
-test('GAP 5.1: DataQualityIndicator has all required fields', () => {
+runTest('GAP 5.1: DataQualityIndicator has all required fields', () => {
   const indicator: DataQualityIndicator = {
     completeness_percent: 75,
     observation_window_days: 30,
@@ -320,7 +320,7 @@ test('GAP 5.1: DataQualityIndicator has all required fields', () => {
   assert(indicator.computed_at !== undefined, 'Timestamp required');
 });
 
-test('GAP 5.2: Confidence levels express reliability', () => {
+runTest('GAP 5.2: Confidence levels express reliability', () => {
   const highConf: DataQualityIndicator = {
     completeness_percent: 100,
     observation_window_days: 60,
@@ -341,7 +341,7 @@ test('GAP 5.2: Confidence levels express reliability', () => {
   assert(lowConf.confidence_level === ConfidenceLevel.LOW, 'LOW for poor data');
 });
 
-test('GAP 5.3: Observation window always present', () => {
+runTest('GAP 5.3: Observation window always present', () => {
   const indicators: DataQualityIndicator[] = [
     createInsufficientWindowDisclosure('Test1', 7),
     createInsufficientWindowDisclosure('Test2', 14),
@@ -354,7 +354,7 @@ test('GAP 5.3: Observation window always present', () => {
   });
 });
 
-test('INTEGRATION: All helper exports work', () => {
+runTest('INTEGRATION: All helper exports work', () => {
   const window = createInsufficientWindowDisclosure('Test', 1);
   const vis = createAutomationVisibilityDisclosure('R1', 'Rule', false);
   const forecast = createForecastWithMandatoryDisclosure(50, ConfidenceLevel.MEDIUM, 30);
@@ -366,7 +366,7 @@ test('INTEGRATION: All helper exports work', () => {
   assert(scope !== undefined, 'Scope export works');
 });
 
-test('INTEGRATION: No zero without reason', () => {
+runTest('INTEGRATION: No zero without reason', () => {
   const window1 = createInsufficientWindowDisclosure('M1', 1);
   const window7 = createInsufficientWindowDisclosure('M2', 7);
   
