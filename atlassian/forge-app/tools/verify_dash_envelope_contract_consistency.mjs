@@ -92,6 +92,32 @@ try {
     "All envelope builders must explicitly set status"
   );
 
+  // CHECK 7: schemaVersion must be 'v1' (string, not number)
+  const uiChecksSchemaVersion = uiContent.includes("stateResult.schemaVersion !== 'v1'");
+  check(
+    "UI validator checks schemaVersion === 'v1' (string)",
+    uiChecksSchemaVersion,
+    "UI must validate against string 'v1', not number 1"
+  );
+
+  // CHECK 8: Backend schemaVersion is 'v1' (string) in interface
+  const backendSchemaVersionString = /schemaVersion:\s*['"]v1['"]/.test(backendContent);
+  check(
+    "Backend interface defines schemaVersion as 'v1' (string)",
+    backendSchemaVersionString,
+    "Interface must have: schemaVersion: 'v1' (not number 1)"
+  );
+
+  // CHECK 9: All builders return schemaVersion: 'v1'
+  const okEnvelopeSchemaVersion = /okEnvelope[\s\S]*?schemaVersion:\s*['"]v1['"]/.test(backendContent);
+  const hardErrorSchemaVersion = /hardErrorEnvelope[\s\S]*?schemaVersion:\s*['"]v1['"]/.test(backendContent);
+  const notAvailableSchemaVersion = /notAvailableEnvelope[\s\S]*?schemaVersion:\s*['"]v1['"]/.test(backendContent);
+  check(
+    "All builders return schemaVersion: 'v1' (string)",
+    okEnvelopeSchemaVersion && hardErrorSchemaVersion && notAvailableSchemaVersion,
+    "okEnvelope, hardErrorEnvelope, notAvailableEnvelope must return schemaVersion: 'v1'"
+  );
+
   // SUMMARY
   console.log(`\n[GATE] Summary: ${passCount} passed, ${failCount} failed`);
 
