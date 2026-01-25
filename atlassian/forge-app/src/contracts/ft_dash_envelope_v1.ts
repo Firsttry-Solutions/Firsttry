@@ -26,7 +26,7 @@ export type FtDashErrorV1 = {
 
 export interface FtDashEnvelopeV1<T = unknown> {
   envelopeKind: typeof FT_DASH_ENVELOPE_MARKER_V1;
-  schemaVersion: 1;
+  schemaVersion: 'v1';
   status: FtDashStatus;
   data?: T;
   error?: FtDashErrorV1;
@@ -38,7 +38,7 @@ export interface FtDashEnvelopeV1<T = unknown> {
 export function okEnvelope<T>(data: T): FtDashEnvelopeV1<T> {
   return {
     envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
-    schemaVersion: 1,
+    schemaVersion: 'v1',
     status: "AVAILABLE",
     data,
   };
@@ -54,7 +54,7 @@ export function notAvailableEnvelope(
 ): FtDashEnvelopeV1<null> {
   return {
     envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
-    schemaVersion: 1,
+    schemaVersion: 'v1',
     status: "NOT_AVAILABLE",
     data: null,
     error: { code, message, details },
@@ -71,7 +71,7 @@ export function hardErrorEnvelope(
 ): FtDashEnvelopeV1<null> {
   return {
     envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
-    schemaVersion: 1,
+    schemaVersion: 'v1',
     status: "HARD_ERROR",
     data: null,
     error: { code, message, details },
@@ -91,8 +91,12 @@ export function normalizeFtDashEnvelopeV1(raw: any): FtDashEnvelopeV1 {
       raw &&
       typeof raw === "object" &&
       raw.envelopeKind === FT_DASH_ENVELOPE_MARKER_V1 &&
-      raw.schemaVersion === 1
+      (raw.schemaVersion === 'v1' || raw.schemaVersion === 1)
     ) {
+      // Normalize schemaVersion to string if needed
+      if (raw.schemaVersion === 1) {
+        return { ...raw, schemaVersion: 'v1' };
+      }
       return raw;
     }
 

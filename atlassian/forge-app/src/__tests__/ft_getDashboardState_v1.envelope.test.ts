@@ -6,30 +6,30 @@ describe("ft_getDashboardState_v1 envelope contract", () => {
     expect(FT_DASH_ENVELOPE_MARKER_V1).toBe("FT_DASH_ENVELOPE_V1");
   });
 
-  it("okEnvelope must include envelopeKind", () => {
+  it("okEnvelope must include envelopeKind and schemaVersion='v1'", () => {
     const data = { test: "value" };
     const env = okEnvelope(data);
     expect(env.envelopeKind).toBe(FT_DASH_ENVELOPE_MARKER_V1);
-    expect(env.schemaVersion).toBe(1);
+    expect(env.schemaVersion).toBe('v1');
     expect(env.status).toBe("AVAILABLE");
     expect(env.data).toEqual(data);
     expect(env.error).toBeUndefined();
   });
 
-  it("hardErrorEnvelope must include envelopeKind", () => {
+  it("hardErrorEnvelope must include envelopeKind and schemaVersion='v1'", () => {
     const env = hardErrorEnvelope("TEST_ERROR", "Test error message", { detail: "test" });
     expect(env.envelopeKind).toBe(FT_DASH_ENVELOPE_MARKER_V1);
-    expect(env.schemaVersion).toBe(1);
+    expect(env.schemaVersion).toBe('v1');
     expect(env.status).toBe("HARD_ERROR");
     expect(env.data).toBeNull();
     expect(env.error?.code).toBe("TEST_ERROR");
     expect(env.error?.message).toBe("Test error message");
   });
 
-  it("notAvailableEnvelope must include envelopeKind", () => {
+  it("notAvailableEnvelope must include envelopeKind and schemaVersion='v1'", () => {
     const env = notAvailableEnvelope("SNAPSHOT_MISSING", "Snapshot not found");
     expect(env.envelopeKind).toBe(FT_DASH_ENVELOPE_MARKER_V1);
-    expect(env.schemaVersion).toBe(1);
+    expect(env.schemaVersion).toBe('v1');
     expect(env.status).toBe("NOT_AVAILABLE");
     expect(env.data).toBeNull();
     expect(env.error?.code).toBe("SNAPSHOT_MISSING");
@@ -40,7 +40,7 @@ describe("ft_getDashboardState_v1 envelope contract", () => {
     const json = JSON.stringify(env);
     const parsed = JSON.parse(json);
     expect(parsed.envelopeKind).toBe("FT_DASH_ENVELOPE_V1");
-    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed.schemaVersion).toBe('v1');
     expect(parsed.status).toBe("AVAILABLE");
     expect(parsed.data).toEqual({ foo: "bar" });
   });
