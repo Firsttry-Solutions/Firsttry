@@ -146,7 +146,11 @@ export async function handler(req: any): Promise<any> {
   }
 
   // Build @forge/api shape proof
-  let apiShape = {
+  let apiShape: {
+    type: string;
+    hasAsApp: boolean;
+    keys: string[];
+  } = {
     type: typeof api,
     hasAsApp: false,
     keys: [] as string[],
