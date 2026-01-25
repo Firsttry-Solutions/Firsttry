@@ -1,9 +1,13 @@
 # Build metadata (generated at build time)
 tools/.build_meta.*
 
+# UI build metadata (generated at build time from .build_meta.json)
+src/gadget-ui/src/ui_build_meta.ts
+
 # Local-only proof artifacts (must not affect determinism)
 proof_artifacts/
 proof_run_*.sh
 proof_phase*.sh
 proof_run_phases_*.sh
 proof_run_basic.sh
+*.proof.log

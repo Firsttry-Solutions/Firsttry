@@ -48,6 +48,10 @@ node_modules/
 coverage/
 dist/
 build/
+
+# Proof artifacts (local-only, do not commit)
+/proof_artifacts/
+/proof_run_*.sh
 *.log
 pnpm-lock.yaml
 yarn.lock
