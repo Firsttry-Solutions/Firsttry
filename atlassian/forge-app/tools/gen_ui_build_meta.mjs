@@ -62,6 +62,18 @@ function main() {
   }
 
   // Generate file content (CONTRACT: Use UI_GIT_SHA from build_meta.json, not recomputed)
+  // Helper: Extract deterministic timestamp from ISO 8601 string
+  function extractYYYYMMDDTHHMMSSFromISO(iso) {
+    // iso format: "2026-01-25T10:17:53Z" -> "20260125T101753Z"
+    const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+    if (!match) {
+      throw new Error(`[FATAL] Invalid ISO time format: ${iso}`);
+    }
+    return `${match[1]}${match[2]}${match[3]}T${match[4]}${match[5]}${match[6]}Z`;
+  }
+
+  const markerTime = extractYYYYMMDDTHHMMSSFromISO(timeUtc);
+
   const content = `/**
  * ui_build_meta.ts - AUTO-GENERATED
  * 
@@ -78,20 +90,11 @@ export const UI_GIT_TIME = "${timeUtc}";
 export const UI_BUILD_TIME_UTC = "${timeUtc}";
 
 /**
- * Dynamic marker for cache-busting: proves the UI was redeployed
+ * Deterministic cache-buster marker derived from git commit time (NOT wall-clock)
  * Format: UI_MARKER_<YYYYMMDDTHHMMSSZ>_<first-7-chars-of-SHA>
+ * Time is extracted from UI_GIT_TIME (immutable commit time), not generated at runtime.
  */
-function getUTCTimestampForMarker(): string {
-  const now = new Date();
-  const yyyy = now.getUTCFullYear();
-  const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(now.getUTCDate()).padStart(2, '0');
-  const hh = String(now.getUTCHours()).padStart(2, '0');
-  const min = String(now.getUTCMinutes()).padStart(2, '0');
-  const ss = String(now.getUTCSeconds()).padStart(2, '0');
-  return \`\${yyyy}\${mm}\${dd}T\${hh}\${min}\${ss}Z\`;
-}
-export const UI_BUILD_MARKER = \`UI_MARKER_\${getUTCTimestampForMarker()}_\${UI_GIT_SHA.substring(0, 7)}\`;
+export const UI_BUILD_MARKER = \`UI_MARKER_${markerTime}_\${UI_GIT_SHA.substring(0, 7)}\`;
 `;
 
   // Write file

@@ -74,10 +74,16 @@ function main() {
     try {
       const bundleContent = fs.readFileSync(appShaJsPath, 'utf-8');
       
-      // Extract UI_BUILD_TIME_UTC from ui_build_meta.ts
+      // Extract UI_BUILD_TIME_UTC from ui_build_meta.ts (MUST be deterministic git-commit time)
       const metaContent = fs.readFileSync(metaPath, 'utf-8');
       const timeMatch = metaContent.match(/export\s+const\s+UI_BUILD_TIME_UTC\s*=\s*["']([^"']+)["']/);
-      const buildTimeUtc = timeMatch ? timeMatch[1] : new Date().toISOString();
+      if (!timeMatch || !timeMatch[1]) {
+        console.error('[POSTBUILD_FATAL] UI_BUILD_TIME_UTC not found in ui_build_meta.ts');
+        console.error('  This means gen_ui_build_meta.mjs failed or was skipped.');
+        console.error('  REFUSING to embed wall-clock time as fallback (fail-closed determinism).');
+        process.exit(1);
+      }
+      const buildTimeUtc = timeMatch[1];
       
       // Git SHA: first 7 chars (git commit identifier)
       const gitSha = uiBuildSha.substring(0, 7);
