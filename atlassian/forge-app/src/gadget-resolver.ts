@@ -49,7 +49,6 @@ import {
   okEnvelope,
   notAvailableEnvelope,
   hardErrorEnvelope,
-  normalizeFtDashEnvelopeV1,
   FtDashEnvelopeV1,
 } from './contracts/ft_dash_envelope_v1';
 
@@ -208,19 +207,57 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       };
     };
 
-    // WRAPPER: Execute implementation and normalize response (fail-closed)
+    // WRAPPER: Execute implementation and wrap in proper envelope (fail-closed)
     const raw = await __impl();
-    return normalizeFtDashEnvelopeV1(raw);
+    
+    // BACKBONE FIX: Use dashOk/dashErr which produce CORRECT format
+    // (envelopeKind: 'FT_DASH_ENVELOPE_V1', schemaVersion: 'v1', ok: boolean)
+    // NOT the old normalizer which uses marker: 'FT_DASH_ENVELOPE_v1', schemaVersion: 1
+    if (raw?.status === "AVAILABLE") {
+      return dashOk({
+        data: raw,
+        meta: {
+          backend_build_sha: BACKEND_BUILD_SHA,
+          ui_build_sha: null,
+          ui_req_id: request?.context?.requestId ?? "UNSET",
+          probe_nonce: null,
+          ts_utc: nowUtcIso(),
+        },
+      });
+    }
+    
+    // Hard error case
+    return dashErr({
+      error: {
+        code: raw?.error ?? "FT_SNAPSHOT_INVALID",
+        message: raw?.error ? `Dashboard state failed: ${raw.error}` : "Snapshot is invalid or missing",
+      },
+      meta: {
+        backend_build_sha: BACKEND_BUILD_SHA,
+        ui_build_sha: null,
+        ui_req_id: request?.context?.requestId ?? "UNSET",
+        probe_nonce: null,
+        ts_utc: nowUtcIso(),
+      },
+    });
   } catch (e) {
     const errorMsg = e instanceof Error ? e.message : String(e);
     console.error("[FT_L0_DASHBOARD] Resolver error:", errorMsg);
     
-    // FAIL-CLOSED: Return hardErrorEnvelope with marker
-    return hardErrorEnvelope(
-      "FT_META_FAILED",
-      "Dashboard state resolver exception",
-      { error: errorMsg }
-    );
+    // BACKBONE FIX: Use dashErr which produces CORRECT envelope format
+    return dashErr({
+      error: {
+        code: "FT_RESOLVER_EXCEPTION",
+        message: `Dashboard resolver failed: ${errorMsg.slice(0, 150)}`,
+      },
+      meta: {
+        backend_build_sha: BACKEND_BUILD_SHA,
+        ui_build_sha: null,
+        ui_req_id: request?.context?.requestId ?? "UNSET",
+        probe_nonce: null,
+        ts_utc: nowUtcIso(),
+      },
+    });
   }
 }
 
