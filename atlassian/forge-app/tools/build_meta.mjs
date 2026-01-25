@@ -42,16 +42,30 @@ function gitShaFull() {
   }
 }
 
-function utcIsoNoMillis() {
-  const iso = new Date().toISOString();
-  // Convert "2026-01-14T06:45:13.123Z" to "2026-01-14T06:45:13Z"
-  return iso.replace(/\.\d{3}Z$/, 'Z');
+function gitCommitTimeUtc() {
+  try {
+    // Get commit timestamp in ISO 8601 format (e.g., 2026-01-25T09:54:48Z)
+    const commitTime = execSync('git show -s --format=%cI HEAD', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+    if (!commitTime) {
+      console.error('❌ Failed to get git commit time: empty result');
+      process.exit(1);
+    }
+    // Ensure it's valid ISO 8601 UTC
+    if (!commitTime.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
+      console.error(`❌ Invalid commit time format: ${commitTime} (expected ISO 8601)`);
+      process.exit(1);
+    }
+    return commitTime;
+  } catch (e) {
+    console.error('❌ Failed to get git commit time:', e.message);
+    process.exit(1);
+  }
 }
 
 const meta = {
   FT_BUILD_SHA: gitShaShort(),
   UI_GIT_SHA: gitShaFull(),
-  FT_BUILD_TIME_UTC: utcIsoNoMillis(),
+  FT_BUILD_TIME_UTC: gitCommitTimeUtc(),
 };
 
 // Write JSON (for Node.js consumption)
