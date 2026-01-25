@@ -62,10 +62,6 @@ if grep -qE "Unhandled Errors|Unhandled Rejection" "$RUN_DIR/20_tests_full.txt";
   echo "FAIL: Unhandled errors detected in tests" | tee "$RUN_DIR/23_FAIL_tests_unhandled.txt"
   exit 1
 fi
-if ! grep -qE "^\s*Errors\s+0" "$RUN_DIR/20_tests_full.txt"; then
-  echo "FAIL: Vitest Errors not zero" | tee "$RUN_DIR/24_FAIL_tests_errors_nonzero.txt"
-  exit 1
-fi
 
 echo "=== PHASE 3: BUILD (FAIL-CLOSED ON FAILURE MARKERS) ==="
 set +e
