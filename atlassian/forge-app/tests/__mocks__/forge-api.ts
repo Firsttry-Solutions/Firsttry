@@ -30,6 +30,9 @@ const createMockStorage = () => ({
   get: createMockStorageFn(),
   set: createMockStorageFn(),
   delete: createMockStorageFn(),
+  getRecordCache: vi.fn().mockResolvedValue(undefined),
+  setRecordCache: vi.fn().mockResolvedValue(undefined),
+  deleteRecordCache: vi.fn().mockResolvedValue(undefined),
 });
 
 // Create the api object with chainable methods
@@ -38,11 +41,13 @@ export const api = {
     requestJira: createMockRequestJira(),
     fetch: createMockFetch(),
     requestStorage: vi.fn((callback) => callback(createMockStorage())),
+    ...createMockStorage(),
   })),
   asApp: vi.fn(() => ({
     requestJira: createMockRequestJira(),
     fetch: createMockFetch(),
     requestStorage: vi.fn((callback) => callback(createMockStorage())),
+    ...createMockStorage(),
   })),
   requestJira: createMockRequestJira(),
   fetch: createMockFetch(),
@@ -77,13 +82,12 @@ export function resetForgeApiMock() {
   });
 }
 
-// Default export for ESM import { default } pattern
-const defaultExport = { api, scheduled, storage };
-export default defaultExport;
+// Default export - use api as default for compatibility with existing imports
+export default api;
 
 // CommonJS export for require() pattern
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = defaultExport;
+  module.exports = api;
   module.exports.api = api;
   module.exports.scheduled = scheduled;
   module.exports.storage = storage;
