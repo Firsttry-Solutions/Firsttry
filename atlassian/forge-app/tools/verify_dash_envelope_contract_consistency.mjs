@@ -220,6 +220,57 @@ try {
     "UI l0_snapshot_mapper must validate response.status !== undefined before using it"
   );
 
+  // CHECK 22: Invariant enforcer function exists (NEW - CRITICAL)
+  const invariantEnforcerExists = /export\s+function\s+enforceDashEnvelopeV1Invariant\s*\(/.test(backendContent);
+  check(
+    "enforceDashEnvelopeV1Invariant function exists and is exported (CRITICAL)",
+    invariantEnforcerExists,
+    "Must have: export function enforceDashEnvelopeV1Invariant(candidate: unknown): FtDashEnvelopeV1"
+  );
+
+  // CHECK 23: Invariant enforcer validates status field (NEW - CRITICAL)
+  const invariantChecksStatus = /enforceDashEnvelopeV1Invariant[\s\S]*?status[\s\S]*?(undefined|null|HARD_ERROR)/.test(backendContent);
+  check(
+    "enforceDashEnvelopeV1Invariant validates status field presence and value (CRITICAL)",
+    invariantChecksStatus,
+    "Invariant enforcer must validate that status is defined and is a valid FtDashStatus value"
+  );
+
+  // CHECK 24: Invariant enforcer checks ok type (NEW - CRITICAL)
+  const invariantChecksOkType = /enforceDashEnvelopeV1Invariant[\s\S]*?typeof.*ok[\s\S]*?boolean/.test(backendContent);
+  check(
+    "enforceDashEnvelopeV1Invariant validates ok field type (CRITICAL)",
+    invariantChecksOkType,
+    "Invariant enforcer must validate: typeof ok === 'boolean'"
+  );
+
+  // CHECK 25: Invariant enforcer enforces mutual exclusivity (NEW - CRITICAL)
+  const invariantChecksMutualExclusivity = /enforceDashEnvelopeV1Invariant[\s\S]*?(data.*error|error.*data)/.test(backendContent);
+  check(
+    "enforceDashEnvelopeV1Invariant enforces mutual exclusivity (ok=true => data only, ok=false => error only) (CRITICAL)",
+    invariantChecksMutualExclusivity,
+    "Invariant enforcer must ensure: ok=true → data required, error forbidden; ok=false → error required, data forbidden"
+  );
+
+  // CHECK 26: Resolver imports invariant enforcer (NEW - CRITICAL)
+  const resolverFile = path.join(PROJECT_ROOT, "src/gadget-resolver.ts");
+  const resolverContent = fs.readFileSync(resolverFile, "utf8");
+  const resolverImportsInvariant = resolverContent.includes("enforceDashEnvelopeV1Invariant");
+  check(
+    "Resolver imports enforceDashEnvelopeV1Invariant function (CRITICAL)",
+    resolverImportsInvariant,
+    "src/gadget-resolver.ts must import: { enforceDashEnvelopeV1Invariant } from contracts/ft_dash_envelope_v1"
+  );
+
+  // CHECK 27: Resolver calls invariant enforcer as final boundary (NEW - CRITICAL)
+  const resolverCallsInvariant = /enforceDashEnvelopeV1Invariant\s*\(\s*result\s*\)/.test(resolverContent) ||
+                                   /enforceDashEnvelopeV1Invariant\s*\(\s*safe\s*\)/.test(resolverContent);
+  check(
+    "Resolver calls enforceDashEnvelopeV1Invariant as final return boundary (CRITICAL)",
+    resolverCallsInvariant,
+    "Resolver wrapper must call: enforceDashEnvelopeV1Invariant(result) before every return"
+  );
+
   // SUMMARY
   console.log(`\n[GATE] Summary: ${passCount} passed, ${failCount} failed`);
 

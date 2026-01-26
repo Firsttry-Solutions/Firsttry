@@ -50,6 +50,7 @@ import {
   notAvailableEnvelope,
   hardErrorEnvelope,
   FtDashEnvelopeV1,
+  enforceDashEnvelopeV1Invariant,
 } from './contracts/ft_dash_envelope_v1';
 
 // Create single canonical resolver instance
@@ -251,30 +252,24 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       );
     }
 
-    // FINAL VERIFICATION: status field is set in envelope (fail-closed)
-    if (!result.status || typeof result.status !== 'string') {
-      console.error("[FT_L0_DASHBOARD] CRITICAL: Result envelope missing status field", {
-        hasStatus: result?.status != null,
-        statusType: typeof result?.status,
-        envelopeKeys: Object.keys(result).slice(0, 10),
-      });
-      return hardErrorEnvelope(
-        "FT_ENVELOPE_STATUS_MISSING",
-        "Envelope builder failed to set status field"
-      );
-    }
+    // =====================================================================
+    // RESOLVER BOUNDARY INVARIANT: Enforce at the last step before return
+    // This makes it IMPOSSIBLE for status to ever be undefined in production
+    // =====================================================================
+    const safe = enforceDashEnvelopeV1Invariant(result);
 
-    // Log successful return with status proof
+    // Log return proof with invariant-checked envelope
     console.log(JSON.stringify({
-      marker: "[FT_L0_DASHBOARD] RETURN_PROOF",
-      ok: result.ok,
-      status: result.status,
-      hasEnvelopeKind: result.envelopeKind === "FT_DASH_ENVELOPE_V1",
-      hasSchemaVersion: result.schemaVersion === 'v1',
+      marker: "FT_DASH_V1_RETURN_PROOF",
+      ok: safe.ok,
+      status: safe.status,
+      hasEnvelopeKind: safe.envelopeKind === "FT_DASH_ENVELOPE_V1",
+      hasSchemaVersion: safe.schemaVersion === 'v1',
+      buildSha: BACKEND_BUILD_SHA || "UNSET",
       ts: new Date().toISOString(),
     }));
 
-    return result;
+    return safe;
   } catch (e) {
     const errorMsg = e instanceof Error ? e.message : String(e);
     console.error("[FT_L0_DASHBOARD] Resolver error:", errorMsg);
