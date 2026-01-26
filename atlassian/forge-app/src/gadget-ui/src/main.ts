@@ -2837,13 +2837,14 @@ async function proceedWithBoot() {
         // STEP 2: Map response to dashboard state
         const dashState = mapL0SnapshotResponse(response);
         
-        // STEP 3: Render dashboard (AVAILABLE or HARD ERROR only)
+        // STEP 3: Render dashboard (AVAILABLE, NO_SNAPSHOT, INVALID_SNAPSHOT, or HARD_ERROR only)
         const dashboard = renderL0Dashboard(dashState);
         document.body.innerHTML = '';
         document.body.appendChild(dashboard);
         
         console.log('[L0_DASHBOARD_RENDERED]', {
           status: dashState.status,
+          reasonCode: dashState.reasonCode,
           snapshotId: dashState.snapshotId,
         });
       } catch (err) {

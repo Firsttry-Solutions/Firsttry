@@ -170,11 +170,21 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
           hasData: snapshot?.data != null,
         });
         
-        // Return as NOT_AVAILABLE (wrapped by outer try/catch + normalizer)
+        // Return as NO_SNAPSHOT (non-fatal state)
+        // Missing or invalid snapshot is not a contract failure - just means we don't have data
+        const subcode = !snapshot ? "NO_SNAPSHOT_POINTER" : "SNAPSHOT_SCHEMA_MISMATCH";
+        console.log(JSON.stringify({
+          marker: "[BACKEND_DASH_STATE_FAIL]",
+          code: "FT_SNAPSHOT_INVALID",
+          subcode,
+          correlationId: requestId,
+          snapshotIdCandidate: snapshot?.snapshotId,
+        }));
         return {
-          status: "HARD ERROR",
+          status: "NO_SNAPSHOT",
           error: "FT_SNAPSHOT_INVALID",
           schemaVersion: "L0",
+          subcode,
         };
       }
       
@@ -226,10 +236,22 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
     }
 
     // BACKBONE FIX: Use okEnvelope/notAvailableEnvelope/hardErrorEnvelope
-    // (envelopeKind: 'FT_DASH_ENVELOPE_v1', schemaVersion: 1, status: 'AVAILABLE'|'NOT_AVAILABLE'|'HARD_ERROR')
+    // (envelopeKind: 'FT_DASH_ENVELOPE_v1', schemaVersion: 1, status: 'AVAILABLE'|'NOT_AVAILABLE'|'HARD_ERROR'|'NO_SNAPSHOT'|'INVALID_SNAPSHOT')
     let result: FtDashEnvelopeV1;
     if (raw.status === "AVAILABLE") {
       result = okEnvelope(raw);
+    } else if (raw.status === "NO_SNAPSHOT") {
+      // Missing snapshot - non-fatal state (user can still see dashboard with no data)
+      result = notAvailableEnvelope(
+        raw.error ?? "NO_SNAPSHOT_POINTER",
+        raw.error ? `Dashboard state: ${raw.error}` : "Snapshot is not available"
+      );
+    } else if (raw.status === "INVALID_SNAPSHOT") {
+      // Invalid snapshot - non-fatal state (schema/parse error but not a contract violation)
+      result = notAvailableEnvelope(
+        raw.error ?? "SNAPSHOT_SCHEMA_MISMATCH",
+        raw.error ? `Dashboard state: ${raw.error}` : "Snapshot schema is invalid"
+      );
     } else if (raw.status === "NOT_AVAILABLE") {
       result = notAvailableEnvelope(
         raw.error ?? "FT_SNAPSHOT_INVALID",
