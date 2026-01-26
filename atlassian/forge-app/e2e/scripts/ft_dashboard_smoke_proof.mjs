@@ -82,10 +82,10 @@ let browser;
     // Check if redirected to login (auth failure)
     const finalUrl = page.url();
     if (finalUrl.includes('id.atlassian.com/login') || finalUrl.includes('id.atlassian.com/logout')) {
-      throw new Error(
-        'HARD GATE FAILED: Redirected to login. StorageState auth is invalid or expired. ' +
-        'Run: npm run jira:auth:capture'
-      );
+      const reasonCode = 'AUTH_REQUIRED';
+      console.error(`[FAIL] Redirected to login. StorageState auth is invalid or expired.`);
+      console.error(`[REASON] ${reasonCode}`);
+      throw new Error(`${reasonCode}: StorageState auth is invalid. Run: npm run jira:auth:capture`);
     }
     
     // Wait for our entry marker
@@ -104,9 +104,11 @@ let browser;
     }
     
     if (!entryMarkerFound) {
+      const reasonCode = 'MARKERS_MISSING';
+      console.error(`[FAIL] Entry marker not found within timeout.`);
+      console.error(`[REASON] ${reasonCode}`);
       throw new Error(
-        'HARD GATE FAILED: Entry marker not found within timeout. ' +
-        'Expected one of: [UI_ENTRY_RUNTIME_PROOF], [UI_SERVE_OK], [UI_BOOT_PROOF]'
+        `${reasonCode}: Expected one of: [UI_ENTRY_RUNTIME_PROOF], [UI_SERVE_OK], [UI_BOOT_PROOF]`
       );
     }
     
@@ -125,9 +127,10 @@ let browser;
     }
     
     if (!successMarkerFound) {
-      throw new Error(
-        'HARD GATE FAILED: [UI_FT_GETDASHBOARDSTATE_SUCCESS] marker not found within timeout'
-      );
+      const reasonCode = 'MARKERS_MISSING';
+      console.error(`[FAIL] [UI_FT_GETDASHBOARDSTATE_SUCCESS] marker not found within timeout.`);
+      console.error(`[REASON] ${reasonCode}`);
+      throw new Error(`${reasonCode}: Dashboard state success marker not detected`);
     }
     
     // Extract proof lines for summary
@@ -137,19 +140,21 @@ let browser;
     
     // Hard gate: status must not be undefined
     if (/status=undefined/.test(successLine)) {
-      throw new Error(
-        'HARD GATE FAILED: status=undefined detected in [UI_FT_GETDASHBOARDSTATE_SUCCESS]'
-      );
+      const reasonCode = 'STATUS_UNDEFINED';
+      console.error(`[FAIL] status=undefined detected in [UI_FT_GETDASHBOARDSTATE_SUCCESS].`);
+      console.error(`[REASON] ${reasonCode}`);
+      throw new Error(`${reasonCode}: UI returned undefined status`);
     }
     
     // Hard gate: status field must be present
     if (!/status=/.test(successLine)) {
-      throw new Error(
-        'HARD GATE FAILED: status= field missing from [UI_FT_GETDASHBOARDSTATE_SUCCESS]'
-      );
+      const reasonCode = 'STATUS_UNDEFINED';
+      console.error(`[FAIL] status= field missing from [UI_FT_GETDASHBOARDSTATE_SUCCESS].`);
+      console.error(`[REASON] ${reasonCode}`);
+      throw new Error(`${reasonCode}: No status field in response`);
     }
     
-    // Print proof summary to stdout
+    // Write proof summary to stdout
     console.log('\n============================================================================');
     console.log('PROOF SUMMARY');
     console.log('============================================================================');
@@ -158,6 +163,7 @@ let browser;
     console.log(`[SUCCESS]:      ${successLine}`);
     console.log('============================================================================');
     console.log('✅ ALL HARD GATES PASSED: Status is NOT undefined\n');
+    console.log('[REASON] PROOF_OK');
     
     // Write full console log to file
     const consoleLogFile = path.join(RUN_DIR, '41_browser_console_full.txt');
@@ -169,12 +175,25 @@ let browser;
     await browser.close();
     process.exit(0);
   } catch (error) {
-    console.error(`\n❌ SMOKE PROOF FAILED: ${error.message}\n`);
+    // Extract reason code from error message if present
+    let reasonCode = 'UNKNOWN_ERROR';
+    if (error.message && error.message.includes(':')) {
+      reasonCode = error.message.split(':')[0];
+    }
+    
+    console.error(`\n============================================================================`);
+    console.error(`SMOKE PROOF FAILED`);
+    console.error(`============================================================================`);
+    console.error(`[FAIL] ${error.message}\n`);
+    console.error(`[REASON] ${reasonCode}`);
+    console.error(`============================================================================\n`);
     
     // Write partial console log before exit
     try {
       const consoleLogFile = path.join(RUN_DIR, '41_browser_console_full.txt');
       fs.writeFileSync(consoleLogFile, consoleLogs.join('\n'), 'utf-8');
+      // Also write reason code
+      fs.appendFileSync(consoleLogFile, `\n\n============================================================================\nFAILURE REASON\n============================================================================\n${reasonCode}: ${error.message}\n`);
     } catch (writeError) {
       console.error(`Could not write console log: ${writeError.message}`);
     }

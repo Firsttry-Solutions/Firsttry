@@ -120,19 +120,42 @@ forge install list > "$RUN_DIR/31_install_list_before.txt" 2>&1 || fail "forge i
 echo "Pre-deployment state: OK"
 
 # ============================================================================
-# STEP 6: Validate UI Smoke Proof Prerequisites (BEFORE deploy)
+# STEP 6: Validate UI Smoke Proof Prerequisites (BEFORE deploy) - HARD GATE
 # ============================================================================
 echo "[STEP 6] Validating UI smoke proof prerequisites..."
 if [ -z "${JIRA_DASHBOARD_URL:-}" ]; then
   fail "JIRA_DASHBOARD_URL env var not set. Required for post-deploy UI verification."
 fi
 if [ -z "${STORAGE_STATE:-}" ]; then
-  fail "STORAGE_STATE env var not set. Required for post-deploy UI verification."
+  STORAGE_STATE="e2e/.auth/storageState.persistent.json"
+  echo "  STORAGE_STATE not set, using default: $STORAGE_STATE"
 fi
 if [ ! -f "$STORAGE_STATE" ]; then
   fail "STORAGE_STATE file not found at $STORAGE_STATE. Run: npm run jira:auth:capture"
 fi
-echo "UI smoke proof prerequisites: OK"
+
+# Parse storageState JSON and validate cookies
+echo "  [6a] Validating storageState authentication..."
+VALIDATE_RESULT=$(node -e "
+const fs = require('fs');
+const state = JSON.parse(fs.readFileSync('$STORAGE_STATE', 'utf-8'));
+if (!state.cookies || state.cookies.length === 0) {
+  console.error('[FAIL] StorageState has no cookies - not authenticated.');
+  process.exit(1);
+}
+const validDomains = state.cookies.filter(c => 
+  c.domain && (c.domain.includes('atlassian.net') || c.domain.includes('id.atlassian.com'))
+);
+if (validDomains.length === 0) {
+  console.error('[FAIL] No Jira/auth cookies found. Valid domains: ' + state.cookies.map(c => c.domain).join(', '));
+  process.exit(1);
+}
+console.log('[PASS] StorageState: ' + state.cookies.length + ' cookies, ' + validDomains.length + ' from Jira domains');
+" 2>&1) || {
+  fail "StorageState validation failed - not authenticated. Run: npm run jira:auth:capture"
+}
+echo "$VALIDATE_RESULT"
+echo "UI smoke proof prerequisites: OK (storageState authenticated)"
 
 # ============================================================================
 # STEP 7: Deploy to Production
