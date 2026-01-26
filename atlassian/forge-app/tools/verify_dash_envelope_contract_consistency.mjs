@@ -169,6 +169,57 @@ try {
     "normalizeFtDashEnvelopeV1 must validate typeof raw.ok === 'boolean'"
   );
 
+  // CHECK 16: Backend interface declares status field as non-optional FtDashStatus
+  const backendStatusFieldExists = /status:\s*FtDashStatus/.test(backendContent);
+  check(
+    "Backend interface FtDashEnvelopeV1 declares status: FtDashStatus (non-optional) (CRITICAL)",
+    backendStatusFieldExists,
+    "FtDashEnvelopeV1 interface must include: status: FtDashStatus (not optional)"
+  );
+
+  // CHECK 17: FtDashStatus type includes all three required values
+  const ftDashStatusType = /type\s+FtDashStatus\s*=\s*\|\s*"AVAILABLE"\s*\|\s*"NOT_AVAILABLE"\s*\|\s*"HARD_ERROR"/.test(backendContent);
+  check(
+    "FtDashStatus type includes AVAILABLE|NOT_AVAILABLE|HARD_ERROR (CRITICAL)",
+    ftDashStatusType,
+    "FtDashStatus type must be: 'AVAILABLE' | 'NOT_AVAILABLE' | 'HARD_ERROR'"
+  );
+
+  // CHECK 18: okEnvelope ALWAYS sets status (cannot be undefined)
+  const okEnvelopeHasStatus = /okEnvelope[\s\S]*?\{[\s\S]*?status:\s*["']AVAILABLE["']/.test(backendContent);
+  check(
+    "okEnvelope ALWAYS sets status='AVAILABLE' (CRITICAL)",
+    okEnvelopeHasStatus,
+    "okEnvelope must explicitly return: status: 'AVAILABLE'"
+  );
+
+  // CHECK 19: hardErrorEnvelope ALWAYS sets status (cannot be undefined)
+  const hardErrorHasStatus = /hardErrorEnvelope[\s\S]*?\{[\s\S]*?status:\s*["']HARD_ERROR["']/.test(backendContent);
+  check(
+    "hardErrorEnvelope ALWAYS sets status='HARD_ERROR' (CRITICAL)",
+    hardErrorHasStatus,
+    "hardErrorEnvelope must explicitly return: status: 'HARD_ERROR'"
+  );
+
+  // CHECK 20: notAvailableEnvelope ALWAYS sets status (cannot be undefined)
+  const notAvailableHasStatus = /notAvailableEnvelope[\s\S]*?\{[\s\S]*?status:\s*["']NOT_AVAILABLE["']/.test(backendContent);
+  check(
+    "notAvailableEnvelope ALWAYS sets status='NOT_AVAILABLE' (CRITICAL)",
+    notAvailableHasStatus,
+    "notAvailableEnvelope must explicitly return: status: 'NOT_AVAILABLE'"
+  );
+
+  // CHECK 21: UI checks status field exists and is valid (NEW)
+  // Look for status checks in the UI snapshot mapper
+  const uiStatusMapperFile = path.join(PROJECT_ROOT, "src/gadget-ui/src/l0_snapshot_mapper.ts");
+  const uiStatusMapperContent = fs.readFileSync(uiStatusMapperFile, "utf8");
+  const uiChecksStatusInMapper = uiStatusMapperContent.includes("response.status");
+  check(
+    "UI mapper checks response.status field exists (CRITICAL)",
+    uiChecksStatusInMapper,
+    "UI l0_snapshot_mapper must validate response.status !== undefined before using it"
+  );
+
   // SUMMARY
   console.log(`\n[GATE] Summary: ${passCount} passed, ${failCount} failed`);
 
