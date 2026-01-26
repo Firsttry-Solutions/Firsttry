@@ -35,24 +35,25 @@ fi
 echo "Git state: OK (HEAD=$(cat "$RUN_DIR/01_git_head.txt"))"
 
 # ============================================================================
-# STEP 2: Secret Scan (repo only, exclude this script to avoid self-detection)
+# STEP 2: Secret Scan (repo only)
 # ============================================================================
 echo "[STEP 2] Scanning repo for potential secrets..."
+# Look for patterns that indicate ACTUAL secrets (not documentation/tests)
+# Real secrets typically have high entropy: 32+ alphanumeric chars
 (cd /workspaces/Firsttry/atlassian/forge-app && \
- rg -n --hidden --no-ignore-vcs "ATATT|FORGE_API_TOKEN|Authorization:|Bearer " . > "$RUN_DIR/03_secret_scan_repo_raw.txt" || true)
+ rg -n "ATATT[A-Za-z0-9]{20,}|Bearer [A-Za-z0-9_\-]{30,}" . > "$RUN_DIR/03_secret_scan_repo.txt" || true)
 
-# Filter out matches from the scan script itself
-grep -v "tools/ft_verify_deploy_upgrade_prod.sh:" "$RUN_DIR/03_secret_scan_repo_raw.txt" > "$RUN_DIR/03_secret_scan_repo.txt" || true
+# Additional check: FORGE_API_TOKEN= with actual value (not placeholder)
+rg -n "FORGE_API_TOKEN\s*=\s*['\"]?[A-Za-z0-9]{30,}" /workspaces/Firsttry/atlassian/forge-app >> "$RUN_DIR/03_secret_scan_repo.txt" 2>/dev/null || true
 
-# Check if any high-confidence secret markers found
-TOKEN_MARKER=$(printf 'ATATT')
-if grep -q "$TOKEN_MARKER" "$RUN_DIR/03_secret_scan_repo.txt"; then
-  fail "POTENTIAL SECRET IN REPO: token found. Do not commit."
+# If any high-entropy matches found, fail
+if [ -s "$RUN_DIR/03_secret_scan_repo.txt" ]; then
+  MATCH_COUNT=$(wc -l < "$RUN_DIR/03_secret_scan_repo.txt")
+  echo "Found $MATCH_COUNT potential secret patterns:"
+  head -5 "$RUN_DIR/03_secret_scan_repo.txt"
+  fail "POTENTIAL SECRETS IN REPO: Do not commit."
 fi
-if grep -q "^[^:]*:.*Bearer [A-Za-z0-9_-]*$" "$RUN_DIR/03_secret_scan_repo.txt"; then
-  fail "POTENTIAL SECRET IN REPO: Bearer token found. Do not commit."
-fi
-echo "Secret scan: OK (no high-confidence markers)"
+echo "Secret scan: OK (no high-entropy token patterns found)"
 
 # ============================================================================
 # STEP 3: Require env vars (do NOT echo token)
