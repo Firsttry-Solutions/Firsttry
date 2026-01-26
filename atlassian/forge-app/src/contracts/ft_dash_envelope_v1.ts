@@ -27,6 +27,7 @@ export type FtDashErrorV1 = {
 export interface FtDashEnvelopeV1<T = unknown> {
   envelopeKind: typeof FT_DASH_ENVELOPE_MARKER_V1;
   schemaVersion: 'v1';
+  ok: boolean;
   status: FtDashStatus;
   data?: T;
   error?: FtDashErrorV1;
@@ -39,6 +40,7 @@ export function okEnvelope<T>(data: T): FtDashEnvelopeV1<T> {
   return {
     envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
     schemaVersion: 'v1',
+    ok: true,
     status: "AVAILABLE",
     data,
   };
@@ -55,6 +57,7 @@ export function notAvailableEnvelope(
   return {
     envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
     schemaVersion: 'v1',
+    ok: false,
     status: "NOT_AVAILABLE",
     data: null,
     error: { code, message, details },
@@ -72,6 +75,7 @@ export function hardErrorEnvelope(
   return {
     envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
     schemaVersion: 'v1',
+    ok: false,
     status: "HARD_ERROR",
     data: null,
     error: { code, message, details },
@@ -91,7 +95,8 @@ export function normalizeFtDashEnvelopeV1(raw: any): FtDashEnvelopeV1 {
       raw &&
       typeof raw === "object" &&
       raw.envelopeKind === FT_DASH_ENVELOPE_MARKER_V1 &&
-      (raw.schemaVersion === 'v1' || raw.schemaVersion === 1)
+      (raw.schemaVersion === 'v1' || raw.schemaVersion === 1) &&
+      typeof raw.ok === 'boolean'
     ) {
       // Normalize schemaVersion to string if needed
       if (raw.schemaVersion === 1) {
@@ -100,7 +105,7 @@ export function normalizeFtDashEnvelopeV1(raw: any): FtDashEnvelopeV1 {
       return raw;
     }
 
-    // Partially wrapped (has status/error but missing envelopeKind) - wrap it
+    // Partially wrapped (has status/error but missing envelopeKind or ok) - wrap it
     if (raw && typeof raw === "object" && ("status" in raw)) {
       const status = String(raw.status || "NOT_AVAILABLE") as FtDashStatus;
       const error = (raw as any).error;
