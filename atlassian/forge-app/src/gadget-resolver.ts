@@ -210,25 +210,71 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
     // WRAPPER: Execute implementation and wrap in proper envelope (fail-closed)
     const raw = await __impl();
     
-    // BACKBONE FIX: Use okEnvelope/notAvailableEnvelope/hardErrorEnvelope
-    // (envelopeKind: 'FT_DASH_ENVELOPE_v1', schemaVersion: 1, status: 'AVAILABLE'|'NOT_AVAILABLE'|'HARD_ERROR')
-    if (raw?.status === "AVAILABLE") {
-      return okEnvelope(raw);
-    }
-    
-    // Not available case
-    if (raw?.status === "NOT_AVAILABLE") {
-      return notAvailableEnvelope(
-        raw?.error ?? "FT_SNAPSHOT_INVALID",
-        raw?.error ? `Dashboard state not available: ${raw.error}` : "Snapshot is not available"
+    // CRITICAL VALIDATION: status MUST be set (fail-closed)
+    if (!raw || typeof raw !== 'object' || !raw.status) {
+      console.error("[FT_L0_DASHBOARD] CRITICAL: __impl returned invalid response", {
+        hasRaw: !!raw,
+        isObject: raw && typeof raw === 'object',
+        hasStatus: raw?.status != null,
+        raw: raw ? { keys: Object.keys(raw).slice(0, 10) } : null,
+      });
+      return hardErrorEnvelope(
+        "FT_IMPL_RESPONSE_INVALID",
+        "Dashboard resolver implementation returned invalid response shape"
       );
     }
-    
-    // Hard error case
-    return hardErrorEnvelope(
-      raw?.error ?? "FT_SNAPSHOT_INVALID",
-      raw?.error ? `Dashboard state failed: ${raw.error}` : "Snapshot is invalid or missing"
-    );
+
+    // BACKBONE FIX: Use okEnvelope/notAvailableEnvelope/hardErrorEnvelope
+    // (envelopeKind: 'FT_DASH_ENVELOPE_v1', schemaVersion: 1, status: 'AVAILABLE'|'NOT_AVAILABLE'|'HARD_ERROR')
+    let result: FtDashEnvelopeV1;
+    if (raw.status === "AVAILABLE") {
+      result = okEnvelope(raw);
+    } else if (raw.status === "NOT_AVAILABLE") {
+      result = notAvailableEnvelope(
+        raw.error ?? "FT_SNAPSHOT_INVALID",
+        raw.error ? `Dashboard state not available: ${raw.error}` : "Snapshot is not available"
+      );
+    } else if (raw.status === "HARD ERROR") {
+      result = hardErrorEnvelope(
+        raw.error ?? "FT_SNAPSHOT_INVALID",
+        raw.error ? `Dashboard state failed: ${raw.error}` : "Snapshot is invalid or missing"
+      );
+    } else {
+      // Unexpected status value - fail-closed
+      console.error("[FT_L0_DASHBOARD] CRITICAL: Unexpected status value", {
+        status: raw.status,
+        statusType: typeof raw.status,
+      });
+      result = hardErrorEnvelope(
+        "FT_UNEXPECTED_STATUS",
+        `Unexpected status value: ${raw.status}`
+      );
+    }
+
+    // FINAL VERIFICATION: status field is set in envelope (fail-closed)
+    if (!result.status || typeof result.status !== 'string') {
+      console.error("[FT_L0_DASHBOARD] CRITICAL: Result envelope missing status field", {
+        hasStatus: result?.status != null,
+        statusType: typeof result?.status,
+        envelopeKeys: Object.keys(result).slice(0, 10),
+      });
+      return hardErrorEnvelope(
+        "FT_ENVELOPE_STATUS_MISSING",
+        "Envelope builder failed to set status field"
+      );
+    }
+
+    // Log successful return with status proof
+    console.log(JSON.stringify({
+      marker: "[FT_L0_DASHBOARD] RETURN_PROOF",
+      ok: result.ok,
+      status: result.status,
+      hasEnvelopeKind: result.envelopeKind === "FT_DASH_ENVELOPE_V1",
+      hasSchemaVersion: result.schemaVersion === 'v1',
+      ts: new Date().toISOString(),
+    }));
+
+    return result;
   } catch (e) {
     const errorMsg = e instanceof Error ? e.message : String(e);
     console.error("[FT_L0_DASHBOARD] Resolver error:", errorMsg);
