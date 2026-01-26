@@ -52,7 +52,8 @@
     "diag:dashboard": "node e2e/scripts/phase5_dashboard_diagnose.mjs",
     "prod:deploy-and-upgrade": "bash tools/prod_deploy_and_upgrade.sh",
     "test:prod-dashboard": "cd ../../e2e && xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24' npx playwright test tests/prod_dashboard_green.spec.ts",
-    "prod:ship-and-verify": "npm run prod:deploy-and-upgrade && npm run test:prod-dashboard"
+    "prod:ship-and-verify": "npm run prod:deploy-and-upgrade && npm run test:prod-dashboard",
+    "prod:verify-deploy-upgrade": "bash tools/ft_verify_deploy_upgrade_prod.sh"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
