@@ -3138,7 +3138,9 @@ async function proceedWithBoot() {
                 }));
                 
                 // Success - show backend build SHA and status
-                console.log(`[UI_FT_GETDASHBOARDSTATE_SUCCESS] uiReqId=${FT_UI_REQ_ID} status=${data?.status} reason=${data?.reason_code}`);
+                console.log(`[UI_RESP_KEYS] ${JSON.stringify(Object.keys(stateResult))} hasStatus=${Object.prototype.hasOwnProperty.call(stateResult, 'status')} status=${stateResult.status}`);
+                console.log(`[UI_RESP_JSON] ${JSON.stringify(stateResult)}`);
+                console.log(`[UI_FT_GETDASHBOARDSTATE_SUCCESS] uiReqId=${FT_UI_REQ_ID} status=${stateResult.status} reason=${data?.reason_code}`);
                 // Extract backend build SHA from response
                 const backendBuildSha = data?.ledger?.build_sha_last_seen_backend || data?.build_sha_backend || 'unknown';
                 const responseTime = data?.now_utc || new Date().toISOString();
@@ -3152,9 +3154,9 @@ async function proceedWithBoot() {
                 buildFooter.classList.remove('text-error');
                 
                 // Add proof markers
-                const resolverOK = Boolean(data?.ok === true && data?.status !== 'FAILED');
+                const resolverOK = Boolean(stateResult?.ok === true && stateResult?.status !== 'FAILED');
                 const proofEl = ftEnsureServeProofEl();
-                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | STATUS:${data?.status || 'UNKNOWN'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
+                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | STATUS:${stateResult?.status || 'UNKNOWN'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
                 if (trace?.stepId) {
                     proofEl.textContent += ` | TRACE_STEP:${trace.stepId}`;
                 }
