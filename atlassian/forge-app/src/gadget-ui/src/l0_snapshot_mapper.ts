@@ -4,7 +4,7 @@
  * Converts ft_getDashboardState_v1 response (simple SnapshotMeta) to dashboard state.
  * Response shape from L0 resolver:
  * {
- *   status: "AVAILABLE" | "HARD ERROR",
+ *   status: "AVAILABLE" | "NO_SNAPSHOT" | "INVALID_SNAPSHOT" | "HARD_ERROR",
  *   snapshotId?: string,
  *   createdAtUtc?: string,
  *   schemaVersion: "L0",
@@ -14,7 +14,7 @@
  */
 
 export interface L0SnapshotResponse {
-  status: "AVAILABLE" | "HARD ERROR";
+  status: "AVAILABLE" | "NO_SNAPSHOT" | "INVALID_SNAPSHOT" | "HARD_ERROR";
   snapshotId?: string;
   createdAtUtc?: string;
   schemaVersion: string;
@@ -31,7 +31,8 @@ export interface L0SnapshotResponse {
 }
 
 export interface L0DashboardState {
-  status: "AVAILABLE" | "HARD ERROR";
+  status: "AVAILABLE" | "NO_SNAPSHOT" | "INVALID_SNAPSHOT" | "HARD_ERROR";
+  reasonCode: "PROOF_OK" | "STATE_NO_SNAPSHOT" | "STATE_INVALID_SNAPSHOT" | "STATE_HARD_ERROR" | "ENVELOPE_NOT_OK";
   snapshotId: string | null;
   createdAtUtc: string | null;
   schemaVersion: string;
@@ -49,12 +50,14 @@ export interface L0DashboardState {
 
 /**
  * Map L0 resolver response to dashboard state
+ * CRITICAL: status and reasonCode must NEVER be undefined
  */
 export function mapL0SnapshotResponse(response: any): L0DashboardState {
   // CONTRACT ENFORCEMENT: Fail closed if response is invalid
   if (!response || typeof response !== 'object') {
     return {
-      status: "HARD ERROR",
+      status: "HARD_ERROR",
+      reasonCode: "ENVELOPE_NOT_OK",
       snapshotId: null,
       createdAtUtc: null,
       schemaVersion: "L0",
@@ -71,6 +74,7 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
     
     return {
       status: "AVAILABLE",
+      reasonCode: "PROOF_OK",
       snapshotId,
       createdAtUtc,
       schemaVersion: response.schemaVersion || "L0",
@@ -80,10 +84,37 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
     };
   }
 
-  // HARD ERROR path: Resolver returned explicit error (no FT_UNKNOWN_STATUS possible)
-  if (response.status === "HARD ERROR") {
+  // NO_SNAPSHOT path: Missing snapshot (non-fatal, user sees dashboard with no data)
+  if (response.status === "NO_SNAPSHOT") {
     return {
-      status: "HARD ERROR",
+      status: "NO_SNAPSHOT",
+      reasonCode: "STATE_NO_SNAPSHOT",
+      snapshotId: null,
+      createdAtUtc: null,
+      schemaVersion: response.schemaVersion || "L0",
+      error: response.error || "NO_SNAPSHOT_POINTER",
+      note: response.containsText || "No snapshot available",
+    };
+  }
+
+  // INVALID_SNAPSHOT path: Snapshot failed validation (non-fatal, user sees dashboard with no data)
+  if (response.status === "INVALID_SNAPSHOT") {
+    return {
+      status: "INVALID_SNAPSHOT",
+      reasonCode: "STATE_INVALID_SNAPSHOT",
+      snapshotId: null,
+      createdAtUtc: null,
+      schemaVersion: response.schemaVersion || "L0",
+      error: response.error || "SNAPSHOT_SCHEMA_MISMATCH",
+      note: response.containsText || "Snapshot validation failed",
+    };
+  }
+
+  // HARD ERROR path: Resolver returned explicit contract violation
+  if (response.status === "HARD_ERROR" || response.status === "HARD ERROR") {
+    return {
+      status: "HARD_ERROR",
+      reasonCode: "STATE_HARD_ERROR",
       snapshotId: null,
       createdAtUtc: null,
       schemaVersion: response.schemaVersion || "L0",
@@ -95,7 +126,8 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
   // FALLBACK: If status field missing or unexpected value, fail-closed with explicit error
   // This should never happen if resolver is correct, but catch it anyway
   return {
-    status: "HARD ERROR",
+    status: "HARD_ERROR",
+    reasonCode: "ENVELOPE_NOT_OK",
     snapshotId: null,
     createdAtUtc: null,
     schemaVersion: "L0",
@@ -107,7 +139,9 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
 /**
  * Render L0 dashboard UI (dumb reader pattern)
  * - AVAILABLE: Show snapshot details
- * - HARD ERROR: Show error message
+ * - NO_SNAPSHOT: Show dashboard with no data (non-fatal)
+ * - INVALID_SNAPSHOT: Show dashboard with no data (non-fatal)
+ * - HARD_ERROR: Show error message
  * - NO intermediate states, NO loading spinners, NO retries
  */
 export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
@@ -151,6 +185,30 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
       const metadataSection = renderMetadataBlocks(state.metadata);
       container.appendChild(metadataSection);
     }
+  } else if (state.status === "NO_SNAPSHOT" || state.status === "INVALID_SNAPSHOT") {
+    // Non-fatal states - show dashboard with no data message
+    const title = document.createElement("h1");
+    title.textContent = state.status === "NO_SNAPSHOT" ? "⊘ No Snapshot Available" : "⊘ Snapshot Invalid";
+    title.style.cssText = "color: #626f86; margin: 0 0 16px 0; font-size: 18px;";
+    container.appendChild(title);
+
+    const message = document.createElement("div");
+    message.style.cssText =
+      "background: #f1f2f4; border-left: 4px solid #626f86; padding: 12px; border-radius: 4px;";
+
+    const msgText = document.createElement("p");
+    msgText.style.cssText = "margin: 0; color: #626f86;";
+    msgText.textContent = state.note || (state.status === "NO_SNAPSHOT" 
+      ? "No snapshot has been created yet." 
+      : "The snapshot failed validation.");
+    message.appendChild(msgText);
+
+    const errCode = document.createElement("p");
+    errCode.style.cssText = "margin: 8px 0 0 0; font-size: 12px; color: #626f86;";
+    errCode.innerHTML = `<strong>Reason:</strong> <code>${escapeHtml(state.error || "UNKNOWN")}</code>`;
+    message.appendChild(errCode);
+
+    container.appendChild(message);
   } else {
     // Hard error state
     const title = document.createElement("h1");

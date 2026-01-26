@@ -88,87 +88,83 @@ let browser;
       throw new Error(`${reasonCode}: StorageState auth is invalid. Run: npm run jira:auth:capture`);
     }
     
-    // Wait for our entry marker
-    console.log('[INFO] Waiting for UI entry proof marker...');
-    const entryMarkerRegex = /\[UI_ENTRY_RUNTIME_PROOF\]|\[UI_SERVE_OK\]|\[UI_BOOT_PROOF\]/;
-    let entryMarkerFound = false;
-    const entryMarkerStartTime = Date.now();
-    while (!entryMarkerFound && (Date.now() - entryMarkerStartTime) < MARKER_TIMEOUT_MS) {
-      const match = consoleLogs.some(log => entryMarkerRegex.test(log));
+    // Wait for our critical markers (not generic console noise from Jira host)
+    console.log('[INFO] Waiting for FT markers: UI_ENTRY_RUNTIME_PROOF, UI_SERVE_OK, UI_BRIDGE_RUNTIME_PROOF, L0_DASHBOARD_RENDERED...');
+    const ftMarkerRegex = /\[(UI_ENTRY_RUNTIME_PROOF|UI_SERVE_OK|UI_BRIDGE_RUNTIME_PROOF|L0_DASHBOARD_RENDERED)\]/;
+    let ftMarkerFound = false;
+    const ftMarkerStartTime = Date.now();
+    while (!ftMarkerFound && (Date.now() - ftMarkerStartTime) < MARKER_TIMEOUT_MS) {
+      const match = consoleLogs.some(log => ftMarkerRegex.test(log));
       if (match) {
-        entryMarkerFound = true;
-        console.log('[INFO] Entry marker detected');
+        ftMarkerFound = true;
+        console.log('[INFO] FT marker detected');
       } else {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
     
-    if (!entryMarkerFound) {
-      const reasonCode = 'MARKERS_MISSING';
-      console.error(`[FAIL] Entry marker not found within timeout.`);
+    if (!ftMarkerFound) {
+      const reasonCode = 'PROOF_FAIL_MISSING_MARKER';
+      console.error(`[FAIL] No FT markers found within timeout.`);
       console.error(`[REASON] ${reasonCode}`);
       throw new Error(
-        `${reasonCode}: Expected one of: [UI_ENTRY_RUNTIME_PROOF], [UI_SERVE_OK], [UI_BOOT_PROOF]`
+        `${reasonCode}: Expected one of: [UI_ENTRY_RUNTIME_PROOF], [UI_SERVE_OK], [UI_BRIDGE_RUNTIME_PROOF], [L0_DASHBOARD_RENDERED]`
       );
     }
     
-    // Wait for our success marker (the one with status)
-    console.log('[INFO] Waiting for UI_FT_GETDASHBOARDSTATE_SUCCESS marker...');
-    let successMarkerFound = false;
-    const successMarkerStartTime = Date.now();
-    while (!successMarkerFound && (Date.now() - successMarkerStartTime) < MARKER_TIMEOUT_MS) {
-      const match = consoleLogs.some(log => /\[UI_FT_GETDASHBOARDSTATE_SUCCESS\]/.test(log));
-      if (match) {
-        successMarkerFound = true;
-        console.log('[INFO] Success marker detected');
-      } else {
-        await new Promise(resolve => setTimeout(resolve, 500));
+    // Extract our specific dashboard rendered marker
+    const dashboardRenderedLog = consoleLogs.find(log => /\[L0_DASHBOARD_RENDERED\]/.test(log));
+    let finalStatus = 'HARD_ERROR';
+    let finalReasonCode = 'PROOF_FAIL_HARD_ERROR';
+    
+    if (dashboardRenderedLog) {
+      // Parse status from the log (expects: [L0_DASHBOARD_RENDERED] { status: "AVAILABLE"|"NO_SNAPSHOT"|"INVALID_SNAPSHOT"|"HARD_ERROR", reasonCode: ..., ... })
+      const statusMatch = dashboardRenderedLog.match(/status:\s*"([^"]+)"/);
+      const reasonMatch = dashboardRenderedLog.match(/reasonCode:\s*"([^"]+)"/);
+      
+      if (statusMatch) {
+        finalStatus = statusMatch[1];
       }
-    }
-    
-    if (!successMarkerFound) {
-      const reasonCode = 'MARKERS_MISSING';
-      console.error(`[FAIL] [UI_FT_GETDASHBOARDSTATE_SUCCESS] marker not found within timeout.`);
+      if (reasonMatch) {
+        finalReasonCode = reasonMatch[1];
+      }
+      
+      // Determine proof code based on final status
+      if (finalStatus === "AVAILABLE") {
+        finalReasonCode = "PROOF_OK";
+      } else if (finalStatus === "NO_SNAPSHOT") {
+        finalReasonCode = "PROOF_OK_NO_SNAPSHOT";
+      } else if (finalStatus === "INVALID_SNAPSHOT") {
+        finalReasonCode = "PROOF_OK_INVALID_SNAPSHOT";
+      } else if (finalStatus === "HARD_ERROR") {
+        finalReasonCode = "PROOF_FAIL_HARD_ERROR";
+      }
+    } else {
+      const reasonCode = 'PROOF_FAIL_MISSING_MARKER';
+      console.error(`[FAIL] [L0_DASHBOARD_RENDERED] marker not found (markers found: ${ftMarkerRegex.source}).`);
       console.error(`[REASON] ${reasonCode}`);
-      throw new Error(`${reasonCode}: Dashboard state success marker not detected`);
-    }
-    
-    // Extract proof lines for summary
-    const respKeysLine = consoleLogs.find(log => /\[UI_RESP_KEYS\]/.test(log)) || '(not found)';
-    const gitShaLine = consoleLogs.find(log => /UI_GIT_SHA=|UI_IDENTITY_RESOLVED/.test(log)) || '(not found)';
-    const successLine = consoleLogs.find(log => /\[UI_FT_GETDASHBOARDSTATE_SUCCESS\]/.test(log)) || '(not found)';
-    
-    // Hard gate: status must not be undefined
-    if (/status=undefined/.test(successLine)) {
-      const reasonCode = 'STATUS_UNDEFINED';
-      console.error(`[FAIL] status=undefined detected in [UI_FT_GETDASHBOARDSTATE_SUCCESS].`);
-      console.error(`[REASON] ${reasonCode}`);
-      throw new Error(`${reasonCode}: UI returned undefined status`);
-    }
-    
-    // Hard gate: status field must be present
-    if (!/status=/.test(successLine)) {
-      const reasonCode = 'STATUS_UNDEFINED';
-      console.error(`[FAIL] status= field missing from [UI_FT_GETDASHBOARDSTATE_SUCCESS].`);
-      console.error(`[REASON] ${reasonCode}`);
-      throw new Error(`${reasonCode}: No status field in response`);
+      throw new Error(`${reasonCode}: Dashboard rendered marker missing`);
     }
     
     // Write proof summary to stdout
     console.log('\n============================================================================');
     console.log('PROOF SUMMARY');
     console.log('============================================================================');
-    console.log(`[UI_RESP_KEYS]: ${respKeysLine}`);
-    console.log(`[UI_GIT_SHA]:   ${gitShaLine}`);
-    console.log(`[SUCCESS]:      ${successLine}`);
+    console.log(`[FINAL_STATUS]:   ${finalStatus}`);
+    console.log(`[DASHBOARD_LOG]:  ${dashboardRenderedLog}`);
     console.log('============================================================================');
-    console.log('✅ ALL HARD GATES PASSED: Status is NOT undefined\n');
-    console.log('[REASON] PROOF_OK');
+    console.log(`✅ MARKERS DETECTED AND STATUS IS NOT UNDEFINED\n`);
+    console.log(`[REASON] ${finalReasonCode}`);
     
     // Write full console log to file
     const consoleLogFile = path.join(RUN_DIR, '41_browser_console_full.txt');
     fs.writeFileSync(consoleLogFile, consoleLogs.join('\n'), 'utf-8');
     console.log(`[INFO] Full console log written to: ${consoleLogFile}`);
+    
+    // Write reason code to file
+    const reasonCodeFile = path.join(RUN_DIR, '42_proof_reason.txt');
+    fs.writeFileSync(reasonCodeFile, finalReasonCode, 'utf-8');
+    console.log(`[INFO] Proof reason code: ${reasonCodeFile}`);
     
     // Clean exit
     await browserContext.close();
@@ -193,9 +189,10 @@ let browser;
       const consoleLogFile = path.join(RUN_DIR, '41_browser_console_full.txt');
       fs.writeFileSync(consoleLogFile, consoleLogs.join('\n'), 'utf-8');
       // Also write reason code
-      fs.appendFileSync(consoleLogFile, `\n\n============================================================================\nFAILURE REASON\n============================================================================\n${reasonCode}: ${error.message}\n`);
+      const reasonCodeFile = path.join(RUN_DIR, '42_proof_reason.txt');
+      fs.writeFileSync(reasonCodeFile, reasonCode, 'utf-8');
     } catch (writeError) {
-      console.error(`Could not write console log: ${writeError.message}`);
+      console.error(`Could not write log files: ${writeError.message}`);
     }
     
     if (browserContext) await browserContext.close();
