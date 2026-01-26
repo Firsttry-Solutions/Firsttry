@@ -39,9 +39,10 @@ echo "Git state: OK (HEAD=$(cat "$RUN_DIR/01_git_head.txt"))"
 # ============================================================================
 echo "[STEP 2] Scanning repo for potential secrets..."
 (cd /workspaces/Firsttry/atlassian/forge-app && \
- rg -n --hidden --no-ignore-vcs "ATATT|FORGE_API_TOKEN|Authorization:|Bearer " . \
-   --exclude "tools/ft_verify_deploy_upgrade_prod.sh" \
-   > "$RUN_DIR/03_secret_scan_repo.txt" || true)
+ rg -n --hidden --no-ignore-vcs "ATATT|FORGE_API_TOKEN|Authorization:|Bearer " . > "$RUN_DIR/03_secret_scan_repo_raw.txt" || true)
+
+# Filter out matches from the scan script itself
+grep -v "tools/ft_verify_deploy_upgrade_prod.sh:" "$RUN_DIR/03_secret_scan_repo_raw.txt" > "$RUN_DIR/03_secret_scan_repo.txt" || true
 
 # Check if any high-confidence secret markers found
 TOKEN_MARKER=$(printf 'ATATT')
@@ -69,17 +70,23 @@ echo "FORGE_EMAIL present: $FORGE_EMAIL"
 echo "FORGE_API_TOKEN present (length=$TOKEN_LEN)"
 
 # ============================================================================
-# STEP 4: Forge Login (non-interactive, no prompt, token in env)
+# STEP 4: Forge Auth (use existing if available, attempt login otherwise)
 # ============================================================================
-echo "[STEP 4] Authenticating Forge (non-interactive)..."
-forge login --email "$FORGE_EMAIL" --token "$FORGE_API_TOKEN" --non-interactive > "$RUN_DIR/10_forge_login.txt" 2>&1 || {
-  fail "Forge login failed. Check email and token."
-}
+echo "[STEP 4] Checking Forge authentication..."
 
-forge whoami > "$RUN_DIR/11_forge_whoami.txt" 2>&1 || {
-  fail "forge whoami failed after login"
-}
-echo "Forge auth: OK ($(head -1 "$RUN_DIR/11_forge_whoami.txt"))"
+# Check if already authenticated
+if forge whoami > "$RUN_DIR/11_forge_whoami_check.txt" 2>&1; then
+  echo "Forge auth: OK (already authenticated: $(cat "$RUN_DIR/11_forge_whoami_check.txt" | head -1))"
+else
+  echo "Not authenticated. Attempting login..."
+  forge login --email "$FORGE_EMAIL" --token "$FORGE_API_TOKEN" --non-interactive > "$RUN_DIR/10_forge_login.txt" 2>&1 || {
+    fail "Forge login failed. Check email and token. Details: $(cat "$RUN_DIR/10_forge_login.txt")"
+  }
+  forge whoami > "$RUN_DIR/11_forge_whoami.txt" 2>&1 || {
+    fail "forge whoami failed after login"
+  }
+  echo "Forge auth: OK ($(head -1 "$RUN_DIR/11_forge_whoami.txt"))"
+fi
 
 # ============================================================================
 # STEP 5: Collect Pre-Deployment State
