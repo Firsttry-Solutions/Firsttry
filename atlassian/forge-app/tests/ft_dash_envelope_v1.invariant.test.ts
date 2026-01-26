@@ -225,4 +225,101 @@ describe("enforceDashEnvelopeV1Invariant - Resolver Boundary Guard", () => {
       expect(["AVAILABLE", "NOT_AVAILABLE", "HARD_ERROR"]).toContain(result.status);
     });
   });
+
+  // ================================================================================
+  // WIRE-LEVEL TESTS: Validate JSON serialization (not just in-memory types)
+  // ================================================================================
+
+  it("WIRE-LEVEL: okEnvelope serializes with status, WITHOUT error field in JSON", () => {
+    const envelope = okEnvelope({ message: "ok" });
+    const wire = JSON.parse(JSON.stringify(envelope));
+    
+    expect(wire).toHaveProperty("status");
+    expect(wire.status).toBe("AVAILABLE");
+    expect(wire.ok).toBe(true);
+    expect(wire).toHaveProperty("data");
+    // CRITICAL: error should NOT be in the wire
+    expect(wire).not.toHaveProperty("error");
+  });
+
+  it("WIRE-LEVEL: hardErrorEnvelope serializes with status and error, WITHOUT data field in JSON", () => {
+    const envelope = hardErrorEnvelope("CODE", "message");
+    const wire = JSON.parse(JSON.stringify(envelope));
+    
+    expect(wire).toHaveProperty("status");
+    expect(wire.status).toBe("HARD_ERROR");
+    expect(wire.ok).toBe(false);
+    expect(wire).toHaveProperty("error");
+    expect(wire.error.code).toBe("CODE");
+    // CRITICAL: data should NOT be in the wire
+    expect(wire).not.toHaveProperty("data");
+  });
+
+  it("WIRE-LEVEL: notAvailableEnvelope serializes with status and error, WITHOUT data field in JSON", () => {
+    const envelope = notAvailableEnvelope("UNAVAIL", "not available");
+    const wire = JSON.parse(JSON.stringify(envelope));
+    
+    expect(wire).toHaveProperty("status");
+    expect(wire.status).toBe("NOT_AVAILABLE");
+    expect(wire.ok).toBe(false);
+    expect(wire).toHaveProperty("error");
+    // CRITICAL: data should NOT be in the wire
+    expect(wire).not.toHaveProperty("data");
+  });
+
+  it("WIRE-LEVEL: Mutual exclusivity - ok=true means NO error in wire", () => {
+    const candidates = [
+      okEnvelope({ foo: "bar" }),
+    ];
+
+    candidates.forEach((envelope) => {
+      const wireJson = JSON.stringify(envelope);
+      const wire = JSON.parse(wireJson);
+      
+      if (wire.ok === true) {
+        expect(wire).toHaveProperty("data");
+        expect(wire).not.toHaveProperty("error");
+      }
+    });
+  });
+
+  it("WIRE-LEVEL: Mutual exclusivity - ok=false means NO data in wire", () => {
+    const candidates = [
+      hardErrorEnvelope("E", "M"),
+      notAvailableEnvelope("E", "M"),
+    ];
+
+    candidates.forEach((envelope) => {
+      const wireJson = JSON.stringify(envelope);
+      const wire = JSON.parse(wireJson);
+      
+      if (wire.ok === false) {
+        expect(wire).toHaveProperty("error");
+        expect(wire).not.toHaveProperty("data");
+      }
+    });
+  });
+
+  it("WIRE-LEVEL: Exact UI observed bad case - ok=false with both data and error", () => {
+    // This is what UI saw: { ok: false, data: {}, error: {...}, status: undefined }
+    const badCandidate = {
+      envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
+      schemaVersion: 'v1',
+      ok: false,
+      data: {}, // VIOLATION: should not have data when ok=false
+      error: { code: "ERR", message: "msg" },
+      // NOTE: status intentionally missing to simulate UI bug
+    };
+
+    const corrected = enforceDashEnvelopeV1Invariant(badCandidate);
+    const wire = JSON.parse(JSON.stringify(corrected));
+
+    // After correction:
+    expect(wire).toHaveProperty("status");
+    expect(wire.status).toBe("HARD_ERROR");
+    expect(wire.ok).toBe(false);
+    expect(wire).toHaveProperty("error");
+    // CRITICAL: data must NOT be in wire (should have been removed)
+    expect(wire).not.toHaveProperty("data");
+  });
 });
