@@ -258,13 +258,29 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
     // =====================================================================
     const safe = enforceDashEnvelopeV1Invariant(result);
 
-    // Log return proof with invariant-checked envelope
+    // WIRE-LEVEL PROOF: Serialize to JSON and verify status presence + mutual exclusivity
+    const wireJson = JSON.stringify(safe);
+    const hasOwnStatus = Object.prototype.hasOwnProperty.call(safe, 'status');
+    const jsonHasStatus = wireJson.includes('"status"');
+    const jsonHasData = wireJson.includes('"data"');
+    const jsonHasError = wireJson.includes('"error"');
+    const violatesExclusivity = (safe.ok === true && jsonHasError && !jsonHasData) ||
+                                (safe.ok === false && jsonHasData && !jsonHasError);
+
+    // Log WIRE-PROOF with all critical invariants
     console.log(JSON.stringify({
-      marker: "FT_DASH_V1_RETURN_PROOF",
+      marker: "[FT_DASH_V1_WIRE_PROOF]",
+      hasOwnStatus,
+      statusValue: safe.status,
+      hasDataKey: Object.prototype.hasOwnProperty.call(safe, 'data'),
+      hasErrorKey: Object.prototype.hasOwnProperty.call(safe, 'error'),
       ok: safe.ok,
-      status: safe.status,
-      hasEnvelopeKind: safe.envelopeKind === "FT_DASH_ENVELOPE_V1",
-      hasSchemaVersion: safe.schemaVersion === 'v1',
+      keys: Object.keys(safe),
+      json: wireJson,
+      jsonHasStatus,
+      jsonHasData,
+      jsonHasError,
+      violatesExclusivity,
       buildSha: BACKEND_BUILD_SHA || "UNSET",
       ts: new Date().toISOString(),
     }));

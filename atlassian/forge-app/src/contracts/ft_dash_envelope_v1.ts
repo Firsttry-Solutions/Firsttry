@@ -35,6 +35,7 @@ export interface FtDashEnvelopeV1<T = unknown> {
 
 /**
  * Success envelope - wraps valid dashboard state
+ * WIRE-LEVEL FIX: Do NOT include error field. Use undefined so JSON.stringify omits it.
  */
 export function okEnvelope<T>(data: T): FtDashEnvelopeV1<T> {
   return {
@@ -43,11 +44,13 @@ export function okEnvelope<T>(data: T): FtDashEnvelopeV1<T> {
     ok: true,
     status: "AVAILABLE",
     data,
-  };
+    error: undefined,  // Omitted in JSON serialization
+  } as any as FtDashEnvelopeV1<T>;
 }
 
 /**
  * Not available - snapshot missing, but no error
+ * WIRE-LEVEL FIX: Do NOT include data field. Use undefined so JSON.stringify omits it.
  */
 export function notAvailableEnvelope(
   code: string,
@@ -59,13 +62,14 @@ export function notAvailableEnvelope(
     schemaVersion: 'v1',
     ok: false,
     status: "NOT_AVAILABLE",
-    data: null,
+    data: undefined,  // Omitted in JSON serialization
     error: { code, message, details },
-  };
+  } as any as FtDashEnvelopeV1<null>;
 }
 
 /**
  * Hard error - resolver or backend failed
+ * WIRE-LEVEL FIX: Do NOT include data field. Use undefined so JSON.stringify omits it.
  */
 export function hardErrorEnvelope(
   code: string,
@@ -77,9 +81,9 @@ export function hardErrorEnvelope(
     schemaVersion: 'v1',
     ok: false,
     status: "HARD_ERROR",
-    data: null,
+    data: undefined,  // Omitted in JSON serialization
     error: { code, message, details },
-  };
+  } as any as FtDashEnvelopeV1<null>;
 }
 
 /**
