@@ -10,6 +10,9 @@
  * 3. Backend constant FT_DASH_ENVELOPE_MARKER_V1 matches UI expectation
  * 4. Backend interface uses field "envelopeKind" (not "marker")
  * 5. Backend always returns status field
+ * 6. UI validator expects ok as boolean (NEW)
+ * 7. Backend interface declares ok: boolean (NEW)
+ * 8. All builders set ok: true/false (NEW)
  */
 
 import fs from "fs";
@@ -116,6 +119,54 @@ try {
     "All builders return schemaVersion: 'v1' (string)",
     okEnvelopeSchemaVersion && hardErrorSchemaVersion && notAvailableSchemaVersion,
     "okEnvelope, hardErrorEnvelope, notAvailableEnvelope must return schemaVersion: 'v1'"
+  );
+
+  // CHECK 10: UI validator checks typeof stateResult.ok === 'boolean' (NEW)
+  const uiChecksOkBoolean = uiContent.includes("typeof stateResult.ok !== 'boolean'");
+  check(
+    "UI validator checks ok field is a boolean (NEW)",
+    uiChecksOkBoolean,
+    "UI must have check: typeof stateResult.ok !== 'boolean'"
+  );
+
+  // CHECK 11: Backend interface declares ok: boolean (NEW)
+  const backendOkFieldExists = /ok:\s*boolean/.test(backendContent);
+  check(
+    "Backend interface FtDashEnvelopeV1 declares ok: boolean (NEW)",
+    backendOkFieldExists,
+    "FtDashEnvelopeV1 interface must include: ok: boolean"
+  );
+
+  // CHECK 12: okEnvelope sets ok: true (NEW)
+  const okEnvelopeOkTrue = /okEnvelope[\s\S]*?ok:\s*true/.test(backendContent);
+  check(
+    "okEnvelope builder sets ok: true (NEW)",
+    okEnvelopeOkTrue,
+    "okEnvelope must return object with ok: true"
+  );
+
+  // CHECK 13: hardErrorEnvelope sets ok: false (NEW)
+  const hardErrorOkFalse = /hardErrorEnvelope[\s\S]*?ok:\s*false/.test(backendContent);
+  check(
+    "hardErrorEnvelope builder sets ok: false (NEW)",
+    hardErrorOkFalse,
+    "hardErrorEnvelope must return object with ok: false"
+  );
+
+  // CHECK 14: notAvailableEnvelope sets ok: false (NEW)
+  const notAvailableOkFalse = /notAvailableEnvelope[\s\S]*?ok:\s*false/.test(backendContent);
+  check(
+    "notAvailableEnvelope builder sets ok: false (NEW)",
+    notAvailableOkFalse,
+    "notAvailableEnvelope must return object with ok: false"
+  );
+
+  // CHECK 15: Normalizer preserves ok as boolean (NEW)
+  const normalizerChecksOkBoolean = /typeof\s+raw\.ok\s*===\s*['"]boolean['"]/.test(backendContent);
+  check(
+    "Normalizer checks ok is boolean before accepting response (NEW)",
+    normalizerChecksOkBoolean,
+    "normalizeFtDashEnvelopeV1 must validate typeof raw.ok === 'boolean'"
   );
 
   // SUMMARY
