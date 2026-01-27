@@ -30,9 +30,16 @@ if [ -n "$TRACKED_CHANGES" ]; then
   exit 1
 fi
 
-# Check untracked files - these are OK as long as they're gitignored or expected
+# STRICT CHECK: BACKBONE_SNAPSHOT_FIX_COMPLETE.md must never appear untracked
 UNTRACKED=$(git status --porcelain | grep -E '^\?\? ' || true)
 
+if echo "$UNTRACKED" | grep -q "BACKBONE_SNAPSHOT_FIX_COMPLETE.md"; then
+  echo "❌ FAIL: Untracked artifact BACKBONE_SNAPSHOT_FIX_COMPLETE.md detected after build"
+  echo "This file must be in .gitignore and removed from working directory"
+  exit 1
+fi
+
+# Check untracked files - these are OK as long as they're gitignored or expected
 if [ -n "$UNTRACKED" ]; then
   echo "ℹ️  Untracked files detected (these are OK if gitignored):"
   echo "$UNTRACKED" | sed 's/^/  /'

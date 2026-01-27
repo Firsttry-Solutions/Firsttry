@@ -3205,6 +3205,7 @@ async function proceedWithBoot() {
                 } catch (e) {
                     console.error('[UI] Failed to render serve-proof element', e);
                 }
+                // FT_UI_ERROR_HANDLER_EXIT_V1
             }
         })();
     }

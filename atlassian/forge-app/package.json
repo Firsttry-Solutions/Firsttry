@@ -4,6 +4,7 @@
   "description": "FirstTry Governance - Atlassian Dual-Layer Integration",
   "main": "src/index.ts",
   "scripts": {
+    "pretest": "node tools/build_meta.mjs",
     "type-check": "tsc --noEmit",
     "verify:bridge-installed": "node tools/verify_forge_bridge_installed.js",
     "verify:ui:no-fatal-dist": "bash tools/verify_no_fatal_ui_bridge_in_dist.sh",
