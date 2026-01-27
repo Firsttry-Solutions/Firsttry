@@ -134,28 +134,20 @@ if [ ! -f "$STORAGE_STATE" ]; then
   fail "STORAGE_STATE file not found at $STORAGE_STATE. Run: npm run jira:auth:capture"
 fi
 
-# Parse storageState JSON and validate cookies
-echo "  [6a] Validating storageState authentication..."
-VALIDATE_RESULT=$(node -e "
-const fs = require('fs');
-const state = JSON.parse(fs.readFileSync('$STORAGE_STATE', 'utf-8'));
-if (!state.cookies || state.cookies.length === 0) {
-  console.error('[FAIL] StorageState has no cookies - not authenticated.');
-  process.exit(1);
-}
-const validDomains = state.cookies.filter(c => 
-  c.domain && (c.domain.includes('atlassian.net') || c.domain.includes('id.atlassian.com'))
-);
-if (validDomains.length === 0) {
-  console.error('[FAIL] No Jira/auth cookies found. Valid domains: ' + state.cookies.map(c => c.domain).join(', '));
-  process.exit(1);
-}
-console.log('[PASS] StorageState: ' + state.cookies.length + ' cookies, ' + validDomains.length + ' from Jira domains');
-" 2>&1) || {
-  fail "StorageState validation failed - not authenticated. Run: npm run jira:auth:capture"
-}
-echo "$VALIDATE_RESULT"
-echo "UI smoke proof prerequisites: OK (storageState authenticated)"
+# Use canonical VERIFY_ONLY validator (no duplicate cookie checks in bash)
+echo "  [6a] Validating storageState authentication via VERIFY_ONLY probe..."
+export VERIFY_ONLY=1
+export STORAGE_STATE="$STORAGE_STATE"
+export JIRA_DASHBOARD_URL="$JIRA_DASHBOARD_URL"
+export RUN_DIR="$RUN_DIR"
+
+if ! node e2e/scripts/ft_capture_jira_storage_state.mjs > "$RUN_DIR/30_verify_only_stdout.txt" 2>&1; then
+  REASON=$(cat "$RUN_DIR/41_auth_reason.txt" 2>/dev/null || echo "UNKNOWN")
+  fail "StorageState validation failed (reason: $REASON). Run: npm run jira:auth:capture"
+fi
+
+cat "$RUN_DIR/30_verify_only_stdout.txt"
+echo "UI smoke proof prerequisites: OK (storageState authenticated and probe passed)"
 
 # ============================================================================
 # STEP 7: Deploy to Production

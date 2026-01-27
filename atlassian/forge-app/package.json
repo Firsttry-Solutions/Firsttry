@@ -54,6 +54,9 @@
     "test:prod-dashboard": "cd ../../e2e && xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24' npx playwright test tests/prod_dashboard_green.spec.ts",
     "prod:ship-and-verify": "npm run prod:deploy-and-upgrade && npm run test:prod-dashboard",
     "jira:auth:capture": "node e2e/scripts/ft_capture_jira_storage_state.mjs",
+    "jira:auth:verify": "VERIFY_ONLY=1 node e2e/scripts/ft_capture_jira_storage_state.mjs",
+    "dashboard:auth": "npm run jira:auth:capture",
+    "dashboard:smoke": "node e2e/scripts/ft_dashboard_smoke_proof.mjs",
     "prod:verify-deploy-upgrade": "bash tools/ft_verify_deploy_upgrade_prod.sh"
   },
   "devDependencies": {
