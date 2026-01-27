@@ -485,6 +485,20 @@ function computePermissionReason(signals: RuntimeSignals): string {
 // ============================================================================
 
 /**
+ * Silent-by-default helper for invariant auto-correction diagnostics.
+ * Only logs when explicitly enabled (FT_DEBUG_INVARIANTS=1) and logs to stdout only.
+ */
+function logInvariantAutoCorrected(message: string, details?: unknown): void {
+  // Default = silent (no stderr noise)
+  // Only log when explicitly enabled:
+  if (typeof process !== "undefined" && process.env?.FT_DEBUG_INVARIANTS === "1") {
+    // When enabled, log to STDOUT ONLY:
+    // eslint-disable-next-line no-console
+    console.log(`[INVARIANT_AUTO_CORRECTED] ${message}`, details ?? "");
+  }
+}
+
+/**
  * Enforce invariants to prevent contradictory state combinations.
  * CRITICAL: Never throws - always auto-corrects with diagnostic logging.
  * This ensures the UI always renders in a consistent state and never freezes.
@@ -493,14 +507,14 @@ function enforceInvariants(vm: GovernanceViewModel, signals: RuntimeSignals, sna
   // Invariant 1: If snapshot is null, age must be null
   if (!signals.snapshot && vm.snapshotAgeMinutes !== null) {
     const msg = "Invariant violation (auto-corrected): snapshot is null but snapshotAgeMinutes is not null";
-    console.warn(msg);
+    logInvariantAutoCorrected(msg);
     vm.snapshotAgeMinutes = null;
   }
 
   // Invariant 2: FRESH only occurs with snapshot
   if (vm.dataFreshnessLabel === "Fresh" && !signals.snapshot) {
     const msg = "Invariant violation (auto-corrected): freshness is FRESH but snapshot is null";
-    console.warn(msg);
+    logInvariantAutoCorrected(msg);
     vm.dataFreshnessLabel = "Never";
   }
 
@@ -509,7 +523,7 @@ function enforceInvariants(vm: GovernanceViewModel, signals: RuntimeSignals, sna
   // (WAITING_FIRST_RUN can still show interval because schedule IS configured, just no run yet)
   if (signals.scheduleStatus !== "CONFIGURED" && vm.expectedScheduleIntervalMinutes !== null) {
     const msg = "Invariant violation (auto-corrected): schedule not configured but expectedScheduleIntervalMinutes is not null";
-    console.warn(msg, {
+    logInvariantAutoCorrected(msg, {
       scheduleStatus: signals.scheduleStatus,
       expectedScheduleIntervalMinutes: vm.expectedScheduleIntervalMinutes
     });
@@ -519,7 +533,7 @@ function enforceInvariants(vm: GovernanceViewModel, signals: RuntimeSignals, sna
   // Invariant 4: Storage empty => snapshot count is 0
   if (signals.storageStatus === "EMPTY" && vm.snapshotCountRetained !== 0) {
     const msg = "Invariant violation (auto-corrected): storage is EMPTY but snapshotCountRetained is not 0";
-    console.warn(msg);
+    logInvariantAutoCorrected(msg);
     vm.snapshotCountRetained = 0;
   }
 
@@ -527,7 +541,7 @@ function enforceInvariants(vm: GovernanceViewModel, signals: RuntimeSignals, sna
   // This is correct: if no successful run yet, cannot be fresh
   if (vm.runtimeState === GovernanceRuntimeState.WAITING_FIRST_RUN && vm.dataFreshnessLabel === "Fresh") {
     const msg = "Invariant violation (auto-corrected): state is WAITING_FIRST_RUN but freshness is FRESH";
-    console.warn(msg);
+    logInvariantAutoCorrected(msg);
     vm.dataFreshnessLabel = "Never";
   }
 
@@ -535,7 +549,7 @@ function enforceInvariants(vm: GovernanceViewModel, signals: RuntimeSignals, sna
   // Only apply when retainedCount is explicitly 0 (measured state)
   if (signals.snapshotCountRetained === 0 && vm.dataFreshnessLabel === "Fresh") {
     const msg = "Invariant violation (auto-corrected): zero snapshots retained but freshness is Fresh";
-    console.warn(msg);
+    logInvariantAutoCorrected(msg);
     vm.dataFreshnessLabel = "Never";
   }
 
