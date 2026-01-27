@@ -134,12 +134,23 @@ function finalizeEvidence(reasonCode, lastUrl = '', httpStatusesStr = '') {
     console.log(`[INFO] Dashboard URL: ${JIRA_DASHBOARD_URL}`);
     console.log(`[INFO] Max runtime: ${MAX_RUNTIME_MS}ms`);
     
-    // Setup internal timeout
+    // Setup internal timeout with precedence logic
     let timedOut = false;
     runtimeTimer = setTimeout(() => {
       timedOut = true;
       console.error(`[TIMEOUT] Max runtime exceeded (${MAX_RUNTIME_MS}ms)`);
-      finalizeEvidence('PROOF_FAIL_TIMEOUT_INTERNAL', lastUrl, httpStatuses.join('\n'));
+      
+      // Reason precedence (UNAUTHORIZED > GADGET > MARKER > TIMEOUT):
+      let timeoutReason = 'PROOF_FAIL_TIMEOUT_INTERNAL';
+      if (unauthorizedOccurred) {
+        timeoutReason = 'PROOF_FAIL_UNAUTHORIZED';
+      } else if (!gadgetIframeFound) {
+        timeoutReason = 'PROOF_FAIL_GADGET_IFRAME_NOT_FOUND';
+      } else if (!ftMarkerDetected) {
+        timeoutReason = 'PROOF_FAIL_FT_MARKER_TIMEOUT';
+      }
+      
+      finalizeEvidence(timeoutReason, lastUrl, httpStatuses.join('\n'));
       process.exit(1);
     }, MAX_RUNTIME_MS);
     

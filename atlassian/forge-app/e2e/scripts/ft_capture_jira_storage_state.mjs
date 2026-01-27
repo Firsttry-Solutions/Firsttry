@@ -7,24 +7,56 @@
  *   - Requires DISPLAY environment variable set
  *   - User must manually log in
  *   - Saves authenticated storageState
+ *   - Then probes /rest/api/3/myself to validate the session
  * 
  * MODE B (verify-only):
  *   - Triggered when VERIFY_ONLY=1
  *   - No browser launched
- *   - Validates existing storageState file
- *   - Checks: file exists, valid JSON, has cookies, Atlassian cookies not expired
+ *   - Reads existing storageState file
+ *   - Validates JSON, cookies, expiry
+ *   - Probes /rest/api/3/myself to validate active session
+ *   - Must derive base URL from JIRA_DASHBOARD_URL or JIRA_SITE
  * 
  * RULE: NO API token/password used to create UI session cookies.
  *       Only interactive Playwright auth (MODE A) or verification (MODE B).
+ *       Session validity proven by successful /rest/api/3/myself probe.
  */
 
-import { chromium } from 'playwright';
+import { chromium, request } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 
 const RUN_DIR = process.env.RUN_DIR;
 const STORAGE_STATE = process.env.STORAGE_STATE || 'e2e/.auth/storageState.persistent.json';
 const VERIFY_ONLY = process.env.VERIFY_ONLY === '1';
+const JIRA_DASHBOARD_URL = process.env.JIRA_DASHBOARD_URL;
+const JIRA_SITE = process.env.JIRA_SITE;
+
+// Helper: derive base URL from JIRA_DASHBOARD_URL or JIRA_SITE
+function getBaseUrl() {
+  if (JIRA_DASHBOARD_URL) {
+    try {
+      const url = new URL(JIRA_DASHBOARD_URL);
+      return `${url.protocol}//${url.host}`;
+    } catch (e) {
+      throw new Error(`Invalid JIRA_DASHBOARD_URL format: ${JIRA_DASHBOARD_URL}`);
+    }
+  }
+  if (JIRA_SITE) {
+    // JIRA_SITE expected to be like "firsttry.atlassian.net" or "https://firsttry.atlassian.net"
+    let site = JIRA_SITE;
+    if (!site.startsWith('http')) {
+      site = `https://${site}`;
+    }
+    try {
+      const url = new URL(site);
+      return `${url.protocol}//${url.host}`;
+    } catch (e) {
+      throw new Error(`Invalid JIRA_SITE format: ${JIRA_SITE}`);
+    }
+  }
+  throw new Error('Neither JIRA_DASHBOARD_URL nor JIRA_SITE env var set');
+}
 
 // Helper: write reason code to files
 function writeReason(code) {
@@ -44,6 +76,35 @@ function writeStoragePath(p) {
     fs.writeFileSync(path.join(RUN_DIR, '43_auth_storage_path.txt'), p, 'utf-8');
   } catch (e) {
     console.error(`[WARN] Could not write storage path file: ${e.message}`);
+  }
+}
+
+// Helper: probe session validity via /rest/api/3/myself
+async function probeAuthValid(baseUrl, storageState) {
+  try {
+    console.log(`[AUTH_PROBE] Testing session with GET ${baseUrl}/rest/api/3/myself`);
+    const requestContext = await request.newContext({ storageState });
+    const response = await requestContext.get(`${baseUrl}/rest/api/3/myself`);
+    const status = response.status();
+    
+    if (status === 200) {
+      console.log(`[AUTH_PROBE] ✅ Session valid (200 OK)`);
+      await requestContext.dispose();
+      return true;
+    } else if (status === 401 || status === 403) {
+      console.error(`[AUTH_PROBE] ❌ Session invalid (${status} Unauthorized)`);
+      await requestContext.dispose();
+      return false;
+    } else {
+      console.error(`[AUTH_PROBE] ⚠️  Unexpected HTTP status: ${status}`);
+      await requestContext.dispose();
+      writeReason(`AUTH_FAIL_SESSION_PROBE_HTTP_${status}`);
+      process.exit(1);
+    }
+  } catch (e) {
+    console.error(`[AUTH_PROBE] Exception: ${e.message}`);
+    writeReason('AUTH_FAIL_SESSION_PROBE_ERROR');
+    process.exit(1);
   }
 }
 
@@ -123,7 +184,27 @@ async function verifyOnly() {
     process.exit(1);
   }
   
-  console.log(`[INFO] ✅ StorageState valid: ${nonExpired.length} non-expired Atlassian cookie(s)`);
+  console.log(`[INFO] StorageState has ${nonExpired.length} non-expired Atlassian cookie(s)`);
+  
+  // Derive base URL for probe
+  let baseUrl;
+  try {
+    baseUrl = getBaseUrl();
+  } catch (e) {
+    console.error(`[FAIL] Could not determine base URL: ${e.message}`);
+    writeReason('AUTH_FAIL_NO_BASE_URL');
+    process.exit(1);
+  }
+  
+  // Probe session validity with HTTP request
+  const isValid = await probeAuthValid(baseUrl, storageState);
+  
+  if (!isValid) {
+    writeReason('AUTH_FAIL_SESSION_INVALID');
+    process.exit(1);
+  }
+  
+  console.log(`[INFO] ✅ Session authenticated and valid`);
   writeReason('AUTH_OK_VERIFY_ONLY');
   process.exit(0);
 }
@@ -222,10 +303,21 @@ async function interactiveCapture() {
     fs.writeFileSync(resolvedStoragePath, JSON.stringify(state, null, 2), 'utf-8');
     console.log(`[INFO] Saved storageState to ${resolvedStoragePath}`);
     
+    // Probe captured session validity
+    const isValid = await probeAuthValid(DASHBOARD_URL.split('/jira')[0] || DASHBOARD_URL.split('/rest')[0], state);
+    
+    if (!isValid) {
+      console.error('[FAIL] Captured session is not valid according to /rest/api/3/myself probe');
+      writeReason('AUTH_FAIL_SESSION_INVALID');
+      await context.close();
+      await browser.close();
+      process.exit(1);
+    }
+    
     writeReason('AUTH_OK');
     await context.close();
     await browser.close();
-    console.log('[SUCCESS] Auth capture complete');
+    console.log('[SUCCESS] Auth capture complete and validated');
     process.exit(0);
     
   } catch (error) {
