@@ -3102,25 +3102,52 @@ async function proceedWithBoot() {
                     return;
                 }
 
-                // Contract validated - extract data
-                const data = stateResult.ok ? stateResult.data : stateResult.error;
+                // Contract validated - extract data and error with deterministic defaults
+                const data = stateResult.ok ? stateResult.data : null;
+                const error = stateResult.ok ? null : stateResult.error;
                 const trace = stateResult.trace;
 
-                if (!data) {
+                // BACKBONE FIX: Guarantee status and reason are never undefined
+                // status comes from stateResult.status (ALWAYS present due to enforceDashEnvelopeV1Invariant)
+                const status = stateResult.status ?? 'HARD_ERROR';
+                
+                // reason comes from error.code if error present, otherwise use OK
+                const reason = error?.code ?? 'OK';
+
+                if (!data && stateResult.ok === true) {
                     console.error(JSON.stringify({
                       marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
-                      reason: 'empty_payload',
+                      reason: 'ok_true_missing_data',
                       uiReqId: FT_UI_REQ_ID
                     }));
                     
-                    const errorInfo = `Contract failure: data/error is empty`;
+                    const errorInfo = `Contract failure: ok=true but data is empty`;
                     const backendDisplay = `(${errorInfo})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                     buildFooter.classList.add('text-error');
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | EMPTY`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | EMPTY_DATA`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+
+                if (!error && stateResult.ok === false) {
+                    console.error(JSON.stringify({
+                      marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
+                      reason: 'ok_false_missing_error',
+                      uiReqId: FT_UI_REQ_ID
+                    }));
+                    
+                    const errorInfo = `Contract failure: ok=false but error is empty`;
+                    const backendDisplay = `(${errorInfo})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | EMPTY_ERROR`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }
@@ -3130,19 +3157,21 @@ async function proceedWithBoot() {
                   marker: '[UI_DASH_RAW_ENVELOPE]',
                   schemaVersion: stateResult.schemaVersion,
                   envelopeKind: stateResult.envelopeKind,
-                  envelopeVersion: stateResult.envelopeVersion,
                   ok: stateResult.ok,
+                  status: status,
+                  reason: reason,
                   hasData: 'data' in stateResult,
                   hasError: 'error' in stateResult,
-                  metaKeys: Object.keys(stateResult.meta || {}),
                   dataKeys: stateResult.data ? Object.keys(stateResult.data).slice(0, 50) : null
                 }));
                 
                 // Success - show backend build SHA and status
-                console.log(`[UI_RESP_KEYS] ${JSON.stringify(Object.keys(stateResult))} hasStatus=${Object.prototype.hasOwnProperty.call(stateResult, 'status')} status=${stateResult.status}`);
+                console.log(`[UI_RESP_KEYS] ${JSON.stringify(Object.keys(stateResult))} hasStatus=${Object.prototype.hasOwnProperty.call(stateResult, 'status')} status=${status}`);
                 console.log(`[UI_RESP_JSON] ${JSON.stringify(stateResult)}`);
-                console.log(`[UI_FT_GETDASHBOARDSTATE_SUCCESS] uiReqId=${FT_UI_REQ_ID} status=${stateResult.status} reason=${data?.reason_code}`);
-                // Extract backend build SHA from response
+                // BACKBONE FIX: Log deterministic status and reason (never undefined)
+                console.log(`[UI_FT_GETDASHBOARDSTATE_SUCCESS] uiReqId=${FT_UI_REQ_ID} status=${status} reason=${reason}`);
+                
+                // Extract backend build SHA from response (only available if ok=true)
                 const backendBuildSha = data?.ledger?.build_sha_last_seen_backend || data?.build_sha_backend || 'unknown';
                 const responseTime = data?.now_utc || new Date().toISOString();
                 
@@ -3155,15 +3184,16 @@ async function proceedWithBoot() {
                 buildFooter.classList.remove('text-error');
                 
                 // Add proof markers
-                const resolverOK = Boolean(stateResult?.ok === true && stateResult?.status !== 'FAILED');
+                const resolverOK = Boolean(stateResult?.ok === true && status === 'AVAILABLE');
                 const proofEl = ftEnsureServeProofEl();
-                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | STATUS:${stateResult?.status || 'UNKNOWN'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
+                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | STATUS:${status} | REASON:${reason} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
                 if (trace?.stepId) {
                     proofEl.textContent += ` | TRACE_STEP:${trace.stepId}`;
                 }
                 buildFooter.appendChild(proofEl);
                 
-                console.log(`[UI_FT_GETDASHBOARDSTATE_FOOTER_UPDATED] status=${data?.status} resolve_ok=${resolverOK}`);
+                // BACKBONE FIX: Log deterministic status (never undefined)
+                console.log(`[UI_FT_GETDASHBOARDSTATE_FOOTER_UPDATED] status=${status} reason=${reason} resolve_ok=${resolverOK}`);
             } catch (err) {
                 console.error(`[UI_OUTER_ERROR] uiReqId=${FT_UI_REQ_ID} error=${String(err).substring(0, 60)}`, err);
                 // Keep UI-only build info if outer error
