@@ -39,6 +39,13 @@ if echo "$UNTRACKED" | grep -q "BACKBONE_SNAPSHOT_FIX_COMPLETE.md"; then
   exit 1
 fi
 
+# HARD FILE EXISTENCE CHECK: Forbidden artifact must not exist on disk at all
+if [ -e "BACKBONE_SNAPSHOT_FIX_COMPLETE.md" ]; then
+  echo "❌ FAIL: Forbidden artifact exists in workspace: BACKBONE_SNAPSHOT_FIX_COMPLETE.md"
+  echo "This file must be removed immediately and added to .gitignore"
+  exit 1
+fi
+
 # Check untracked files - these are OK as long as they're gitignored or expected
 if [ -n "$UNTRACKED" ]; then
   echo "ℹ️  Untracked files detected (these are OK if gitignored):"
