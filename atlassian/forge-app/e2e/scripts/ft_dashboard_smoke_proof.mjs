@@ -4,6 +4,7 @@
  * Deterministic Playwright script to prove UI status is NOT undefined.
  * Fail-closed: hard gates block success.
  * No secrets printed.
+ * HARDENING: Always write 42_proof_reason.txt on any path (success or fail).
  */
 
 import { chromium } from 'playwright';
@@ -12,33 +13,71 @@ import path from 'path';
 
 const TIMEOUT_MS = 240000; // 4 minutes for page load
 const MARKER_TIMEOUT_MS = 120000; // 2 minutes for marker appearance
-const RUN_DIR = process.env.RUN_DIR;
+
+// HARDENING: Function to write proof reason code (FAIL-CLOSED)
+function writeProofReason(code) {
+  const runDir = process.env.RUN_DIR;
+  if (!runDir) {
+    // If RUN_DIR missing, create one
+    const now = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
+    const dir = `/tmp/ft_smoke_${now}Z`;
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, '42_proof_reason.txt'), code + '\n', 'utf-8');
+    } catch (e) {
+      console.error(`[WARN] Could not write reason file: ${e.message}`);
+    }
+    return;
+  }
+  try {
+    fs.mkdirSync(runDir, { recursive: true });
+    fs.writeFileSync(path.join(runDir, '42_proof_reason.txt'), code + '\n', 'utf-8');
+  } catch (e) {
+    console.error(`[WARN] Could not write reason file: ${e.message}`);
+  }
+}
+
+let RUN_DIR = process.env.RUN_DIR;
 const JIRA_DASHBOARD_URL = process.env.JIRA_DASHBOARD_URL;
 const STORAGE_STATE = process.env.STORAGE_STATE;
 
-// Validate env vars
+// Validate env vars (FAIL-CLOSED with reason codes)
 if (!RUN_DIR) {
-  console.error('ERROR: RUN_DIR env var not set');
-  process.exit(2);
+  const now = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
+  RUN_DIR = `/tmp/ft_smoke_${now}Z`;
+  fs.mkdirSync(RUN_DIR, { recursive: true });
+  console.log(`[INFO] RUN_DIR created: ${RUN_DIR}`);
 }
 if (!JIRA_DASHBOARD_URL) {
   console.error('ERROR: JIRA_DASHBOARD_URL env var not set');
+  writeProofReason('PROOF_FAIL_NO_URL');
   process.exit(2);
 }
 if (!STORAGE_STATE) {
   console.error('ERROR: STORAGE_STATE env var not set');
+  writeProofReason('PROOF_FAIL_STORAGESTATE_MISSING');
   process.exit(2);
 }
 if (!fs.existsSync(STORAGE_STATE)) {
   console.error('[FAIL] No authenticated storageState. Run: npm run jira:auth:capture');
+  writeProofReason('PROOF_FAIL_STORAGESTATE_NOT_FOUND');
   process.exit(2);
 }
 
-const storageState = JSON.parse(fs.readFileSync(STORAGE_STATE, 'utf-8'));
+// Parse and validate storage state JSON (FAIL-CLOSED)
+let storageState;
+try {
+  storageState = JSON.parse(fs.readFileSync(STORAGE_STATE, 'utf-8'));
+} catch (e) {
+  console.error(`[FAIL] StorageState invalid JSON: ${e.message}`);
+  writeProofReason('PROOF_FAIL_STORAGESTATE_INVALID_JSON');
+  process.exit(2);
+}
 
 // Validate that storageState has cookies (proof of authentication)
 if (!storageState.cookies || storageState.cookies.length === 0) {
   console.error('[FAIL] StorageState is empty - not authenticated. Run: npm run jira:auth:capture');
+  writeProofReason('PROOF_FAIL_STORAGESTATE_EMPTY');
   process.exit(2);
 }
 const consoleLogs = [];
@@ -161,10 +200,9 @@ let browser;
     fs.writeFileSync(consoleLogFile, consoleLogs.join('\n'), 'utf-8');
     console.log(`[INFO] Full console log written to: ${consoleLogFile}`);
     
-    // Write reason code to file
-    const reasonCodeFile = path.join(RUN_DIR, '42_proof_reason.txt');
-    fs.writeFileSync(reasonCodeFile, finalReasonCode, 'utf-8');
-    console.log(`[INFO] Proof reason code: ${reasonCodeFile}`);
+    // HARDENING: Always write reason code (FAIL-CLOSED)
+    writeProofReason(finalReasonCode);
+    console.log(`[INFO] Proof reason code written: ${finalReasonCode}`);
     
     // Clean exit
     await browserContext.close();
@@ -172,10 +210,9 @@ let browser;
     process.exit(0);
   } catch (error) {
     // Extract reason code from error message if present
-    let reasonCode = 'UNKNOWN_ERROR';
-    if (error.message && error.message.includes(':')) {
-      reasonCode = error.message.split(':')[0];
-    }
+    let reasonCode = error.message && error.message.includes(':') 
+      ? error.message.split(':')[0] 
+      : 'PROOF_FAIL_HARD_ERROR';
     
     console.error(`\n============================================================================`);
     console.error(`SMOKE PROOF FAILED`);
@@ -184,13 +221,13 @@ let browser;
     console.error(`[REASON] ${reasonCode}`);
     console.error(`============================================================================\n`);
     
+    // HARDENING: Always write reason code (FAIL-CLOSED)
+    writeProofReason(reasonCode);
+    
     // Write partial console log before exit
     try {
       const consoleLogFile = path.join(RUN_DIR, '41_browser_console_full.txt');
       fs.writeFileSync(consoleLogFile, consoleLogs.join('\n'), 'utf-8');
-      // Also write reason code
-      const reasonCodeFile = path.join(RUN_DIR, '42_proof_reason.txt');
-      fs.writeFileSync(reasonCodeFile, reasonCode, 'utf-8');
     } catch (writeError) {
       console.error(`Could not write log files: ${writeError.message}`);
     }
