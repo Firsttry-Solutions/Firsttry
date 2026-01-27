@@ -116,7 +116,7 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
   if (response.status === "NOT_AVAILABLE" && response.error?.code === "FT_SNAPSHOT_INVALID") {
     return {
       status: "NO_SNAPSHOT",
-      reasonCode: "FT_SNAPSHOT_INVALID",
+      reasonCode: "STATE_NO_SNAPSHOT",
       snapshotId: null,
       createdAtUtc: null,
       schemaVersion: response.schemaVersion || "L0",
