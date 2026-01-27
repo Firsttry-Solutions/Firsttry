@@ -36,40 +36,80 @@ function writeFile(name, content) {
   }
 }
 
+// Finalization - synchronous signal-safe write of all three files
+function finalizeEvidence(reasonCode, lastUrl = '', httpStatusesStr = '') {
+  // Must be synchronous and idempotent
+  writeFile('42_proof_reason.txt', reasonCode + '\n');
+  writeFile('43_last_url.txt', lastUrl + '\n');
+  writeFile('44_http_statuses.txt', httpStatusesStr);
+}
+
 // Main execution
 (async () => {
   let browser;
   let runtimeTimer;
+  let lastUrl = '';
+  let httpStatuses = [];
+  
+  // Install signal handlers BEFORE any async work
+  process.on('SIGTERM', () => {
+    console.error('[SIGNAL] Received SIGTERM');
+    finalizeEvidence('PROOF_FAIL_SIGTERM', lastUrl, httpStatuses.join('\n'));
+    if (runtimeTimer) clearTimeout(runtimeTimer);
+    if (browser) browser.close().catch(() => {});
+    process.exit(1);
+  });
+  
+  process.on('SIGINT', () => {
+    console.error('[SIGNAL] Received SIGINT');
+    finalizeEvidence('PROOF_FAIL_SIGINT', lastUrl, httpStatuses.join('\n'));
+    if (runtimeTimer) clearTimeout(runtimeTimer);
+    if (browser) browser.close().catch(() => {});
+    process.exit(1);
+  });
+  
+  process.on('uncaughtException', (err) => {
+    console.error('[EXCEPTION] Uncaught: ' + err.message);
+    finalizeEvidence('PROOF_FAIL_HARD_ERROR', lastUrl, httpStatuses.join('\n'));
+    if (runtimeTimer) clearTimeout(runtimeTimer);
+    if (browser) browser.close().catch(() => {});
+    process.exit(1);
+  });
+  
+  process.on('unhandledRejection', (reason) => {
+    console.error('[REJECTION] Unhandled: ' + reason);
+    finalizeEvidence('PROOF_FAIL_HARD_ERROR', lastUrl, httpStatuses.join('\n'));
+    if (runtimeTimer) clearTimeout(runtimeTimer);
+    if (browser) browser.close().catch(() => {});
+    process.exit(1);
+  });
   
   try {
     // Validate inputs
     if (!RUN_DIR) {
       console.error('[FAIL] RUN_DIR not set');
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_NO_RUN_DIR');
+      finalizeEvidence('PROOF_FAIL_NO_RUN_DIR', '', '');
       process.exit(1);
     }
     
+    // Create evidence files IMMEDIATELY at startup
+    finalizeEvidence('PROOF_RUNNING', '', '');
+    
     if (!JIRA_DASHBOARD_URL) {
       console.error('[FAIL] JIRA_DASHBOARD_URL not set');
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_NO_JIRA_DASHBOARD_URL');
-      writeFile('43_last_url.txt', '(not set)');
-      writeFile('44_http_statuses.txt', '(not set)');
+      finalizeEvidence('PROOF_FAIL_NO_JIRA_DASHBOARD_URL', '(not set)', '');
       process.exit(1);
     }
     
     if (!STORAGE_STATE) {
       console.error('[FAIL] STORAGE_STATE not set');
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_NO_STORAGE_STATE');
-      writeFile('43_last_url.txt', '(not set)');
-      writeFile('44_http_statuses.txt', '(not set)');
+      finalizeEvidence('PROOF_FAIL_NO_STORAGE_STATE', '(not set)', '');
       process.exit(1);
     }
     
     if (!fs.existsSync(STORAGE_STATE)) {
       console.error(`[FAIL] StorageState file not found: ${STORAGE_STATE}`);
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_STORAGESTATE_NOT_FOUND');
-      writeFile('43_last_url.txt', '(file not found)');
-      writeFile('44_http_statuses.txt', '(file not found)');
+      finalizeEvidence('PROOF_FAIL_STORAGESTATE_NOT_FOUND', '(file not found)', '');
       process.exit(1);
     }
     
@@ -79,18 +119,14 @@ function writeFile(name, content) {
       storageState = JSON.parse(fs.readFileSync(STORAGE_STATE, 'utf-8'));
     } catch (e) {
       console.error(`[FAIL] StorageState invalid JSON: ${e.message}`);
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_STORAGESTATE_INVALID_JSON');
-      writeFile('43_last_url.txt', '(JSON parse error)');
-      writeFile('44_http_statuses.txt', '(JSON parse error)');
+      finalizeEvidence('PROOF_FAIL_STORAGESTATE_INVALID_JSON', '(JSON parse error)', '');
       process.exit(1);
     }
     
     // Validate cookies exist
     if (!Array.isArray(storageState.cookies) || storageState.cookies.length === 0) {
       console.error('[FAIL] StorageState has no cookies');
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_STORAGESTATE_EMPTY');
-      writeFile('43_last_url.txt', '(no auth)');
-      writeFile('44_http_statuses.txt', '(no auth)');
+      finalizeEvidence('PROOF_FAIL_STORAGESTATE_EMPTY', '(no auth)', '');
       process.exit(1);
     }
     
@@ -103,12 +139,11 @@ function writeFile(name, content) {
     runtimeTimer = setTimeout(() => {
       timedOut = true;
       console.error(`[TIMEOUT] Max runtime exceeded (${MAX_RUNTIME_MS}ms)`);
+      finalizeEvidence('PROOF_FAIL_TIMEOUT_INTERNAL', lastUrl, httpStatuses.join('\n'));
       process.exit(1);
     }, MAX_RUNTIME_MS);
     
-    // Track state
-    let lastUrl = '';
-    const httpStatuses = [];
+    // Track state (already declared above for signal handlers)
     let unauthorizedOccurred = false;
     let gadgetIframeFound = false;
     let ftMarkerDetected = false;
@@ -167,22 +202,17 @@ function writeFile(name, content) {
       });
     } catch (navError) {
       lastUrl = page.url();
-      writeFile('43_last_url.txt', lastUrl);
-      writeFile('44_http_statuses.txt', httpStatuses.join('\n'));
-      
       console.error(`[FAIL] Navigation timeout or error: ${navError.message}`);
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_DASHBOARD_NAV_TIMEOUT');
+      finalizeEvidence('PROOF_FAIL_DASHBOARD_NAV_TIMEOUT', lastUrl, httpStatuses.join('\n'));
       throw navError;
     }
     
     lastUrl = page.url();
-    writeFile('43_last_url.txt', lastUrl);
     
     // Check for redirect to login (auth failed)
     if (lastUrl.includes('id.atlassian.com/login') || lastUrl.includes('id.atlassian.com/logout')) {
-      writeFile('44_http_statuses.txt', httpStatuses.join('\n'));
       console.error('[FAIL] Redirected to login - auth failed');
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_UNAUTHORIZED');
+      finalizeEvidence('PROOF_FAIL_UNAUTHORIZED', lastUrl, httpStatuses.join('\n'));
       await context.close();
       await browser.close();
       clearTimeout(runtimeTimer);
@@ -209,9 +239,8 @@ function writeFile(name, content) {
     }
     
     if (!gadgetIframeFound) {
-      writeFile('44_http_statuses.txt', httpStatuses.join('\n'));
       console.error('[FAIL] Gadget iframe not found');
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_GADGET_IFRAME_NOT_FOUND');
+      finalizeEvidence('PROOF_FAIL_GADGET_IFRAME_NOT_FOUND', lastUrl, httpStatuses.join('\n'));
       await context.close();
       await browser.close();
       clearTimeout(runtimeTimer);
@@ -227,9 +256,8 @@ function writeFile(name, content) {
     }
     
     if (!ftMarkerDetected) {
-      writeFile('44_http_statuses.txt', httpStatuses.join('\n'));
       console.error('[FAIL] FT markers not detected');
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_FT_MARKER_TIMEOUT');
+      finalizeEvidence('PROOF_FAIL_FT_MARKER_TIMEOUT', lastUrl, httpStatuses.join('\n'));
       await context.close();
       await browser.close();
       clearTimeout(runtimeTimer);
@@ -238,9 +266,8 @@ function writeFile(name, content) {
     
     // Check for unauthorized responses after markers detected
     if (unauthorizedOccurred) {
-      writeFile('44_http_statuses.txt', httpStatuses.join('\n'));
       console.error('[FAIL] Unauthorized responses detected during execution');
-      writeFile('42_proof_reason.txt', 'PROOF_FAIL_UNAUTHORIZED');
+      finalizeEvidence('PROOF_FAIL_UNAUTHORIZED', lastUrl, httpStatuses.join('\n'));
       await context.close();
       await browser.close();
       clearTimeout(runtimeTimer);
@@ -249,8 +276,7 @@ function writeFile(name, content) {
     
     // Success
     console.log('\n✅ SMOKE PROOF PASSED: All checks passed');
-    writeFile('44_http_statuses.txt', httpStatuses.join('\n'));
-    writeFile('42_proof_reason.txt', 'PROOF_OK');
+    finalizeEvidence('PROOF_OK', lastUrl, httpStatuses.join('\n'));
     
     await context.close();
     await browser.close();
@@ -260,9 +286,7 @@ function writeFile(name, content) {
   } catch (error) {
     console.error(`\n❌ SMOKE PROOF FAILED: ${error.message}`);
     
-    writeFile('44_http_statuses.txt', '(exception occurred)');
-    writeFile('43_last_url.txt', lastUrl || '(unknown)');
-    writeFile('42_proof_reason.txt', 'PROOF_FAIL_HARD_ERROR');
+    finalizeEvidence('PROOF_FAIL_HARD_ERROR', lastUrl || '(unknown)', '(exception occurred)');
     
     if (browser) await browser.close();
     if (runtimeTimer) clearTimeout(runtimeTimer);

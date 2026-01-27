@@ -31,7 +31,7 @@ function writeReason(code) {
   if (!RUN_DIR) return; // Silent if no RUN_DIR
   try {
     fs.mkdirSync(RUN_DIR, { recursive: true });
-    fs.writeFileSync(path.join(RUN_DIR, '42_proof_reason.txt'), code, 'utf-8');
+    fs.writeFileSync(path.join(RUN_DIR, '41_auth_reason.txt'), code, 'utf-8');
   } catch (e) {
     console.error(`[WARN] Could not write reason file: ${e.message}`);
   }
@@ -104,7 +104,19 @@ async function verifyOnly() {
   }
   
   // Check if any are expired
-  const nonExpired = atlassianCookies.filter(c => !c.expires || c.expires > now);
+  // VALID session cookie if: expires is -1, null, undefined, OR expires > now
+  // INVALID only if: expires is positive number AND expires <= now
+  const nonExpired = atlassianCookies.filter(c => {
+    const expiresVal = c.expires;
+    if (expiresVal === -1 || expiresVal === null || expiresVal === undefined) {
+      return true; // VALID
+    }
+    if (typeof expiresVal === 'number' && expiresVal > now) {
+      return true; // VALID
+    }
+    return false; // EXPIRED
+  });
+  
   if (nonExpired.length === 0) {
     console.error('[FAIL] All Atlassian cookies are expired');
     writeReason('AUTH_FAIL_NO_VALID_ATLASSIAN_COOKIE');
