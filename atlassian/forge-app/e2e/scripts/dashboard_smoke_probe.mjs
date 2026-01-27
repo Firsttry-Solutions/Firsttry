@@ -11,7 +11,7 @@ if (!JIRA_DASHBOARD_URL) throw new Error("JIRA_DASHBOARD_URL env var is required
 if (!STORAGE_STATE) throw new Error("STORAGE_STATE env var is required");
 
 const outFile = path.join(RUN_DIR, "20_dashboard_console.txt");
-const forbidden = [
+const gadgetForbidden = [
   "status=undefined",
   "reason=undefined",
   "FATAL_",
@@ -20,6 +20,10 @@ const forbidden = [
 
 function append(line) {
   fs.appendFileSync(outFile, line + "\n");
+}
+
+function isGadgetFrame(url) {
+  return url && (url.includes("govGadget") || (url.includes("atlassian-dev.net") && url.includes("govGadget")));
 }
 
 (async () => {
@@ -32,17 +36,46 @@ function append(line) {
   let sawSuccessMarker = false;
   let sawForbidden = false;
   let sawPageError = false;
+  let gadgetFrameUrl = null;
 
   page.on("console", (msg) => {
     const line = `[console.${msg.type()}] ${msg.text()}`;
+    const msgUrl = msg.location()?.url || "";
     append(line);
+    
+    // Check for success marker (any frame)
     if (line.includes("[UI_FT_GETDASHBOARDSTATE_SUCCESS]")) sawSuccessMarker = true;
-    if (forbidden.some(f => line.includes(f))) sawForbidden = true;
+    
+    // Check for L0_DASHBOARD_RENDERED + HARD_ERROR (gadget frame only)
+    if (isGadgetFrame(msgUrl) && line.includes("[L0_DASHBOARD_RENDERED]") && line.includes("HARD_ERROR")) {
+      sawForbidden = true;
+      append(`[gadget-frame-error] L0_DASHBOARD_RENDERED with HARD_ERROR detected`);
+    }
+    
+    // Check for forbidden markers in gadget frame only
+    if (isGadgetFrame(msgUrl) && gadgetForbidden.some(f => line.includes(f))) sawForbidden = true;
   });
 
   page.on("pageerror", (err) => {
     sawPageError = true;
     append(`[pageerror] ${String(err)}`);
+  });
+  
+  page.on("response", (resp) => {
+    const respUrl = resp.url();
+    const status = resp.status();
+    if ((status === 401 || status === 403) && isGadgetFrame(respUrl)) {
+      sawForbidden = true;
+      append(`[gadget-frame-auth-fail] ${status} ${respUrl}`);
+    }
+  });
+  
+  page.on("requestfailed", (req) => {
+    const reqUrl = req.url();
+    if (isGadgetFrame(reqUrl)) {
+      sawForbidden = true;
+      append(`[gadget-frame-request-failed] ${reqUrl}`);
+    }
   });
 
   // Do NOT use networkidle (Atlassian often never becomes idle). Use domcontentloaded.

@@ -110,6 +110,21 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
     };
   }
 
+  // NOT_AVAILABLE with FT_SNAPSHOT_INVALID: Treat as EMPTY_STATE (non-fatal)
+  // Resolver returns status="NOT_AVAILABLE" + error.code="FT_SNAPSHOT_INVALID" when snapshot is invalid
+  // This is NOT a hard error, just indicates no valid snapshot exists
+  if (response.status === "NOT_AVAILABLE" && response.error?.code === "FT_SNAPSHOT_INVALID") {
+    return {
+      status: "NO_SNAPSHOT",
+      reasonCode: "FT_SNAPSHOT_INVALID",
+      snapshotId: null,
+      createdAtUtc: null,
+      schemaVersion: response.schemaVersion || "L0",
+      error: "FT_SNAPSHOT_INVALID",
+      note: response.containsText || "Snapshot is invalid or unavailable",
+    };
+  }
+
   // HARD ERROR path: Resolver returned explicit contract violation
   if (response.status === "HARD_ERROR" || response.status === "HARD ERROR") {
     return {
