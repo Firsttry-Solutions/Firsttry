@@ -558,12 +558,12 @@ function enforceInvariants(vm: GovernanceViewModel, signals: RuntimeSignals, sna
   if (vm.runtimeState === GovernanceRuntimeState.BOOTING) {
     if (vm.dataFreshnessLabel !== "Never" && vm.dataFreshnessLabel !== "Unknown") {
       const msg = "Invariant violation (auto-corrected): BOOTING state but freshness label is not Never/Unknown";
-      console.warn(msg);
+      logInvariantAutoCorrected(msg);
       vm.dataFreshnessLabel = "Never";
     }
     if (vm.expectedScheduleIntervalMinutes !== null) {
       const msg = "Invariant violation (auto-corrected): BOOTING state but expectedScheduleIntervalMinutes is not null";
-      console.warn(msg);
+      logInvariantAutoCorrected(msg);
       vm.expectedScheduleIntervalMinutes = null;
     }
   }
