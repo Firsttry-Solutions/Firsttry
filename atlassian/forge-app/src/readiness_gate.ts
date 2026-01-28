@@ -23,8 +23,10 @@
 import { REPORT_FIRST_DELAY_HOURS, MIN_EVENTS_FOR_FIRST_REPORT } from './config/constants';
 
 let api: any;
+let storage: any;
 try {
   api = require('@forge/api').default;
+  storage = require('@forge/api').storage;
 } catch {
   // Test environment
 }
@@ -34,6 +36,13 @@ try {
  */
 export function setMockApi(mockApiObj: any): void {
   api = mockApiObj;
+}
+
+/**
+ * (Test only) Set mock storage for testing
+ */
+export function setMockStorage(mockStorageObj: any): void {
+  storage = mockStorageObj;
 }
 
 export enum ReadinessStatus {
@@ -116,11 +125,9 @@ export async function write_readiness_status(
   nowISO: string
 ): Promise<void> {
   try {
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(`report/${org}/first_ready_status`, status);
-      await storage.set(`report/${org}/first_ready_reason`, reason);
-      await storage.set(`report/${org}/first_ready_checked_at`, nowISO);
-    });
+    await storage.set(`report/${org}/first_ready_status`, status);
+    await storage.set(`report/${org}/first_ready_reason`, reason);
+    await storage.set(`report/${org}/first_ready_checked_at`, nowISO);
   } catch (error) {
     console.error(`[ReadinessGate] Failed to write readiness status for ${org}:`, error);
     throw error;
@@ -132,9 +139,7 @@ export async function write_readiness_status(
  */
 async function get_install_at(org: string): Promise<string | null> {
   try {
-    const result = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(`coverage/${org}/install_at`);
-    });
+    const result = await storage.get(`coverage/${org}/install_at`);
     return result || null;
   } catch {
     return null;
@@ -152,9 +157,7 @@ async function get_event_count_for_org(org: string): Promise<number> {
 
     // Fallback: try to get from a summary key if it exists
     const countKey = `coverage/${org}/total_events_counted`;
-    const result = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(countKey);
-    });
+    const result = await storage.get(countKey);
     return typeof result === 'number' ? result : 0;
   } catch {
     return 0;
@@ -166,9 +169,7 @@ async function get_event_count_for_org(org: string): Promise<number> {
  */
 async function get_manual_override_flag(org: string): Promise<boolean> {
   try {
-    const result = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(`report/${org}/manual_override`);
-    });
+    const result = await storage.get(`report/${org}/manual_override`);
     return result === true;
   } catch {
     return false;
