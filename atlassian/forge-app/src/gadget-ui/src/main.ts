@@ -346,13 +346,12 @@ try {
  */
 async function relayMarkerToBackend(marker: string, extra?: any): Promise<void> {
   try {
+    // FLAT PAYLOAD: Invoke expects flat structure, not nested
     await invoke('ft_uiLogRelay_v1', {
-      payload: {
-        marker,
-        ui_git_sha: UI_IDENTITY.git_sha,
-        ui_req_id: FT_UI_REQ_ID,
-        extra: extra || {},
-      },
+      marker,
+      ui_git_sha: UI_IDENTITY.git_sha,
+      ui_req_id: FT_UI_REQ_ID,
+      extra: extra || {},
     });
   } catch (e) {
     // Swallow errors - relay is diagnostics only, never break UI

@@ -526,7 +526,17 @@ async function ft_getRuntimeProof_v1(request: any): Promise<any> {
  */
 export async function ft_uiLogRelay_v1(request: any): Promise<{ ok: boolean }> {
   try {
-    const payload = request?.payload || {};
+    // DEFENSIVE UNWRAP: Accept both old nested { payload: { marker, ... } } and correct flat { marker, ... }
+    let payload = request?.payload || {};
+    if (
+      payload &&
+      typeof payload === "object" &&
+      (payload as any).payload &&
+      typeof (payload as any).payload === "object"
+    ) {
+      // Old nested format - unwrap it
+      payload = (payload as any).payload;
+    }
     const marker = payload.marker || "UNKNOWN_MARKER";
     const ui_git_sha = payload.ui_git_sha || "MISSING";
     const ui_req_id = payload.ui_req_id || "MISSING";
