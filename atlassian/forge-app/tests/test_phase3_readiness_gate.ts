@@ -4,7 +4,7 @@
  */
 
 import { describe, it } from 'vitest';
-import { ReadinessStatus, evaluate_readiness, write_readiness_status, setMockApi } from '../src/readiness_gate';
+import { ReadinessStatus, evaluate_readiness, write_readiness_status, setMockApi, setMockStorage } from '../src/readiness_gate';
 
 // Mock storage for testing
 const mockStorage: Map<string, any> = new Map();
@@ -26,6 +26,15 @@ const mockApi = {
 
 // Set mock BEFORE tests run
 setMockApi(mockApi);
+
+// Mock storage for direct storage.get/set calls
+const mockStorageObject = {
+  get: async (key: string) => mockStorage.get(key),
+  set: async (key: string, value: any) => {
+    mockStorage.set(key, value);
+  },
+};
+setMockStorage(mockStorageObject);
 
 async function runTests() {
   console.log('=== Test: Readiness Gate ===\n');
