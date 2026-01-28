@@ -12,6 +12,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 
 export enum EvidenceSource {
   JIRA_METADATA = 'jira_metadata',
@@ -63,25 +64,23 @@ export async function storeEvidenceRecord(
   // Store in Forge storage under evidence index
   const storageKey = `evidence/${evidenceId}`;
 
-  await api.asApp().requestStorage(async (storage) => {
-    // Check if already exists (idempotency)
-    const existing = await storage.get(storageKey);
-    if (existing) {
-      // Record already exists, no update needed
-      return;
-    }
+  // Check if already exists (idempotency)
+  const existing = await storage.get(storageKey);
+  if (existing) {
+    // Record already exists, no update needed
+    return evidenceId;
+  }
 
-    // Append new record
-    await storage.set(storageKey, record);
+  // Append new record
+  await storage.set(storageKey, record);
 
-    // Update evidence index (append-only list of IDs)
-    const indexKey = `evidence:index`;
-    const index = (await storage.get(indexKey) || []) as string[];
-    if (!index.includes(evidenceId)) {
-      index.push(evidenceId);
-      await storage.set(indexKey, index);
-    }
-  });
+  // Update evidence index (append-only list of IDs)
+  const indexKey = `evidence:index`;
+  const index = (await storage.get(indexKey) || []) as string[];
+  if (!index.includes(evidenceId)) {
+    index.push(evidenceId);
+    await storage.set(indexKey, index);
+  }
 
   return evidenceId;
 }
@@ -92,9 +91,7 @@ export async function storeEvidenceRecord(
 export async function getEvidenceRecord(evidenceId: string): Promise<EvidenceRecord | null> {
   const storageKey = `evidence/${evidenceId}`;
 
-  const record = await api.asApp().requestStorage(async (storage) => {
-    return await storage.get(storageKey);
-  });
+  const record = await storage.get(storageKey);
 
   return record || null;
 }
@@ -106,48 +103,40 @@ export async function listEvidenceRecords(
   limit: number = 100,
   offset: number = 0
 ): Promise<EvidenceRecord[]> {
-  const records = await api.asApp().requestStorage(async (storage) => {
-    const indexKey = `evidence:index`;
-    const index = (await storage.get(indexKey) || []) as string[];
+  const indexKey = `evidence:index`;
+  const index = (await storage.get(indexKey) || []) as string[];
 
-    // Sort by timestamp descending (most recent first)
-    const sortedIds = index.sort().reverse();
+  // Sort by timestamp descending (most recent first)
+  const sortedIds = index.sort().reverse();
 
-    // Apply pagination
-    const paginatedIds = sortedIds.slice(offset, offset + limit);
+  // Apply pagination
+  const paginatedIds = sortedIds.slice(offset, offset + limit);
 
-    // Fetch all records in parallel
-    const recordPromises = paginatedIds.map(async (id) => {
-      const record = await storage.get(`evidence/${id}`);
-      return record as EvidenceRecord | null;
-    });
-
-    const allRecords = await Promise.all(recordPromises);
-    return allRecords.filter((r) => r !== null) as EvidenceRecord[];
+  // Fetch all records in parallel
+  const recordPromises = paginatedIds.map(async (id) => {
+    const record = await storage.get(`evidence/${id}`);
+    return record as EvidenceRecord | null;
   });
 
-  return records;
+  const allRecords = await Promise.all(recordPromises);
+  return allRecords.filter((r) => r !== null) as EvidenceRecord[];
 }
 
 /**
  * Filter evidence records by source
  */
 export async function filterEvidenceBySource(source: EvidenceSource): Promise<EvidenceRecord[]> {
-  const records = await api.asApp().requestStorage(async (storage) => {
-    const indexKey = `evidence:index`;
-    const index = (await storage.get(indexKey) || []) as string[];
+  const indexKey = `evidence:index`;
+  const index = (await storage.get(indexKey) || []) as string[];
 
-    // Fetch all records matching source
-    const recordPromises = index.map(async (id) => {
-      const record = await storage.get(`evidence/${id}`);
-      return record as EvidenceRecord | null;
-    });
-
-    const allRecords = await Promise.all(recordPromises);
-    return allRecords.filter((r) => r && r.source === source) as EvidenceRecord[];
+  // Fetch all records matching source
+  const recordPromises = index.map(async (id) => {
+    const record = await storage.get(`evidence/${id}`);
+    return record as EvidenceRecord | null;
   });
 
-  return records;
+  const allRecords = await Promise.all(recordPromises);
+  return allRecords.filter((r) => r && r.source === source) as EvidenceRecord[];
 }
 
 /**
@@ -171,13 +160,9 @@ export async function getMostRecentEvidence(source: EvidenceSource): Promise<Evi
  * Count total evidence records
  */
 export async function countEvidenceRecords(): Promise<number> {
-  const count = await api.asApp().requestStorage(async (storage) => {
-    const indexKey = `evidence:index`;
-    const index = (await storage.get(indexKey) || []) as string[];
-    return index.length;
-  });
-
-  return count;
+  const indexKey = `evidence:index`;
+  const index = (await storage.get(indexKey) || []) as string[];
+  return index.length;
 }
 
 /**
