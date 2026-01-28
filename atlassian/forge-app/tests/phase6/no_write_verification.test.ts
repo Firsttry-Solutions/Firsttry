@@ -25,31 +25,21 @@ import * as forgeApi from '@forge/api';
 let storageGetManyMockResults: Array<{ key: string; value: any }> = [];
 
 vi.mock('@forge/api', () => ({
-  default: {
-    storage: {
-      set: vi.fn(),
-      get: vi.fn(),
-      delete: vi.fn(),
-      query: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          }),
-          getKeys: vi.fn(),
-        }),
-      }),
-    },
-  },
   storage: {
     set: vi.fn(),
     get: vi.fn(),
     delete: vi.fn(),
     query: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
+        getMany: vi.fn().mockResolvedValue({
+          results: storageGetManyMockResults,
         }),
-        getKeys: vi.fn(),
       }),
     }),
   },
-    beginsWith: vi.fn((prefix: string) => prefix),
+  api: {
+    asUser: vi.fn(),
+    asApp: vi.fn(),
   },
 }));
 

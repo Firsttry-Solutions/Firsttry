@@ -30,27 +30,6 @@ vi.mock('@forge/api', () => {
   });
 
   return {
-    default: {
-      api: {
-        asUser: asUserMock,
-        asApp: asAppMock,
-        requestJira: requestJiraMock,
-      },
-      scheduled: {
-        on: vi.fn(),
-      },
-      storage: {
-        set: vi.fn(),
-        get: vi.fn(),
-        delete: vi.fn(),
-        query: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            }),
-            getKeys: vi.fn(),
-          }),
-        }),
-      },
-    },
     api: {
       asUser: asUserMock,
       asApp: asAppMock,
@@ -65,14 +44,14 @@ vi.mock('@forge/api', () => {
       delete: vi.fn(),
       query: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
+          getMany: vi.fn().mockResolvedValue({
+            results: storageGetManyMockResults || [],
           }),
-          getKeys: vi.fn(),
         }),
       }),
     },
-      beginsWith: vi.fn((prefix: string) => prefix),
-    },
   };
+});
 });
 
 
