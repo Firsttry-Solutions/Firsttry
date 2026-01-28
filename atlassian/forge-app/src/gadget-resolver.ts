@@ -29,6 +29,7 @@
 
 import Resolver from '@forge/resolver';
 import api from '@forge/api';
+import { storage } from '@forge/api';
 import { FT_RELEASE_VERSION } from './release/release_version';
 import { getStatusSnapshot_resolver } from './resolvers/getStatusSnapshot';
 import { getBuildInfo_resolver } from './resolvers/getBuildInfo';
@@ -131,26 +132,14 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       // Read snapshot from storage (single source of truth)
       const snapshot = await (async () => {
         try {
-          const api_imported = require("@forge/api");
-          // Capture API shape before calling asApp()
-          console.log("[FT_L0_DASHBOARD] API_SHAPE_PROOF", {
-            hasApi: typeof api_imported !== "undefined",
-            apiType: typeof api_imported,
-            hasAsApp: !!(api_imported as any)?.asApp,
-            keys: api_imported ? Object.keys(api_imported as any).slice(0, 20) : [],
-          });
-          let storedSnapshot: any = null;
-          await api_imported.asApp().requestStorage(async (storage: any) => {
-            storedSnapshot = await storage.get("ft:snapshot:last:v1");
-          });
+          // Use correct Forge storage API: storage.get()
+          const storedSnapshot = await storage.get("ft:snapshot:last:v1");
           return storedSnapshot;
         } catch (e) {
-          console.error("[FT_L0_DASHBOARD] Storage read failed", {
+          console.error("[FT_STORAGE_FAIL] Storage read failed for ft:snapshot:last:v1", {
             name: (e as any)?.name,
             message: (e as any)?.message,
-            stack: (e as any)?.stack,
-            typeof: typeof e,
-            raw: e,
+            code: (e as any)?.code,
           });
           return null;
         }
