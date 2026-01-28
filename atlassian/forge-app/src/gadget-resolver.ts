@@ -403,10 +403,7 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<Da
  */
 async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; value: any }> {
   try {
-    let value: any = null;
-    await api.asApp().requestStorage(async (storage: any) => {
-      value = await storage.get("ft:install:marker:v1");
-    });
+    const value = await storage.get("ft:install:marker:v1");
     return { key: "ft:install:marker:v1", value };
   } catch (e) {
     throw new Error("FT_META_FAILED");
@@ -420,10 +417,7 @@ async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; valu
  */
 async function ft_getSnapshotAnchor_v1(request: any): Promise<{ key: string; value: any }> {
   try {
-    let value: any = null;
-    await api.asApp().requestStorage(async (storage: any) => {
-      value = await storage.get("ft:snapshot:last:v1");
-    });
+    const value = await storage.get("ft:snapshot:last:v1");
     return { key: "ft:snapshot:last:v1", value };
   } catch (e) {
     throw new Error("FT_META_FAILED");
