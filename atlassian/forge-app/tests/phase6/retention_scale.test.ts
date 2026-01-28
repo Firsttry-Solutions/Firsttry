@@ -20,10 +20,10 @@ import { Snapshot, RetentionPolicy } from '../../src/phase6/snapshot_model';
 import { computeCanonicalHash } from '../../src/phase6/canonicalization';
 import * as forgeApi from '@forge/api';
 
-// Store for kvs mock data - will be set by tests
-let kvsGetManyMockResults: Array<{ key: string; value: any }> = [];
+// Store for storage query mock data - will be set by tests
+let storageGetManyMockResults: Array<{ key: string; value: any }> = [];
 
-// Mock @forge/api storage
+// Mock @forge/api storage with cursor pagination support
 vi.mock('@forge/api', () => ({
   default: {
     storage: {
@@ -32,6 +32,7 @@ vi.mock('@forge/api', () => ({
       delete: vi.fn(),
       query: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
+          }),
           getKeys: vi.fn(),
         }),
       }),
@@ -43,34 +44,14 @@ vi.mock('@forge/api', () => ({
     delete: vi.fn(),
     query: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
+        }),
         getKeys: vi.fn(),
       }),
     }),
   },
+    beginsWith: vi.fn((prefix: string) => prefix),
+  },
 }));
-
-// Mock @forge/kvs for the new paging helper - returns empty by default, can be configured
-vi.mock('@forge/kvs', () => {
-  return {
-    kvs: {
-      query: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockReturnValue({
-            getMany: vi.fn().mockImplementation(async () => {
-              return { results: kvsGetManyMockResults, nextCursor: undefined };
-            }),
-          }),
-          getMany: vi.fn().mockImplementation(async () => {
-            return { results: kvsGetManyMockResults, nextCursor: undefined };
-          }),
-        }),
-      }),
-    },
-    WhereConditions: {
-      beginsWith: vi.fn((prefix: string) => prefix),
-    },
-  };
-});
 
 const mockStorage = forgeApi.storage;
 
@@ -84,7 +65,7 @@ describe('Retention Enforcement at Scale', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    kvsGetManyMockResults = [];  // Reset kvs mock data for this test
+    storageGetManyMockResults = [];  // Reset kvs mock data for this test
     snapshotStorage = new SnapshotStorage(tenantId, cloudId);
     enforcer = new RetentionEnforcer(tenantId, cloudId);
     policyStorage = new RetentionPolicyStorage(tenantId);
@@ -121,7 +102,7 @@ describe('Retention Enforcement at Scale', () => {
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
 
       // Also set kvs mock data
-      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -165,7 +146,7 @@ describe('Retention Enforcement at Scale', () => {
 
       const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-weekly-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
-      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -204,7 +185,7 @@ describe('Retention Enforcement at Scale', () => {
 
       const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
-      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -266,7 +247,7 @@ describe('Retention Enforcement at Scale', () => {
 
       const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
-      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -310,7 +291,7 @@ describe('Retention Enforcement at Scale', () => {
 
       const keys = largeSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
-      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -356,7 +337,7 @@ describe('Retention Enforcement at Scale', () => {
 
       const keys = recentSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
-      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -429,7 +410,7 @@ describe('Retention Enforcement at Scale', () => {
 
       const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
-      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
