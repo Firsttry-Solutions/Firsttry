@@ -13,6 +13,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 
 /**
  * OAuth token structure
@@ -43,9 +44,7 @@ export async function saveOAuthToken(installationId: string, token: OAuthToken):
   const storageKey = `oauth:${installationId}`;
   const ttl = 31536000; // 1 year in seconds (storage TTL, not token expiry)
   
-  await api.asApp().requestStorage(async (storage) => {
-    await storage.set(storageKey, JSON.stringify(token), { ttl });
-  });
+  await storage.set(storageKey, JSON.stringify(token), { ttl });
 }
 
 /**
@@ -54,10 +53,8 @@ export async function saveOAuthToken(installationId: string, token: OAuthToken):
 export async function getOAuthToken(installationId: string): Promise<OAuthToken | null> {
   const storageKey = `oauth:${installationId}`;
   
-  return await api.asApp().requestStorage(async (storage) => {
-    const data = await storage.get(storageKey);
-    return data ? JSON.parse(data as string) : null;
-  });
+  const data = await storage.get(storageKey);
+  return data ? JSON.parse(data as string) : null;
 }
 
 /**
