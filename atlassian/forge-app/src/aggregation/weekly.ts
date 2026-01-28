@@ -16,6 +16,13 @@ try {
   // @forge/api only available in Forge runtime, not in tests
 }
 
+let storage: any;
+try {
+  storage = require('@forge/api').storage;
+} catch (e) {
+  // @forge/api only available in Forge runtime, not in tests
+}
+
 import { index_weekly_aggregate, get_daily_aggregates_for_day } from '../storage_index';
 import { canonicalize } from '../canonicalize';
 
@@ -115,9 +122,8 @@ export async function recompute_week(
   weekKey: string
 ): Promise<WeeklyAggregate> {
   try {
-    return await api.asApp().requestStorage(async (storage) => {
-      // Step 1: Get all days in this week
-      const daysInWeek = getDaysInWeek(weekKey);
+    // Step 1: Get all days in this week
+    const daysInWeek = getDaysInWeek(weekKey);
       const days_expected = daysInWeek.length;
 
       // Step 2: Read daily aggregates for each day
@@ -125,13 +131,13 @@ export async function recompute_week(
       const missingDays: string[] = [];
 
       for (const dateStr of daysInWeek) {
-        const orgDailyKey = `agg/org/daily/${org}/${dateStr}`;
-        const dailyAgg = await storage.get(orgDailyKey);
-        if (dailyAgg) {
-          dailyAggregates.push(dailyAgg);
-        } else {
-          missingDays.push(dateStr);
-        }
+      const orgDailyKey = `agg/org/daily/${org}/${dateStr}`;
+      const dailyAgg = await storage.get(orgDailyKey);
+      if (dailyAgg) {
+        dailyAggregates.push(dailyAgg);
+      } else {
+        missingDays.push(dateStr);
+      }
       }
 
       // Step 3: Initialize rollup maps
@@ -149,78 +155,78 @@ export async function recompute_week(
       let retryTotal = 0;
 
       for (const daily of dailyAggregates) {
-        totalEvents += daily.total_events || 0;
-        totalDurationMs += daily.total_duration_ms || 0;
-        successCount += daily.success_count || 0;
-        failCount += daily.fail_count || 0;
-        cacheHitCount += daily.cache_hit_count || 0;
-        cacheMissCount += daily.cache_miss_count || 0;
-        retryTotal += daily.retry_total || 0;
+      totalEvents += daily.total_events || 0;
+      totalDurationMs += daily.total_duration_ms || 0;
+      successCount += daily.success_count || 0;
+      failCount += daily.fail_count || 0;
+      cacheHitCount += daily.cache_hit_count || 0;
+      cacheMissCount += daily.cache_miss_count || 0;
+      retryTotal += daily.retry_total || 0;
 
-        // Sum by_repo
-        if (daily.by_repo && Array.isArray(daily.by_repo)) {
-          for (const repoData of daily.by_repo) {
-            const existing = repoRollup.get(repoData.repo) || {
-              repo: repoData.repo,
-              total_events: 0,
-              success_count: 0,
-              fail_count: 0,
-              total_duration_ms: 0,
-            };
-            existing.total_events += repoData.total_events || 0;
-            existing.success_count += repoData.success_count || 0;
-            existing.fail_count += repoData.fail_count || 0;
-            existing.total_duration_ms += repoData.total_duration_ms || 0;
-            repoRollup.set(repoData.repo, existing);
-          }
+      // Sum by_repo
+      if (daily.by_repo && Array.isArray(daily.by_repo)) {
+        for (const repoData of daily.by_repo) {
+          const existing = repoRollup.get(repoData.repo) || {
+            repo: repoData.repo,
+            total_events: 0,
+            success_count: 0,
+            fail_count: 0,
+            total_duration_ms: 0,
+          };
+          existing.total_events += repoData.total_events || 0;
+          existing.success_count += repoData.success_count || 0;
+          existing.fail_count += repoData.fail_count || 0;
+          existing.total_duration_ms += repoData.total_duration_ms || 0;
+          repoRollup.set(repoData.repo, existing);
         }
+      }
 
-        // Sum by_gate
-        if (daily.by_gate && Array.isArray(daily.by_gate)) {
-          for (const gateData of daily.by_gate) {
-            gateRollup.set(gateData.gate, (gateRollup.get(gateData.gate) || 0) + gateData.count);
-          }
+      // Sum by_gate
+      if (daily.by_gate && Array.isArray(daily.by_gate)) {
+        for (const gateData of daily.by_gate) {
+          gateRollup.set(gateData.gate, (gateRollup.get(gateData.gate) || 0) + gateData.count);
         }
+      }
 
-        // Sum by_profile
-        if (daily.by_profile && Array.isArray(daily.by_profile)) {
-          for (const profileData of daily.by_profile) {
-            profileRollup.set(
-              profileData.profile,
-              (profileRollup.get(profileData.profile) || 0) + profileData.count
-            );
-          }
+      // Sum by_profile
+      if (daily.by_profile && Array.isArray(daily.by_profile)) {
+        for (const profileData of daily.by_profile) {
+          profileRollup.set(
+            profileData.profile,
+            (profileRollup.get(profileData.profile) || 0) + profileData.count
+          );
         }
+      }
       }
 
       // Step 5: Build weekly aggregate
       const aggregate: WeeklyAggregate = {
-        org,
-        week: weekKey,
-        total_events: totalEvents,
-        total_duration_ms: totalDurationMs,
-        success_count: successCount,
-        fail_count: failCount,
-        cache_hit_count: cacheHitCount > 0 ? cacheHitCount : undefined,
-        cache_miss_count: cacheMissCount > 0 ? cacheMissCount : undefined,
-        retry_total: retryTotal,
-        by_repo: Array.from(repoRollup.values()).sort((a, b) => a.repo.localeCompare(b.repo)),
-        by_gate: Array.from(gateRollup.entries())
-          .map(([gate, count]) => ({ gate, count }))
-          .sort((a, b) => a.gate.localeCompare(b.gate)),
-        by_profile: Array.from(profileRollup.entries())
-          .map(([profile, count]) => ({ profile, count }))
-          .sort((a, b) => a.profile.localeCompare(b.profile)),
-        days_expected,
-        days_present: daysInWeek.length - missingDays.length,
-        missing_days: missingDays.sort(),
-        incomplete_inputs: {
-          raw_shards_missing: missingDays.length > 0,
-        },
-        notes:
-          missingDays.length > 0
-            ? [`Missing aggregates for ${missingDays.length} of ${days_expected} days`]
-            : [],
+      org,
+      week: weekKey,
+      total_events: totalEvents,
+      total_duration_ms: totalDurationMs,
+      success_count: successCount,
+      fail_count: failCount,
+      cache_hit_count: cacheHitCount > 0 ? cacheHitCount : undefined,
+      cache_miss_count: cacheMissCount > 0 ? cacheMissCount : undefined,
+      retry_total: retryTotal,
+      by_repo: Array.from(repoRollup.values()).sort((a, b) => a.repo.localeCompare(b.repo)),
+      by_gate: Array.from(gateRollup.entries())
+        .map(([gate, count]) => ({ gate, count }))
+        .sort((a, b) => a.gate.localeCompare(b.gate)),
+      by_profile: Array.from(profileRollup.entries())
+        .map(([profile, count]) => ({ profile, count }))
+        .sort((a, b) => a.profile.localeCompare(b.profile)),
+      days_expected,
+      days_present: daysInWeek.length - missingDays.length,
+      missing_days: missingDays.sort(),
+      incomplete_inputs: {
+        raw_shards_missing: missingDays.length > 0,
+      },
+      notes:
+        missingDays.length > 0
+          ? [`Missing aggregates for ${missingDays.length} of ${days_expected} days`]
+          : [],
       };
 
       // Step 6: Canonicalize
@@ -233,27 +239,26 @@ export async function recompute_week(
 
       // Step 8: Write per-repo weekly aggregates
       for (const repoAgg of aggregate.by_repo) {
-        const repoWeeklyKey = `agg/weekly/${org}/${repoAgg.repo}/${weekKey}`;
-        const repoWeeklyData = {
-          org,
-          repo: repoAgg.repo,
-          week: weekKey,
-          total_events: repoAgg.total_events,
-          total_duration_ms: repoAgg.total_duration_ms,
-          success_count: repoAgg.success_count,
-          fail_count: repoAgg.fail_count,
-          missing_days: aggregate.missing_days,
-          incomplete_inputs: aggregate.incomplete_inputs,
-          notes: aggregate.notes,
-        };
-        await storage.set(repoWeeklyKey, canonicalize(repoWeeklyData));
-        await index_weekly_aggregate(org, weekKey, repoWeeklyKey);
+      const repoWeeklyKey = `agg/weekly/${org}/${repoAgg.repo}/${weekKey}`;
+      const repoWeeklyData = {
+        org,
+        repo: repoAgg.repo,
+        week: weekKey,
+        total_events: repoAgg.total_events,
+        total_duration_ms: repoAgg.total_duration_ms,
+        success_count: repoAgg.success_count,
+        fail_count: repoAgg.fail_count,
+        missing_days: aggregate.missing_days,
+        incomplete_inputs: aggregate.incomplete_inputs,
+        notes: aggregate.notes,
+      };
+      await storage.set(repoWeeklyKey, canonicalize(repoWeeklyData));
+      await index_weekly_aggregate(org, weekKey, repoWeeklyKey);
       }
 
       return aggregate;
-    });
-  } catch (error) {
-    console.error('[Weekly] Error recomputing weekly aggregate:', error);
-    throw error;
-  }
+    } catch (err) {
+      console.error('[recompute_week] Error:', err);
+      throw err;
+    }
 }

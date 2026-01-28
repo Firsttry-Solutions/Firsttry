@@ -10,6 +10,7 @@
  */
 
 import api from "@forge/api";
+import { storage } from "@forge/api";
 import { FT_SNAPSHOT_LAST_KEY, FT_INSTALL_MARKER_KEY } from "../backbone/keys";
 
 /**
@@ -104,9 +105,8 @@ function createSnapshotAnchor(): any {
  */
 export const handler = async (event: any) => {
   try {
-    await api.asApp().requestStorage(async (storage) => {
-      // Step 1: Check if snapshot exists
-      const existing = await storage.get(FT_SNAPSHOT_LAST_KEY);
+    // Step 1: Check if snapshot exists
+    const existing = await storage.get(FT_SNAPSHOT_LAST_KEY);
       
       if (existing && isValidSnapshot(existing)) {
         // Snapshot already exists - do nothing
@@ -127,9 +127,8 @@ export const handler = async (event: any) => {
       
       // Log success
       console.log(`[FT_INSTALLED] created=true snapshotId=${snapshot.snapshotId}`);
-    });
-  } catch (err) {
-    console.error("[FT_INSTALLED] Error during install:", err instanceof Error ? err.message : String(err));
-    throw err;
-  }
+    } catch (err) {
+      console.error("[FT_INSTALLED] Error during install:", err instanceof Error ? err.message : String(err));
+      throw err;
+    }
 };
