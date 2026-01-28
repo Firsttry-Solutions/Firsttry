@@ -25,6 +25,9 @@ import {
 import { ErrorCode, DEFAULT_RETENTION_POLICY } from '../../src/phase6/constants';
 import * as forgeApi from '@forge/api';
 
+// Store for kvs mock data - will be set by tests
+let kvsGetManyMockResults: Array<{ key: string; value: any }> = [];
+
 // Mock @forge/api storage
 vi.mock('@forge/api', () => ({
   default: {
@@ -51,6 +54,29 @@ vi.mock('@forge/api', () => ({
   },
 }));
 
+// Mock @forge/kvs for the new paging helper
+vi.mock('@forge/kvs', () => {
+  return {
+    kvs: {
+      query: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockReturnValue({
+            getMany: vi.fn().mockImplementation(async () => {
+              return { results: kvsGetManyMockResults, nextCursor: undefined };
+            }),
+          }),
+          getMany: vi.fn().mockImplementation(async () => {
+            return { results: kvsGetManyMockResults, nextCursor: undefined };
+          }),
+        }),
+      }),
+    },
+    WhereConditions: {
+      beginsWith: vi.fn((prefix: string) => prefix),
+    },
+  };
+});
+
 const mockStorage = forgeApi.storage;
 
 describe('SnapshotRunStorage', () => {
@@ -60,6 +86,7 @@ describe('SnapshotRunStorage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    kvsGetManyMockResults = [];
     storage = new SnapshotRunStorage(tenantId, cloudId);
   });
 
@@ -157,6 +184,7 @@ describe('SnapshotStorage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    kvsGetManyMockResults = [];
     snapshotStorage = new SnapshotStorage(tenantId, cloudId);
   });
 
@@ -293,6 +321,7 @@ describe('RetentionEnforcer', () => {
     // Mock the underlying storage operations
     mockStorage.get.mockResolvedValue(null);
     mockStorage.query().where().getKeys.mockResolvedValue([]);
+    kvsGetManyMockResults = [];
 
     const result = await enforcer.enforceRetention('daily');
 
@@ -308,6 +337,7 @@ describe('Storage: No-Write Verification', () => {
     mockStorage.set.mockResolvedValue(undefined);
     mockStorage.get.mockResolvedValue(null);
     mockStorage.query().where().getKeys.mockResolvedValue([]);
+    kvsGetManyMockResults = [];
 
     const storage = new SnapshotRunStorage('tenant1', 'cloud1');
     await storage.listRuns({}, 0, 20);
