@@ -528,25 +528,42 @@ export async function ft_uiLogRelay_v1(request: any): Promise<{ ok: boolean }> {
   try {
     const payload = request?.payload || {};
     const marker = payload.marker || "UNKNOWN_MARKER";
-    const ui_git_sha = payload.ui_git_sha || null;
-    const ui_req_id = payload.ui_req_id || null;
-    const extra = payload.extra || {};
+    const ui_git_sha = payload.ui_git_sha || "MISSING";
+    const ui_req_id = payload.ui_req_id || "MISSING";
+    let extra = payload.extra;
 
-    // Log relay event with [UI_RELAY] prefix for grep-ability
-    const logEntry = {
-      marker: `[UI_RELAY] marker=${marker}`,
+    // Validate required fields are present
+    const presentKeys = Object.keys(payload);
+    let finalMarker = marker;
+    if (!payload.marker || !payload.ui_git_sha || !payload.ui_req_id) {
+      finalMarker = "MALFORMED_RELAY";
+    }
+
+    // Truncate extra if too large (max 500 chars when stringified)
+    let extraStr: string | any;
+    if (extra !== undefined) {
+      if (typeof extra === "string") {
+        extraStr = extra.length > 500 ? extra.substring(0, 500) : extra;
+      } else {
+        const extraJson = JSON.stringify(extra);
+        extraStr = extraJson.length > 500 ? extraJson.substring(0, 500) : extra;
+      }
+    }
+
+    // LINE 1: Strict JSON log for parsing
+    const jsonLog = {
+      marker: finalMarker,
       ui_git_sha,
       ui_req_id,
-      extra,
+      extra: extraStr || null,
+      presentKeys,
       ts: new Date().toISOString(),
     };
+    console.log(`[UI_RELAY_JSON] ${JSON.stringify(jsonLog)}`);
 
-    // Log as single line for grep compatibility
+    // LINE 2: Key=value log for grep binding
     console.log(
-      `[UI_RELAY] marker=${marker}` +
-      (ui_git_sha ? ` ui_git_sha=${ui_git_sha}` : "") +
-      (ui_req_id ? ` ui_req_id=${ui_req_id}` : "") +
-      (Object.keys(extra).length > 0 ? ` extra=${JSON.stringify(extra)}` : "")
+      `[UI_RELAY_BIND] marker=${finalMarker} ui_git_sha=${ui_git_sha} ui_req_id=${ui_req_id}`
     );
 
     return { ok: true };
