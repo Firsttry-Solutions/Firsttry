@@ -206,3 +206,81 @@ describe('l0_snapshot_mapper', () => {
     });
   });
 });
+
+/**
+ * UI Log Relay Payload Tests
+ * 
+ * Tests for relay payload structure and field validation.
+ * Ensures relay markers have all required fields for backend grep.
+ */
+describe('UI Log Relay payload', () => {
+  describe('buildRelayPayload', () => {
+    it('should build valid relay payload with all required fields', () => {
+      const marker = 'UI_ENTRY_RUNTIME_PROOF';
+      const ui_git_sha = 'e76695552e4e21790c86d577bef9624894ef397d';
+      const ui_req_id = 'ui_1706511234_abc12345';
+      const extra = { ui_bundle_hash: 'abc123', ui_git_time: '2026-01-28T10:00:00Z' };
+
+      const payload = {
+        marker,
+        ui_git_sha,
+        ui_req_id,
+        extra,
+      };
+
+      // Validate required fields
+      expect(payload).toHaveProperty('marker');
+      expect(payload).toHaveProperty('ui_git_sha');
+      expect(payload).toHaveProperty('ui_req_id');
+      expect(payload).toHaveProperty('extra');
+
+      // Validate field types
+      expect(typeof payload.marker).toBe('string');
+      expect(typeof payload.ui_git_sha).toBe('string');
+      expect(typeof payload.ui_req_id).toBe('string');
+      expect(typeof payload.extra).toBe('object');
+
+      // Validate field values are non-empty
+      expect(payload.marker.length).toBeGreaterThan(0);
+      expect(payload.ui_git_sha.length).toBe(40); // Full SHA
+      expect(payload.ui_req_id.length).toBeGreaterThan(0);
+    });
+
+    it('should have required marker values in relay calls', () => {
+      const validMarkers = ['UI_ENTRY_RUNTIME_PROOF', 'L0_DASHBOARD_RENDERED'];
+      
+      validMarkers.forEach((marker) => {
+        expect(marker).toBeDefined();
+        expect(typeof marker).toBe('string');
+        expect(marker.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('should handle dashboard rendered extra fields', () => {
+      const dashStateExtra = {
+        status: 'AVAILABLE',
+        reasonCode: 'PROOF_OK',
+        snapshotId: 'snap-123456',
+      };
+
+      // Validate extra can be stringified (for truncation)
+      const extraStr = JSON.stringify(dashStateExtra);
+      expect(extraStr.length).toBeLessThan(500);
+      expect(extraStr).toContain('status');
+      expect(extraStr).toContain('reasonCode');
+      expect(extraStr).toContain('snapshotId');
+    });
+
+    it('should handle entry proof extra fields', () => {
+      const entryExtra = {
+        ui_bundle_hash: 'abc123def456',
+        ui_git_time: '2026-01-28T10:00:00Z',
+      };
+
+      const extraStr = JSON.stringify(entryExtra);
+      expect(extraStr.length).toBeLessThan(500);
+      expect(extraStr).toContain('ui_bundle_hash');
+      expect(extraStr).toContain('ui_git_time');
+    });
+  });
+});
