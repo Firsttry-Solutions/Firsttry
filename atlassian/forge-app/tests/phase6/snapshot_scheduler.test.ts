@@ -16,6 +16,9 @@ import {
 } from '../../src/phase6/constants';
 import * as forgeApi from '@forge/api';
 
+// Store for kvs mock data
+let kvsGetManyMockResults: Array<{ key: string; value: any }> = [];
+
 // Mock @forge/api
 vi.mock('@forge/api', () => {
   const requestJiraMock = vi.fn();
@@ -64,6 +67,29 @@ vi.mock('@forge/api', () => {
           getKeys: vi.fn(),
         }),
       }),
+    },
+  };
+});
+
+// Mock @forge/kvs for the new paging helper
+vi.mock('@forge/kvs', () => {
+  return {
+    kvs: {
+      query: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockReturnValue({
+            getMany: vi.fn().mockImplementation(async () => {
+              return { results: kvsGetManyMockResults, nextCursor: undefined };
+            }),
+          }),
+          getMany: vi.fn().mockImplementation(async () => {
+            return { results: kvsGetManyMockResults, nextCursor: undefined };
+          }),
+        }),
+      }),
+    },
+    WhereConditions: {
+      beginsWith: vi.fn((prefix: string) => prefix),
     },
   };
 });

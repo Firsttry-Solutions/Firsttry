@@ -10,7 +10,7 @@
  * - No data corruption during bulk deletion
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   SnapshotStorage,
   RetentionEnforcer,
@@ -19,6 +19,9 @@ import {
 import { Snapshot, RetentionPolicy } from '../../src/phase6/snapshot_model';
 import { computeCanonicalHash } from '../../src/phase6/canonicalization';
 import * as forgeApi from '@forge/api';
+
+// Store for kvs mock data - will be set by tests
+let kvsGetManyMockResults: Array<{ key: string; value: any }> = [];
 
 // Mock @forge/api storage
 vi.mock('@forge/api', () => ({
@@ -46,6 +49,29 @@ vi.mock('@forge/api', () => ({
   },
 }));
 
+// Mock @forge/kvs for the new paging helper - returns empty by default, can be configured
+vi.mock('@forge/kvs', () => {
+  return {
+    kvs: {
+      query: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockReturnValue({
+            getMany: vi.fn().mockImplementation(async () => {
+              return { results: kvsGetManyMockResults, nextCursor: undefined };
+            }),
+          }),
+          getMany: vi.fn().mockImplementation(async () => {
+            return { results: kvsGetManyMockResults, nextCursor: undefined };
+          }),
+        }),
+      }),
+    },
+    WhereConditions: {
+      beginsWith: vi.fn((prefix: string) => prefix),
+    },
+  };
+});
+
 const mockStorage = forgeApi.storage;
 
 describe('Retention Enforcement at Scale', () => {
@@ -58,6 +84,7 @@ describe('Retention Enforcement at Scale', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    kvsGetManyMockResults = [];  // Reset kvs mock data for this test
     snapshotStorage = new SnapshotStorage(tenantId, cloudId);
     enforcer = new RetentionEnforcer(tenantId, cloudId);
     policyStorage = new RetentionPolicyStorage(tenantId);
@@ -88,10 +115,13 @@ describe('Retention Enforcement at Scale', () => {
         payload: { data: `item-${i}` },
       }));
 
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-daily-${i}`);
+
       // Mock storage operations for bulk snapshots
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-daily-${i}`)
-      );
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+
+      // Also set kvs mock data
+      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -133,9 +163,9 @@ describe('Retention Enforcement at Scale', () => {
         payload: { data: `week-${i}` },
       }));
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-weekly-${i}`)
-      );
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-weekly-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -172,9 +202,9 @@ describe('Retention Enforcement at Scale', () => {
         payload: {},
       }));
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -234,9 +264,9 @@ describe('Retention Enforcement at Scale', () => {
         };
       });
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -278,9 +308,9 @@ describe('Retention Enforcement at Scale', () => {
         payload: {},
       }));
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        largeSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = largeSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -324,9 +354,9 @@ describe('Retention Enforcement at Scale', () => {
         payload: {},
       }));
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        recentSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = recentSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -397,9 +427,9 @@ describe('Retention Enforcement at Scale', () => {
       // Store original hashes
       const originalHashes = snapshots.map(s => s.canonical_hash);
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      kvsGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');

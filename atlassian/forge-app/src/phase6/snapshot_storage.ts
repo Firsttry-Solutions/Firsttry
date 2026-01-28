@@ -12,6 +12,7 @@
  */
 
 import { storage, api } from '@forge/api';
+import { kvs, WhereConditions } from '@forge/kvs';
 import {
   Snapshot,
   SnapshotRun,
@@ -30,6 +31,39 @@ import {
 } from './constants';
 import { computeCanonicalHash } from './canonicalization';
 import { createSnapshotLock } from './distributed_lock';
+
+/**
+ * Helper: Page through @forge/kvs query results using cursor pagination
+ * Returns all results for a given prefix, materializing the full result set
+ * to preserve exact sort/slice semantics.
+ * 
+ * @param prefix - Key prefix to query
+ * @param maxItems - Optional max items to fetch (no limit if undefined)
+ * @returns Promise with array of { key, value } results
+ */
+async function kvsListByPrefix(
+  prefix: string,
+  maxItems?: number,
+): Promise<Array<{ key: string; value: unknown }>> {
+  const results: Array<{ key: string; value: unknown }> = [];
+  let cursor: string | undefined;
+
+  // Page through results with cursor until exhaustion or maxItems reached
+  while (true) {
+    const pageSize = Math.min(maxItems ? maxItems - results.length : 100, 100);
+    const query = kvs.query().where('key', WhereConditions.beginsWith(prefix));
+
+    const { results: pageResults, nextCursor } = await query.limit(pageSize).getMany();
+    results.push(...pageResults);
+
+    if (!nextCursor || (maxItems && results.length >= maxItems)) {
+      break;
+    }
+    cursor = nextCursor;
+  }
+
+  return results.slice(0, maxItems);
+}
 
 /**
  * Snapshot Run Storage
@@ -78,11 +112,11 @@ export class SnapshotRunStorage {
     // This is a simplified implementation.
     
     const prefix = getSnapshotRunKey(this.tenantId, '');
-    const keys = await storage.query().where('key', 'like', prefix).getKeys();
+    const kvResults = await kvsListByPrefix(prefix);
     
     let runs: SnapshotRun[] = [];
-    for (const key of keys) {
-      const data = await storage.get(key);
+    for (const item of kvResults) {
+      const data = await storage.get(item.key);
       if (data) {
         runs.push(JSON.parse(data as string));
       }
@@ -192,11 +226,11 @@ export class SnapshotStorage {
     pageSize: number = 20,
   ): Promise<SnapshotPageResult<Snapshot>> {
     const prefix = getSnapshotKey(this.tenantId, '');
-    const keys = await storage.query().where('key', 'like', prefix).getKeys();
+    const kvResults = await kvsListByPrefix(prefix);
     
     let snapshots: Snapshot[] = [];
-    for (const key of keys) {
-      const data = await storage.get(key);
+    for (const item of kvResults) {
+      const data = await storage.get(item.key);
       if (data) {
         snapshots.push(JSON.parse(data as string));
       }
@@ -382,10 +416,10 @@ export class SnapshotLedger {
   }
 
   async getAllSnapshots(): Promise<Snapshot[]> {
-    const result = await storage.query().where('key', 'like', `snapshot:${this.tenantId}:*`).getKeys();
+    const kvResults = await kvsListByPrefix(`snapshot:${this.tenantId}:`);
     const snapshots: Snapshot[] = [];
-    for (const key of result) {
-      const data = await storage.get(key);
+    for (const item of kvResults) {
+      const data = await storage.get(item.key);
       if (data) {
         snapshots.push(JSON.parse(data as string));
       }
