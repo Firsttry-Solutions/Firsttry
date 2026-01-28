@@ -6,6 +6,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 import { OutputTruthMetadata } from './output_contract';
 
 /**
@@ -84,10 +85,8 @@ export class OutputRecordStore {
       expiresAtISO,
     };
 
-    await api.asApp().requestStorage(async (storage) => {
-      const ttlSeconds = Math.ceil((new Date(expiresAtISO).getTime() - new Date(nowISO).getTime()) / 1000);
-      await storage.set(storageKey, record, { ttl: Math.max(1, ttlSeconds) });
-    });
+    const ttlSeconds = Math.ceil((new Date(expiresAtISO).getTime() - new Date(nowISO).getTime()) / 1000);
+    await storage.set(storageKey, record, { ttl: Math.max(1, ttlSeconds) });
   }
 
   /**
@@ -119,19 +118,15 @@ export class OutputRecordStore {
     // Recompute TTL from expiry
     const ttlSeconds = Math.ceil((new Date(record.expiresAtISO).getTime() - new Date(nowISO).getTime()) / 1000);
 
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(storageKey, updated, { ttl: Math.max(1, ttlSeconds) });
-    });
+    await storage.set(storageKey, updated, { ttl: Math.max(1, ttlSeconds) });
   }
 
   /**
    * Retrieve an output record by ID
    */
   async getOutputRecord(outputId: string): Promise<PersistedOutputRecord | null> {
-    return await api.asApp().requestStorage(async (storage) => {
-      const key = this.getOutputRecordKey(outputId);
-      return (await storage.get(key)) as PersistedOutputRecord | null;
-    });
+    const key = this.getOutputRecordKey(outputId);
+    return (await storage.get(key)) as PersistedOutputRecord | null;
   }
 
   /**
@@ -139,18 +134,16 @@ export class OutputRecordStore {
    * Used for verification and auditing
    */
   async getOutputsForSnapshot(snapshotId: string): Promise<PersistedOutputRecord[]> {
-    return await api.asApp().requestStorage(async (storage) => {
-      const prefix = `${this.tenantId}:outputs:snapshot:${snapshotId}:`;
-      const results = await storage.query({ prefix, limit: 1000 });
+    const prefix = `${this.tenantId}:outputs:snapshot:${snapshotId}:`;
+    const results = await storage.query({ prefix, limit: 1000 });
 
-      const outputs: PersistedOutputRecord[] = [];
-      for (const entry of results.entries || []) {
-        if (typeof entry.value === 'object' && entry.value !== null) {
-          outputs.push(entry.value as PersistedOutputRecord);
-        }
+    const outputs: PersistedOutputRecord[] = [];
+    for (const entry of results.entries || []) {
+      if (typeof entry.value === 'object' && entry.value !== null) {
+        outputs.push(entry.value as PersistedOutputRecord);
       }
-      return outputs;
-    });
+    }
+    return outputs;
   }
 
   /**
@@ -158,19 +151,17 @@ export class OutputRecordStore {
    * Prevents version number collisions
    */
   private async getNextOutputVersion(snapshotId: string, outputType: string): Promise<number> {
-    return await api.asApp().requestStorage(async (storage) => {
-      const versionKey = `${this.tenantId}:output:version:${snapshotId}:${outputType}`;
-      let currentVersion = (await storage.get(versionKey)) as number | null;
+    const versionKey = `${this.tenantId}:output:version:${snapshotId}:${outputType}`;
+    let currentVersion = (await storage.get(versionKey)) as number | null;
 
-      if (currentVersion === null) {
-        currentVersion = 0;
-      }
+    if (currentVersion === null) {
+      currentVersion = 0;
+    }
 
-      const nextVersion = currentVersion + 1;
-      await storage.set(versionKey, nextVersion);
+    const nextVersion = currentVersion + 1;
+    await storage.set(versionKey, nextVersion);
 
-      return nextVersion;
-    });
+    return nextVersion;
   }
 
   /**
