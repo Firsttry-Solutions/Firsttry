@@ -15,6 +15,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 import { randomUUID } from 'crypto';
 
 /**
@@ -100,9 +101,7 @@ export class AuditEventStore {
 
     const ttlSeconds = Math.ceil((new Date(expiresAtISO).getTime() - new Date(nowISO).getTime()) / 1000);
 
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(storageKey, event, { ttl: Math.max(1, ttlSeconds) });
-    });
+    await storage.set(storageKey, event, { ttl: Math.max(1, ttlSeconds) });
   }
 
   /**
@@ -196,21 +195,19 @@ export class AuditEventStore {
    * Retrieve audit events for a snapshot
    */
   async getEventsForSnapshot(snapshotId: string): Promise<AuditEvent[]> {
-    return await api.asApp().requestStorage(async (storage) => {
-      const prefix = `${this.tenantId}:audit:`;
-      const results = await storage.query({ prefix, limit: 10000 });
+    const prefix = `${this.tenantId}:audit:`;
+    const results = await storage.query({ prefix, limit: 10000 });
 
-      const events: AuditEvent[] = [];
-      for (const entry of results.entries || []) {
-        if (typeof entry.value === 'object' && entry.value !== null) {
-          const event = entry.value as AuditEvent;
-          if (event.snapshotId === snapshotId) {
-            events.push(event);
-          }
+    const events: AuditEvent[] = [];
+    for (const entry of results.entries || []) {
+      if (typeof entry.value === 'object' && entry.value !== null) {
+        const event = entry.value as AuditEvent;
+        if (event.snapshotId === snapshotId) {
+          events.push(event);
         }
       }
-      return events.sort((a, b) => new Date(a.occurredAtISO).getTime() - new Date(b.occurredAtISO).getTime());
-    });
+    }
+    return events.sort((a, b) => new Date(a.occurredAtISO).getTime() - new Date(b.occurredAtISO).getTime());
   }
 
   /**
