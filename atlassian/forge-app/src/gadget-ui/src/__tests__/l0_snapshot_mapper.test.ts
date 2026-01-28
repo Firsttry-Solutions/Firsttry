@@ -214,6 +214,23 @@ describe('l0_snapshot_mapper', () => {
  * Ensures relay markers have all required fields for backend grep.
  */
 describe('UI Log Relay payload', () => {
+  /**
+   * Helper: Simulate the backend unwrap logic
+   * Handles both old nested { payload: {...} } and correct flat { marker, ... }
+   */
+  function unwrapRelayPayload(request: any): any {
+    let payload = request?.payload || {};
+    if (
+      payload &&
+      typeof payload === "object" &&
+      (payload as any).payload &&
+      typeof (payload as any).payload === "object"
+    ) {
+      payload = (payload as any).payload;
+    }
+    return payload;
+  }
+
   describe('buildRelayPayload', () => {
     it('should build valid relay payload with all required fields', () => {
       const marker = 'UI_ENTRY_RUNTIME_PROOF';
@@ -281,6 +298,94 @@ describe('UI Log Relay payload', () => {
       expect(extraStr.length).toBeLessThan(500);
       expect(extraStr).toContain('ui_bundle_hash');
       expect(extraStr).toContain('ui_git_time');
+    });
+  });
+
+  describe('Backend unwrap logic (backward compatibility)', () => {
+    it('should unwrap old nested format { payload: { marker, ... } }', () => {
+      const nestedRequest = {
+        payload: {
+          payload: {
+            marker: 'UI_ENTRY_RUNTIME_PROOF',
+            ui_git_sha: 'e76695552e4e21790c86d577bef9624894ef397d',
+            ui_req_id: 'ui_1706511234_abc12345',
+            extra: { test: 'data' },
+          },
+        },
+      };
+
+      // Simulate backend unwrap
+      let payload = nestedRequest?.payload || {};
+      if (
+        payload &&
+        typeof payload === "object" &&
+        (payload as any).payload &&
+        typeof (payload as any).payload === "object"
+      ) {
+        payload = (payload as any).payload;
+      }
+
+      // Verify unwrapped payload has correct structure
+      expect(payload.marker).toBe('UI_ENTRY_RUNTIME_PROOF');
+      expect(payload.ui_git_sha).toBe('e76695552e4e21790c86d577bef9624894ef397d');
+      expect(payload.ui_req_id).toBe('ui_1706511234_abc12345');
+      expect(payload.extra).toEqual({ test: 'data' });
+    });
+
+    it('should accept flat format { marker, ui_git_sha, ui_req_id, extra }', () => {
+      const flatRequest = {
+        payload: {
+          marker: 'L0_DASHBOARD_RENDERED',
+          ui_git_sha: 'e76695552e4e21790c86d577bef9624894ef397d',
+          ui_req_id: 'ui_1706511234_def56789',
+          extra: { status: 'AVAILABLE' },
+        },
+      };
+
+      // Simulate backend unwrap
+      let payload = flatRequest?.payload || {};
+      if (
+        payload &&
+        typeof payload === "object" &&
+        (payload as any).payload &&
+        typeof (payload as any).payload === "object"
+      ) {
+        payload = (payload as any).payload;
+      }
+
+      // Verify flat payload is used as-is
+      expect(payload.marker).toBe('L0_DASHBOARD_RENDERED');
+      expect(payload.ui_git_sha).toBe('e76695552e4e21790c86d577bef9624894ef397d');
+      expect(payload.ui_req_id).toBe('ui_1706511234_def56789');
+      expect(payload.extra).toEqual({ status: 'AVAILABLE' });
+    });
+
+    it('should extract marker value correctly from both formats', () => {
+      const testCases = [
+        {
+          name: 'nested old format',
+          request: { payload: { payload: { marker: 'UI_ENTRY_RUNTIME_PROOF', ui_git_sha: 'a'.repeat(40), ui_req_id: 'id1' } } },
+          expectedMarker: 'UI_ENTRY_RUNTIME_PROOF',
+        },
+        {
+          name: 'flat new format',
+          request: { payload: { marker: 'L0_DASHBOARD_RENDERED', ui_git_sha: 'b'.repeat(40), ui_req_id: 'id2' } },
+          expectedMarker: 'L0_DASHBOARD_RENDERED',
+        },
+      ];
+
+      testCases.forEach(({ name, request, expectedMarker }) => {
+        let payload = request?.payload || {};
+        if (
+          payload &&
+          typeof payload === "object" &&
+          (payload as any).payload &&
+          typeof (payload as any).payload === "object"
+        ) {
+          payload = (payload as any).payload;
+        }
+        expect(payload.marker).toBe(expectedMarker, `${name} should extract correct marker`);
+      });
     });
   });
 });
