@@ -340,6 +340,26 @@ try {
   throw err;
 }
 
+/**
+ * Helper: Send marker to backend log relay
+ * Fire-and-forget: wraps errors so UI never breaks
+ */
+async function relayMarkerToBackend(marker: string, extra?: any): Promise<void> {
+  try {
+    await invoke('ft_uiLogRelay_v1', {
+      payload: {
+        marker,
+        ui_git_sha: UI_IDENTITY.git_sha,
+        ui_req_id: FT_UI_REQ_ID,
+        extra: extra || {},
+      },
+    });
+  } catch (e) {
+    // Swallow errors - relay is diagnostics only, never break UI
+    console.warn('[UI_RELAY_INVOKE_ERROR]', String(e));
+  }
+}
+
 // ============================================================================
 // UI BOOT PROOF LOGGING (CACHE-BUST VISIBILITY)
 // ============================================================================
@@ -2825,6 +2845,14 @@ async function proceedWithBoot() {
     // PHASE 1: Log consolidated build identity proof
     // ========================================================================
     logUiBuildIdentityProof();
+
+    // RELAY: Send entry proof to backend for log capture
+    // ========================================================================
+    relayMarkerToBackend('UI_ENTRY_RUNTIME_PROOF', {
+      ui_git_sha: UI_IDENTITY.ui_git_sha,
+      ui_bundle_hash: UI_IDENTITY.ui_bundle_hash,
+      ui_git_time: UI_IDENTITY.ui_git_time_iso,
+    });
     
     // ========================================================================
     // Layer-0 Marketplace: Load dashboard state at startup (dumb reader pattern)
@@ -2841,6 +2869,14 @@ async function proceedWithBoot() {
         const dashboard = renderL0Dashboard(dashState);
         document.body.innerHTML = '';
         document.body.appendChild(dashboard);
+        
+        // RELAY: Send dashboard rendered marker with status and reason code
+        // ========================================================================
+        relayMarkerToBackend('L0_DASHBOARD_RENDERED', {
+          status: dashState.status,
+          reasonCode: dashState.reasonCode,
+          snapshotId: dashState.snapshotId,
+        });
         
         console.log('[L0_DASHBOARD_RENDERED]', {
           status: dashState.status,

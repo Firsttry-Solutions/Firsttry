@@ -79,6 +79,9 @@ resolver.define('ft_getSnapshotAnchor_v1', ft_getSnapshotAnchor_v1);
 // Runtime proof resolver (admin-only)
 resolver.define('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1);
 
+// UI log relay resolver (UI → backend log relay for markers)
+resolver.define('ft_uiLogRelay_v1', ft_uiLogRelay_v1);
+
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
 
@@ -502,6 +505,55 @@ async function ft_getRuntimeProof_v1(request: any): Promise<any> {
       marker: "FT_RUNTIME_PROOF_UI",
       error: "internal_error",
     };
+  }
+}
+
+/**
+ * UI Log Relay Resolver - ft_uiLogRelay_v1
+ * 
+ * Accepts markers from UI and logs them in backend logs for forensic analysis.
+ * This allows UI-side events to be captured in Forge logs for deterministic proof.
+ * 
+ * Payload shape:
+ * {
+ *   marker: string,          // e.g., "UI_ENTRY_RUNTIME_PROOF", "L0_DASHBOARD_RENDERED"
+ *   ui_git_sha?: string,     // UI build git SHA
+ *   ui_req_id?: string,      // Request ID for correlation
+ *   extra?: any              // Additional context (status, reasonCode, etc)
+ * }
+ * 
+ * Returns: { ok: true } always (fire-and-forget)
+ */
+export async function ft_uiLogRelay_v1(request: any): Promise<{ ok: boolean }> {
+  try {
+    const payload = request?.payload || {};
+    const marker = payload.marker || "UNKNOWN_MARKER";
+    const ui_git_sha = payload.ui_git_sha || null;
+    const ui_req_id = payload.ui_req_id || null;
+    const extra = payload.extra || {};
+
+    // Log relay event with [UI_RELAY] prefix for grep-ability
+    const logEntry = {
+      marker: `[UI_RELAY] marker=${marker}`,
+      ui_git_sha,
+      ui_req_id,
+      extra,
+      ts: new Date().toISOString(),
+    };
+
+    // Log as single line for grep compatibility
+    console.log(
+      `[UI_RELAY] marker=${marker}` +
+      (ui_git_sha ? ` ui_git_sha=${ui_git_sha}` : "") +
+      (ui_req_id ? ` ui_req_id=${ui_req_id}` : "") +
+      (Object.keys(extra).length > 0 ? ` extra=${JSON.stringify(extra)}` : "")
+    );
+
+    return { ok: true };
+  } catch (e) {
+    // Swallow errors (fire-and-forget relay)
+    console.error("[UI_RELAY_ERROR]", { error: (e as any)?.message });
+    return { ok: true };  // Still return ok so UI doesn't break
   }
 }
 
