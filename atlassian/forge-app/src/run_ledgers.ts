@@ -35,6 +35,13 @@ export function setMockApi(mockApiObj: any): void {
 }
 
 /**
+ * (Test only) Set mock storage for testing
+ */
+export function setMockStorage(mockStorageObj: any): void {
+  storage = mockStorageObj;
+}
+
+/**
  * Record a daily pipeline attempt
  */
 export async function record_daily_attempt(org: string, nowISO: string): Promise<void> {
