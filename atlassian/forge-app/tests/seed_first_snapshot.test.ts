@@ -48,8 +48,8 @@ describe('seedFirstSnapshotIfMissing - Deterministic Seed-First-Snapshot', () =>
       const result = await seedFirstSnapshotIfMissing();
 
       // Verify result
-      expect(result.seeded).toBe(true);
-      expect(result.created).toBe(true);
+      expect(result.ran).toBe(true);
+      expect(result.action).toBe('CREATED');
       expect(result.snapshotId).toBeTruthy();
       expect(result.snapshotId).toMatch(/^[0-9a-f]+-\d{4}\.\d{2}\.\d{2}\.\d{2}-seed$/);
 
@@ -75,7 +75,7 @@ describe('seedFirstSnapshotIfMissing - Deterministic Seed-First-Snapshot', () =>
     it('should skip seed when snapshot already exists', async () => {
       // Seed once
       const firstResult = await seedFirstSnapshotIfMissing();
-      expect(firstResult.created).toBe(true);
+      expect(firstResult.action).toBe('CREATED');
       const firstSnapshotId = firstResult.snapshotId;
 
       // Clear marker to simulate multiple runs
@@ -85,8 +85,8 @@ describe('seedFirstSnapshotIfMissing - Deterministic Seed-First-Snapshot', () =>
       const secondResult = await seedFirstSnapshotIfMissing();
 
       // Verify idempotency
-      expect(secondResult.seeded).toBe(true);
-      expect(secondResult.created).toBe(false); // ← KEY: created=false on idempotent run
+      expect(secondResult.ran).toBe(true);
+      expect(secondResult.action).toBe('SKIPPED_VALID'); // ← KEY: SKIPPED_VALID on idempotent run
       expect(secondResult.snapshotId).toBe(firstSnapshotId); // ← Same snapshot ID
 
       // Verify only one snapshot stored (no duplicate)
@@ -171,7 +171,8 @@ describe('seedFirstSnapshotIfMissing - Deterministic Seed-First-Snapshot', () =>
       const result = await seedFirstSnapshotIfMissing();
 
       // Verify result
-      expect(result.created).toBe(true);
+      expect(result.ran).toBe(true);
+      expect(result.action).toBe('CREATED');
 
       // Verify storage was used (no Jira API mocks to check)
       // In a real test, we'd verify @forge/api is NOT called
@@ -267,7 +268,7 @@ describe('seedFirstSnapshotIfMissing - Deterministic Seed-First-Snapshot', () =>
 
       // Should return seed result
       expect(result).toBeTruthy();
-      expect(result.seeded).toBe(true);
+      expect(result.ran).toBe(true);
     });
   });
 });
@@ -281,7 +282,7 @@ describe('seedFirstSnapshotIfMissing - UI Contract Tests', () => {
     it('ft_getDashboardState_v1 should return AVAILABLE status after seed', async () => {
       // Seed snapshot
       const seedResult = await seedFirstSnapshotIfMissing();
-      expect(seedResult.created).toBe(true);
+      expect(seedResult.action).toBe("CREATED");
 
       // In a real test, ft_getDashboardState_v1 resolver would:
       // 1. Call storage.get(FT_SNAPSHOT_LAST_KEY)
@@ -301,7 +302,7 @@ describe('seedFirstSnapshotIfMissing - UI Contract Tests', () => {
     it('no dashboard gadget should show NO_SNAPSHOT on fresh install after seed', async () => {
       // Fresh install with seed
       const seedResult = await seedFirstSnapshotIfMissing();
-      expect(seedResult.created).toBe(true);
+      expect(seedResult.action).toBe("CREATED");
 
       // The seeded snapshot ensures ft_getDashboardState_v1 returns okEnvelope
       // (not notAvailableEnvelope which would render NO_SNAPSHOT)
