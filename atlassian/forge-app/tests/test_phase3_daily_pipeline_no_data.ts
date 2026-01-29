@@ -23,18 +23,33 @@ const mockApi = {
   }),
 };
 
+// Mock storage object for direct storage calls
+const mockStorageObj = {
+  set: async (key: string, value: any) => {
+    mockStorage.set(key, value);
+  },
+  get: async (key: string) => {
+    return mockStorage.get(key);
+  },
+  delete: async (key: string) => {
+    mockStorage.delete(key);
+  },
+};
+
 // Mock @forge/api module BEFORE importing the modules that use it
 vi.mock('@forge/api', () => ({
   default: mockApi,
+  storage: mockStorageObj,
 }));
 
 // NOW import the modules that depend on @forge/api
 import { process_org_daily, setMockApi } from '../src/pipelines/daily_pipeline';
-import { setMockApi as setLedgerMockApi } from '../src/run_ledgers';
+import { setMockApi as setLedgerMockApi, setMockStorage as setLedgerMockStorage } from '../src/run_ledgers';
 
 // Set mocks BEFORE any tests run
 setMockApi(mockApi);
 setLedgerMockApi(mockApi);
+setLedgerMockStorage(mockStorageObj);
 
 async function runTests() {
   console.log('=== Test: Daily Pipeline - No Data ===\n');

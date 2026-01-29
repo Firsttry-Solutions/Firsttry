@@ -3,9 +3,7 @@
  * PHASE 3: Verify pipeline continues processing after one org fails
  */
 
-import { describe, it } from 'vitest';
-import { process_org_daily, setMockApi } from '../src/pipelines/daily_pipeline';
-import { setMockApi as setLedgerMockApi } from '../src/run_ledgers';
+import { describe, it, vi } from 'vitest';
 
 // Mock storage
 const mockStorage: Map<string, any> = new Map();
@@ -39,6 +37,40 @@ const createMockApi = (failOnKey?: string) => ({
   }),
 });
 
+// Create mock storage for direct @forge/api.storage calls
+const createMockStorageObj = (failOnKey?: string) => ({
+  set: async (key: string, value: any) => {
+    storageSetCallCount++;
+    if (failOnKey && key.includes(failOnKey)) {
+      throw new Error(`Simulated failure on key: ${key}`);
+    }
+    mockStorage.set(key, value);
+  },
+  get: async (key: string) => {
+    storageGetCallCount++;
+    if (failOnKey && key.includes(failOnKey)) {
+      throw new Error(`Simulated failure on key: ${key}`);
+    }
+    return mockStorage.get(key);
+  },
+  delete: async (key: string) => {
+    mockStorage.delete(key);
+  },
+});
+
+// Mock @forge/api BEFORE imports
+vi.mock('@forge/api', () => {
+  const mockApi = createMockApi();
+  return {
+    default: mockApi,
+    storage: createMockStorageObj(),
+  };
+});
+
+// NOW import modules that depend on @forge/api
+import { process_org_daily, setMockApi } from '../src/pipelines/daily_pipeline';
+import { setMockApi as setLedgerMockApi, setMockStorage as setLedgerMockStorage } from '../src/run_ledgers';
+
 async function runTests() {
   console.log('=== Test: Daily Pipeline - Partial Failure ===\n');
 
@@ -47,8 +79,10 @@ async function runTests() {
 
   // Set mocks at beginning of first test
   const mockApi = createMockApi();
+  const mockStorageObj = createMockStorageObj();
   setMockApi(mockApi);
   setLedgerMockApi(mockApi);
+  setLedgerMockStorage(mockStorageObj);
 
   // Test 1: One org fails mid-processing, continues to completion
   totalCount++;
