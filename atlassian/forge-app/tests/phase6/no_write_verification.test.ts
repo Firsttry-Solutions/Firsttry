@@ -31,9 +31,9 @@ vi.mock('@forge/api', () => ({
     delete: vi.fn(),
     query: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
-        getMany: vi.fn().mockResolvedValue({
+        getMany: vi.fn(async () => ({
           results: storageGetManyMockResults,
-        }),
+        })),
       }),
     }),
   },
