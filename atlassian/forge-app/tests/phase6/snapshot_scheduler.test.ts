@@ -52,7 +52,6 @@ vi.mock('@forge/api', () => {
     },
   };
 });
-});
 
 
 describe('Scheduler: Idempotency', () => {
