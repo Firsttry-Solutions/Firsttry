@@ -2859,12 +2859,30 @@ async function proceedWithBoot() {
     (async () => {
       try {
         // STEP 1: Invoke backend resolver (single call only)
-        const response = await forgeInvoke('ft_getDashboardState_v1', {});
+        const invokeResult = await forgeInvoke('ft_getDashboardState_v1', {});
         
-        // STEP 2: Map response to dashboard state
-        const dashState = mapL0SnapshotResponse(response);
+        // STEP 2: Extract resolver response from invoke wrapper
+        // forgeInvoke wraps result as { ok: true, value: {...} } or { ok: false, error: {...} }
+        // We need to extract the actual resolver response for the mapper
+        let resolverResponse: any;
+        if (invokeResult.ok === true) {
+          resolverResponse = invokeResult.value;
+        } else {
+          // Bridge error - treat as hard error
+          resolverResponse = {
+            status: 'HARD_ERROR',
+            schemaVersion: 'v1',
+            error: {
+              code: invokeResult.error.code,
+              message: invokeResult.error.message
+            }
+          };
+        }
         
-        // STEP 3: Render dashboard (AVAILABLE, NO_SNAPSHOT, INVALID_SNAPSHOT, or HARD_ERROR only)
+        // STEP 3: Map resolver response to dashboard state
+        const dashState = mapL0SnapshotResponse(resolverResponse);
+        
+        // STEP 4: Render dashboard (AVAILABLE, NO_SNAPSHOT, INVALID_SNAPSHOT, or HARD_ERROR only)
         const dashboard = renderL0Dashboard(dashState);
         document.body.innerHTML = '';
         document.body.appendChild(dashboard);
