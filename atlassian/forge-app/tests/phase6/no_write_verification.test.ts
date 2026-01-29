@@ -34,6 +34,7 @@ vi.mock('@forge/api', () => ({
         getMany: vi.fn(async () => ({
           results: storageGetManyMockResults,
         })),
+        getKeys: vi.fn(),
       }),
     }),
   },
