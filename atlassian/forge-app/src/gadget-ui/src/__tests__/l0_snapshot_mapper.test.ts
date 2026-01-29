@@ -388,4 +388,135 @@ describe('UI Log Relay payload', () => {
       });
     });
   });
+
+  describe('Envelope payload extraction (CRITICAL FIX)', () => {
+    it('should extract snapshotId and createdAtUtc from envelope.data when present', () => {
+      // This test FAILS on the old code (before fix) because it looked for response.snapshotId instead of response.data.snapshotId
+      const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        ok: true,
+        status: 'AVAILABLE',
+        data: {
+          status: 'AVAILABLE',
+          snapshotId: 'abc123def456-2026.01.24.01-seed',
+          createdAtUtc: '2026-01-24T12:00:00Z',
+          schemaVersion: 'L0',
+          containsText: 'Jira governance evidence snapshot (export for full details).',
+        },
+      };
+
+      const state = mapL0SnapshotResponse(envelope);
+
+      // CRITICAL: These assertions would FAIL before the fix
+      expect(state.snapshotId).toBe('abc123def456-2026.01.24.01-seed');
+      expect(state.createdAtUtc).toBe('2026-01-24T12:00:00Z');
+      expect(state.status).toBe('AVAILABLE');
+      expect(state.reasonCode).toBe('PROOF_OK');
+    });
+
+    it('should NOT return null for snapshotId when data contains it', () => {
+      // This is the hard gate test: if snapshotId becomes null despite data having it, this fails
+      const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        ok: true,
+        status: 'AVAILABLE',
+        data: {
+          status: 'AVAILABLE',
+          snapshotId: 'real-snapshot-id-value',
+          createdAtUtc: '2026-01-24T12:00:00Z',
+          schemaVersion: 'L0',
+          containsText: 'Test snapshot',
+        },
+      };
+
+      const state = mapL0SnapshotResponse(envelope);
+
+      // Hard gate: snapshotId MUST NOT be null
+      expect(state.snapshotId).not.toBeNull();
+      expect(state.snapshotId).toBe('real-snapshot-id-value');
+    });
+
+    it('should NOT return null for createdAtUtc when data contains it', () => {
+      // Hard gate: createdAtUtc MUST NOT be null when present in data
+      const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        ok: true,
+        status: 'AVAILABLE',
+        data: {
+          status: 'AVAILABLE',
+          snapshotId: 'snap-123',
+          createdAtUtc: '2026-01-24T14:30:00Z',
+          schemaVersion: 'L0',
+          containsText: 'Test',
+        },
+      };
+
+      const state = mapL0SnapshotResponse(envelope);
+
+      // Hard gate: createdAtUtc MUST NOT be null
+      expect(state.createdAtUtc).not.toBeNull();
+      expect(state.createdAtUtc).toBe('2026-01-24T14:30:00Z');
+    });
+
+    it('should handle AVAILABLE with missing snapshotId gracefully (set to null)', () => {
+      // When status is AVAILABLE but snapshotId is missing, should set to null
+      const envelope = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        ok: true,
+        status: 'AVAILABLE',
+        data: {
+          status: 'AVAILABLE',
+          // snapshotId missing
+          createdAtUtc: '2026-01-24T12:00:00Z',
+          schemaVersion: 'L0',
+        },
+      };
+
+      const state = mapL0SnapshotResponse(envelope);
+
+      // Should gracefully handle missing snapshotId
+      expect(state.snapshotId).toBeNull();
+      expect(state.createdAtUtc).toBe('2026-01-24T12:00:00Z');
+      expect(state.status).toBe('AVAILABLE');
+    });
+
+    it('should work with direct payload (not wrapped in envelope) for backwards compatibility', () => {
+      // If response doesn't have data field, should use response directly
+      const directPayload = {
+        status: 'AVAILABLE',
+        snapshotId: 'direct-snap-id',
+        createdAtUtc: '2026-01-24T10:00:00Z',
+        schemaVersion: 'L0',
+      };
+
+      const state = mapL0SnapshotResponse(directPayload);
+
+      expect(state.snapshotId).toBe('direct-snap-id');
+      expect(state.createdAtUtc).toBe('2026-01-24T10:00:00Z');
+      expect(state.status).toBe('AVAILABLE');
+    });
+
+    it('should prefer envelope.data over response-level fields', () => {
+      // If both data and top-level fields exist, should prefer data
+      const mixed = {
+        envelopeKind: 'FT_DASH_ENVELOPE_V1',
+        ok: true,
+        status: 'AVAILABLE',
+        snapshotId: 'wrong-id', // This should be ignored
+        createdAtUtc: 'wrong-date', // This should be ignored
+        data: {
+          status: 'AVAILABLE',
+          snapshotId: 'correct-id',
+          createdAtUtc: '2026-01-24T12:00:00Z',
+          schemaVersion: 'L0',
+        },
+      };
+
+      const state = mapL0SnapshotResponse(mixed);
+
+      // Should use data field, not top-level fields
+      expect(state.snapshotId).toBe('correct-id');
+      expect(state.createdAtUtc).toBe('2026-01-24T12:00:00Z');
+    });
+  });
 });

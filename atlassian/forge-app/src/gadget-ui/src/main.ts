@@ -2893,12 +2893,14 @@ async function proceedWithBoot() {
           status: dashState.status,
           reasonCode: dashState.reasonCode,
           snapshotId: dashState.snapshotId,
+          createdAtUtc: dashState.createdAtUtc,
         });
         
         console.log('[L0_DASHBOARD_RENDERED]', {
           status: dashState.status,
           reasonCode: dashState.reasonCode,
           snapshotId: dashState.snapshotId,
+          createdAtUtc: dashState.createdAtUtc,
         });
       } catch (err) {
         // Fatal invoke error - backend not responding
