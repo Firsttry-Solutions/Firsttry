@@ -32,11 +32,14 @@ const INVARIANT_LOG_THROTTLE_MS = 5000; // log max once per 5 seconds
 /**
  * Merge previous dashboard state with next mapped state
  * 
- * Implements:
- * 1) Prevent AVAILABLE→NO_SNAPSHOT downgrade unless explicitly allowed
- * 2) Allow all other transitions (INITIALIZING→AVAILABLE, NO_SNAPSHOT→AVAILABLE, etc.)
- * 3) Allow newer AVAILABLE snapshot to replace older AVAILABLE
- * 4) Log when invariant blocks a downgrade (throttled)
+ * Implements STRICT INVARIANTS:
+ * 1) If prev.status=AVAILABLE + prev.snapshotId exists:
+ *    - BLOCK next.status=NO_SNAPSHOT (unless explicitly allowed)
+ *    - BLOCK next.status=INITIALIZING (prevent "reset" flicker)
+ *    - BLOCK next.status=AVAILABLE if next.snapshotId is null/undefined (cannot prove it's valid)
+ *    - BLOCK next.status=AVAILABLE if next.createdAtUtc < prev.createdAtUtc (cannot downgrade to older)
+ *    - BLOCK next.status=AVAILABLE if next.snapshotId differs but next.createdAtUtc missing (cannot prove newer)
+ * 2) Allow all other transitions (NO_SNAPSHOT→AVAILABLE, ERROR→AVAILABLE, etc.)
  * 
  * @param prev Previous dashboard state (can be null/undefined on first load)
  * @param next Next mapped state from response
@@ -58,59 +61,80 @@ export function mergeDashboardState(
   const nextHasSnapshot = next.snapshotId !== null && next.snapshotId !== undefined;
 
   // =========================================================================
-  // INVARIANT GUARD: Prevent AVAILABLE→NO_SNAPSHOT downgrade
+  // INVARIANT: If prev is AVAILABLE with snapshot, protect it strictly
   // =========================================================================
-  if (
-    prevStatus === "AVAILABLE" &&
-    prevHasSnapshot &&
-    nextStatus === "NO_SNAPSHOT"
-  ) {
-    // Check if this downgrade is explicitly allowed by reason code
-    const isAllowedReason = next.reasonCode && ALLOWED_DOWNGRADE_REASONS.has(next.reasonCode);
+  if (prevStatus === "AVAILABLE" && prevHasSnapshot) {
+    
+    // RULE 1: BLOCK AVAILABLE→NO_SNAPSHOT unless explicitly allowed
+    if (nextStatus === "NO_SNAPSHOT") {
+      const isAllowedReason = next.reasonCode && ALLOWED_DOWNGRADE_REASONS.has(next.reasonCode);
+      if (!isAllowedReason) {
+        const now = Date.now();
+        if (now - lastInvariantBlockLogTime > INVARIANT_LOG_THROTTLE_MS) {
+          console.warn(
+            "[UI_INVARIANT_BLOCK] AVAILABLE→NO_SNAPSHOT downgrade blocked.",
+            { snapshotId: prev.snapshotId, createdAtUtc: prev.createdAtUtc }
+          );
+          lastInvariantBlockLogTime = now;
+        }
+        return {
+          ...prev,
+          reasonCode: "INVARIANT_BLOCKED_DOWNGRADE_AVAILABLE_TO_NO_SNAPSHOT",
+        };
+      }
+    }
 
-    if (!isAllowedReason) {
-      // BLOCK: Log warning and return previous state
+    // RULE 2: BLOCK AVAILABLE→INITIALIZING (prevent reset flicker)
+    if (nextStatus === "INITIALIZING") {
       const now = Date.now();
       if (now - lastInvariantBlockLogTime > INVARIANT_LOG_THROTTLE_MS) {
         console.warn(
-          "[UI_INVARIANT_BLOCK] AVAILABLE→NO_SNAPSHOT downgrade blocked. Retaining snapshot.",
-          {
-            prevSnapshotId: prev.snapshotId,
-            prevCreatedAtUtc: prev.createdAtUtc,
-            nextStatus,
-            reason: "No explicit reset approval found",
-            timestamp: new Date().toISOString(),
-          }
+          "[UI_INVARIANT_BLOCK] AVAILABLE→INITIALIZING reset blocked.",
+          { snapshotId: prev.snapshotId, createdAtUtc: prev.createdAtUtc }
         );
         lastInvariantBlockLogTime = now;
       }
-
-      // Return previous state but mark with invariant-blocked reason
       return {
         ...prev,
-        // Add a marker that invariant blocked a downgrade
-        // (This can be used in UI to show a subtle warning if desired)
-        reasonCode: "INVARIANT_BLOCKED_DOWNGRADE_AVAILABLE_TO_NO_SNAPSHOT",
+        reasonCode: "INVARIANT_BLOCKED_DOWNGRADE_AVAILABLE_TO_INITIALIZING",
       };
     }
+
+    // RULE 3: For AVAILABLE→AVAILABLE, enforce strict replacement rules
+    if (nextStatus === "AVAILABLE") {
+      // RULE 3a: If next.snapshotId is missing, cannot replace prev (cannot verify validity)
+      if (!nextHasSnapshot) {
+        return prev; // Keep prev, next is invalid
+      }
+
+      // RULE 3b: If snapshotId changed, must prove next is newer via createdAtUtc
+      if (next.snapshotId !== prev.snapshotId) {
+        // Both must have createdAtUtc to compare
+        if (!prev.createdAtUtc || !next.createdAtUtc) {
+          return prev; // Cannot prove newer, keep prev
+        }
+
+        // Compare timestamps: next must be >= prev
+        const prevTime = new Date(prev.createdAtUtc).getTime();
+        const nextTime = new Date(next.createdAtUtc).getTime();
+        
+        if (nextTime < prevTime) {
+          return prev; // Older timestamp, keep prev
+        }
+
+        // nextTime >= prevTime: accept next
+        return next;
+      }
+
+      // RULE 3c: Same snapshotId, keep prev (no update needed)
+      if (next.snapshotId === prev.snapshotId) {
+        return prev;
+      }
+    }
   }
 
   // =========================================================================
-  // ALLOW: AVAILABLE→AVAILABLE (newer snapshot)
-  // =========================================================================
-  if (prevStatus === "AVAILABLE" && nextStatus === "AVAILABLE") {
-    // If next has a newer snapshotId, use it
-    if (nextHasSnapshot && next.snapshotId !== prev.snapshotId) {
-      return next; // Newer snapshot replaces older
-    }
-    // Same snapshot, keep current
-    if (next.snapshotId === prev.snapshotId) {
-      return prev; // No change needed
-    }
-  }
-
-  // =========================================================================
-  // ALLOW: All other transitions (NO_SNAPSHOT→AVAILABLE, ERROR→AVAILABLE, etc.)
+  // ALLOW: All other transitions
   // =========================================================================
   return next;
 }

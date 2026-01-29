@@ -164,6 +164,58 @@ else
 fi
 
 # ========================================================================
+# MUTATION F: Verify no-STG gate fails when STG is present
+# ========================================================================
+
+echo "[SELFTEST] Mutation F: STG marker in dist (verify:no-stg must FAIL)"
+TEMP_STG_FILE="$GADGET_DIR/dist/stg_test_mutation_$$.js"
+echo "/* STG_BADGE: This is a test mutation */" > "$TEMP_STG_FILE"
+trap "rm -rf $TEST_DIR; rm -f $TEMP_STG_FILE" EXIT
+
+STG_GATE="$SCRIPT_DIR/verify_no_stg_in_prod_artifacts.sh"
+output=$(bash "$STG_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL\|❌"; then
+    echo "[SELFTEST]   ✓ verify:no-stg correctly FAILED on STG marker"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:no-stg should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Clean up test file
+rm -f "$TEMP_STG_FILE"
+
+# ========================================================================
+# MUTATION G: Verify no-bypass-merge gate fails when merge is bypassed
+# ========================================================================
+
+echo "[SELFTEST] Mutation G: Direct render bypass (verify:no-bypass-merge must FAIL)"
+
+MAIN_TS="$SCRIPT_DIR/../src/gadget-ui/src/main.ts"
+MAIN_TS_BACKUP="$TEST_DIR/main.ts.backup"
+cp "$MAIN_TS" "$MAIN_TS_BACKUP"
+
+# Inject a line that violates the gate: renderL0Dashboard(mapL0SnapshotResponse(...))
+# (Insert it temporarily, test it, then restore)
+LINE_TO_INSERT="  // TEST MUTATION: const testBypass = renderL0Dashboard(mapL0SnapshotResponse({}));"
+sed -i "100i\\$LINE_TO_INSERT" "$MAIN_TS"
+
+NO_BYPASS_GATE="$SCRIPT_DIR/verify_no_direct_render_without_merge.sh"
+output=$(bash "$NO_BYPASS_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL\|❌"; then
+    echo "[SELFTEST]   ✓ verify:no-bypass-merge correctly FAILED on bypass pattern"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:no-bypass-merge should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore main.ts
+cp "$MAIN_TS_BACKUP" "$MAIN_TS"
+
+# ========================================================================
 # SUMMARY
 # ========================================================================
 
@@ -172,11 +224,11 @@ echo "[SELFTEST] =========================================="
 echo "[SELFTEST] SELFTEST SUMMARY"
 echo "[SELFTEST] =========================================="
 echo "[SELFTEST] Real bundle smoke tests: 2/2 PASS"
-echo "[SELFTEST] Mutation tests: $MUTATION_PASS/5 PASS"
+echo "[SELFTEST] Mutation tests (gates): $MUTATION_PASS/7 PASS"
 echo ""
 
 if [ $MUTATION_FAIL -eq 0 ]; then
-    pass "ALL TESTS PASSED (7/7)"
+    pass "ALL TESTS PASSED (9/9)"
     exit 0
 else
     fail "MUTATION TESTS FAILED ($MUTATION_FAIL failed)"
