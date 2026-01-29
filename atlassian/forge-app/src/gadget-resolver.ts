@@ -37,6 +37,7 @@ import { refreshNow_resolver } from './resolvers/refreshNow';
 import { exportTrustSnapshot } from './resolvers/audit_snapshot_export';
 import { getSnapshotDebug_resolver } from './resolvers/getSnapshotDebug';
 import { ping } from './resolvers/ping';
+import { debugSnapshotState_resolver } from './resolvers/debugSnapshotState';
 import { ensureFirstSnapshot } from './resolvers/ensureFirstSnapshot';
 import { probe } from './resolvers/probe'; // FORENSIC_PROBE
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
@@ -63,6 +64,7 @@ resolver.define('getStatusSnapshot', getStatusSnapshot_resolver);
 resolver.define('getBuildInfo', getBuildInfo_resolver);
 resolver.define('refreshNow', refreshNow_resolver);
 resolver.define('exportTrustSnapshot', exportTrustSnapshot);
+resolver.define('debugSnapshotState', debugSnapshotState_resolver);
 resolver.define('getSnapshotDebug', getSnapshotDebug_resolver);
 resolver.define('ping', ping);
 resolver.define('ensureFirstSnapshot', ensureFirstSnapshot);
@@ -175,8 +177,8 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
           
           try {
             // Import seed function dynamically to avoid circular imports
-            const { seedFirstSnapshotIfMissing } = await import("./lifecycle/installed");
-            const repairResult = await seedFirstSnapshotIfMissing();
+            const { seedFirstSnapshotIfMissingOrRepair } = await import("./lifecycle/seedSnapshot");
+            const repairResult = await seedFirstSnapshotIfMissingOrRepair();
             
             console.log(JSON.stringify({
               marker: "[FT_RESOLVER_REPAIR_RESULT]",

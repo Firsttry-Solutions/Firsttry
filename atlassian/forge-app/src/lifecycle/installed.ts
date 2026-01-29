@@ -1,11 +1,11 @@
 /**
- * Layer-0 Marketplace: App Installation & Upgrade Trigger Handler
+ * Layer-0 Marketplace: App Installation Trigger Handler
  * 
- * PHASE: Deterministic Seed-First-Snapshot on Install/Upgrade
+ * PHASE: Deterministic Seed-First-Snapshot on Install
  * 
  * Purpose:
  * - Ensures new app installs NEVER show NO_SNAPSHOT on first load
- * - Seeds snapshot automatically on install/upgrade (idempotent)
+ * - Seeds snapshot automatically on install (idempotent)
  * - Uses deterministic identifiers (git SHA + release version)
  * - NO Jira mutations (read-only + Forge storage writes only)
  * - GATED by enforceDashEnvelopeV1Invariant (contract compliance)
@@ -13,10 +13,10 @@
  * Logic:
  * - Check if snapshot pointer (FT_SNAPSHOT_LAST_KEY) exists
  * - If exists: do nothing (idempotent, already seeded)
- * - If missing: call seedFirstSnapshotIfMissing()
+ * - If missing: call seedFirstSnapshotIfMissingOrRepair()
  *   - Generates snapshot using deterministic build metadata
  *   - Stores in Forge storage (read-only Jira APIs only)
- *   - Writes install/upgrade marker for proof
+ *   - Writes install marker for proof
  * - Result: ft_getDashboardState_v1 immediately returns AVAILABLE + renders UI
  * 
  * Determinism:
@@ -27,11 +27,17 @@
  * - Created time = placeholder timestamp (will be updated by resolver on live calls)
  */
 
-import api from "@forge/api";
-import { storage } from "@forge/api";
-import { FT_SNAPSHOT_LAST_KEY, FT_INSTALL_MARKER_KEY } from "../backbone/keys";
 import { BACKEND_BUILD_SHA } from "../build/backend_build";
 import { FT_RELEASE_VERSION } from "../release/release_version";
+import { seedFirstSnapshotIfMissingOrRepair } from "./seedSnapshot";
+
+/**
+ * Backward compatibility alias
+ * New code should use seedFirstSnapshotIfMissingOrRepair from seedSnapshot.ts
+ */
+export async function seedFirstSnapshotIfMissing() {
+  return seedFirstSnapshotIfMissingOrRepair();
+}
 
 /**
  * Generate deterministic snapshot ID using build metadata

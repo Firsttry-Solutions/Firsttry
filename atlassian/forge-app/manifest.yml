@@ -56,6 +56,12 @@ modules:
     # Layer-0 Marketplace: Install trigger handler
     - key: ft-installed-handler
       handler: lifecycle/installed.handler
+    # Layer-0 Marketplace: Upgrade trigger handler (CRITICAL: runs on forge install --upgrade)
+    - key: ft-upgraded-handler
+      handler: lifecycle/upgraded.handler
+    # Layer-0 Debug: Snapshot state endpoint (read-only, for testing)
+    - key: debug-snapshot-state-fn
+      handler: gadget-resolver.handler
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # Supported intervals: day, week, hour, minute, fiveMinute
@@ -91,6 +97,11 @@ modules:
       events:
         - avi:forge:installed:app
       function: ft-installed-handler
+    # Layer-0 Marketplace: Upgrade trigger ensures snapshot is seeded/repaired
+    - key: ft-upgraded-trigger
+      events:
+        - avi:forge:upgraded:app
+      function: ft-upgraded-handler
 
 # Permissions
 permissions:
