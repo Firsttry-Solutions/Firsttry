@@ -159,44 +159,110 @@ function createFirstSnapshotAnchor(): any {
 }
 
 /**
- * SEED FUNCTION: Create and store first snapshot if missing
+ * SEED FUNCTION: Create, validate, and repair snapshot on install/upgrade
  * 
- * IDEMPOTENT: Checks FT_SNAPSHOT_LAST_KEY pointer
- * - If pointer exists → snapshot already seeded → return (do nothing)
- * - If pointer missing → create snapshot → store → return
+ * REPAIR SEMANTICS (NOT trapped by "key exists but invalid"):
+ * - If pointer missing → create snapshot → store → return action=CREATED
+ * - If pointer exists + valid → idempotent, return action=SKIPPED_VALID
+ * - If pointer exists + invalid → REPAIR: rebuild → validate → overwrite → return action=REPAIRED_INVALID
  * 
  * JIRA READ-ONLY: Uses only Forge storage writes, NO Jira API mutations
  * 
- * CONTRACT: Returns object with { seeded: boolean, snapshotId: string, created: boolean }
+ * CONTRACT: Returns { ran: boolean, action: string, snapshotId: string, reason?: string, tsDerived?: string, buildSha: string, releaseVersion: string }
  * 
  * DETERMINISTIC: Generates reproducible snapshot ID and timestamp
  */
 export async function seedFirstSnapshotIfMissing(): Promise<{
-  seeded: boolean;
+  ran: boolean;
+  action: "CREATED" | "SKIPPED_VALID" | "REPAIRED_INVALID" | "FAILED";
   snapshotId: string;
-  created: boolean;
+  reason?: string;
+  tsDerived?: string;
+  buildSha: string;
+  releaseVersion: string;
 }> {
+  const startTs = new Date().toISOString();
+  const buildSha = BACKEND_BUILD_SHA || "unknown";
+  const releaseVersion = FT_RELEASE_VERSION || "unknown";
+  
   try {
-    // Step 1: Check if snapshot pointer exists (idempotency gate)
+    // Log: Installed trigger started
+    console.log(JSON.stringify({
+      marker: "[FT_INSTALLED_TRIGGER_START]",
+      ts: startTs,
+      buildSha,
+      releaseVersion,
+      correlationId: `install-${Date.now()}`
+    }));
+
+    // Step 1: Check if snapshot pointer exists
     const existing = await storage.get(FT_SNAPSHOT_LAST_KEY);
     
+    // Case 1: Valid snapshot exists - IDEMPOTENT SUCCESS
     if (existing && isValidSnapshot(existing)) {
-      // Snapshot already exists - idempotent, do nothing
-      console.log(
-        `[SEED_SNAPSHOT] idempotent=true snapshotId=${(existing as any).snapshotId} ` +
-        `(snapshot already seeded, skipping)`
-      );
-      return {
-        seeded: true,
+      const result = {
+        ran: true,
+        action: "SKIPPED_VALID" as const,
         snapshotId: (existing as any).snapshotId,
-        created: false
+        tsDerived: generateDeterministicTimestamp(),
+        buildSha,
+        releaseVersion
       };
+      
+      console.log(JSON.stringify({
+        marker: "[FT_SEED_RESULT]",
+        action: "SKIPPED_VALID",
+        snapshotId: result.snapshotId,
+        validity: "valid",
+        reason: "snapshot already seeded with valid structure",
+        buildSha,
+        releaseVersion
+      }));
+      
+      return result;
     }
-
-    // Step 2: Create deterministic first snapshot
-    const snapshot = createFirstSnapshotAnchor();
     
-    // Step 3: Store in Forge storage (NO Jira mutations)
+    // Case 2: Invalid snapshot exists - REPAIR IT
+    if (existing && !isValidSnapshot(existing)) {
+      const oldSnapshotId = (existing as any).snapshotId || "UNKNOWN";
+      const invalidReason = (() => {
+        if (!existing.snapshotId) return "missing snapshotId";
+        if (!existing.createdAtUtc) return "missing createdAtUtc";
+        if (existing.schemaVersion !== "L0") return `wrong schemaVersion: ${existing.schemaVersion}`;
+        if (!existing.data) return "missing data";
+        if (!existing.createdAtUtc.endsWith('Z')) return "invalid ISO timestamp";
+        return "unknown";
+      })();
+      
+      const snapshot = createFirstSnapshotAnchor();
+      await storage.set(FT_SNAPSHOT_LAST_KEY, snapshot);
+      
+      const result = {
+        ran: true,
+        action: "REPAIRED_INVALID" as const,
+        snapshotId: snapshot.snapshotId,
+        reason: `repaired invalid snapshot (was: ${oldSnapshotId}, reason: ${invalidReason})`,
+        tsDerived: generateDeterministicTimestamp(),
+        buildSha,
+        releaseVersion
+      };
+      
+      console.log(JSON.stringify({
+        marker: "[FT_SEED_RESULT]",
+        action: "REPAIRED_INVALID",
+        snapshotId: snapshot.snapshotId,
+        validity: "repaired",
+        oldSnapshotId,
+        invalidReason,
+        buildSha,
+        releaseVersion
+      }));
+      
+      return result;
+    }
+    
+    // Case 3: No snapshot exists - CREATE IT
+    const snapshot = createFirstSnapshotAnchor();
     await storage.set(FT_SNAPSHOT_LAST_KEY, snapshot);
     
     // Step 4: Write seed marker for proof
@@ -204,29 +270,54 @@ export async function seedFirstSnapshotIfMissing(): Promise<{
       ranAtUtc: new Date().toISOString(),
       phase: "SEED",
       snapshotId: snapshot.snapshotId,
-      buildSha: BACKEND_BUILD_SHA,
-      releaseVersion: FT_RELEASE_VERSION,
+      buildSha,
+      releaseVersion,
       schemaVersion: "L0"
     };
     await storage.set(FT_INSTALL_MARKER_KEY, seedMarker);
     
-    // Log success
-    console.log(
-      `[SEED_SNAPSHOT] created=true snapshotId=${snapshot.snapshotId} ` +
-      `buildSha=${BACKEND_BUILD_SHA} version=${FT_RELEASE_VERSION}`
-    );
-
-    return {
-      seeded: true,
+    const result = {
+      ran: true,
+      action: "CREATED" as const,
       snapshotId: snapshot.snapshotId,
-      created: true
+      tsDerived: generateDeterministicTimestamp(),
+      buildSha,
+      releaseVersion
     };
+    
+    console.log(JSON.stringify({
+      marker: "[FT_SEED_RESULT]",
+      action: "CREATED",
+      snapshotId: snapshot.snapshotId,
+      validity: "created",
+      buildSha,
+      releaseVersion
+    }));
+
+    return result;
   } catch (err) {
-    console.error(
-      "[SEED_SNAPSHOT] Error during seed:",
-      err instanceof Error ? err.message : String(err)
-    );
-    throw err;
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    
+    console.log(JSON.stringify({
+      marker: "[FT_SEED_RESULT]",
+      action: "FAILED",
+      snapshotId: "N/A",
+      validity: "failed",
+      reason: errorMsg,
+      buildSha,
+      releaseVersion
+    }));
+    
+    console.error("[SEED_SNAPSHOT] Error during seed:", errorMsg);
+    
+    return {
+      ran: false,
+      action: "FAILED" as const,
+      snapshotId: "N/A",
+      reason: errorMsg,
+      buildSha,
+      releaseVersion
+    };
   }
 }
 
@@ -237,27 +328,52 @@ export async function seedFirstSnapshotIfMissing(): Promise<{
  * 
  * Flow:
  * 1. Call seedFirstSnapshotIfMissing()
- * 2. If error: throw (fail-closed)
- * 3. Otherwise: return (install/upgrade complete)
+ * 2. Log result
+ * 3. Return (install/upgrade complete)
  * 
  * Result: Dashboard gadget will render AVAILABLE on first load
  * (ft_getDashboardState_v1 will find snapshot + return okEnvelope)
  */
 export const handler = async (event: any) => {
-  console.log(`[FT_INSTALLED] handler triggered by ${event?.trigger || "avi:forge:installed:app"}`);
+  const startTs = new Date().toISOString();
+  
+  console.log(JSON.stringify({
+    marker: "[FT_INSTALLED_TRIGGER_START]",
+    trigger: event?.trigger || "avi:forge:installed:app",
+    ts: startTs,
+    buildSha: BACKEND_BUILD_SHA,
+    releaseVersion: FT_RELEASE_VERSION
+  }));
   
   try {
     const result = await seedFirstSnapshotIfMissing();
-    console.log(
-      `[FT_INSTALLED] completion: seeded=${result.seeded} created=${result.created} ` +
-      `snapshotId=${result.snapshotId}`
-    );
+    
+    const endTs = new Date().toISOString();
+    console.log(JSON.stringify({
+      marker: "[FT_INSTALLED_TRIGGER_END]",
+      action: result.action,
+      snapshotId: result.snapshotId,
+      ran: result.ran,
+      ts: endTs,
+      buildSha: result.buildSha,
+      releaseVersion: result.releaseVersion
+    }));
+    
     return result;
   } catch (err) {
-    console.error(
-      "[FT_INSTALLED] Fatal error during install/upgrade handler:",
-      err instanceof Error ? err.message : String(err)
-    );
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    
+    console.log(JSON.stringify({
+      marker: "[FT_INSTALLED_TRIGGER_END]",
+      action: "FAILED",
+      ran: false,
+      ts: new Date().toISOString(),
+      error: errorMsg,
+      buildSha: BACKEND_BUILD_SHA,
+      releaseVersion: FT_RELEASE_VERSION
+    }));
+    
+    console.error("[FT_INSTALLED] Fatal error during install/upgrade handler:", errorMsg);
     throw err;
   }
 };

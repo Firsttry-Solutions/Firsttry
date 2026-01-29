@@ -162,6 +162,73 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
           hasData: snapshot?.data != null,
         });
         
+        // CRITICAL FIX: Try to repair invalid snapshot inline
+        // If snapshot exists but is invalid, rebuild and store a canonical one
+        if (snapshot && !isValid) {
+          console.log(JSON.stringify({
+            marker: "[FT_RESOLVER_REPAIR_ATTEMPT]",
+            action: "ATTEMPT_REPAIR_INVALID_SNAPSHOT",
+            reason: "Resolver detected invalid snapshot, attempting inline repair",
+            snapshotIdBefore: snapshot?.snapshotId,
+            ts: new Date().toISOString()
+          }));
+          
+          try {
+            // Import seed function dynamically to avoid circular imports
+            const { seedFirstSnapshotIfMissing } = await import("./lifecycle/installed");
+            const repairResult = await seedFirstSnapshotIfMissing();
+            
+            console.log(JSON.stringify({
+              marker: "[FT_RESOLVER_REPAIR_RESULT]",
+              action: repairResult.action,
+              snapshotIdAfter: repairResult.snapshotId,
+              ts: new Date().toISOString()
+            }));
+            
+            // If repair succeeded, re-fetch snapshot
+            if (repairResult.action === "REPAIRED_INVALID" || repairResult.action === "CREATED") {
+              const repairedSnapshot = await storage.get("ft:snapshot:last:v1");
+              if (repairedSnapshot && 
+                  typeof repairedSnapshot.snapshotId === 'string' && 
+                  repairedSnapshot.snapshotId.trim() &&
+                  typeof repairedSnapshot.createdAtUtc === 'string' && 
+                  repairedSnapshot.createdAtUtc.trim() &&
+                  repairedSnapshot.schemaVersion === "L0" &&
+                  typeof repairedSnapshot.data === 'object' && 
+                  repairedSnapshot.data &&
+                  repairedSnapshot.createdAtUtc.endsWith('Z')) {
+                // Repaired snapshot is now valid - return it
+                console.log(JSON.stringify({
+                  marker: "[FT_RESOLVER_REPAIR_SUCCESS]",
+                  snapshotId: repairedSnapshot.snapshotId,
+                  ts: new Date().toISOString()
+                }));
+                
+                return {
+                  status: "AVAILABLE",
+                  snapshotId: repairedSnapshot.snapshotId,
+                  createdAtUtc: repairedSnapshot.createdAtUtc,
+                  schemaVersion: "L0",
+                  containsText: "Jira governance evidence snapshot (export for full details).",
+                  metadata: repairedSnapshot.metadata || {
+                    coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+                    integrity: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+                    provenance: { capturedBy: "RESOLVER_REPAIR" },
+                  },
+                  data: repairedSnapshot.data,
+                };
+              }
+            }
+          } catch (repairErr) {
+            console.log(JSON.stringify({
+              marker: "[FT_RESOLVER_REPAIR_FAILED]",
+              error: repairErr instanceof Error ? repairErr.message : String(repairErr),
+              ts: new Date().toISOString()
+            }));
+            // If repair fails, fall through to return invalid state
+          }
+        }
+        
         // Return as NO_SNAPSHOT (non-fatal state)
         // Missing or invalid snapshot is not a contract failure - just means we don't have data
         const subcode = !snapshot ? "NO_SNAPSHOT_POINTER" : "SNAPSHOT_SCHEMA_MISMATCH";
