@@ -37,6 +37,11 @@ import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownS
 import { mapL0SnapshotResponse, renderL0Dashboard, type L0DashboardState } from "./l0_snapshot_mapper";
 
 // ============================================================================
+// LAYER-0 STATE MERGE GUARD (INVARIANT: Prevent AVAILABLE→NO_SNAPSHOT downgrade)
+// ============================================================================
+import { mergeDashboardState } from "./l0_state_merge";
+
+// ============================================================================
 // DASHBOARD ENVELOPE MAPPING & VALIDATION (SHARED MODULE)
 
 // CRITICAL: Both UI and tests use these real functions (no duplicates allowed)
@@ -2834,6 +2839,11 @@ function onDOMReady() {
     })();
 }
 
+// ============================================================================
+// GLOBAL STATE STORAGE (for invariant guard)
+// ============================================================================
+let currentL0DashboardState: L0DashboardState | null = null;
+
 async function proceedWithBoot() {
     // Initialize proof node early (will be updated when envelope arrives)
     ftUpdateProofNode();
@@ -2880,7 +2890,14 @@ async function proceedWithBoot() {
         }
         
         // STEP 3: Map resolver response to dashboard state
-        const dashState = mapL0SnapshotResponse(resolverResponse);
+        const mappedState = mapL0SnapshotResponse(resolverResponse);
+        
+        // STEP 3b: Apply invariant guard (merge with previous state)
+        // Prevents AVAILABLE→NO_SNAPSHOT downgrade unless explicitly allowed
+        const dashState = mergeDashboardState(currentL0DashboardState, mappedState);
+        
+        // Store current state for next update
+        currentL0DashboardState = dashState;
         
         // STEP 4: Render dashboard (AVAILABLE, NO_SNAPSHOT, INVALID_SNAPSHOT, or HARD_ERROR only)
         const dashboard = renderL0Dashboard(dashState);
