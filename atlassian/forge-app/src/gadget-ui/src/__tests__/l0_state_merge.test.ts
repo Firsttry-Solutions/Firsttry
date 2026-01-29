@@ -279,6 +279,184 @@ describe("L0 Dashboard State Merge Invariant Guard", () => {
         note: "Was good",
       };
 
+  // =========================================================================
+  // TEST G: BLOCKS INITIALIZING - AVAILABLE with snapshot cannot reset
+  // =========================================================================
+  describe("TEST_G: Blocks AVAILABLE→INITIALIZING reset", () => {
+    it("should NOT allow downgrade from AVAILABLE to INITIALIZING", () => {
+      const prevState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_stable",
+        createdAtUtc: "2026-01-24T10:00:00.000Z",
+        schemaVersion: "L0",
+        error: null,
+        note: "Stable snapshot",
+      };
+
+      const nextState: L0DashboardState = {
+        status: "INITIALIZING",
+        reasonCode: "STATE_INITIALIZING",
+        snapshotId: null,
+        createdAtUtc: null,
+        schemaVersion: "L0",
+        error: null,
+        note: "Loading...",
+      };
+
+      const merged = mergeDashboardState(prevState, nextState);
+
+      // INVARIANT: Must keep AVAILABLE, not reset to INITIALIZING
+      expect(merged.status).toBe("AVAILABLE");
+      expect(merged.snapshotId).toBe("snap_stable");
+      expect(merged.reasonCode).toBe("INVARIANT_BLOCKED_DOWNGRADE_AVAILABLE_TO_INITIALIZING");
+    });
+  });
+
+  // =========================================================================
+  // TEST H: BLOCKS OLDER SNAPSHOT - AVAILABLE→AVAILABLE with older timestamp
+  // =========================================================================
+  describe("TEST_H: Blocks AVAILABLE→AVAILABLE if next is older", () => {
+    it("should keep prev if next.createdAtUtc is older", () => {
+      const prevState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_recent",
+        createdAtUtc: "2026-01-24T15:00:00.000Z", // Recent
+        schemaVersion: "L0",
+        error: null,
+        note: "Recent snapshot",
+      };
+
+      const nextState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_old",
+        createdAtUtc: "2026-01-24T10:00:00.000Z", // Older
+        schemaVersion: "L0",
+        error: null,
+        note: "Old snapshot",
+      };
+
+      const merged = mergeDashboardState(prevState, nextState);
+
+      // INVARIANT: Keep prev (recent), reject next (older)
+      expect(merged.status).toBe("AVAILABLE");
+      expect(merged.snapshotId).toBe("snap_recent");
+      expect(merged.createdAtUtc).toBe("2026-01-24T15:00:00.000Z");
+    });
+  });
+
+  // =========================================================================
+  // TEST I: BLOCKS PROOF-LESS UPGRADE - AVAILABLE→AVAILABLE missing timestamps
+  // =========================================================================
+  describe("TEST_I: Blocks AVAILABLE→AVAILABLE if new snapshot lacks createdAtUtc", () => {
+    it("should keep prev if next differs but has no createdAtUtc", () => {
+      const prevState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_known",
+        createdAtUtc: "2026-01-24T12:00:00.000Z",
+        schemaVersion: "L0",
+        error: null,
+        note: "Known snapshot",
+      };
+
+      const nextState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_unknown", // Different ID
+        createdAtUtc: null, // No timestamp to prove it's newer
+        schemaVersion: "L0",
+        error: null,
+        note: "Unknown snapshot",
+      };
+
+      const merged = mergeDashboardState(prevState, nextState);
+
+      // INVARIANT: Keep prev, cannot prove next is newer
+      expect(merged.status).toBe("AVAILABLE");
+      expect(merged.snapshotId).toBe("snap_known");
+      expect(merged.createdAtUtc).toBe("2026-01-24T12:00:00.000Z");
+    });
+  });
+
+  // =========================================================================
+  // TEST J: ALLOWS PROVABLY NEWER - AVAILABLE→AVAILABLE with newer timestamp
+  // =========================================================================
+  describe("TEST_J: Allows AVAILABLE→AVAILABLE if next is provably newer", () => {
+    it("should allow next if createdAtUtc >= prev.createdAtUtc", () => {
+      const prevState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_old",
+        createdAtUtc: "2026-01-24T10:00:00.000Z",
+        schemaVersion: "L0",
+        error: null,
+        note: "Old snapshot",
+      };
+
+      const nextState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_new",
+        createdAtUtc: "2026-01-24T16:00:00.000Z", // Newer
+        schemaVersion: "L0",
+        error: null,
+        note: "New snapshot",
+      };
+
+      const merged = mergeDashboardState(prevState, nextState);
+
+      // INVARIANT: Accept next (newer)
+      expect(merged.status).toBe("AVAILABLE");
+      expect(merged.snapshotId).toBe("snap_new");
+      expect(merged.createdAtUtc).toBe("2026-01-24T16:00:00.000Z");
+    });
+
+    it("should allow next if timestamps are equal", () => {
+      const same_time = "2026-01-24T14:00:00.000Z";
+
+      const prevState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_a",
+        createdAtUtc: same_time,
+        schemaVersion: "L0",
+        error: null,
+        note: "Snapshot A",
+      };
+
+      const nextState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_b",
+        createdAtUtc: same_time, // Equal time
+        schemaVersion: "L0",
+        error: null,
+        note: "Snapshot B",
+      };
+
+      const merged = mergeDashboardState(prevState, nextState);
+
+      // INVARIANT: Accept next (timestamps equal)
+      expect(merged.status).toBe("AVAILABLE");
+      expect(merged.snapshotId).toBe("snap_b");
+      expect(merged.createdAtUtc).toBe(same_time);
+    });
+  });
+
+      it("should allow AVAILABLE→HARD_ERROR (explicit backend error)", () => {
+      const prevState: L0DashboardState = {
+        status: "AVAILABLE",
+        reasonCode: "PROOF_OK",
+        snapshotId: "snap_was_ok",
+        createdAtUtc: "2026-01-24T16:00:00.000Z",
+        schemaVersion: "L0",
+        error: null,
+        note: "Was good",
+      };
+
       const nextState: L0DashboardState = {
         status: "HARD_ERROR",
         reasonCode: "STATE_HARD_ERROR",
