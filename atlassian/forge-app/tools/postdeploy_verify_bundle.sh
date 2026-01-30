@@ -69,15 +69,16 @@ forge settings list 2>&1 | tee "$RUN_DIR/14_forge_settings.txt" || true
 echo ""
 echo "===== PHASE 2: DEPLOYMENT STATE ====="
 
-forge deployments list -e staging 2>&1 | tee "$RUN_DIR/20_deployments_list_staging.txt"
-forge install list 2>&1 | tee "$RUN_DIR/21_install_list.txt" || true
+# Check installed instances in staging
+forge install list -e staging 2>&1 | tee "$RUN_DIR/20_install_list_staging.txt"
+forge install list 2>&1 | tee "$RUN_DIR/21_install_list_default.txt" || true
 
-# Check: staging deployments must be non-empty
-if ! grep -q . "$RUN_DIR/20_deployments_list_staging.txt"; then
-  echo "❌ STOP: No deployments found in staging."
+# Check: staging installs must be non-empty (should show at least one app install)
+if ! grep -q "firsttry" "$RUN_DIR/20_install_list_staging.txt"; then
+  echo "❌ STOP: No active app instances found in staging."
   exit 1
 fi
-echo "✅ Staging deployments verified"
+echo "✅ Staging deployment verified (app installed)"
 
 ################################################################################
 # PHASE 3 — MANIFEST VALIDATION + WEBHOOK/TRIGGER SAFETY
