@@ -8,9 +8,98 @@
  * - May render a fatal error panel into DOM if bridge missing
  * 
  * CRITICAL: Uses ESM import + real invoke ping (NOT require or window globals)
+ * CSP NOTE: All styles use CSS classes (no inline style attributes).
  */
 
 import { invoke } from "@forge/bridge";
+
+/**
+ * Inject CSS styles for fatal bridge panel (CSP-safe, no unsafe-inline)
+ */
+function ensureFatalPanelStyles(): void {
+  if (document.getElementById("fatal-bridge-panel-styles")) {
+    return; // Already injected
+  }
+
+  const styleTag = document.createElement("style");
+  styleTag.id = "fatal-bridge-panel-styles";
+  styleTag.textContent = `
+    .fatal-bridge-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      z-index: 999999;
+      font-family: system-ui, -apple-system, sans-serif;
+      overflow: auto;
+    }
+
+    .fatal-bridge-content {
+      text-align: center;
+      padding: 24px;
+      max-width: 600px;
+    }
+
+    .fatal-bridge-title {
+      color: #d32f2f;
+      margin: 0 0 16px 0;
+      font-size: 24px;
+    }
+
+    .fatal-bridge-explanation {
+      color: #666;
+      margin: 0 0 16px 0;
+      font-size: 16px;
+    }
+
+    .fatal-bridge-diagnostics-label {
+      display: block;
+      margin-top: 20px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .fatal-bridge-diagnostics-block {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 4px;
+      margin: 8px 0;
+      text-align: left;
+      font-size: 12px;
+      color: #333;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+    }
+
+    .fatal-bridge-copy-btn {
+      background: #0052cc;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .fatal-bridge-copy-btn:hover {
+      background: #0039a6;
+    }
+
+    .fatal-bridge-help-text {
+      color: #999;
+      margin-top: 16px;
+      font-size: 12px;
+    }
+  `;
+
+  document.head.appendChild(styleTag);
+}
 
 export type ForgeBridgePresenceProof = {
   uiReqId: string;
@@ -135,67 +224,33 @@ export async function ensureForgeBridgeOrRenderFatal(container: HTMLElement): Pr
  * proof.href, proof.invokeType, proof.pingErr
  */
 function renderBridgeFatalPanel(container: HTMLElement, proof: ForgeBridgePresenceProof): void {
+  ensureFatalPanelStyles();
+
   const panel = document.createElement("div");
   panel.id = "forge-bridge-fatal-error-panel";
-  panel.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fff;
-    z-index: 999999;
-    font-family: system-ui, -apple-system, sans-serif;
-    overflow: auto;
-  `;
+  panel.className = "fatal-bridge-panel";
 
   const content = document.createElement("div");
-  content.style.cssText = `
-    text-align: center;
-    padding: 24px;
-    max-width: 600px;
-  `;
+  content.className = "fatal-bridge-content";
 
   const title = document.createElement("h1");
-  title.style.cssText = "color: #d32f2f; margin: 0 0 16px 0; font-size: 24px;";
+  title.className = "fatal-bridge-title";
   title.textContent = "⚠️ Forge Bridge Unavailable";
 
   const explanation = document.createElement("p");
-  explanation.style.cssText = "color: #666; margin: 0 0 16px 0; font-size: 16px;";
+  explanation.className = "fatal-bridge-explanation";
   explanation.textContent = "This gadget requires Forge Custom UI bridge to function safely.";
 
   const diagnosticsLabel = document.createElement("strong");
-  diagnosticsLabel.style.cssText = "display: block; margin-top: 20px; color: #333; font-size: 14px;";
+  diagnosticsLabel.className = "fatal-bridge-diagnostics-label";
   diagnosticsLabel.textContent = "Diagnostics (copy and paste for support):";
 
   const diagnosticsBlock = document.createElement("pre");
-  diagnosticsBlock.style.cssText = `
-    background: #f5f5f5;
-    padding: 12px;
-    border-radius: 4px;
-    margin: 8px 0;
-    text-align: left;
-    font-size: 12px;
-    color: #333;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-  `;
+  diagnosticsBlock.className = "fatal-bridge-diagnostics-block";
   diagnosticsBlock.textContent = JSON.stringify(proof, null, 2);
 
   const copyBtn = document.createElement("button");
-  copyBtn.style.cssText = `
-    background: #0052cc;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-top: 8px;
-  `;
+  copyBtn.className = "fatal-bridge-copy-btn";
   copyBtn.textContent = "📋 Copy diagnostics JSON";
   copyBtn.onclick = async () => {
     try {
@@ -220,7 +275,7 @@ function renderBridgeFatalPanel(container: HTMLElement, proof: ForgeBridgePresen
   };
 
   const helpText = document.createElement("p");
-  helpText.style.cssText = "color: #999; margin-top: 16px; font-size: 12px;";
+  helpText.className = "fatal-bridge-help-text";
   helpText.textContent = "Please contact support and share the diagnostics above.";
 
   content.appendChild(title);

@@ -11,12 +11,195 @@
  *   error?: string,
  *   containsText?: string
  * }
+ *
+ * CSP NOTE: All styles use CSS classes (no inline style attributes).
+ * Styles are injected via <style> tag which is CSP-compliant.
  */
 
 // Support link configuration (mailto: for user accessibility)
 // Must match docs/CONTACTS.md canonical value
 const SUPPORT_EMAIL = "contact@firsttry.run";
 const SUPPORT_URL = `mailto:${SUPPORT_EMAIL}`;
+
+/**
+ * Inject CSS styles via <style> tag (CSP-safe, no unsafe-inline)
+ * This runs once per dashboard render to ensure styles are present
+ */
+function ensureL0DashboardStyles(): void {
+  if (document.getElementById("l0-dashboard-styles")) {
+    return; // Already injected
+  }
+
+  const styleTag = document.createElement("style");
+  styleTag.id = "l0-dashboard-styles";
+  styleTag.textContent = `
+    .l0-dashboard-container {
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      font-size: 14px;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .l0-dashboard-live-region {
+      position: absolute;
+      left: -9999px;
+      height: 1px;
+      width: 1px;
+      overflow: hidden;
+    }
+
+    .l0-dashboard-content {
+      flex: 1;
+    }
+
+    .l0-dashboard-title-available {
+      color: #0052cc;
+      margin: 0 0 16px 0;
+      font-size: 18px;
+    }
+
+    .l0-dashboard-details {
+      background: #f1f2f4;
+      padding: 12px;
+      border-radius: 4px;
+    }
+
+    .l0-dashboard-detail-item {
+      margin: 0 0 8px 0;
+    }
+
+    .l0-dashboard-seed-notice {
+      margin: 8px 0 0 0;
+      font-size: 12px;
+      color: #974f0c;
+      background: #fff7d6;
+      padding: 8px;
+      border-radius: 2px;
+    }
+
+    .l0-dashboard-detail-note {
+      margin: 8px 0 0 0;
+      font-size: 12px;
+      color: #626f86;
+    }
+
+    .l0-dashboard-title-inactive {
+      color: #626f86;
+      margin: 0 0 16px 0;
+      font-size: 18px;
+    }
+
+    .l0-dashboard-message {
+      background: #f1f2f4;
+      border-left: 4px solid #626f86;
+      padding: 12px;
+      border-radius: 4px;
+    }
+
+    .l0-dashboard-message-text {
+      margin: 0;
+      color: #626f86;
+    }
+
+    .l0-dashboard-error-code {
+      margin: 8px 0 0 0;
+      font-size: 12px;
+      color: #626f86;
+    }
+
+    .l0-dashboard-title-error {
+      color: #d32f2f;
+      margin: 0 0 16px 0;
+      font-size: 18px;
+    }
+
+    .l0-dashboard-error-box {
+      background: #fce4ec;
+      border-left: 4px solid #d32f2f;
+      padding: 12px;
+      border-radius: 4px;
+    }
+
+    .l0-dashboard-footer {
+      border-top: 1px solid #eee;
+      margin-top: 20px;
+      padding-top: 12px;
+      font-size: 12px;
+      color: #626f86;
+    }
+
+    .l0-dashboard-support-link {
+      color: #0052cc;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .l0-dashboard-support-link:hover {
+      text-decoration: underline;
+    }
+
+    .l0-dashboard-metadata-section {
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 12px;
+    }
+
+    .l0-dashboard-metadata-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin: 0 0 12px 0;
+      color: #333;
+    }
+
+    .l0-dashboard-metadata-block {
+      background: #f7f8f9;
+      border: 1px solid #ddd;
+      padding: 8px;
+      border-radius: 3px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .l0-dashboard-metadata-block-title {
+      color: #333;
+    }
+
+    .l0-dashboard-metadata-block-value {
+      margin-top: 4px;
+      color: #626f86;
+    }
+
+    .l0-dashboard-metadata-block-note {
+      margin-top: 4px;
+      color: #999;
+      font-size: 11px;
+    }
+
+    .l0-dashboard-disclaimer-block {
+      background: #fff3cd;
+      border-left: 3px solid #ffc107;
+      padding: 12px;
+      border-radius: 3px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .l0-dashboard-disclaimer-title {
+      margin: 0 0 8px 0;
+      font-weight: bold;
+    }
+
+    .l0-dashboard-disclaimer-item {
+      margin: 4px 0;
+      color: #333;
+    }
+  `;
+
+  document.head.appendChild(styleTag);
+}
 
 export interface L0SnapshotResponse {
   status: "AVAILABLE" | "NO_SNAPSHOT" | "INVALID_SNAPSHOT" | "HARD_ERROR";
@@ -206,29 +389,23 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
  * - NO intermediate states, NO loading spinners, NO retries
  */
 export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
+  ensureL0DashboardStyles();
+
   const container = document.createElement("div");
-  container.style.cssText = `
-    padding: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    font-size: 14px;
-    color: #333;
-    display: flex;
-    flex-direction: column;
-    min-height: 100%;
-  `;
+  container.className = "l0-dashboard-container";
 
   // Aria-live region for state announcements (polite mode - doesn't interrupt user)
   const liveRegion = document.createElement("div");
   liveRegion.setAttribute("role", "status");
   liveRegion.setAttribute("aria-live", "polite");
   liveRegion.setAttribute("aria-atomic", "true");
-  liveRegion.style.cssText = "position: absolute; left: -9999px; height: 1px; width: 1px; overflow: hidden;";
+  liveRegion.className = "l0-dashboard-live-region";
   liveRegion.textContent = `Dashboard state: ${state.status}. ${state.note}`;
   container.appendChild(liveRegion);
 
   // Main content div (grows to fill space)
   const content = document.createElement("div");
-  content.style.cssText = "flex: 1;";
+  content.className = "l0-dashboard-content";
 
   if (state.status === "AVAILABLE") {
     // Available state - show snapshot
@@ -241,32 +418,32 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
       : "✓ Governance Snapshot Available";
     
     title.textContent = titleText;
-    title.style.cssText = "color: #0052cc; margin: 0 0 16px 0; font-size: 18px;";
+    title.className = "l0-dashboard-title-available";
     content.appendChild(title);
 
     const details = document.createElement("div");
-    details.style.cssText = "background: #f1f2f4; padding: 12px; border-radius: 4px;";
+    details.className = "l0-dashboard-details";
 
     const snapshotIdEl = document.createElement("p");
-    snapshotIdEl.style.cssText = "margin: 0 0 8px 0;";
+    snapshotIdEl.className = "l0-dashboard-detail-item";
     snapshotIdEl.innerHTML = `<strong>Snapshot ID:</strong> <code>${escapeHtml(state.snapshotId || "N/A")}</code>`;
     details.appendChild(snapshotIdEl);
 
     // Add seed notice if applicable
     if (isSeedSnapshot) {
       const seedNotice = document.createElement("p");
-      seedNotice.style.cssText = "margin: 8px 0 0 0; font-size: 12px; color: #974f0c; background: #fff7d6; padding: 8px; border-radius: 2px;";
+      seedNotice.className = "l0-dashboard-seed-notice";
       seedNotice.textContent = "⚠ This is a seed snapshot provided at app installation. It is not audit evidence. Governance snapshots will be created when evidence is collected.";
       details.appendChild(seedNotice);
     }
 
     const createdEl = document.createElement("p");
-    createdEl.style.cssText = "margin: 0 0 8px 0;";
+    createdEl.className = "l0-dashboard-detail-item";
     createdEl.innerHTML = `<strong>Created:</strong> <code>${escapeHtml(state.createdAtUtc || "N/A")}</code>`;
     details.appendChild(createdEl);
 
     const noteEl = document.createElement("p");
-    noteEl.style.cssText = "margin: 8px 0 0 0; font-size: 12px; color: #626f86;";
+    noteEl.className = "l0-dashboard-detail-note";
     noteEl.textContent = state.note;
     details.appendChild(noteEl);
 
@@ -281,22 +458,21 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     // Non-fatal states - show dashboard with no data message
     const title = document.createElement("h1");
     title.textContent = state.status === "NO_SNAPSHOT" ? "⊘ No Snapshot Available" : "⊘ Snapshot Invalid";
-    title.style.cssText = "color: #626f86; margin: 0 0 16px 0; font-size: 18px;";
+    title.className = "l0-dashboard-title-inactive";
     content.appendChild(title);
 
     const message = document.createElement("div");
-    message.style.cssText =
-      "background: #f1f2f4; border-left: 4px solid #626f86; padding: 12px; border-radius: 4px;";
+    message.className = "l0-dashboard-message";
 
     const msgText = document.createElement("p");
-    msgText.style.cssText = "margin: 0; color: #626f86;";
+    msgText.className = "l0-dashboard-message-text";
     msgText.textContent = state.note || (state.status === "NO_SNAPSHOT" 
       ? "No snapshot has been created yet." 
       : "The snapshot failed validation.");
     message.appendChild(msgText);
 
     const errCode = document.createElement("p");
-    errCode.style.cssText = "margin: 8px 0 0 0; font-size: 12px; color: #626f86;";
+    errCode.className = "l0-dashboard-error-code";
     errCode.innerHTML = `<strong>Reason:</strong> <code>${escapeHtml(state.error || "UNKNOWN")}</code>`;
     message.appendChild(errCode);
 
@@ -305,20 +481,19 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     // Hard error state
     const title = document.createElement("h1");
     title.textContent = "✗ Snapshot Unavailable";
-    title.style.cssText = "color: #d32f2f; margin: 0 0 16px 0; font-size: 18px;";
+    title.className = "l0-dashboard-title-error";
     content.appendChild(title);
 
     const error = document.createElement("div");
-    error.style.cssText =
-      "background: #fce4ec; border-left: 4px solid #d32f2f; padding: 12px; border-radius: 4px;";
+    error.className = "l0-dashboard-error-box";
 
     const errorCode = document.createElement("p");
-    errorCode.style.cssText = "margin: 0 0 8px 0;";
+    errorCode.className = "l0-dashboard-detail-item";
     errorCode.innerHTML = `<strong>Error:</strong> <code>${escapeHtml(state.error || "UNKNOWN")}</code>`;
     error.appendChild(errorCode);
 
     const errorNote = document.createElement("p");
-    errorNote.style.cssText = "margin: 0; color: #626f86; font-size: 12px;";
+    errorNote.className = "l0-dashboard-message-text";
     errorNote.textContent = state.note;
     error.appendChild(errorNote);
 
@@ -329,19 +504,11 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
 
   // Support footer - always visible in all states
   const footer = document.createElement("div");
-  footer.style.cssText = `
-    border-top: 1px solid #eee;
-    margin-top: 20px;
-    padding-top: 12px;
-    font-size: 12px;
-    color: #626f86;
-  `;
+  footer.className = "l0-dashboard-footer";
   const supportLink = document.createElement("a");
   supportLink.href = SUPPORT_URL;
   supportLink.textContent = "Get Support";
-  supportLink.style.cssText = "color: #0052cc; text-decoration: none; font-weight: 600;";
-  supportLink.onmouseover = () => { supportLink.style.textDecoration = "underline"; };
-  supportLink.onmouseout = () => { supportLink.style.textDecoration = "none"; };
+  supportLink.className = "l0-dashboard-support-link";
   footer.appendChild(document.createTextNode("Need help? "));
   footer.appendChild(supportLink);
   container.appendChild(footer);
@@ -361,11 +528,11 @@ function escapeHtml(text: string): string {
  */
 function renderMetadataBlocks(metadata: any): HTMLElement {
   const section = document.createElement("div");
-  section.style.cssText = "margin-top: 20px; border-top: 1px solid #ccc; padding-top: 12px;";
+  section.className = "l0-dashboard-metadata-section";
 
   const title = document.createElement("h2");
   title.textContent = "Snapshot Metadata";
-  title.style.cssText = "font-size: 14px; font-weight: bold; margin: 0 0 12px 0; color: #333;";
+  title.className = "l0-dashboard-metadata-title";
   section.appendChild(title);
 
   // A. Coverage Declaration
@@ -424,11 +591,10 @@ function renderMetadataBlocks(metadata: any): HTMLElement {
   // F. Disclaimer (static text)
   if (metadata.disclaimer) {
     const disclaimerBlock = document.createElement("div");
-    disclaimerBlock.style.cssText =
-      "background: #fff3cd; border-left: 3px solid #ffc107; padding: 12px; border-radius: 3px; margin-bottom: 8px; font-size: 12px;";
+    disclaimerBlock.className = "l0-dashboard-disclaimer-block";
 
     const title = document.createElement("p");
-    title.style.cssText = "margin: 0 0 8px 0; font-weight: bold;";
+    title.className = "l0-dashboard-disclaimer-title";
     title.textContent = "This dashboard does NOT:";
     disclaimerBlock.appendChild(title);
 
@@ -441,7 +607,7 @@ function renderMetadataBlocks(metadata: any): HTMLElement {
 
     items.forEach((item) => {
       const p = document.createElement("p");
-      p.style.cssText = "margin: 4px 0; color: #333;";
+      p.className = "l0-dashboard-disclaimer-item";
       p.textContent = item;
       disclaimerBlock.appendChild(p);
     });
@@ -457,22 +623,21 @@ function renderMetadataBlocks(metadata: any): HTMLElement {
  */
 function renderMetadataBlock(title: string, value: string, note?: string): HTMLElement {
   const block = document.createElement("div");
-  block.style.cssText =
-    "background: #f7f8f9; border: 1px solid #ddd; padding: 8px; border-radius: 3px; margin-bottom: 8px; font-size: 12px;";
+  block.className = "l0-dashboard-metadata-block";
 
   const titleEl = document.createElement("strong");
   titleEl.textContent = title + ":";
-  titleEl.style.cssText = "color: #333;";
+  titleEl.className = "l0-dashboard-metadata-block-title";
   block.appendChild(titleEl);
 
   const valueEl = document.createElement("div");
-  valueEl.style.cssText = "margin-top: 4px; color: #626f86;";
+  valueEl.className = "l0-dashboard-metadata-block-value";
   valueEl.textContent = value;
   block.appendChild(valueEl);
 
   if (note) {
     const noteEl = document.createElement("div");
-    noteEl.style.cssText = "margin-top: 4px; color: #999; font-size: 11px;";
+    noteEl.className = "l0-dashboard-metadata-block-note";
     noteEl.textContent = `Note: ${note}`;
     block.appendChild(noteEl);
   }
