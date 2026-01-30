@@ -10,12 +10,6 @@ app:
   description: FirstTry Governance - Atlassian Dual-Layer Integration
   runtime:
     name: nodejs20.x
-  environment:
-    variables:
-      # Diagnostic probe token (required for webtrigger auth)
-      # Set to a strong random value in production deployment
-      FT_DIAG_TOKEN:
-        default: "ft_diag_dev_token_replace_in_production"
 
 # Modules
 modules:
