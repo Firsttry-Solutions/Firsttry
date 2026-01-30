@@ -13,6 +13,10 @@
  * }
  */
 
+// Support link configuration (mailto: for user accessibility)
+const SUPPORT_EMAIL = "support@firstry-solutions.com";
+const SUPPORT_URL = `mailto:${SUPPORT_EMAIL}`;
+
 export interface L0SnapshotResponse {
   status: "AVAILABLE" | "NO_SNAPSHOT" | "INVALID_SNAPSHOT" | "HARD_ERROR";
   snapshotId?: string;
@@ -207,14 +211,30 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     font-size: 14px;
     color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
   `;
+
+  // Aria-live region for state announcements (polite mode - doesn't interrupt user)
+  const liveRegion = document.createElement("div");
+  liveRegion.setAttribute("role", "status");
+  liveRegion.setAttribute("aria-live", "polite");
+  liveRegion.setAttribute("aria-atomic", "true");
+  liveRegion.style.cssText = "position: absolute; left: -9999px; height: 1px; width: 1px; overflow: hidden;";
+  liveRegion.textContent = `Dashboard state: ${state.status}. ${state.note}`;
+  container.appendChild(liveRegion);
+
+  // Main content div (grows to fill space)
+  const content = document.createElement("div");
+  content.style.cssText = "flex: 1;";
 
   if (state.status === "AVAILABLE") {
     // Available state - show snapshot
     const title = document.createElement("h1");
     title.textContent = "✓ Governance Snapshot Available";
     title.style.cssText = "color: #0052cc; margin: 0 0 16px 0; font-size: 18px;";
-    container.appendChild(title);
+    content.appendChild(title);
 
     const details = document.createElement("div");
     details.style.cssText = "background: #f1f2f4; padding: 12px; border-radius: 4px;";
@@ -234,19 +254,19 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     noteEl.textContent = state.note;
     details.appendChild(noteEl);
 
-    container.appendChild(details);
+    content.appendChild(details);
 
     // Snapshot metadata blocks (if present)
     if (state.metadata) {
       const metadataSection = renderMetadataBlocks(state.metadata);
-      container.appendChild(metadataSection);
+      content.appendChild(metadataSection);
     }
   } else if (state.status === "NO_SNAPSHOT" || state.status === "INVALID_SNAPSHOT") {
     // Non-fatal states - show dashboard with no data message
     const title = document.createElement("h1");
     title.textContent = state.status === "NO_SNAPSHOT" ? "⊘ No Snapshot Available" : "⊘ Snapshot Invalid";
     title.style.cssText = "color: #626f86; margin: 0 0 16px 0; font-size: 18px;";
-    container.appendChild(title);
+    content.appendChild(title);
 
     const message = document.createElement("div");
     message.style.cssText =
@@ -264,13 +284,13 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     errCode.innerHTML = `<strong>Reason:</strong> <code>${escapeHtml(state.error || "UNKNOWN")}</code>`;
     message.appendChild(errCode);
 
-    container.appendChild(message);
+    content.appendChild(message);
   } else {
     // Hard error state
     const title = document.createElement("h1");
     title.textContent = "✗ Snapshot Unavailable";
     title.style.cssText = "color: #d32f2f; margin: 0 0 16px 0; font-size: 18px;";
-    container.appendChild(title);
+    content.appendChild(title);
 
     const error = document.createElement("div");
     error.style.cssText =
@@ -286,8 +306,29 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     errorNote.textContent = state.note;
     error.appendChild(errorNote);
 
-    container.appendChild(error);
+    content.appendChild(error);
   }
+
+  container.appendChild(content);
+
+  // Support footer - always visible in all states
+  const footer = document.createElement("div");
+  footer.style.cssText = `
+    border-top: 1px solid #eee;
+    margin-top: 20px;
+    padding-top: 12px;
+    font-size: 12px;
+    color: #626f86;
+  `;
+  const supportLink = document.createElement("a");
+  supportLink.href = SUPPORT_URL;
+  supportLink.textContent = "Get Support";
+  supportLink.style.cssText = "color: #0052cc; text-decoration: none; font-weight: 600;";
+  supportLink.onmouseover = () => { supportLink.style.textDecoration = "underline"; };
+  supportLink.onmouseout = () => { supportLink.style.textDecoration = "none"; };
+  footer.appendChild(document.createTextNode("Need help? "));
+  footer.appendChild(supportLink);
+  container.appendChild(footer);
 
   return container;
 }

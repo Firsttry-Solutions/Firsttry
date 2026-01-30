@@ -9,7 +9,7 @@
 
 For reporting security vulnerabilities or concerns:
 
-- **Email**: SECURITY_EMAIL_HERE
+- **Email**: security@firstry-solutions.com
 - **Response time**: Best effort within 48 hours
 - **Do NOT** post security issues publicly or file GitHub issues for vulnerabilities
 
@@ -123,10 +123,10 @@ This app complies with:
 ## 8. Questions?
 
 For security questions (non-vulnerability):
-- Email: SUPPORT_EMAIL_HERE
+- Email: support@firstry-solutions.com
 - See also: Privacy Policy (docs/PRIVACY_POLICY.md)
 
 ---
 
 **Last Updated**: January 2026  
-**Report vulnerabilities to**: SECURITY_EMAIL_HERE
+**Report vulnerabilities to**: security@firstry-solutions.com
