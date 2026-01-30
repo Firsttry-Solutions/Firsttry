@@ -245,9 +245,9 @@ If a data breach occurs:
 
 For data handling questions:
 
-- **Email**: support@firstry-solutions.com
-- **Privacy inquiries**: support@firstry-solutions.com
-- **Security inquiries**: security@firstry-solutions.com
+- **Email**: support@firstry.io
+- **Privacy inquiries**: support@firstry.io
+- **Security inquiries**: security@firstry.io
 
 ---
 
@@ -266,4 +266,4 @@ When we make changes:
 ---
 
 **Last Updated**: January 2026  
-**For questions**: support@firstry-solutions.com
+**For questions**: support@firstry.io
