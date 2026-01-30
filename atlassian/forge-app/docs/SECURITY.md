@@ -9,7 +9,7 @@
 
 For reporting security vulnerabilities or concerns:
 
-- **Email**: security@firstry.io
+- **Email**: contact@firsttry.run
 - **Response time**: Best effort within 48 hours
 - **Do NOT** post security issues publicly or file GitHub issues for vulnerabilities
 
@@ -123,10 +123,10 @@ This app complies with:
 ## 8. Questions?
 
 For security questions (non-vulnerability):
-- Email: support@firstry.io
+- Email: contact@firsttry.run
 - See also: Privacy Policy (docs/PRIVACY_POLICY.md)
 
 ---
 
 **Last Updated**: January 2026  
-**Report vulnerabilities to**: security@firstry.io
+**Report vulnerabilities to**: contact@firsttry.run

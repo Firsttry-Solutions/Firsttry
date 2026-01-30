@@ -243,7 +243,7 @@ Results (all tests must pass):
 If you discover a security vulnerability, please:
 
 1. **Do NOT** open a public GitHub issue
-2. Email `security@firstry.governance` with:
+2. Email `contact@firsttry.run` with:
    - Description of the vulnerability
    - Steps to reproduce
    - Potential impact

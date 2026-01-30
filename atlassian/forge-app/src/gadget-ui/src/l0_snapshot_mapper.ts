@@ -15,7 +15,7 @@
 
 // Support link configuration (mailto: for user accessibility)
 // Must match docs/CONTACTS.md canonical value
-const SUPPORT_EMAIL = "support@firstry.io";
+const SUPPORT_EMAIL = "contact@firsttry.run";
 const SUPPORT_URL = `mailto:${SUPPORT_EMAIL}`;
 
 export interface L0SnapshotResponse {

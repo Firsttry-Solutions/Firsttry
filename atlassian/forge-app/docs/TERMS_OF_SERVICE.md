@@ -96,7 +96,7 @@ These Terms of Service are governed by:
 
 For questions about these Terms of Service:
 
-- **Email**: support@firstry.io (replace with your support email)
+- **Email**: contact@firsttry.run (replace with your support email)
 - **Support hours**: Monday–Friday, 9 AM–5 PM PT
 - **Response target**: Best effort within 2 business days
 
