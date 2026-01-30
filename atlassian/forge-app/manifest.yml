@@ -108,9 +108,6 @@ permissions:
   scopes:
     - storage:app
     - read:jira-work
-  content:
-    styles:
-      - 'unsafe-inline'
 
 # Resource pages
 resources:

@@ -232,7 +232,14 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
   if (state.status === "AVAILABLE") {
     // Available state - show snapshot
     const title = document.createElement("h1");
-    title.textContent = "✓ Governance Snapshot Available";
+    
+    // Check if snapshot is a seed snapshot and label accordingly
+    const isSeedSnapshot = state.snapshotId && state.snapshotId.includes("-seed");
+    const titleText = isSeedSnapshot
+      ? "✓ Seed Snapshot (Baseline Only)"
+      : "✓ Governance Snapshot Available";
+    
+    title.textContent = titleText;
     title.style.cssText = "color: #0052cc; margin: 0 0 16px 0; font-size: 18px;";
     content.appendChild(title);
 
@@ -243,6 +250,14 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     snapshotIdEl.style.cssText = "margin: 0 0 8px 0;";
     snapshotIdEl.innerHTML = `<strong>Snapshot ID:</strong> <code>${escapeHtml(state.snapshotId || "N/A")}</code>`;
     details.appendChild(snapshotIdEl);
+
+    // Add seed notice if applicable
+    if (isSeedSnapshot) {
+      const seedNotice = document.createElement("p");
+      seedNotice.style.cssText = "margin: 8px 0 0 0; font-size: 12px; color: #974f0c; background: #fff7d6; padding: 8px; border-radius: 2px;";
+      seedNotice.textContent = "⚠ This is a seed snapshot provided at app installation. It is not audit evidence. Governance snapshots will be created when evidence is collected.";
+      details.appendChild(seedNotice);
+    }
 
     const createdEl = document.createElement("p");
     createdEl.style.cssText = "margin: 0 0 8px 0;";
