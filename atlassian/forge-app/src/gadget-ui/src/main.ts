@@ -66,6 +66,149 @@ console.log("[UI_INVOKE_WIRING_PROOF] start");
 // ============================================================================
 console.log("[UI_CSP_PROOF] skip-inline-style-probe (no inline style attempted)");
 
+/**
+ * Inject CSS styles for error/fallback UI elements (CSP-safe, no unsafe-inline)
+ * This function injects a <style> tag once, then all elements use className refs
+ */
+function ensureMainUIStyles(): void {
+  if (document.getElementById("main-ui-styles")) {
+    return; // Already injected
+  }
+
+  const styleTag = document.createElement("style");
+  styleTag.id = "main-ui-styles";
+  styleTag.textContent = `
+    .ft-bridge-timeout-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      z-index: 999999;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .ft-bridge-timeout-content {
+      text-align: center;
+      padding: 24px;
+      max-width: 500px;
+    }
+
+    .ft-bridge-timeout-title {
+      color: #d32f2f;
+      margin: 0 0 16px 0;
+      font-size: 24px;
+    }
+
+    .ft-bridge-timeout-message {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .ft-error-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #fff;
+      z-index: 9999;
+    }
+
+    .ft-error-panel-content {
+      max-width: 600px;
+      padding: 20px;
+      background: #fee;
+      border: 1px solid #c00;
+    }
+
+    .ft-error-panel-title {
+      margin: 0 0 16px 0;
+      font-weight: bold;
+      color: #c00;
+    }
+
+    .ft-error-panel-text {
+      margin: 0;
+      color: #333;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .ft-backend-error-panel {
+      padding: 20px;
+      background: #fce4ec;
+      color: #d32f2f;
+      border-left: 4px solid #d32f2f;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    .ft-ui-serve-proof-banner {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #f0f7ff;
+      border-bottom: 2px solid #0052cc;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-family: monospace;
+      z-index: 9999;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .ft-ui-entry-runtime-proof-banner {
+      background: #003f87;
+      color: #fff;
+      padding: 8px 12px;
+      font-family: monospace;
+      font-size: 11px;
+      line-height: 1.4;
+      border-bottom: 1px solid #0052cc;
+    }
+
+    .ft-ui-entry-runtime-proof-banner strong {
+      color: #fff;
+    }
+
+    .ft-serve-mismatch-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 99999;
+      padding: 12px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: auto;
+    }
+
+    .ft-serve-mismatch-banner.ok {
+      background-color: #f0f7ff;
+      border-bottom: 2px solid #0052cc;
+      color: #003d66;
+    }
+
+    .ft-serve-mismatch-banner.mismatch {
+      background-color: #ffeceb;
+      border-bottom: 3px solid #cc0000;
+      color: #660000;
+    }
+  `;
+
+  document.head.appendChild(styleTag);
+}
+
 // ============================================================================
 // UI BUILD IDENTITY — ALWAYS PRINTED (even if bridge fails)
 // This marker runs before bridge check so we know which bundle is executing
@@ -106,29 +249,25 @@ setTimeout(() => {
   // After 3 seconds, if bridge hasn't been verified, assume it's missing
   const fatalPanel = document.getElementById("forge-bridge-fatal-error-panel");
   if (!fatalPanel && !document.body.classList.contains("ft-bridge-verified")) {
+    ensureMainUIStyles();
     const panel = document.createElement("div");
     panel.id = "forge-bridge-fatal-error-panel-timeout";
-    panel.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff;
-      z-index: 999999;
-      font-family: system-ui, -apple-system, sans-serif;
-    `;
-    panel.innerHTML = `
-      <div style="text-align: center; padding: 24px; max-width: 500px;">
-        <h1 style="color: #d32f2f; margin: 0 0 16px 0; font-size: 24px;">⚠️ Bridge Timeout</h1>
-        <p style="color: #666; font-size: 16px;">
-          The Forge bridge did not respond within 3 seconds. Try refreshing the page.
-        </p>
-      </div>
-    `;
+    panel.className = "ft-bridge-timeout-panel";
+    
+    const content = document.createElement("div");
+    content.className = "ft-bridge-timeout-content";
+    
+    const title = document.createElement("h1");
+    title.className = "ft-bridge-timeout-title";
+    title.textContent = "⚠️ Bridge Timeout";
+    content.appendChild(title);
+    
+    const message = document.createElement("p");
+    message.className = "ft-bridge-timeout-message";
+    message.textContent = "The Forge bridge did not respond within 3 seconds. Try refreshing the page.";
+    content.appendChild(message);
+    
+    panel.appendChild(content);
     document.body.appendChild(panel);
   }
 }, 3000);
@@ -325,15 +464,29 @@ try {
 } catch (err) {
   console.error('[FATAL_UI_IDENTITY]', err instanceof Error ? err.message : String(err));
   // Fail closed: if identity cannot be built, show error and stop
+  ensureMainUIStyles();
   const errPanel = document.createElement('div');
-  errPanel.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:9999;' +
-    'display:flex;align-items:center;justify-content:center;font-family:monospace;';
-  errPanel.innerHTML = `<div style="max-width:600px;padding:20px;background:#fee;border:1px solid #c00;">` +
-    `<h2>FATAL: UI Identity Error</h2>` +
-    `<pre>${err instanceof Error ? err.message : String(err)}</pre>` +
-    `<p>The UI bundle identity could not be determined. This prevents secure operation.` +
-    ` Check that @forge/bridge is installed and the gadget is served from dist.</p>` +
-    `</div>`;
+  errPanel.className = 'ft-error-panel';
+  
+  const content = document.createElement('div');
+  content.className = 'ft-error-panel-content';
+  
+  const title = document.createElement('h2');
+  title.className = 'ft-error-panel-title';
+  title.textContent = 'FATAL: UI Identity Error';
+  content.appendChild(title);
+  
+  const message = document.createElement('pre');
+  message.className = 'ft-error-panel-text';
+  message.textContent = err instanceof Error ? err.message : String(err);
+  content.appendChild(message);
+  
+  const note = document.createElement('p');
+  note.className = 'ft-error-panel-text';
+  note.textContent = "The UI bundle identity could not be determined. This prevents secure operation. Check that @forge/bridge is installed and the gadget is served from dist.";
+  content.appendChild(note);
+  
+  errPanel.appendChild(content);
   document.body.innerHTML = '';
   document.body.appendChild(errPanel);
   throw err;
@@ -2622,29 +2775,32 @@ function wireExportButtons() {
     }
     
     // Make banner visible and populate with UI build info
-    banner.className = ''; // Remove is-hidden
-    banner.style.cssText = `
-      display: block;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: #f0f7ff;
-      border-bottom: 2px solid #0052cc;
-      padding: 8px 16px;
-      font-size: 12px;
-      font-family: monospace;
-      z-index: 9999;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    `;
+    ensureMainUIStyles();
+    banner.className = 'ft-ui-serve-proof-banner';
     
-    banner.innerHTML = `
-      <strong style="color: #0052cc;">[UI_SERVE_PROOF]</strong>
-      UI_GIT_SHA=<code>${UI_GIT_SHA}</code>
-      UI_BUILD_TIME=<code>${UI_BUILD_TIME_UTC}</code>
-      SCRIPT_SRC=<code>${scriptUrls.join(' | ')}</code>
-      UI_REQ_ID=<code>${FT_UI_REQ_ID}</code>
-    `;
+    const strong = document.createElement('strong');
+    strong.textContent = '[UI_SERVE_PROOF]';
+    banner.appendChild(strong);
+    
+    banner.appendChild(document.createTextNode(' UI_GIT_SHA='));
+    const code1 = document.createElement('code');
+    code1.textContent = UI_GIT_SHA;
+    banner.appendChild(code1);
+    
+    banner.appendChild(document.createTextNode(' UI_BUILD_TIME='));
+    const code2 = document.createElement('code');
+    code2.textContent = UI_BUILD_TIME_UTC;
+    banner.appendChild(code2);
+    
+    banner.appendChild(document.createTextNode(' SCRIPT_SRC='));
+    const code3 = document.createElement('code');
+    code3.textContent = scriptUrls.join(' | ');
+    banner.appendChild(code3);
+    
+    banner.appendChild(document.createTextNode(' UI_REQ_ID='));
+    const code4 = document.createElement('code');
+    code4.textContent = FT_UI_REQ_ID;
+    banner.appendChild(code4);
   } catch (err) {
     console.error('[UI_SERVE_PROOF_BANNER] Error:', err);
   }
@@ -2700,34 +2856,18 @@ function wireExportButtons() {
     };
     
     // 5. Render appropriate banner
+    ensureMainUIStyles();
     let banner = document.createElement('div');
     banner.id = 'ft-serve-mismatch-banner';
-    banner.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 99999;
-      padding: 12px 16px;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      line-height: 1.4;
-      white-space: nowrap;
-      overflow: auto;
-    `;
     
     if (isMatch) {
       // GREEN/BLUE: All good
-      banner.style.backgroundColor = '#f0f7ff';
-      banner.style.borderBottom = '2px solid #0052cc';
-      banner.style.color = '#003d66';
+      banner.className = 'ft-serve-mismatch-banner ok';
       banner.textContent = `[UI_SERVE_OK] runtime=${runtimeSha} loaded=${filenameShaPart} url=${loadedEntry} uiReqId=${FT_UI_REQ_ID}`;
       console.log('[UI_SERVE_OK]', proofObj);
     } else {
       // RED: Mismatch detected (CDN is serving stale code)
-      banner.style.backgroundColor = '#ffeceb';
-      banner.style.borderBottom = '3px solid #cc0000';
-      banner.style.color = '#660000';
+      banner.className = 'ft-serve-mismatch-banner mismatch';
       banner.textContent = `[UI_SERVE_MISMATCH] runtime=${runtimeSha} loaded=${filenameShaPart} url=${loadedEntry} uiReqId=${FT_UI_REQ_ID}`;
       console.error('[UI_SERVE_MISMATCH]', proofObj);
     }
@@ -2918,16 +3058,10 @@ async function proceedWithBoot() {
         const errorMsg = err instanceof Error ? err.message : String(err);
         console.error('[L0_DASHBOARD_FATAL]', errorMsg);
         
+        ensureMainUIStyles();
         document.body.innerHTML = '';
         const errorPanel = document.createElement('div');
-        errorPanel.style.cssText = `
-          padding: 20px;
-          background: #fce4ec;
-          color: #d32f2f;
-          border-left: 4px solid #d32f2f;
-          font-family: monospace;
-          font-size: 12px;
-        `;
+        errorPanel.className = 'ft-backend-error-panel';
         errorPanel.textContent = `Backend invoke failed: ${errorMsg.substring(0, 100)}`;
         document.body.appendChild(errorPanel);
       }
@@ -2937,24 +3071,30 @@ async function proceedWithBoot() {
     // L0.C: RENDER ENTRY RUNTIME PROOF BANNER (top of page)
     // ========================================================================
     try {
+        ensureMainUIStyles();
         const proof = (window as any).__FT_RUNTIME_ENTRY_PROOF__;
         const entryProofText = formatEntryProofForBanner();
         const bundleHash = proof?.ui_entry_bundle_hash || 'UNKNOWN';
         const gitSha = proof?.ui_git_sha || 'UNSET';
         const scripts = proof?.script_srcs || [];
         
-        const bannerHtml = `
-            <div style="background: #003f87; color: #fff; padding: 8px 12px; font-family: monospace; font-size: 11px; line-height: 1.4; border-bottom: 1px solid #0052cc;">
-                <strong>[UI_ENTRY_RUNTIME_PROOF]</strong> UI_ENTRY_BUNDLE_HASH=${bundleHash} | UI_GIT_SHA=${gitSha} | ${entryProofText}
-                <br/>Scripts: ${scripts.join(' | ') || '(none)'}
-            </div>
-        `;
-        
         const mainSection = document.querySelector('main') || document.body;
-        const banner = document.createElement('div');
-        banner.id = 'ui-entry-proof-banner';
-        banner.innerHTML = bannerHtml;
-        mainSection.insertBefore(banner, mainSection.firstChild);
+        const bannerDiv = document.createElement('div');
+        bannerDiv.id = 'ui-entry-proof-banner';
+        bannerDiv.className = 'ft-ui-entry-runtime-proof-banner';
+        
+        const strong = document.createElement('strong');
+        strong.textContent = '[UI_ENTRY_RUNTIME_PROOF]';
+        bannerDiv.appendChild(strong);
+        
+        bannerDiv.appendChild(document.createTextNode(` UI_ENTRY_BUNDLE_HASH=${bundleHash} | UI_GIT_SHA=${gitSha} | ${entryProofText}`));
+        
+        const br = document.createElement('br');
+        bannerDiv.appendChild(br);
+        
+        bannerDiv.appendChild(document.createTextNode(`Scripts: ${scripts.join(' | ') || '(none)'}`));
+        
+        mainSection.insertBefore(bannerDiv, mainSection.firstChild);
     } catch (err) {
         console.error('[UI_ENTRY_PROOF_BANNER_ERROR]', err);
     }
