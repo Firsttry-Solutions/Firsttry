@@ -42,6 +42,11 @@ import { mapL0SnapshotResponse, renderL0Dashboard, type L0DashboardState } from 
 import { mergeDashboardState } from "./l0_state_merge";
 
 // ============================================================================
+// NATIVE RESIZE HANDLER (No iframe-resizer, CSP-safe)
+// ============================================================================
+import { initResizeHandler } from "./resizeHandler";
+
+// ============================================================================
 // DASHBOARD ENVELOPE MAPPING & VALIDATION (SHARED MODULE)
 
 // CRITICAL: Both UI and tests use these real functions (no duplicates allowed)
@@ -2840,6 +2845,14 @@ async function proceedWithBoot() {
     ftUpdateProofNode();
     
     wireExportButtons();
+
+    // ========================================================================
+    // NATIVE RESIZE HANDLER (CSP-safe, no iframe-resizer)
+    // ========================================================================
+    initResizeHandler().catch((err) => {
+      console.warn("[UI_BOOT] Failed to initialize resize handler:", err);
+      // Non-fatal - gadget continues to work
+    });
     
     // ========================================================================
     // PHASE 1: Log consolidated build identity proof
