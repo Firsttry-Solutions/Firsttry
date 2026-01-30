@@ -16,6 +16,9 @@ import {
 } from '../../src/phase6/constants';
 import * as forgeApi from '@forge/api';
 
+// Store for storage query mock data
+let storageGetManyMockResults: Array<{ key: string; value: any }> = [];
+
 // Mock @forge/api
 vi.mock('@forge/api', () => {
   const requestJiraMock = vi.fn();
@@ -27,26 +30,6 @@ vi.mock('@forge/api', () => {
   });
 
   return {
-    default: {
-      api: {
-        asUser: asUserMock,
-        asApp: asAppMock,
-        requestJira: requestJiraMock,
-      },
-      scheduled: {
-        on: vi.fn(),
-      },
-      storage: {
-        set: vi.fn(),
-        get: vi.fn(),
-        delete: vi.fn(),
-        query: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            getKeys: vi.fn(),
-          }),
-        }),
-      },
-    },
     api: {
       asUser: asUserMock,
       asApp: asAppMock,
@@ -61,12 +44,16 @@ vi.mock('@forge/api', () => {
       delete: vi.fn(),
       query: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
+          getMany: vi.fn(async () => ({
+            results: storageGetManyMockResults || [],
+          })),
           getKeys: vi.fn(),
         }),
       }),
     },
   };
 });
+
 
 describe('Scheduler: Idempotency', () => {
   it('should generate consistent idempotency keys for daily snapshot', () => {

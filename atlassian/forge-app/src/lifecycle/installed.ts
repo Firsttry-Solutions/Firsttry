@@ -1,135 +1,98 @@
 /**
  * Layer-0 Marketplace: App Installation Trigger Handler
  * 
- * Creates snapshot anchor on app install (idempotent).
- * - If snapshot exists: do nothing
- * - If missing: create anchor snapshot
- * - Write install marker to prove execution
- * - NO Jira API calls
- * - NO retries
+ * PHASE: Deterministic Seed-First-Snapshot on Install
+ * 
+ * Purpose:
+ * - Ensures new app installs NEVER show NO_SNAPSHOT on first load
+ * - Seeds snapshot automatically on install (idempotent)
+ * - Uses deterministic identifiers (git SHA + release version)
+ * - NO Jira mutations (read-only + Forge storage writes only)
+ * - GATED by enforceDashEnvelopeV1Invariant (contract compliance)
+ * 
+ * Logic:
+ * - Check if snapshot pointer (FT_SNAPSHOT_LAST_KEY) exists
+ * - If exists: do nothing (idempotent, already seeded)
+ * - If missing: call seedFirstSnapshotIfMissingOrRepair()
+ *   - Generates snapshot using deterministic build metadata
+ *   - Stores in Forge storage (read-only Jira APIs only)
+ *   - Writes install marker for proof
+ * - Result: ft_getDashboardState_v1 immediately returns AVAILABLE + renders UI
+ * 
+ * Determinism:
+ * - Uses BACKEND_BUILD_SHA (git short SHA from build)
+ * - Uses FT_RELEASE_VERSION (manually bumped version marker)
+ * - NO Date.now(), NO Math.random(), NO wall-clock time
+ * - Snapshot ID = deterministic hash(buildSha + version + install)
+ * - Created time = placeholder timestamp (will be updated by resolver on live calls)
  */
 
-import api from "@forge/api";
-import { FT_SNAPSHOT_LAST_KEY, FT_INSTALL_MARKER_KEY } from "../backbone/keys";
+import { BACKEND_BUILD_SHA } from "../build/backend_build";
+import { FT_RELEASE_VERSION } from "../release/release_version";
+import { seedFirstSnapshotIfMissingOrRepair } from "./seedSnapshot";
 
 /**
- * Generate deterministic UUID
+ * Backward compatibility alias
+ * New code should use seedFirstSnapshotIfMissingOrRepair from seedSnapshot.ts
  */
-function generateUUID(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+export async function seedFirstSnapshotIfMissing() {
+  return seedFirstSnapshotIfMissingOrRepair();
 }
 
 /**
- * Validate snapshot structure (STRICT)
- */
-function isValidSnapshot(snapshot: any): boolean {
-  if (!snapshot) return false;
-  if (typeof snapshot.snapshotId !== 'string' || !snapshot.snapshotId.trim()) return false;
-  if (typeof snapshot.createdAtUtc !== 'string' || !snapshot.createdAtUtc.trim()) return false;
-  if (snapshot.schemaVersion !== "L0") return false;
-  if (typeof snapshot.data !== 'object' || snapshot.data === null) return false;
-  // Must end with 'Z' for UTC
-  if (!snapshot.createdAtUtc.endsWith('Z')) return false;
-  return true;
-}
-
-/**
- * Create minimal L0 snapshot anchor with metadata declarations
- */
-function createSnapshotAnchor(): any {
-  const now = new Date().toISOString();
-  const snapshotId = generateUUID();
-  
-  return {
-    snapshotId,
-    createdAtUtc: now,
-    schemaVersion: "L0",
-    // Snapshot metadata (declared, not computed)
-    metadata: {
-      // A. Snapshot Existence & Freshness (MANDATORY)
-      status: "AVAILABLE",
-      
-      // B. Coverage Declaration (READ-ONLY)
-      coverage: {
-        declaration: "NOT_DECLARED_IN_SNAPSHOT",
-        note: "Coverage counts (projects, issues, users) not computed in L0 dumb reader"
-      },
-      
-      // C. Integrity & Immutability Proof
-      integrity: {
-        declaration: "NOT_DECLARED_IN_SNAPSHOT",
-        note: "Snapshot hash and write-once semantics not yet declared at capture time"
-      },
-      
-      // D. Provenance & Chain-of-Custody
-      provenance: {
-        capturedBy: "L0_INSTALLED_HANDLER",
-        captureTrigger: "APP_INSTALLATION",
-        appVersionAtCapture: "1.0.0-L0",
-        note: "Snapshot created at app install time"
-      },
-      
-      // E. Export Readiness (DECLARATIVE ONLY)
-      export: {
-        formats: ["JSON"],
-        scope: "SNAPSHOT_METADATA",
-        readiness: "AVAILABLE"
-      },
-      
-      // F. Compliance Mapping (FACTUAL ONLY)
-      compliance: {
-        declaration: "NOT_DECLARED_IN_SNAPSHOT",
-        note: "Specific compliance mappings not declared at snapshot creation time"
-      },
-      
-      // G. Non-Claims Disclaimer
-      disclaimer: {
-        doesNotMonitor: "Live Jira activity",
-        doesNotModify: "Jira data or configuration",
-        doesNotAutoFix: "Compliance issues",
-        doesNotProvide: "Compliance guarantees or substitutes for professional audit"
-      }
-    },
-    data: {
-      kind: "L0",
-      note: "Jira governance evidence snapshot (export for full details).",
-      createdAtUtc: now,
-      snapshotId
-    }
-  };
-}
-
-/**
- * Main handler: Create snapshot anchor if missing
+ * Main handler: Wired to avi:forge:installed:app trigger
+ * 
+ * Runs on: app install (NOT upgrade - use upgraded.ts handler for upgrades)
+ * 
+ * Flow:
+ * 1. Call seedFirstSnapshotIfMissingOrRepair()
+ * 2. Log result
+ * 3. Return (install complete)
+ * 
+ * Result: Dashboard gadget will render AVAILABLE on first load
+ * (ft_getDashboardState_v1 will find snapshot + return okEnvelope)
  */
 export const handler = async (event: any) => {
+  const startTs = new Date().toISOString();
+  
+  console.log(JSON.stringify({
+    marker: "[FT_INSTALLED_TRIGGER_START]",
+    trigger: event?.trigger || "avi:forge:installed:app",
+    ts: startTs,
+    buildSha: BACKEND_BUILD_SHA,
+    releaseVersion: FT_RELEASE_VERSION
+  }));
+  
   try {
-    await api.asApp().requestStorage(async (storage) => {
-      // Step 1: Check if snapshot exists
-      const existing = await storage.get(FT_SNAPSHOT_LAST_KEY);
-      
-      if (existing && isValidSnapshot(existing)) {
-        // Snapshot already exists - do nothing
-        console.log(`[FT_INSTALLED] created=false snapshotId=${(existing as any).snapshotId}`);
-        return;
-      }
-      
-      // Step 2: Create snapshot anchor
-      const snapshot = createSnapshotAnchor();
-      await storage.set(FT_SNAPSHOT_LAST_KEY, snapshot);
-      
-      // Step 3: Write install marker
-      const installMarker = {
-        ranAtUtc: new Date().toISOString(),
-        schemaVersion: "L0"
-      };
-      await storage.set(FT_INSTALL_MARKER_KEY, installMarker);
-      
-      // Log success
-      console.log(`[FT_INSTALLED] created=true snapshotId=${snapshot.snapshotId}`);
-    });
+    const result = await seedFirstSnapshotIfMissingOrRepair();
+    
+    const endTs = new Date().toISOString();
+    console.log(JSON.stringify({
+      marker: "[FT_INSTALLED_TRIGGER_END]",
+      action: result.action,
+      snapshotId: result.snapshotId,
+      ran: result.ran,
+      ts: endTs,
+      buildSha: result.buildSha,
+      releaseVersion: result.releaseVersion
+    }));
+    
+    return result;
   } catch (err) {
-    console.error("[FT_INSTALLED] Error during install:", err instanceof Error ? err.message : String(err));
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    
+    console.log(JSON.stringify({
+      marker: "[FT_INSTALLED_TRIGGER_END]",
+      action: "FAILED",
+      ran: false,
+      ts: new Date().toISOString(),
+      error: errorMsg,
+      buildSha: BACKEND_BUILD_SHA,
+      releaseVersion: FT_RELEASE_VERSION
+    }));
+    
+    console.error("[FT_INSTALLED] Fatal error during install handler:", errorMsg);
     throw err;
   }
 };
+

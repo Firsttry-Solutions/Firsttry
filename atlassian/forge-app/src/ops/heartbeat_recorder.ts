@@ -38,6 +38,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 
 interface HeartbeatRecord {
   status: 'RUNNING' | 'INITIALIZING' | 'DEGRADED';
@@ -101,15 +102,14 @@ export async function recordHeartbeatCheck(
     const storageKey = `firsttry:heartbeat:${cloudId}`;
     const now = new Date().toISOString();
 
-    await api.asApp().requestStorage(async (storage) => {
-      // Load existing record (or initialize)
-      let record = (await storage.get(storageKey)) as HeartbeatRecord | null;
+    // Load existing record (or initialize)
+    let record = (await storage.get(storageKey)) as HeartbeatRecord | null;
 
-      if (!record) {
-        record = {
-          status: 'INITIALIZING',
-        };
-      }
+    if (!record) {
+      record = {
+        status: 'INITIALIZING',
+      };
+    }
 
       // Update cadence check timestamps
       record.lastCadenceCheckAt = now;
@@ -153,8 +153,7 @@ export async function recordHeartbeatCheck(
 
       // Persist back to storage
       await storage.set(storageKey, record);
-    });
-  } catch (error) {
+    } catch (error) {
     console.error('[Heartbeat] Error recording check:', error);
     // Do not throw - we never want heartbeat failures to disrupt the main app
   }
@@ -178,26 +177,24 @@ export async function recordSnapshot(cloudId: string): Promise<void> {
     const storageKey = `firsttry:heartbeat:${cloudId}`;
     const now = new Date().toISOString();
 
-    await api.asApp().requestStorage(async (storage) => {
-      let record = (await storage.get(storageKey)) as HeartbeatRecord | null;
+    let record = (await storage.get(storageKey)) as HeartbeatRecord | null;
 
-      if (!record) {
-        record = {
-          status: 'INITIALIZING',
-        };
-      }
+    if (!record) {
+      record = {
+        status: 'INITIALIZING',
+      };
+    }
 
-      record.updatedAt = now;
+    record.updatedAt = now;
 
-      // Increment snapshot count
-      if (!record.snapshotCount) {
-        record.snapshotCount = 1;
-      } else {
-        record.snapshotCount += 1;
-      }
+    // Increment snapshot count
+    if (!record.snapshotCount) {
+      record.snapshotCount = 1;
+    } else {
+      record.snapshotCount += 1;
+    }
 
-      await storage.set(storageKey, record);
-    });
+    await storage.set(storageKey, record);
   } catch (error) {
     console.error('[Heartbeat] Error recording snapshot:', error);
     // Do not throw
@@ -222,32 +219,30 @@ export async function recordPlatformPing(cloudId: string): Promise<void> {
     const storageKey = `firsttry:heartbeat:${cloudId}`;
     const now = new Date().toISOString();
 
-    await api.asApp().requestStorage(async (storage) => {
-      let record = (await storage.get(storageKey)) as HeartbeatRecord | null;
+    let record = (await storage.get(storageKey)) as HeartbeatRecord | null;
 
-      if (!record) {
-        record = {
-          status: 'INITIALIZING',
-        };
-      }
+    if (!record) {
+      record = {
+        status: 'INITIALIZING',
+      };
+    }
 
-      // Update platform trigger fields
-      record.lastTriggerAt = now;
-      record.updatedAt = now;
+    // Update platform trigger fields
+    record.lastTriggerAt = now;
+    record.updatedAt = now;
 
-      if (!record.triggerCount) {
-        record.triggerCount = 1;
-      } else {
-        record.triggerCount += 1;
-      }
+    if (!record.triggerCount) {
+      record.triggerCount = 1;
+    } else {
+      record.triggerCount += 1;
+    }
 
-      // Set cadence interval if not set
-      if (!record.cadenceIntervalMinutes) {
-        record.cadenceIntervalMinutes = 15; // Fixed constant
-      }
+    // Set cadence interval if not set
+    if (!record.cadenceIntervalMinutes) {
+      record.cadenceIntervalMinutes = 15; // Fixed constant
+    }
 
-      await storage.set(storageKey, record);
-    });
+    await storage.set(storageKey, record);
   } catch (error) {
     console.error('[Heartbeat] Error recording platform ping:', error);
     // Do not throw
@@ -271,10 +266,8 @@ export async function getHeartbeat(cloudId: string): Promise<HeartbeatRecord | n
   try {
     const storageKey = `firsttry:heartbeat:${cloudId}`;
 
-    return await api.asApp().requestStorage(async (storage) => {
-      const record = await storage.get(storageKey);
-      return (record as HeartbeatRecord) || null;
-    });
+    const record = await storage.get(storageKey);
+    return (record as HeartbeatRecord) || null;
   } catch (error) {
     console.error('[Heartbeat] Error reading record:', error);
     return null;

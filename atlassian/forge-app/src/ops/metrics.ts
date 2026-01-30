@@ -23,6 +23,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 import crypto from 'crypto';
 import { TenantContext } from '../security/tenant_context';
 import { CorrelationId } from './trace';
@@ -115,9 +116,7 @@ export async function recordMetricEvent(
   const tenantToken = computeTenantToken(tenantContext);
   const storageKey = `metrics:${tenantToken}:${Date.now()}:${Math.random().toString(36).substring(2)}`;
   
-  await api.asApp().requestStorage(async (storage) => {
-    await storage.set(storageKey, event, { ttl: Math.max(1, ttlSeconds) });
-  });
+  await storage.set(storageKey, event, { ttl: Math.max(1, ttlSeconds) });
 }
 
 /**

@@ -37,6 +37,11 @@ import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownS
 import { mapL0SnapshotResponse, renderL0Dashboard, type L0DashboardState } from "./l0_snapshot_mapper";
 
 // ============================================================================
+// LAYER-0 STATE MERGE GUARD (INVARIANT: Prevent AVAILABLE→NO_SNAPSHOT downgrade)
+// ============================================================================
+import { mergeDashboardState } from "./l0_state_merge";
+
+// ============================================================================
 // DASHBOARD ENVELOPE MAPPING & VALIDATION (SHARED MODULE)
 
 // CRITICAL: Both UI and tests use these real functions (no duplicates allowed)
@@ -338,6 +343,25 @@ try {
   document.body.innerHTML = '';
   document.body.appendChild(errPanel);
   throw err;
+}
+
+/**
+ * Helper: Send marker to backend log relay
+ * Fire-and-forget: wraps errors so UI never breaks
+ */
+async function relayMarkerToBackend(marker: string, extra?: any): Promise<void> {
+  try {
+    // FLAT PAYLOAD: Invoke expects flat structure, not nested
+    await invoke('ft_uiLogRelay_v1', {
+      marker,
+      ui_git_sha: UI_IDENTITY.git_sha,
+      ui_req_id: FT_UI_REQ_ID,
+      extra: extra || {},
+    });
+  } catch (e) {
+    // Swallow errors - relay is diagnostics only, never break UI
+    console.warn('[UI_RELAY_INVOKE_ERROR]', String(e));
+  }
 }
 
 // ============================================================================
@@ -2815,6 +2839,11 @@ function onDOMReady() {
     })();
 }
 
+// ============================================================================
+// GLOBAL STATE STORAGE (for invariant guard)
+// ============================================================================
+let currentL0DashboardState: L0DashboardState | null = null;
+
 async function proceedWithBoot() {
     // Initialize proof node early (will be updated when envelope arrives)
     ftUpdateProofNode();
@@ -2825,6 +2854,14 @@ async function proceedWithBoot() {
     // PHASE 1: Log consolidated build identity proof
     // ========================================================================
     logUiBuildIdentityProof();
+
+    // RELAY: Send entry proof to backend for log capture
+    // ========================================================================
+    relayMarkerToBackend('UI_ENTRY_RUNTIME_PROOF', {
+      ui_git_sha: UI_IDENTITY.ui_git_sha,
+      ui_bundle_hash: UI_IDENTITY.ui_bundle_hash,
+      ui_git_time: UI_IDENTITY.ui_git_time_iso,
+    });
     
     // ========================================================================
     // Layer-0 Marketplace: Load dashboard state at startup (dumb reader pattern)
@@ -2832,19 +2869,55 @@ async function proceedWithBoot() {
     (async () => {
       try {
         // STEP 1: Invoke backend resolver (single call only)
-        const response = await forgeInvoke('ft_getDashboardState_v1', {});
+        const invokeResult = await forgeInvoke('ft_getDashboardState_v1', {});
         
-        // STEP 2: Map response to dashboard state
-        const dashState = mapL0SnapshotResponse(response);
+        // STEP 2: Extract resolver response from invoke wrapper
+        // forgeInvoke wraps result as { ok: true, value: {...} } or { ok: false, error: {...} }
+        // We need to extract the actual resolver response for the mapper
+        let resolverResponse: any;
+        if (invokeResult.ok === true) {
+          resolverResponse = invokeResult.value;
+        } else {
+          // Bridge error - treat as hard error
+          resolverResponse = {
+            status: 'HARD_ERROR',
+            schemaVersion: 'v1',
+            error: {
+              code: invokeResult.error.code,
+              message: invokeResult.error.message
+            }
+          };
+        }
         
-        // STEP 3: Render dashboard (AVAILABLE or HARD ERROR only)
+        // STEP 3: Map resolver response to dashboard state
+        const mappedState = mapL0SnapshotResponse(resolverResponse);
+        
+        // STEP 3b: Apply invariant guard (merge with previous state)
+        // Prevents AVAILABLE→NO_SNAPSHOT downgrade unless explicitly allowed
+        const dashState = mergeDashboardState(currentL0DashboardState, mappedState);
+        
+        // Store current state for next update
+        currentL0DashboardState = dashState;
+        
+        // STEP 4: Render dashboard (AVAILABLE, NO_SNAPSHOT, INVALID_SNAPSHOT, or HARD_ERROR only)
         const dashboard = renderL0Dashboard(dashState);
         document.body.innerHTML = '';
         document.body.appendChild(dashboard);
         
+        // RELAY: Send dashboard rendered marker with status and reason code
+        // ========================================================================
+        relayMarkerToBackend('L0_DASHBOARD_RENDERED', {
+          status: dashState.status,
+          reasonCode: dashState.reasonCode,
+          snapshotId: dashState.snapshotId,
+          createdAtUtc: dashState.createdAtUtc,
+        });
+        
         console.log('[L0_DASHBOARD_RENDERED]', {
           status: dashState.status,
+          reasonCode: dashState.reasonCode,
           snapshotId: dashState.snapshotId,
+          createdAtUtc: dashState.createdAtUtc,
         });
       } catch (err) {
         // Fatal invoke error - backend not responding
@@ -3101,25 +3174,52 @@ async function proceedWithBoot() {
                     return;
                 }
 
-                // Contract validated - extract data
-                const data = stateResult.ok ? stateResult.data : stateResult.error;
+                // Contract validated - extract data and error with deterministic defaults
+                const data = stateResult.ok ? stateResult.data : null;
+                const error = stateResult.ok ? null : stateResult.error;
                 const trace = stateResult.trace;
 
-                if (!data) {
+                // BACKBONE FIX: Guarantee status and reason are never undefined
+                // status comes from stateResult.status (ALWAYS present due to enforceDashEnvelopeV1Invariant)
+                const status = stateResult.status ?? 'HARD_ERROR';
+                
+                // reason comes from error.code if error present, otherwise use OK
+                const reason = error?.code ?? 'OK';
+
+                if (!data && stateResult.ok === true) {
                     console.error(JSON.stringify({
                       marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
-                      reason: 'empty_payload',
+                      reason: 'ok_true_missing_data',
                       uiReqId: FT_UI_REQ_ID
                     }));
                     
-                    const errorInfo = `Contract failure: data/error is empty`;
+                    const errorInfo = `Contract failure: ok=true but data is empty`;
                     const backendDisplay = `(${errorInfo})`;
                     buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
                     buildFooter.classList.add('text-error');
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | EMPTY`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | EMPTY_DATA`;
+                    buildFooter.appendChild(proofEl);
+                    return;
+                }
+
+                if (!error && stateResult.ok === false) {
+                    console.error(JSON.stringify({
+                      marker: 'UI_DASH_CONTRACT_FAIL_CLOSED',
+                      reason: 'ok_false_missing_error',
+                      uiReqId: FT_UI_REQ_ID
+                    }));
+                    
+                    const errorInfo = `Contract failure: ok=false but error is empty`;
+                    const backendDisplay = `(${errorInfo})`;
+                    buildFooter.textContent = `UI: ${uiBuild} | Backend: ${backendDisplay}`;
+                    buildFooter.classList.add('text-error');
+                    buildFooter.classList.remove('text-info');
+                    
+                    const proofEl = ftEnsureServeProofEl();
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | EMPTY_ERROR`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }
@@ -3129,17 +3229,21 @@ async function proceedWithBoot() {
                   marker: '[UI_DASH_RAW_ENVELOPE]',
                   schemaVersion: stateResult.schemaVersion,
                   envelopeKind: stateResult.envelopeKind,
-                  envelopeVersion: stateResult.envelopeVersion,
                   ok: stateResult.ok,
+                  status: status,
+                  reason: reason,
                   hasData: 'data' in stateResult,
                   hasError: 'error' in stateResult,
-                  metaKeys: Object.keys(stateResult.meta || {}),
                   dataKeys: stateResult.data ? Object.keys(stateResult.data).slice(0, 50) : null
                 }));
                 
                 // Success - show backend build SHA and status
-                console.log(`[UI_FT_GETDASHBOARDSTATE_SUCCESS] uiReqId=${FT_UI_REQ_ID} status=${data?.status} reason=${data?.reason_code}`);
-                // Extract backend build SHA from response
+                console.log(`[UI_RESP_KEYS] ${JSON.stringify(Object.keys(stateResult))} hasStatus=${Object.prototype.hasOwnProperty.call(stateResult, 'status')} status=${status}`);
+                console.log(`[UI_RESP_JSON] ${JSON.stringify(stateResult)}`);
+                // BACKBONE FIX: Log deterministic status and reason (never undefined)
+                console.log(`[UI_FT_GETDASHBOARDSTATE_SUCCESS] uiReqId=${FT_UI_REQ_ID} status=${status} reason=${reason}`);
+                
+                // Extract backend build SHA from response (only available if ok=true)
                 const backendBuildSha = data?.ledger?.build_sha_last_seen_backend || data?.build_sha_backend || 'unknown';
                 const responseTime = data?.now_utc || new Date().toISOString();
                 
@@ -3152,15 +3256,16 @@ async function proceedWithBoot() {
                 buildFooter.classList.remove('text-error');
                 
                 // Add proof markers
-                const resolverOK = Boolean(data?.ok === true && data?.status !== 'FAILED');
+                const resolverOK = Boolean(stateResult?.ok === true && status === 'AVAILABLE');
                 const proofEl = ftEnsureServeProofEl();
-                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | STATUS:${data?.status || 'UNKNOWN'} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
+                proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | STATUS:${status} | REASON:${reason} | BACKEND: ${backendDisplay} | RESOLVER_OK:${resolverOK}`;
                 if (trace?.stepId) {
                     proofEl.textContent += ` | TRACE_STEP:${trace.stepId}`;
                 }
                 buildFooter.appendChild(proofEl);
                 
-                console.log(`[UI_FT_GETDASHBOARDSTATE_FOOTER_UPDATED] status=${data?.status} resolve_ok=${resolverOK}`);
+                // BACKBONE FIX: Log deterministic status (never undefined)
+                console.log(`[UI_FT_GETDASHBOARDSTATE_FOOTER_UPDATED] status=${status} reason=${reason} resolve_ok=${resolverOK}`);
             } catch (err) {
                 console.error(`[UI_OUTER_ERROR] uiReqId=${FT_UI_REQ_ID} error=${String(err).substring(0, 60)}`, err);
                 // Keep UI-only build info if outer error
@@ -3172,6 +3277,7 @@ async function proceedWithBoot() {
                 } catch (e) {
                     console.error('[UI] Failed to render serve-proof element', e);
                 }
+                // FT_UI_ERROR_HANDLER_EXIT_V1
             }
         })();
     }

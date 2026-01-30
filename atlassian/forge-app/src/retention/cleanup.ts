@@ -24,6 +24,13 @@ try {
   // @forge/api only available in Forge runtime, not in tests
 }
 
+let storage: any;
+try {
+  storage = require('@forge/api').storage;
+} catch (e) {
+  // @forge/api only available in Forge runtime, not in tests
+}
+
 import { get_raw_shards_for_day, get_daily_aggregates_for_day, get_weekly_aggregates_for_week, update_index_metadata } from '../storage_index';
 
 /**
@@ -73,33 +80,32 @@ export async function retention_cleanup(
   const errors: Array<{ key: string; error: string }> = [];
 
   try {
-    return await api.asApp().requestStorage(async (storage) => {
-      // Note: We iterate through index buckets we know about.
-      // Since we cannot enumerate all possible date/week buckets without Forge prefix listing,
-      // we rely on index metadata to track which buckets have been written.
-      // For Phase 2, we implement a simple approach: scan a reasonable date window backward.
+    // Note: We iterate through index buckets we know about.
+    // Since we cannot enumerate all possible date/week buckets without Forge prefix listing,
+    // we rely on index metadata to track which buckets have been written.
+    // For Phase 2, we implement a simple approach: scan a reasonable date window backward.
 
-      // Step 1: Generate date buckets to check (last 150 days)
-      const bucketsToCheck: string[] = [];
+    // Step 1: Generate date buckets to check (last 150 days)
+    const bucketsToCheck: string[] = [];
       const now = new Date(nowISO);
       for (let i = 0; i < 150; i++) {
-        const d = new Date(now);
-        d.setUTCDate(d.getUTCDate() - i);
-        const y = d.getUTCFullYear();
-        const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(d.getUTCDate()).padStart(2, '0');
-        bucketsToCheck.push(`${y}-${m}-${day}`);
+      const d = new Date(now);
+      d.setUTCDate(d.getUTCDate() - i);
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      bucketsToCheck.push(`${y}-${m}-${day}`);
       }
 
       // Step 2: Process each bucket
       for (const bucket of bucketsToCheck) {
-        if (!isDateOlder(bucket, cutoffDate)) {
-          continue; // Skip buckets not older than cutoff
-        }
+      if (!isDateOlder(bucket, cutoffDate)) {
+        continue; // Skip buckets not older than cutoff
+      }
 
-        // Get raw shards for this day and delete them
-        const rawShards = await get_raw_shards_for_day(org, bucket);
-        for (const shardKey of rawShards) {
+      // Get raw shards for this day and delete them
+      const rawShards = await get_raw_shards_for_day(org, bucket);
+      for (const shardKey of rawShards) {
           try {
             await storage.delete(shardKey);
             deletedKeys.push(shardKey);
@@ -219,16 +225,15 @@ export async function retention_cleanup(
         deleted_count: deletedKeys.length,
         error_count: errors.length,
       };
-    });
-  } catch (error) {
-    console.error('[Retention] Error during cleanup:', error);
-    return {
-      deleted_keys: deletedKeys,
-      skipped_keys_reason: 'Non-indexed keys cannot be enumerated safely',
-      errors: [...errors, { key: 'general', error: String(error) }],
-      cutoff_date: cutoffDate,
-      deleted_count: deletedKeys.length,
-      error_count: errors.length + 1,
-    };
+    } catch (error) {
+      console.error('[Retention] Error during cleanup:', error);
+      return {
+        deleted_keys: deletedKeys,
+        skipped_keys_reason: 'Non-indexed keys cannot be enumerated safely',
+        errors: [...errors, { key: 'general', error: String(error) }],
+        cutoff_date: cutoffDate,
+        deleted_count: deletedKeys.length,
+        error_count: errors.length + 1,
+      };
+    }
   }
-}

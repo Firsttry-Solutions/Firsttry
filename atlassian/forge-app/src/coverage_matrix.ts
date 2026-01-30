@@ -15,6 +15,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 import { JiraIngestionResult } from './jira_ingest';
 import {
   DataQualityIndicator,
@@ -538,20 +539,18 @@ export async function storeCoverageMatrixSnapshot(
 ): Promise<string> {
   const snapshotId = `coverage_${org}_${new Date(snapshot.snapshotTimestamp).getTime()}`;
 
-  await api.asApp().requestStorage(async (storage) => {
-    // Store snapshot
-    // Use colons instead of slashes to comply with Forge storage key pattern: ^(?!\s+$)[a-zA-Z0-9:._\s-#]+$
-    const storageKey = `coverage:${snapshotId}`;
-    await storage.set(storageKey, snapshot);
+  // Store snapshot
+  // Use colons instead of slashes to comply with Forge storage key pattern: ^(?!\s+$)[a-zA-Z0-9:._\s-#]+$
+  const storageKey = `coverage:${snapshotId}`;
+  await storage.set(storageKey, snapshot);
 
-    // Update index
-    const indexKey = `coverage:index:${org}`;
-    const index = (await storage.get(indexKey) || []) as string[];
-    if (!index.includes(snapshotId)) {
-      index.push(snapshotId);
-      await storage.set(indexKey, index);
-    }
-  });
+  // Update index
+  const indexKey = `coverage:index:${org}`;
+  const index = (await storage.get(indexKey) || []) as string[];
+  if (!index.includes(snapshotId)) {
+    index.push(snapshotId);
+    await storage.set(indexKey, index);
+  }
 
   return snapshotId;
 }
@@ -560,20 +559,18 @@ export async function storeCoverageMatrixSnapshot(
  * Retrieve most recent coverage matrix for org
  */
 export async function getMostRecentCoverageMatrix(org: string): Promise<CoverageMatrixSnapshot | null> {
-  const snapshot = await api.asApp().requestStorage(async (storage) => {
-    const indexKey = `coverage:index:${org}`;
-    const index = (await storage.get(indexKey) || []) as string[];
+  const indexKey = `coverage:index:${org}`;
+  const index = (await storage.get(indexKey) || []) as string[];
 
-    if (index.length === 0) {
-      return null;
-    }
+  if (index.length === 0) {
+    return null;
+  }
 
-    // Most recent is last in index
-    const snapshotId = index[index.length - 1];
-    // Use colons instead of slashes to comply with Forge storage key pattern
-    const storageKey = `coverage:${snapshotId}`;
-    return await storage.get(storageKey);
-  });
+  // Most recent is last in index
+  const snapshotId = index[index.length - 1];
+  // Use colons instead of slashes to comply with Forge storage key pattern
+  const storageKey = `coverage:${snapshotId}`;
+  const snapshot = await storage.get(storageKey);
 
   return snapshot || null;
 }
@@ -582,22 +579,20 @@ export async function getMostRecentCoverageMatrix(org: string): Promise<Coverage
  * Get all coverage matrices for org with pagination
  */
 export async function listCoverageMatrices(org: string, limit: number = 100): Promise<CoverageMatrixSnapshot[]> {
-  const snapshots = await api.asApp().requestStorage(async (storage) => {
-    const indexKey = `coverage:index:${org}`;
-    const index = (await storage.get(indexKey) || []) as string[];
+  const indexKey = `coverage:index:${org}`;
+  const index = (await storage.get(indexKey) || []) as string[];
 
-    // Get most recent N
-    const recentIds = index.slice(-limit).reverse();
+  // Get most recent N
+  const recentIds = index.slice(-limit).reverse();
 
-    const snapshotPromises = recentIds.map(async (id) => {
-      // Use colons instead of slashes to comply with Forge storage key pattern
-      const storageKey = `coverage:${id}`;
-      return await storage.get(storageKey);
-    });
-
-    const allSnapshots = await Promise.all(snapshotPromises);
-    return allSnapshots.filter((s) => s !== null);
+  const snapshotPromises = recentIds.map(async (id) => {
+    // Use colons instead of slashes to comply with Forge storage key pattern
+    const storageKey = `coverage:${id}`;
+    return await storage.get(storageKey);
   });
+
+  const allSnapshots = await Promise.all(snapshotPromises);
+  const snapshots = allSnapshots.filter((s) => s !== null);
 
   return snapshots || [];
 }

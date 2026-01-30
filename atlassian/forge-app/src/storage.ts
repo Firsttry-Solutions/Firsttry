@@ -12,6 +12,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 
 const SHARD_SIZE_LIMIT = 200;
 
@@ -21,9 +22,7 @@ const SHARD_SIZE_LIMIT = 200;
 export async function isEventSeen(orgKey: string, repoKey: string, eventId: string): Promise<boolean> {
   try {
     const storageKey = `seen/${orgKey}/${repoKey}/${eventId}`;
-    const result = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(storageKey);
-    });
+    const result = await storage.get(storageKey);
     return result !== undefined;
   } catch (error) {
     console.error('[Storage] Error checking if event seen:', error);
@@ -37,10 +36,8 @@ export async function isEventSeen(orgKey: string, repoKey: string, eventId: stri
 export async function markEventSeen(orgKey: string, repoKey: string, eventId: string): Promise<void> {
   try {
     const storageKey = `seen/${orgKey}/${repoKey}/${eventId}`;
-    await api.asApp().requestStorage(async (storage) => {
-      // Store with 90-day TTL (in seconds)
-      await storage.set(storageKey, true, { ttl: 7776000 });
-    });
+    // Store with 90-day TTL (in seconds)
+    await storage.set(storageKey, true, { ttl: 7776000 });
   } catch (error) {
     console.error('[Storage] Error marking event as seen:', error);
     throw error;
@@ -54,22 +51,20 @@ export async function getCurrentShardId(orgKey: string, dateStr: string): Promis
   try {
     const counterKey = `rawshard/${orgKey}/${dateStr}/current`;
     
-    return await api.asApp().requestStorage(async (storage) => {
-      let currentShardId: string = await storage.get(counterKey) || '0';
-      
-      // Check if current shard is full
-      const shardCountKey = `rawshard/${orgKey}/${dateStr}/${currentShardId}/count`;
-      const shardCount = (await storage.get(shardCountKey) || 0) as number;
-      
-      // If shard is full, increment to next shard
-      if (shardCount >= SHARD_SIZE_LIMIT) {
-        const nextShardId = String(Number(currentShardId) + 1);
-        await storage.set(counterKey, nextShardId);
-        return nextShardId;
-      }
-      
-      return currentShardId;
-    });
+    let currentShardId: string = await storage.get(counterKey) || '0';
+    
+    // Check if current shard is full
+    const shardCountKey = `rawshard/${orgKey}/${dateStr}/${currentShardId}/count`;
+    const shardCount = (await storage.get(shardCountKey) || 0) as number;
+    
+    // If shard is full, increment to next shard
+    if (shardCount >= SHARD_SIZE_LIMIT) {
+      const nextShardId = String(Number(currentShardId) + 1);
+      await storage.set(counterKey, nextShardId);
+      return nextShardId;
+    }
+    
+    return currentShardId;
   } catch (error) {
     console.error('[Storage] Error getting current shard ID:', error);
     throw error;
@@ -86,28 +81,26 @@ export async function storeRawEvent(
   event: Record<string, unknown>
 ): Promise<{ shardId: string; storageKey: string }> {
   try {
-    return await api.asApp().requestStorage(async (storage) => {
-      // Get current shard (handles rollover if needed)
-      const shardId = await getCurrentShardId(orgKey, dateStr);
-      
-      // Store raw event
-      const storageKey = `raw/${orgKey}/${dateStr}/${shardId}`;
-      const existingEvents = (await storage.get(storageKey) || []) as Record<string, unknown>[];
-      existingEvents.push({
-        ...event,
-        _stored_at: new Date().toISOString(),
-      });
-      
-      // Store with 90-day TTL
-      await storage.set(storageKey, existingEvents, { ttl: 7776000 });
-      
-      // Increment shard count
-      const countKey = `rawshard/${orgKey}/${dateStr}/${shardId}/count`;
-      const currentCount = (await storage.get(countKey) || 0) as number;
-      await storage.set(countKey, currentCount + 1);
-      
-      return { shardId, storageKey };
+    // Get current shard (handles rollover if needed)
+    const shardId = await getCurrentShardId(orgKey, dateStr);
+    
+    // Store raw event
+    const storageKey = `raw/${orgKey}/${dateStr}/${shardId}`;
+    const existingEvents = (await storage.get(storageKey) || []) as Record<string, unknown>[];
+    existingEvents.push({
+      ...event,
+      _stored_at: new Date().toISOString(),
     });
+    
+    // Store with 90-day TTL
+    await storage.set(storageKey, existingEvents, { ttl: 7776000 });
+    
+    // Increment shard count
+    const countKey = `rawshard/${orgKey}/${dateStr}/${shardId}/count`;
+    const currentCount = (await storage.get(countKey) || 0) as number;
+    await storage.set(countKey, currentCount + 1);
+    
+    return { shardId, storageKey };
   } catch (error) {
     console.error('[Storage] Error storing raw event:', error);
     throw error;
@@ -119,11 +112,9 @@ export async function storeRawEvent(
  */
 export async function getShardEvents(orgKey: string, dateStr: string, shardId: string): Promise<Record<string, unknown>[]> {
   try {
-    return await api.asApp().requestStorage(async (storage) => {
-      const storageKey = `raw/${orgKey}/${dateStr}/${shardId}`;
-      const events = await storage.get(storageKey);
-      return (events as Record<string, unknown>[]) || [];
-    });
+    const storageKey = `raw/${orgKey}/${dateStr}/${shardId}`;
+    const events = await storage.get(storageKey);
+    return (events as Record<string, unknown>[]) || [];
   } catch (error) {
     console.error('[Storage] Error getting shard events:', error);
     throw error;
@@ -135,10 +126,8 @@ export async function getShardEvents(orgKey: string, dateStr: string, shardId: s
  */
 export async function getShardCount(orgKey: string, dateStr: string, shardId: string): Promise<number> {
   try {
-    return await api.asApp().requestStorage(async (storage) => {
-      const countKey = `rawshard/${orgKey}/${dateStr}/${shardId}/count`;
-      return (await storage.get(countKey)) as number || 0;
-    });
+    const countKey = `rawshard/${orgKey}/${dateStr}/${shardId}/count`;
+    return (await storage.get(countKey)) as number || 0;
   } catch (error) {
     console.error('[Storage] Error getting shard count:', error);
     throw error;

@@ -32,6 +32,22 @@ import { computeCanonicalHash } from './canonicalization';
 import { createSnapshotLock } from './distributed_lock';
 
 /**
+ * Helper: Fetch all keys matching a prefix using @forge/api storage.query()
+ * Returns all results for a given prefix by calling getMany() directly.
+ * 
+ * @param prefix - Key prefix to query
+ * @returns Promise with array of { key, value } results
+ */
+async function storageListByPrefix(
+  prefix: string,
+): Promise<Array<{ key: string; value: unknown }>> {
+  // Use storage.query().where().getMany() to get all matching keys
+  // The 'like' pattern is used for prefix matching
+  const { results } = await storage.query().where('key', 'like', prefix).getMany();
+  return results;
+}
+
+/**
  * Snapshot Run Storage
  */
 export class SnapshotRunStorage {
@@ -78,11 +94,11 @@ export class SnapshotRunStorage {
     // This is a simplified implementation.
     
     const prefix = getSnapshotRunKey(this.tenantId, '');
-    const keys = await storage.query().where('key', 'like', prefix).getKeys();
+    const kvResults = await storageListByPrefix(prefix);
     
     let runs: SnapshotRun[] = [];
-    for (const key of keys) {
-      const data = await storage.get(key);
+    for (const item of kvResults) {
+      const data = await storage.get(item.key);
       if (data) {
         runs.push(JSON.parse(data as string));
       }
@@ -192,11 +208,11 @@ export class SnapshotStorage {
     pageSize: number = 20,
   ): Promise<SnapshotPageResult<Snapshot>> {
     const prefix = getSnapshotKey(this.tenantId, '');
-    const keys = await storage.query().where('key', 'like', prefix).getKeys();
+    const kvResults = await storageListByPrefix(prefix);
     
     let snapshots: Snapshot[] = [];
-    for (const key of keys) {
-      const data = await storage.get(key);
+    for (const item of kvResults) {
+      const data = await storage.get(item.key);
       if (data) {
         snapshots.push(JSON.parse(data as string));
       }
@@ -382,10 +398,10 @@ export class SnapshotLedger {
   }
 
   async getAllSnapshots(): Promise<Snapshot[]> {
-    const result = await storage.query().where('key', 'like', `snapshot:${this.tenantId}:*`).getKeys();
+    const kvResults = await storageListByPrefix(`snapshot:${this.tenantId}:`);
     const snapshots: Snapshot[] = [];
-    for (const key of result) {
-      const data = await storage.get(key);
+    for (const item of kvResults) {
+      const data = await storage.get(item.key);
       if (data) {
         snapshots.push(JSON.parse(data as string));
       }

@@ -53,12 +53,16 @@ if [ -f "$DIST_DIR/src/gadget-ui/src/traceDiagnostics.ts" ]; then
     fi
 fi
 
-# Check 5: Ensure error handler returns early (no fallback rendering)
+# Check 5: Ensure error handler is properly marked with deterministic exit marker
 if [ -f "$DIST_DIR/src/gadget-ui/src/main.ts" ]; then
-    if grep -A 2 "error-panel error" "$DIST_DIR/src/gadget-ui/src/main.ts" 2>/dev/null | grep -q "return"; then
-        echo "✓ PASS: Error handler exits early (no fallback UI)"
+    # Count occurrences of the error handler exit marker
+    MARKER_COUNT=$(grep -c "FT_UI_ERROR_HANDLER_EXIT_V1" "$DIST_DIR/src/gadget-ui/src/main.ts" || echo "0")
+    
+    if [ "$MARKER_COUNT" -eq 1 ]; then
+        echo "✓ PASS: Error handler exit marker present exactly once (FT_UI_ERROR_HANDLER_EXIT_V1)"
     else
-        echo "⚠ WARNING: Could not verify error handler exit in source"
+        echo "❌ FAIL: Error handler exit marker FT_UI_ERROR_HANDLER_EXIT_V1 not found (count: $MARKER_COUNT, expected: 1)"
+        EXIT_CODE=1
     fi
 fi
 

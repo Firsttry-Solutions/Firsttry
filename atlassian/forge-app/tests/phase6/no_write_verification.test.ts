@@ -21,30 +21,29 @@ import { Snapshot } from '../../src/phase6/snapshot_model';
 import { computeCanonicalHash } from '../../src/phase6/canonicalization';
 import * as forgeApi from '@forge/api';
 
+// Store for storage query mock data
+let storageGetManyMockResults: Array<{ key: string; value: any }> = [];
+
 vi.mock('@forge/api', () => ({
-  default: {
-    storage: {
-      set: vi.fn(),
-      get: vi.fn(),
-      delete: vi.fn(),
-      query: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          getKeys: vi.fn(),
-        }),
-      }),
-    },
-  },
   storage: {
     set: vi.fn(),
     get: vi.fn(),
     delete: vi.fn(),
     query: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
+        getMany: vi.fn(async () => ({
+          results: storageGetManyMockResults,
+        })),
         getKeys: vi.fn(),
       }),
     }),
   },
+  api: {
+    asUser: vi.fn(),
+    asApp: vi.fn(),
+  },
 }));
+
 
 const mockStorage = forgeApi.storage;
 
