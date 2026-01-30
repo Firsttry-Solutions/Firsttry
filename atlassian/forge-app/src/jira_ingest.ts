@@ -18,6 +18,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 
 /**
  * Coverage flag: Exactly one per dataset
@@ -557,11 +558,7 @@ async function getAppInstallationState(): Promise<{
     // For Phase 4, we store this when the app is first installed
     const storageKey = 'app:installation:timestamp';
 
-    const timestamp = await api
-      .asApp()
-      .requestStorage(async (storage) => {
-        return await storage.get(storageKey);
-      });
+    const timestamp = await storage.get(storageKey);
 
     if (timestamp) {
       return {
@@ -637,11 +634,9 @@ export async function recordAppInstallation(installedAt?: string): Promise<void>
   const timestamp = installedAt || new Date().toISOString();
   const storageKey = 'app:installation:timestamp';
 
-  await api.asApp().requestStorage(async (storage) => {
-    const existing = await storage.get(storageKey);
-    // Only write if not already set (idempotent)
-    if (!existing) {
-      await storage.set(storageKey, timestamp);
-    }
-  });
+  const existing = await storage.get(storageKey);
+  // Only write if not already set (idempotent)
+  if (!existing) {
+    await storage.set(storageKey, timestamp);
+  }
 }

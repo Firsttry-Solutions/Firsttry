@@ -11,3 +11,6 @@ proof_phase*.sh
 proof_run_phases_*.sh
 proof_run_basic.sh
 *.proof.log
+e2e/.auth/
+# Backbone fix proof documents (for cleanup/evidence only, not tracked)
+BACKBONE_SNAPSHOT_FIX_COMPLETE.md

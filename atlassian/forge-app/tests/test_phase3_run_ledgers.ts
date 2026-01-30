@@ -15,6 +15,7 @@ import {
   add_org_to_index,
   get_all_orgs,
   setMockApi,
+  setMockStorage,
 } from '../src/run_ledgers';
 
 // Mock storage
@@ -37,6 +38,15 @@ const mockApi = {
 
 // Set mock BEFORE any tests run
 setMockApi(mockApi);
+
+// Mock storage for direct storage.get/set calls
+const mockStorageObject = {
+  get: async (key: string) => mockStorage.get(key),
+  set: async (key: string, value: any) => {
+    mockStorage.set(key, value);
+  },
+};
+setMockStorage(mockStorageObject);
 
 async function runTests() {
   console.log('=== Test: Run Ledgers ===\n');

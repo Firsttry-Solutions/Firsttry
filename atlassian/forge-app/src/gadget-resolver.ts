@@ -29,6 +29,7 @@
 
 import Resolver from '@forge/resolver';
 import api from '@forge/api';
+import { storage } from '@forge/api';
 import { FT_RELEASE_VERSION } from './release/release_version';
 import { getStatusSnapshot_resolver } from './resolvers/getStatusSnapshot';
 import { getBuildInfo_resolver } from './resolvers/getBuildInfo';
@@ -36,13 +37,14 @@ import { refreshNow_resolver } from './resolvers/refreshNow';
 import { exportTrustSnapshot } from './resolvers/audit_snapshot_export';
 import { getSnapshotDebug_resolver } from './resolvers/getSnapshotDebug';
 import { ping } from './resolvers/ping';
+import { debugSnapshotState_resolver } from './resolvers/debugSnapshotState';
 import { ensureFirstSnapshot } from './resolvers/ensureFirstSnapshot';
 import { probe } from './resolvers/probe'; // FORENSIC_PROBE
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
 import { nowUtcIso } from './backbone/time';
-import { dashOk, dashErr } from './shared/dashEnvelopeV1';
+import { dashOk, dashErr, DashEnvelopeV1 } from './shared/dashEnvelopeV1';
 import { BACKEND_BUILD_SHA } from './build/backend_build';
 import {
   FT_DASH_ENVELOPE_MARKER_V1,
@@ -50,6 +52,7 @@ import {
   notAvailableEnvelope,
   hardErrorEnvelope,
   FtDashEnvelopeV1,
+  enforceDashEnvelopeV1Invariant,
 } from './contracts/ft_dash_envelope_v1';
 
 // Create single canonical resolver instance
@@ -61,6 +64,7 @@ resolver.define('getStatusSnapshot', getStatusSnapshot_resolver);
 resolver.define('getBuildInfo', getBuildInfo_resolver);
 resolver.define('refreshNow', refreshNow_resolver);
 resolver.define('exportTrustSnapshot', exportTrustSnapshot);
+resolver.define('debugSnapshotState', debugSnapshotState_resolver);
 resolver.define('getSnapshotDebug', getSnapshotDebug_resolver);
 resolver.define('ping', ping);
 resolver.define('ensureFirstSnapshot', ensureFirstSnapshot);
@@ -77,6 +81,9 @@ resolver.define('ft_getSnapshotAnchor_v1', ft_getSnapshotAnchor_v1);
 
 // Runtime proof resolver (admin-only)
 resolver.define('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1);
+
+// UI log relay resolver (UI → backend log relay for markers)
+resolver.define('ft_uiLogRelay_v1', ft_uiLogRelay_v1);
 
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
@@ -127,26 +134,14 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       // Read snapshot from storage (single source of truth)
       const snapshot = await (async () => {
         try {
-          const api_imported = require("@forge/api");
-          // Capture API shape before calling asApp()
-          console.log("[FT_L0_DASHBOARD] API_SHAPE_PROOF", {
-            hasApi: typeof api_imported !== "undefined",
-            apiType: typeof api_imported,
-            hasAsApp: !!(api_imported as any)?.asApp,
-            keys: api_imported ? Object.keys(api_imported as any).slice(0, 20) : [],
-          });
-          let storedSnapshot: any = null;
-          await api_imported.asApp().requestStorage(async (storage: any) => {
-            storedSnapshot = await storage.get("ft:snapshot:last:v1");
-          });
+          // Use correct Forge storage API: storage.get()
+          const storedSnapshot = await storage.get("ft:snapshot:last:v1");
           return storedSnapshot;
         } catch (e) {
-          console.error("[FT_L0_DASHBOARD] Storage read failed", {
+          console.error("[FT_STORAGE_FAIL] Storage read failed for ft:snapshot:last:v1", {
             name: (e as any)?.name,
             message: (e as any)?.message,
-            stack: (e as any)?.stack,
-            typeof: typeof e,
-            raw: e,
+            code: (e as any)?.code,
           });
           return null;
         }
@@ -169,11 +164,88 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
           hasData: snapshot?.data != null,
         });
         
-        // Return as NOT_AVAILABLE (wrapped by outer try/catch + normalizer)
+        // CRITICAL FIX: Try to repair invalid snapshot inline
+        // If snapshot exists but is invalid, rebuild and store a canonical one
+        if (snapshot && !isValid) {
+          console.log(JSON.stringify({
+            marker: "[FT_RESOLVER_REPAIR_ATTEMPT]",
+            action: "ATTEMPT_REPAIR_INVALID_SNAPSHOT",
+            reason: "Resolver detected invalid snapshot, attempting inline repair",
+            snapshotIdBefore: snapshot?.snapshotId,
+            ts: new Date().toISOString()
+          }));
+          
+          try {
+            // Import seed function dynamically to avoid circular imports
+            const { seedFirstSnapshotIfMissingOrRepair } = await import("./lifecycle/seedSnapshot");
+            const repairResult = await seedFirstSnapshotIfMissingOrRepair();
+            
+            console.log(JSON.stringify({
+              marker: "[FT_RESOLVER_REPAIR_RESULT]",
+              action: repairResult.action,
+              snapshotIdAfter: repairResult.snapshotId,
+              ts: new Date().toISOString()
+            }));
+            
+            // If repair succeeded, re-fetch snapshot
+            if (repairResult.action === "REPAIRED_INVALID" || repairResult.action === "CREATED") {
+              const repairedSnapshot = await storage.get("ft:snapshot:last:v1");
+              if (repairedSnapshot && 
+                  typeof repairedSnapshot.snapshotId === 'string' && 
+                  repairedSnapshot.snapshotId.trim() &&
+                  typeof repairedSnapshot.createdAtUtc === 'string' && 
+                  repairedSnapshot.createdAtUtc.trim() &&
+                  repairedSnapshot.schemaVersion === "L0" &&
+                  typeof repairedSnapshot.data === 'object' && 
+                  repairedSnapshot.data &&
+                  repairedSnapshot.createdAtUtc.endsWith('Z')) {
+                // Repaired snapshot is now valid - return it
+                console.log(JSON.stringify({
+                  marker: "[FT_RESOLVER_REPAIR_SUCCESS]",
+                  snapshotId: repairedSnapshot.snapshotId,
+                  ts: new Date().toISOString()
+                }));
+                
+                return {
+                  status: "AVAILABLE",
+                  snapshotId: repairedSnapshot.snapshotId,
+                  createdAtUtc: repairedSnapshot.createdAtUtc,
+                  schemaVersion: "L0",
+                  containsText: "Jira governance evidence snapshot (export for full details).",
+                  metadata: repairedSnapshot.metadata || {
+                    coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+                    integrity: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
+                    provenance: { capturedBy: "RESOLVER_REPAIR" },
+                  },
+                  data: repairedSnapshot.data,
+                };
+              }
+            }
+          } catch (repairErr) {
+            console.log(JSON.stringify({
+              marker: "[FT_RESOLVER_REPAIR_FAILED]",
+              error: repairErr instanceof Error ? repairErr.message : String(repairErr),
+              ts: new Date().toISOString()
+            }));
+            // If repair fails, fall through to return invalid state
+          }
+        }
+        
+        // Return as NO_SNAPSHOT (non-fatal state)
+        // Missing or invalid snapshot is not a contract failure - just means we don't have data
+        const subcode = !snapshot ? "NO_SNAPSHOT_POINTER" : "SNAPSHOT_SCHEMA_MISMATCH";
+        console.log(JSON.stringify({
+          marker: "[BACKEND_DASH_STATE_FAIL]",
+          code: "FT_SNAPSHOT_INVALID",
+          subcode,
+          correlationId: requestId,
+          snapshotIdCandidate: snapshot?.snapshotId,
+        }));
         return {
-          status: "HARD ERROR",
+          status: "NO_SNAPSHOT",
           error: "FT_SNAPSHOT_INVALID",
           schemaVersion: "L0",
+          subcode,
         };
       }
       
@@ -210,54 +282,102 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
     // WRAPPER: Execute implementation and wrap in proper envelope (fail-closed)
     const raw = await __impl();
     
-    // BACKBONE FIX: Use dashOk/dashErr which produce CORRECT format
-    // (envelopeKind: 'FT_DASH_ENVELOPE_V1', schemaVersion: 'v1', ok: boolean)
-    // NOT the old normalizer which uses marker: 'FT_DASH_ENVELOPE_v1', schemaVersion: 1
-    if (raw?.status === "AVAILABLE") {
-      return dashOk({
-        data: raw,
-        meta: {
-          backend_build_sha: BACKEND_BUILD_SHA,
-          ui_build_sha: null,
-          ui_req_id: request?.context?.requestId ?? "UNSET",
-          probe_nonce: null,
-          ts_utc: nowUtcIso(),
-        },
+    // CRITICAL VALIDATION: status MUST be set (fail-closed)
+    if (!raw || typeof raw !== 'object' || !raw.status) {
+      console.error("[FT_L0_DASHBOARD] CRITICAL: __impl returned invalid response", {
+        hasRaw: !!raw,
+        isObject: raw && typeof raw === 'object',
+        hasStatus: raw?.status != null,
+        raw: raw ? { keys: Object.keys(raw).slice(0, 10) } : null,
       });
+      return hardErrorEnvelope(
+        "FT_IMPL_RESPONSE_INVALID",
+        "Dashboard resolver implementation returned invalid response shape"
+      );
     }
-    
-    // Hard error case
-    return dashErr({
-      error: {
-        code: raw?.error ?? "FT_SNAPSHOT_INVALID",
-        message: raw?.error ? `Dashboard state failed: ${raw.error}` : "Snapshot is invalid or missing",
-      },
-      meta: {
-        backend_build_sha: BACKEND_BUILD_SHA,
-        ui_build_sha: null,
-        ui_req_id: request?.context?.requestId ?? "UNSET",
-        probe_nonce: null,
-        ts_utc: nowUtcIso(),
-      },
-    });
+
+    // BACKBONE FIX: Use okEnvelope/notAvailableEnvelope/hardErrorEnvelope
+    // (envelopeKind: 'FT_DASH_ENVELOPE_v1', schemaVersion: 1, status: 'AVAILABLE'|'NOT_AVAILABLE'|'HARD_ERROR'|'NO_SNAPSHOT'|'INVALID_SNAPSHOT')
+    let result: FtDashEnvelopeV1;
+    if (raw.status === "AVAILABLE") {
+      result = okEnvelope(raw);
+    } else if (raw.status === "NO_SNAPSHOT") {
+      // Missing snapshot - non-fatal state (user can still see dashboard with no data)
+      result = notAvailableEnvelope(
+        raw.error ?? "NO_SNAPSHOT_POINTER",
+        raw.error ? `Dashboard state: ${raw.error}` : "Snapshot is not available"
+      );
+    } else if (raw.status === "INVALID_SNAPSHOT") {
+      // Invalid snapshot - non-fatal state (schema/parse error but not a contract violation)
+      result = notAvailableEnvelope(
+        raw.error ?? "SNAPSHOT_SCHEMA_MISMATCH",
+        raw.error ? `Dashboard state: ${raw.error}` : "Snapshot schema is invalid"
+      );
+    } else if (raw.status === "NOT_AVAILABLE") {
+      result = notAvailableEnvelope(
+        raw.error ?? "FT_SNAPSHOT_INVALID",
+        raw.error ? `Dashboard state not available: ${raw.error}` : "Snapshot is not available"
+      );
+    } else if (raw.status === "HARD ERROR") {
+      result = hardErrorEnvelope(
+        raw.error ?? "FT_SNAPSHOT_INVALID",
+        raw.error ? `Dashboard state failed: ${raw.error}` : "Snapshot is invalid or missing"
+      );
+    } else {
+      // Unexpected status value - fail-closed
+      console.error("[FT_L0_DASHBOARD] CRITICAL: Unexpected status value", {
+        status: raw.status,
+        statusType: typeof raw.status,
+      });
+      result = hardErrorEnvelope(
+        "FT_UNEXPECTED_STATUS",
+        `Unexpected status value: ${raw.status}`
+      );
+    }
+
+    // =====================================================================
+    // RESOLVER BOUNDARY INVARIANT: Enforce at the last step before return
+    // This makes it IMPOSSIBLE for status to ever be undefined in production
+    // =====================================================================
+    const safe = enforceDashEnvelopeV1Invariant(result);
+
+    // WIRE-LEVEL PROOF: Serialize to JSON and verify status presence + mutual exclusivity
+    const wireJson = JSON.stringify(safe);
+    const hasOwnStatus = Object.prototype.hasOwnProperty.call(safe, 'status');
+    const jsonHasStatus = wireJson.includes('"status"');
+    const jsonHasData = wireJson.includes('"data"');
+    const jsonHasError = wireJson.includes('"error"');
+    const violatesExclusivity = (safe.ok === true && jsonHasError && !jsonHasData) ||
+                                (safe.ok === false && jsonHasData && !jsonHasError);
+
+    // Log WIRE-PROOF with all critical invariants
+    console.log(JSON.stringify({
+      marker: "[FT_DASH_V1_WIRE_PROOF]",
+      hasOwnStatus,
+      statusValue: safe.status,
+      hasDataKey: Object.prototype.hasOwnProperty.call(safe, 'data'),
+      hasErrorKey: Object.prototype.hasOwnProperty.call(safe, 'error'),
+      ok: safe.ok,
+      keys: Object.keys(safe),
+      json: wireJson,
+      jsonHasStatus,
+      jsonHasData,
+      jsonHasError,
+      violatesExclusivity,
+      buildSha: BACKEND_BUILD_SHA || "UNSET",
+      ts: new Date().toISOString(),
+    }));
+
+    return safe;
   } catch (e) {
     const errorMsg = e instanceof Error ? e.message : String(e);
     console.error("[FT_L0_DASHBOARD] Resolver error:", errorMsg);
     
-    // BACKBONE FIX: Use dashErr which produces CORRECT envelope format
-    return dashErr({
-      error: {
-        code: "FT_RESOLVER_EXCEPTION",
-        message: `Dashboard resolver failed: ${errorMsg.slice(0, 150)}`,
-      },
-      meta: {
-        backend_build_sha: BACKEND_BUILD_SHA,
-        ui_build_sha: null,
-        ui_req_id: request?.context?.requestId ?? "UNSET",
-        probe_nonce: null,
-        ts_utc: nowUtcIso(),
-      },
-    });
+    // BACKBONE FIX: Use hardErrorEnvelope which produces CORRECT envelope format
+    return hardErrorEnvelope(
+      "FT_RESOLVER_EXCEPTION",
+      `Dashboard resolver failed: ${errorMsg.slice(0, 150)}`
+    );
   }
 }
 
@@ -279,7 +399,7 @@ async function ft_setUiBuildSha_v1(request: any): Promise<{ ok: boolean; error?:
  * Returns ONLY envelope structure proof (no tenant data, read-only).
  * Used for non-interactive CLI verification of production envelope shape.
  */
-export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<any> {
+export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<DashEnvelopeV1> {
   try {
     const now = nowUtcIso();
     
@@ -352,10 +472,7 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<an
  */
 async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; value: any }> {
   try {
-    let value: any = null;
-    await api.asApp().requestStorage(async (storage: any) => {
-      value = await storage.get("ft:install:marker:v1");
-    });
+    const value = await storage.get("ft:install:marker:v1");
     return { key: "ft:install:marker:v1", value };
   } catch (e) {
     throw new Error("FT_META_FAILED");
@@ -369,10 +486,7 @@ async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; valu
  */
 async function ft_getSnapshotAnchor_v1(request: any): Promise<{ key: string; value: any }> {
   try {
-    let value: any = null;
-    await api.asApp().requestStorage(async (storage: any) => {
-      value = await storage.get("ft:snapshot:last:v1");
-    });
+    const value = await storage.get("ft:snapshot:last:v1");
     return { key: "ft:snapshot:last:v1", value };
   } catch (e) {
     throw new Error("FT_META_FAILED");
@@ -443,6 +557,82 @@ async function ft_getRuntimeProof_v1(request: any): Promise<any> {
       marker: "FT_RUNTIME_PROOF_UI",
       error: "internal_error",
     };
+  }
+}
+
+/**
+ * UI Log Relay Resolver - ft_uiLogRelay_v1
+ * 
+ * Accepts markers from UI and logs them in backend logs for forensic analysis.
+ * This allows UI-side events to be captured in Forge logs for deterministic proof.
+ * 
+ * Payload shape:
+ * {
+ *   marker: string,          // e.g., "UI_ENTRY_RUNTIME_PROOF", "L0_DASHBOARD_RENDERED"
+ *   ui_git_sha?: string,     // UI build git SHA
+ *   ui_req_id?: string,      // Request ID for correlation
+ *   extra?: any              // Additional context (status, reasonCode, etc)
+ * }
+ * 
+ * Returns: { ok: true } always (fire-and-forget)
+ */
+export async function ft_uiLogRelay_v1(request: any): Promise<{ ok: boolean }> {
+  try {
+    // DEFENSIVE UNWRAP: Accept both old nested { payload: { marker, ... } } and correct flat { marker, ... }
+    let payload = request?.payload || {};
+    if (
+      payload &&
+      typeof payload === "object" &&
+      (payload as any).payload &&
+      typeof (payload as any).payload === "object"
+    ) {
+      // Old nested format - unwrap it
+      payload = (payload as any).payload;
+    }
+    const marker = payload.marker || "UNKNOWN_MARKER";
+    const ui_git_sha = payload.ui_git_sha || "MISSING";
+    const ui_req_id = payload.ui_req_id || "MISSING";
+    let extra = payload.extra;
+
+    // Validate required fields are present
+    const presentKeys = Object.keys(payload);
+    let finalMarker = marker;
+    if (!payload.marker || !payload.ui_git_sha || !payload.ui_req_id) {
+      finalMarker = "MALFORMED_RELAY";
+    }
+
+    // Truncate extra if too large (max 500 chars when stringified)
+    let extraStr: string | any;
+    if (extra !== undefined) {
+      if (typeof extra === "string") {
+        extraStr = extra.length > 500 ? extra.substring(0, 500) : extra;
+      } else {
+        const extraJson = JSON.stringify(extra);
+        extraStr = extraJson.length > 500 ? extraJson.substring(0, 500) : extra;
+      }
+    }
+
+    // LINE 1: Strict JSON log for parsing
+    const jsonLog = {
+      marker: finalMarker,
+      ui_git_sha,
+      ui_req_id,
+      extra: extraStr || null,
+      presentKeys,
+      ts: new Date().toISOString(),
+    };
+    console.log(`[UI_RELAY_JSON] ${JSON.stringify(jsonLog)}`);
+
+    // LINE 2: Key=value log for grep binding
+    console.log(
+      `[UI_RELAY_BIND] marker=${finalMarker} ui_git_sha=${ui_git_sha} ui_req_id=${ui_req_id}`
+    );
+
+    return { ok: true };
+  } catch (e) {
+    // Swallow errors (fire-and-forget relay)
+    console.error("[UI_RELAY_ERROR]", { error: (e as any)?.message });
+    return { ok: true };  // Still return ok so UI doesn't break
   }
 }
 

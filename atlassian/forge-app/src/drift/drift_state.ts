@@ -11,6 +11,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 import { DriftStatus } from '../output/output_contract';
 
 /**
@@ -82,30 +83,26 @@ export class DriftStateTracker {
 
     const ttlSeconds = Math.ceil((new Date(expiresAtISO).getTime() - new Date(nowISO).getTime()) / 1000);
 
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(storageKey, event, { ttl: Math.max(1, ttlSeconds) });
-    });
+    await storage.set(storageKey, event, { ttl: Math.max(1, ttlSeconds) });
   }
 
   /**
    * Retrieve all drift events for a snapshot
    */
   private async getDriftEventsForSnapshot(snapshotId: string): Promise<DriftEventRecord[]> {
-    return await api.asApp().requestStorage(async (storage) => {
-      const prefix = `${this.tenantId}:drift:`;
-      const results = await storage.query({ prefix, limit: 10000 });
+    const prefix = `${this.tenantId}:drift:`;
+    const results = await storage.query({ prefix, limit: 10000 });
 
-      const events: DriftEventRecord[] = [];
-      for (const entry of results.entries || []) {
-        if (typeof entry.value === 'object' && entry.value !== null) {
-          const event = entry.value as DriftEventRecord;
-          if (event.snapshotId === snapshotId) {
-            events.push(event);
-          }
+    const events: DriftEventRecord[] = [];
+    for (const entry of results.entries || []) {
+      if (typeof entry.value === 'object' && entry.value !== null) {
+        const event = entry.value as DriftEventRecord;
+        if (event.snapshotId === snapshotId) {
+          events.push(event);
         }
       }
-      return events;
-    });
+    }
+    return events;
   }
 
   /**

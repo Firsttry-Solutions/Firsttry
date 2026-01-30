@@ -17,6 +17,13 @@ try {
   // @forge/api only available in Forge runtime, not in tests
 }
 
+let storage: any;
+try {
+  storage = require('@forge/api').storage;
+} catch (e) {
+  // @forge/api only available in Forge runtime, not in tests
+}
+
 /**
  * Parse ISO 8601 timestamp safely
  * @param iso ISO 8601 timestamp (e.g., "2025-12-19T10:30:45.123Z")
@@ -49,37 +56,35 @@ export async function update_ingest_timeline(org: string, eventAtISO: string): P
   }
 
   try {
-    await api.asApp().requestStorage(async (storage) => {
-      const firstKey = `ingest/${org}/first_event_at`;
-      const lastKey = `ingest/${org}/last_event_at`;
+    const firstKey = `ingest/${org}/first_event_at`;
+    const lastKey = `ingest/${org}/last_event_at`;
 
-      // Get current first_event_at
-      const currentFirst = await storage.get(firstKey) as string | undefined;
+    // Get current first_event_at
+    const currentFirst = await storage.get(firstKey) as string | undefined;
 
-      // Set first_event_at only if not already set OR if eventAtISO is earlier
-      if (!currentFirst) {
+    // Set first_event_at only if not already set OR if eventAtISO is earlier
+    if (!currentFirst) {
+      await storage.set(firstKey, eventAtISO);
+    } else {
+      const currentFirstTime = parseISO(currentFirst);
+      if (currentFirstTime && eventTime < currentFirstTime) {
+        // Only overwrite if new event is earlier (optional correction)
         await storage.set(firstKey, eventAtISO);
-      } else {
-        const currentFirstTime = parseISO(currentFirst);
-        if (currentFirstTime && eventTime < currentFirstTime) {
-          // Only overwrite if new event is earlier (optional correction)
-          await storage.set(firstKey, eventAtISO);
-        }
       }
+    }
 
-      // Get current last_event_at
-      const currentLast = await storage.get(lastKey) as string | undefined;
+    // Get current last_event_at
+    const currentLast = await storage.get(lastKey) as string | undefined;
 
-      // Set/update last_event_at if eventAtISO is later
-      if (!currentLast) {
+    // Set/update last_event_at if eventAtISO is later
+    if (!currentLast) {
+      await storage.set(lastKey, eventAtISO);
+    } else {
+      const currentLastTime = parseISO(currentLast);
+      if (currentLastTime && eventTime > currentLastTime) {
         await storage.set(lastKey, eventAtISO);
-      } else {
-        const currentLastTime = parseISO(currentLast);
-        if (currentLastTime && eventTime > currentLastTime) {
-          await storage.set(lastKey, eventAtISO);
-        }
       }
-    });
+    }
   } catch (error) {
     console.error('[Timeline] Error updating ingest timeline:', error);
     // Do not throw; timeline update is optional for Phase 2
@@ -91,18 +96,16 @@ export async function update_ingest_timeline(org: string, eventAtISO: string): P
  */
 export async function get_ingest_timeline(org: string): Promise<{ first_event_at?: string; last_event_at?: string }> {
   try {
-    return await api.asApp().requestStorage(async (storage) => {
-      const firstKey = `ingest/${org}/first_event_at`;
-      const lastKey = `ingest/${org}/last_event_at`;
+    const firstKey = `ingest/${org}/first_event_at`;
+    const lastKey = `ingest/${org}/last_event_at`;
 
-      const first = await storage.get(firstKey) as string | undefined;
-      const last = await storage.get(lastKey) as string | undefined;
+    const first = await storage.get(firstKey) as string | undefined;
+    const last = await storage.get(lastKey) as string | undefined;
 
-      return {
-        first_event_at: first,
-        last_event_at: last,
-      };
-    });
+    return {
+      first_event_at: first,
+      last_event_at: last,
+    };
   } catch (error) {
     console.error('[Timeline] Error getting ingest timeline:', error);
     return {};

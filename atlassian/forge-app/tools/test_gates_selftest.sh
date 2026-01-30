@@ -164,6 +164,239 @@ else
 fi
 
 # ========================================================================
+# MUTATION F: Verify no-STG gate fails when STG is present
+# ========================================================================
+
+echo "[SELFTEST] Mutation F: STG marker in dist (verify:no-stg must FAIL)"
+TEMP_STG_FILE="$GADGET_DIR/dist/stg_test_mutation_$$.js"
+echo "/* STG_BADGE: This is a test mutation */" > "$TEMP_STG_FILE"
+trap "rm -rf $TEST_DIR; rm -f $TEMP_STG_FILE" EXIT
+
+STG_GATE="$SCRIPT_DIR/verify_no_stg_in_prod_artifacts.sh"
+output=$(bash "$STG_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL\|❌"; then
+    echo "[SELFTEST]   ✓ verify:no-stg correctly FAILED on STG marker"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:no-stg should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Clean up test file
+rm -f "$TEMP_STG_FILE"
+
+# ========================================================================
+# MUTATION G: Verify no-bypass-merge gate fails when merge is bypassed
+# ========================================================================
+
+echo "[SELFTEST] Mutation G: Direct render bypass (verify:no-bypass-merge must FAIL)"
+
+MAIN_TS="$SCRIPT_DIR/../src/gadget-ui/src/main.ts"
+MAIN_TS_BACKUP="$TEST_DIR/main.ts.backup"
+cp "$MAIN_TS" "$MAIN_TS_BACKUP"
+
+# Inject a line that violates the gate: renderL0Dashboard(mapL0SnapshotResponse(...))
+# (Insert it temporarily, test it, then restore)
+LINE_TO_INSERT="  // TEST MUTATION: const testBypass = renderL0Dashboard(mapL0SnapshotResponse({}));"
+sed -i "100i\\$LINE_TO_INSERT" "$MAIN_TS"
+
+NO_BYPASS_GATE="$SCRIPT_DIR/verify_no_direct_render_without_merge.sh"
+output=$(bash "$NO_BYPASS_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL\|❌"; then
+    echo "[SELFTEST]   ✓ verify:no-bypass-merge correctly FAILED on bypass pattern"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:no-bypass-merge should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore main.ts
+cp "$MAIN_TS_BACKUP" "$MAIN_TS"
+
+# ========================================================================
+# MUTATION H: Verify marketplace-docs gate fails when privacy policy missing
+# ========================================================================
+
+echo "[SELFTEST] Mutation H: Missing PRIVACY_POLICY.md (verify:marketplace-docs must FAIL)"
+
+PRIVACY_DOC="$SCRIPT_DIR/../docs/PRIVACY_POLICY.md"
+PRIVACY_BACKUP="$TEST_DIR/PRIVACY_POLICY.md.backup"
+mv "$PRIVACY_DOC" "$PRIVACY_BACKUP"
+
+MARKETPLACE_GATE="$SCRIPT_DIR/verify_marketplace_docs_present.sh"
+output=$(bash "$MARKETPLACE_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL\|MISSING"; then
+    echo "[SELFTEST]   ✓ verify:marketplace-docs correctly FAILED on missing PRIVACY_POLICY.md"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:marketplace-docs should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore PRIVACY_POLICY.md
+mv "$PRIVACY_BACKUP" "$PRIVACY_DOC"
+
+# ========================================================================
+# MUTATION I: Verify support-docs gate fails when contact missing
+# ========================================================================
+
+echo "[SELFTEST] Mutation I: No contact in SUPPORT.md (verify:support-docs must FAIL)"
+
+SUPPORT_DOC="$SCRIPT_DIR/../docs/SUPPORT.md"
+SUPPORT_BACKUP="$TEST_DIR/SUPPORT.md.backup"
+cp "$SUPPORT_DOC" "$SUPPORT_BACKUP"
+
+# Replace content with version that has no @ or mailto:
+cat > "$SUPPORT_DOC" << 'SUPPORT_TBD'
+# Support Documentation
+
+**Last Updated**: January 2026
+
+---
+
+## Getting Support
+
+To be determined.
+Support information coming soon.
+
+---
+
+**Contact**: Coming soon
+SUPPORT_TBD
+
+SUPPORT_GATE="$SCRIPT_DIR/verify_support_docs_have_contact.sh"
+output=$(bash "$SUPPORT_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:support-docs correctly FAILED on missing contact"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:support-docs should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore SUPPORT.md
+cp "$SUPPORT_BACKUP" "$SUPPORT_DOC"
+
+# ========================================================================
+# MUTATION J: verify:no-placeholders gate must FAIL when placeholder found
+# ========================================================================
+
+echo "[SELFTEST] Mutation J: Reinsert placeholder email (verify:no-placeholders must FAIL)"
+
+SUPPORT_DOC="$SCRIPT_DIR/../docs/SUPPORT.md"
+SUPPORT_BACKUP2="$TEST_DIR/SUPPORT.md.backup2"
+cp "$SUPPORT_DOC" "$SUPPORT_BACKUP2"
+
+# Inject placeholder back into doc (replace first instance)
+sed '1s/^/# PLACEHOLDER MARKER: SUPPORT_EMAIL_HERE\n/' "$SUPPORT_DOC" > "$SUPPORT_DOC.tmp"
+mv "$SUPPORT_DOC.tmp" "$SUPPORT_DOC"
+
+PLACEHOLDER_GATE="$SCRIPT_DIR/verify_no_placeholders_anywhere.sh"
+output=$(bash "$PLACEHOLDER_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:no-placeholders correctly FAILED on placeholder found"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:no-placeholders should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore SUPPORT.md
+cp "$SUPPORT_BACKUP2" "$SUPPORT_DOC"
+
+# ========================================================================
+# MUTATION K: verify:ui:no-timers gate must FAIL when timer found
+# ========================================================================
+
+echo "[SELFTEST] Mutation K: Add timer to l0_snapshot_mapper (verify:ui:no-timers must FAIL)"
+
+L0_MAPPER="$SCRIPT_DIR/../src/gadget-ui/src/l0_snapshot_mapper.ts"
+L0_BACKUP="$TEST_DIR/l0_snapshot_mapper.ts.backup"
+cp "$L0_MAPPER" "$L0_BACKUP"
+
+# Inject a setTimeout into the file (add after first line)
+{
+  head -1 "$L0_MAPPER"
+  echo "const DEBUG_TIMER = setInterval(() => console.log('mutation test'), 1000);"
+  tail -n +2 "$L0_MAPPER"
+} > "$L0_MAPPER.tmp"
+mv "$L0_MAPPER.tmp" "$L0_MAPPER"
+
+TIMERS_GATE="$SCRIPT_DIR/verify_no_timers_in_ui.sh"
+output=$(bash "$TIMERS_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:ui:no-timers correctly FAILED on timer found"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:ui:no-timers should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore l0_snapshot_mapper.ts
+cp "$L0_BACKUP" "$L0_MAPPER"
+
+# ========================================================================
+# MUTATION L: verify:ui:support-link gate must FAIL when mailto: missing
+# ========================================================================
+
+echo "[SELFTEST] Mutation L: Remove mailto: from l0_snapshot_mapper (verify:ui:support-link must FAIL)"
+
+L0_MAPPER="$SCRIPT_DIR/../src/gadget-ui/src/l0_snapshot_mapper.ts"
+L0_BACKUP2="$TEST_DIR/l0_snapshot_mapper.ts.backup2"
+cp "$L0_MAPPER" "$L0_BACKUP2"
+
+# Create a temp file without the mailto: line
+grep -v "mailto:" "$L0_MAPPER" > "$L0_MAPPER.tmp"
+mv "$L0_MAPPER.tmp" "$L0_MAPPER"
+
+SUPPORT_LINK_GATE="$SCRIPT_DIR/verify_ui_support_link_present.sh"
+output=$(bash "$SUPPORT_LINK_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:ui:support-link correctly FAILED on mailto: missing"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:ui:support-link should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore l0_snapshot_mapper.ts
+cp "$L0_BACKUP2" "$L0_MAPPER"
+
+# ========================================================================
+# MUTATION M: verify:ui:aria-live gate must FAIL when aria-live missing
+# ========================================================================
+
+echo "[SELFTEST] Mutation M: Remove aria-live from l0_snapshot_mapper (verify:ui:aria-live must FAIL)"
+
+L0_MAPPER="$SCRIPT_DIR/../src/gadget-ui/src/l0_snapshot_mapper.ts"
+L0_BACKUP3="$TEST_DIR/l0_snapshot_mapper.ts.backup3"
+cp "$L0_MAPPER" "$L0_BACKUP3"
+
+# Remove the setAttribute call for aria-live
+sed -i '/setAttribute.*aria-live/d' "$L0_MAPPER"
+
+ARIA_LIVE_GATE="$SCRIPT_DIR/verify_ui_aria_live_present.sh"
+output=$(bash "$ARIA_LIVE_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:ui:aria-live correctly FAILED on aria-live missing"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:ui:aria-live should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore l0_snapshot_mapper.ts
+cp "$L0_BACKUP3" "$L0_MAPPER"
+
+# ========================================================================
 # SUMMARY
 # ========================================================================
 
@@ -172,12 +405,13 @@ echo "[SELFTEST] =========================================="
 echo "[SELFTEST] SELFTEST SUMMARY"
 echo "[SELFTEST] =========================================="
 echo "[SELFTEST] Real bundle smoke tests: 2/2 PASS"
-echo "[SELFTEST] Mutation tests: $MUTATION_PASS/5 PASS"
+echo "[SELFTEST] Mutation tests (gates): $MUTATION_PASS/13 PASS"
 echo ""
 
 if [ $MUTATION_FAIL -eq 0 ]; then
-    pass "ALL TESTS PASSED (7/7)"
+    pass "ALL TESTS PASSED (15/15)"
     exit 0
 else
     fail "MUTATION TESTS FAILED ($MUTATION_FAIL failed)"
 fi
+

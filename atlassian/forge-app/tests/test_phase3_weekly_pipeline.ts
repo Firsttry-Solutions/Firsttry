@@ -3,10 +3,7 @@
  * PHASE 3: Verify weekly aggregation and readiness status writing
  */
 
-import { describe, it } from 'vitest';
-import { process_org_weekly, setMockApi } from '../src/pipelines/weekly_pipeline';
-import { setMockApi as setReadinessMockApi } from '../src/readiness_gate';
-import { setMockApi as setLedgerMockApi } from '../src/run_ledgers';
+import { describe, it, vi } from 'vitest';
 
 // Mock storage
 const mockStorage: Map<string, any> = new Map();
@@ -26,10 +23,36 @@ const mockApi = {
   }),
 };
 
+// Mock storage object for direct @forge/api.storage calls
+const mockStorageObj = {
+  set: async (key: string, value: any) => {
+    mockStorage.set(key, value);
+  },
+  get: async (key: string) => {
+    return mockStorage.get(key);
+  },
+  delete: async (key: string) => {
+    mockStorage.delete(key);
+  },
+};
+
+// Mock @forge/api BEFORE imports
+vi.mock('@forge/api', () => ({
+  default: mockApi,
+  storage: mockStorageObj,
+}));
+
+// NOW import modules that depend on @forge/api
+import { process_org_weekly, setMockApi } from '../src/pipelines/weekly_pipeline';
+import { setMockApi as setReadinessMockApi, setMockStorage as setReadinessMockStorage } from '../src/readiness_gate';
+import { setMockApi as setLedgerMockApi, setMockStorage as setLedgerMockStorage } from '../src/run_ledgers';
+
 // Set mocks BEFORE tests run
 setMockApi(mockApi);
 setReadinessMockApi(mockApi);
+setReadinessMockStorage(mockStorageObj);
 setLedgerMockApi(mockApi);
+setLedgerMockStorage(mockStorageObj);
 
 async function runTests() {
   console.log('=== Test: Weekly Pipeline - Ledgers & Readiness ===\n');

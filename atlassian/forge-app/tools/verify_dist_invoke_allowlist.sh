@@ -83,24 +83,25 @@ else
 fi
 
 # ========================================================================
-# CHECK 2: Only ft_getDashboardState_v1 and "ping" allowed (if any literal invokes found)
+# CHECK 2: Only allowed resolvers (if any literal invokes found)
 # - "ping" is allowed for bridge runtime probe (Phase 3 fix)
 # - "ft_getDashboardState_v1" is the canonical resolver for dashboard state
+# - "ft_uiLogRelay_v1" is UI→backend log relay for diagnostics
 # Since most invokes are dynamic in this bundle, this check is lenient
 # ========================================================================
 if [ "$LITERAL_COUNT" -gt 0 ]; then
-    # Allow ping (bridge probe) and ft_getDashboardState_v1 (main resolver)
-    FORBIDDEN=$(echo "$LITERAL_INVOKES" | grep -v -E "^(ft_getDashboardState_v1|ping)$" || true)
+    # Allow ping (bridge probe), ft_getDashboardState_v1 (main resolver), and ft_uiLogRelay_v1 (log relay)
+    FORBIDDEN=$(echo "$LITERAL_INVOKES" | grep -v -E "^(ft_getDashboardState_v1|ping|ft_uiLogRelay_v1)$" || true)
     if [ -n "$FORBIDDEN" ]; then
         echo "[GATE_INVOKE_ALLOWLIST] ✗ Forbidden resolvers found:"
         echo "$FORBIDDEN" | sed 's/^/    /'
         FAIL=1
     else
-        echo "[GATE_INVOKE_ALLOWLIST]   ✓ Only ft_getDashboardState_v1 and/or ping in resolver list"
+        echo "[GATE_INVOKE_ALLOWLIST]   ✓ Only allowed resolvers (ft_getDashboardState_v1, ping, ft_uiLogRelay_v1)"
     fi
     
-    if ! echo "$LITERAL_INVOKES" | grep -q -E "^(ft_getDashboardState_v1|ping)$"; then
-        echo "[GATE_INVOKE_ALLOWLIST] ⚠ Warning: Neither ft_getDashboardState_v1 nor ping found (may be minified)"
+    if ! echo "$LITERAL_INVOKES" | grep -q -E "^(ft_getDashboardState_v1|ping|ft_uiLogRelay_v1)$"; then
+        echo "[GATE_INVOKE_ALLOWLIST] ⚠ Warning: Expected resolvers not found (may be minified)"
     fi
 else
     echo "[GATE_INVOKE_ALLOWLIST]   ✓ No literal invoke calls (all dynamic via @forge/bridge)"

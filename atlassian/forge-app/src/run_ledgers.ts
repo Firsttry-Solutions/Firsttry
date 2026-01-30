@@ -17,8 +17,10 @@
  */
 
 let api: any;
+let storage: any;
 try {
   api = require('@forge/api').default;
+  storage = require('@forge/api').storage;
 } catch {
   // Test environment; mock will be injected
 }
@@ -33,14 +35,19 @@ export function setMockApi(mockApiObj: any): void {
 }
 
 /**
+ * (Test only) Set mock storage for testing
+ */
+export function setMockStorage(mockStorageObj: any): void {
+  storage = mockStorageObj;
+}
+
+/**
  * Record a daily pipeline attempt
  */
 export async function record_daily_attempt(org: string, nowISO: string): Promise<void> {
   try {
     const key = `runs/${org}/daily/last_attempt_at`;
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(key, nowISO);
-    });
+    await storage.set(key, nowISO);
   } catch (error) {
     console.error(`[RunLedgers] Failed to record daily attempt for ${org}:`, error);
     throw error;
@@ -53,9 +60,7 @@ export async function record_daily_attempt(org: string, nowISO: string): Promise
 export async function record_daily_success(org: string, nowISO: string): Promise<void> {
   try {
     const key = `runs/${org}/daily/last_success_at`;
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(key, nowISO);
-    });
+    await storage.set(key, nowISO);
   } catch (error) {
     console.error(`[RunLedgers] Failed to record daily success for ${org}:`, error);
     throw error;
@@ -68,9 +73,7 @@ export async function record_daily_success(org: string, nowISO: string): Promise
 export async function record_weekly_attempt(org: string, nowISO: string): Promise<void> {
   try {
     const key = `runs/${org}/weekly/last_attempt_at`;
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(key, nowISO);
-    });
+    await storage.set(key, nowISO);
   } catch (error) {
     console.error(`[RunLedgers] Failed to record weekly attempt for ${org}:`, error);
     throw error;
@@ -83,9 +86,7 @@ export async function record_weekly_attempt(org: string, nowISO: string): Promis
 export async function record_weekly_success(org: string, nowISO: string): Promise<void> {
   try {
     const key = `runs/${org}/weekly/last_success_at`;
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(key, nowISO);
-    });
+    await storage.set(key, nowISO);
   } catch (error) {
     console.error(`[RunLedgers] Failed to record weekly success for ${org}:`, error);
     throw error;
@@ -108,9 +109,7 @@ export async function record_last_error(
       .trim();
     
     const key = `runs/${org}/last_error`;
-    await api.asApp().requestStorage(async (storage) => {
-      await storage.set(key, { message: sanitized, recorded_at: nowISO });
-    });
+    await storage.set(key, { message: sanitized, recorded_at: nowISO });
   } catch (error) {
     console.error(`[RunLedgers] Failed to record error for ${org}:`, error);
     throw error;
@@ -123,9 +122,7 @@ export async function record_last_error(
 export async function get_daily_last_success(org: string): Promise<string | null> {
   try {
     const key = `runs/${org}/daily/last_success_at`;
-    const result = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(key);
-    });
+    const result = await storage.get(key);
     return result || null;
   } catch (error) {
     console.error(`[RunLedgers] Failed to get daily last success for ${org}:`, error);
@@ -139,9 +136,7 @@ export async function get_daily_last_success(org: string): Promise<string | null
 export async function get_weekly_last_success(org: string): Promise<string | null> {
   try {
     const key = `runs/${org}/weekly/last_success_at`;
-    const result = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(key);
-    });
+    const result = await storage.get(key);
     return result || null;
   } catch (error) {
     console.error(`[RunLedgers] Failed to get weekly last success for ${org}:`, error);
@@ -157,20 +152,18 @@ export async function add_org_to_index(org: string): Promise<void> {
   try {
     const indexKey = 'index/orgs';
     
-    await api.asApp().requestStorage(async (storage) => {
-      const current = (await storage.get(indexKey)) || [];
-      
-      // Add if not present, deduplicate and sort
-      const updated = Array.from(new Set([...current, org])).sort();
-      
-      // Sanity check: prevent unbounded growth
-      if (updated.length > MAX_ORGS_IN_INDEX) {
-        console.warn(`[RunLedgers] Org index size exceeds ${MAX_ORGS_IN_INDEX}; trimming`);
-        // This should not happen in normal operation
-      }
-      
-      await storage.set(indexKey, updated);
-    });
+    const current = (await storage.get(indexKey)) || [];
+    
+    // Add if not present, deduplicate and sort
+    const updated = Array.from(new Set([...current, org])).sort();
+    
+    // Sanity check: prevent unbounded growth
+    if (updated.length > MAX_ORGS_IN_INDEX) {
+      console.warn(`[RunLedgers] Org index size exceeds ${MAX_ORGS_IN_INDEX}; trimming`);
+      // This should not happen in normal operation
+    }
+    
+    await storage.set(indexKey, updated);
   } catch (error) {
     console.error(`[RunLedgers] Failed to add org ${org} to index:`, error);
     // Non-fatal; continue processing
@@ -184,9 +177,7 @@ export async function add_org_to_index(org: string): Promise<void> {
 export async function get_all_orgs(): Promise<string[]> {
   try {
     const indexKey = 'index/orgs';
-    const result = await api.asApp().requestStorage(async (storage) => {
-      return (await storage.get(indexKey)) || [];
-    });
+    const result = await storage.get(indexKey);
     return Array.isArray(result) ? result.sort() : [];
   } catch (error) {
     console.error('[RunLedgers] Failed to get org index:', error);

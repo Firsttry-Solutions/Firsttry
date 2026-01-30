@@ -1,51 +1,105 @@
 # Support Documentation
 
-**App Name**: FirstTry Governance - Atlassian Dual-Layer Integration  
-**Last Updated**: 2025-12-22  
-**Status**: Production  
+**Last Updated**: January 2026
 
 ---
 
-## Support Channels
+## Getting Support
 
-## Support contact
-**Primary contact (paste-ready):** GitHub Issues — https://github.com/Global-domination/Firstry/issues
-**Acknowledgement target:** Best effort (no SLA). If a stricter timeline is required, mark as UNKNOWN and request via the issue text.
+### Support Email
+- **Primary**: contact@firsttry.run
+- **Alternative**: contact@firsttry.run (replace with your actual support contact)
 
----
-
-### Primary Support
-
-**Method**: GitHub Issues  
-**URL**: https://github.com/Global-domination/Firstry/issues  
-**Response Time**: Best effort (no SLA)  
-**Scope**: Bug reports, feature requests, technical questions
-
-**Process**:
-1. Open an issue at: https://github.com/Global-domination/Firstry/issues
-2. Include app version, Jira Cloud site ID (if applicable), and detailed description
-3. Maintainers will respond when available (best effort; no guaranteed SLA)
-
-### Community Support
-
-**Method**: Public repository discussions  
-**URL**: https://github.com/Global-domination/Firstry/discussions  
-**Scope**: General questions, usage guidance, community-contributed solutions
+### Support Hours
+- **Monday–Friday**: 9 AM–5 PM PT
+- **Holidays**: Closed (US holidays observed)
+- **Response target**: Best effort within 2 business days
 
 ---
 
-## What We Support
+## How to Report an Issue
 
-✅ **Bug Fixes**: Issues with app functionality as documented  
-✅ **Documentation Clarifications**: Ambiguities or errors in docs  
-✅ **Feature Requests**: Suggestions for future enhancements (no commitment)  
+When contacting support, please include:
 
-❌ **NOT SUPPORTED**:
-- Jira Cloud platform issues (contact Atlassian support)
-- Forge runtime issues (contact Atlassian Forge support)
-- Custom development or consulting
-- Urgent/emergency support outside GitHub issues
-- Phone or video call support
+1. **Build Identity** (from the dashboard):
+   - `ui_git_sha`: The git commit SHA displayed in the dashboard
+   - `ui_bundle_hash`: The bundle hash displayed
+   - Example: `ui_git_sha=3bddca6214fdd3319eb14d7a16696341501d3fed`
+
+2. **Request Identifier**:
+   - `ui_req_id`: Shown in debug mode (?ft_debug=1) or browser console
+   - Helps correlate your request with server logs
+
+3. **Dashboard State**:
+   - Is the snapshot showing AVAILABLE, NO_SNAPSHOT, HARD_ERROR, or INVALID_SNAPSHOT?
+   - Include a screenshot if possible
+
+4. **Steps to Reproduce**:
+   - What were you doing when the issue occurred?
+   - Does it happen consistently or intermittently?
+
+5. **Your Jira Workspace**:
+   - Workspace URL (e.g., https://your-workspace.atlassian.net)
+   - Your Jira user display name
+
+---
+
+## Common Issues
+
+### Issue: Dashboard shows "NO_SNAPSHOT"
+**Meaning**: No build snapshot is available yet.  
+**Solution**: 
+- Wait for a build to complete
+- Click "Refresh" button to re-check
+- Verify your Jira workspace has the Forge app enabled
+
+### Issue: Dashboard shows "HARD_ERROR"
+**Meaning**: The snapshot service encountered an error.  
+**Solution**:
+- Click "Refresh" to retry
+- Check your Jira workspace is accessible
+- Contact support with your ui_req_id (enable debug mode: ?ft_debug=1)
+
+### Issue: Dashboard shows "INVALID_SNAPSHOT"
+**Meaning**: The snapshot data is malformed or expired.  
+**Solution**:
+- Click "Refresh" to fetch a new snapshot
+- If persistent, contact support with your ui_req_id
+
+### Issue: Export button does not work
+**Meaning**: The snapshot cannot be exported (may be missing data).  
+**Solution**:
+- Ensure dashboard shows AVAILABLE state
+- Try refreshing first
+- Contact support if the issue persists
+
+### Issue: Debug mode (?ft_debug=1) shows red errors
+**Meaning**: Network or serialization error in the dashboard.  
+**Solution**:
+- Check your internet connection
+- Verify your Jira credentials are valid
+- Contact support with the console error message (copy-paste the full error)
+
+---
+
+## Escalation Path
+
+1. **First contact**: Email support address above (2-business-day SLA)
+2. **No response within 2 business days**: Reply to escalate the ticket
+3. **Urgent issues**: Mention "URGENT" in the subject line
+
+---
+
+## SLA (Service Level Agreement)
+
+| Severity | Response Time | Resolution Target |
+|----------|---------------|-------------------|
+| **Critical** (app down) | 4 hours | 24 hours |
+| **High** (major feature broken) | 8 hours | 3 days |
+| **Medium** (workaround exists) | 2 business days | 5 business days |
+| **Low** (minor issue) | 3 business days | Best effort |
+
+*SLAs are best-effort; not guaranteed.*
 
 ---
 

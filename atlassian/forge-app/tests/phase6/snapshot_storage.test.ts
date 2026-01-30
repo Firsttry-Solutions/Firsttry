@@ -25,29 +25,27 @@ import {
 import { ErrorCode, DEFAULT_RETENTION_POLICY } from '../../src/phase6/constants';
 import * as forgeApi from '@forge/api';
 
-// Mock @forge/api storage
+// Store for storage query mock data - will be set by tests
+let storageGetManyMockResults: Array<{ key: string; value: any }> = [];
+
+// Mock @forge/api storage with cursor pagination support
 vi.mock('@forge/api', () => ({
-  default: {
-    storage: {
-      set: vi.fn(),
-      get: vi.fn(),
-      delete: vi.fn(),
-      query: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          getKeys: vi.fn(),
-        }),
-      }),
-    },
-  },
   storage: {
     set: vi.fn(),
     get: vi.fn(),
     delete: vi.fn(),
     query: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
+        getMany: vi.fn(async () => ({
+          results: storageGetManyMockResults,
+        })),
         getKeys: vi.fn(),
       }),
     }),
+  },
+  api: {
+    asUser: vi.fn(),
+    asApp: vi.fn(),
   },
 }));
 
@@ -60,6 +58,7 @@ describe('SnapshotRunStorage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    storageGetManyMockResults = [];
     storage = new SnapshotRunStorage(tenantId, cloudId);
   });
 
@@ -157,6 +156,7 @@ describe('SnapshotStorage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    storageGetManyMockResults = [];
     snapshotStorage = new SnapshotStorage(tenantId, cloudId);
   });
 
@@ -293,6 +293,7 @@ describe('RetentionEnforcer', () => {
     // Mock the underlying storage operations
     mockStorage.get.mockResolvedValue(null);
     mockStorage.query().where().getKeys.mockResolvedValue([]);
+    storageGetManyMockResults = [];
 
     const result = await enforcer.enforceRetention('daily');
 
@@ -308,6 +309,7 @@ describe('Storage: No-Write Verification', () => {
     mockStorage.set.mockResolvedValue(undefined);
     mockStorage.get.mockResolvedValue(null);
     mockStorage.query().where().getKeys.mockResolvedValue([]);
+    storageGetManyMockResults = [];
 
     const storage = new SnapshotRunStorage('tenant1', 'cloud1');
     await storage.listRuns({}, 0, 20);

@@ -10,7 +10,7 @@
  * - No data corruption during bulk deletion
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   SnapshotStorage,
   RetentionEnforcer,
@@ -20,29 +20,27 @@ import { Snapshot, RetentionPolicy } from '../../src/phase6/snapshot_model';
 import { computeCanonicalHash } from '../../src/phase6/canonicalization';
 import * as forgeApi from '@forge/api';
 
-// Mock @forge/api storage
+// Store for storage query mock data - will be set by tests
+let storageGetManyMockResults: Array<{ key: string; value: any }> = [];
+
+// Mock @forge/api storage with cursor pagination support
 vi.mock('@forge/api', () => ({
-  default: {
-    storage: {
-      set: vi.fn(),
-      get: vi.fn(),
-      delete: vi.fn(),
-      query: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          getKeys: vi.fn(),
-        }),
-      }),
-    },
-  },
   storage: {
     set: vi.fn(),
     get: vi.fn(),
     delete: vi.fn(),
     query: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
+        getMany: vi.fn(async () => ({
+          results: storageGetManyMockResults,
+        })),
         getKeys: vi.fn(),
       }),
     }),
+  },
+  api: {
+    asUser: vi.fn(),
+    asApp: vi.fn(),
   },
 }));
 
@@ -58,6 +56,7 @@ describe('Retention Enforcement at Scale', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    storageGetManyMockResults = [];  // Reset kvs mock data for this test
     snapshotStorage = new SnapshotStorage(tenantId, cloudId);
     enforcer = new RetentionEnforcer(tenantId, cloudId);
     policyStorage = new RetentionPolicyStorage(tenantId);
@@ -88,10 +87,13 @@ describe('Retention Enforcement at Scale', () => {
         payload: { data: `item-${i}` },
       }));
 
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-daily-${i}`);
+
       // Mock storage operations for bulk snapshots
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-daily-${i}`)
-      );
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+
+      // Also set kvs mock data
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -133,9 +135,9 @@ describe('Retention Enforcement at Scale', () => {
         payload: { data: `week-${i}` },
       }));
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-weekly-${i}`)
-      );
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-weekly-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -172,9 +174,9 @@ describe('Retention Enforcement at Scale', () => {
         payload: {},
       }));
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -234,9 +236,9 @@ describe('Retention Enforcement at Scale', () => {
         };
       });
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -278,9 +280,9 @@ describe('Retention Enforcement at Scale', () => {
         payload: {},
       }));
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        largeSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = largeSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -324,9 +326,9 @@ describe('Retention Enforcement at Scale', () => {
         payload: {},
       }));
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        recentSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = recentSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');
@@ -397,9 +399,9 @@ describe('Retention Enforcement at Scale', () => {
       // Store original hashes
       const originalHashes = snapshots.map(s => s.canonical_hash);
 
-      mockStorage.query().where().getKeys.mockResolvedValue(
-        snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`)
-      );
+      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      mockStorage.query().where().getKeys.mockResolvedValue(keys);
+      storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
       mockStorage.get.mockImplementation((key) => {
         const index = parseInt(key.split('-').pop() || '0');

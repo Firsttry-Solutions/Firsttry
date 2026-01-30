@@ -12,6 +12,7 @@
  */
 
 import api from '@forge/api';
+import { storage } from '@forge/api';
 import {
   Phase5Report,
   validatePhase5ReportStructure,
@@ -81,9 +82,7 @@ async function loadLatestReport(cloudId: string): Promise<Phase5Report | null> {
   try {
     const key = getPhase5ReportStorageKey(cloudId);
     
-    const reportData = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(key);
-    });
+    const reportData = await storage.get(key);
 
     if (!reportData) {
       return null;
@@ -125,9 +124,7 @@ async function loadSchedulerStateSummary(cloudId: string): Promise<SchedulerStat
   try {
     const key = getSchedulerStateStorageKey(cloudId);
     
-    const stateData = await api.asApp().requestStorage(async (storage) => {
-      return await storage.get(key);
-    });
+    const stateData = await storage.get(key);
 
     if (!stateData) {
       return {};
@@ -226,10 +223,8 @@ export async function saveLatestReport(cloudId: string, report: Phase5Report): P
   try {
     const key = getPhase5ReportStorageKey(cloudId);
     
-    await api.asApp().requestStorage(async (storage) => {
-      // Store as JSON string with 90-day TTL
-      await storage.set(key, JSON.stringify(report), { ttl: 7776000 });
-    });
+    // Store as JSON string with 90-day TTL
+    await storage.set(key, JSON.stringify(report), { ttl: 7776000 });
   } catch (error) {
     console.error('[AdminPageLoader] Error saving report:', error);
     throw error;
