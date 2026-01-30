@@ -106,15 +106,9 @@ modules:
         - avi:forge:upgraded:app
       function: ft-upgraded-handler
 
-  # Diagnostic webtrigger: token-gated endpoint that proves live Jira reads
-  # Usage: curl "https://.../ft-diag-probe?token=<FT_DIAG_TOKEN>"
-  # Returns: { ts, cloudId, appVersionSha, projectCount, note: "diagnostic" }
-  webhooks:
-    - key: ft-diag-probe
-      function: ft-diag-probe-fn
-      url: /rest/atlassian/1.0/ft/diagnostic
+  # Permissions (following module definitions)
 
-# Permissions
+
 permissions:
   scopes:
     - storage:app
