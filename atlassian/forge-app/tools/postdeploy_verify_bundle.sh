@@ -317,14 +317,74 @@ sha256sum "$(basename "$RUN_DIR").tar.gz" | tee "$RUN_DIR/99_archive_sha256.txt"
 echo ""
 echo "========================================="
 echo "✅ POST-DEPLOYMENT VERIFICATION COMPLETE"
+
+################################################################################
+# PHASE 9 — UI CONSOLE CLEANLINESS (MANUAL ARTIFACT)
+################################################################################
+echo ""
+echo "===== PHASE 9: UI CONSOLE CLEANLINESS ====="
+echo ""
+echo "⚠️  OPERATOR INSTRUCTIONS:"
+echo "   1. Open Jira dashboard: https://firsttry.atlassian.net/jira/dashboards/10102"
+echo "   2. Open DevTools Console (F12)"
+echo "   3. Right-click -> Save as… OR Select all + Copy"
+echo "   4. Save to file (e.g., /tmp/console.txt)"
+echo ""
+
+CONSOLE_LOG_FILE="${CONSOLE_LOG_FILE:-}"
+if [ -n "$CONSOLE_LOG_FILE" ] && [ -f "$CONSOLE_LOG_FILE" ]; then
+  echo "✅ Console log file detected: $CONSOLE_LOG_FILE"
+  bash tools/verify_console_log_bundle.sh 2>&1 | tee "$RUN_DIR/90_console_gate_result.txt"
+  CONSOLE_GATE_STATUS=$?
+  if [ $CONSOLE_GATE_STATUS -eq 0 ]; then
+    echo "✅ Console gate PASSED (no bundle errors detected)"
+    CONSOLE_APPROVAL="PASS"
+  else
+    echo "❌ Console gate FAILED (errors detected in bundle)"
+    CONSOLE_APPROVAL="FAIL"
+    exit 1
+  fi
+else
+  echo "⏭️  Console log file NOT provided (SKIPPED)"
+  echo "   To include: export CONSOLE_LOG_FILE=/path/to/console.txt before running"
+  CONSOLE_APPROVAL="SKIPPED"
+fi
+
+################################################################################
+# PHASE 10 — SUMMARY + ARCHIVE
+################################################################################
+echo ""
+echo "===== PHASE 10: SUMMARY + ARCHIVE ====="
+
+HEAD_SHA=$(cat "$RUN_DIR/01_head_sha.txt")
+PROD_STATUS=$(cat "$RUN_DIR/52_prod_var_status.txt" 2>/dev/null || echo "UNKNOWN")
+ARCHIVE_NAME="$(basename "$RUN_DIR")"
+
+cd /tmp
+tar -czf "${ARCHIVE_NAME}.tar.gz" "$(basename "$RUN_DIR")"
+ls -lh "${ARCHIVE_NAME}.tar.gz" | tee "$RUN_DIR/98_archive_size.txt"
+sha256sum "${ARCHIVE_NAME}.tar.gz" | tee "$RUN_DIR/99_archive_sha256.txt"
+
+echo ""
 echo "========================================="
 echo ""
 echo "RUN_DIR: $RUN_DIR"
-echo "Archive: $(pwd)/$(basename "$RUN_DIR").tar.gz"
+echo "Archive: /tmp/${ARCHIVE_NAME}.tar.gz"
 echo "SHA256:  $(cat "$RUN_DIR/99_archive_sha256.txt" | awk '{print $1}')"
 echo ""
 echo "HEAD SHA: $HEAD_SHA"
 echo "Prod Vars Status: $PROD_STATUS"
+echo "Console Gate: $CONSOLE_APPROVAL"
 echo ""
-echo "READY FOR PROD?: YES (staging ✅, prod requires manual verification)"
+
+if [ "$CONSOLE_APPROVAL" = "PASS" ]; then
+  echo "✅ APPROVED FOR PRODUCTION (all gates including console verification passed)"
+elif [ "$CONSOLE_APPROVAL" = "SKIPPED" ]; then
+  echo "⚠️  NOT APPROVED FOR PRODUCTION (console verification SKIPPED)"
+  echo "   To approve: provide console log and re-run with CONSOLE_LOG_FILE=/path"
+else
+  echo "❌ NOT APPROVED FOR PRODUCTION (console verification FAILED)"
+fi
+
 echo "========================================="
+
