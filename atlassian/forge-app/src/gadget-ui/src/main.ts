@@ -66,149 +66,6 @@ console.log("[UI_INVOKE_WIRING_PROOF] start");
 // ============================================================================
 console.log("[UI_CSP_PROOF] skip-inline-style-probe (no inline style attempted)");
 
-/**
- * Inject CSS styles for error/fallback UI elements (CSP-safe, no unsafe-inline)
- * This function injects a <style> tag once, then all elements use className refs
- */
-function ensureMainUIStyles(): void {
-  if (document.getElementById("main-ui-styles")) {
-    return; // Already injected
-  }
-
-  const styleTag = document.createElement("style");
-  styleTag.id = "main-ui-styles";
-  styleTag.textContent = `
-    .ft-bridge-timeout-panel {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff;
-      z-index: 999999;
-      font-family: system-ui, -apple-system, sans-serif;
-    }
-
-    .ft-bridge-timeout-content {
-      text-align: center;
-      padding: 24px;
-      max-width: 500px;
-    }
-
-    .ft-bridge-timeout-title {
-      color: #d32f2f;
-      margin: 0 0 16px 0;
-      font-size: 24px;
-    }
-
-    .ft-bridge-timeout-message {
-      color: #666;
-      font-size: 16px;
-    }
-
-    .ft-error-panel {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #fff;
-      z-index: 9999;
-    }
-
-    .ft-error-panel-content {
-      max-width: 600px;
-      padding: 20px;
-      background: #fee;
-      border: 1px solid #c00;
-    }
-
-    .ft-error-panel-title {
-      margin: 0 0 16px 0;
-      font-weight: bold;
-      color: #c00;
-    }
-
-    .ft-error-panel-text {
-      margin: 0;
-      color: #333;
-      font-family: monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-
-    .ft-backend-error-panel {
-      padding: 20px;
-      background: #fce4ec;
-      color: #d32f2f;
-      border-left: 4px solid #d32f2f;
-      font-family: monospace;
-      font-size: 12px;
-    }
-
-    .ft-ui-serve-proof-banner {
-      display: block;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: #f0f7ff;
-      border-bottom: 2px solid #0052cc;
-      padding: 8px 16px;
-      font-size: 12px;
-      font-family: monospace;
-      z-index: 9999;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .ft-ui-entry-runtime-proof-banner {
-      background: #003f87;
-      color: #fff;
-      padding: 8px 12px;
-      font-family: monospace;
-      font-size: 11px;
-      line-height: 1.4;
-      border-bottom: 1px solid #0052cc;
-    }
-
-    .ft-ui-entry-runtime-proof-banner strong {
-      color: #fff;
-    }
-
-    .ft-serve-mismatch-banner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 99999;
-      padding: 12px 16px;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      line-height: 1.4;
-      white-space: nowrap;
-      overflow: auto;
-    }
-
-    .ft-serve-mismatch-banner.ok {
-      background-color: #f0f7ff;
-      border-bottom: 2px solid #0052cc;
-      color: #003d66;
-    }
-
-    .ft-serve-mismatch-banner.mismatch {
-      background-color: #ffeceb;
-      border-bottom: 3px solid #cc0000;
-      color: #660000;
-    }
-  `;
-
-  document.head.appendChild(styleTag);
-}
-
 // ============================================================================
 // UI BUILD IDENTITY — ALWAYS PRINTED (even if bridge fails)
 // This marker runs before bridge check so we know which bundle is executing
@@ -249,7 +106,7 @@ setTimeout(() => {
   // After 3 seconds, if bridge hasn't been verified, assume it's missing
   const fatalPanel = document.getElementById("forge-bridge-fatal-error-panel");
   if (!fatalPanel && !document.body.classList.contains("ft-bridge-verified")) {
-    ensureMainUIStyles();
+    // CSS styles are already loaded from static ft_styles.css file
     const panel = document.createElement("div");
     panel.id = "forge-bridge-fatal-error-panel-timeout";
     panel.className = "ft-bridge-timeout-panel";
@@ -464,7 +321,7 @@ try {
 } catch (err) {
   console.error('[FATAL_UI_IDENTITY]', err instanceof Error ? err.message : String(err));
   // Fail closed: if identity cannot be built, show error and stop
-  ensureMainUIStyles();
+  // CSS styles are already loaded from static ft_styles.css file
   const errPanel = document.createElement('div');
   errPanel.className = 'ft-error-panel';
   
@@ -591,7 +448,7 @@ function ftUpdateProofNode(optional?: { schemaVersion?: string; backendBuildSha?
         el = document.createElement("pre");
         el.id = id;
         el.setAttribute("data-ft-proof", "1");
-        el.style.display = "none";
+        el.className = "ft-hidden";  // Use CSS class instead of inline style (CSP-compliant)
         document.body.appendChild(el);
     }
     
@@ -2775,7 +2632,7 @@ function wireExportButtons() {
     }
     
     // Make banner visible and populate with UI build info
-    ensureMainUIStyles();
+    // CSS styles are already loaded from static ft_styles.css file
     banner.className = 'ft-ui-serve-proof-banner';
     
     const strong = document.createElement('strong');
@@ -2856,7 +2713,7 @@ function wireExportButtons() {
     };
     
     // 5. Render appropriate banner
-    ensureMainUIStyles();
+    // CSS styles are already loaded from static ft_styles.css file
     let banner = document.createElement('div');
     banner.id = 'ft-serve-mismatch-banner';
     
@@ -3058,7 +2915,7 @@ async function proceedWithBoot() {
         const errorMsg = err instanceof Error ? err.message : String(err);
         console.error('[L0_DASHBOARD_FATAL]', errorMsg);
         
-        ensureMainUIStyles();
+        // CSS styles are already loaded from static ft_styles.css file
         document.body.innerHTML = '';
         const errorPanel = document.createElement('div');
         errorPanel.className = 'ft-backend-error-panel';
@@ -3071,7 +2928,7 @@ async function proceedWithBoot() {
     // L0.C: RENDER ENTRY RUNTIME PROOF BANNER (top of page)
     // ========================================================================
     try {
-        ensureMainUIStyles();
+        // CSS styles are already loaded from static ft_styles.css file
         const proof = (window as any).__FT_RUNTIME_ENTRY_PROOF__;
         const entryProofText = formatEntryProofForBanner();
         const bundleHash = proof?.ui_entry_bundle_hash || 'UNKNOWN';
