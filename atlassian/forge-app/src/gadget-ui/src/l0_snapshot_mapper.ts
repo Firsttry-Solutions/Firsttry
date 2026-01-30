@@ -113,6 +113,28 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
     const snapshotId = payload?.snapshotId ?? null;
     const createdAtUtc = payload?.createdAtUtc ?? null;
     
+    // CRITICAL VALIDATION: AVAILABLE requires both snapshotId and createdAtUtc
+    // This is fail-closed: if either is missing, map to INVALID_SNAPSHOT instead
+    if (!snapshotId || !createdAtUtc) {
+      console.log('[UI_STATE_MAPPED]', { 
+        snapshotId, 
+        createdAtUtc, 
+        status: 'INVALID_SNAPSHOT', 
+        reason: 'AVAILABLE missing required fields',
+        hasSnapshotId: !!snapshotId,
+        hasCreatedAtUtc: !!createdAtUtc,
+      });
+      return {
+        status: "INVALID_SNAPSHOT",
+        reasonCode: "STATE_INVALID_SNAPSHOT",
+        snapshotId: null,
+        createdAtUtc: null,
+        schemaVersion: payload.schemaVersion || "L0",
+        error: "FT_RESPONSE_MISSING_FIELDS",
+        note: "AVAILABLE response missing required snapshotId or createdAtUtc",
+      };
+    }
+    
     // PROOF: Log mapped state before returning
     console.log('[UI_STATE_MAPPED]', { snapshotId, createdAtUtc, status: 'AVAILABLE', reason: 'extracted from payload' });
     

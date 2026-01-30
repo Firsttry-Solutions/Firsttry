@@ -6,6 +6,12 @@
  */
 
 // ============================================================================
+// CSP VIOLATION LISTENER (INIT FIRST - must run before any other code)
+// ============================================================================
+import { initCSPViolationListener } from "./cspViolationListener";
+initCSPViolationListener();
+
+// ============================================================================
 // L0 DUMB-READER MODE ENFORCEMENT (STRICT SINGLE-INVOKE)
 // ============================================================================
 const FT_L0_MODE = true;
