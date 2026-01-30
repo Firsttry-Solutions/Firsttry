@@ -2,6 +2,7 @@
  * UI State Mapper Contract Test - Fail-Closed Behavior
  *
  * CRITICAL: Ensures UI does NOT show AVAILABLE if backend says NOT_AVAILABLE
+ * REGRESSION: Tests for the exact AVAILABLE envelope from seed snapshot + missing field checks
  */
 
 import { describe, it, expect } from "vitest";
@@ -23,6 +24,98 @@ describe("L0 Snapshot Mapper - Fail-Closed State Contract", () => {
       expect(result.status).toBe("AVAILABLE");
       expect(result.snapshotId).toBe("snap-123");
       expect(result.createdAtUtc).toBe("2026-01-30T12:00:00Z");
+    });
+
+    // REGRESSION TEST: Seed snapshot with exact envelope shape from logs
+    it("REGRESSION: AVAILABLE envelope maps to AVAILABLE with snapshotId and createdAtUtc", () => {
+      // This is the EXACT envelope from the seed snapshot (from logs)
+      const seedEnvelope = {
+        envelopeKind: "FT_DASH_ENVELOPE_V1",
+        schemaVersion: "v1",
+        ok: true,
+        status: "AVAILABLE",
+        data: {
+          status: "AVAILABLE",
+          snapshotId: "a5224a163f6e-2026.01.24.01-seed",
+          createdAtUtc: "2026-01-24T12:00:00Z",
+          schemaVersion: "L0",
+          containsText: "Seed snapshot",
+        },
+      };
+
+      const result = mapL0SnapshotResponse(seedEnvelope);
+
+      // CRITICAL: Must map to AVAILABLE
+      expect(result.status).toBe("AVAILABLE");
+      expect(result.reasonCode).toBe("PROOF_OK");
+      // CRITICAL: snapshotId and createdAtUtc must be preserved
+      expect(result.snapshotId).toBe("a5224a163f6e-2026.01.24.01-seed");
+      expect(result.createdAtUtc).toBe("2026-01-24T12:00:00Z");
+      expect(result.error).toBeNull();
+    });
+
+    // REGRESSION TEST: Missing snapshotId fails-closed to INVALID_SNAPSHOT
+    it("REGRESSION: AVAILABLE missing snapshotId fails-closed to INVALID_SNAPSHOT", () => {
+      const envelopeWithoutSnapshot = {
+        ok: true,
+        status: "AVAILABLE",
+        data: {
+          status: "AVAILABLE",
+          // snapshotId MISSING
+          createdAtUtc: "2026-01-24T12:00:00Z",
+          schemaVersion: "L0",
+        },
+      };
+
+      const result = mapL0SnapshotResponse(envelopeWithoutSnapshot);
+
+      // CRITICAL: Must NOT be AVAILABLE
+      expect(result.status).not.toBe("AVAILABLE");
+      // Should fail-closed to INVALID_SNAPSHOT
+      expect(result.status).toBe("INVALID_SNAPSHOT");
+      expect(result.snapshotId).toBeNull();
+      expect(result.error).toBe("FT_RESPONSE_MISSING_FIELDS");
+    });
+
+    // REGRESSION TEST: Missing createdAtUtc fails-closed to INVALID_SNAPSHOT
+    it("REGRESSION: AVAILABLE missing createdAtUtc fails-closed to INVALID_SNAPSHOT", () => {
+      const envelopeWithoutTimestamp = {
+        ok: true,
+        status: "AVAILABLE",
+        data: {
+          status: "AVAILABLE",
+          snapshotId: "snap-123",
+          // createdAtUtc MISSING
+          schemaVersion: "L0",
+        },
+      };
+
+      const result = mapL0SnapshotResponse(envelopeWithoutTimestamp);
+
+      // CRITICAL: Must NOT be AVAILABLE
+      expect(result.status).not.toBe("AVAILABLE");
+      // Should fail-closed to INVALID_SNAPSHOT
+      expect(result.status).toBe("INVALID_SNAPSHOT");
+      expect(result.createdAtUtc).toBeNull();
+      expect(result.error).toBe("FT_RESPONSE_MISSING_FIELDS");
+    });
+
+    // REGRESSION TEST: Both missing fields
+    it("REGRESSION: AVAILABLE missing both snapshotId and createdAtUtc fails-closed", () => {
+      const envelopeWithoutBoth = {
+        ok: true,
+        status: "AVAILABLE",
+        data: {
+          status: "AVAILABLE",
+          schemaVersion: "L0",
+        },
+      };
+
+      const result = mapL0SnapshotResponse(envelopeWithoutBoth);
+
+      // CRITICAL: Must NOT be AVAILABLE
+      expect(result.status).not.toBe("AVAILABLE");
+      expect(result.status).toBe("INVALID_SNAPSHOT");
     });
   });
 
@@ -159,3 +252,4 @@ describe("L0 Snapshot Mapper - Fail-Closed State Contract", () => {
     });
   });
 });
+
