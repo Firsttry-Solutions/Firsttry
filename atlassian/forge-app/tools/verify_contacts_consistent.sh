@@ -1,32 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Fail-closed gate: enforce canonical contact email everywhere
-# Canonical source: docs/CONTACTS.md
-
-if [ ! -f "docs/CONTACTS.md" ]; then
-  echo "❌ FAIL: docs/CONTACTS.md not found"
+# Fail-closed contact consistency gate
+# Rule 1: docs/CONTACTS.md must exist
+if [ ! -f docs/CONTACTS.md ]; then
+  echo "FAIL: docs/CONTACTS.md not found"
   exit 1
 fi
 
-CANONICAL=$(grep -oE "contact@firsttry\.run" docs/CONTACTS.md | head -1)
-
-if [ -z "$CANONICAL" ]; then
-  echo "❌ FAIL: contact@firsttry.run not found in docs/CONTACTS.md"
+# Rule 2: contact@firsttry.run must be in CONTACTS.md
+if ! rg -q "contact@firsttry\.run" docs/CONTACTS.md; then
+  echo "FAIL: contact@firsttry.run not found in docs/CONTACTS.md"
   exit 1
 fi
 
-# Scan for FirstTry internal emails in committed src+docs only (not node_modules, dist, build artifacts)
-# Only flag FirstTry-branded emails that should be canonical
-NONCANONICAL=$(find src docs -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.md" -o -name "*.js" \) \
-  -not -path "*/node_modules/*" -not -path "*/dist/*" 2>/dev/null | \
-  xargs grep -hE "@firstry\.(io|governance|solutions)" 2>/dev/null || true)
+# Rule 3: Extract canonical email from CONTACTS.md
+CANONICAL=$(rg -m 1 -o "[a-z]+@[a-z.]+\.[a-z]+" docs/CONTACTS.md)
+
+# Rule 4: Scan src/ and docs/ for any emails NOT matching canonical
+# Fail if any non-canonical email found
+NONCANONICAL=$(rg -n --hidden --no-ignore -S -g'!node_modules/**' -g'!**/dist/**' -g'!**/.git/**' -g'!package-lock.json' \
+  "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z0-9.-]+\.[A-Za-z]{2,}" src docs 2>/dev/null | rg -v "$CANONICAL" || true)
 
 if [ -n "$NONCANONICAL" ]; then
-  echo "❌ FAIL: Non-canonical FirstTry emails found (must be contact@firsttry.run):"
-  echo "$NONCANONICAL" | head -10
+  echo "FAIL: Non-canonical emails found:"
+  echo "$NONCANONICAL"
   exit 1
 fi
 
-echo "✅ PASS: All contact emails are canonical ($CANONICAL)"
+echo "PASS: All contact emails are canonical ($CANONICAL)"
 exit 0
