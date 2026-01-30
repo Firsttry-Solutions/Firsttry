@@ -1,5 +1,9 @@
 /**
- * Diagnostic Probe Handler (Webtrigger)
+ * Diagnostic Probe Handler (Deprecated - Webhooks module not supported in Forge v12)
+ *
+ * Note: This handler was intended to be exposed via webhooks module, which is no longer
+ * supported in Forge CLI v12+. The function is retained for potential future use via
+ * different invocation mechanisms (e.g., scheduled tasks or other Forge modules).
  *
  * Token-gated endpoint that proves live Jira API reads WITHOUT rendering the UI.
  * This handler is called by: GET /rest/atlassian/1.0/ft/diagnostic?token=<FT_DIAG_TOKEN>
@@ -16,16 +20,20 @@
  * - No audit logging (to avoid PII leakage)
  */
 
-import api, { route } from "@forge/api";
+import api from "@forge/api";
 
 // Require token match for access
 const getDiagToken = (): string => {
   return process.env.FT_DIAG_TOKEN || "ft_diag_dev_token_replace_in_production";
 };
 
-export const handler = route(async (req) => {
+/**
+ * DEPRECATED: This handler is no longer exposed via webhooks (removed in Forge v12 compatibility fix)
+ * Kept for reference and potential future use.
+ */
+export const handler = async (req: any) => {
   // Extract and validate token from query param
-  const token = req.queryParameters?.token || null;
+  const token = req?.queryParameters?.token || null;
   const expectedToken = getDiagToken();
 
   if (!token || token !== expectedToken) {
@@ -76,4 +84,4 @@ export const handler = route(async (req) => {
       headers: { "Content-Type": "application/json" },
     };
   }
-});
+};
