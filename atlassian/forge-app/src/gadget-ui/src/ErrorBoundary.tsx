@@ -48,36 +48,17 @@ export class ErrorBoundary extends React.Component<Props, State> {
       const errorStack = this.state.errorInfo?.componentStack || "";
 
       return (
-        <div
-          style={{
-            padding: "16px",
-            backgroundColor: "#fee",
-            borderLeft: "4px solid #c00",
-            fontFamily: "monospace",
-            fontSize: "12px",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-            color: "#333",
-          }}
-        >
-          <strong style={{ color: "#c00" }}>⚠️ UI Error</strong>
-          <div style={{ marginTop: "8px", fontSize: "11px" }}>
+        <div className="error-boundary-container">
+          <strong className="error-boundary-title">⚠️ UI Error</strong>
+          <div className="error-boundary-message">
             {errorMessage}
           </div>
           {errorStack && (
-            <div
-              style={{
-                marginTop: "8px",
-                fontSize: "10px",
-                opacity: 0.7,
-                maxHeight: "200px",
-                overflow: "auto",
-              }}
-            >
+            <div className="error-boundary-stack">
               {errorStack}
             </div>
           )}
-          <div style={{ marginTop: "8px", fontSize: "11px", opacity: 0.6 }}>
+          <div className="error-boundary-footer">
             Refresh the page to retry.
           </div>
         </div>
