@@ -7,8 +7,8 @@
 ## Getting Support
 
 ### Support Email
-- **Primary**: SUPPORT_EMAIL_HERE
-- **Alternative**: SUPPORT_EMAIL_HERE (replace with your actual support contact)
+- **Primary**: support@firstry-solutions.com
+- **Alternative**: support@firstry-solutions.com (replace with your actual support contact)
 
 ### Support Hours
 - **Monday–Friday**: 9 AM–5 PM PT

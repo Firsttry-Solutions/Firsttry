@@ -282,6 +282,114 @@ fi
 cp "$SUPPORT_BACKUP" "$SUPPORT_DOC"
 
 # ========================================================================
+# MUTATION J: verify:no-placeholders gate must FAIL when placeholder found
+# ========================================================================
+
+echo "[SELFTEST] Mutation J: Reinsert placeholder email (verify:no-placeholders must FAIL)"
+
+SUPPORT_DOC="$SCRIPT_DIR/../docs/SUPPORT.md"
+SUPPORT_BACKUP2="$TEST_DIR/SUPPORT.md.backup2"
+cp "$SUPPORT_DOC" "$SUPPORT_BACKUP2"
+
+# Inject placeholder back into doc
+sed -i 's/support@firstry-solutions.com/SUPPORT_EMAIL_HERE/g' "$SUPPORT_DOC"
+
+PLACEHOLDER_GATE="$SCRIPT_DIR/verify_no_placeholders_anywhere.sh"
+output=$(bash "$PLACEHOLDER_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:no-placeholders correctly FAILED on placeholder found"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:no-placeholders should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore SUPPORT.md
+cp "$SUPPORT_BACKUP2" "$SUPPORT_DOC"
+
+# ========================================================================
+# MUTATION K: verify:ui:no-timers gate must FAIL when timer found
+# ========================================================================
+
+echo "[SELFTEST] Mutation K: Add timer to l0_snapshot_mapper (verify:ui:no-timers must FAIL)"
+
+L0_MAPPER="$SCRIPT_DIR/../src/gadget-ui/src/l0_snapshot_mapper.ts"
+L0_BACKUP="$TEST_DIR/l0_snapshot_mapper.ts.backup"
+cp "$L0_MAPPER" "$L0_BACKUP"
+
+# Inject a setTimeout into the file
+sed -i '/const SUPPORT_URL/a \  const DEBUG_TIMER = setInterval(() => console.log("debug"), 1000);' "$L0_MAPPER"
+
+TIMERS_GATE="$SCRIPT_DIR/verify_no_timers_in_ui.sh"
+output=$(bash "$TIMERS_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:ui:no-timers correctly FAILED on timer found"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:ui:no-timers should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore l0_snapshot_mapper.ts
+cp "$L0_BACKUP" "$L0_MAPPER"
+
+# ========================================================================
+# MUTATION L: verify:ui:support-link gate must FAIL when mailto: missing
+# ========================================================================
+
+echo "[SELFTEST] Mutation L: Remove mailto: from l0_snapshot_mapper (verify:ui:support-link must FAIL)"
+
+L0_MAPPER="$SCRIPT_DIR/../src/gadget-ui/src/l0_snapshot_mapper.ts"
+L0_BACKUP2="$TEST_DIR/l0_snapshot_mapper.ts.backup2"
+cp "$L0_MAPPER" "$L0_BACKUP2"
+
+# Remove the mailto: reference
+sed -i 's/mailto:support@firstry-solutions.com/REMOVEDFORTEST/g' "$L0_MAPPER"
+
+SUPPORT_LINK_GATE="$SCRIPT_DIR/verify_ui_support_link_present.sh"
+output=$(bash "$SUPPORT_LINK_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:ui:support-link correctly FAILED on mailto: missing"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:ui:support-link should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore l0_snapshot_mapper.ts
+cp "$L0_BACKUP2" "$L0_MAPPER"
+
+# ========================================================================
+# MUTATION M: verify:ui:aria-live gate must FAIL when aria-live missing
+# ========================================================================
+
+echo "[SELFTEST] Mutation M: Remove aria-live from l0_snapshot_mapper (verify:ui:aria-live must FAIL)"
+
+L0_MAPPER="$SCRIPT_DIR/../src/gadget-ui/src/l0_snapshot_mapper.ts"
+L0_BACKUP3="$TEST_DIR/l0_snapshot_mapper.ts.backup3"
+cp "$L0_MAPPER" "$L0_BACKUP3"
+
+# Remove the aria-live attribute
+sed -i 's/aria-live="polite"//g' "$L0_MAPPER"
+
+ARIA_LIVE_GATE="$SCRIPT_DIR/verify_ui_aria_live_present.sh"
+output=$(bash "$ARIA_LIVE_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:ui:aria-live correctly FAILED on aria-live missing"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:ui:aria-live should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore l0_snapshot_mapper.ts
+cp "$L0_BACKUP3" "$L0_MAPPER"
+
+# ========================================================================
 # SUMMARY
 # ========================================================================
 
@@ -290,11 +398,11 @@ echo "[SELFTEST] =========================================="
 echo "[SELFTEST] SELFTEST SUMMARY"
 echo "[SELFTEST] =========================================="
 echo "[SELFTEST] Real bundle smoke tests: 2/2 PASS"
-echo "[SELFTEST] Mutation tests (gates): $MUTATION_PASS/9 PASS"
+echo "[SELFTEST] Mutation tests (gates): $MUTATION_PASS/13 PASS"
 echo ""
 
 if [ $MUTATION_FAIL -eq 0 ]; then
-    pass "ALL TESTS PASSED (11/11)"
+    pass "ALL TESTS PASSED (15/15)"
     exit 0
 else
     fail "MUTATION TESTS FAILED ($MUTATION_FAIL failed)"
