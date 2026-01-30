@@ -1,0 +1,392 @@
+/**
+ * Firsttry Gadget UI - Static Stylesheet
+ * 
+ * CSP-Compliant: This file is loaded via <link rel="stylesheet">, not inline <style> tags.
+ * All styling is now centralized here rather than runtime-injected via document.createElement('style').
+ * 
+ * This eliminates all unsafe-inline CSP violations.
+ */
+
+/* ============================================================================
+   L0 DASHBOARD STYLES (from ensureL0DashboardStyles)
+   ============================================================================ */
+
+.l0-dashboard-container {
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.l0-dashboard-live-region {
+  position: absolute;
+  left: -9999px;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+}
+
+.l0-dashboard-content {
+  flex: 1;
+}
+
+.l0-dashboard-title-available {
+  color: #0052cc;
+  margin: 0 0 16px 0;
+  font-size: 18px;
+}
+
+.l0-dashboard-details {
+  background: #f1f2f4;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.l0-dashboard-detail-item {
+  margin: 0 0 8px 0;
+}
+
+.l0-dashboard-seed-notice {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: #974f0c;
+  background: #fff7d6;
+  padding: 8px;
+  border-radius: 2px;
+}
+
+.l0-dashboard-detail-note {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: #626f86;
+}
+
+.l0-dashboard-title-inactive {
+  color: #626f86;
+  margin: 0 0 16px 0;
+  font-size: 18px;
+}
+
+.l0-dashboard-message {
+  background: #f1f2f4;
+  border-left: 4px solid #626f86;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.l0-dashboard-message-text {
+  margin: 0;
+  color: #626f86;
+}
+
+.l0-dashboard-error-code {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: #626f86;
+}
+
+.l0-dashboard-title-error {
+  color: #d32f2f;
+  margin: 0 0 16px 0;
+  font-size: 18px;
+}
+
+.l0-dashboard-error-box {
+  background: #fce4ec;
+  border-left: 4px solid #d32f2f;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.l0-dashboard-footer {
+  border-top: 1px solid #eee;
+  margin-top: 20px;
+  padding-top: 12px;
+  font-size: 12px;
+  color: #626f86;
+}
+
+.l0-dashboard-support-link {
+  color: #0052cc;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.l0-dashboard-support-link:hover {
+  text-decoration: underline;
+}
+
+.l0-dashboard-metadata-section {
+  margin-top: 20px;
+  border-top: 1px solid #ccc;
+  padding-top: 12px;
+}
+
+.l0-dashboard-metadata-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin: 0 0 12px 0;
+  color: #333;
+}
+
+.l0-dashboard-metadata-block {
+  background: #f7f8f9;
+  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.l0-dashboard-metadata-block-title {
+  color: #333;
+}
+
+.l0-dashboard-metadata-block-value {
+  margin-top: 4px;
+  color: #626f86;
+}
+
+.l0-dashboard-metadata-block-note {
+  margin-top: 4px;
+  color: #999;
+  font-size: 11px;
+}
+
+.l0-dashboard-disclaimer-block {
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+  padding: 12px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.l0-dashboard-disclaimer-title {
+  margin: 0 0 8px 0;
+  font-weight: bold;
+}
+
+.l0-dashboard-disclaimer-item {
+  margin: 4px 0;
+  color: #333;
+}
+
+/* ============================================================================
+   FATAL BRIDGE PANEL STYLES (from ensureFatalPanelStyles)
+   ============================================================================ */
+
+.fatal-bridge-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  z-index: 999999;
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow: auto;
+}
+
+.fatal-bridge-content {
+  text-align: center;
+  padding: 24px;
+  max-width: 600px;
+}
+
+.fatal-bridge-title {
+  color: #d32f2f;
+  margin: 0 0 16px 0;
+  font-size: 24px;
+}
+
+.fatal-bridge-explanation {
+  color: #666;
+  margin: 0 0 16px 0;
+  font-size: 16px;
+}
+
+.fatal-bridge-diagnostics-label {
+  display: block;
+  margin-top: 20px;
+  color: #333;
+  font-size: 14px;
+}
+
+.fatal-bridge-diagnostics-block {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 8px 0;
+  text-align: left;
+  font-size: 12px;
+  color: #333;
+  overflow-x: auto;
+  border: 1px solid #ddd;
+}
+
+.fatal-bridge-copy-btn {
+  background: #0052cc;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.fatal-bridge-copy-btn:hover {
+  background: #0039a6;
+}
+
+.fatal-bridge-help-text {
+  color: #999;
+  margin-top: 16px;
+  font-size: 12px;
+}
+
+/* ============================================================================
+   MAIN UI STYLES (from ensureMainUIStyles)
+   ============================================================================ */
+
+.ft-bridge-timeout-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  z-index: 999999;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.ft-bridge-timeout-content {
+  text-align: center;
+  padding: 24px;
+  max-width: 500px;
+}
+
+.ft-bridge-timeout-title {
+  color: #d32f2f;
+  margin: 0 0 16px 0;
+  font-size: 24px;
+}
+
+.ft-bridge-timeout-message {
+  color: #666;
+  font-size: 16px;
+}
+
+.ft-error-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  z-index: 9999;
+}
+
+.ft-error-panel-content {
+  max-width: 600px;
+  padding: 20px;
+  background: #fee;
+  border: 1px solid #c00;
+}
+
+.ft-error-panel-title {
+  margin: 0 0 16px 0;
+  font-weight: bold;
+  color: #c00;
+}
+
+.ft-error-panel-text {
+  margin: 0;
+  color: #333;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.ft-backend-error-panel {
+  padding: 20px;
+  background: #fce4ec;
+  color: #d32f2f;
+  border-left: 4px solid #d32f2f;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.ft-ui-serve-proof-banner {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #f0f7ff;
+  border-bottom: 2px solid #0052cc;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-family: monospace;
+  z-index: 9999;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.ft-ui-entry-runtime-proof-banner {
+  background: #003f87;
+  color: #fff;
+  padding: 8px 12px;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  border-bottom: 1px solid #0052cc;
+}
+
+.ft-ui-entry-runtime-proof-banner strong {
+  color: #fff;
+}
+
+.ft-serve-mismatch-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  padding: 12px 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: auto;
+}
+
+.ft-serve-mismatch-banner.ok {
+  background-color: #f0f7ff;
+  border-bottom: 2px solid #0052cc;
+  color: #003d66;
+}
+
+.ft-serve-mismatch-banner.mismatch {
+  background-color: #ffeceb;
+  border-bottom: 3px solid #cc0000;
+  color: #660000;
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+.ft-hidden {
+  display: none;
+}
