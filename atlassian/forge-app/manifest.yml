@@ -10,6 +10,12 @@ app:
   description: FirstTry Governance - Atlassian Dual-Layer Integration
   runtime:
     name: nodejs20.x
+  environment:
+    variables:
+      # Diagnostic probe token (required for webtrigger auth)
+      # Set to a strong random value in production deployment
+      FT_DIAG_TOKEN:
+        default: "ft_diag_dev_token_replace_in_production"
 
 # Modules
 modules:
@@ -59,6 +65,9 @@ modules:
     # Layer-0 Marketplace: Upgrade trigger handler (CRITICAL: runs on forge install --upgrade)
     - key: ft-upgraded-handler
       handler: lifecycle/upgraded.handler
+    # Diagnostic probe handler (webtrigger): proves live Jira backend without UI
+    - key: ft-diag-probe-fn
+      handler: diagnostic/probe.handler
     # Layer-0 Debug: Snapshot state endpoint (read-only, for testing)
     - key: debug-snapshot-state-fn
       handler: gadget-resolver.handler
@@ -102,6 +111,14 @@ modules:
       events:
         - avi:forge:upgraded:app
       function: ft-upgraded-handler
+
+  # Diagnostic webtrigger: token-gated endpoint that proves live Jira reads
+  # Usage: curl "https://.../ft-diag-probe?token=<FT_DIAG_TOKEN>"
+  # Returns: { ts, cloudId, appVersionSha, projectCount, note: "diagnostic" }
+  webhooks:
+    - key: ft-diag-probe
+      function: ft-diag-probe-fn
+      url: /rest/atlassian/1.0/ft/diagnostic
 
 # Permissions
 permissions:
