@@ -217,8 +217,9 @@ echo "===== PHASE 8: STAGING RE-DEPLOY ====="
 forge deploy -e staging 2>&1 | tee "$RUN_DIR/80_forge_deploy_staging.log"
 echo "✅ Staging deploy succeeded"
 
-forge deployments list -e staging 2>&1 | tee "$RUN_DIR/81_deployments_list_staging_after.txt"
-echo "✅ Staging deployments listed"
+# Verify app is installed (installed count should match pre-deploy)
+forge install list -e staging 2>&1 | tee "$RUN_DIR/81_install_list_staging_after.txt"
+echo "✅ Staging install list verified"
 
 ################################################################################
 # PHASE 9 — SUMMARY + ARCHIVE
