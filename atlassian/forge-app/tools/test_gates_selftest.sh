@@ -216,6 +216,72 @@ fi
 cp "$MAIN_TS_BACKUP" "$MAIN_TS"
 
 # ========================================================================
+# MUTATION H: Verify marketplace-docs gate fails when privacy policy missing
+# ========================================================================
+
+echo "[SELFTEST] Mutation H: Missing PRIVACY_POLICY.md (verify:marketplace-docs must FAIL)"
+
+PRIVACY_DOC="$SCRIPT_DIR/../docs/PRIVACY_POLICY.md"
+PRIVACY_BACKUP="$TEST_DIR/PRIVACY_POLICY.md.backup"
+mv "$PRIVACY_DOC" "$PRIVACY_BACKUP"
+
+MARKETPLACE_GATE="$SCRIPT_DIR/verify_marketplace_docs_present.sh"
+output=$(bash "$MARKETPLACE_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL\|MISSING"; then
+    echo "[SELFTEST]   ✓ verify:marketplace-docs correctly FAILED on missing PRIVACY_POLICY.md"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:marketplace-docs should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore PRIVACY_POLICY.md
+mv "$PRIVACY_BACKUP" "$PRIVACY_DOC"
+
+# ========================================================================
+# MUTATION I: Verify support-docs gate fails when contact missing
+# ========================================================================
+
+echo "[SELFTEST] Mutation I: No contact in SUPPORT.md (verify:support-docs must FAIL)"
+
+SUPPORT_DOC="$SCRIPT_DIR/../docs/SUPPORT.md"
+SUPPORT_BACKUP="$TEST_DIR/SUPPORT.md.backup"
+cp "$SUPPORT_DOC" "$SUPPORT_BACKUP"
+
+# Replace content with version that has no @ or mailto:
+cat > "$SUPPORT_DOC" << 'SUPPORT_TBD'
+# Support Documentation
+
+**Last Updated**: January 2026
+
+---
+
+## Getting Support
+
+To be determined.
+Support information coming soon.
+
+---
+
+**Contact**: Coming soon
+SUPPORT_TBD
+
+SUPPORT_GATE="$SCRIPT_DIR/verify_support_docs_have_contact.sh"
+output=$(bash "$SUPPORT_GATE" 2>&1 || true)
+if echo "$output" | grep -q "FAIL"; then
+    echo "[SELFTEST]   ✓ verify:support-docs correctly FAILED on missing contact"
+    MUTATION_PASS=$((MUTATION_PASS + 1))
+else
+    echo "[SELFTEST]   ✗ verify:support-docs should have FAILED"
+    echo "[SELFTEST]   Output: $output"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# Restore SUPPORT.md
+cp "$SUPPORT_BACKUP" "$SUPPORT_DOC"
+
+# ========================================================================
 # SUMMARY
 # ========================================================================
 
@@ -224,12 +290,13 @@ echo "[SELFTEST] =========================================="
 echo "[SELFTEST] SELFTEST SUMMARY"
 echo "[SELFTEST] =========================================="
 echo "[SELFTEST] Real bundle smoke tests: 2/2 PASS"
-echo "[SELFTEST] Mutation tests (gates): $MUTATION_PASS/7 PASS"
+echo "[SELFTEST] Mutation tests (gates): $MUTATION_PASS/9 PASS"
 echo ""
 
 if [ $MUTATION_FAIL -eq 0 ]; then
-    pass "ALL TESTS PASSED (9/9)"
+    pass "ALL TESTS PASSED (11/11)"
     exit 0
 else
     fail "MUTATION TESTS FAILED ($MUTATION_FAIL failed)"
 fi
+
