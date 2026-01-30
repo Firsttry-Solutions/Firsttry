@@ -100,7 +100,7 @@ All data stays within the Jira workspace where the app is installed.
 
 ### Contact
 For privacy questions or requests:
-- **Email**: support@firstry.io (replace with your support email)
+- **Email**: contact@firsttry.run (replace with your support email)
 - **Response time**: Best effort within 5 business days
 
 ---

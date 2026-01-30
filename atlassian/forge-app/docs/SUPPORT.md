@@ -7,8 +7,8 @@
 ## Getting Support
 
 ### Support Email
-- **Primary**: support@firstry.io
-- **Alternative**: support@firstry.io (replace with your actual support contact)
+- **Primary**: contact@firsttry.run
+- **Alternative**: contact@firsttry.run (replace with your actual support contact)
 
 ### Support Hours
 - **Monday–Friday**: 9 AM–5 PM PT
