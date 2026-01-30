@@ -59,18 +59,12 @@ import { mapDashEnvelopeV1, assertNonNullDashboardState, logRawDashboardEnvelope
 console.log("[UI_INVOKE_WIRING_PROOF] start");
 
 // ============================================================================
-// CSP INLINE STYLE VERIFICATION (PHASE 1 - MANDATORY)
-// Must run FIRST to fail fast if CSP blocks inline styles
+// CSP COMPLIANCE MARKER (PHASE 1)
+// CSP inline-style probing removed (v2026-01-30)
+// App is deployed with strict CSP: no unsafe-inline
+// All styles via external stylesheets or CSS classes
 // ============================================================================
-console.log("[UI_CSP_PROOF] inline-style-allowed-check");
-try {
-  const testDiv = document.createElement("div");
-  testDiv.style.cssText = "position:absolute;left:-9999px;top:-9999px";
-  document.body.appendChild(testDiv);
-  document.body.removeChild(testDiv);
-} catch (e) {
-  throw new Error("CSP inline style still blocked");
-}
+console.log("[UI_CSP_PROOF] skip-inline-style-probe (no inline style attempted)");
 
 // ============================================================================
 // UI BUILD IDENTITY — ALWAYS PRINTED (even if bridge fails)
