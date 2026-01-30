@@ -291,8 +291,9 @@ SUPPORT_DOC="$SCRIPT_DIR/../docs/SUPPORT.md"
 SUPPORT_BACKUP2="$TEST_DIR/SUPPORT.md.backup2"
 cp "$SUPPORT_DOC" "$SUPPORT_BACKUP2"
 
-# Inject placeholder back into doc
-sed -i 's/support@firstry-solutions.com/SUPPORT_EMAIL_HERE/g' "$SUPPORT_DOC"
+# Inject placeholder back into doc (replace first instance)
+sed '1s/^/# PLACEHOLDER MARKER: SUPPORT_EMAIL_HERE\n/' "$SUPPORT_DOC" > "$SUPPORT_DOC.tmp"
+mv "$SUPPORT_DOC.tmp" "$SUPPORT_DOC"
 
 PLACEHOLDER_GATE="$SCRIPT_DIR/verify_no_placeholders_anywhere.sh"
 output=$(bash "$PLACEHOLDER_GATE" 2>&1 || true)
@@ -318,8 +319,13 @@ L0_MAPPER="$SCRIPT_DIR/../src/gadget-ui/src/l0_snapshot_mapper.ts"
 L0_BACKUP="$TEST_DIR/l0_snapshot_mapper.ts.backup"
 cp "$L0_MAPPER" "$L0_BACKUP"
 
-# Inject a setTimeout into the file
-sed -i '/const SUPPORT_URL/a \  const DEBUG_TIMER = setInterval(() => console.log("debug"), 1000);' "$L0_MAPPER"
+# Inject a setTimeout into the file (add after first line)
+{
+  head -1 "$L0_MAPPER"
+  echo "const DEBUG_TIMER = setInterval(() => console.log('mutation test'), 1000);"
+  tail -n +2 "$L0_MAPPER"
+} > "$L0_MAPPER.tmp"
+mv "$L0_MAPPER.tmp" "$L0_MAPPER"
 
 TIMERS_GATE="$SCRIPT_DIR/verify_no_timers_in_ui.sh"
 output=$(bash "$TIMERS_GATE" 2>&1 || true)
@@ -345,8 +351,9 @@ L0_MAPPER="$SCRIPT_DIR/../src/gadget-ui/src/l0_snapshot_mapper.ts"
 L0_BACKUP2="$TEST_DIR/l0_snapshot_mapper.ts.backup2"
 cp "$L0_MAPPER" "$L0_BACKUP2"
 
-# Remove the mailto: reference
-sed -i 's/mailto:support@firstry-solutions.com/REMOVEDFORTEST/g' "$L0_MAPPER"
+# Create a temp file without the mailto: line
+grep -v "mailto:" "$L0_MAPPER" > "$L0_MAPPER.tmp"
+mv "$L0_MAPPER.tmp" "$L0_MAPPER"
 
 SUPPORT_LINK_GATE="$SCRIPT_DIR/verify_ui_support_link_present.sh"
 output=$(bash "$SUPPORT_LINK_GATE" 2>&1 || true)
@@ -372,8 +379,8 @@ L0_MAPPER="$SCRIPT_DIR/../src/gadget-ui/src/l0_snapshot_mapper.ts"
 L0_BACKUP3="$TEST_DIR/l0_snapshot_mapper.ts.backup3"
 cp "$L0_MAPPER" "$L0_BACKUP3"
 
-# Remove the aria-live attribute
-sed -i 's/aria-live="polite"//g' "$L0_MAPPER"
+# Remove the setAttribute call for aria-live
+sed -i '/setAttribute.*aria-live/d' "$L0_MAPPER"
 
 ARIA_LIVE_GATE="$SCRIPT_DIR/verify_ui_aria_live_present.sh"
 output=$(bash "$ARIA_LIVE_GATE" 2>&1 || true)
