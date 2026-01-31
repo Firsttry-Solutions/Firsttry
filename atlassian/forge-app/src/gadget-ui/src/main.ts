@@ -23,13 +23,28 @@ console.log("[UI_ERROR_CAPTURE_BOOT] ok");
 // CRITICAL: This MUST be the single source of truth for triage pack exports.
 // window.__FT_CORRELATION_ID is read by DevTools export and backend correlation.
 // ============================================================================
-const FT_CORRELATION_ID_NONCE =
-  (window as any).__FT_CORRELATION_ID ||
-  `correlation_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
-// Persist to window global (fail-closed: must not be null after this)
-(window as any).__FT_CORRELATION_ID = FT_CORRELATION_ID_NONCE;
+/**
+ * Ensures window.__FT_CORRELATION_ID is set and returns it deterministically.
+ * - Reuses existing ID if already set (non-empty string)
+ * - Otherwise generates: correlation_<timestamp>_<random>
+ * - Always persists to window global
+ * - Returns the persistent ID
+ */
+function ensureCorrelationId(): string {
+  const existing = (window as any).__FT_CORRELATION_ID;
+  if (typeof existing === "string" && existing.length > 0) {
+    return existing;
+  }
+  
+  const newId = `correlation_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  (window as any).__FT_CORRELATION_ID = newId;
+  console.info("[UI_CORRELATION_ID_SET]", { correlationId: newId });
+  return newId;
+}
 
+// Call once at startup to set the initial correlation ID
+const FT_CORRELATION_ID_NONCE = ensureCorrelationId();
 console.log("[UI_CORRELATION_ID]", "nonce=" + FT_CORRELATION_ID_NONCE);
 
 // ============================================================================
@@ -791,13 +806,14 @@ function extractErrorEnvelopeDetails(response: any): ExtractedErrorDetails {
 // BACKBONE LAYER 0: UI_REQ_ID CORRELATION WRAPPER
 // ============================================================================
 /**
- * invokeWithUiReqId: Wrapper that guarantees every resolver invocation includes ui_req_id
+ * invokeWithUiReqId: Wrapper that guarantees every resolver invocation includes ui_req_id and correlation_id
  * 
  * RULES (non-bypassable):
  * 1. Always injects ui_req_id into payload
  * 2. Uses FT_UI_REQ_ID as single source of truth (same as displayed in footer)
- * 3. If payload is null/undefined, creates { ui_req_id }
- * 4. Every invoke() call in main.ts must use this wrapper (guarded by CI test)
+ * 3. Ensures correlation_id is persistent via ensureCorrelationId()
+ * 4. If payload is null/undefined, creates { ui_req_id, correlation_id }
+ * 5. Every invoke() call in main.ts must use this wrapper (guarded by CI test)
  * 
  * This is the ONLY entry point to the Forge bridge for gadget resolvers.
  */
@@ -805,11 +821,14 @@ async function invokeWithUiReqId<T>(
   resolverName: string,
   payload?: any
 ): Promise<T> {
-  // Always inject ui_req_id using CURRENT_UI_REQ_ID (single source of truth)
+  // Ensure correlation ID is persistent
+  const persistedCorrelationId = ensureCorrelationId();
+  
+  // Always inject ui_req_id and correlation_id using persistent values (single source of truth)
   const enrichedPayload = {
     ...(payload || {}),
     ui_req_id: FT_UI_REQ_ID,
-    correlation_id: FT_CORRELATION_ID_NONCE  // STEP 3: Send correlation nonce to backend
+    correlation_id: persistedCorrelationId
   };
   
   // Call Forge bridge with enriched payload
@@ -2950,11 +2969,14 @@ async function proceedWithBoot() {
         document.body.appendChild(dashboard);
         
         // A5: Attach event listener for snapshot variant selector
-        const variantSelect = document.getElementById('ft-snapshot-variant-select') as HTMLSelectElement | null;
-        if (variantSelect && dashState.status === 'AVAILABLE') {
-          variantSelect.addEventListener('change', async (e) => {
+        // Define handler as named function to avoid strict-mode arguments.callee
+        const attachVariantSelectHandler = (selectElement: HTMLSelectElement) => {
+          selectElement.addEventListener('change', async (e) => {
             const newVariant = (e.target as HTMLSelectElement).value as "latest" | "seed";
             try {
+              // Ensure correlation ID persists through this invoke
+              ensureCorrelationId();
+              
               // Call getSnapshotVariant resolver to fetch snapshot data for selected variant
               const variantResponse = await invokeWithUiReqId('getSnapshotVariant', {
                 variant: newVariant,
@@ -2979,8 +3001,10 @@ async function proceedWithBoot() {
                 // Re-attach event listener for the new select element
                 const newVariantSelect = document.getElementById('ft-snapshot-variant-select') as HTMLSelectElement | null;
                 if (newVariantSelect) {
-                  newVariantSelect.addEventListener('change', arguments.callee);
+                  attachVariantSelectHandler(newVariantSelect);
                 }
+                
+                console.info("[UI_VARIANT_SELECT_OK]", { value: newVariant });
               } else {
                 console.error('[VARIANT_SELECT_ERROR]', 'Failed to fetch variant snapshot', variantResponse);
               }
@@ -2988,6 +3012,11 @@ async function proceedWithBoot() {
               console.error('[VARIANT_SELECT_EXCEPTION]', err);
             }
           });
+        };
+        
+        const variantSelect = document.getElementById('ft-snapshot-variant-select') as HTMLSelectElement | null;
+        if (variantSelect && dashState.status === 'AVAILABLE') {
+          attachVariantSelectHandler(variantSelect);
         }
         
         // RELAY: Send dashboard rendered marker with status and reason code
