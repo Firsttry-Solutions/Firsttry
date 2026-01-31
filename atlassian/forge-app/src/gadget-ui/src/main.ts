@@ -12,6 +12,22 @@ import { initCSPViolationListener } from "./cspViolationListener";
 initCSPViolationListener();
 
 // ============================================================================
+// UI ERROR CAPTURE (INIT SECOND - captures errors early)
+// ============================================================================
+import { initUIErrorCapture } from "./uiErrorCapture";
+initUIErrorCapture();
+console.log("[UI_ERROR_CAPTURE_BOOT] ok");
+
+// ============================================================================
+// CORRELATION ID SETUP (STABLE PER PAGE-LOAD)
+// ============================================================================
+const correlationId =
+  (window as any).__FT_CORRELATION_ID ||
+  `correlation_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+(window as any).__FT_CORRELATION_ID = correlationId;
+console.log("[UI_CORRELATION_ID]", "correlationId=" + correlationId);
+
+// ============================================================================
 // L0 DUMB-READER MODE ENFORCEMENT (STRICT SINGLE-INVOKE)
 // ============================================================================
 const FT_L0_MODE = true;
