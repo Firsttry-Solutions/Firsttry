@@ -283,6 +283,15 @@ import { buildUiIdentity, formatUiIdentity, type UiIdentity } from './ui_identit
 import { UI_GIT_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
 
 // ============================================================================
+// UI IDENTITY FALLBACK (used if backend doesn't populate identity fields)
+// This ensures the DOM ALWAYS shows real values, never placeholders
+// ============================================================================
+const UI_IDENTITY_FALLBACK = {
+  ui_build_sha: UI_GIT_SHA,
+  ui_build_time_utc: UI_BUILD_TIME_UTC,
+};
+
+// ============================================================================
 // BACKBONE FIX #1: PREVENT TREE-SHAKING OF UI BUILD IDENTIFIERS
 // ============================================================================
 // Force Vite to include these constants by using them at module level
@@ -514,8 +523,10 @@ function renderIdentityProofPanel(data: GovernanceStatusV1) {
     const envelopeKind = data.envelopeKind || "UNSET";
     const schemaVersion = data.schemaVersion || "UNSET";
     const correlationId = data.correlation_id || "UNSET";
-    const uiBuildSha = data.ui_build_sha || "UNSET";
-    const uiBuildTime = data.ui_build_time_utc || "UNSET";
+    
+    // Use backend values if available, otherwise fall back to UI identity
+    const uiBuildSha = data.ui_build_sha || UI_IDENTITY_FALLBACK.ui_build_sha || "UNSET";
+    const uiBuildTime = data.ui_build_time_utc || UI_IDENTITY_FALLBACK.ui_build_time_utc || "UNSET";
     const backendBuildSha = data.backend_build_sha || "UNSET";
     const backendBuildTime = data.backend_build_time_utc || "UNSET";
     
