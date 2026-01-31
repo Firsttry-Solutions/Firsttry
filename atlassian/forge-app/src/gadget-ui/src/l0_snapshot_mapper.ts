@@ -46,6 +46,11 @@ export interface L0DashboardState {
   schemaVersion: string;
   error: string | null;
   note: string;
+  selectedVariant?: "latest" | "seed";
+  buildInfo?: {
+    buildSha?: string;
+    buildTimeUtc?: string;
+  };
   metadata?: {
     coverage?: any;
     integrity?: any;
@@ -263,6 +268,87 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     title.textContent = titleText;
     title.className = "l0-dashboard-title-available";
     content.appendChild(title);
+
+    // A5: Snapshot Variant Selector Control
+    const variantControls = document.createElement("div");
+    variantControls.className = "l0-variant-controls";
+    
+    const variantLabel = document.createElement("label");
+    variantLabel.className = "l0-variant-label";
+    variantLabel.textContent = "View Snapshot: ";
+    
+    const variantSelect = document.createElement("select");
+    variantSelect.id = "ft-snapshot-variant-select";
+    variantSelect.className = "l0-variant-select";
+    
+    const optionLatest = document.createElement("option");
+    optionLatest.value = "latest";
+    optionLatest.textContent = "Latest";
+    optionLatest.selected = (state.selectedVariant !== "seed");
+    variantSelect.appendChild(optionLatest);
+    
+    const optionSeed = document.createElement("option");
+    optionSeed.value = "seed";
+    optionSeed.textContent = "Seed";
+    optionSeed.selected = (state.selectedVariant === "seed");
+    variantSelect.appendChild(optionSeed);
+    
+    variantLabel.appendChild(variantSelect);
+    variantControls.appendChild(variantLabel);
+    content.appendChild(variantControls);
+
+    // A2-ui: Build Provenance Strip (always visible, compact layout)
+    const provenanceStrip = document.createElement("div");
+    provenanceStrip.className = "l0-provenance-strip";
+    
+    // Provenance fields with fallback values
+    const provenanceFields = [
+      { label: "Build SHA", value: state.buildInfo?.buildSha || "NOT_AVAILABLE" },
+      { label: "Build Time", value: state.buildInfo?.buildTimeUtc || "NOT_AVAILABLE" },
+      { label: "Schema", value: state.schemaVersion || "NOT_AVAILABLE" },
+      { label: "Snapshot ID", value: state.snapshotId || "NOT_AVAILABLE" },
+      { label: "Created", value: state.createdAtUtc || "NOT_AVAILABLE" }
+    ];
+    
+    // Add optional metadata fields if present in state.metadata
+    if (state.metadata?.provenance?.captureTrigger) {
+      provenanceFields.push({ 
+        label: "Trigger", 
+        value: state.metadata.provenance.captureTrigger 
+      });
+    }
+    if (state.metadata?.integrity?.declaration) {
+      provenanceFields.push({ 
+        label: "Integrity", 
+        value: state.metadata.integrity.declaration 
+      });
+    }
+    if (state.metadata?.provenance?.correlationId) {
+      provenanceFields.push({ 
+        label: "Correlation", 
+        value: state.metadata.provenance.correlationId 
+      });
+    }
+    
+    provenanceFields.forEach(field => {
+      const fieldEl = document.createElement("div");
+      fieldEl.className = "l0-provenance-field";
+      
+      const labelEl = document.createElement("span");
+      labelEl.className = "l0-provenance-label";
+      labelEl.textContent = field.label + ":";
+      
+      const valueEl = document.createElement("code");
+      valueEl.className = "l0-provenance-value";
+      valueEl.textContent = field.value;
+      
+      fieldEl.appendChild(labelEl);
+      fieldEl.appendChild(document.createTextNode(" "));
+      fieldEl.appendChild(valueEl);
+      provenanceStrip.appendChild(fieldEl);
+    });
+    
+    content.appendChild(provenanceStrip);
 
     const details = document.createElement("div");
     details.className = "l0-dashboard-details";

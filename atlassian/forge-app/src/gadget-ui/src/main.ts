@@ -2906,6 +2906,27 @@ async function proceedWithBoot() {
         // Prevents AVAILABLE→NO_SNAPSHOT downgrade unless explicitly allowed
         const dashState = mergeDashboardState(currentL0DashboardState, mappedState);
         
+        // A2-ui / A5: Fetch build provenance info for AVAILABLE snapshots
+        if (dashState.status === 'AVAILABLE') {
+          try {
+            const defaultVariant = 'latest';
+            const variantResponse = await invokeWithUiReqId('getSnapshotVariant', {
+              variant: defaultVariant,
+            });
+            
+            if (variantResponse && variantResponse.ok) {
+              dashState.selectedVariant = defaultVariant;
+              dashState.buildInfo = {
+                buildSha: variantResponse.buildSha,
+                buildTimeUtc: variantResponse.buildTimeUtc,
+              };
+            }
+          } catch (err) {
+            // Fail gracefully - provenance fetch is non-critical
+            console.log('[PROVENANCE_FETCH_ERROR]', err);
+          }
+        }
+        
         // Store current state for next update
         currentL0DashboardState = dashState;
         
@@ -2913,6 +2934,47 @@ async function proceedWithBoot() {
         const dashboard = renderL0Dashboard(dashState);
         document.body.innerHTML = '';
         document.body.appendChild(dashboard);
+        
+        // A5: Attach event listener for snapshot variant selector
+        const variantSelect = document.getElementById('ft-snapshot-variant-select') as HTMLSelectElement | null;
+        if (variantSelect && dashState.status === 'AVAILABLE') {
+          variantSelect.addEventListener('change', async (e) => {
+            const newVariant = (e.target as HTMLSelectElement).value as "latest" | "seed";
+            try {
+              // Call getSnapshotVariant resolver to fetch snapshot data for selected variant
+              const variantResponse = await invokeWithUiReqId('getSnapshotVariant', {
+                variant: newVariant,
+              });
+              
+              if (variantResponse && variantResponse.ok) {
+                // Update dashboard state with new variant data
+                dashState.selectedVariant = newVariant;
+                dashState.snapshotId = variantResponse.snapshotId || dashState.snapshotId;
+                dashState.createdAtUtc = variantResponse.createdAtUtc || dashState.createdAtUtc;
+                dashState.schemaVersion = variantResponse.schemaVersion || dashState.schemaVersion;
+                dashState.buildInfo = {
+                  buildSha: variantResponse.buildSha,
+                  buildTimeUtc: variantResponse.buildTimeUtc,
+                };
+                
+                // Re-render dashboard with new data
+                const updatedDashboard = renderL0Dashboard(dashState);
+                document.body.innerHTML = '';
+                document.body.appendChild(updatedDashboard);
+                
+                // Re-attach event listener for the new select element
+                const newVariantSelect = document.getElementById('ft-snapshot-variant-select') as HTMLSelectElement | null;
+                if (newVariantSelect) {
+                  newVariantSelect.addEventListener('change', arguments.callee);
+                }
+              } else {
+                console.error('[VARIANT_SELECT_ERROR]', 'Failed to fetch variant snapshot', variantResponse);
+              }
+            } catch (err) {
+              console.error('[VARIANT_SELECT_EXCEPTION]', err);
+            }
+          });
+        }
         
         // RELAY: Send dashboard rendered marker with status and reason code
         // ========================================================================

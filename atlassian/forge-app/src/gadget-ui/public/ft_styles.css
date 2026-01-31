@@ -471,3 +471,80 @@
 .ft-hidden {
   display: none;
 }
+/* ============================================================================
+   A5: SNAPSHOT VARIANT SELECTOR STYLES
+   ============================================================================ */
+
+.l0-variant-controls {
+  margin: 12px 0;
+  padding: 8px 12px;
+  background: #f1f2f4;
+  border-radius: 4px;
+}
+
+.l0-variant-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.l0-variant-select {
+  padding: 4px 8px;
+  border: 1px solid #999;
+  border-radius: 3px;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.l0-variant-select:hover {
+  border-color: #0052cc;
+}
+
+.l0-variant-select:focus {
+  outline: none;
+  border-color: #0052cc;
+  box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.2);
+}
+
+/* ============================================================================
+   A2-ui: BUILD PROVENANCE STRIP STYLES
+   ============================================================================ */
+
+.l0-provenance-strip {
+  margin: 12px 0;
+  padding: 12px;
+  background: #e6f0ff;
+  border-left: 4px solid #0052cc;
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  font-size: 12px;
+}
+
+.l0-provenance-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: baseline;
+}
+
+.l0-provenance-label {
+  font-weight: 600;
+  color: #0052cc;
+  white-space: nowrap;
+}
+
+.l0-provenance-value {
+  background: white;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-family: 'Courier New', monospace;
+  color: #333;
+  word-break: break-all;
+  flex: 1;
+  min-width: 60px;
+}
