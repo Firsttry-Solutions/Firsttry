@@ -20,12 +20,17 @@ console.log("[UI_ERROR_CAPTURE_BOOT] ok");
 
 // ============================================================================
 // CORRELATION ID SETUP (STABLE PER PAGE-LOAD)
+// CRITICAL: This MUST be the single source of truth for triage pack exports.
+// window.__FT_CORRELATION_ID is read by DevTools export and backend correlation.
 // ============================================================================
-const correlationId =
+const FT_CORRELATION_ID_NONCE =
   (window as any).__FT_CORRELATION_ID ||
-  `correlation_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-(window as any).__FT_CORRELATION_ID = correlationId;
-console.log("[UI_CORRELATION_ID]", "correlationId=" + correlationId);
+  `correlation_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+
+// Persist to window global (fail-closed: must not be null after this)
+(window as any).__FT_CORRELATION_ID = FT_CORRELATION_ID_NONCE;
+
+console.log("[UI_CORRELATION_ID]", "nonce=" + FT_CORRELATION_ID_NONCE);
 
 // ============================================================================
 // L0 DUMB-READER MODE ENFORCEMENT (STRICT SINGLE-INVOKE)
@@ -324,13 +329,6 @@ const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
 // Format: UI_MARKER_<YYYYMMDDTHHMMSSZ>_<SHA>
 // UI_REQ_ID: Unique per page load. Used to correlate UI invoke calls with resolver logs.
 const FT_UI_REQ_ID = `ui_${Date.now()}_${Math.random().toString(16).slice(2).substring(0, 8)}`;
-
-// STEP 3: CORRELATION_ID NONCE - Unique per page load, sent to backend, echoed back
-// This proves round-trip: UI generates → sends to backend → backend echoes → UI displays
-// Format: correlation_<timestamp>_<random>
-const FT_CORRELATION_ID_NONCE = `correlation_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-
-console.log(`[UI_CORRELATION_ID] nonce=${FT_CORRELATION_ID_NONCE}`);
 
 // ============================================================================
 // PHASE 2: UI IDENTITY INITIALIZATION (STRICT TYPES)

@@ -10,11 +10,13 @@ function short(e: unknown): string {
 
 export async function forgeInvoke<T>(resolver: string, payload: any): Promise<InvokeOk<T> | InvokeErr> {
   try {
-    // Generate unique request ID and get correlation ID
-    const uiReqId = `ui_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    // Get correlation ID from window global (set at UI startup, fail-closed if missing)
     const correlationId = (window as any).__FT_CORRELATION_ID || "MISSING";
+    
+    // Generate unique request ID per invoke
+    const uiReqId = `ui_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
-    // Enhance payload with correlation fields
+    // Enhance payload with correlation fields (read-only, no app mutation)
     const enhancedPayload = {
       ...payload,
       uiReqId,
