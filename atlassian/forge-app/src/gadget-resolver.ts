@@ -36,6 +36,7 @@ import { getBuildInfo_resolver } from './resolvers/getBuildInfo';
 import { refreshNow_resolver } from './resolvers/refreshNow';
 import { exportTrustSnapshot } from './resolvers/audit_snapshot_export';
 import { getSnapshotDebug_resolver } from './resolvers/getSnapshotDebug';
+import { getSnapshotVariant_resolver } from './resolvers/getSnapshotVariant';
 import { ping } from './resolvers/ping';
 import { debugSnapshotState_resolver } from './resolvers/debugSnapshotState';
 import { ensureFirstSnapshot } from './resolvers/ensureFirstSnapshot';
@@ -66,6 +67,7 @@ resolver.define('refreshNow', refreshNow_resolver);
 resolver.define('exportTrustSnapshot', exportTrustSnapshot);
 resolver.define('debugSnapshotState', debugSnapshotState_resolver);
 resolver.define('getSnapshotDebug', getSnapshotDebug_resolver);
+resolver.define('getSnapshotVariant', getSnapshotVariant_resolver);
 resolver.define('ping', ping);
 resolver.define('ensureFirstSnapshot', ensureFirstSnapshot);
 resolver.define('probe', probe);  // FORENSIC_PROBE
