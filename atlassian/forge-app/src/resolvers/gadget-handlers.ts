@@ -233,12 +233,16 @@ export async function handler(req: any) {
   // BACKBONE LAYER 0: Extract ui_req_id using canonical fallback chain
   const ui_req_id = extractUiReqId(payload);
   
+  // Extract correlationId from payload
+  const correlationId = payload.correlationId || "MISSING";
+  
   // Log entry point (machine-readable)
   console.log(
     JSON.stringify({
       marker: "RESOLVER_ENTER",
       resolver: resolverName,
       ui_req_id,
+      correlationId,
       backend_build_sha: BACKEND_BUILD_SHA,
       ts: new Date().toISOString()
     })
@@ -262,6 +266,7 @@ export async function handler(req: any) {
         marker: "RESOLVER_ERR",
         resolver: resolverName,
         ui_req_id,
+        correlationId,
         backend_build_sha: BACKEND_BUILD_SHA,
         error_code: normalized.error.code,
         message: normalized.error.message.substring(0, 200),  // Truncate to 200 chars for safety
@@ -301,6 +306,7 @@ export async function handler(req: any) {
       marker: isError ? "RESOLVER_ERR" : "RESOLVER_OK",
       resolver: resolverName,
       ui_req_id,
+      correlationId,
       backend_build_sha: BACKEND_BUILD_SHA,
       ts: new Date().toISOString()
     };
@@ -336,6 +342,7 @@ export async function handler(req: any) {
         marker: "RESOLVER_ERR",
         resolver: resolverName,
         ui_req_id,
+        correlationId,
         backend_build_sha: BACKEND_BUILD_SHA,
         error_code: normalized.error.code,
         message: normalized.error.message.substring(0, 200),  // Truncate for safety
