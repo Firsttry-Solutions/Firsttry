@@ -37,7 +37,7 @@
     "verify:docs:no-unverified-claims": "bash tools/verify_docs_no_unverified_claims.sh",
     "verify:contacts:consistent": "bash tools/verify_contacts_consistent.sh",
     "verify:manifest:diag-webtrigger": "bash tools/verify_manifest_has_diag_webtrigger.sh",
-    "build:gadget": "npm run verify:no-unsafe-inline && npm run verify:ui:not-seed-available && npm run verify:docs:no-unverified-claims && npm run verify:contacts:consistent && npm run verify:manifest:diag-webtrigger && npm run verify:bridge-installed && npm run verify:required-files && npm run verify:marketplace-docs && npm run verify:support-docs && npm run verify:no-placeholders && npm run verify:ui:no-timers && npm run verify:ui:support-link && npm run verify:ui:aria-live && npm run verify:ui:no-runtime-meta && npm run verify:no-wall-clock-in-meta && npm run verify:dash-envelope-contract && node tools/build_meta.mjs && node tools/gen_ui_build_meta.mjs && cd src/gadget-ui && npm ci && npm run build && cd ../.. && npm run verify:ui:no-fatal-dist && npm run verify:ui:no-top-level-throw && npm run verify:ui:no-legacy-states && npm run verify:dist:invoke-allowlist && npm run verify:dist:identity-labels && npm run verify:source:anchor-unique && npm run verify:no-stg && npm run verify:no-bypass-merge && npm run verify:bundle:integrity && npm run verify:bundle:provenance && npm run verify:dist:anchor-unique && npm run verify:gates:selftest && npm run verify:lockfile:clean && npm run verify:no-tracked-changes",
+    "build:gadget": "npm run verify:no-unsafe-inline && npm run verify:ui:not-seed-available && npm run verify:docs:no-unverified-claims && npm run verify:contacts:consistent && npm run verify:manifest:diag-webtrigger && npm run verify:bridge-installed && npm run verify:required-files && npm run verify:marketplace-docs && npm run verify:support-docs && npm run verify:no-placeholders && npm run verify:ui:no-timers && npm run verify:ui:support-link && npm run verify:ui:aria-live && npm run verify:ui:no-runtime-meta && npm run verify:no-wall-clock-in-meta && npm run verify:dash-envelope-contract && node tools/build_meta.mjs && node tools/gen_ui_build_meta.mjs && cd src/gadget-ui && npm ci && npm run build && cd ../.. && npm run verify:ui:no-fatal-dist && npm run verify:ui:no-top-level-throw && npm run verify:ui:no-legacy-states && npm run verify:dist:invoke-allowlist && npm run verify:dist:identity-labels && npm run verify:source:anchor-unique && npm run verify:no-stg && npm run verify:no-bypass-merge && npm run verify:bundle:integrity && npm run verify:bundle:provenance && npm run verify:dist:anchor-unique && npm run verify:gates:selftest && npm run verify:deps:no-vuln-lodash && npm run verify:lockfile:clean && npm run verify:no-tracked-changes",
     "test": "npm run verify:ui:no-runtime-meta && vitest run",
     "posttest": "node tools/posttest_clean_gate.js",
     "test:ci": "FT_REQUIRE_CLEAN=1 npm test",
@@ -55,6 +55,7 @@
     "verify:error-envelope": "bash tools/verify_error_envelope_contract.sh",
     "verify:layer0": "bash tools/verify_layer0_contract.sh",
     "verify:no-window-invoke": "bash tools/verify_no_window_invoke.sh",
+    "verify:deps:no-vuln-lodash": "bash tools/verify_no_vuln_lodash_versions.sh",
     "lint": "echo \"lint: not configured (intentional)\"",
     "build": "node tools/build_meta.mjs && npm run build:gadget && node tools/run_build_with_meta.mjs && echo \"Backend build: not configured (intentional)\"",
     "predeploy:prod": "node tools/build_meta.mjs && npm run test && npm run build:gadget && echo \"UI build ready for deploy\"",
@@ -96,5 +97,8 @@
     "@forge/bridge": "^5.11.0",
     "@forge/resolver": "^1.7.1",
     "pdfkit": "^0.17.2"
+  },
+  "overrides": {
+    "lodash": "4.17.23"
   }
 }
