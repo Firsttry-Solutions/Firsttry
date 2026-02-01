@@ -3440,6 +3440,17 @@ async function proceedWithBoot() {
                 const backendBuildSha = data?.ledger?.build_sha_last_seen_backend || data?.build_sha_backend || 'unknown';
                 const responseTime = data?.now_utc || new Date().toISOString();
                 
+                // LOG FINAL IDENTITY MARKER: Identity source is now confirmed to be from resolver
+                console.log('[UI_BUILD_IDENTITY_FINAL]', {
+                  marker: 'UI_BUILD_IDENTITY_FINAL',
+                  ui_git_sha: UI_BUILD_MARKER,
+                  ui_bundle_hash: UI_DIST_STAMP,
+                  identity_source: 'resolver_confirmed',
+                  backend_build_sha: backendBuildSha,
+                  correlation_id: FT_CORRELATION_ID_NONCE,
+                  ts: new Date().toISOString(),
+                });
+                
                 // Update footer with both UI and backend versions
                 const backendDisplay = backendBuildSha !== 'unknown' 
                     ? `${backendBuildSha}`
