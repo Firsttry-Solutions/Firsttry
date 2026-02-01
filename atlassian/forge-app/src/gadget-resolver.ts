@@ -96,6 +96,19 @@ export const handler = resolver.getDefinitions();
 
 export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvelopeV1> {
   try {
+    // Extract correlation_id and ui_req_id from request (sent by UI)
+    const correlationId = request?.correlation_id || request?.correlationId || 'unknown';
+    const uiReqId = request?.ui_req_id || request?.uiReqId || 'unknown';
+    
+    // Log resolver entry marker with correlation IDs
+    console.log(JSON.stringify({
+      marker: '[FT_RESOLVER_ENTRY]',
+      resolver: 'ft_getDashboardState_v1',
+      correlationId,
+      uiReqId,
+      ts: new Date().toISOString(),
+    }));
+    
     // Log version proof at start of resolver invocation
     let buildSha = BACKEND_BUILD_SHA || "UNSET";
     console.log(JSON.stringify({
@@ -446,10 +459,33 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<Da
       ts_utc: now
     }));
 
+    // Log resolver OK marker with snapshotId for correlation cross-check
+    const snapshotId = envelope.data?.snapshotId || 'unknown';
+    console.log(JSON.stringify({
+      marker: '[FT_RESOLVER_OK]',
+      resolver: 'ft_getDashboardState_v1',
+      correlationId: request?.correlation_id || request?.correlationId || 'unknown',
+      uiReqId: request?.ui_req_id || request?.uiReqId || 'unknown',
+      snapshotId,
+      status: envelope.status,
+      ok: envelope.ok,
+      ts: new Date().toISOString(),
+    }));
+
     return envelope;
   } catch (e) {
     const now = nowUtcIso();
     const errorMessage = e instanceof Error ? e.message : String(e);
+    
+    // Log resolver ERROR marker with correlationId for correlation cross-check
+    console.log(JSON.stringify({
+      marker: '[FT_RESOLVER_ERR]',
+      resolver: 'ft_getDashboardState_v1',
+      correlationId: request?.correlation_id || request?.correlationId || 'unknown',
+      uiReqId: request?.ui_req_id || request?.uiReqId || 'unknown',
+      error: errorMessage.slice(0, 100),
+      ts: new Date().toISOString(),
+    }));
 
     return dashErr({
       error: {
