@@ -1,91 +1,168 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Deterministic lodash version gate: full dependency tree scan
-# Scans ENTIRE resolved npm dependency tree for vulnerable lodash versions.
-# Fails CLOSED: any version != 4.17.23 = FAIL. Missing lodash = FAIL.
+# Hybrid lodash gate: lockfile authoritative + npm ls sanity
+# 
+# Purpose: Ensure all lodash in dependency tree is ONLY 4.17.23 (no CVE versions 4.17.21/22)
 #
-# Context:
-# - Forge app depends on @forge/i18n@0.0.7 → lodash ^4.17.21
-# - CVE: lodash 4.0.0-4.17.22 have known vulnerabilities
-# - Fix: npm override to 4.17.23 (patched version)
-# - Design: Scan entire dependency tree deterministically (npm ls + Node JSON parse)
+# Design (fail-closed, deterministic, offline):
+# 1. PRIMARY: Parse package-lock.json (authoritative, works from repo state)
+#    - Recursively extract ALL lodash versions anywhere in lockfile
+#    - FAIL if missing, empty, or any version != 4.17.23
+# 2. SECONDARY: If node_modules exists, sanity check npm ls (runtime reality)
+#    - Parse npm ls --all --json output
+#    - Verify installed versions also 4.17.23 only
+#    - FAIL if npm ls fails or non-4.17.23 found
+#    - SKIP if node_modules absent (lockfile already authoritative)
 #
-# Method:
-# 1. Use npm ls lodash --all --json to get clean JSON of resolved tree
-# 2. Parse with Node.js to extract ALL lodash versions recursively
-# 3. Verify only 4.17.23 is present (exact match, fail-closed)
-# 4. Output deterministic markers [LODASH_GATE] for audit trail
-#
-# Why npm ls + JSON parse (not grep on lockfile)?
-# - npm has already resolved and deduplicated dependencies
-# - Clean JSON format without circular references
-# - Handles npm v7+ with locked/deduped markers correctly
-# - No edge cases with package-lock.json v2/v3 format variance
+# No network calls, no npm audit, deterministic markers for audit trail.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOCKFILE="${FT_LOCKFILE_PATH:-$ROOT/package-lock.json}"
 
-# Collect all lodash versions from npm ls output
-npm ls lodash --all --json 2>/dev/null | node -e "
+# ============================================================================
+# PART A: LOCKFILE SCAN (authoritative)
+# ============================================================================
+
+if [[ ! -f "$LOCKFILE" ]]; then
+  echo "[LODASH_GATE] FAIL: missing package-lock.json at $LOCKFILE"
+  exit 1
+fi
+
+# Parse lockfile and extract ALL lodash versions
+LOCKFILE_VERSIONS=$(node -e "
 const fs = require('fs');
-const input = fs.readFileSync(0, 'utf8');
-
-// Parse npm ls JSON output
-let data;
 try {
-  data = JSON.parse(input);
-} catch (e) {
-  console.log('[LODASH_GATE] FAIL: invalid JSON from npm ls output');
-  process.exit(1);
-}
-
-// Recursively collect all lodash versions from npm tree
-function collectVersions(obj, versions = new Set()) {
-  if (!obj || typeof obj !== 'object') return versions;
+  const lock = JSON.parse(fs.readFileSync('$LOCKFILE', 'utf8'));
+  const versions = new Set();
   
-  // npm ls format: each dependency has name and version
-  // Root object may not have 'name', so check for lodash explicitly first
-  if (obj.name === 'lodash' && obj.version && typeof obj.version === 'string') {
-    versions.add(obj.version);
-  }
-  
-  // Recurse into dependencies (npm ls structure)
-  if (obj.dependencies && typeof obj.dependencies === 'object') {
-    for (const [key, dep] of Object.entries(obj.dependencies)) {
-      // Check if this dependency object is lodash
-      if (dep && typeof dep === 'object') {
-        if (dep.version && typeof dep.version === 'string' && key === 'lodash') {
-          versions.add(dep.version);
+  // Helper to recursively collect lodash versions from any object
+  function collectLodash(obj, depth = 0) {
+    if (!obj || typeof obj !== 'object' || depth > 50) return;
+    
+    // Format 1: packages[\"node_modules/lodash\"] = { version: \"X.Y.Z\" }
+    if (obj.version && typeof obj.version === 'string') {
+      // Check if this looks like a lodash package
+      // If obj has a name field, check it. If in packages section, already keyed by path
+      if (obj.name === 'lodash' || (typeof obj === 'object' && obj.resolved && obj.resolved.includes('/lodash-'))) {
+        versions.add(obj.version);
+      }
+    }
+    
+    // Recurse into nested objects (dependencies, packages, etc)
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      if (typeof val === 'object' && val !== null) {
+        // Special case: if key is 'lodash' or path ends with 'lodash', and has version
+        if ((key === 'lodash' || key.endsWith('/lodash')) && val.version) {
+          versions.add(val.version);
+        } else {
+          // Recurse
+          collectLodash(val, depth + 1);
         }
-        // Recurse deeper
-        collectVersions(dep, versions);
       }
     }
   }
   
-  return versions;
-}
-
-const versions = collectVersions(data);
-const versionArray = Array.from(versions).sort();
-
-console.log('[LODASH_GATE] FOUND_VERSIONS=' + JSON.stringify(versionArray));
-
-// Fail-closed: no lodash found anywhere (fail if missing)
-if (versionArray.length === 0) {
-  console.log('[LODASH_GATE] FAIL: no lodash found in resolved dependency tree (fail-closed)');
+  collectLodash(lock);
+  
+  const arr = Array.from(versions).sort();
+  console.log(JSON.stringify(arr));
+} catch (err) {
+  console.error('ERROR parsing lockfile:', err.message);
   process.exit(1);
 }
+")
 
-// Fail: any version is not exactly 4.17.23
-if (!versionArray.every(v => v === '4.17.23')) {
-  const bad = versionArray.filter(v => v !== '4.17.23');
-  console.log('[LODASH_GATE] FAIL: found non-4.17.23 lodash: ' + bad.join(', '));
+echo "[LODASH_GATE] LOCKFILE_VERSIONS=$LOCKFILE_VERSIONS"
+
+# Verify lockfile has versions
+LOCKFILE_COUNT=$(echo "$LOCKFILE_VERSIONS" | node -e "const a = JSON.parse(require('fs').readFileSync(0, 'utf-8')); console.log(a.length)")
+if [[ "$LOCKFILE_COUNT" -eq 0 ]]; then
+  echo "[LODASH_GATE] FAIL: no lodash versions found in lockfile (lockfile may be corrupted)"
+  exit 1
+fi
+
+# Verify all lockfile versions are exactly 4.17.23
+echo "$LOCKFILE_VERSIONS" | node -e "
+const arr = JSON.parse(require('fs').readFileSync(0, 'utf-8'));
+const bad = arr.filter(v => v !== '4.17.23');
+if (bad.length > 0) {
+  console.log('[LODASH_GATE] FAIL: lockfile contains non-4.17.23 lodash: ' + bad.join(', '));
   process.exit(1);
 }
-
-// Pass: all versions are exactly 4.17.23
-console.log('[LODASH_GATE] PASS: all lodash versions resolved to exactly 4.17.23 (safe)');
-console.log('[LODASH_GATE] PASS: ' + versionArray.length + ' distinct version(s), all patched');
-process.exit(0);
+console.log('[LODASH_GATE] PASS: lockfile scan verified, all versions are 4.17.23');
 " || exit 1
+
+# ============================================================================
+# PART B: INSTALLED TREE SANITY (secondary, if node_modules exists)
+# ============================================================================
+
+if [[ ! -d "$ROOT/node_modules" ]]; then
+  echo "[LODASH_GATE] SKIP: npm ls sanity check (no node_modules directory)"
+  exit 0
+fi
+
+# node_modules exists, run sanity check
+INSTALLED_VERSIONS=$(npm ls lodash --all --json 2>/dev/null | node -e "
+const fs = require('fs');
+const input = fs.readFileSync(0, 'utf-8');
+try {
+  const data = JSON.parse(input);
+  const versions = new Set();
+  
+  // Traverse npm ls output recursively
+  function collectVersions(obj) {
+    if (!obj || typeof obj !== 'object') return;
+    
+    // npm ls format: dependencies keyed by name
+    if (obj.dependencies) {
+      for (const [key, dep] of Object.entries(obj.dependencies)) {
+        if (key === 'lodash' && dep.version && typeof dep.version === 'string') {
+          versions.add(dep.version);
+        }
+        // Recurse
+        collectVersions(dep);
+      }
+    }
+  }
+  
+  collectVersions(data);
+  
+  const arr = Array.from(versions).sort();
+  console.log(JSON.stringify(arr));
+} catch (err) {
+  console.log(JSON.stringify({ error: 'parse error: ' + err.message }));
+  process.exit(1);
+}
+" || echo '{"error":"npm ls failed"}')
+
+echo "[LODASH_GATE] INSTALLED_VERSIONS=$INSTALLED_VERSIONS"
+
+# Check for errors in installed versions parse
+if echo "$INSTALLED_VERSIONS" | grep -q '"error"'; then
+  ERROR_MSG=$(echo "$INSTALLED_VERSIONS" | node -e "const o = JSON.parse(require('fs').readFileSync(0, 'utf-8')); console.log(o.error)")
+  echo "[LODASH_GATE] FAIL: npm ls sanity check failed: $ERROR_MSG"
+  exit 1
+fi
+
+# Verify installed versions
+echo "$INSTALLED_VERSIONS" | node -e "
+const arr = JSON.parse(require('fs').readFileSync(0, 'utf-8'));
+
+if (arr.length === 0) {
+  console.log('[LODASH_GATE] FAIL: npm ls found no lodash in installed tree');
+  process.exit(1);
+}
+
+const bad = arr.filter(v => v !== '4.17.23');
+if (bad.length > 0) {
+  console.log('[LODASH_GATE] FAIL: npm ls found non-4.17.23 lodash: ' + bad.join(', '));
+  process.exit(1);
+}
+
+console.log('[LODASH_GATE] PASS: installed tree sanity verified, all versions are 4.17.23');
+" || exit 1
+
+echo "[LODASH_GATE] PASS: hybrid gate complete (lockfile + installed tree both verified to be 4.17.23 only)"
+exit 0
