@@ -515,8 +515,39 @@ function ftUpdateProofNode(optional?: { schemaVersion?: string; backendBuildSha?
 }
 
 /**
+ * Placeholder detector: returns true if value is null/undefined/empty/placeholder-like
+ * PHASE 2: IMPOSSIBLE TO RENDER PLACEHOLDERS
+ */
+function isPlaceholder(x: unknown): boolean {
+    if (x === null || x === undefined || x === '') return true;
+    if (typeof x === 'string') {
+        const upper = x.toUpperCase();
+        return upper === 'UNSET' || 
+               upper === 'NOT_AVAILABLE' || 
+               upper === 'NOT_DECLARED_IN_SNAPSHOT' || 
+               upper === 'NOT_DECLARED_IN_SNAPSHOTS';
+    }
+    return false;
+}
+
+/**
+ * Validates Build SHA is 40-char lowercase hex
+ */
+function isValidBuildSha(x: unknown): boolean {
+    return typeof x === 'string' && /^[0-9a-f]{40}$/.test(x);
+}
+
+/**
+ * Validates Build Time is ISO-8601 UTC with milliseconds optional, ending in Z
+ */
+function isValidBuildTime(x: unknown): boolean {
+    return typeof x === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(x);
+}
+
+/**
  * STEP 3: Render the Identity/Deployment Proof Panel
  * Displays backend proof contract fields to prove deployment identity
+ * PHASE 2: Implements fail-closed placeholder elimination
  */
 function renderIdentityProofPanel(data: GovernanceStatusV1) {
     // Extract proof fields from backend response
@@ -524,23 +555,59 @@ function renderIdentityProofPanel(data: GovernanceStatusV1) {
     const schemaVersion = data.schemaVersion || "UNSET";
     const correlationId = data.correlation_id || "UNSET";
     
-    // Use backend values if available, otherwise fall back to UI identity
-    const uiBuildSha = data.ui_build_sha || UI_IDENTITY_FALLBACK.ui_build_sha || "UNSET";
-    const uiBuildTime = data.ui_build_time_utc || UI_IDENTITY_FALLBACK.ui_build_time_utc || "UNSET";
-    const backendBuildSha = data.backend_build_sha || "UNSET";
-    const backendBuildTime = data.backend_build_time_utc || "UNSET";
+    // UI Build SHA: prefer backend, fallback to UI identity, never render placeholder
+    let uiBuildSha = data.ui_build_sha || UI_IDENTITY_FALLBACK.ui_build_sha;
+    // Ensure we NEVER render a placeholder string - validate format
+    if (isPlaceholder(uiBuildSha) || !isValidBuildSha(uiBuildSha)) {
+        uiBuildSha = UI_IDENTITY_FALLBACK.ui_build_sha;
+    }
+    // Final fail-closed: if fallback is invalid, set hidden marker (not visible text)
+    if (!isValidBuildSha(uiBuildSha)) {
+        uiBuildSha = "INVALID_BUILD_IDENTITY";
+        document.documentElement.setAttribute('data-ft-identity-error', 'invalid-sha');
+    }
+    
+    // UI Build Time: prefer backend, fallback to UI identity, never render placeholder
+    let uiBuildTime = data.ui_build_time_utc || UI_IDENTITY_FALLBACK.ui_build_time_utc;
+    if (isPlaceholder(uiBuildTime) || !isValidBuildTime(uiBuildTime)) {
+        uiBuildTime = UI_IDENTITY_FALLBACK.ui_build_time_utc;
+    }
+    // Final fail-closed: if fallback is invalid, set hidden marker
+    if (!isValidBuildTime(uiBuildTime)) {
+        uiBuildTime = "INVALID_BUILD_TIME";
+        document.documentElement.setAttribute('data-ft-identity-error', 'invalid-time');
+    }
+    
+    // Backend Build SHA: never render placeholder
+    let backendBuildSha = data.backend_build_sha || "";
+    if (isPlaceholder(backendBuildSha)) {
+        backendBuildSha = "";
+    }
+    
+    // Backend Build Time: never render placeholder
+    let backendBuildTime = data.backend_build_time_utc || "";
+    if (isPlaceholder(backendBuildTime)) {
+        backendBuildTime = "";
+    }
+    
+    // Determine identity source (backend vs fallback)
+    const identitySource = (!isPlaceholder(data.ui_build_sha) && isValidBuildSha(data.ui_build_sha)) ? "backend" : "fallback";
     
     // Log the proof panel values for E2E assertion
-    console.log(`[UI_IDENTITY_PROOF_PANEL] envelopeKind=${envelopeKind} schemaVersion=${schemaVersion} correlationId=${correlationId} backendSha=${backendBuildSha}`);
+    console.log(`[UI_IDENTITY_PROOF_PANEL] source=${identitySource} envelopeKind=${envelopeKind} schemaVersion=${schemaVersion} correlationId=${correlationId} backendSha=${backendBuildSha || '(not provided)'}`);
     
     // Update each proof field in the DOM
     setText('proof-envelope-kind', envelopeKind);
     setText('proof-schema-version', schemaVersion);
     setText('proof-correlation-id', correlationId);
+    setText('proof-identity-source', identitySource);
     setText('proof-ui-build-sha', uiBuildSha);
     setText('proof-ui-build-time', uiBuildTime);
     setText('proof-backend-build-sha', backendBuildSha);
     setText('proof-backend-build-time', backendBuildTime);
+    
+    // Store identity source in window for DevTools inspection
+    (window as any).__FT_IDENTITY_SOURCE = identitySource;
 }
 
 function setText(id: string, value: string): boolean {
