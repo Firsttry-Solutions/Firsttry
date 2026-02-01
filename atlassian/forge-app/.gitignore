@@ -18,3 +18,8 @@ test-results/
 playwright-report/
 blob-report/
 .last-run.json
+# Playwright test artifacts (deterministic proofs)
+test-results/
+playwright-report/
+blob-report/
+.last-run.json
