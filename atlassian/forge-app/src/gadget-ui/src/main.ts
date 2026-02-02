@@ -282,6 +282,18 @@ import { buildUiIdentity, formatUiIdentity, type UiIdentity } from './ui_identit
 // Import UI build markers (auto-generated at build time)
 import { UI_GIT_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
 
+// TASK 1D: Import build identity from generated file
+import { 
+  UI_GIT_SHA as UI_BUILD_ID_SHA, 
+  UI_GIT_SHA_SHORT,
+  UI_BUILD_TIME_UTC as UI_BUILD_ID_TIME,
+  UI_APP_VERSION,
+  formatBuildIdentity
+} from './build/buildIdentity.gen';
+
+// TASK 1D: Import footer renderer
+import { createBuildIdentityFooter, renderBuildIdentityFooterInto } from './build/buildIdentityFooter';
+
 // ============================================================================
 // UI IDENTITY FALLBACK (used if backend doesn't populate identity fields)
 // This ensures the DOM ALWAYS shows real values, never placeholders
@@ -1046,6 +1058,18 @@ async function loadStatus() {
         
         // STEP 3: Render the identity/proof panel from backend envelope
         renderIdentityProofPanel(data);
+        
+        // TASK 1D: Render build identity footer with mismatch detection
+        // Extract backend_build_sha from the resolver response
+        const backendBuildSha = data?.backend_build_sha || rawData?.backend_build_sha;
+        if (backendBuildSha) {
+          const footer = createBuildIdentityFooter(backendBuildSha);
+          const footerContainer = document.getElementById('ft-build-identity-footer-container');
+          if (footerContainer) {
+            footerContainer.innerHTML = '';
+            footerContainer.appendChild(footer);
+          }
+        }
 
         // PHASE 4: Compute deterministic view model from resolver payload
         // This is the SINGLE SOURCE OF TRUTH for all UI state across all widgets

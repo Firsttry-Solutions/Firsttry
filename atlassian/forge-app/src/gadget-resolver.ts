@@ -271,12 +271,22 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         requestId,
       });
       
+      // TASK 1C: Add backend build identity fields
+      // Build time is now UTC, version from package.json
+      const nowUtc = new Date().toISOString();
+      const backendBuildTimeUtc = snapshot.metadata?.provenance?.buildTimeUtc || nowUtc;
+      const appVersion = "2.14.0";  // From package.json
+      
       return {
         status: "AVAILABLE",
         snapshotId: snapshot.snapshotId,
         createdAtUtc: snapshot.createdAtUtc,
         schemaVersion: "L0",
         containsText: "Jira governance evidence snapshot (export for full details).",
+        // TASK 1C: Backend build identity fields (never undefined, always present)
+        backend_build_sha: BACKEND_BUILD_SHA || "unknown",
+        backend_build_time_utc: backendBuildTimeUtc,
+        backend_app_version: appVersion,
         // Pass through metadata verbatim (dumb reader - no transforms)
         metadata: snapshot.metadata || {
           coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
