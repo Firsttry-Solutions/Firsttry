@@ -47,6 +47,7 @@ import { loadOrInitLedger, updateLedger } from './backbone/ledger';
 import { nowUtcIso } from './backbone/time';
 import { dashOk, dashErr, DashEnvelopeV1 } from './shared/dashEnvelopeV1';
 import { BACKEND_BUILD_SHA } from './build/backend_build';
+import { BACKEND_GIT_SHA, BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC, BACKEND_APP_VERSION } from './build/buildIdentityBackend.gen';
 import {
   FT_DASH_ENVELOPE_MARKER_V1,
   okEnvelope,
@@ -271,11 +272,8 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         requestId,
       });
       
-      // TASK 1C: Add backend build identity fields
-      // Build time is now UTC, version from package.json
-      const nowUtc = new Date().toISOString();
-      const backendBuildTimeUtc = snapshot.metadata?.provenance?.buildTimeUtc || nowUtc;
-      const appVersion = "2.14.0";  // From package.json
+      // TASK 1C: Add backend build identity fields (from generated file)
+      // These are deterministically generated at build time from git HEAD and package.json
       
       return {
         status: "AVAILABLE",
@@ -283,10 +281,11 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         createdAtUtc: snapshot.createdAtUtc,
         schemaVersion: "L0",
         containsText: "Jira governance evidence snapshot (export for full details).",
-        // TASK 1C: Backend build identity fields (never undefined, always present)
-        backend_build_sha: BACKEND_BUILD_SHA || "unknown",
-        backend_build_time_utc: backendBuildTimeUtc,
-        backend_app_version: appVersion,
+        // Backend build identity fields (canonical names with full/short SHA distinction)
+        backend_git_sha: BACKEND_GIT_SHA,
+        backend_git_sha_short: BACKEND_GIT_SHA_SHORT,
+        backend_build_time_utc: BACKEND_BUILD_TIME_UTC,
+        backend_app_version: BACKEND_APP_VERSION,
         // Pass through metadata verbatim (dumb reader - no transforms)
         metadata: snapshot.metadata || {
           coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },

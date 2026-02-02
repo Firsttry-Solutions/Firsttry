@@ -1060,10 +1060,10 @@ async function loadStatus() {
         renderIdentityProofPanel(data);
         
         // TASK 1D: Render build identity footer with mismatch detection
-        // Extract backend_build_sha from the resolver response
-        const backendBuildSha = data?.backend_build_sha || rawData?.backend_build_sha;
-        if (backendBuildSha) {
-          const footer = createBuildIdentityFooter(backendBuildSha);
+        // Extract backend_git_sha_short from the resolver response (new canonical field)
+        const backendGitShaShort = data?.backend_git_sha_short || rawData?.backend_git_sha_short;
+        if (backendGitShaShort) {
+          const footer = createBuildIdentityFooter(backendGitShaShort);
           const footerContainer = document.getElementById('ft-build-identity-footer-container');
           if (footerContainer) {
             footerContainer.innerHTML = '';
