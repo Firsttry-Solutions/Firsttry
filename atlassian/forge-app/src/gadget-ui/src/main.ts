@@ -79,6 +79,11 @@ import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownS
 import { mapL0SnapshotResponse, renderL0Dashboard, type L0DashboardState } from "./l0_snapshot_mapper";
 
 // ============================================================================
+// ENTERPRISE DASHBOARD UI V1 (Task 2: Read-only snapshot display)
+// ============================================================================
+import { renderEnterpriseDashboard, type SnapshotState } from "./components/EnterpriseDashboard";
+
+// ============================================================================
 // LAYER-0 STATE MERGE GUARD (INVARIANT: Prevent AVAILABLE→NO_SNAPSHOT downgrade)
 // ============================================================================
 import { mergeDashboardState } from "./l0_state_merge";
