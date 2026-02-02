@@ -640,3 +640,55 @@ h1 {
         justify-content: center;
     }
 }
+
+/* ========================================================================
+   BUILD IDENTITY FOOTER (TASK 1D)
+   ======================================================================== */
+#ft-build-identity-footer,
+.ft-build-identity-footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    padding: var(--space-8);
+    margin-top: var(--space-16);
+    background-color: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-6);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.ft-build-id-ui {
+    display: block;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    word-break: break-all;
+}
+
+.ft-build-id-backend {
+    display: block;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    word-break: break-all;
+}
+
+.ft-build-id-mismatch-banner {
+    display: block;
+    padding: var(--space-8) var(--space-12);
+    background-color: var(--color-status-degraded);
+    border-left: 3px solid var(--color-status-degraded-text);
+    color: var(--color-status-degraded-text);
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 11px;
+    border-radius: var(--radius-6);
+    word-break: break-all;
+}
+
+/* Mark root when build mismatch detected */
+:root[data-ft-build-mismatch='true'] {
+    --local-mismatch-color: #ae2a19;
+}
+
