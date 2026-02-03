@@ -41,6 +41,7 @@ import { ping } from './resolvers/ping';
 import { debugSnapshotState_resolver } from './resolvers/debugSnapshotState';
 import { ensureFirstSnapshot } from './resolvers/ensureFirstSnapshot';
 import { probe } from './resolvers/probe'; // FORENSIC_PROBE
+import { getDashboardSnapshotV1_resolver } from './resolvers/getDashboardSnapshotV1';
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -72,6 +73,9 @@ resolver.define('getSnapshotVariant', getSnapshotVariant_resolver);
 resolver.define('ping', ping);
 resolver.define('ensureFirstSnapshot', ensureFirstSnapshot);
 resolver.define('probe', probe);  // FORENSIC_PROBE
+
+// Enterprise dashboard resolver (NEW - Phase 9)
+resolver.define('getDashboardSnapshotV1', getDashboardSnapshotV1_resolver);
 
 // Layer-0 Backbone resolvers
 resolver.define('ft_getDashboardState_v1', ft_getDashboardState_v1);
