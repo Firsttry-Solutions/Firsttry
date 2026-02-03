@@ -51,6 +51,10 @@ export interface L0DashboardState {
     buildSha?: string;
     buildTimeUtc?: string;
   };
+  // Backend build identity fields from resolver response (used as fallback if buildInfo missing)
+  backendBuildSha?: string;
+  backendBuildTimeUtc?: string;
+  backendAppVersion?: string;
   metadata?: {
     coverage?: any;
     integrity?: any;
@@ -151,6 +155,10 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
       schemaVersion: response.schemaVersion || "L0",
       error: null,
       note: response.containsText || "Jira governance evidence snapshot (export for full details).",
+      // Extract backend build identity fields from resolver response for fallback rendering
+      backendBuildSha: payload.backend_git_sha,
+      backendBuildTimeUtc: payload.backend_build_time_utc,
+      backendAppVersion: payload.backend_app_version,
       metadata: response.metadata || {}
     };
   }
@@ -301,10 +309,14 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     const provenanceStrip = document.createElement("div");
     provenanceStrip.className = "l0-provenance-strip";
     
-    // Provenance fields with fallback values
+    // Helper: Format build SHA for display (use backend if available, never show NOT_AVAILABLE)
+    const buildShaValue = state.buildInfo?.buildSha || state.backendBuildSha || "";
+    const buildTimeValue = state.buildInfo?.buildTimeUtc || state.backendBuildTimeUtc || "";
+    
+    // Provenance fields with backend fallback (never render NOT_AVAILABLE if backend has data)
     const provenanceFields = [
-      { label: "Build SHA", value: state.buildInfo?.buildSha || "NOT_AVAILABLE" },
-      { label: "Build Time", value: state.buildInfo?.buildTimeUtc || "NOT_AVAILABLE" },
+      { label: "Build SHA", value: buildShaValue || "NOT_AVAILABLE" },
+      { label: "Build Time", value: buildTimeValue || "NOT_AVAILABLE" },
       { label: "Schema", value: state.schemaVersion || "NOT_AVAILABLE" },
       { label: "Snapshot ID", value: state.snapshotId || "NOT_AVAILABLE" },
       { label: "Created", value: state.createdAtUtc || "NOT_AVAILABLE" }
