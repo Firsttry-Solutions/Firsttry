@@ -79,6 +79,11 @@ import { validateNonLegacyFlow, validateResponseNoLegacyMode, validateNoUnknownS
 import { mapL0SnapshotResponse, renderL0Dashboard, type L0DashboardState } from "./l0_snapshot_mapper";
 
 // ============================================================================
+// ENTERPRISE DASHBOARD UI V1 (Task 2: Read-only snapshot display)
+// ============================================================================
+import { renderEnterpriseDashboard, type SnapshotState } from "./components/EnterpriseDashboard";
+
+// ============================================================================
 // LAYER-0 STATE MERGE GUARD (INVARIANT: Prevent AVAILABLE→NO_SNAPSHOT downgrade)
 // ============================================================================
 import { mergeDashboardState } from "./l0_state_merge";
@@ -281,6 +286,18 @@ import { buildUiIdentity, formatUiIdentity, type UiIdentity } from './ui_identit
 
 // Import UI build markers (auto-generated at build time)
 import { UI_GIT_SHA, UI_BUILD_TIME_UTC, UI_BUILD_MARKER } from './ui_build_meta';
+
+// TASK 1D: Import build identity from generated file
+import { 
+  UI_GIT_SHA as UI_BUILD_ID_SHA, 
+  UI_GIT_SHA_SHORT,
+  UI_BUILD_TIME_UTC as UI_BUILD_ID_TIME,
+  UI_APP_VERSION,
+  formatBuildIdentity
+} from './build/buildIdentity.gen';
+
+// TASK 1D: Import footer renderer
+import { createBuildIdentityFooter, renderBuildIdentityFooterInto } from './build/buildIdentityFooter';
 
 // ============================================================================
 // UI IDENTITY FALLBACK (used if backend doesn't populate identity fields)
@@ -1046,6 +1063,18 @@ async function loadStatus() {
         
         // STEP 3: Render the identity/proof panel from backend envelope
         renderIdentityProofPanel(data);
+        
+        // TASK 1D: Render build identity footer with mismatch detection
+        // Extract backend_git_sha_short from the resolver response (new canonical field)
+        const backendGitShaShort = data?.backend_git_sha_short || rawData?.backend_git_sha_short;
+        if (backendGitShaShort) {
+          const footer = createBuildIdentityFooter(backendGitShaShort);
+          const footerContainer = document.getElementById('ft-build-identity-footer-container');
+          if (footerContainer) {
+            footerContainer.innerHTML = '';
+            footerContainer.appendChild(footer);
+          }
+        }
 
         // PHASE 4: Compute deterministic view model from resolver payload
         // This is the SINGLE SOURCE OF TRUTH for all UI state across all widgets
@@ -3439,6 +3468,17 @@ async function proceedWithBoot() {
                 // Extract backend build SHA from response (only available if ok=true)
                 const backendBuildSha = data?.ledger?.build_sha_last_seen_backend || data?.build_sha_backend || 'unknown';
                 const responseTime = data?.now_utc || new Date().toISOString();
+                
+                // LOG FINAL IDENTITY MARKER: Identity source is now confirmed to be from resolver
+                console.log('[UI_BUILD_IDENTITY_FINAL]', {
+                  marker: 'UI_BUILD_IDENTITY_FINAL',
+                  ui_git_sha: UI_BUILD_MARKER,
+                  ui_bundle_hash: UI_DIST_STAMP,
+                  identity_source: 'resolver_confirmed',
+                  backend_build_sha: backendBuildSha,
+                  correlation_id: FT_CORRELATION_ID_NONCE,
+                  ts: new Date().toISOString(),
+                });
                 
                 // Update footer with both UI and backend versions
                 const backendDisplay = backendBuildSha !== 'unknown' 

@@ -41,12 +41,14 @@ import { ping } from './resolvers/ping';
 import { debugSnapshotState_resolver } from './resolvers/debugSnapshotState';
 import { ensureFirstSnapshot } from './resolvers/ensureFirstSnapshot';
 import { probe } from './resolvers/probe'; // FORENSIC_PROBE
+import { getDashboardSnapshotV1_resolver } from './resolvers/getDashboardSnapshotV1';
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
 import { nowUtcIso } from './backbone/time';
 import { dashOk, dashErr, DashEnvelopeV1 } from './shared/dashEnvelopeV1';
 import { BACKEND_BUILD_SHA } from './build/backend_build';
+import { BACKEND_GIT_SHA, BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC, BACKEND_APP_VERSION } from './build/buildIdentityBackend.gen';
 import {
   FT_DASH_ENVELOPE_MARKER_V1,
   okEnvelope,
@@ -72,6 +74,9 @@ resolver.define('ping', ping);
 resolver.define('ensureFirstSnapshot', ensureFirstSnapshot);
 resolver.define('probe', probe);  // FORENSIC_PROBE
 
+// Enterprise dashboard resolver (NEW - Phase 9)
+resolver.define('getDashboardSnapshotV1', getDashboardSnapshotV1_resolver);
+
 // Layer-0 Backbone resolvers
 resolver.define('ft_getDashboardState_v1', ft_getDashboardState_v1);
 resolver.define('ft_setUiBuildSha_v1', ft_setUiBuildSha_v1);
@@ -96,6 +101,19 @@ export const handler = resolver.getDefinitions();
 
 export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvelopeV1> {
   try {
+    // Extract correlation_id and ui_req_id from request (sent by UI)
+    const correlationId = request?.correlation_id || request?.correlationId || 'unknown';
+    const uiReqId = request?.ui_req_id || request?.uiReqId || 'unknown';
+    
+    // Log resolver entry marker with correlation IDs
+    console.log(JSON.stringify({
+      marker: '[FT_RESOLVER_ENTRY]',
+      resolver: 'ft_getDashboardState_v1',
+      correlationId,
+      uiReqId,
+      ts: new Date().toISOString(),
+    }));
+    
     // Log version proof at start of resolver invocation
     let buildSha = BACKEND_BUILD_SHA || "UNSET";
     console.log(JSON.stringify({
@@ -258,12 +276,20 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         requestId,
       });
       
+      // TASK 1C: Add backend build identity fields (from generated file)
+      // These are deterministically generated at build time from git HEAD and package.json
+      
       return {
         status: "AVAILABLE",
         snapshotId: snapshot.snapshotId,
         createdAtUtc: snapshot.createdAtUtc,
         schemaVersion: "L0",
         containsText: "Jira governance evidence snapshot (export for full details).",
+        // Backend build identity fields (canonical names with full/short SHA distinction)
+        backend_git_sha: BACKEND_GIT_SHA,
+        backend_git_sha_short: BACKEND_GIT_SHA_SHORT,
+        backend_build_time_utc: BACKEND_BUILD_TIME_UTC,
+        backend_app_version: BACKEND_APP_VERSION,
         // Pass through metadata verbatim (dumb reader - no transforms)
         metadata: snapshot.metadata || {
           coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
@@ -446,10 +472,30 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<Da
       ts_utc: now
     }));
 
+    // Log resolver OK marker for correlation tracking
+    console.log(JSON.stringify({
+      marker: '[FT_RESOLVER_OK]',
+      resolver: 'ft_getDashboardState_v1',
+      correlationId: request?.correlation_id || request?.correlationId || 'unknown',
+      uiReqId: request?.ui_req_id || request?.uiReqId || 'unknown',
+      okType: (envelope as any).okType || 'unknown',
+      ts: new Date().toISOString(),
+    }));
+
     return envelope;
   } catch (e) {
     const now = nowUtcIso();
     const errorMessage = e instanceof Error ? e.message : String(e);
+    
+    // Log resolver ERROR marker with correlationId for correlation cross-check
+    console.log(JSON.stringify({
+      marker: '[FT_RESOLVER_ERR]',
+      resolver: 'ft_getDashboardState_v1',
+      correlationId: request?.correlation_id || request?.correlationId || 'unknown',
+      uiReqId: request?.ui_req_id || request?.uiReqId || 'unknown',
+      error: errorMessage.slice(0, 100),
+      ts: new Date().toISOString(),
+    }));
 
     return dashErr({
       error: {
