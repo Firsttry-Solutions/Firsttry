@@ -25,7 +25,7 @@ import {
 } from '../shared/DashboardSnapshotV1';
 import { BACKEND_GIT_SHA, BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC, BACKEND_APP_VERSION } from '../build/buildIdentityBackend.gen';
 import { UI_GIT_SHA, UI_GIT_SHA_SHORT, UI_BUILD_TIME_UTC } from '../gadget-ui/src/build/buildIdentity.gen';
-import { v4 as uuidv4 } from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Main resolver function
