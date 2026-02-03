@@ -1,6 +1,7 @@
 {
-  "commitSha": "752c2171b878ea7817a36948d373c19ef01a3b2d",
-  "frozenContentSha": "a2de4d83ce80de2749562ebae7a969f73e9c62c85c3a8abbda20026039e1292a",
-  "method": "git-tracked-files+sha256-manifest",
-  "frozenAt": "2026-02-03T09:20:23Z"
+  "commitSha": "6cb996aaa6f1e3fa35170690e7db3607f8b4b256",
+  "createdAtUtc": "2026-02-03T12:13:55Z",
+  "source": "marketplace_freeze_lock_fix",
+  "frozenContentSha": "20097f2a9688c6f6b933d9a2d4cb07a37d78d7b4c224995fe0c03be1a0953922",
+  "method": "git-tracked-files+sha256-manifest"
 }
