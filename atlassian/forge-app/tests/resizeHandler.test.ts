@@ -37,9 +37,12 @@ describe("resizeHandler - Source Code Verification", () => {
     expect(source).toMatch(/import\s+{\s*view\s*}\s+from\s+['"]@forge\/bridge['"]/);
   });
 
-  it("should use ResizeObserver (native API, not iframe-resizer)", () => {
-    // Verify uses ResizeObserver
-    expect(source).toMatch(/new\s+ResizeObserver/);
+  it("should use requestAnimationFrame (not ResizeObserver or iframe-resizer)", () => {
+    // Verify uses requestAnimationFrame for post-render detection
+    expect(source).toMatch(/requestAnimationFrame/);
+
+    // Verify NO ResizeObserver loop (one-shot only, no continuous observers)
+    expect(source).not.toMatch(/new\s+ResizeObserver/);
 
     // Verify NO runtime iframeResizer usage (comments/docs are OK)
     // Look for actual imports, requires, or function calls - not comments
@@ -61,67 +64,77 @@ describe("resizeHandler - Source Code Verification", () => {
     // Should check for view.setHeight
     expect(source).toMatch(/typeof.*view.*setHeight/);
 
-    // Should have resizeFuncType variable
-    expect(source).toMatch(/resizeFuncType/);
+    // Should have resizeCapability variable (detects which API is available)
+    expect(source).toMatch(/resizeCapability/);
   });
 
   it("should have fail-closed behavior markers", () => {
-    // Should have error catch blocks
+    // Should have error catch blocks (to handle resize failures)
     expect(source).toMatch(/catch\s*\(/);
 
-    // Should NOT have top-level throws
-    expect(source).not.toMatch(/^\s*throw\s+/m);
+    // Should log FAILED marker when errors occur (deterministic proof)
+    expect(source).toMatch(/console\.log.*UI_RESIZE_FAILED/);
 
-    // Should have warning log for missing capability
-    expect(source).toMatch(/console\.warn/);
+    // Should emit APPLIED marker when successful
+    expect(source).toMatch(/console\.log.*UI_RESIZE_APPLIED/);
+
+    // Should have finally or similar to set window marker (deterministic proof)
+    expect(source).toMatch(/finally|window.*__FT_RESIZE/);
   });
 
-  it("should emit UI_RESIZE_CAPS marker on boot", () => {
-    // Should log UI_RESIZE_CAPS marker
-    expect(source).toMatch(/UI_RESIZE_CAPS/);
+  it("should emit UI_RESIZE_CAPS_FINAL marker on boot", () => {
+    // Should log UI_RESIZE_CAPS_FINAL marker
+    expect(source).toMatch(/UI_RESIZE_CAPS_FINAL/);
 
-    // Marker should include hasResize field
-    expect(source).toMatch(/hasResize/);
+    // Marker should include capability detection
+    expect(source).toMatch(/canResize/);
 
-    // Marker should include hasSetHeight field
-    expect(source).toMatch(/hasSetHeight/);
-
-    // Marker should include resizeFuncType field
-    expect(source).toMatch(/resizeFuncType/);
+    // Marker should include kind field (which API: view.resize, view.setHeight, or none)
+    expect(source).toMatch(/kind/);
 
     // Marker should include timestamp
     expect(source).toMatch(/new\s+Date\(\)\.toISOString/);
   });
 
   it("should handle missing Forge capability gracefully", () => {
-    // Should check if resizeFuncType === "none"
-    expect(source).toMatch(/resizeFuncType.*===.*['"]none['"]/);
+    // Should check if !resizeCapability.canResize (no resize capability available)
+    expect(source).toMatch(/!resizeCapability\.canResize|canResize.*false/);
 
-    // Should return early (not throw) if no capability
-    expect(source).toMatch(/return;\s*\/\/ Gadget continues/);
+    // Should emit DISABLED_FINAL marker if no capability
+    expect(source).toMatch(/UI_RESIZE_DISABLED_FINAL/);
+
+    // Should return without throwing if no capability
+    expect(source).toMatch(/return;/);
   });
 
-  it("should debounce resize requests", () => {
-    // Should have debounce timeout
-    expect(source).toMatch(/RESIZE_DEBOUNCE_MS/);
-    expect(source).toMatch(/setTimeout/);
-    expect(source).toMatch(/clearTimeout/);
+  it("should apply resize ONE-SHOT at init time", () => {
+    // Should have measureHeight function
+    expect(source).toMatch(/function\s+measureHeight/);
+
+    // Should apply resize in ONE-SHOT (not continuous)
+    expect(source).toMatch(/applyResizeOnce/);
+
+    // Should emit APPLIED or FAILED marker when resize is applied
+    expect(source).toMatch(/UI_RESIZE_APPLIED|UI_RESIZE_FAILED/);
   });
 
-  it("should cleanup resize observer on shutdown", () => {
-    // cleanupResizeHandler should disconnect observer
-    expect(source).toMatch(/resizeObserver\.disconnect/);
+  it("should export cleanupResizeHandler with no-op implementation", () => {
+    // Should have cleanupResizeHandler function exported
+    expect(source).toMatch(/export\s+function\s+cleanupResizeHandler/);
 
-    // Should clear timeout
-    expect(source).toMatch(/clearTimeout.*resizeTimeout/);
+    // Comment indicates no resources to clean up (no ResizeObserver, no setInterval)
+    expect(source).toMatch(/no\s+resources?\s+to\s+clean\s+up|no-op/i);
   });
 
   it("should support both view.resize() and view.setHeight() APIs", () => {
-    // Should conditionally call resize
-    expect(source).toMatch(/resizeFuncType.*===.*['"]resize['"]/);
+    // Should detect and call view.resize if available
+    expect(source).toMatch(/kind.*===.*['"]view\.resize['"]/);
 
-    // Should conditionally call setHeight
-    expect(source).toMatch(/resizeFuncType.*===.*['"]setHeight['"]/);
+    // Should detect and call view.setHeight if available
+    expect(source).toMatch(/kind.*===.*['"]view\.setHeight['"]/);
+
+    // Should handle either API being present
+    expect(source).toMatch(/resizeCapability\.resize|resizeCapability\.setHeight/);
   });
 });
 

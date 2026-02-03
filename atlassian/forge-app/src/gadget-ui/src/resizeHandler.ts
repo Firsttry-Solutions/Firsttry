@@ -1,34 +1,117 @@
 /**
  * Native Forge Bridge Resize Handler (No iframe-resizer)
  *
- * Implements gadget iframe height resizing using Forge bridge
- * without any runtime style injection or unsafe-inline CSP violations.
- *
- * APPROACH: Use ResizeObserver on document.documentElement to detect
- * content height changes, then call Forge bridge to request resize.
+ * Implements ONE-SHOT gadget iframe height resizing using Forge bridge.
+ * This is deterministic, fail-closed, and safe for Jira dashboard gadgets.
  *
  * CAPABILITY DETECTION:
- * - First tries view.resize(height) if available
- * - Falls back to view.setHeight(height) if available
- * - If neither, logs warning and continues (fail-closed, never throws)
+ * - Detects view.resize() OR view.setHeight() at init time only
+ * - Emits [UI_RESIZE_CAPS_FINAL] marker with result
+ * - If neither available: emit [UI_RESIZE_DISABLED_FINAL], log once, stop
+ *
+ * HEIGHT APPLICATION:
+ * - One-shot measure using scrollHeight / clientHeight
+ * - Clamp to [200, 2000] px
+ * - Call detected API
+ * - Emit [UI_RESIZE_APPLIED] or [UI_RESIZE_FAILED] marker
+ *
+ * POST-RENDER REMEASURE:
+ * - Single bounded re-measure via rAF x2 (post-render)
+ * - Emit [UI_RESIZE_POST_RENDER_DONE] marker
  *
  * CSP COMPLIANCE:
- * - No inline styles, no style mutation, no unsafe-inline usage
- * - Uses only ResizeObserver (native API) + @forge/bridge (CSP-safe import)
+ * - No inline styles, no DOM style= attributes
+ * - No polling loops, no MutationObserver
+ * - No setInterval, no continuous observers
  */
 
 import { view } from "@forge/bridge";
 
-let resizeObserver: ResizeObserver | null = null;
-let lastHeight = 0;
-const RESIZE_DEBOUNCE_MS = 200;
-let resizeTimeout: NodeJS.Timeout | null = null;
-let warningLogged = false;
-let resizeFuncType: "resize" | "setHeight" | "none" = "none";
+let resizeCapability: {
+  kind: "view.resize" | "view.setHeight" | "none";
+  canResize: boolean;
+  setHeight?: (h: number) => Promise<void> | void;
+  resize?: () => Promise<void> | void;
+} = { kind: "none", canResize: false };
+
+let lastAppliedHeight = 0;
+let resizeFailed = false;
+let resizeApplied = false;
+const MIN_HEIGHT = 200;
+const MAX_HEIGHT = 2000;
+
+/**
+ * Detect resize capability from Forge bridge view object.
+ * Returns capability descriptor with exactly one resize method.
+ */
+function detectResizeCapability(): {
+  kind: "view.resize" | "view.setHeight" | "none";
+  canResize: boolean;
+  setHeight?: (h: number) => Promise<void> | void;
+  resize?: () => Promise<void> | void;
+} {
+  const hasResize = typeof (view as any)?.resize === "function";
+  const hasSetHeight = typeof (view as any)?.setHeight === "function";
+
+  if (hasResize) {
+    return { kind: "view.resize", canResize: true, resize: (view as any).resize };
+  } else if (hasSetHeight) {
+    return { kind: "view.setHeight", canResize: true, setHeight: view.setHeight };
+  } else {
+    return { kind: "none", canResize: false };
+  }
+}
+
+/**
+ * Measure desired height using layout metrics.
+ * Clamps to [MIN_HEIGHT, MAX_HEIGHT].
+ */
+function measureHeight(): number {
+  const scrollH = document.documentElement.scrollHeight;
+  const clientH = document.documentElement.clientHeight;
+  const bodyH = document.body.scrollHeight;
+  const measured = Math.max(scrollH, clientH, bodyH);
+  return Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, measured));
+}
+
+/**
+ * Apply resize ONE-SHOT at init time.
+ * Emits [UI_RESIZE_APPLIED] or [UI_RESIZE_FAILED] marker.
+ */
+async function applyResizeOnce(): Promise<void> {
+  if (!resizeCapability.canResize) return;
+
+  try {
+    const height = measureHeight();
+
+    if (resizeCapability.kind === "view.resize") {
+      // Try to call view.resize(height); if it fails, call without args once
+      try {
+        await (resizeCapability.resize as any)(height);
+      } catch (argErr) {
+        if ((argErr as any)?.message?.includes("argument")) {
+          // Function doesn't accept arguments, try calling without args
+          await (resizeCapability.resize as any)();
+        } else {
+          throw argErr;
+        }
+      }
+    } else if (resizeCapability.kind === "view.setHeight") {
+      await resizeCapability.setHeight!(height);
+    }
+
+    lastAppliedHeight = height;
+    resizeApplied = true;
+    console.log("[UI_RESIZE_APPLIED]", JSON.stringify({ height, kind: resizeCapability.kind, ts: new Date().toISOString() }));
+  } catch (err) {
+    resizeFailed = true;
+    console.log("[UI_RESIZE_FAILED]", JSON.stringify({ kind: resizeCapability.kind, err: String(err), ts: new Date().toISOString() }));
+  }
+}
 
 /**
  * Initialize native resize handling via Forge bridge.
- * Call this once after React app mounts.
+ * ONE-SHOT at boot, plus one bounded post-render remeasure.
  * 
  * FAIL-CLOSED: Never throws. Always returns successfully.
  */
@@ -37,116 +120,76 @@ export async function initResizeHandler(): Promise<void> {
     // ====================================================================
     // CAPABILITY DETECTION: Determine which resize function is available
     // ====================================================================
-    const hasResize = typeof (view as any)?.resize === "function";
-    const hasSetHeight = typeof (view as any)?.setHeight === "function";
-
-    if (hasResize) {
-      resizeFuncType = "resize";
-    } else if (hasSetHeight) {
-      resizeFuncType = "setHeight";
-    } else {
-      resizeFuncType = "none";
-    }
+    resizeCapability = detectResizeCapability();
 
     // ====================================================================
-    // BOOT-TIME PROOF MARKER: UI_RESIZE_CAPS
+    // BOOT-TIME PROOF MARKER: UI_RESIZE_CAPS_FINAL
     // ====================================================================
-    const resizeCaps = {
-      marker: "UI_RESIZE_CAPS",
-      hasResize,
-      hasSetHeight,
-      resizeFuncType,
-      viewKeys: Object.keys(view).slice(0, 20),
+    console.log("[UI_RESIZE_CAPS_FINAL]", JSON.stringify({
+      canResize: resizeCapability.canResize,
+      kind: resizeCapability.kind,
       ts: new Date().toISOString(),
-    };
-    console.log("[UI_RESIZE_CAPS]", JSON.stringify(resizeCaps));
+    }));
 
-    // If no resize capability, log once and continue (fail-closed)
-    if (resizeFuncType === "none") {
-      console.warn("[RESIZE_HANDLER] No Forge view resize capability found. Resize disabled.");
-      warningLogged = true;
-      return; // Gadget continues to work without resize
-    }
-
-    // Measure initial height
-    await requestResize();
-
-    // Set up ResizeObserver to detect future height changes
-    resizeObserver = new ResizeObserver(() => {
-      // Debounce resize requests
-      if (resizeTimeout) clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(async () => {
-        await requestResize();
-      }, RESIZE_DEBOUNCE_MS);
-    });
-
-    resizeObserver.observe(document.documentElement);
-
-    console.log("[RESIZE_HANDLER] Native Forge bridge resize initialized", {
-      funcType: resizeFuncType,
-    });
-  } catch (err) {
-    console.error("[RESIZE_HANDLER] Failed to initialize:", err);
-    // Non-fatal: gadget continues to work even if resize fails
-  }
-}
-
-/**
- * Request Forge bridge to resize iframe to fit content.
- * This is CSP-safe: no inline styles, just native bridge call.
- * 
- * FAIL-CLOSED: Never throws. Logs warning only once if resize not available.
- */
-async function requestResize(): Promise<void> {
-  try {
-    // If no resize capability detected, skip (fail-closed)
-    if (resizeFuncType === "none") {
-      if (!warningLogged) {
-        console.warn("[RESIZE_HANDLER] Resize disabled: no Forge capability found");
-        warningLogged = true;
-      }
+    // If no resize capability, emit disabled marker and stop
+    if (!resizeCapability.canResize) {
+      console.log("[UI_RESIZE_DISABLED_FINAL]", JSON.stringify({
+        reason: "NO_SUPPORTED_RESIZE_API",
+        ts: new Date().toISOString(),
+      }));
+      // Set window marker for gate verification
+      (window as any).__FT_RESIZE = {
+        canResize: false,
+        kind: "none",
+        lastHeight: 0,
+        applied: false,
+        failed: false,
+        ts: new Date().toISOString(),
+      };
       return;
     }
 
-    // Get current document height
-    const height = Math.max(
-      document.documentElement.scrollHeight,
-      document.body.scrollHeight,
-      document.documentElement.clientHeight
-    );
+    // ====================================================================
+    // ONE-SHOT HEIGHT APPLICATION AT INIT
+    // ====================================================================
+    await applyResizeOnce();
 
-    // Only call bridge if height changed
-    if (height !== lastHeight) {
-      lastHeight = height;
+    // ====================================================================
+    // BOUNDED POST-RENDER REMEASURE (ONE-SHOT via rAF x2)
+    // ====================================================================
+    requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
+        if (resizeCapability.canResize) {
+          const newHeight = measureHeight();
+          if (newHeight !== lastAppliedHeight) {
+            await applyResizeOnce();
+          }
+        }
+        console.log("[UI_RESIZE_POST_RENDER_DONE]", JSON.stringify({ ts: new Date().toISOString() }));
+      });
+    });
 
-      // Call Forge bridge to request resize (CSP-safe)
-      // Use capability detection: prefer view.resize, fallback to view.setHeight
-      if (resizeFuncType === "resize") {
-        await (view as any).resize(height);
-      } else if (resizeFuncType === "setHeight") {
-        await view.setHeight(height);
-      }
-
-      console.log("[RESIZE_HANDLER] Resized to", { height, method: resizeFuncType });
-    }
   } catch (err) {
-    // Silently fail: resize is not critical to functionality
-    if ((err as any)?.code !== "BRIDGE_NOT_AVAILABLE") {
-      console.warn("[RESIZE_HANDLER] Resize request failed:", err);
-    }
+    console.error("[RESIZE_HANDLER] Initialization failed:", err);
+    resizeFailed = true;
+  } finally {
+    // ====================================================================
+    // SET WINDOW MARKER FOR DEVTOOLS GATE VERIFICATION
+    // ====================================================================
+    (window as any).__FT_RESIZE = {
+      canResize: resizeCapability.canResize,
+      kind: resizeCapability.kind,
+      lastHeight: lastAppliedHeight,
+      applied: resizeApplied,
+      failed: resizeFailed,
+      ts: new Date().toISOString(),
+    };
   }
 }
 
 /**
- * Cleanup resize observer.
+ * Cleanup (no-op now - no continuous observers)
  */
 export function cleanupResizeHandler(): void {
-  if (resizeTimeout) {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = null;
-  }
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-    resizeObserver = null;
-  }
+  // No resources to clean up: no ResizeObserver, no setInterval
 }

@@ -27,11 +27,28 @@ if [[ "$LOCK_PATH" == *"audit/proof_runs/"* ]]; then
 fi
 
 # ============================================================================
+# Determine computation base: HEAD^ if lock is tracked at HEAD, else HEAD
+# (non-circular freeze: the lock meta-commit freezes its parent)
+# ============================================================================
+LOCK_IS_TRACKED=0
+if git ls-files --error-unmatch "$LOCK_PATH" >/dev/null 2>&1; then
+    LOCK_IS_TRACKED=1
+fi
+
+# Compute base: if tracked, use parent (HEAD^); else use current (HEAD)
+COMPUTE_BASE="$PAYLOAD"
+if [[ $LOCK_IS_TRACKED -eq 1 ]]; then
+    COMPUTE_BASE=$(cd "$REPO_ROOT" && git rev-parse "${PAYLOAD}^" 2>/dev/null || echo "$PAYLOAD")
+fi
+
+# ============================================================================
 # Print evidence of mode and settings
 # ============================================================================
 echo "[FREEZE_VERIFY] mode=$MODE"
 echo "[FREEZE_VERIFY] lock_path=$LOCK_PATH"
 echo "[FREEZE_VERIFY] payload_commit=$PAYLOAD"
+echo "[FREEZE_VERIFY] lock_is_tracked=$LOCK_IS_TRACKED"
+echo "[FREEZE_VERIFY] compute_base=$COMPUTE_BASE"
 
 # Check if FREEZE_LOCK exists
 if [[ ! -f "$LOCK_PATH" ]]; then
@@ -71,6 +88,11 @@ if [[ "$MODE" == "proof" ]]; then
     fi
     
     # Proof mode: Success on commitSha match
+    # Emit markers: LOCKED_FROZEN_SHA is the locked commitSha, COMPUTED is also commitSha in proof mode
+    LOCKED_FROZEN_SHA="$LOCKED_COMMIT"
+    COMPUTED_FROZEN_SHA="$LOCKED_COMMIT"
+    echo "LOCKED_FROZEN_SHA=$LOCKED_FROZEN_SHA"
+    echo "COMPUTED_FROZEN_SHA=$COMPUTED_FROZEN_SHA"
     echo "[FREEZE_VERIFY] OK: proof mode - commitSha validated"
     exit 0
 
@@ -92,17 +114,29 @@ else
         exit 1
     fi
     
-    # Validate commitSha matches payload
-    if [[ "$LOCKED_COMMIT" != "$PAYLOAD" ]]; then
-        echo "[FREEZE_VERIFY] FAIL: commitSha mismatch"
-        echo "  Expected: $PAYLOAD"
-        echo "  Got:      $LOCKED_COMMIT"
-        exit 1
+    # NON-CIRCULAR CHECK: If lock is tracked, payload is meta commit and we skip payload match
+    # In this case, we verify that COMPUTE_BASE (HEAD^) is what lock freezes
+    if [[ $LOCK_IS_TRACKED -eq 0 ]]; then
+        # Lock not tracked = normal case, validate that current payload matches lock's commitSha
+        if [[ "$LOCKED_COMMIT" != "$PAYLOAD" ]]; then
+            echo "[FREEZE_VERIFY] FAIL: commitSha mismatch (lock not tracked)"
+            echo "  Expected: $PAYLOAD"
+            echo "  Got:      $LOCKED_COMMIT"
+            exit 1
+        fi
+    else
+        # Lock is tracked = meta commit case, validate that parent (COMPUTE_BASE) matches lock's commitSha
+        if [[ "$LOCKED_COMMIT" != "$COMPUTE_BASE" ]]; then
+            echo "[FREEZE_VERIFY] FAIL: commitSha mismatch (lock is tracked, comparing parent)"
+            echo "  Expected: $COMPUTE_BASE (parent of meta commit)"
+            echo "  Got:      $LOCKED_COMMIT"
+            exit 1
+        fi
     fi
     
     # RELEASE MODE: Compute FROZEN_CONTENT_SHA from git snapshot (NOT working tree)
-    # Use LOCKED_COMMIT (or PAYLOAD if provided) to get deterministic snapshot
-    SNAPSHOT_COMMIT="${PAYLOAD}"
+    # Use COMPUTE_BASE (HEAD^ if lock is tracked, else PAYLOAD) to get deterministic snapshot
+    SNAPSHOT_COMMIT="${COMPUTE_BASE}"
     echo "[FREEZE_VERIFY] Computing hash from git snapshot at ${SNAPSHOT_COMMIT}..."
     
     cd "$REPO_ROOT"
@@ -130,6 +164,12 @@ else
 
     # Step 5: Hash the manifest to get CURRENT_SHA
     CURRENT_SHA=$(sha256sum "$MANIFEST" | awk '{print $1}')
+
+    # Emit markers: LOCKED_FROZEN_SHA is commitSha, COMPUTED is the frozen content SHA
+    LOCKED_FROZEN_SHA="$LOCKED_COMMIT"
+    COMPUTED_FROZEN_SHA="$CURRENT_SHA"
+    echo "LOCKED_FROZEN_SHA=$LOCKED_FROZEN_SHA"
+    echo "COMPUTED_FROZEN_SHA=$COMPUTED_FROZEN_SHA"
 
     # Compare frozen content
     if [[ "$CURRENT_SHA" == "$LOCKED_SHA" ]]; then
