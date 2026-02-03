@@ -22,6 +22,139 @@
 ################################################################################
 
 set -euo pipefail
+umask 077
+
+# ============================================================================
+# HARDENED ERROR HANDLING & SAFETY FUNCTIONS
+# ============================================================================
+
+# Die with STOP_REASON.txt (fail-closed)
+die() {
+  local reason="$1"
+  echo "STOP: $reason" > "$RUN_DIR/STOP_REASON.txt" 2>/dev/null || echo "STOP: $reason" >&2
+  echo "$reason" >&2
+  exit 1
+}
+
+# Require file exists and has minimum size
+require_file() {
+  local path="$1"
+  local min_bytes="${2:-1}"
+  if [[ ! -f "$path" ]]; then
+    die "Required file missing: $path"
+  fi
+  if [[ ! -s "$path" ]]; then
+    die "Required file empty: $path"
+  fi
+  local size
+  size=$(wc -c < "$path")
+  if (( size < min_bytes )); then
+    die "File too small: $path (${size} bytes, need ${min_bytes})"
+  fi
+}
+
+# Require command exists and is executable
+require_cmd() {
+  local cmd="$1"
+  if ! command -v "$cmd" &>/dev/null; then
+    die "Required command not found: $cmd"
+  fi
+}
+
+# Capture command output safely with exit code check
+capture_cmd() {
+  local out_file="$1"
+  shift
+  local cmd_array=("$@")
+
+  "${cmd_array[@]}" > "$out_file" 2>&1
+  local exit_code=$?
+  if [[ $exit_code -ne 0 ]]; then
+    die "Command failed with exit code $exit_code: ${cmd_array[*]}"
+  fi
+
+  require_file "$out_file" 1
+}
+
+# Scan for token-like secrets in file
+scan_for_secrets() {
+  local file="$1"
+  local patterns=(
+    "ATATT"
+    "FORGE_API_TOKEN"
+    "Bearer [A-Za-z0-9]*"
+    "api_token"
+    "[A-Za-z0-9+/]{40,}"  # long base64-like strings
+  )
+  
+  for pattern in "${patterns[@]}"; do
+    if grep -qi "$pattern" "$file" 2>/dev/null; then
+      die "SECURITY VIOLATION: Token-like string found in $file (pattern: $pattern). Output truncated for safety."
+    fi
+  done
+}
+
+# Self-integrity check: refuse to run if script contains simulation patterns
+check_script_integrity() {
+  local script_file="$0"
+  
+  # A) Forbidden: heredocs writing evidence files
+  if grep -Eq 'cat\s*>\s*.*20_logs_before.*<<|cat\s*>\s*.*40_logs_after.*<<|cat\s*>\s*.*50_resolver_extract.*<<|cat\s*>\s*.*31_browser_console.*<<|cat\s*>\s*.*32_dashboard.*<<' "$script_file"; then
+    die "INTEGRITY CHECK FAILED: Script contains forbidden heredoc pattern for evidence file"
+  fi
+  
+  # B) Forbidden: echo/printf piped or redirected to evidence files (not exit code markers)
+  if grep -Eq '\becho\b.*>\s*\$RUN_DIR/20_logs_before\.txt|\becho\b.*>\s*\$RUN_DIR/40_logs_after\.txt|\bprintf\b.*>\s*\$RUN_DIR/20_logs_before\.txt|\bprintf\b.*>\s*\$RUN_DIR/40_logs_after\.txt' "$script_file"; then
+    die "INTEGRITY CHECK FAILED: Script contains forbidden echo/printf redirection to evidence file"
+  fi
+  
+  # C) Forbidden: tee writing evidence files (including pipelines)
+  if grep -Eq '\|\s*tee.*20_logs_before\.txt|\|\s*tee.*40_logs_after\.txt|\|\s*tee.*50_resolver_extract\.txt|\|\s*tee.*31_browser_console\.txt' "$script_file"; then
+    die "INTEGRITY CHECK FAILED: Script contains forbidden tee output to evidence file"
+  fi
+  
+  # D) Forbidden: interpreter heredocs (python, node, perl) that could fabricate evidence
+  if grep -Eq '(python|node|perl)\s+.*-\s*<<' "$script_file"; then
+    die "INTEGRITY CHECK FAILED: Script contains forbidden interpreter heredoc (python/node/perl -)"
+  fi
+  
+  # E) Forbidden: cat heredoc piped to tee INTO evidence files (fabrication)
+  if grep -Eq 'cat[[:space:]]*<<.*\|[[:space:]]*tee[[:space:]]+.*(20_logs_before|40_logs_after|50_resolver_extract|31_browser_console|32_dashboard|50_.*extract|51_console_extract)' "$script_file"; then
+    die "INTEGRITY CHECK FAILED: Script contains forbidden cat<<heredoc | tee evidence pattern"
+  fi
+  
+  # F) Forbidden: mv/cp into evidence artifacts (fabrication via rename/copy)
+  if grep -Eq '\b(mv|cp)\b[[:space:]].*(20_logs_before|40_logs_after|31_browser_console|32_dashboard|50_.*extract|51_console_extract)(\.[A-Za-z0-9]+)?' "$script_file"; then
+    die "INTEGRITY CHECK FAILED: Script contains forbidden mv/cp into evidence artifact"
+  fi
+  
+  # G) Forbidden: mv/cp into $RUN_DIR evidence paths
+  if grep -Eq '\b(mv|cp)\b[[:space:]].*\$RUN_DIR/.*(20_logs_before|40_logs_after|31_browser_console|32_dashboard|50_.*extract|51_console_extract)' "$script_file"; then
+    die "INTEGRITY CHECK FAILED: Script contains forbidden mv/cp into \$RUN_DIR evidence artifact"
+  fi
+}
+
+# Enforce FREEZE_LOCK is clean and tracked
+enforce_freeze_lock() {
+  local freeze_file="audit/marketplace_submission/FREEZE_LOCK.json"
+  
+  # Reject FIRSTTRY_ALLOW_NO_FREEZE environment variable
+  if [[ "${FIRSTTRY_ALLOW_NO_FREEZE:-}" == "1" ]]; then
+    die "ENFORCEMENT: FIRSTTRY_ALLOW_NO_FREEZE override is forbidden in proof mode. Commit FREEZE_LOCK.json instead."
+  fi
+  
+  # Check if FREEZE_LOCK is dirty or untracked
+  if ! git ls-files --error-unmatch "$freeze_file" &>/dev/null 2>&1; then
+    die "FREEZE_LOCK not tracked in git: $freeze_file"
+  fi
+  
+  if git diff --quiet --cached "$freeze_file" 2>/dev/null && git diff --quiet "$freeze_file" 2>/dev/null; then
+    # Clean
+    return 0
+  else
+    die "FREEZE_LOCK is dirty. Commit with: git add $freeze_file && git commit -m 'chore: update freeze lock'"
+  fi
+}
 
 # ============================================================================
 # Configuration
@@ -39,9 +172,38 @@ fi
 mkdir -p "$RUN_DIR"
 
 # ============================================================================
+# PRE-FLIGHT: HARDENED ENFORCEMENT CHECKS
+# ============================================================================
+
+echo "=== PRE-FLIGHT: Integrity & Freeze Checks ==="
+
+# Check 1: Script self-integrity (no simulation patterns)
+check_script_integrity
+echo "✓ Script integrity verified (no simulation patterns)"
+
+# Check 2: Enforce FREEZE_LOCK alignment
+enforce_freeze_lock
+echo "✓ FREEZE_LOCK valid (no overrides allowed)"
+
+# Check 3: Require critical commands
+require_cmd "git"
+require_cmd "forge"
+require_cmd "grep"
+require_cmd "sha256sum"
+echo "✓ Required commands available"
+
+# Check 4: RUN_DIR is writable
+if ! touch "$RUN_DIR/.test_write" 2>/dev/null; then
+  die "RUN_DIR not writable: $RUN_DIR"
+fi
+rm -f "$RUN_DIR/.test_write"
+echo "✓ RUN_DIR is writable"
+
+# ============================================================================
 # PHASE 0: Baseline Establishment
 # ============================================================================
 
+echo ""
 echo "=== PHASE 0: Baseline Establishment ==="
 
 # Capture git baseline
@@ -65,24 +227,11 @@ echo "✓ PHASE 0 complete (baseline established)"
 echo ""
 echo "=== PHASE 1: Real Forge Authentication ==="
 
-if ! forge whoami > "$RUN_DIR/10_forge_whoami.txt" 2>&1; then
-  EXIT_CODE=$?
-  echo "$EXIT_CODE" > "$RUN_DIR/10_forge_whoami_exit.txt"
-  echo "STOP: forge whoami failed (exit code $EXIT_CODE)" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
+capture_cmd "$RUN_DIR/10_forge_whoami.txt" forge whoami
+scan_for_secrets "$RUN_DIR/10_forge_whoami.txt"
 echo "0" > "$RUN_DIR/10_forge_whoami_exit.txt"
 
-# Validate: exit code 0
-EXIT_CODE=$(cat "$RUN_DIR/10_forge_whoami_exit.txt")
-if [[ "$EXIT_CODE" != "0" ]]; then
-  echo "STOP: forge whoami exit code not 0: $EXIT_CODE" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
-
-echo "✓ PHASE 1 complete (forge authenticated)"
+echo "✓ PHASE 1 complete (forge authenticated, no secrets)"
 
 # ============================================================================
 # PHASE 2: Production Logs BEFORE User Refresh
@@ -91,23 +240,11 @@ echo "✓ PHASE 1 complete (forge authenticated)"
 echo ""
 echo "=== PHASE 2: Production Logs BEFORE ==="
 
-if ! forge logs --environment "$FORGE_ENV" --since "$LOG_SINCE" > "$RUN_DIR/20_logs_before.txt" 2>&1; then
-  EXIT_CODE=$?
-  echo "$EXIT_CODE" > "$RUN_DIR/20_logs_before_exit.txt"
-  echo "STOP: forge logs failed (exit code $EXIT_CODE)" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
+capture_cmd "$RUN_DIR/20_logs_before.txt" forge logs --environment "$FORGE_ENV" --since "$LOG_SINCE"
+scan_for_secrets "$RUN_DIR/20_logs_before.txt"
 echo "0" > "$RUN_DIR/20_logs_before_exit.txt"
 
-# Validate: logs not empty
-if [[ ! -s "$RUN_DIR/20_logs_before.txt" ]]; then
-  echo "STOP: forge logs produced empty output" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
-
-echo "✓ PHASE 2 complete (pre-refresh logs captured)"
+echo "✓ PHASE 2 complete (pre-refresh logs captured, no secrets)"
 
 # ============================================================================
 # PHASE 3: Manual Evidence Collection Instructions (NOT simulated)
@@ -206,23 +343,11 @@ echo "✓ Manual artifacts validated (both exist and non-empty)"
 echo ""
 echo "=== PHASE 4: Production Logs AFTER ==="
 
-if ! forge logs --environment "$FORGE_ENV" --since "$LOG_SINCE" > "$RUN_DIR/40_logs_after.txt" 2>&1; then
-  EXIT_CODE=$?
-  echo "$EXIT_CODE" > "$RUN_DIR/40_logs_after_exit.txt"
-  echo "STOP: forge logs (after) failed (exit code $EXIT_CODE)" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
+capture_cmd "$RUN_DIR/40_logs_after.txt" forge logs --environment "$FORGE_ENV" --since "$LOG_SINCE"
+scan_for_secrets "$RUN_DIR/40_logs_after.txt"
 echo "0" > "$RUN_DIR/40_logs_after_exit.txt"
 
-# Validate: logs not empty
-if [[ ! -s "$RUN_DIR/40_logs_after.txt" ]]; then
-  echo "STOP: forge logs (after) produced empty output" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
-
-echo "✓ PHASE 4 complete (post-refresh logs captured)"
+echo "✓ PHASE 4 complete (post-refresh logs captured, no secrets)"
 
 # ============================================================================
 # PHASE 5: Resolver Marker Extraction
@@ -257,23 +382,19 @@ echo "✓ PHASE 5 complete ($(wc -l < "$RUN_DIR/50_resolver_extract.txt") resolv
 echo ""
 echo "=== PHASE 5B: Console Marker Extraction ==="
 
+# Scan browser console for secrets before extracting
+scan_for_secrets "$RUN_DIR/31_browser_console.txt"
+
 # Extract UI_BUILD_IDENTITY_CONFIRMED or UI_ENTRY_RUNTIME_PROOF from browser console
 if grep -q '\[UI_BUILD_IDENTITY_CONFIRMED\]' "$RUN_DIR/31_browser_console.txt" || \
    grep -q '\[UI_ENTRY_RUNTIME_PROOF\]' "$RUN_DIR/31_browser_console.txt"; then
   (grep '\[UI_BUILD_IDENTITY_CONFIRMED\]' "$RUN_DIR/31_browser_console.txt" || true; \
    grep '\[UI_ENTRY_RUNTIME_PROOF\]' "$RUN_DIR/31_browser_console.txt" || true) > "$RUN_DIR/51_console_extract.txt"
 else
-  echo "STOP: No UI console markers found (need UI_BUILD_IDENTITY_CONFIRMED or UI_ENTRY_RUNTIME_PROOF)" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
+  die "No UI console markers found (need UI_BUILD_IDENTITY_CONFIRMED or UI_ENTRY_RUNTIME_PROOF)"
 fi
 
-# Validate: at least 1 line of console extraction
-if [[ ! -s "$RUN_DIR/51_console_extract.txt" ]]; then
-  echo "STOP: Console extraction returned 0 matches" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
+require_file "$RUN_DIR/51_console_extract.txt" 1
 
 echo "✓ PHASE 5B complete (console markers extracted)"
 
