@@ -139,19 +139,34 @@ while IFS= read -r line; do
   
   CLASSIFIED=0
   
-  # Check FirstTry-origin patterns
-  if echo "$line" | grep -Eiq "app\.[a-f0-9]{8,}\.js|[UI_|L0_DASHBOARD_RENDERED|FT_|/govGadget|forge\.cdn\.prod\.atlassian-dev\.net"; then
-    FIRSTTRY_ERRORS=$((FIRSTTRY_ERRORS + 1))
-    FIRSTTRY_LIST+=("$line")
+  # Check for Jira platform CSP inline-style error FIRST (very narrow, must match ALL three signatures)
+  # This must come before FirstTry check because the CSP error contains "firsttry.atlassian.net" in the allowlist domain
+  if echo "$line" | rg -F '_ctx_H4sIA' > /dev/null 2>&1 && \
+     echo "$line" | rg -F 'Applying inline style violates the following Content Security Policy directive' > /dev/null 2>&1 && \
+     echo "$line" | rg -F 'style-src' > /dev/null 2>&1; then
+    ALLOWLISTED_ERRORS=$((ALLOWLISTED_ERRORS + 1))
     CLASSIFIED=1
   fi
   
-  # Check allowlist patterns
+  # Check FirstTry-origin patterns (very specific to FirstTry code)
+  # Use rg with regex for more precise matching
+  if [ $CLASSIFIED -eq 0 ]; then
+    if echo "$line" | rg 'app\.[a-f0-9]{8,}\.js' > /dev/null 2>&1 || \
+       echo "$line" | rg '\[UI_' > /dev/null 2>&1 || \
+       echo "$line" | rg 'UI_DASHBOARD|FT_PROOF|/govGadget|L0_DASHBOARD' > /dev/null 2>&1 || \
+       echo "$line" | rg 'forge\.cdn\.prod\.atlassian-dev\.net' > /dev/null 2>&1; then
+      FIRSTTRY_ERRORS=$((FIRSTTRY_ERRORS + 1))
+      FIRSTTRY_LIST+=("$line")
+      CLASSIFIED=1
+    fi
+  fi
+  
+  # Check allowlist patterns (using rg -F for fixed strings)
   if [ $CLASSIFIED -eq 0 ]; then
     while IFS= read -r pattern; do
       [ -z "$pattern" ] && continue
       [[ "$pattern" =~ ^# ]] && continue  # skip comments
-      if echo "$line" | grep -Eiq "$pattern"; then
+      if echo "$line" | rg -F "$pattern" > /dev/null 2>&1; then
         ALLOWLISTED_ERRORS=$((ALLOWLISTED_ERRORS + 1))
         CLASSIFIED=1
         break
