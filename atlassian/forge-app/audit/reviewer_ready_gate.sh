@@ -80,7 +80,7 @@ fi
 
 echo -e "${GREEN}✓ Claims ledger verified (no MISSING statuses)${NC}"
 
-# Check 3: Mandatory Freeze Lock (unless FIRSTTRY_ALLOW_NO_FREEZE=1)
+# Check 3: Mandatory Freeze Lock (NO OVERRIDE ALLOWED)
 echo ""
 echo "========================================"
 echo "CHECK 3: Freeze Lock Verification"
@@ -90,6 +90,14 @@ FREEZE_LOCK="$AUDIT_DIR/marketplace_submission/FREEZE_LOCK.json"
 VERIFY_FREEZE="$AUDIT_DIR/verify_freeze_lock.sh"
 GENERATE_FREEZE="$AUDIT_DIR/generate_freeze_lock.sh"
 
+# HARDENED: Reject FIRSTTRY_ALLOW_NO_FREEZE entirely
+if [[ "${FIRSTTRY_ALLOW_NO_FREEZE:-0}" == "1" ]]; then
+    echo -e "${RED}FAIL: FREEZE_OVERRIDE_FORBIDDEN${NC}"
+    echo -e "${RED}FIRSTTRY_ALLOW_NO_FREEZE is forbidden in proof/CI mode.${NC}"
+    echo -e "${RED}Fix: Commit FREEZE_LOCK.json with: git add audit/marketplace_submission/FREEZE_LOCK.json && git commit -m 'chore: update freeze lock'${NC}"
+    exit 1
+fi
+
 # Enforce freeze generator presence
 if [[ ! -f "$GENERATE_FREEZE" ]] || [[ ! -x "$GENERATE_FREEZE" ]]; then
     echo -e "${RED}FAIL: FREEZE_GENERATOR_MISSING${NC}"
@@ -97,44 +105,47 @@ if [[ ! -f "$GENERATE_FREEZE" ]] || [[ ! -x "$GENERATE_FREEZE" ]]; then
     exit 1
 fi
 
-# Check if override is set
-if [[ "${FIRSTTRY_ALLOW_NO_FREEZE:-0}" == "1" ]]; then
-    echo -e "${YELLOW}⚠ WARN: FREEZE_SKIPPED_BY_OVERRIDE${NC}"
-    echo -e "${YELLOW}Freeze verification skipped due to FIRSTTRY_ALLOW_NO_FREEZE=1${NC}"
-else
-    # Freeze is MANDATORY - both files must exist
-    if [[ ! -f "$FREEZE_LOCK" ]]; then
-        echo -e "${RED}FAIL: FREEZE_LOCK_MISSING${NC}"
-        echo -e "${RED}Required: audit/marketplace_submission/FREEZE_LOCK.json${NC}"
-        exit 1
-    fi
-    
-    if [[ ! -f "$VERIFY_FREEZE" ]]; then
-        echo -e "${RED}FAIL: FREEZE_VERIFY_MISSING${NC}"
-        echo -e "${RED}Required: audit/verify_freeze_lock.sh${NC}"
-        exit 1
-    fi
-    
-    # Run the verifier
-    echo -e "${YELLOW}Running freeze verification...${NC}"
-    VERIFY_OUTPUT=$(bash "$VERIFY_FREEZE" 2>&1) || {
-        echo -e "${RED}FAIL: FREEZE_VERIFY_FAIL${NC}"
-        exit 1
-    }
-    
-    # Validate machine-readable proof output
-    if ! echo "$VERIFY_OUTPUT" | grep -q "COMPUTED_FROZEN_SHA="; then
-        echo -e "${RED}FAIL: FREEZE_PROOF_MISSING_COMPUTED${NC}"
-        exit 1
-    fi
-    if ! echo "$VERIFY_OUTPUT" | grep -q "LOCKED_FROZEN_SHA="; then
-        echo -e "${RED}FAIL: FREEZE_PROOF_MISSING_LOCKED${NC}"
-        exit 1
-    fi
-    
-    echo "$VERIFY_OUTPUT"
-    echo -e "${GREEN}✓ Freeze verification passed${NC}"
+# Check if FREEZE_LOCK exists
+if [[ ! -f "$FREEZE_LOCK" ]]; then
+    echo -e "${RED}FAIL: FREEZE_LOCK_MISSING${NC}"
+    echo -e "${RED}Required: audit/marketplace_submission/FREEZE_LOCK.json${NC}"
+    exit 1
 fi
+
+# HARDENED: Check if FREEZE_LOCK is dirty (modified or untracked)
+if ! git diff --quiet --cached "$FREEZE_LOCK" 2>/dev/null || ! git diff --quiet "$FREEZE_LOCK" 2>/dev/null; then
+    echo -e "${RED}FAIL: FREEZE_LOCK_DIRTY${NC}"
+    echo -e "${RED}FREEZE_LOCK is dirty. Commit with:${NC}"
+    echo -e "${RED}  git add $FREEZE_LOCK${NC}"
+    echo -e "${RED}  git commit -m 'chore: update freeze lock'${NC}"
+    exit 1
+fi
+
+if [[ ! -f "$VERIFY_FREEZE" ]]; then
+    echo -e "${RED}FAIL: FREEZE_VERIFY_MISSING${NC}"
+    echo -e "${RED}Required: audit/verify_freeze_lock.sh${NC}"
+    exit 1
+fi
+
+# Run the verifier
+echo -e "${YELLOW}Running freeze verification...${NC}"
+VERIFY_OUTPUT=$(bash "$VERIFY_FREEZE" 2>&1) || {
+    echo -e "${RED}FAIL: FREEZE_VERIFY_FAIL${NC}"
+    exit 1
+}
+
+# Validate machine-readable proof output
+if ! echo "$VERIFY_OUTPUT" | grep -q "COMPUTED_FROZEN_SHA="; then
+    echo -e "${RED}FAIL: FREEZE_PROOF_MISSING_COMPUTED${NC}"
+    exit 1
+fi
+if ! echo "$VERIFY_OUTPUT" | grep -q "LOCKED_FROZEN_SHA="; then
+    echo -e "${RED}FAIL: FREEZE_PROOF_MISSING_LOCKED${NC}"
+    exit 1
+fi
+
+echo "$VERIFY_OUTPUT"
+echo -e "${GREEN}✓ Freeze verification passed${NC}"
 
 # Check 3B: Manifest write-scope ban
 echo ""
