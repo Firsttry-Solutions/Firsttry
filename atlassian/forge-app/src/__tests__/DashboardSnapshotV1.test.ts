@@ -302,4 +302,15 @@ describe('DashboardSnapshotV1 Contract', () => {
       }
     });
   });
+
+  describe('Regression: UUID Import', () => {
+    it('getDashboardSnapshotV1.ts should not import uuid from crypto', () => {
+      const fs = require('fs');
+      const resolverPath = require.resolve('../resolvers/getDashboardSnapshotV1');
+      const resolverSource = fs.readFileSync(resolverPath, 'utf-8');
+      // Ensure uuid v4 is NOT imported from 'crypto' module
+      // This prevents reintroduction of the TypeScript compilation error
+      expect(resolverSource).not.toMatch(/from\s+['"]crypto['"]\s*;/);
+    });
+  });
 });
