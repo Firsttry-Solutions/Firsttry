@@ -147,6 +147,19 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
     // PROOF: Log mapped state before returning
     console.log('[UI_STATE_MAPPED]', { snapshotId, createdAtUtc, status: 'AVAILABLE', reason: 'extracted from payload' });
     
+    // PHASE C: Map build identity fields (prefer direct fields, fallback to metadata.provenance)
+    // - backend_git_sha (direct) → backendBuildSha
+    // - backend_build_time_utc (direct) → backendBuildTimeUtc
+    // - or metadata.provenance.buildShaAtCapture / capturedAtUtc if present
+    const backendSha = payload.backend_git_sha || 
+                       payload.metadata?.provenance?.buildShaAtCapture ||
+                       response.metadata?.provenance?.buildShaAtCapture;
+    const backendTime = payload.backend_build_time_utc || 
+                        payload.metadata?.provenance?.capturedAtUtc ||
+                        payload.metadata?.provenance?.createdAtUtc ||
+                        response.metadata?.provenance?.capturedAtUtc ||
+                        response.metadata?.provenance?.createdAtUtc;
+    
     return {
       status: "AVAILABLE",
       reasonCode: "PROOF_OK",
@@ -156,8 +169,8 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
       error: null,
       note: response.containsText || "Jira governance evidence snapshot (export for full details).",
       // Extract backend build identity fields from resolver response for fallback rendering
-      backendBuildSha: payload.backend_git_sha,
-      backendBuildTimeUtc: payload.backend_build_time_utc,
+      backendBuildSha: backendSha,
+      backendBuildTimeUtc: backendTime,
       backendAppVersion: payload.backend_app_version,
       metadata: response.metadata || {}
     };
