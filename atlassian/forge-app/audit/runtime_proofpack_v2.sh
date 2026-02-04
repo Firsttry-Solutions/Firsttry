@@ -94,6 +94,54 @@ scan_for_secrets() {
   done
 }
 
+# Require text file has minimum byte size
+require_min_bytes() {
+  local path="$1"
+  local min_bytes="$2"
+  require_file "$path" 1
+  local size
+  size=$(wc -c < "$path")
+  if (( size < min_bytes )); then
+    die "Manual artifact too small: $path (${size} bytes, need >= ${min_bytes})"
+  fi
+}
+
+# Validate PNG has minimum dimensions (reject 1x1 placeholders)
+require_png_min_dims() {
+  local path="$1"
+  local min_w="$2"
+  local min_h="$3"
+  require_file "$path" 1
+
+  # Use `file` first (fast path)
+  local f
+  f=$(file "$path" 2>/dev/null || true)
+
+  # Hard reject 1 x 1 explicitly (common placeholder)
+  if echo "$f" | grep -Eq '\b1\s*x\s*1\b'; then
+    die "Manual screenshot appears to be a placeholder (1x1 PNG): $path"
+  fi
+
+  # Parse IHDR width/height via python -c (NOT heredoc)
+  local dims
+  dims=$(python -c 'import struct; import sys
+p=sys.argv[1]
+b=open(p,"rb").read(24)
+if b[:8]!=b"\x89PNG\r\n\x1a\n": raise SystemExit(2)
+w,h=struct.unpack(">II", b[16:24])
+print(f"{w}x{h}")' "$path" 2>/dev/null || true)
+
+  if ! echo "$dims" | grep -Eq '^[0-9]+x[0-9]+$'; then
+    die "Manual screenshot PNG dims unreadable: $path"
+  fi
+
+  local w="${dims%x*}"
+  local h="${dims#*x}"
+  if (( w < min_w || h < min_h )); then
+    die "Manual screenshot too small: $path (${w}x${h}, need >= ${min_w}x${min_h})"
+  fi
+}
+
 # Self-integrity check: refuse to run if script contains simulation patterns
 check_script_integrity() {
   local script_file="$0"
@@ -308,33 +356,22 @@ echo "✓ PHASE 3 complete (manual instructions created)"
 echo ""
 echo "=== PHASE 3B: Validate Manual Artifacts ==="
 
-# Check 31_browser_console.txt exists and non-empty
-if [[ ! -f "$RUN_DIR/31_browser_console.txt" ]]; then
-  echo "STOP: 31_browser_console.txt does not exist" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
+# Validate browser console: exists, non-empty, meets minimum size
+require_min_bytes "$RUN_DIR/31_browser_console.txt" 2000
+
+# Scan console for secrets before proceeding
+scan_for_secrets "$RUN_DIR/31_browser_console.txt"
+
+# Validate console contains required UI markers
+if ! grep -q '\[UI_BUILD_IDENTITY_CONFIRMED\]' "$RUN_DIR/31_browser_console.txt" && \
+   ! grep -q '\[UI_ENTRY_RUNTIME_PROOF\]' "$RUN_DIR/31_browser_console.txt"; then
+  die "Browser console missing UI identity markers (need [UI_BUILD_IDENTITY_CONFIRMED] or [UI_ENTRY_RUNTIME_PROOF])"
 fi
 
-if [[ ! -s "$RUN_DIR/31_browser_console.txt" ]]; then
-  echo "STOP: 31_browser_console.txt is empty" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
+# Validate dashboard PNG: exists, non-empty, meets minimum dimensions (600x400)
+require_png_min_dims "$RUN_DIR/32_dashboard.png" 600 400
 
-# Check 32_dashboard.png exists and non-empty
-if [[ ! -f "$RUN_DIR/32_dashboard.png" ]]; then
-  echo "STOP: 32_dashboard.png does not exist" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
-
-if [[ ! -s "$RUN_DIR/32_dashboard.png" ]]; then
-  echo "STOP: 32_dashboard.png is empty" > "$RUN_DIR/STOP_REASON.txt"
-  cat "$RUN_DIR/STOP_REASON.txt" >&2
-  exit 1
-fi
-
-echo "✓ Manual artifacts validated (both exist and non-empty)"
+echo "✓ Manual artifacts validated (console >= 2KB, PNG >= 600x400, UI markers present)"
 
 # ============================================================================
 # PHASE 4: Production Logs AFTER User Refresh

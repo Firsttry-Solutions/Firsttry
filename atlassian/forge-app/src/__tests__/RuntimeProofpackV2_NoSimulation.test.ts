@@ -138,4 +138,35 @@ describe('RuntimeProofpackV2_NoSimulation', () => {
     expect(hasRequireFile).toBe(true);
   });
 
+  it('MUST enforce minimum artifact sizes and PNG dimensions', () => {
+    // Validate that hardened functions exist
+    const hasRequireMinBytes = scriptContent.includes('require_min_bytes()');
+    const hasRequirePngMinDims = scriptContent.includes('require_png_min_dims()');
+    
+    expect(hasRequireMinBytes).toBe(true);
+    expect(hasRequirePngMinDims).toBe(true);
+    
+    // Validate that these functions are used in PHASE 3B
+    const phase3bSection = scriptContent.match(
+      /=== PHASE 3B: Validate Manual Artifacts ===([\s\S]*?)=== PHASE [0-9]/
+    );
+    
+    if (phase3bSection) {
+      expect(phase3bSection[1]).toContain('require_min_bytes');
+      expect(phase3bSection[1]).toContain('require_png_min_dims');
+      expect(phase3bSection[1]).toContain('2000');  // minimum bytes for console
+      expect(phase3bSection[1]).toContain('600');   // minimum width for PNG
+      expect(phase3bSection[1]).toContain('400');   // minimum height for PNG
+    }
+  });
+
+  it('MUST explicitly reject 1x1 PNG placeholders', () => {
+    // Ensure the placeholder detection logic exists
+    const has1x1Rejection = scriptContent.includes('1x1 PNG');
+    const hasPlaceholderDetection = scriptContent.includes('placeholder');
+    
+    expect(has1x1Rejection).toBe(true);
+    expect(hasPlaceholderDetection).toBe(true);
+  });
+
 });
