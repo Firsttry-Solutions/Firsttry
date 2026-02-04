@@ -519,4 +519,42 @@ describe('UI Log Relay payload', () => {
       expect(state.createdAtUtc).toBe('2026-01-24T12:00:00Z');
     });
   });
+
+  describe('Build SHA and Build Time mapping', () => {
+    it('should extract backend_git_sha and backend_build_time_utc from AVAILABLE response payload', () => {
+      // Regression test: Ensure Build SHA and Build Time are NOT shown as NOT_AVAILABLE when resolver provides them
+      const response = {
+        status: 'AVAILABLE',
+        snapshotId: 'snap-12345',
+        createdAtUtc: '2026-01-28T10:00:00Z',
+        schemaVersion: 'L0',
+        backend_git_sha: 'abc1234567890def',
+        backend_build_time_utc: '2026-01-28T09:30:00Z',
+        backend_app_version: '2.14.0',
+      };
+
+      const state = mapL0SnapshotResponse(response);
+
+      expect(state.status).toBe('AVAILABLE');
+      expect(state.backendBuildSha).toBe('abc1234567890def');
+      expect(state.backendBuildTimeUtc).toBe('2026-01-28T09:30:00Z');
+      expect(state.backendAppVersion).toBe('2.14.0');
+    });
+
+    it('should handle missing backend build fields gracefully', () => {
+      // When resolver doesn't provide backend build fields, should still map to AVAILABLE
+      const response = {
+        status: 'AVAILABLE',
+        snapshotId: 'snap-12345',
+        createdAtUtc: '2026-01-28T10:00:00Z',
+        schemaVersion: 'L0',
+      };
+
+      const state = mapL0SnapshotResponse(response);
+
+      expect(state.status).toBe('AVAILABLE');
+      expect(state.backendBuildSha).toBeUndefined();
+      expect(state.backendBuildTimeUtc).toBeUndefined();
+    });
+  });
 });
