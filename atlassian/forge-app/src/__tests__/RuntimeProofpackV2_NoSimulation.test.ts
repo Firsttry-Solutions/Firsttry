@@ -169,4 +169,16 @@ describe('RuntimeProofpackV2_NoSimulation', () => {
     expect(hasPlaceholderDetection).toBe(true);
   });
 
+  it('MUST have CSP_VIOLATION fail-closed check for inline styles', () => {
+    // Ensure runtime proofpack detects CSP violations in browser console
+    const hasCspViolationCheck = scriptContent.includes('CSP_VIOLATION');
+    const hasInlineStyleDetection = scriptContent.includes('Applying inline style violates');
+    const hasStyleSrcDetection = scriptContent.includes('style-src');
+    
+    expect(hasCspViolationCheck).toBe(true);
+    expect(hasInlineStyleDetection).toBe(true);
+    expect(hasStyleSrcDetection).toBe(true);
+  });
+
 });
+

@@ -1128,3 +1128,383 @@ h1 {
     }
 }
 
+/* ========================================================================
+   CSP COMPLIANCE: HELPER CLASSES FOR DOM MUTATIONS & INLINE STYLES
+   Fix for: https://jira.atlassian.com/browse/CSP-INLINE-STYLES
+   ======================================================================== */
+
+/* Display control (replaces .style.display mutations) */
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+.flex-hidden {
+    display: flex !important;
+}
+
+.inline-block {
+    display: inline-block !important;
+}
+
+/* Visibility control */
+.invisible {
+    visibility: hidden !important;
+}
+
+.invisible-transparent {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Color states (replaces .style.color mutations) */
+.text-error {
+    color: #ae2a19 !important;
+}
+
+.text-success {
+    color: #216e4e !important;
+}
+
+.text-neutral {
+    color: #626f86 !important;
+}
+
+.text-primary {
+    color: #172b4d !important;
+}
+
+.text-secondary {
+    color: #44546f !important;
+}
+
+.text-muted {
+    color: #8590a2 !important;
+}
+
+.text-light {
+    color: #a3b0b9 !important;
+}
+
+/* Font styling */
+.font-bold {
+    font-weight: 600 !important;
+}
+
+.font-medium {
+    font-weight: 500 !important;
+}
+
+.font-normal {
+    font-weight: 400 !important;
+}
+
+.text-small {
+    font-size: 11px !important;
+}
+
+.text-label {
+    font-size: 12px !important;
+}
+
+.text-body {
+    font-size: 14px !important;
+}
+
+.text-monospace {
+    font-family: monospace !important;
+}
+
+/* Margin helpers (replaces .style.margin mutations) */
+.margin-top-sm {
+    margin-top: 8px !important;
+}
+
+.margin-top-md {
+    margin-top: 16px !important;
+}
+
+.margin-top-lg {
+    margin-top: 24px !important;
+}
+
+.margin-top-xl {
+    margin-top: 40px !important;
+}
+
+.margin-right-sm {
+    margin-right: 4px !important;
+}
+
+.margin-right-md {
+    margin-right: 8px !important;
+}
+
+.margin-bottom-xs {
+    margin-bottom: 4px !important;
+}
+
+.margin-bottom-sm {
+    margin-bottom: 8px !important;
+}
+
+.margin-bottom-md {
+    margin-bottom: 16px !important;
+}
+
+.margin-bottom-lg {
+    margin-bottom: 24px !important;
+}
+
+.margin-zero {
+    margin: 0 !important;
+}
+
+/* Padding helpers (replaces .style.padding mutations) */
+.padding-sm {
+    padding: 4px !important;
+}
+
+.padding-md {
+    padding: 12px !important;
+}
+
+.padding-lg {
+    padding: 16px !important;
+}
+
+/* Border radius (replaces .style.borderRadius mutations) */
+.rounded-sm {
+    border-radius: 3px !important;
+}
+
+.rounded-md {
+    border-radius: 4px !important;
+}
+
+.rounded-lg {
+    border-radius: 8px !important;
+}
+
+/* Box shadow (replaces .style.boxShadow mutations) */
+.shadow-subtle {
+    box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13) !important;
+}
+
+.shadow-card {
+    box-shadow: 0 2px 4px rgba(9, 30, 66, 0.06) !important;
+}
+
+/* Background colors (replaces .style.background mutations) */
+.bg-white {
+    background-color: #ffffff !important;
+}
+
+.bg-subtle {
+    background-color: #f5f6f7 !important;
+}
+
+.bg-page {
+    background-color: #f8f9fa !important;
+}
+
+.bg-success {
+    background-color: #dffbf0 !important;
+}
+
+.bg-warning {
+    background-color: #fff7d6 !important;
+}
+
+.bg-error {
+    background-color: #ffeceb !important;
+}
+
+.bg-info {
+    background-color: #eaf1ff !important;
+}
+
+/* Border styles (replaces .style.border mutations) */
+.border-subtle {
+    border: 1px solid #dfe1e6 !important;
+}
+
+.border-bottom-subtle {
+    border-bottom: 1px solid #dfe1e6 !important;
+}
+
+/* Opacity/Cursor states (replaces .style.opacity and .style.cursor mutations) */
+.disabled-state {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+}
+
+.enabled-state {
+    opacity: 1 !important;
+    cursor: pointer !important;
+}
+
+.cursor-pointer {
+    cursor: pointer !important;
+}
+
+.cursor-not-allowed {
+    cursor: not-allowed !important;
+}
+
+/* Position helpers for invisible copy textarea trick (replaces .style.position mutations) */
+.offscreen {
+    position: fixed !important;
+    left: -9999px !important;
+    top: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Flexbox helpers for inline style={{...}} React components */
+.flex {
+    display: flex !important;
+}
+
+.flex-col {
+    flex-direction: column !important;
+}
+
+.gap-sm {
+    gap: 8px !important;
+}
+
+.gap-md {
+    gap: 16px !important;
+}
+
+.items-center {
+    align-items: center !important;
+}
+
+.justify-between {
+    justify-content: space-between !important;
+}
+
+.justify-center {
+    justify-content: center !important;
+}
+
+/* Table styling (replaces inline style="..." in table templates) */
+.table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border: 1px solid #dfe1e6 !important;
+}
+
+.table-row {
+    border-bottom: 1px solid #dfe1e6 !important;
+}
+
+.table-header-row {
+    background: #f5f6f7 !important;
+    border-bottom: 1px solid #dfe1e6 !important;
+}
+
+.table-header {
+    padding: 12px !important;
+    text-align: left !important;
+    font-weight: 600 !important;
+    color: #172b4d !important;
+    font-size: 13px !important;
+}
+
+.table-cell {
+    padding: 12px !important;
+    color: #172b4d !important;
+    font-size: 13px !important;
+}
+
+/* Card styling (replaces inline style="..." in card panels) */
+.card {
+    background: #ffffff !important;
+    border: 1px solid #dfe1e6 !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13) !important;
+}
+
+.card-header {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #172b4d !important;
+    margin-bottom: 16px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid #dfe1e6 !important;
+}
+
+.card-content {
+    padding: 12px !important;
+    background: #f1f2f4 !important;
+    border-radius: 4px !important;
+    margin-top: 8px !important;
+    font-size: 13px !important;
+    color: #44546f !important;
+    line-height: 1.6 !important;
+}
+
+/* Admin page styling fixes */
+.event-card {
+    border-left: 4px solid transparent !important;
+}
+
+.event-card-critical {
+    border-left-color: #ae2a19 !important;
+}
+
+.event-card-high {
+    border-left-color: #f87462 !important;
+}
+
+.event-card-medium {
+    border-left-color: #f5cd47 !important;
+}
+
+/* Metrics panel (replaces inline style="..." in metrics section) */
+.metrics-panel {
+    margin-top: 16px !important;
+    padding: 12px !important;
+    background: #f5f6f7 !important;
+    border-radius: 4px !important;
+    border: 1px solid #dfe1e6 !important;
+}
+
+.metric-row {
+    display: flex !important;
+    gap: 16px !important;
+    margin-bottom: 12px !important;
+}
+
+.metric-field {
+    flex: 1 !important;
+}
+
+.metric-label {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #8590a2 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+}
+
+.metric-value {
+    font-size: 14px !important;
+    color: #172b4d !important;
+    font-weight: 500 !important;
+}
+
+.metric-hint {
+    font-size: 11px !important;
+    color: #8590a2 !important;
+    margin-top: 4px !important;
+}
+

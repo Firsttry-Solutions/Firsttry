@@ -209,6 +209,18 @@ fi
 
 echo -e "${GREEN}✓ Deterministic tests passed${NC}"
 
+echo ""
+echo "========================================"
+echo "CHECK 4C: CSP Regression Gate"
+echo "========================================"
+
+if ! npm test -- CSP_NoInlineStyleAttributes; then
+    echo -e "${RED}FAIL: CSP_VIOLATION_DETECTED${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ CHECK CSP: No inline styles detected${NC}"
+
 # Check 5: Run npm audit (check for HIGH or CRITICAL without waiver)
 echo ""
 echo "========================================"
@@ -217,11 +229,17 @@ echo "========================================"
 
 AUDIT_JSON=$(npm audit --json 2>/dev/null || echo "{}")
 
-# Structural jq-based parsing
-HIGH_COUNT=$(echo "$AUDIT_JSON" | jq '[.. | objects | select(.severity? == "high")] | length' 2>/dev/null || echo 0)
-CRITICAL_COUNT=$(echo "$AUDIT_JSON" | jq '[.. | objects | select(.severity? == "critical")] | length' 2>/dev/null || echo 0)
+# Structural jq-based parsing - ensure numeric output with fallback to 0
+HIGH_COUNT=$(echo "$AUDIT_JSON" | jq -r '[.. | objects | select(.severity? == "high")] | length' 2>/dev/null || echo "0")
+HIGH_COUNT=${HIGH_COUNT:-0}
+CRITICAL_COUNT=$(echo "$AUDIT_JSON" | jq -r '[.. | objects | select(.severity? == "critical")] | length' 2>/dev/null || echo "0")
+CRITICAL_COUNT=${CRITICAL_COUNT:-0}
 
-if [[ $((HIGH_COUNT + CRITICAL_COUNT)) -gt 0 ]]; then
+# Ensure values are numeric
+if ! [[ "$HIGH_COUNT" =~ ^[0-9]+$ ]]; then HIGH_COUNT=0; fi
+if ! [[ "$CRITICAL_COUNT" =~ ^[0-9]+$ ]]; then CRITICAL_COUNT=0; fi
+
+if (( HIGH_COUNT + CRITICAL_COUNT > 0 )); then
     WAIVER="$AUDIT_DIR/NPM_AUDIT_WAIVER.md"
     if [[ ! -f "$WAIVER" ]]; then
         echo -e "${RED}FAIL: AUDIT_FAIL_NEEDS_WAIVER${NC}"
