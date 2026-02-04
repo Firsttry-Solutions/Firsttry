@@ -368,6 +368,11 @@ if ! grep -q '\[UI_BUILD_IDENTITY_CONFIRMED\]' "$RUN_DIR/31_browser_console.txt"
   die "Browser console missing UI identity markers (need [UI_BUILD_IDENTITY_CONFIRMED] or [UI_ENTRY_RUNTIME_PROOF])"
 fi
 
+# CSP_VIOLATION_CHECK: Fail-closed if Jira reports CSP inline style block
+if grep -q 'Applying inline style violates\|Content Security Policy directive.*style-src' "$RUN_DIR/31_browser_console.txt"; then
+  die "CSP_VIOLATION: inline style blocked by host CSP. Fix gadget UI to avoid inline styles."
+fi
+
 # Validate dashboard PNG: exists, non-empty, meets minimum dimensions (600x400)
 require_png_min_dims "$RUN_DIR/32_dashboard.png" 600 400
 
