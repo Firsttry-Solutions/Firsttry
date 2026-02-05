@@ -26,12 +26,6 @@ modules:
         function: get-status-snapshot-fn
       thumbnail: https://www.atlassian.com/favicon.ico
 
-  # PHASE 6: Admin page for Evidence Ledger and Drift History (ENTERPRISE R2)
-  jira:adminPage:
-    - key: phase6-evidence-ledger-admin
-      title: "FirstTry Evidence Ledger"
-      function: phase6-admin-page-fn
-
   # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
   function:
     - key: ftBackboneScheduled
