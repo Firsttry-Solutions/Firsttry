@@ -595,6 +595,16 @@ function renderIdentityProofPanel(data: GovernanceStatusV1) {
         document.documentElement.setAttribute('data-ft-identity-error', 'invalid-time');
     }
     
+    // App Version: prefer backend, fallback to UI APP_VERSION (from package.json)
+    let appVersion = data.app_version || UI_APP_VERSION;
+    if (isPlaceholder(appVersion)) {
+        appVersion = UI_APP_VERSION;
+    }
+    // Validate semver format (e.g., "2.14.0")
+    if (!appVersion || !/^\d+\.\d+\.\d+/.test(appVersion)) {
+        appVersion = UI_APP_VERSION;
+    }
+    
     // Backend Build SHA: never render placeholder
     let backendBuildSha = data.backend_build_sha || "";
     if (isPlaceholder(backendBuildSha)) {
@@ -618,6 +628,7 @@ function renderIdentityProofPanel(data: GovernanceStatusV1) {
     setText('proof-schema-version', schemaVersion);
     setText('proof-correlation-id', correlationId);
     setText('proof-identity-source', identitySource);
+    setText('proof-app-version', appVersion);
     setText('proof-ui-build-sha', uiBuildSha);
     setText('proof-ui-build-time', uiBuildTime);
     setText('proof-backend-build-sha', backendBuildSha);
