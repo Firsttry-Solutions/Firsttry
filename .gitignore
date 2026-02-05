@@ -184,3 +184,4 @@ e2e/test-results/
 
 # Local-only proof artifacts (determinism safeguard)
 proof_artifacts/
+/test-results/
