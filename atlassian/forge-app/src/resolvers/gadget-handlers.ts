@@ -254,6 +254,20 @@ export async function handler(req: any) {
       ts: new Date().toISOString()
     })
   );
+  
+  // ENTERPRISE PROOF: Add deterministic runtime proof marker for E2E validation
+  // This log enables E2E tests to verify backend resolver wiring and build identity
+  // NO PII: ui_req_id is sanitized, no tokens/cookies/emails
+  console.log(
+    JSON.stringify({
+      marker: "FT_RESOLVER_RUNTIME_PROOF",
+      resolverName,
+      backendBuildSha: BACKEND_BUILD_SHA,
+      requestId: ui_req_id,
+      correlationId,
+      timestamp: new Date().toISOString()
+    })
+  );
 
   // Enforce allowlist
   if (!(resolverName in ALLOWED_RESOLVERS)) {

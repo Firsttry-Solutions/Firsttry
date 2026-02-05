@@ -24,6 +24,13 @@ export type FtDashErrorV1 = {
   details?: unknown;
 };
 
+// Dashboard context for enterprise proof pack (non-PII)
+export type FtDashboardContext = {
+  dashboardId: string;           // Jira dashboard ID (e.g., "10102")
+  tenantHashPrefix: string;      // First 12 chars of sha256(cloudId)
+  dashboardPath: string;         // Dashboard path (e.g., "/jira/dashboards/10102")
+};
+
 export interface FtDashEnvelopeV1<T = unknown> {
   envelopeKind: typeof FT_DASH_ENVELOPE_MARKER_V1;
   schemaVersion: 'v1';
@@ -31,13 +38,14 @@ export interface FtDashEnvelopeV1<T = unknown> {
   status: FtDashStatus;
   data?: T;
   error?: FtDashErrorV1;
+  dashboardContext?: FtDashboardContext;  // Enterprise: dashboard-scoped evidence
 }
 
 /**
  * Success envelope - wraps valid dashboard state
  * WIRE-LEVEL FIX: Do NOT include error field. Use undefined so JSON.stringify omits it.
  */
-export function okEnvelope<T>(data: T): FtDashEnvelopeV1<T> {
+export function okEnvelope<T>(data: T, dashboardContext?: FtDashboardContext): FtDashEnvelopeV1<T> {
   return {
     envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
     schemaVersion: 'v1',
@@ -45,6 +53,7 @@ export function okEnvelope<T>(data: T): FtDashEnvelopeV1<T> {
     status: "AVAILABLE",
     data,
     error: undefined,  // Omitted in JSON serialization
+    dashboardContext,
   } as any as FtDashEnvelopeV1<T>;
 }
 
@@ -55,7 +64,8 @@ export function okEnvelope<T>(data: T): FtDashEnvelopeV1<T> {
 export function notAvailableEnvelope(
   code: string,
   message: string,
-  details?: unknown
+  details?: unknown,
+  dashboardContext?: FtDashboardContext
 ): FtDashEnvelopeV1<null> {
   return {
     envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
@@ -64,6 +74,7 @@ export function notAvailableEnvelope(
     status: "NOT_AVAILABLE",
     data: undefined,  // Omitted in JSON serialization
     error: { code, message, details },
+    dashboardContext,
   } as any as FtDashEnvelopeV1<null>;
 }
 
@@ -74,7 +85,8 @@ export function notAvailableEnvelope(
 export function hardErrorEnvelope(
   code: string,
   message: string,
-  details?: unknown
+  details?: unknown,
+  dashboardContext?: FtDashboardContext
 ): FtDashEnvelopeV1<null> {
   return {
     envelopeKind: FT_DASH_ENVELOPE_MARKER_V1,
@@ -83,6 +95,7 @@ export function hardErrorEnvelope(
     status: "HARD_ERROR",
     data: undefined,  // Omitted in JSON serialization
     error: { code, message, details },
+    dashboardContext,
   } as any as FtDashEnvelopeV1<null>;
 }
 

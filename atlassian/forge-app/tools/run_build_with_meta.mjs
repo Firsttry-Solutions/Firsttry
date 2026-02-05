@@ -29,12 +29,33 @@ console.log(`✅ Loaded build metadata:`);
 console.log(`   FT_BUILD_SHA=${meta.FT_BUILD_SHA}`);
 console.log(`   FT_BUILD_TIME_UTC=${meta.FT_BUILD_TIME_UTC}`);
 
+// ENTERPRISE PROOF PACK: Create prebuild snapshot if RUN_DIR is set
+const RUN_DIR = process.env.RUN_DIR || '';
+let prebuildSnapshotFile = '';
+if (RUN_DIR) {
+  prebuildSnapshotFile = path.join(RUN_DIR, '18_prebuild_tracked_status.txt');
+  try {
+    const prebuildStatus = execSync('git status --porcelain=v1 -uno', { encoding: 'utf8' });
+    fs.writeFileSync(prebuildSnapshotFile, prebuildStatus);
+    console.log(`✅ Created prebuild snapshot: ${prebuildSnapshotFile}`);
+  } catch (e) {
+    console.warn(`⚠️  Failed to create prebuild snapshot: ${e.message}`);
+  }
+}
+
 // Run build:gadget with environment variables
 const env = {
   ...process.env,
   FT_BUILD_SHA: meta.FT_BUILD_SHA,
   FT_BUILD_TIME_UTC: meta.FT_BUILD_TIME_UTC,
 };
+
+// Export prebuild snapshot file path if available
+if (prebuildSnapshotFile) {
+  env.FT_PREBUILD_TRACKED_STATUS_FILE = prebuildSnapshotFile;
+  env.RUN_DIR = RUN_DIR;
+  console.log(`✅ Exported FT_PREBUILD_TRACKED_STATUS_FILE=${prebuildSnapshotFile}`);
+}
 
 try {
   console.log(`\n📦 Running: npm run build:gadget`);

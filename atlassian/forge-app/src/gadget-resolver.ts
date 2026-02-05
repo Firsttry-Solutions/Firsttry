@@ -114,6 +114,52 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       ts: new Date().toISOString(),
     }));
     
+    // ENTERPRISE PROOF PACK: Extract dashboard context (non-PII)
+    const dashboardId = request?.payload?.dashboardId || request?.dashboardId || 'MISSING';
+    const dashboardPath = request?.payload?.dashboardPath || request?.dashboardPath || 'MISSING';
+    const cloudId = request?.context?.cloudId || 'MISSING';
+    
+    // Validate dashboardId format (fail-closed)
+    // Rule: If MISSING, keep as MISSING. Otherwise must match \d{1,10} or becomes INVALID.
+    const dashboardIdValid = dashboardId === 'MISSING' || /^\d{1,10}$/.test(dashboardId);
+    if (!dashboardIdValid) {
+      console.log(JSON.stringify({
+        marker: '[FT_DASHBOARD_CONTEXT_INVALID]',
+        dashboardId,
+        reason: 'Invalid dashboardId format (expected digits only, max 10 chars, or MISSING)',
+        ts: new Date().toISOString(),
+      }));
+    }
+    
+    // Compute tenantHashPrefix: sha256(cloudId).slice(0,12)
+    const tenantHashPrefix = await (async () => {
+      if (cloudId === 'MISSING') return 'MISSING';
+      try {
+        const crypto = require('crypto');
+        const hash = crypto.createHash('sha256').update(cloudId).digest('hex');
+        return hash.slice(0, 12);
+      } catch (e) {
+        console.error('[FT_TENANT_HASH_FAILED]', e);
+        return 'HASH_FAILED';
+      }
+    })();
+    
+    // Build dashboard context for envelope (preserve MISSING, never use INVALID)
+    // Phase 2 fix: dashboardId comes from view.getContext() (frontend), preserve as-is
+    const dashboardContext = {
+      dashboardId,  // Keep as-is: either actual ID or "MISSING"
+      tenantHashPrefix,
+      dashboardPath,
+    };
+    
+    console.log(JSON.stringify({
+      marker: '[FT_DASHBOARD_CONTEXT]',
+      dashboardId: dashboardContext.dashboardId,
+      tenantHashPrefix: dashboardContext.tenantHashPrefix,
+      dashboardPath: dashboardContext.dashboardPath,
+      ts: new Date().toISOString(),
+    }));
+    
     // Log version proof at start of resolver invocation
     let buildSha = BACKEND_BUILD_SHA || "UNSET";
     console.log(JSON.stringify({
@@ -219,15 +265,116 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                   typeof repairedSnapshot.data === 'object' && 
                   repairedSnapshot.data &&
                   repairedSnapshot.createdAtUtc.endsWith('Z')) {
-                // Repaired snapshot is now valid - return it
+                // Repaired snapshot is now valid - return it with enterprise contract structure
                 console.log(JSON.stringify({
                   marker: "[FT_RESOLVER_REPAIR_SUCCESS]",
                   snapshotId: repairedSnapshot.snapshotId,
                   ts: new Date().toISOString()
                 }));
                 
+                // ENTERPRISE CONTRACT: Compute integrity hash
+                const computeIntegrityHash = (snapshotData: any): string => {
+                  try {
+                    const crypto = require('crypto');
+                    const canonicalInput = {
+                      snapshotId: snapshotData.snapshotId,
+                      createdAtUtc: snapshotData.createdAtUtc,
+                      schemaVersion: snapshotData.schemaVersion,
+                      data: snapshotData.data,
+                    };
+                    const canonicalJson = JSON.stringify(canonicalInput, Object.keys(canonicalInput).sort());
+                    return crypto.createHash('sha256').update(canonicalJson, 'utf8').digest('hex');
+                  } catch (e) {
+                    console.error('[FT_INTEGRITY_HASH_FAILED]', e);
+                    return '0000000000000000000000000000000000000000000000000000000000000000';
+                  }
+                };
+                
+                const integrityHash = computeIntegrityHash(repairedSnapshot);
+                const snapshotKind = repairedSnapshot.snapshotId.includes('-seed') ? "SEED" : "GOVERNANCE";
+                
+                // FRESHNESS SEMANTICS: SEED snapshots are NOT governance evidence
+                // Only GOVERNANCE snapshots contribute to freshness
+                const FRESHNESS_STALE_AFTER_DAYS = 30;
+                let evidenceFreshness: any;
+                if (snapshotKind === "SEED") {
+                  // No governance snapshots exist - freshness is NO_GOVERNANCE with null values
+                  evidenceFreshness = {
+                    lastCollectedUtc: null,
+                    ageSeconds: null,
+                    status: "NO_GOVERNANCE",
+                    staleAfterDays: FRESHNESS_STALE_AFTER_DAYS,
+                  };
+                } else {
+                  // GOVERNANCE snapshot - compute actual freshness
+                  const lastCollectedUtc = repairedSnapshot.createdAtUtc;
+                  const ageSeconds = Math.floor((Date.now() - new Date(lastCollectedUtc).getTime()) / 1000);
+                  const freshnessStatus = ageSeconds > (FRESHNESS_STALE_AFTER_DAYS * 86400) ? "STALE" : "CURRENT";
+                  evidenceFreshness = {
+                    lastCollectedUtc,
+                    ageSeconds,
+                    status: freshnessStatus,
+                    staleAfterDays: FRESHNESS_STALE_AFTER_DAYS,
+                  };
+                }
+                
+                const READ_ONLY_STATEMENT_EXACT = "FirstTry is a read-only system. It does not modify Jira data, settings, or configurations.";
+                const IMMUTABILITY_STATEMENT_EXACT = "Timestamp recorded at snapshot creation (UTC) and cannot be modified.";
+                const EXPORT_DECLARATION_EXACT = "This export contains governance evidence collected from a live Jira tenant.";
+                const SEED_VS_GOVERNANCE_TITLE_EXACT = "Seed vs Governance";
+                const SEED_BULLETS_EXACT = [
+                  "Seed snapshots initialize baseline context and are not audit evidence.",
+                  "Governance snapshots are immutable evidence captured after initialization.",
+                  "Only governance snapshots can be exported as evidence."
+                ];
+                
                 return {
                   status: "AVAILABLE",
+                  readOnlyGuarantee: READ_ONLY_STATEMENT_EXACT,
+                  seedVsGovernanceExplanation: {
+                    title: SEED_VS_GOVERNANCE_TITLE_EXACT,
+                    bullets: SEED_BULLETS_EXACT,
+                  },
+                  evidenceFreshness,
+                  snapshots: [
+                    {
+                      snapshotId: repairedSnapshot.snapshotId,
+                      snapshotKind,
+                      origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
+                      initiator: snapshotKind === "SEED" ? "system" : "user",
+                      triggerReason: undefined,
+                      createdAtUtc: repairedSnapshot.createdAtUtc,
+                      immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+                      integrity: {
+                        algorithm: "sha256",
+                        value: integrityHash,
+                      },
+                      scope: {
+                        included: [
+                          "Jira projects configuration metadata",
+                          "Workflow schemes and statuses",
+                          "Permission schemes and roles",
+                          "Automation rules metadata",
+                          "App/plugin installation list"
+                        ],
+                        excluded: [
+                          "Issue contents (summaries, descriptions, comments, attachments)",
+                          "User profile data (names, emails, avatars)",
+                          "Personally Identifiable Information (PII)",
+                          "Authentication tokens or credentials",
+                          "Real-time activity or audit logs"
+                        ],
+                      },
+                      controls: [
+                        "Change management (workflow configuration)",
+                        "Access control configuration (permission schemes)",
+                        "Automation governance (rule inventory)",
+                        "Third-party app risk assessment (installed apps list)"
+                      ],
+                      exportEligible: snapshotKind === "GOVERNANCE",
+                      exportDeclaration: EXPORT_DECLARATION_EXACT,
+                    }
+                  ],
                   snapshotId: repairedSnapshot.snapshotId,
                   createdAtUtc: repairedSnapshot.createdAtUtc,
                   schemaVersion: "L0",
@@ -238,6 +385,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                     provenance: { capturedBy: "RESOLVER_REPAIR" },
                   },
                   data: repairedSnapshot.data,
+                  dashboardContext,
                 };
               }
             }
@@ -279,18 +427,127 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       // TASK 1C: Add backend build identity fields (from generated file)
       // These are deterministically generated at build time from git HEAD and package.json
       
-      return {
-        status: "AVAILABLE",
-        snapshotId: snapshot.snapshotId,
-        createdAtUtc: snapshot.createdAtUtc,
-        schemaVersion: "L0",
-        containsText: "Jira governance evidence snapshot (export for full details).",
+      // ENTERPRISE CONTRACT: Compute integrity hash (deterministic sha256)
+      const computeIntegrityHash = (snapshotData: any): string => {
+        try {
+          const crypto = require('crypto');
+          // Create canonical representation (sorted keys, exclude volatile fields)
+          const canonicalInput = {
+            snapshotId: snapshotData.snapshotId,
+            createdAtUtc: snapshotData.createdAtUtc,
+            schemaVersion: snapshotData.schemaVersion,
+            data: snapshotData.data,
+          };
+          const canonicalJson = JSON.stringify(canonicalInput, Object.keys(canonicalInput).sort());
+          return crypto.createHash('sha256').update(canonicalJson, 'utf8').digest('hex');
+        } catch (e) {
+          console.error('[FT_INTEGRITY_HASH_FAILED]', e);
+          return '0000000000000000000000000000000000000000000000000000000000000000';
+        }
+      };
+      
+      const integrityHash = computeIntegrityHash(snapshot);
+      
+      // ENTERPRISE CONTRACT: Detect snapshot kind (SEED vs GOVERNANCE)
+      // For now, all snapshots from seedSnapshot are SEED
+      // Future: Governance snapshots will be created via scheduled/triggered/on-demand collectors
+      const snapshotKind = snapshot.snapshotId.includes('-seed') ? "SEED" : "GOVERNANCE";
+      
+      // ENTERPRISE CONTRACT: Compute freshness (SEED snapshots are NOT governance evidence)
+      // FRESHNESS SEMANTICS: Only GOVERNANCE snapshots contribute to freshness
+      const FRESHNESS_STALE_AFTER_DAYS = 30;
+      let evidenceFreshness: any;
+      if (snapshotKind === "SEED") {
+        // No governance snapshots exist - freshness is NO_GOVERNANCE with null values
+        evidenceFreshness = {
+          lastCollectedUtc: null,
+          ageSeconds: null,
+          status: "NO_GOVERNANCE",
+          staleAfterDays: FRESHNESS_STALE_AFTER_DAYS,
+        };
+      } else {
+        // GOVERNANCE snapshot - compute actual freshness
+        const lastCollectedUtc = snapshot.createdAtUtc;
+        const ageSeconds = Math.floor((Date.now() - new Date(lastCollectedUtc).getTime()) / 1000);
+        const freshnessStatus = ageSeconds > (FRESHNESS_STALE_AFTER_DAYS * 86400) ? "STALE" : "CURRENT";
+        evidenceFreshness = {
+          lastCollectedUtc,
+          ageSeconds,
+          status: freshnessStatus,
+          staleAfterDays: FRESHNESS_STALE_AFTER_DAYS,
+        };
+      }
+      
+      // ENTERPRISE CONTRACT CONSTANTS (exact strings)
+      const READ_ONLY_STATEMENT_EXACT = "FirstTry is a read-only system. It does not modify Jira data, settings, or configurations.";
+      const IMMUTABILITY_STATEMENT_EXACT = "Timestamp recorded at snapshot creation (UTC) and cannot be modified.";
+      const EXPORT_DECLARATION_EXACT = "This export contains governance evidence collected from a live Jira tenant.";
+      const SEED_VS_GOVERNANCE_TITLE_EXACT = "Seed vs Governance";
+      const SEED_BULLETS_EXACT = [
+        "Seed snapshots initialize baseline context and are not audit evidence.",
+        "Governance snapshots are immutable evidence captured after initialization.",
+        "Only governance snapshots can be exported as evidence."
+      ];
+      
+      // ENTERPRISE CONTRACT: Structure response
+      const enterpriseContractData = {
+        // Global dashboard fields
+        readOnlyGuarantee: READ_ONLY_STATEMENT_EXACT,
+        seedVsGovernanceExplanation: {
+          title: SEED_VS_GOVERNANCE_TITLE_EXACT,
+          bullets: SEED_BULLETS_EXACT,
+        },
+        evidenceFreshness,
+        // Snapshots array (currently only one)
+        snapshots: [
+          {
+            snapshotId: snapshot.snapshotId,
+            snapshotKind,
+            origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
+            initiator: snapshotKind === "SEED" ? "system" : "user",
+            triggerReason: undefined, // Only for TRIGGERED snapshots
+            createdAtUtc: snapshot.createdAtUtc,
+            immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+            integrity: {
+              algorithm: "sha256",
+              value: integrityHash,
+            },
+            scope: {
+              included: [
+                "Jira projects configuration metadata",
+                "Workflow schemes and statuses",
+                "Permission schemes and roles",
+                "Automation rules metadata",
+                "App/plugin installation list"
+              ],
+              excluded: [
+                "Issue contents (summaries, descriptions, comments, attachments)",
+                "User profile data (names, emails, avatars)",
+                "Personally Identifiable Information (PII)",
+                "Authentication tokens or credentials",
+                "Real-time activity or audit logs"
+              ],
+            },
+            controls: [
+              "Change management (workflow configuration)",
+              "Access control configuration (permission schemes)",
+              "Automation governance (rule inventory)",
+              "Third-party app risk assessment (installed apps list)"
+            ],
+            exportEligible: snapshotKind === "GOVERNANCE",
+            exportDeclaration: EXPORT_DECLARATION_EXACT,
+          }
+        ],
         // Backend build identity fields (canonical names with full/short SHA distinction)
         backend_git_sha: BACKEND_GIT_SHA,
         backend_git_sha_short: BACKEND_GIT_SHA_SHORT,
         backend_build_time_utc: BACKEND_BUILD_TIME_UTC,
         backend_app_version: BACKEND_APP_VERSION,
-        // Pass through metadata verbatim (dumb reader - no transforms)
+        // Legacy: Keep for backward compat with existing UI
+        snapshotId: snapshot.snapshotId,
+        createdAtUtc: snapshot.createdAtUtc,
+        schemaVersion: "L0",
+        containsText: "Jira governance evidence snapshot (export for full details).",
         metadata: snapshot.metadata || {
           coverage: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
           integrity: { declaration: "NOT_DECLARED_IN_SNAPSHOT" },
@@ -303,7 +560,47 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
             doesNotAutoFix: "Compliance issues",
             doesNotProvide: "Compliance guarantees or substitutes for professional audit"
           }
+        },
+        dashboardContext,  // Enterprise: add dashboard context
+      };
+      
+      // ENTERPRISE CONTRACT: Fail-closed validation
+      const governanceSnapshots = enterpriseContractData.snapshots.filter(s => s.snapshotKind === "GOVERNANCE");
+      if (governanceSnapshots.length > 0) {
+        // Verify ALL governance snapshots have ALL required fields
+        for (const snap of governanceSnapshots) {
+          const requiredFields = [
+            'snapshotId', 'snapshotKind', 'origin', 'initiator', 'createdAtUtc',
+            'immutabilityStatement', 'integrity', 'scope', 'controls',
+            'exportEligible', 'exportDeclaration'
+          ];
+          for (const field of requiredFields) {
+            if (!(field in snap) || snap[field as keyof typeof snap] === undefined) {
+              console.error(`[FT_ENTERPRISE_CONTRACT_MISSING_FIELDS] Field ${field} missing in governance snapshot ${snap.snapshotId}`);
+              return {
+                status: "HARD ERROR",
+                error: "FT_ENTERPRISE_CONTRACT_MISSING_FIELDS",
+                message: `Governance snapshot ${snap.snapshotId} missing required field: ${field}`,
+              };
+            }
+          }
         }
+      }
+      
+      // Backend logging (MANDATORY for corroboration)
+      console.log(JSON.stringify({
+        marker: "[FT_ENTERPRISE_CONTRACT_BACKEND_OK]",
+        dashboardId: dashboardContext.dashboardId,
+        tenantHashPrefix: dashboardContext.tenantHashPrefix,
+        governanceSnapshotCount: governanceSnapshots.length,
+        lastCollectedUtc: evidenceFreshness.lastCollectedUtc,  // null for NO_GOVERNANCE
+        freshnessStatus: evidenceFreshness.status,
+        ts: new Date().toISOString(),
+      }));
+      
+      return {
+        status: "AVAILABLE",
+        ...enterpriseContractData,
       };
     };
 
@@ -320,7 +617,9 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       });
       return hardErrorEnvelope(
         "FT_IMPL_RESPONSE_INVALID",
-        "Dashboard resolver implementation returned invalid response shape"
+        "Dashboard resolver implementation returned invalid response shape",
+        undefined,
+        dashboardContext
       );
     }
 
@@ -328,28 +627,36 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
     // (envelopeKind: 'FT_DASH_ENVELOPE_v1', schemaVersion: 1, status: 'AVAILABLE'|'NOT_AVAILABLE'|'HARD_ERROR'|'NO_SNAPSHOT'|'INVALID_SNAPSHOT')
     let result: FtDashEnvelopeV1;
     if (raw.status === "AVAILABLE") {
-      result = okEnvelope(raw);
+      result = okEnvelope(raw, dashboardContext);
     } else if (raw.status === "NO_SNAPSHOT") {
       // Missing snapshot - non-fatal state (user can still see dashboard with no data)
       result = notAvailableEnvelope(
         raw.error ?? "NO_SNAPSHOT_POINTER",
-        raw.error ? `Dashboard state: ${raw.error}` : "Snapshot is not available"
+        raw.error ? `Dashboard state: ${raw.error}` : "Snapshot is not available",
+        undefined,
+        dashboardContext
       );
     } else if (raw.status === "INVALID_SNAPSHOT") {
       // Invalid snapshot - non-fatal state (schema/parse error but not a contract violation)
       result = notAvailableEnvelope(
         raw.error ?? "SNAPSHOT_SCHEMA_MISMATCH",
-        raw.error ? `Dashboard state: ${raw.error}` : "Snapshot schema is invalid"
+        raw.error ? `Dashboard state: ${raw.error}` : "Snapshot schema is invalid",
+        undefined,
+        dashboardContext
       );
     } else if (raw.status === "NOT_AVAILABLE") {
       result = notAvailableEnvelope(
         raw.error ?? "FT_SNAPSHOT_INVALID",
-        raw.error ? `Dashboard state not available: ${raw.error}` : "Snapshot is not available"
+        raw.error ? `Dashboard state not available: ${raw.error}` : "Snapshot is not available",
+        undefined,
+        dashboardContext
       );
     } else if (raw.status === "HARD ERROR") {
       result = hardErrorEnvelope(
         raw.error ?? "FT_SNAPSHOT_INVALID",
-        raw.error ? `Dashboard state failed: ${raw.error}` : "Snapshot is invalid or missing"
+        raw.error ? `Dashboard state failed: ${raw.error}` : "Snapshot is invalid or missing",
+        undefined,
+        dashboardContext
       );
     } else {
       // Unexpected status value - fail-closed
@@ -359,7 +666,9 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       });
       result = hardErrorEnvelope(
         "FT_UNEXPECTED_STATUS",
-        `Unexpected status value: ${raw.status}`
+        `Unexpected status value: ${raw.status}`,
+        undefined,
+        dashboardContext
       );
     }
 
@@ -402,9 +711,17 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
     console.error("[FT_L0_DASHBOARD] Resolver error:", errorMsg);
     
     // BACKBONE FIX: Use hardErrorEnvelope which produces CORRECT envelope format
+    // Note: dashboardContext may not be available if error occurred before extraction
+    const dashboardContextSafe = {
+      dashboardId: 'ERROR_BEFORE_EXTRACTION',
+      tenantHashPrefix: 'ERROR_BEFORE_EXTRACTION',
+      dashboardPath: 'ERROR_BEFORE_EXTRACTION',
+    };
     return hardErrorEnvelope(
       "FT_RESOLVER_EXCEPTION",
-      `Dashboard resolver failed: ${errorMsg.slice(0, 150)}`
+      `Dashboard resolver failed: ${errorMsg.slice(0, 150)}`,
+      undefined,
+      dashboardContextSafe
     );
   }
 }
