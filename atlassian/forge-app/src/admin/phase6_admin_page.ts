@@ -29,6 +29,7 @@ import {
 import {
   verifyCanonicalHash,
 } from '../phase6/canonicalization';
+import { SnapshotCapturer } from '../phase6/snapshot_capture';
 import {
   renderDriftHistoryList,
   renderDriftEventDetail,
@@ -78,10 +79,110 @@ export async function handler(request: any) {
       return await renderPolicyPage(request, tenantId, cloudId);
     }
 
+    if (action === 'export-snapshot') {
+      return await handleExportSnapshot(request, tenantId, cloudId);
+    }
+
+    if (action === 'create-snapshot') {
+      return await handleCreateSnapshot(request, tenantId, cloudId);
+    }
+
     // Default: list snapshots
     return await renderSnapshotList(request, tenantId, cloudId, type, parseInt(String(page), 10));
   } catch (error: any) {
     return errorResponse(error.message);
+  }
+}
+
+/**
+ * Handle create-snapshot action (deterministic endpoint for E2E validation)
+ * Creates a Phase 6 governance snapshot (type='daily') on-demand
+ */
+async function handleCreateSnapshot(
+  request: any,
+  tenantId: string,
+  cloudId: string
+) {
+  // Validate tenant identity
+  if (!tenantId || !cloudId) {
+    return {
+      statusCode: 400,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store'
+      },
+      body: JSON.stringify({
+        ok: false,
+        error: {
+          code: 'TENANT_CONTEXT_MISSING',
+          message: 'Tenant identity unavailable'
+        }
+      })
+    };
+  }
+
+  try {
+    // Create Phase 6 governance snapshot (type='daily' explicit)
+    const capturer = new SnapshotCapturer(tenantId, cloudId, 'daily');
+    const { run, snapshot } = await capturer.capture();
+
+    if (!snapshot) {
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'no-store'
+        },
+        body: JSON.stringify({
+          ok: false,
+          error: {
+            code: 'SNAPSHOT_CAPTURE_FAILED',
+            message: 'Snapshot capture returned no snapshot'
+          }
+        })
+      };
+    }
+
+    // Save run record
+    const runStorage = new SnapshotRunStorage(tenantId, cloudId);
+    await runStorage.createRun(run);
+
+    // Save snapshot
+    const snapshotStorage = new SnapshotStorage(tenantId, cloudId);
+    await snapshotStorage.createSnapshot(snapshot);
+
+    // Return JSON response with snapshot details
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Snapshot-Type': snapshot.snapshot_type,
+        'X-Snapshot-Hash': snapshot.canonical_hash
+      },
+      body: JSON.stringify({
+        ok: true,
+        snapshot_id: snapshot.snapshot_id,
+        snapshot_type: snapshot.snapshot_type,
+        captured_at: snapshot.captured_at,
+        canonical_hash: snapshot.canonical_hash
+      }, null, 2)
+    };
+  } catch (error: any) {
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store'
+      },
+      body: JSON.stringify({
+        ok: false,
+        error: {
+          code: 'SNAPSHOT_CREATION_FAILED',
+          message: error.message || String(error)
+        }
+      }, null, 2)
+    };
   }
 }
 
@@ -110,6 +211,116 @@ function errorResponse(message: string) {
 }
 
 /**
+ * Handle snapshot export (JSON download)
+ * Fail-closed: seed snapshots MUST NOT export
+ */
+async function handleExportSnapshot(
+  request: any,
+  tenantId: string,
+  cloudId: string
+) {
+  const { id } = request.queryParameters || {};
+
+  // Validate id parameter
+  if (!id || typeof id !== 'string' || id.trim() === '') {
+    return {
+      statusCode: 400,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store'
+      },
+      body: 'snapshot_id (id) required'
+    };
+  }
+
+  try {
+    // Load snapshot
+    const snapshotStorage = new SnapshotStorage(tenantId, cloudId);
+    const snapshot = await snapshotStorage.getSnapshotById(id);
+
+    // 404 if not found
+    if (!snapshot) {
+      return {
+        statusCode: 404,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-store'
+        },
+        body: `Snapshot not found: ${id}`
+      };
+    }
+
+    // 403 if seed (MUST NOT export)
+    if ((snapshot.snapshot_type as string) === 'seed') {
+      return {
+        statusCode: 403,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-store'
+        },
+        body: 'Seed snapshots are not audit evidence and cannot be exported.'
+      };
+    }
+
+    // 400 if not daily/weekly
+    if (!['daily', 'weekly'].includes(snapshot.snapshot_type)) {
+      return {
+        statusCode: 400,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-store'
+        },
+        body: `Invalid snapshot type for export: ${snapshot.snapshot_type}`
+      };
+    }
+
+    // Build export payload (real data, no placeholders)
+    const exportPayload: any = {
+      snapshot_id: snapshot.snapshot_id,
+      captured_at: snapshot.captured_at,
+      snapshot_type: snapshot.snapshot_type,
+      canonical_hash: snapshot.canonical_hash,
+      hash_algorithm: snapshot.hash_algorithm || 'sha256',
+      schema_version: snapshot.schema_version || 'v1',
+      clock_source: snapshot.clock_source,
+      payload: snapshot.payload,
+      missing_data: snapshot.missing_data,
+      export_timestamp: new Date().toISOString()
+    };
+
+    // Include optional fields if present on snapshot
+    if (snapshot.input_provenance) {
+      exportPayload.input_provenance = snapshot.input_provenance;
+    }
+    if (snapshot.scope) {
+      exportPayload.scope = snapshot.scope;
+    }
+
+    // Return JSON download response
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Disposition': `attachment; filename="snapshot-${snapshot.snapshot_id}.json"`,
+        'Cache-Control': 'no-store',
+        'X-Snapshot-Type': snapshot.snapshot_type,
+        'X-Snapshot-Hash': snapshot.canonical_hash
+      },
+      body: JSON.stringify(exportPayload, null, 2)
+    };
+  } catch (error: any) {
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store'
+      },
+      body: `Export failed: ${error.message}`
+    };
+  }
+}
+
+/**
  * Render snapshot list page
  */
 async function renderSnapshotList(
@@ -135,7 +346,10 @@ async function renderSnapshotList(
       <td>
         <a href="?action=view-snapshot&id=${snap.snapshot_id}">View</a> |
         <a href="?action=verify-integrity&id=${snap.snapshot_id}">Verify</a> |
-        <a href="/api/phase6/export?id=${snap.snapshot_id}&format=json">JSON</a>
+        ${(snap.snapshot_type as string) !== 'seed' 
+          ? `<a href="?action=export-snapshot&id=${snap.snapshot_id}">JSON</a>`
+          : '<span style="color: #999; font-style: italic;">(Not exportable)</span>'
+        }
       </td>
     </tr>
   `).join('');
@@ -326,7 +540,10 @@ async function renderSnapshotDetail(
 
           <h3>📊 Payload Summary</h3>
           <p>Datasets captured: ${Object.keys(snapshot.payload).join(', ')}</p>
-          <p><a href="/api/phase6/export?id=${snapshot.snapshot_id}&format=json">⬇️ Download as JSON</a></p>
+          ${(snapshot.snapshot_type as string) !== 'seed'
+            ? `<p><a href="?action=export-snapshot&id=${snapshot.snapshot_id}">⬇️ Download as JSON</a></p>`
+            : `<p style="color: #999; font-style: italic;">⚠️ Seed snapshots cannot be exported (not audit evidence)</p>`
+          }
 
           <h3>✅ Integrity Verification</h3>
           <p><a href="?action=verify-integrity&id=${snapshot.snapshot_id}">Verify this snapshot's integrity</a></p>

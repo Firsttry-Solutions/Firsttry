@@ -31,6 +31,9 @@ import { exportTrustSnapshot as exportTrustSnapshot_resolver } from "./audit_sna
 import { getSnapshotVariant_resolver } from "./getSnapshotVariant";
 import { ft_getDashboardState_v1, ft_contractProof_dashEnvelope_v1 } from "../gadget-resolver";
 import { BACKEND_BUILD_SHA } from "../build/backend_build";
+// ENTERPRISE REQUIREMENTS: Phase 6 governance snapshot operations
+import { createGovernanceSnapshotNow_resolver } from "./createGovernanceSnapshotNow";
+import { exportGovernanceSnapshotById_resolver } from "./exportGovernanceSnapshotById";
 
 // ============================================================================
 // BACKBONE LAYER 0: Canonical correlation + trace enforcement functions
@@ -211,7 +214,11 @@ const ALLOWED_RESOLVERS: Record<string, (req: any) => Promise<any>> = {
   getSnapshotVariant: getSnapshotVariant_resolver,
   // BACKBONE CONTRACT PROOF: Read-only production envelope verification (no tenant data)
   ft_contractProof_dashEnvelope_v1: ft_contractProof_dashEnvelope_v1,
-  exportTrustSnapshot: exportTrustSnapshot_resolver
+  exportTrustSnapshot: exportTrustSnapshot_resolver,
+  // ENTERPRISE R1c: On-demand governance snapshot creation (Phase 6)
+  createGovernanceSnapshotNow: createGovernanceSnapshotNow_resolver,
+  // ENTERPRISE R3: Export governance snapshots by ID (Phase 6, blocks seed)
+  exportGovernanceSnapshotById: exportGovernanceSnapshotById_resolver
 };
 
 /**
