@@ -16,6 +16,9 @@
  * Styles are injected via <style> tag which is CSP-compliant.
  */
 
+// Import build identity for App Version display in provenance strip
+import { UI_APP_VERSION } from './build/buildIdentity.gen';
+
 // Support link configuration (mailto: for user accessibility)
 // Must match docs/CONTACTS.md canonical value
 const SUPPORT_EMAIL = "contact@firsttry.run";
@@ -328,6 +331,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     
     // Provenance fields with backend fallback (render empty string if missing, never "NOT_AVAILABLE")
     const provenanceFields = [
+      { label: "App Version", value: UI_APP_VERSION || "(Version unknown)" },
       { label: "Build SHA", value: buildShaValue || "(Build identity not provided)" },
       { label: "Build Time", value: buildTimeValue || "(Build time not provided)" },
       { label: "Schema", value: state.schemaVersion || "(Schema version missing)" },

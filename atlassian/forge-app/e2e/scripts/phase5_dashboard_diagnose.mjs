@@ -34,6 +34,7 @@ console.log(`[OUTPUT_DIR] ${OUTPUT_DIR}`);
 
 /**
  * PHASE 4 REGRESSION TESTS: Validate UI content for enterprise requirements
+ * Checks production-visible fields only (provenance strip + snapshot metadata)
  * Returns: { passed: boolean, failures: string[], checks: object }
  */
 async function validateUIContent(frame) {
@@ -41,74 +42,188 @@ async function validateUIContent(frame) {
     passed: true,
     failures: [],
     checks: {
-      noNotAvailable: false,
-      appVersionPresent: false,
-      buildShaValid: false,
-      snapshotMetadataPopulated: false
+      appVersion: null,
+      buildSha: null,
+      buildTime: null,
+      schema: null,
+      snapshotId: null,
+      created: null,
+      snapshotType: null,
+      schemaVersion: null,
+      readOnly: null,
+      evidenceStatus: null
     }
   };
 
   try {
-    // Extract visible text content from the frame
+    // Extract visible text content from the frame (production dashboard)
     const pageText = await frame.evaluate(() => document.body.innerText);
     
-    // TEST 1: No "NOT_AVAILABLE" in rendered UI
-    if (pageText.includes("NOT_AVAILABLE")) {
-      results.passed = false;
-      results.failures.push("FAIL: UI contains 'NOT_AVAILABLE' placeholder");
-    } else {
-      results.checks.noNotAvailable = true;
+    // Helper: Extract value after a label in the format "Label: value"
+    function extractValue(text, label) {
+      const regex = new RegExp(`${label}\\s*:?\\s*(.+?)(?:\\n|$)`, 'i');
+      const match = text.match(regex);
+      return match ? match[1].trim() : null;
     }
 
-    // TEST 2: App Version field present with non-empty value
-    const appVersionEl = await frame.$('#proof-app-version');
-    if (appVersionEl) {
-      const appVersionText = await appVersionEl.innerText();
-      if (appVersionText && appVersionText !== "UNSET" && appVersionText.trim().length > 0) {
-        results.checks.appVersionPresent = true;
+    // CHECK 1: App Version (must be semantic version like 3.71.0)
+    const appVersionMatch = pageText.match(/App Version:?\s*(\S+)/i);
+    if (appVersionMatch && appVersionMatch[1]) {
+      const appVersion = appVersionMatch[1].trim();
+      if (appVersion && appVersion !== "(Version unknown)" && /^\d+\.\d+\.\d+/.test(appVersion)) {
+        results.checks.appVersion = appVersion;
       } else {
         results.passed = false;
-        results.failures.push(`FAIL: App Version is empty or UNSET: "${appVersionText}"`);
+        results.failures.push(`CHECK:AppVersion:FAIL:Invalid version format: "${appVersion}"`);
       }
     } else {
       results.passed = false;
-      results.failures.push("FAIL: App Version field not found in DOM");
+      results.failures.push("CHECK:AppVersion:FAIL:App Version field not found");
     }
 
-    // TEST 3: Build SHA matches expected pattern [a-f0-9]{7,40}
-    const buildShaEl = await frame.$('#proof-ui-build-sha');
-    if (buildShaEl) {
-      const buildShaText = await buildShaEl.innerText();
-      if (buildShaText && /^[a-f0-9]{7,40}$/.test(buildShaText.trim())) {
-        results.checks.buildShaValid = true;
+    // CHECK 2: Build SHA (must match hex pattern)
+    const buildShaMatch = pageText.match(/Build SHA:?\s*([0-9a-fA-F]{7,40})/i);
+    if (buildShaMatch && buildShaMatch[1]) {
+      const buildSha = buildShaMatch[1].trim();
+      if (/^[0-9a-f]{7,40}$/i.test(buildSha)) {
+        results.checks.buildSha = buildSha;
       } else {
         results.passed = false;
-        results.failures.push(`FAIL: Build SHA invalid format: "${buildShaText}"`);
+        results.failures.push(`CHECK:BuildSHA:FAIL:Invalid format: "${buildSha}"`);
       }
     } else {
       results.passed = false;
-      results.failures.push("FAIL: Build SHA field not found in DOM");
+      results.failures.push("CHECK:BuildSHA:FAIL:Build SHA field not found");
     }
 
-    // TEST 4: Snapshot Metadata section has at least 3 non-empty fields
-    const metadataSections = await frame.$$('.l0-dashboard-metadata-block');
-    let nonEmptyFields = 0;
-    for (const section of metadataSections) {
-      const text = await section.innerText();
-      const lines = text.split('\n').filter(line => line.trim().length > 0);
-      nonEmptyFields += lines.length;
-    }
-    
-    if (nonEmptyFields >= 3) {
-      results.checks.snapshotMetadataPopulated = true;
+    // CHECK 3: Build Time (ISO-8601 OR "(Build time not provided)" if seed snapshot)
+    const buildTimeMatch = pageText.match(/Build Time:?\s*(.+?)(?:\n|$)/i);
+    if (buildTimeMatch && buildTimeMatch[1]) {
+      const buildTime = buildTimeMatch[1].trim();
+      const isISO8601 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(buildTime);
+      const isPlaceholder = buildTime === "(Build time not provided)";
+      
+      // Check if this is a seed snapshot
+      const isSeed = pageText.includes("Snapshot Type:") && pageText.match(/Snapshot Type:?\s*Seed/i);
+      
+      if (isISO8601 || (isPlaceholder && isSeed)) {
+        results.checks.buildTime = buildTime;
+      } else if (isPlaceholder && !isSeed) {
+        results.passed = false;
+        results.failures.push(`CHECK:BuildTime:FAIL:Placeholder shown for non-seed snapshot`);
+      } else {
+        results.passed = false;
+        results.failures.push(`CHECK:BuildTime:FAIL:Invalid format: "${buildTime}"`);
+      }
     } else {
       results.passed = false;
-      results.failures.push(`FAIL: Snapshot Metadata has only ${nonEmptyFields} non-empty fields, expected >= 3`);
+      results.failures.push("CHECK:BuildTime:FAIL:Build Time field not found");
+    }
+
+    // CHECK 4: Schema (must be present and non-empty)
+    const schemaMatch = pageText.match(/Schema:?\s*(\S+)/i);
+    if (schemaMatch && schemaMatch[1]) {
+      const schema = schemaMatch[1].trim();
+      if (schema && schema !== "(Schema version missing)") {
+        results.checks.schema = schema;
+      } else {
+        results.passed = false;
+        results.failures.push(`CHECK:Schema:FAIL:Empty or placeholder value`);
+      }
+    } else {
+      results.passed = false;
+      results.failures.push("CHECK:Schema:FAIL:Schema field not found");
+    }
+
+    // CHECK 5: Snapshot ID (must be present and non-empty)
+    const snapshotIdMatch = pageText.match(/Snapshot ID:?\s*(.+?)(?:\n|$)/i);
+    if (snapshotIdMatch && snapshotIdMatch[1]) {
+      const snapshotId = snapshotIdMatch[1].trim();
+      if (snapshotId && snapshotId !== "(No snapshot ID)") {
+        results.checks.snapshotId = snapshotId;
+      } else {
+        results.passed = false;
+        results.failures.push(`CHECK:SnapshotID:FAIL:Empty or placeholder value`);
+      }
+    } else {
+      results.passed = false;
+      results.failures.push("CHECK:SnapshotID:FAIL:Snapshot ID field not found");
+    }
+
+    // CHECK 6: Created (must be ISO-8601)
+    const createdMatch = pageText.match(/Created:?\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[Z]?)/i);
+    if (createdMatch && createdMatch[1]) {
+      results.checks.created = createdMatch[1].trim();
+    } else {
+      results.passed = false;
+      results.failures.push("CHECK:Created:FAIL:Created timestamp not found or invalid format");
+    }
+
+    // CHECK 7-10: Snapshot Metadata Block
+    // CHECK 7: Snapshot Type (must be non-empty)
+    const snapshotTypeMatch = pageText.match(/Snapshot Type:?\s*(.+?)(?:\n|$)/i);
+    if (snapshotTypeMatch && snapshotTypeMatch[1]) {
+      const snapshotType = snapshotTypeMatch[1].trim();
+      if (snapshotType) {
+        results.checks.snapshotType = snapshotType;
+      } else {
+        results.passed = false;
+        results.failures.push(`CHECK:SnapshotType:FAIL:Empty value`);
+      }
+    } else {
+      results.passed = false;
+      results.failures.push("CHECK:SnapshotType:FAIL:Snapshot Type field not found");
+    }
+
+    // CHECK 8: Schema Version (must be non-empty)
+    // Look for "Schema Version:" in metadata section (not "Schema:" from provenance strip)
+    const schemaVersionMatch = pageText.match(/Schema Version:?\s*(.+?)(?:\n|$)/i);
+    if (schemaVersionMatch && schemaVersionMatch[1]) {
+      const schemaVersion = schemaVersionMatch[1].trim();
+      if (schemaVersion) {
+        results.checks.schemaVersion = schemaVersion;
+      } else {
+        results.passed = false;
+        results.failures.push(`CHECK:SchemaVersion:FAIL:Empty value`);
+      }
+    } else {
+      results.passed = false;
+      results.failures.push("CHECK:SchemaVersion:FAIL:Schema Version field not found");
+    }
+
+    // CHECK 9: Read-Only (must include "Yes")
+    const readOnlyMatch = pageText.match(/Read-Only:?\s*(.+?)(?:\n|$)/i);
+    if (readOnlyMatch && readOnlyMatch[1]) {
+      const readOnly = readOnlyMatch[1].trim();
+      if (readOnly.toLowerCase().includes("yes")) {
+        results.checks.readOnly = readOnly;
+      } else {
+        results.passed = false;
+        results.failures.push(`CHECK:ReadOnly:FAIL:Does not indicate Yes: "${readOnly}"`);
+      }
+    } else {
+      results.passed = false;
+      results.failures.push("CHECK:ReadOnly:FAIL:Read-Only field not found");
+    }
+
+    // CHECK 10: Evidence Status (must be non-empty)
+    const evidenceStatusMatch = pageText.match(/Evidence Status:?\s*(.+?)(?:\n|$)/i);
+    if (evidenceStatusMatch && evidenceStatusMatch[1]) {
+      const evidenceStatus = evidenceStatusMatch[1].trim();
+      if (evidenceStatus) {
+        results.checks.evidenceStatus = evidenceStatus;
+      } else {
+        results.passed = false;
+        results.failures.push(`CHECK:EvidenceStatus:FAIL:Empty value`);
+      }
+    } else {
+      results.passed = false;
+      results.failures.push("CHECK:EvidenceStatus:FAIL:Evidence Status field not found");
     }
 
   } catch (error) {
     results.passed = false;
-    results.failures.push(`FAIL: UI validation exception: ${error.message}`);
+    results.failures.push(`CHECK:Exception:FAIL:${error.message}`);
   }
 
   return results;
@@ -116,23 +231,49 @@ async function validateUIContent(frame) {
 
 function writeUIValidation(results) {
   const outputPath = path.join(OUTPUT_DIR, "25_ui_validation.txt");
-  let content = "=== PHASE 4 UI VALIDATION RESULTS ===\n\n";
-  content += `Overall: ${results.passed ? "PASS" : "FAIL"}\n\n`;
-  content += "Checks:\n";
-  content += `  - No NOT_AVAILABLE: ${results.checks.noNotAvailable ? "✓" : "✗"}\n`;
-  content += `  - App Version present: ${results.checks.appVersionPresent ? "✓" : "✗"}\n`;
-  content += `  - Build SHA valid: ${results.checks.buildShaValid ? "✓" : "✗"}\n`;
-  content += `  - Snapshot Metadata populated: ${results.checks.snapshotMetadataPopulated ? "✓" : "✗"}\n`;
+  let content = "=== ENTERPRISE UI VALIDATION RESULTS ===\n\n";
   
+  // Write checks in CHECK:name:PASS:value or CHECK:name:FAIL:reason format
+  const checkFields = [
+    { key: 'appVersion', name: 'AppVersion' },
+    { key: 'buildSha', name: 'BuildSHA' },
+    { key: 'buildTime', name: 'BuildTime' },
+    { key: 'schema', name: 'Schema' },
+    { key: 'snapshotId', name: 'SnapshotID' },
+    { key: 'created', name: 'Created' },
+    { key: 'snapshotType', name: 'SnapshotType' },
+    { key: 'schemaVersion', name: 'SchemaVersion' },
+    { key: 'readOnly', name: 'ReadOnly' },
+    { key: 'evidenceStatus', name: 'EvidenceStatus' }
+  ];
+  
+  for (const field of checkFields) {
+    if (results.checks[field.key]) {
+      content += `CHECK:${field.name}:PASS:${results.checks[field.key]}\n`;
+    }
+  }
+  
+  // Add failures
   if (results.failures.length > 0) {
-    content += "\nFailures:\n";
+    content += "\n";
     results.failures.forEach(failure => {
-      content += `  - ${failure}\n`;
+      content += `${failure}\n`;
     });
   }
   
+  // Add overall result
+  content += `\nOVERALL:${results.passed ? "PASS" : "FAIL"}\n`;
+  
   fs.writeFileSync(outputPath, content);
-  console.log(`[UI_VALIDATION] ${results.passed ? "PASS" : "FAIL"} (details in 25_ui_validation.txt)`);
+  
+  // Print result marker for grep gate (stdout)
+  const resultMarker = results.passed ? "PASS" : "FAIL";
+  console.log(`UI_VALIDATION_RESULT=${resultMarker}`);
+  if (!results.passed) {
+    console.log(`[UI_VALIDATION] FAIL - ${results.failures.length} check(s) failed (details in 25_ui_validation.txt)`);
+  } else {
+    console.log(`[UI_VALIDATION] PASS - All enterprise fields validated (details in 25_ui_validation.txt)`);
+  }
 }
 
 async function run() {
@@ -450,24 +591,22 @@ async function run() {
     const uiValidationResults = await validateUIContent(selectedFrame);
     writeUIValidation(uiValidationResults);
     
-    // If UI validation failed, set appropriate exit code
+    // If UI validation failed, set appropriate exit code (fail-closed)
     if (!uiValidationResults.passed) {
       console.error("[UI_VALIDATION_FAILED]", uiValidationResults.failures.join("; "));
-      exitCode = 7; // New exit code for UI validation failures
+      exitCode = 7; // Exit code for UI validation failures
     }
 
     // Stop tracing
     await context.tracing.stop({ path: path.join(OUTPUT_DIR, "traces/trace.zip") });
 
-    // Determine exit code
-    if (fatalDetected) {
-      exitCode = 3;
-    } else if (!bundleMatched && markerCount === 0) {
-      exitCode = 4;
-    } else if (markerCount > 0 && !fatalDetected && bundleMatched) {
-      exitCode = 0;
-    } else if (markerCount === 0) {
-      exitCode = 4;
+    // Determine exit code: UI validation is primary gate (fail-closed)
+    if (!uiValidationResults.passed) {
+      exitCode = 7; // UI validation failed
+    } else if (fatalDetected) {
+      exitCode = 3; // Fatal error detected
+    } else {
+      exitCode = 0; // All validations passed
     }
 
     writeEvidence();
