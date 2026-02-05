@@ -32,6 +32,109 @@ const failedRequests = [];
 
 console.log(`[OUTPUT_DIR] ${OUTPUT_DIR}`);
 
+/**
+ * PHASE 4 REGRESSION TESTS: Validate UI content for enterprise requirements
+ * Returns: { passed: boolean, failures: string[], checks: object }
+ */
+async function validateUIContent(frame) {
+  const results = {
+    passed: true,
+    failures: [],
+    checks: {
+      noNotAvailable: false,
+      appVersionPresent: false,
+      buildShaValid: false,
+      snapshotMetadataPopulated: false
+    }
+  };
+
+  try {
+    // Extract visible text content from the frame
+    const pageText = await frame.evaluate(() => document.body.innerText);
+    
+    // TEST 1: No "NOT_AVAILABLE" in rendered UI
+    if (pageText.includes("NOT_AVAILABLE")) {
+      results.passed = false;
+      results.failures.push("FAIL: UI contains 'NOT_AVAILABLE' placeholder");
+    } else {
+      results.checks.noNotAvailable = true;
+    }
+
+    // TEST 2: App Version field present with non-empty value
+    const appVersionEl = await frame.$('#proof-app-version');
+    if (appVersionEl) {
+      const appVersionText = await appVersionEl.innerText();
+      if (appVersionText && appVersionText !== "UNSET" && appVersionText.trim().length > 0) {
+        results.checks.appVersionPresent = true;
+      } else {
+        results.passed = false;
+        results.failures.push(`FAIL: App Version is empty or UNSET: "${appVersionText}"`);
+      }
+    } else {
+      results.passed = false;
+      results.failures.push("FAIL: App Version field not found in DOM");
+    }
+
+    // TEST 3: Build SHA matches expected pattern [a-f0-9]{7,40}
+    const buildShaEl = await frame.$('#proof-ui-build-sha');
+    if (buildShaEl) {
+      const buildShaText = await buildShaEl.innerText();
+      if (buildShaText && /^[a-f0-9]{7,40}$/.test(buildShaText.trim())) {
+        results.checks.buildShaValid = true;
+      } else {
+        results.passed = false;
+        results.failures.push(`FAIL: Build SHA invalid format: "${buildShaText}"`);
+      }
+    } else {
+      results.passed = false;
+      results.failures.push("FAIL: Build SHA field not found in DOM");
+    }
+
+    // TEST 4: Snapshot Metadata section has at least 3 non-empty fields
+    const metadataSections = await frame.$$('.l0-dashboard-metadata-block');
+    let nonEmptyFields = 0;
+    for (const section of metadataSections) {
+      const text = await section.innerText();
+      const lines = text.split('\n').filter(line => line.trim().length > 0);
+      nonEmptyFields += lines.length;
+    }
+    
+    if (nonEmptyFields >= 3) {
+      results.checks.snapshotMetadataPopulated = true;
+    } else {
+      results.passed = false;
+      results.failures.push(`FAIL: Snapshot Metadata has only ${nonEmptyFields} non-empty fields, expected >= 3`);
+    }
+
+  } catch (error) {
+    results.passed = false;
+    results.failures.push(`FAIL: UI validation exception: ${error.message}`);
+  }
+
+  return results;
+}
+
+function writeUIValidation(results) {
+  const outputPath = path.join(OUTPUT_DIR, "25_ui_validation.txt");
+  let content = "=== PHASE 4 UI VALIDATION RESULTS ===\n\n";
+  content += `Overall: ${results.passed ? "PASS" : "FAIL"}\n\n`;
+  content += "Checks:\n";
+  content += `  - No NOT_AVAILABLE: ${results.checks.noNotAvailable ? "✓" : "✗"}\n`;
+  content += `  - App Version present: ${results.checks.appVersionPresent ? "✓" : "✗"}\n`;
+  content += `  - Build SHA valid: ${results.checks.buildShaValid ? "✓" : "✗"}\n`;
+  content += `  - Snapshot Metadata populated: ${results.checks.snapshotMetadataPopulated ? "✓" : "✗"}\n`;
+  
+  if (results.failures.length > 0) {
+    content += "\nFailures:\n";
+    results.failures.forEach(failure => {
+      content += `  - ${failure}\n`;
+    });
+  }
+  
+  fs.writeFileSync(outputPath, content);
+  console.log(`[UI_VALIDATION] ${results.passed ? "PASS" : "FAIL"} (details in 25_ui_validation.txt)`);
+}
+
 async function run() {
   try {
     // Create output directories
@@ -341,6 +444,16 @@ async function run() {
       });
     } catch {
       console.log("[WARN] Frame screenshot failed");
+    }
+
+    // PHASE 4 REGRESSION TESTS: Validate UI content for enterprise requirements
+    const uiValidationResults = await validateUIContent(selectedFrame);
+    writeUIValidation(uiValidationResults);
+    
+    // If UI validation failed, set appropriate exit code
+    if (!uiValidationResults.passed) {
+      console.error("[UI_VALIDATION_FAILED]", uiValidationResults.failures.join("; "));
+      exitCode = 7; // New exit code for UI validation failures
     }
 
     // Stop tracing

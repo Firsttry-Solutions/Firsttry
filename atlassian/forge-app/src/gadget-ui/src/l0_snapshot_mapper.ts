@@ -322,17 +322,17 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     const provenanceStrip = document.createElement("div");
     provenanceStrip.className = "l0-provenance-strip";
     
-    // Helper: Format build SHA for display (use backend if available, never show NOT_AVAILABLE)
+    // Helper: Format build SHA for display (use backend if available, otherwise empty)
     const buildShaValue = state.buildInfo?.buildSha || state.backendBuildSha || "";
     const buildTimeValue = state.buildInfo?.buildTimeUtc || state.backendBuildTimeUtc || "";
     
-    // Provenance fields with backend fallback (never render NOT_AVAILABLE if backend has data)
+    // Provenance fields with backend fallback (render empty string if missing, never "NOT_AVAILABLE")
     const provenanceFields = [
-      { label: "Build SHA", value: buildShaValue || "NOT_AVAILABLE" },
-      { label: "Build Time", value: buildTimeValue || "NOT_AVAILABLE" },
-      { label: "Schema", value: state.schemaVersion || "NOT_AVAILABLE" },
-      { label: "Snapshot ID", value: state.snapshotId || "NOT_AVAILABLE" },
-      { label: "Created", value: state.createdAtUtc || "NOT_AVAILABLE" }
+      { label: "Build SHA", value: buildShaValue || "(Build identity not provided)" },
+      { label: "Build Time", value: buildTimeValue || "(Build time not provided)" },
+      { label: "Schema", value: state.schemaVersion || "(Schema version missing)" },
+      { label: "Snapshot ID", value: state.snapshotId || "(No snapshot ID)" },
+      { label: "Created", value: state.createdAtUtc || "(Creation time missing)" }
     ];
     
     // Add optional metadata fields if present in state.metadata
@@ -403,11 +403,14 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
 
     content.appendChild(details);
 
-    // Snapshot metadata blocks (if present)
-    if (state.metadata) {
-      const metadataSection = renderMetadataBlocks(state.metadata);
-      content.appendChild(metadataSection);
-    }
+    // Snapshot metadata blocks (always render, even for seed snapshots)
+    const metadataSection = renderMetadataBlocks(state.metadata || {}, isSeedSnapshot, {
+      snapshotId: state.snapshotId,
+      createdAtUtc: state.createdAtUtc,
+      schemaVersion: state.schemaVersion,
+      snapshotType: isSeedSnapshot ? "Seed" : "Governance"
+    });
+    content.appendChild(metadataSection);
   } else if (state.status === "NO_SNAPSHOT" || state.status === "INVALID_SNAPSHOT") {
     // Non-fatal states - show dashboard with no data message
     const title = document.createElement("h1");
@@ -478,9 +481,14 @@ function escapeHtml(text: string): string {
 
 /**
  * Render snapshot metadata blocks (dumb reader pattern)
- * Displays all metadata verbatim with "NOT_DECLARED_IN_SNAPSHOT" for missing declarations
+ * Displays all metadata verbatim with explicit messages for missing declarations
+ * Always renders minimum enterprise-relevant fields even for seed snapshots
  */
-function renderMetadataBlocks(metadata: any): HTMLElement {
+function renderMetadataBlocks(
+  metadata: any, 
+  isSeedSnapshot: boolean,
+  baseInfo: { snapshotId?: string; createdAtUtc?: string; schemaVersion?: string; snapshotType: string }
+): HTMLElement {
   const section = document.createElement("div");
   section.className = "l0-dashboard-metadata-section";
 
@@ -488,6 +496,30 @@ function renderMetadataBlocks(metadata: any): HTMLElement {
   title.textContent = "Snapshot Metadata";
   title.className = "l0-dashboard-metadata-title";
   section.appendChild(title);
+
+  // Always show: Snapshot Type, Schema Version, Read-Only Status
+  const essentialsBlock = document.createElement("div");
+  essentialsBlock.className = "l0-dashboard-metadata-block";
+  essentialsBlock.innerHTML = `
+    <div class="l0-dashboard-metadata-label">Snapshot Type:</div>
+    <div class="l0-dashboard-metadata-value">${baseInfo.snapshotType}</div>
+    <div class="l0-dashboard-metadata-label">Schema Version:</div>
+    <div class="l0-dashboard-metadata-value">${baseInfo.schemaVersion || "(Not specified in snapshot)"}</div>
+    <div class="l0-dashboard-metadata-label">Read-Only:</div>
+    <div class="l0-dashboard-metadata-value">Yes (no Jira mutations)</div>
+  `;
+  section.appendChild(essentialsBlock);
+
+  // For seed snapshots, show explicit notice about governance evidence
+  if (isSeedSnapshot) {
+    const seedMetadataNotice = document.createElement("div");
+    seedMetadataNotice.className = "l0-dashboard-metadata-block l0-seed-metadata-notice";
+    seedMetadataNotice.innerHTML = `
+      <div class="l0-dashboard-metadata-label">Evidence Status:</div>
+      <div class="l0-dashboard-metadata-value">Seed placeholder - No governance snapshots yet. Evidence will be collected on first check.</div>
+    `;
+    section.appendChild(seedMetadataNotice);
+  }
 
   // A. Coverage Declaration
   if (metadata.coverage) {
@@ -523,7 +555,7 @@ function renderMetadataBlocks(metadata: any): HTMLElement {
   if (metadata.export) {
     const formats = Array.isArray(metadata.export.formats)
       ? metadata.export.formats.join(", ")
-      : "NOT_DECLARED";
+      : "(Not specified in snapshot)";
     const block = renderMetadataBlock(
       "Export",
       `${metadata.export.readiness} (${formats})`,
