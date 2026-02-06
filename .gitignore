@@ -185,3 +185,8 @@ e2e/test-results/
 # Local-only proof artifacts (determinism safeguard)
 proof_artifacts/
 /test-results/
+
+# Proof bundles (must never be committed)
+audit/enterprise_contract_proof_real/
+audit/enterprise_contract_proof/
+ENTERPRISE_CONTRACT_*.txt
