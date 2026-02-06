@@ -55,6 +55,7 @@ import re
 import json
 import sys
 import os
+import hashlib
 from pathlib import Path
 
 run_dir = os.environ["RUN_DIR"]
@@ -91,6 +92,51 @@ ALLOWED_PATH_PATTERNS = [
     r"(^|.*/)scripts/strict_secret_scan\.sh$",  # This script contains example tokens
 ]
 
+# Secret pattern regexes for token type detection
+TOKEN_PATTERNS = {
+    "AWS_ACCESS_KEY": re.compile(r"AKIA[0-9A-Z]{16}"),
+    "PRIVATE_KEY_HEADER": re.compile(r"-----BEGIN( RSA)? PRIVATE KEY-----"),
+    "GITHUB_TOKEN": re.compile(r"ghp_[0-9A-Za-z]{36}"),
+    "SLACK_TOKEN": re.compile(r"xox[baprs]-[0-9A-Za-z-]+"),
+    "GOOGLE_API_KEY": re.compile(r"AIza[0-9A-Za-z_-]{35}"),
+    "OPENAI_KEY": re.compile(r"sk-[0-9A-Za-z]{20,}"),
+}
+
+def detect_token_type(content):
+    """Detect which type of secret token is in content"""
+    for token_type, pattern in TOKEN_PATTERNS.items():
+        if pattern.search(content):
+            return token_type
+    return "UNKNOWN"
+
+def extract_matched_token(content):
+    """Extract the actual matched token from content"""
+    for pattern in TOKEN_PATTERNS.values():
+        match = pattern.search(content)
+        if match:
+            return match.group(0)
+    return content.strip()
+
+def redact_token(token, token_type):
+    """Redact token according to type-specific rules to avoid triggering regex"""
+    if token_type == "AWS_ACCESS_KEY":
+        # Show AKIA + ellipsis + last 4, but never full pattern
+        if len(token) >= 8:
+            return f"AKIA…{token[-4:]}"
+        return "AKIA…REDACTED"
+    elif token_type == "PRIVATE_KEY_HEADER":
+        return "PRIVATE_KEY_HEADER"
+    elif token_type == "GITHUB_TOKEN":
+        return "ghp_…REDACTED"
+    elif token_type == "SLACK_TOKEN":
+        return "xox…REDACTED"
+    elif token_type == "GOOGLE_API_KEY":
+        return "AIza…REDACTED"
+    elif token_type == "OPENAI_KEY":
+        return "sk-…REDACTED"
+    else:
+        return "REDACTED"
+
 def is_allowed_path(filepath):
     """Check if filepath matches allowed patterns"""
     for pattern in ALLOWED_PATH_PATTERNS:
@@ -123,12 +169,15 @@ def classify_hit(line):
     
     filepath, lineno, content = parts[0], parts[1], parts[2]
     
-    # Extract matched token (simplified - just take the content)
-    match_text = content.strip()
+    # Extract matched token and detect type
+    matched_token = extract_matched_token(content)
+    token_type = detect_token_type(content)
+    token_sha256 = hashlib.sha256(matched_token.encode()).hexdigest()
+    redacted = redact_token(matched_token, token_type)
     
     # Classification logic: ALLOW only if BOTH conditions true
     path_ok = is_allowed_path(filepath)
-    token_ok = is_known_example(match_text)
+    token_ok = is_known_example(content)
     
     if path_ok and token_ok:
         status = "ALLOWED"
@@ -146,6 +195,9 @@ def classify_hit(line):
         "filepath": filepath,
         "lineno": lineno,
         "content": content.strip(),
+        "token_type": token_type,
+        "redacted_token": redacted,
+        "token_sha256": token_sha256,
         "status": status,
         "reason": reason,
     }
@@ -178,7 +230,7 @@ with open(allowed_file, "w") as f:
     for hit in allowed:
         f.write(f"{hit['filepath']}:{hit['lineno']}: {hit['content']}\n")
 
-# Generate waiver markdown
+# Generate waiver markdown (REDACTED - NO RAW TOKENS)
 waiver_lines = []
 waiver_lines.append("# Secret Scan Waiver")
 waiver_lines.append("")
@@ -209,33 +261,36 @@ if forbidden:
         waiver_lines.append(f"- ... and {len(forbidden) - 20} more (see 45_secret_scan_forbidden.txt)")
     waiver_lines.append("")
 
-waiver_lines.append("## Allowed Patterns")
+waiver_lines.append("## Allowed Patterns (Redacted)")
+waiver_lines.append("")
+waiver_lines.append("**Note**: Tokens shown below are redacted to prevent self-referential scanning. See `44_secret_scan_classified.json` for SHA256 hashes for deterministic verification.")
 waiver_lines.append("")
 if allowed:
-    waiver_lines.append("| File | Line | Reason | Content Preview |")
-    waiver_lines.append("|------|-----:|--------|-----------------|")
+    waiver_lines.append("| File | Line | Token Type | Redacted Token | SHA256 (first 16) | Reason |")
+    waiver_lines.append("|------|-----:|------------|----------------|-------------------|--------|")
     for hit in allowed:
-        preview = hit["content"][:60] + ("..." if len(hit["content"]) > 60 else "")
-        preview_esc = preview.replace("|", "\\|")
-        waiver_lines.append(f"| `{hit['filepath']}` | {hit['lineno']} | {hit['reason']} | `{preview_esc}` |")
+        sha_short = hit["token_sha256"][:16]
+        waiver_lines.append(f"| `{hit['filepath']}` | {hit['lineno']} | {hit['token_type']} | `{hit['redacted_token']}` | `{sha_short}…` | {hit['reason']} |")
 else:
     waiver_lines.append("*No allowed patterns detected*")
 
 waiver_lines.append("")
-waiver_lines.append("## Known Safe Examples")
+waiver_lines.append("## Known Safe Token Types")
 waiver_lines.append("")
-waiver_lines.append("The following tokens are known to be safe examples from official documentation:")
+waiver_lines.append("The following token types are allowed in test/doc contexts:")
 waiver_lines.append("")
-waiver_lines.append("- `AKIAIOSFODNN7EXAMPLE` - AWS official documentation example")
-waiver_lines.append("- `AKIA0000000000000000` - Placeholder format")
-waiver_lines.append("- `AKIA1234567890ABCDEF` - Test fixture")
-waiver_lines.append("- `-----BEGIN RSA PRIVATE KEY-----` - Header line (allowed in tests/docs only)")
+waiver_lines.append("- **AWS_ACCESS_KEY**: AWS official documentation examples (format: AKIA + 16 alphanumeric)")
+waiver_lines.append("- **PRIVATE_KEY_HEADER**: PEM format key headers (allowed in test fixtures)")
+waiver_lines.append("- **GITHUB_TOKEN**: GitHub personal access tokens (format: ghp_ + 36 chars)")
+waiver_lines.append("- **SLACK_TOKEN**: Slack API tokens (format: xox[baprs]- + chars)")
+waiver_lines.append("- **GOOGLE_API_KEY**: Google API keys (format: AIza + 35 chars)")
+waiver_lines.append("- **OPENAI_KEY**: OpenAI API keys (format: sk- + 20+ chars)")
 waiver_lines.append("")
 
 with open(waiver_file, "w") as f:
     f.write("\n".join(waiver_lines) + "\n")
 
-print(f"[CLASSIFIER] Wrote waiver to {waiver_file}")
+print(f"[CLASSIFIER] Wrote redacted waiver to {waiver_file}")
 
 # Exit with failure code if forbidden hits exist
 sys.exit(len(forbidden))
@@ -258,5 +313,18 @@ if [[ "$CLASSIFY_EXIT" -ne 0 ]]; then
     exit 1
 fi
 
-echo "[SECRET_SCAN] PASS: All detected patterns are waived"
+# CRITICAL: Verify waiver itself doesn't contain raw secrets (self-scan)
+echo "[SECRET_SCAN] Running waiver self-scan..."
+rg -n -S "$SECRET_PATTERN" "$AUDIT_WAIVER" > "$RUN_DIR/48_waiver_self_scan_hits.txt" 2>&1 || true
+
+if [[ -s "$RUN_DIR/48_waiver_self_scan_hits.txt" ]]; then
+    SELF_SCAN_COUNT=$(wc -l < "$RUN_DIR/48_waiver_self_scan_hits.txt" || echo "0")
+    echo "[SECRET_SCAN] FAIL: Waiver contains $SELF_SCAN_COUNT raw secret patterns (self-referential)" >&2
+    echo "[SECRET_SCAN] See: $RUN_DIR/48_waiver_self_scan_hits.txt" >&2
+    echo "[SECRET_SCAN] This is a security smell - waiver must use redacted tokens only" >&2
+    exit 1
+fi
+
+echo "[SECRET_SCAN] Waiver self-scan: PASS (no raw secrets in waiver)"
+echo "[SECRET_SCAN] PASS: All detected patterns are waived, waiver is clean"
 exit 0
