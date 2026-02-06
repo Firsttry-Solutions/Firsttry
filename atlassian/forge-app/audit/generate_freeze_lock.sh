@@ -26,7 +26,7 @@ cd "$REPO_ROOT"
 ALL_FILES=$(git ls-files "atlassian/forge-app" 2>/dev/null || echo "")
 
 # Step 2: Filter out excluded patterns (MUST MATCH verify_freeze_lock.sh exactly)
-FILTERED_FILES=$(echo "$ALL_FILES" | grep -v -E "(audit/proof_runs|OV_RESULTS|SHK_REPORT|audit/verification_reports|audit/out_runs|audit/.*OUT|audit/state_assessment/run_|FREEZE_LOCK\.json|node_modules/|dist/)" || true)
+FILTERED_FILES=$(echo "$ALL_FILES" | grep -v -E "(audit/proof_runs|OV_RESULTS|SHK_REPORT|audit/verification_reports|audit/out_runs|audit/.*OUT|audit/state_assessment/run_|audit/marketplace_submission/FREEZE_LOCK\.json|node_modules/|dist/)" || true)
 
 # Step 3: Sort lexicographically with locale stability
 SORTED_FILES=$(echo "$FILTERED_FILES" | LC_ALL=C sort)
