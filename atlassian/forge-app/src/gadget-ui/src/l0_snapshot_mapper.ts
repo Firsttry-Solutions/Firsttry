@@ -19,6 +19,9 @@
 // Import build identity for App Version display in provenance strip
 import { UI_APP_VERSION } from './build/buildIdentity.gen';
 
+// Import enterprise contract renderers
+import { renderEvidenceSummaryCard, renderEnterpriseContractSection, renderSnapshotHistoryList } from './components/EnterpriseContractRenderer';
+
 // Support link configuration (mailto: for user accessibility)
 // Must match docs/CONTACTS.md canonical value
 const SUPPORT_EMAIL = "contact@firsttry.run";
@@ -65,6 +68,31 @@ export interface L0DashboardState {
     export?: any;
     compliance?: any;
     disclaimer?: any;
+  };
+  // Enterprise Contract fields for rendering contract items A-M
+  enterpriseContract?: {
+    readOnlyGuarantee?: string;
+    seedVsGovernanceExplanation?: { title: string; bullets: string[] };
+    evidenceFreshness?: {
+      lastCollectedUtc?: string;
+      ageSeconds?: number;
+      status?: "CURRENT" | "OUT_OF_DATE" | "NO_GOVERNANCE";
+      staleAfterDays?: number;
+    };
+    snapshots?: Array<{
+      snapshotId: string;
+      snapshotKind: "SEED" | "GOVERNANCE";
+      origin: "ON_DEMAND" | "SCHEDULED" | "TRIGGERED";
+      initiator?: string;
+      triggerReason?: string;
+      createdAtUtc: string;
+      immutabilityStatement?: string;
+      integrity?: { algorithm: string; value: string };
+      scope?: { included: string[]; excluded: string[] };
+      controls?: any[];
+      exportEligible?: boolean;
+      exportDeclaration?: string;
+    }>;
   };
 }
 
@@ -163,6 +191,14 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
                         response.metadata?.provenance?.capturedAtUtc ||
                         response.metadata?.provenance?.createdAtUtc;
     
+    // PHASE D: Extract enterprise contract data for rendering contract items A-M
+    const enterpriseContract = {
+      readOnlyGuarantee: payload.readOnlyGuarantee,
+      seedVsGovernanceExplanation: payload.seedVsGovernanceExplanation,
+      evidenceFreshness: payload.evidenceFreshness,
+      snapshots: payload.snapshots || []
+    };
+    
     return {
       status: "AVAILABLE",
       reasonCode: "PROOF_OK",
@@ -175,7 +211,8 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
       backendBuildSha: backendSha,
       backendBuildTimeUtc: backendTime,
       backendAppVersion: payload.backend_app_version,
-      metadata: response.metadata || {}
+      metadata: response.metadata || {},
+      enterpriseContract
     };
   }
 
@@ -378,6 +415,13 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     });
     
     content.appendChild(provenanceStrip);
+    
+    // === EVIDENCE SUMMARY CARD (TOP - Above the fold) ===
+    if (state.enterpriseContract && state.enterpriseContract.snapshots && state.enterpriseContract.snapshots.length > 0) {
+      const currentSnapshot = state.enterpriseContract.snapshots[0];
+      const evidenceSummary = renderEvidenceSummaryCard(state.enterpriseContract, currentSnapshot);
+      content.appendChild(evidenceSummary);
+    }
 
     const details = document.createElement("div");
     details.className = "l0-dashboard-details";
@@ -415,6 +459,17 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
       snapshotType: isSeedSnapshot ? "Seed" : "Governance"
     });
     content.appendChild(metadataSection);
+    
+    // === ENTERPRISE CONTRACT SECTION (Contract items A-L) ===
+    if (state.enterpriseContract && state.enterpriseContract.snapshots && state.enterpriseContract.snapshots.length > 0) {
+      const currentSnapshot = state.enterpriseContract.snapshots[0];
+      const contractSection = renderEnterpriseContractSection(state.enterpriseContract, currentSnapshot);
+      content.appendChild(contractSection);
+      
+      // === SNAPSHOT HISTORY (Contract item M) ===
+      const historySection = renderSnapshotHistoryList(state.enterpriseContract.snapshots);
+      content.appendChild(historySection);
+    }
   } else if (state.status === "NO_SNAPSHOT" || state.status === "INVALID_SNAPSHOT") {
     // Non-fatal states - show dashboard with no data message
     const title = document.createElement("h1");
