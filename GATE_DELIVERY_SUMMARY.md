@@ -230,5 +230,5 @@ or
 
 ---
 
-**Delivered by**: GitHub Copilot | **Date**: 2024  
+**Delivered by**: code completion assistant | **Date**: 2024  
 **Quality**: 5/5 selftest scenarios pass | **Risk**: Minimal (pure bash, no externals)

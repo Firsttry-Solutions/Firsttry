@@ -117,9 +117,9 @@ cat .firsttry/tier_summary.md
 - High fail counts
 - p95 > 5000ms (very slow checks)
 
-## Copilot Analysis Prompt
+## assistant Analysis Prompt
 
-After running the sweep and collation, use this prompt with GitHub Copilot Chat:
+After running the sweep and collation, use this prompt with code completion assistant Chat:
 
 ```
 You are auditing the FirstTry CLI across tiers.

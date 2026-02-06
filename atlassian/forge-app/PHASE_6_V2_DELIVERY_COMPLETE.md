@@ -506,7 +506,7 @@ This delivery includes:
 
 ---
 
-**Prepared by:** GitHub Copilot  
+**Prepared by:** code completion assistant  
 **Review Date:** 2024  
 **Approval:** Required before production deployment
 

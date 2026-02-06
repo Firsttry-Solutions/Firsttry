@@ -32,7 +32,7 @@ A3.2 completes the validator hardening cycle by replacing keyword-based exclusio
 | P18_FINAL_PROOF_SUMMARY.md | root | docs/audit_reports/ |
 | MARKETPLACE_READINESS_SESSION_COMPLETION.md | root | docs/audit_reports/ |
 | MARKETPLACE_READINESS.md | root | docs/audit_reports/ |
-| COPILOT_ENFORCEMENT_PROMPT.md | docs/ | docs/audit_reports/ |
+| ENFORCEMENT_PROMPT.md | docs/ | docs/audit_reports/ |
 | DOCS_AUDIT_REPORT.md | docs/ | docs/audit_reports/ |
 | RUNTIME_PROOF.md | docs/ | docs/audit_reports/ |
 
@@ -144,7 +144,7 @@ Before A3.2:
 │   ├── P18_FINAL_PROOF_SUMMARY.md
 │   └── ...
 ├── docs/
-│   ├── COPILOT_ENFORCEMENT_PROMPT.md
+│   ├── ENFORCEMENT_PROMPT.md
 │   ├── DOCS_AUDIT_REPORT.md
 │   ├── RUNTIME_PROOF.md
 │   └── [other docs]
@@ -156,7 +156,7 @@ After A3.2:
 │   │   ├── EMAIL_FORENSIC_AUDIT_A1_FINAL_REPORT.md
 │   │   ├── EMAIL_IDENTITY_ENFORCEMENT_A3_REPORT.md
 │   │   ├── P18_FINAL_PROOF_SUMMARY.md
-│   │   ├── COPILOT_ENFORCEMENT_PROMPT.md
+│   │   ├── ENFORCEMENT_PROMPT.md
 │   │   ├── DOCS_AUDIT_REPORT.md
 │   │   ├── RUNTIME_PROOF.md
 │   │   └── [all audit metadata]
@@ -217,7 +217,7 @@ rename EMAIL_IDENTITY_ENFORCEMENT_A3_REPORT.md → docs/audit_reports/
 rename MARKETPLACE_READINESS.md → docs/audit_reports/
 rename MARKETPLACE_READINESS_SESSION_COMPLETION.md → docs/audit_reports/
 rename P18_FINAL_PROOF_SUMMARY.md → docs/audit_reports/
-rename docs/COPILOT_ENFORCEMENT_PROMPT.md → docs/audit_reports/
+rename docs/ENFORCEMENT_PROMPT.md → docs/audit_reports/
 rename docs/DOCS_AUDIT_REPORT.md → docs/audit_reports/
 rename docs/RUNTIME_PROOF.md → docs/audit_reports/
 update tools/validate_docs_email_identity.sh

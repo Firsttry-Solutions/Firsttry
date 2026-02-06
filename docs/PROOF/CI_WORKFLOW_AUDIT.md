@@ -207,6 +207,6 @@ The infrastructure exists (npm ci conditional, package-lock.json, prove_clean_in
 
 ---
 
-**Audit performed by**: GitHub Copilot  
+**Audit performed by**: code completion assistant  
 **Audit date**: 2026-01-19 16:50 UTC  
 **Status**: COMPLETE - Ready for enforcement implementation

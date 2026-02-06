@@ -383,6 +383,6 @@ Export Endpoint:    /rest/api/1/evidence/export
 
 **Last Updated:** 2024  
 **Version:** 1.0.0 (Production Ready)  
-**Maintainer:** GitHub Copilot
+**Maintainer:** code completion assistant
 
 🚀 **PRODUCTION READY**

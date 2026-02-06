@@ -32,7 +32,7 @@ DOC_PATHS = [
 ALLOWLIST = [
     # Documentation ABOUT placeholders (meta: discussing the checking system)
     (r"docs/PLACEHOLDERS_POLICY\.md", r".*", "Policy document about placeholders (all references are examples)"),
-    (r"docs/COPILOT_ENFORCEMENT_PROMPT\.md", r".*", "Enforcement rules and code examples documentation"),
+    (r"docs/ENFORCEMENT_PROMPT\.md", r".*", "Enforcement rules and code examples documentation"),
     (r"docs/EVIDENCE_REPRODUCTION\.md", r"TBD|TODO|FIXME|placeholder", "Documentation showing example checks"),
     (r"docs/DOCS_AUDIT_REPORT\.md", r"Placeholders|TBD|TODO|placeholder", "Audit report documenting previous findings"),
     

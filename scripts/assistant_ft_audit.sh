@@ -3,11 +3,11 @@ set -euo pipefail
 
 # READ-ONLY: do not export demo or license keys here; we only audit behavior.
 # Ensure directories
-mkdir -p .firsttry .firsttry/copilot logs
+mkdir -p .firsttry .firsttry/assistant logs
 
 PROBE="scripts/_ft_probe.py"
-REPORT_MD=".firsttry/copilot_ft_audit_report.md"
-REPORT_JSONL=".firsttry/copilot_ft_audit_report.jsonl"
+REPORT_MD=".firsttry/assistant_ft_audit_report.md"
+REPORT_JSONL=".firsttry/assistant_ft_audit_report.jsonl"
 
 chmod +x "$PROBE" || true
 
@@ -69,7 +69,7 @@ done
 import json, sys
 from pathlib import Path
 
-p = Path(".firsttry/copilot_ft_audit_report.jsonl")
+p = Path(".firsttry/assistant_ft_audit_report.jsonl")
 for line in p.read_text().splitlines():
     try:
         rec = json.loads(line)
@@ -92,7 +92,7 @@ PY
   echo "### Notes"
   echo "- This audit is **read-only** and uses safe flags only."
   echo "- Any non-zero exit is marked **FAIL**; timeouts appear as exit 124."
-  echo "- See ".firsttry/copilot_ft_audit_report.jsonl" for full JSON records (stdout/stderr tails)."
+  echo "- See ".firsttry/assistant_ft_audit_report.jsonl" for full JSON records (stdout/stderr tails)."
 } > "$REPORT_MD"
 
 echo "Wrote: $REPORT_MD"

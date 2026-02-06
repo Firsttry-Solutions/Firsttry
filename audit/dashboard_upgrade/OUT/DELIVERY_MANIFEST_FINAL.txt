@@ -456,7 +456,7 @@ Future Enhancements (Phase 5+):
 12. SUPPORT & CONTACTS
 ================================================================================
 
-Project Owner: Copilot
+Project Owner: assistant
 Last Updated: 2026-01-11T11:30:00 UTC
 Documentation: This manifest + inline code comments
 

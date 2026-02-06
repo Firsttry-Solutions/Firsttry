@@ -1,7 +1,7 @@
-COPILOT Guard — Conftest and CI
+assistant Guard — Conftest and CI
 ================================
 
-This file contains strict constraints for any automated assistant (Copilot or
+This file contains strict constraints for any automated assistant (assistant or
 similar) when proposing edits to `tests/conftest.py`, CI parity workflows, or
 the tests added as part of the stability hardening.
 

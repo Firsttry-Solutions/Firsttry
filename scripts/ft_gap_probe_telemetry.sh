@@ -4,7 +4,7 @@ set -euo pipefail
 # scripts/ft_gap_probe_telemetry.sh
 # Read-only probe for telemetry behavior. Idempotent: always overwrites the single log file.
 
-LOG_DIR=".firsttry/copilot/logs"
+LOG_DIR=".firsttry/assistant/logs"
 LOG_FILE="$LOG_DIR/telemetry_probe.log"
 mkdir -p "$LOG_DIR"
 : > "$LOG_FILE"

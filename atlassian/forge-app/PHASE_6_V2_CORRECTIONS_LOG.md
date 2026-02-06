@@ -317,6 +317,6 @@ Content-Type: 'text/plain; charset=utf-8'
 - All changes are backward compatible (same external APIs)
 - Truth-in-output requirement met (no marketing claims that don't match code)
 
-**Author:** GitHub Copilot  
+**Author:** code completion assistant  
 **Review:** Complete  
 **Status:** Ready for re-submission

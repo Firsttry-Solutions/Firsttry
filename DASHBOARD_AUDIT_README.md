@@ -2,7 +2,7 @@
 
 **Status:** ⛔ **BLOCKED** — Schema mismatch requires product decision  
 **Date:** January 15, 2026  
-**Auditor:** GitHub Copilot  
+**Auditor:** code completion assistant  
 **Repo:** Firsttry-Solutions/Firsttry (HEAD: 5af4f3bd39b4cc3312bb1086afcc2ad316e2a96c)
 
 ---

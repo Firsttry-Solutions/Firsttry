@@ -495,7 +495,7 @@ If Atlassian Forge adds new features (custom keys, backup control, etc.), update
 
 | Property | Value |
 |---|---|
-| **Author** | GitHub Copilot (Automated) |
+| **Author** | code completion assistant (Automated) |
 | **Date** | 2025-12-22 |
 | **Version** | 1.0 |
 | **Status** | FINAL |

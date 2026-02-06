@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Read-only audit script for FirstTry
-# Writes logs to .firsttry/copilot/logs and prints a final JSON summary to stdout
+# Writes logs to .firsttry/assistant/logs and prints a final JSON summary to stdout
 
-LOGDIR=".firsttry/copilot/logs"
-SCANFILE_FULL=".firsttry/copilot/scan_full.txt"
-SCANFILE_EVIDENCE=".firsttry/copilot/scan_evidence.txt"
-SUMMARYJSON=".firsttry/copilot/summary.json"
+LOGDIR=".firsttry/assistant/logs"
+SCANFILE_FULL=".firsttry/assistant/scan_full.txt"
+SCANFILE_EVIDENCE=".firsttry/assistant/scan_evidence.txt"
+SUMMARYJSON=".firsttry/assistant/summary.json"
 mkdir -p "$LOGDIR"
 
 # Helper: run a command and capture stdout/stderr to a log file, but don't exit on failure

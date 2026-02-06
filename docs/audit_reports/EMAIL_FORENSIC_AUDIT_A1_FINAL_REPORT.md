@@ -1,4 +1,4 @@
-# COPILOT PROMPT A1: EMAIL ID FORENSIC AUDIT — FINAL REPORT
+# assistant PROMPT A1: EMAIL ID FORENSIC AUDIT — FINAL REPORT
 
 **Date**: 2026-01-14  
 **Audit Type**: Read-only forensic scan of all tracked files  
@@ -223,5 +223,5 @@ grep -n "firstry\.io" docs/MARKETPLACE_FORM_ANSWERS.md
 ---
 
 **Generated**: 2026-01-14T16:08:00Z  
-**Audit Method**: COPILOT PROMPT A1 — EMAIL ID FORENSIC AUDIT (READ-ONLY)  
+**Audit Method**: assistant PROMPT A1 — EMAIL ID FORENSIC AUDIT (READ-ONLY)  
 **Confidence Level**: HIGH

@@ -513,7 +513,7 @@ const valid = await checker.verifySnapshot(snapshotId);
 
 ---
 
-**Prepared by:** GitHub Copilot  
+**Prepared by:** code completion assistant  
 **Delivery Date:** 2024  
 **Version:** 1.0.0 (Production)  
 **Approval Status:** Ready for deployment

@@ -445,6 +445,6 @@ jest.mock('@forge/api', () => ({
 |------|---------|---------|
 | 2024 | 1.0.0 | Stage 2 test plan completed |
 
-**Author:** GitHub Copilot  
+**Author:** code completion assistant  
 **Review:** Required before Stage 2 execution  
 **Approval:** Product Team

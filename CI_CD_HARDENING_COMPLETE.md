@@ -444,6 +444,6 @@ Require up-to-date branches: Yes
 
 ---
 
-**Delivered by:** GitHub Copilot AI Agent  
+**Delivered by:** code completion assistant AI Agent  
 **Quality Assurance:** ✅ YAML validated, ✅ Tests passing, ✅ Self-audit passing  
 **Compliance:** ✅ No hardcoded secrets, ✅ OIDC-only auth, ✅ Audit trail enabled
