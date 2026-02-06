@@ -447,3 +447,46 @@ export function renderSnapshotHistoryList(snapshots: any[]): HTMLElement {
   
   return container;
 }
+
+/**
+ * Render Definitions & Guidance section (read-only context)
+ * This provides additional audit context without adding new features
+ */
+export function renderDefinitionsGuidance(): HTMLElement {
+  const container = document.createElement('div');
+  container.className = 'ft-definitions-guidance';
+  container.style.marginTop = '32px';
+  container.style.padding = '16px';
+  container.style.backgroundColor = '#f4f5f7';
+  container.style.borderRadius = '4px';
+  
+  const heading = document.createElement('h3');
+  heading.textContent = 'Definitions & Guidance';
+  heading.style.marginBottom = '12px';
+  heading.style.fontSize = '14px';
+  heading.style.fontWeight = '600';
+  container.appendChild(heading);
+  
+  const list = document.createElement('ul');
+  list.style.margin = '0';
+  list.style.paddingLeft = '20px';
+  list.style.fontSize = '13px';
+  list.style.lineHeight = '1.6';
+  
+  const listItems = [
+    'Governance snapshots appear after evidence is collected by the scheduled backend process. Seed snapshots are provided at installation for testing.',
+    'Export eligibility indicates whether a snapshot meets the quality and completeness requirements for external audit or compliance reporting.',
+    'Evidence scope excludes individual issues and personally identifiable information (PII) to ensure privacy and focus on configuration governance.'
+  ];
+  
+  listItems.forEach(text => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    li.style.marginBottom = '8px';
+    list.appendChild(li);
+  });
+  
+  container.appendChild(list);
+  
+  return container;
+}

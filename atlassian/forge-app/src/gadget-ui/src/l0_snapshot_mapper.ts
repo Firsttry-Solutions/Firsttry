@@ -20,7 +20,7 @@
 import { UI_APP_VERSION } from './build/buildIdentity.gen';
 
 // Import enterprise contract renderers
-import { renderEvidenceSummaryCard, renderEnterpriseContractSection, renderSnapshotHistoryList } from './components/EnterpriseContractRenderer';
+import { renderEvidenceSummaryCard, renderEnterpriseContractSection, renderSnapshotHistoryList, renderDefinitionsGuidance } from './components/EnterpriseContractRenderer';
 
 // Support link configuration (mailto: for user accessibility)
 // Must match docs/CONTACTS.md canonical value
@@ -421,6 +421,15 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
       const currentSnapshot = state.enterpriseContract.snapshots[0];
       const evidenceSummary = renderEvidenceSummaryCard(state.enterpriseContract, currentSnapshot);
       content.appendChild(evidenceSummary);
+      
+      // === ENTERPRISE CONTRACT SECTION (Contract items A-L) ===
+      // MOVED HERE: Ensure contract/history are visible immediately after summary
+      const contractSection = renderEnterpriseContractSection(state.enterpriseContract, currentSnapshot);
+      content.appendChild(contractSection);
+      
+      // === SNAPSHOT HISTORY (Contract item M) ===
+      const historySection = renderSnapshotHistoryList(state.enterpriseContract.snapshots);
+      content.appendChild(historySection);
     }
 
     const details = document.createElement("div");
@@ -460,16 +469,10 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     });
     content.appendChild(metadataSection);
     
-    // === ENTERPRISE CONTRACT SECTION (Contract items A-L) ===
-    if (state.enterpriseContract && state.enterpriseContract.snapshots && state.enterpriseContract.snapshots.length > 0) {
-      const currentSnapshot = state.enterpriseContract.snapshots[0];
-      const contractSection = renderEnterpriseContractSection(state.enterpriseContract, currentSnapshot);
-      content.appendChild(contractSection);
-      
-      // === SNAPSHOT HISTORY (Contract item M) ===
-      const historySection = renderSnapshotHistoryList(state.enterpriseContract.snapshots);
-      content.appendChild(historySection);
-    }
+    // === DEFINITIONS & GUIDANCE (Read-only context) ===
+    // Fill remaining space with useful audit guidance
+    const guidanceSection = renderDefinitionsGuidance();
+    content.appendChild(guidanceSection);
   } else if (state.status === "NO_SNAPSHOT" || state.status === "INVALID_SNAPSHOT") {
     // Non-fatal states - show dashboard with no data message
     const title = document.createElement("h1");
