@@ -4,10 +4,10 @@
 # It is designed to be run before any demo to ensure all
 # "magic" features are working as intended.
 #
-# You (the "Director") can use Copilot to help write each function.
+# You (the "Director") can use assistant to help write each function.
 # Just write a comment like:
 # `# Test 3.1: Verify 'Gate Locking'`
-# and Copilot will help write the function.
+# and assistant will help write the function.
 #
 
 # --- Setup: Helper functions for pretty output ---
@@ -41,7 +41,7 @@ FAIL_COUNT=0
 
 # --- Test Suite 1: Performance Core (Developer Demo) ---
 
-# Here, you would write this comment and let Copilot help:
+# Here, you would write this comment and let assistant help:
 # `# Test 1.1: Verify cold vs. warm cache`
 function test_cache() {
     info "Test 1.1: Cold vs. Warm Cache ('ft lite')"

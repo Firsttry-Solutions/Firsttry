@@ -297,7 +297,7 @@ When gadget boots, the following is logged to browser console:
 
 ```
 Commit: d7b49b96 (HEAD -> main)
-Author: Copilot
+Author: assistant
 Date:   2026-01-30T17:30:00Z
 Message: feat(csp-fix): Remove iframeResizer, use CSP-safe Forge bridge resize
 

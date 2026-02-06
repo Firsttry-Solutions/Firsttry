@@ -87,6 +87,6 @@ If consolidation fails validation:
 
 ## Sign-off
 
-**Plan Author:** Copilot Patch Agent  
+**Plan Author:** assistant Patch Agent  
 **Approval Date:** 2026-01-10  
 **Status:** Ready for implementation → STEP 2

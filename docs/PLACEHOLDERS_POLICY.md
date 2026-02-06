@@ -274,5 +274,5 @@ When adding documentation:
 ---
 
 **Last Updated**: January 13, 2026  
-**Audit Lead**: GitHub Copilot (Phase E3)  
+**Audit Lead**: code completion assistant (Phase E3)  
 **Status**: ✅ ACTIVE ENFORCEMENT

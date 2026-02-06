@@ -238,10 +238,10 @@ Phase 1.1 test plan is DONE when:
 
 | Test Type | Owner | Environment | Notes |
 |-----------|-------|-------------|-------|
-| Unit tests | Copilot | Local | No deployment required |
-| Security tests | Copilot | Local | Mock context; no live Jira |
-| Integration tests | Copilot | Development | Requires app deployed |
-| E2E script | Copilot | Development | Real HTTP calls to webtrigger |
+| Unit tests | assistant | Local | No deployment required |
+| Security tests | assistant | Local | Mock context; no live Jira |
+| Integration tests | assistant | Development | Requires app deployed |
+| E2E script | assistant | Development | Real HTTP calls to webtrigger |
 
 ---
 

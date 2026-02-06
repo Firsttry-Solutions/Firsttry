@@ -156,7 +156,7 @@ Closes: "Snapshot validity on first load"
 
 CO-AUTHORED-BY:
 ---------------
-GitHub Copilot (Implementation)
+code completion assistant (Implementation)
 
 REFS:
 -----

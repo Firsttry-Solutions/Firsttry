@@ -572,7 +572,7 @@ A: Error handling with retry logic and partial export recovery.
 A: FIFO deletion or age-based (>90 days). Policies configurable.
 
 ### Contact
-- **Lead:** GitHub Copilot
+- **Lead:** code completion assistant
 - **Review:** Required before production
 - **Questions:** See architecture docs
 

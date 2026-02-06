@@ -426,7 +426,7 @@ All 7 phases implemented:
 ---
 
 **Implementation Date**: 2026-01-17T12:21:34Z  
-**By**: GitHub Copilot  
+**By**: code completion assistant  
 **For**: Jira Dashboard Gadget E2E Verification  
 **Target**: https://firsttry.atlassian.net/jira/dashboards/10102  
 **Gadget**: governance-dashboard-gadget-v2 (v2.88.0)

@@ -76,7 +76,7 @@ FirstTry has completed a **comprehensive placeholder audit** to ensure all custo
    - **Reason**: No fake URLs in templates
 
 ### No Changes Required
-- **docs/COPILOT_ENFORCEMENT_PROMPT.md**: Code examples are meta (showing what validator checks for)
+- **docs/ENFORCEMENT_PROMPT.md**: Code examples are meta (showing what validator checks for)
 - **docs/PLACEHOLDERS_POLICY.md**: NEW policy doc (contains intentional examples of placeholders to demonstrate policy)
 - **docs/EVIDENCE_REPRODUCTION.md**: Documentation about audit checks (not customer-facing)
 - **ROI_MODEL.md**: Has prominent "EXAMPLE" disclaimers on all cost/time figures
@@ -116,7 +116,7 @@ $ python3 tools/validate_placeholders.py
 code_examples_and_enforcement:
   reason: "Code snippets showing what validators check for"
   files:
-    - "docs/COPILOT_ENFORCEMENT_PROMPT.md"
+    - "docs/ENFORCEMENT_PROMPT.md"
     - "tools/validate_docs.sh"
 
 test_fixtures:
@@ -207,7 +207,7 @@ Exit code: 0
 
 ```
 Commit:     81fcbf90
-Author:     GitHub Copilot (Phase E3)
+Author:     code completion assistant (Phase E3)
 Date:       20260113T125008Z
 Branch:     main
 
@@ -300,7 +300,7 @@ FirstTry submission is now:
 
 ---
 
-**Audit Conducted By**: GitHub Copilot (Phase E3)  
+**Audit Conducted By**: code completion assistant (Phase E3)  
 **Completion Date**: January 13, 2026  
 **Status**: ✅ **PRODUCTION READY**
 
@@ -321,7 +321,7 @@ FirstTry submission is now:
 | D1 | Post-Submission: Case Studies | ✅ | 19711bf1 |
 | D2 | Post-Submission: ROI Model | ✅ | e3b39d55 |
 | E1 | Process: Master Readiness Gate | ✅ | eff609f2b |
-| E2 | Process: Copilot Enforcement Prompt | ✅ | abf1c5be |
+| E2 | Process: assistant Enforcement Prompt | ✅ | abf1c5be |
 | **E3** | **Process: Placeholder Audit & Policy** | **✅** | **81fcbf90** |
 
 **Status**: ✅ **ALL 13 ITEMS COMPLETE** (A1-A3, B1-B2, C1-C3, D1-D2, E1-E3)

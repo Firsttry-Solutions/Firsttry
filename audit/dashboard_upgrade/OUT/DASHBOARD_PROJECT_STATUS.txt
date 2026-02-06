@@ -298,7 +298,7 @@ Total lines of evidence: ~2000+
 
 ## CONTACT & SUPPORT
 
-Project Lead: Copilot
+Project Lead: assistant
 Last Updated: 2026-01-11T11:25:00 UTC
 Status Page: This document
 Evidence Path: /workspaces/Firsttry/audit/dashboard_upgrade/OUT/

@@ -3,7 +3,7 @@ set -euo pipefail
 export LC_ALL=C
 
 # FINAL-FINAL STYLE ENFORCEMENT SCAN
-# Detects AI-generated patterns, hype language, emojis, and enforces professional standards
+# Detects generated patterns, hype language, emojis, and enforces professional standards
 
 ENTERPRISE_DOCS=(
   "docs/SECURITY_SUMMARY.md"

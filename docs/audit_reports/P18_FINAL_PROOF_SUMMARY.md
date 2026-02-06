@@ -237,6 +237,6 @@ All marketplace readiness requirements met:
 
 ---
 
-**Signed**: GitHub Copilot  
+**Signed**: code completion assistant  
 **Date**: 2026-01-14T15:56:06Z  
 **Branch**: `release/marketplace-ready-20260113`

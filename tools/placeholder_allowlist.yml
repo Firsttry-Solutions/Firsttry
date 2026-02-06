@@ -21,7 +21,7 @@ code_examples_and_enforcement:
   reason: "Code snippets inside documentation showing what validators will check for"
   rationale: "These are META examples of bad patterns, not actual bad patterns"
   files:
-    - "docs/COPILOT_ENFORCEMENT_PROMPT.md"  # Shows grep patterns for TODO/TBD checking
+    - "docs/ENFORCEMENT_PROMPT.md"  # Shows grep patterns for TODO/TBD checking
     - "tools/validate_docs.sh"               # Shows validation logic
     - ".github/workflows/*.yml"              # CI checks themselves reference keywords
 

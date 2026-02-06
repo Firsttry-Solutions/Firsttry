@@ -1,6 +1,6 @@
 # STOP: Forge Authentication Required
 
-**Prompt**: COPILOT PROMPT v7 — Marketplace Submission Runbook  
+**Prompt**: assistant PROMPT v7 — Marketplace Submission Runbook  
 **Phase**: PHASE 3 — Confirm Forge Auth  
 **Status**: HARD STOP (Non-negotiable, per RULE B)
 
@@ -16,7 +16,7 @@ https://go.atlassian.com/dac/platform/forge/getting-started/#log-in-with-an-atla
 
 ## Why This Is Blocking
 
-COPILOT PROMPT v7 has strict rules:
+assistant PROMPT v7 has strict rules:
 - **RULE B**: "DO NOT fake site URLs. If no site URL is available, STOP with STOP_NEED_JIRA_SITE.md."
 - **Equivalent**: DO NOT proceed without real authentication. Cannot fake Forge credentials.
 
@@ -24,7 +24,7 @@ Production deploy and install require valid Forge CLI authentication.
 
 ## Resolution
 
-Before rerunning COPILOT PROMPT v7, authenticate with Forge CLI:
+Before rerunning assistant PROMPT v7, authenticate with Forge CLI:
 
 ### Option 1: Use Local Keychain (Recommended)
 ```bash
@@ -46,7 +46,7 @@ See: https://go.atlassian.com/dac/platform/forge/getting-started/#log-in-with-an
 ## Next Steps
 
 1. Authenticate with Forge CLI (above)
-2. Rerun COPILOT PROMPT v7 from the release branch:
+2. Rerun assistant PROMPT v7 from the release branch:
    ```bash
    cd /workspaces/Firsttry
    git switch release/freeze-20260111-4d9ed6c5

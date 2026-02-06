@@ -1,4 +1,4 @@
-# Copilot Enforcement Prompt — Authoritative Development Rules
+# assistant Enforcement Prompt — Authoritative Development Rules
 
 **Version**: 1.0  
 **Date**: 2026-01-13  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document defines the **exact rules** Copilot must follow when making changes to the FirstTry repository. It exists to prevent compliance drift and ensure every submission maintains the integrity established in gaps A1–E1.
+This document defines the **exact rules** assistant must follow when making changes to the FirstTry repository. It exists to prevent compliance drift and ensure every submission maintains the integrity established in gaps A1–E1.
 
 **Non-Negotiable Principle**: If these rules are not followed exactly, **the work is not complete**.
 
@@ -136,7 +136,7 @@ git show HEAD --stat
 3. **STOP_AMBIGUOUS_REQUIREMENT**: If the user's request is unclear
    ```
    USER SAYS: "Add some documentation"
-   COPILOT RESPONDS: "I need clarification: Which documentation? What audience? 
+   assistant RESPONDS: "I need clarification: Which documentation? What audience? 
    Is this a security doc, operational doc, or sales doc?"
    ```
 
@@ -204,14 +204,14 @@ Validation:
 **Example (WRONG)**:
 ```
 User: "Create gap E2"
-Copilot: Creates E2, E3, E4 without asking
+assistant: Creates E2, E3, E4 without asking
 ```
 
 **Example (CORRECT)**:
 ```
 User: "Create gap E2"
-Copilot: Creates E2 exactly as specified
-Copilot: "E2 is complete. Gap E3 (X) is suggested but requires user approval."
+assistant: Creates E2 exactly as specified
+assistant: "E2 is complete. Gap E3 (X) is suggested but requires user approval."
 ```
 
 ---
@@ -261,7 +261,7 @@ Scripts available:
 
 **01_impl.log**:
 ```
-Creating docs/COPILOT_ENFORCEMENT_PROMPT.md...
+Creating docs/ENFORCEMENT_PROMPT.md...
 - Size: XXX lines
 - Sections: YYY
 - Evidence anchors: ZZZ
@@ -293,16 +293,16 @@ Including:
 
 **03_commit.txt**:
 ```
-git add docs/COPILOT_ENFORCEMENT_PROMPT.md
-git commit -m "docs(dev): add authoritative Copilot enforcement prompt"
+git add docs/ENFORCEMENT_PROMPT.md
+git commit -m "docs(dev): add authoritative assistant enforcement prompt"
 
 Output:
-[main abc123def] docs(dev): add authoritative Copilot enforcement prompt
+[main abc123def] docs(dev): add authoritative assistant enforcement prompt
  1 file changed, 450 insertions(+)
- create mode 100644 docs/COPILOT_ENFORCEMENT_PROMPT.md
+ create mode 100644 docs/ENFORCEMENT_PROMPT.md
 
 git log --oneline -1:
-abc123def docs(dev): add authoritative Copilot enforcement prompt
+abc123def docs(dev): add authoritative assistant enforcement prompt
 ```
 
 ### 2.4: Attaching Proof to PR (When Applicable)
@@ -501,10 +501,10 @@ These are templates. FirstTry makes no claims about real customer results.
 ### 6.1: Ambiguity Stops Work
 
 **User says**: "Add some documentation"  
-**Copilot response**: "I need clarification: Which documentation? About what feature? Is this for users, developers, or auditors?"
+**assistant response**: "I need clarification: Which documentation? About what feature? Is this for users, developers, or auditors?"
 
 **User says**: "Improve the ROI model"  
-**Copilot response**: "Do you mean: (A) add more detail? (B) add calculator? (C) fix assumptions? (D) all of the above?"
+**assistant response**: "Do you mean: (A) add more detail? (B) add calculator? (C) fix assumptions? (D) all of the above?"
 
 ### 6.2: Missing Proof Stops Work
 
@@ -517,8 +517,8 @@ These are templates. FirstTry makes no claims about real customer results.
 ### 6.3: Scope Creep Stops Work
 
 **User says**: "Create gap E2"  
-**Copilot realizes**: "E2 will require changes to A1, B2, and C3"  
-**Copilot action**: "STOP: Implementing E2 requires changes to existing gaps. Is this intended? Should I update those gaps too, or just create E2?"
+**assistant realizes**: "E2 will require changes to A1, B2, and C3"  
+**assistant action**: "STOP: Implementing E2 requires changes to existing gaps. Is this intended? Should I update those gaps too, or just create E2?"
 
 ---
 
@@ -564,8 +564,8 @@ git add tools/readiness_gate.sh atlassian/forge-app/audit/marketplace_submission
 git commit -m "chore(gate): add non-bypassable master readiness gate (E1)"
 
 # Gap E2 (next commit)
-git add docs/COPILOT_ENFORCEMENT_PROMPT.md
-git commit -m "docs(dev): add authoritative Copilot enforcement prompt (E2)"
+git add docs/ENFORCEMENT_PROMPT.md
+git commit -m "docs(dev): add authoritative assistant enforcement prompt (E2)"
 ```
 
 **Wrong**:
@@ -682,7 +682,7 @@ test -f tools/readiness_gate.sh
 echo "✓ Master gate exists" | tee "$RUN_DIR/00_check.txt"
 
 # Step 3: Create enforcement prompt
-echo "Creating docs/COPILOT_ENFORCEMENT_PROMPT.md..." | tee "$RUN_DIR/01_impl.log"
+echo "Creating docs/ENFORCEMENT_PROMPT.md..." | tee "$RUN_DIR/01_impl.log"
 # [Create file with 400+ lines of rules]
 echo "✓ File created" | tee -a "$RUN_DIR/01_impl.log"
 
@@ -698,8 +698,8 @@ fi
 
 # Step 5: Commit
 echo "Committing..." | tee "$RUN_DIR/03_commit.txt"
-git add docs/COPILOT_ENFORCEMENT_PROMPT.md
-git commit -m "docs(dev): add authoritative Copilot enforcement prompt (E2)
+git add docs/ENFORCEMENT_PROMPT.md
+git commit -m "docs(dev): add authoritative assistant enforcement prompt (E2)
 
 Rules for future development:
 - Master readiness gate is final arbiter
@@ -782,6 +782,6 @@ bash tools/readiness_gate.sh > /dev/null 2>&1 && echo "✓ Gate still passes" | 
 
 ---
 
-**End of Copilot Enforcement Prompt**
+**End of assistant Enforcement Prompt**
 
-*This document is the single source of truth for Copilot development on FirstTry. All future gaps must comply with these rules.*
+*This document is the single source of truth for assistant development on FirstTry. All future gaps must comply with these rules.*

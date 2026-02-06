@@ -329,5 +329,5 @@ User-trust aligned.
 ---
 
 **Last Updated:** 2025-01-03  
-**Delivered by:** GitHub Copilot  
+**Delivered by:** code completion assistant  
 **Status:** Production-Ready

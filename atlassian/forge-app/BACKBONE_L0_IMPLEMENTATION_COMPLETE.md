@@ -403,4 +403,4 @@ Contains:
 
 **Version:** 2.98.0+  
 **Date:** 2026-01-17  
-**Implemented by:** GitHub Copilot (L0 Backbone Team)
+**Implemented by:** code completion assistant (L0 Backbone Team)
