@@ -1,7 +1,6 @@
 {
-  "commitSha": "686145886a7577830b5de27733617d3d5c57eca5",
-  "createdAtUtc": "2026-02-05T17:32:49.214Z",
-  "source": "release_freeze_lock",
-  "frozenContentSha": "48fa7323a6245e67498eb596659ce0d665b900cee1b9761186550853b9c2af97",
-  "method": "git-tracked-files+sha256-manifest"
+  "commitSha": "197d8d632c9320b499079ff7087c72951452e436",
+  "frozenContentSha": "8c020dbb3a41b5e712dd3e6f895f7b2a586260601ca4ea9490e30290ff7f62a6",
+  "method": "git-tracked-files+sha256-manifest",
+  "frozenAt": "2026-02-06T07:52:29Z"
 }
