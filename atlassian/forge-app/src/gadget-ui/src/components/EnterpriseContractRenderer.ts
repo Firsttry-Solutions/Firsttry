@@ -457,13 +457,10 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   header.appendChild(supportBtn);
   
   // Snapshot selector (static display for current snapshot - explicitly read-only)
+  // All styling via CSS only (no inline styles per CSP requirement)
   const snapshotSelector = document.createElement('div');
   snapshotSelector.className = 'ft-snapshot-selector';
   snapshotSelector.setAttribute('data-testid', 'ft-snapshot-selector');
-  snapshotSelector.style.marginTop = '12px';
-  snapshotSelector.style.fontSize = '0.9em';
-  snapshotSelector.style.color = '#5E6C84';
-  snapshotSelector.style.cursor = 'default';
   snapshotSelector.textContent = 'View snapshot: Latest (read-only)';
   header.appendChild(snapshotSelector);
   
