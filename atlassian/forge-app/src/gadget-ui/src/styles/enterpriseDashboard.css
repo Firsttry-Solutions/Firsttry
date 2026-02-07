@@ -257,16 +257,18 @@
   letter-spacing: 0.3px;
 }
 
-/* ===== SNAPSHOT SELECTOR ===== */
+/* ===== SNAPSHOT SELECTOR (READ-ONLY DISPLAY ONLY) ===== */
 .ft-snapshot-selector {
   margin-top: 16px;
   padding: 12px;
-  background-color: var(--ds-surface-raised, #f4f5f7);
-  border: 1px solid var(--ds-border, #dfe1e6);
-  border-radius: 3px;
+  background-color: transparent;
+  border: none;
   font-size: 13px;
+  color: var(--ds-text-subtle, #6b778c);
+  cursor: default;
 }
 
+/* Legacy rules for select elements (not used - snapshot selector is read-only text only) */
 .ft-snapshot-selector label {
   display: block;
   margin-bottom: 6px;
