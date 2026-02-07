@@ -28,6 +28,7 @@ import {
   DEFAULT_RETENTION_POLICY,
   type SnapshotType,
 } from './constants';
+import { ImmutabilityViolationError } from '../shared/snapshotStatus';
 import { computeCanonicalHash } from './canonicalization';
 import { createSnapshotLock } from './distributed_lock';
 
@@ -152,6 +153,13 @@ export class SnapshotStorage {
     }
 
     const key = getSnapshotKey(this.tenantId, snapshot.snapshot_id);
+    
+    // Immutability enforcement: check if snapshot already exists
+    const existing = await storage.get(key);
+    if (existing) {
+      throw new ImmutabilityViolationError(snapshot.snapshot_id);
+    }
+    
     const ttl = 90 * 24 * 60 * 60; // 90 days in seconds
     
     await storage.set(key, JSON.stringify(snapshot), { ttl });

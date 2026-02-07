@@ -35,6 +35,7 @@ import {
 import {
   computeCanonicalHash,
 } from './canonicalization';
+import { computeSnapshotStatus, type RequiredFetchResult } from '../shared/snapshotStatus';
 
 /**
  * Snapshot capturer
@@ -44,6 +45,7 @@ export class SnapshotCapturer {
   private apiCallsMade: number = 0;
   private rateLimitHits: number = 0;
   private missingData: MissingDataItem[] = [];
+  private fetchResults: RequiredFetchResult[] = [];
 
   constructor(
     private tenantId: string,
@@ -71,6 +73,11 @@ export class SnapshotCapturer {
 
       // Compute hash
       const canonicalHash = computeCanonicalHash(payload);
+      
+      // Compute status (v2: fail-closed)
+      const status = this.fetchResults.length > 0 
+        ? computeSnapshotStatus(this.fetchResults)
+        : 'FAILED';
 
       // Create snapshot
       const snapshot: Snapshot = {
@@ -82,6 +89,7 @@ export class SnapshotCapturer {
         schema_version: '1.0.0',
         canonical_hash: canonicalHash,
         hash_algorithm: 'sha256',
+        status: status,
         clock_source: 'system',
         scope: {
           projects_included: ['ALL'],
@@ -155,8 +163,14 @@ export class SnapshotCapturer {
     for (const dataset of datasets) {
       try {
         payload[dataset] = await this.captureDataset(dataset);
+        this.fetchResults.push({ datasetName: dataset, succeeded: true });
       } catch (error: any) {
         this.recordMissingData(dataset, error);
+        this.fetchResults.push({ 
+          datasetName: dataset, 
+          succeeded: false, 
+          errorMessage: error.message 
+        });
       }
     }
 
