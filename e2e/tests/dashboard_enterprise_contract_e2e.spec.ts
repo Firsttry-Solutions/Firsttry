@@ -602,6 +602,149 @@ test.describe('Enterprise Contract Dashboard', () => {
       throw new Error('STOP_MOBILE_TEXT_TOO_SHORT');
     }
     
+    // ========================================================================
+    // SUPPORT BUTTON SANDBOX-SAFETY GATE
+    // ========================================================================
+    console.log('[TEST] Testing support button (sandbox-safe router.open)...');
+    const supportResults: string[] = [];
+    supportResults.push('=== SUPPORT BUTTON SANDBOX-SAFETY GATE ===\n\n');
+    
+    // Find support button
+    const supportButton = gadgetFrame.locator('[data-testid="ft-support-button"]');
+    const supportButtonExists = await supportButton.count() > 0;
+    supportResults.push(`Support button exists: ${supportButtonExists}\n`);
+    
+    if (!supportButtonExists) {
+      const stopFile = path.join(RUN_DIR, 'STOP_SUPPORT_BUTTON_MISSING.txt');
+      fs.writeFileSync(stopFile, 'Support button (ft-support-button) not found in gadget frame');
+      fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
+      throw new Error('STOP_SUPPORT_BUTTON_MISSING');
+    }
+    
+    // Record console messages before click
+    const consoleBeforeClick = [...consoleLogs];
+    
+    // Click support button
+    console.log('[TEST] Clicking support button...');
+    await supportButton.click();
+    await page.waitForTimeout(2000); // Allow time for router.open attempt and any fallback
+    
+    // Record console messages after click
+    const consoleAfterClick = consoleLogs.slice(consoleBeforeClick.length);
+    
+    // Filter for our app scope
+    const supportClickMessages = consoleMessages.slice(consoleBeforeClick.length).filter(msg => {
+      const url = msg.location || '';
+      const isOurApp = (
+        url.includes('cdn.prod.atlassian-dev.net') && url.includes('/govGadget')
+      ) || url.includes(expectedHeadShortSha);
+      return isOurApp;
+    });
+    
+    const supportClickLogsText = supportClickMessages.map(msg => 
+      `[${msg.type}] ${msg.text}\n  Location: ${msg.location}`
+    ).join('\n\n');
+    
+    fs.writeFileSync(path.join(RUN_DIR, '77_support_click_console_scope.txt'), 
+      supportClickLogsText || 'No scoped console messages from support button click');
+    supportResults.push(`\nScoped console messages after click: ${supportClickMessages.length}\n`);
+    
+    // Check for sandbox block error
+    const sandboxBlockFound = consoleAfterClick.some(log => 
+      log.includes('SandboxExternalProtocolBlocked') || 
+      log.includes('Navigation to external protocol blocked by sandbox')
+    );
+    
+    if (sandboxBlockFound) {
+      const stopFile = path.join(RUN_DIR, 'STOP_SUPPORT_SANDBOX_BLOCKED.txt');
+      const stopMsg = [
+        '=== SUPPORT SANDBOX BLOCK DETECTED ===',
+        '',
+        'The support button triggered a sandbox navigation block.',
+        'This means the implementation is NOT using Forge bridge router.open correctly.',
+        '',
+        'Console messages after click:',
+        ...consoleAfterClick.slice(0, 10).map(log => `  ${log}`)
+      ].join('\n');
+      fs.writeFileSync(stopFile, stopMsg);
+      fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
+      throw new Error('STOP_SUPPORT_SANDBOX_BLOCKED');
+    }
+    supportResults.push('✓ No sandbox block error detected\n');
+    
+    // Check for console errors from our app after click
+    const supportConsoleErrors = supportClickMessages.filter(m => m.type === 'error');
+    if (supportConsoleErrors.length > 0) {
+      const stopFile = path.join(RUN_DIR, 'STOP_SUPPORT_CONSOLE_ERROR.txt');
+      const stopMsg = [
+        '=== SUPPORT CONSOLE ERROR DETECTED ===',
+        '',
+        `Found ${supportConsoleErrors.length} error(s) after clicking support button:`,
+        '',
+        ...supportConsoleErrors.map(err => `  ${err.text}\n  Location: ${err.location}`).join('\n\n')
+      ].join('\n');
+      fs.writeFileSync(stopFile, stopMsg);
+      fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
+      throw new Error('STOP_SUPPORT_CONSOLE_ERROR');
+    }
+    supportResults.push('✓ No console errors from our app after click\n');
+    
+    // Check for FT_SUPPORT_OPEN_ATTEMPT marker
+    const openAttemptFound = consoleAfterClick.some(log => 
+      log.includes('FT_SUPPORT_OPEN_ATTEMPT')
+    );
+    
+    if (!openAttemptFound) {
+      const stopFile = path.join(RUN_DIR, 'STOP_SUPPORT_OPEN_NOT_ATTEMPTED.txt');
+      const stopMsg = [
+        '=== SUPPORT OPEN NOT ATTEMPTED ===',
+        '',
+        'The FT_SUPPORT_OPEN_ATTEMPT marker was not found in console logs.',
+        'This means router.open was not called.',
+        '',
+        'Console messages after click:',
+        ...consoleAfterClick.slice(0, 10).map(log => `  ${log}`)
+      ].join('\n');
+      fs.writeFileSync(stopFile, stopMsg);
+      fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
+      throw new Error('STOP_SUPPORT_OPEN_NOT_ATTEMPTED');
+    }
+    supportResults.push('✓ FT_SUPPORT_OPEN_ATTEMPT marker found\n');
+    
+    // Check for fallback elements (may or may not appear depending on router.open success)
+    const supportUrl = gadgetFrame.locator('[data-testid="ft-support-url"]');
+    const supportCopy = gadgetFrame.locator('[data-testid="ft-support-copy"]');
+    const fallbackUrlExists = await supportUrl.count() > 0;
+    const fallbackCopyExists = await supportCopy.count() > 0;
+    
+    supportResults.push(`\nFallback elements:\n`);
+    supportResults.push(`  ft-support-url exists: ${fallbackUrlExists}\n`);
+    supportResults.push(`  ft-support-copy exists: ${fallbackCopyExists}\n`);
+    
+    if (fallbackUrlExists) {
+      const urlText = await supportUrl.innerText();
+      supportResults.push(`  URL text: ${urlText}\n`);
+    }
+    
+    supportResults.push('\n✓ VERDICT: PASS - Support button is sandbox-safe\n');
+    fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
+    console.log(`[TEST] Support button proof written to ${path.join(RUN_DIR, '78_support_dom_proof.txt')}`);
+    
+    // Network proof (attempt marker)
+    const networkProof = [
+      '=== SUPPORT NETWORK PROOF ===',
+      '',
+      'Console markers found:',
+      `  FT_SUPPORT_OPEN_ATTEMPT: ${openAttemptFound ? 'YES' : 'NO'}`,
+      '',
+      'Relevant console logs:',
+      ...consoleAfterClick.filter(log => log.includes('FT_SUPPORT') || log.includes('support')).map(log => `  ${log}`),
+      '',
+      '✓ VERDICT: router.open attempt logged'
+    ].join('\n');
+    fs.writeFileSync(path.join(RUN_DIR, '79_support_network_proof.txt'), networkProof);
+    console.log(`[TEST] Support network proof written to ${path.join(RUN_DIR, '79_support_network_proof.txt')}`);
+    
     // === CONSOLE HYGIENE GATE (OUR APP ONLY) ===
     console.log('[TEST] Processing console hygiene gate (filtering for our app only)...');
     const scopedMessages = consoleMessages.filter(msg => {

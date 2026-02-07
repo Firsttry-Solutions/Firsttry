@@ -7,6 +7,12 @@
  */
 
 import { computeEvidenceAgeDays, computeFreshness, formatEvidenceAge } from '../utils/evidenceMetrics';
+import { router } from '@forge/bridge';
+
+/**
+ * Support URL for FirstTry (HTTPS only for sandbox compatibility)
+ */
+const SUPPORT_URL = 'https://firsttry.run/support';
 
 /**
  * Helper: Escape HTML entities
@@ -284,6 +290,96 @@ function createCopyButton(text: string, testId: string): HTMLButtonElement {
 }
 
 /**
+ * Helper: Create support button container with sandbox-safe router.open
+ */
+function createSupportButton(): HTMLElement {
+  const container = document.createElement('div');
+  container.className = 'ft-support-container';
+  container.style.marginTop = '12px';
+  
+  const button = document.createElement('button');
+  button.className = 'ft-button';
+  button.setAttribute('data-testid', 'ft-support-button');
+  button.setAttribute('aria-label', 'Get support');
+  button.textContent = 'Get support';
+  
+  let fallbackShown = false;
+  
+  button.addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    // Log attempt marker for E2E verification
+    console.log('FT_SUPPORT_OPEN_ATTEMPT', SUPPORT_URL);
+    
+    try {
+      await router.open(SUPPORT_URL);
+      // Success - router.open worked
+    } catch (err) {
+      // Fallback: show URL and copy button
+      if (!fallbackShown) {
+        fallbackShown = true;
+        
+        const fallbackMsg = document.createElement('div');
+        fallbackMsg.style.marginTop = '8px';
+        fallbackMsg.style.fontSize = '0.9em';
+        fallbackMsg.style.color = '#5E6C84';
+        fallbackMsg.textContent = 'Support link could not be opened. Copy the URL below:';
+        container.appendChild(fallbackMsg);
+        
+        const urlDiv = document.createElement('div');
+        urlDiv.setAttribute('data-testid', 'ft-support-url');
+        urlDiv.style.marginTop = '4px';
+        urlDiv.style.fontFamily = 'monospace';
+        urlDiv.style.fontSize = '0.85em';
+        urlDiv.style.wordBreak = 'break-all';
+        urlDiv.textContent = SUPPORT_URL;
+        container.appendChild(urlDiv);
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'ft-button';
+        copyBtn.setAttribute('data-testid', 'ft-support-copy');
+        copyBtn.setAttribute('aria-label', 'Copy support URL');
+        copyBtn.textContent = 'Copy support URL';
+        copyBtn.style.marginTop = '8px';
+        
+        copyBtn.addEventListener('click', async (copyE) => {
+          copyE.preventDefault();
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(SUPPORT_URL);
+            } else {
+              // Fallback for older browsers
+              const textarea = document.createElement('textarea');
+              textarea.value = SUPPORT_URL;
+              textarea.style.position = 'fixed';
+              textarea.style.opacity = '0';
+              document.body.appendChild(textarea);
+              textarea.select();
+              document.execCommand('copy');
+              document.body.removeChild(textarea);
+            }
+            
+            // Visual feedback
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => {
+              copyBtn.textContent = originalText;
+            }, 1200);
+          } catch (copyErr) {
+            console.error('Copy failed:', copyErr);
+          }
+        });
+        
+        container.appendChild(copyBtn);
+      }
+    }
+  });
+  
+  container.appendChild(button);
+  return container;
+}
+
+/**
  * Render the Enterprise Contract section
  * 
  * This renders contract items A-L (Snapshot History is rendered separately)
@@ -356,6 +452,10 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   readonly.textContent = data.readOnlyGuarantee || 'FirstTry is a read-only system. It does not modify Jira data, settings, or configurations.';
   header.appendChild(readonly);
   
+  // Support button (sandbox-safe)
+  const supportBtn = createSupportButton();
+  header.appendChild(supportBtn);
+  
   shell.appendChild(header);
   
   // === CARD GRID ===
@@ -402,6 +502,19 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
     
     evidenceCard.appendChild(kvDiv);
   });
+  
+  // Export hint (if disabled, provide guidance)
+  if (!currentSnapshot.exportEligible) {
+    const exportHint = document.createElement('div');
+    exportHint.className = 'ft-hint';
+    exportHint.setAttribute('data-testid', 'ft-export-hint');
+    exportHint.style.marginTop = '12px';
+    exportHint.style.fontSize = '0.9em';
+    exportHint.style.color = '#5E6C84';
+    exportHint.style.fontStyle = 'italic';
+    exportHint.textContent = 'Create a Governance Snapshot to enable exportable evidence.';
+    evidenceCard.appendChild(exportHint);
+  }
   
   // Integrity hash (special treatment: monospace + copy button)
   const integrityHash = currentSnapshot.integrity?.value || '';
