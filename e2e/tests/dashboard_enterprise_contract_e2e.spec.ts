@@ -25,18 +25,25 @@ test.describe('Enterprise Contract Dashboard', () => {
   let consoleLogs: string[] = [];
   
   test.beforeEach(async () => {
-    // Get RUN_DIR from environment variable (Phase 6 requirement) or fallback to file
-    if (process.env.RUN_DIR) {
+    // Get output directory from E2E_OUTPUT_DIR or RUN_DIR environment variable
+    if (process.env.E2E_OUTPUT_DIR) {
+      RUN_DIR = process.env.E2E_OUTPUT_DIR;
+      console.log(`[TEST] Using E2E_OUTPUT_DIR: ${RUN_DIR}`);
+    } else if (process.env.RUN_DIR) {
       RUN_DIR = process.env.RUN_DIR;
       console.log(`[TEST] Using RUN_DIR from env: ${RUN_DIR}`);
     } else {
       const runDirPath = '/tmp/current_contract_run_dir.txt';
       if (!fs.existsSync(runDirPath)) {
-        console.error('[TEST] STOP_NO_RUN_DIR: No RUN_DIR env var and /tmp/current_contract_run_dir.txt not found');
+        console.error('[TEST] STOP_NO_RUN_DIR: No E2E_OUTPUT_DIR, RUN_DIR env var, or /tmp/current_contract_run_dir.txt found');
         throw new Error('STOP_NO_RUN_DIR');
       }
       RUN_DIR = fs.readFileSync(runDirPath, 'utf8').trim();
       console.log(`[TEST] Using RUN_DIR from file: ${RUN_DIR}`);
+    }
+    
+    if (!RUN_DIR) {
+      throw new Error('STOP_NO_RUN_DIR: Output directory not configured');
     }
     
     if (!fs.existsSync(RUN_DIR)) {
@@ -46,7 +53,7 @@ test.describe('Enterprise Contract Dashboard', () => {
   
   test.afterEach(async ({ page }) => {
     // ALWAYS write console logs, even on failure
-    const consoleLogPath = path.join(RUN_DIR, '51_console.txt');
+    const consoleLogPath = path.join(RUN_DIR, '37_console.txt');
     fs.writeFileSync(consoleLogPath, consoleLogs.join('\n'));
     console.log(`[TEST] Console logs written to ${consoleLogPath}`);
   });
@@ -121,41 +128,89 @@ test.describe('Enterprise Contract Dashboard', () => {
     console.log('[TEST] Enterprise contract root visible');
     
     // ========================================================================
-    // ENTERPRISE-GRADE LAYOUT GATE
+    // ENTERPRISE-GRADE LAYOUT GATE (STRICT: y < 320 @ 1280x720)
     // ========================================================================
     console.log('[TEST] Validating enterprise-grade layout...');
+    const layoutResults: string[] = [];
+    layoutResults.push('=== ENTERPRISE LAYOUT GATE ===\n');
+    layoutResults.push('Viewport: 1280x720\n');
+    layoutResults.push('Threshold: Evidence Summary y < 320px (enterprise above-the-fold)\n\n');
     
     // Locate Evidence Summary (must be above the fold)
     const summary = gadgetFrame.locator('[data-testid="ft-evidence-summary-root"]');
     await expect(summary).toBeVisible({ timeout: 120000 });
     console.log('[TEST] ✓ Evidence Summary visible');
+    layoutResults.push('✓ Evidence Summary visible\n');
     
     // Check Evidence Summary is above the fold (bounding box y position)
     const summaryBox = await summary.boundingBox();
     if (!summaryBox) {
-      throw new Error('SUMMARY_BOUNDING_BOX_NULL');
+      const msg = 'SUMMARY_BOUNDING_BOX_NULL';
+      layoutResults.push(`✗ FAIL: ${msg}\n`);
+      layoutResults.push('\nVERDICT: FAIL (cannot measure Evidence Summary position)\n');
+      fs.writeFileSync(path.join(RUN_DIR, '39_layout_gate.txt'), layoutResults.join(''));
+      throw new Error(msg);
     }
-    console.log(`[TEST] Evidence Summary position: y=${summaryBox.y}, height=${summaryBox.height}`);
+    console.log(`[TEST] Evidence Summary y=${summaryBox.y}, height=${summaryBox.height}`);
+    layoutResults.push(`Evidence Summary y=${summaryBox.y}, height=${summaryBox.height}\n`);
     
-    // STRICT THRESHOLD: Must start within first 500px of gadget viewport
-    if (summaryBox.y > 500) {
-      throw new Error(`SUMMARY_NOT_ABOVE_FOLD: y=${summaryBox.y} (threshold: 500px)`);
+    // ENTERPRISE THRESHOLD: Must start within first 320px  (well above fold for 720px viewport)
+    // Note: y=298 is ~41% through viewport height, clearly visible without scrolling
+    if (summaryBox.y >= 320) {
+      const msg = `SUMMARY_NOT_ABOVE_FOLD: y=${summaryBox.y} >= 320px threshold (FAIL)`;
+      layoutResults.push(`✗ FAIL: ${msg}\n`);
+      layoutResults.push('\nVERDICT: FAIL (Evidence Summary not within 320px threshold)\n');
+      fs.writeFileSync(path.join(RUN_DIR, '39_layout_gate.txt'), layoutResults.join(''));
+      throw new Error(msg);
     }
-    console.log(`[TEST] ✓ Evidence Summary is above the fold (y=${summaryBox.y} < 500px)`);
+    console.log(`[TEST] ✓ Evidence Summary above fold (y=${summaryBox.y} < 320px)`);
+    layoutResults.push(`✓ PASS: Evidence Summary y=${summaryBox.y} < 320px\n`);
+    layoutResults.push(`Above-the-fold: ${Math.round((summaryBox.y / 720) * 100)}% through 720px viewport\n`);
     
     // Contract root already verified visible above
     const contractRoot = gadgetFrame.locator('[data-testid="ft-enterprise-contract-root"]');
     console.log('[TEST] ✓ Enterprise Contract root confirmed visible');
+    layoutResults.push('✓ Enterprise Contract root visible\n');
     
-    // Capture screenshot EARLY (before any assertions fail)
-    const screenshotPath = path.join(RUN_DIR, '32_dashboard.png');
-    await page.screenshot({ path: screenshotPath, fullPage: true });
-    console.log(`[TEST] Screenshot saved to ${screenshotPath}`);
+    // Snapshot History
+    const historyRoot = gadgetFrame.locator('[data-testid="ft-snapshot-history"]');
+    await expect(historyRoot).toBeVisible({ timeout: 30000 });
+    console.log('[TEST] ✓ Snapshot History visible');
+    layoutResults.push('✓ Snapshot History visible\n');
+    
+    layoutResults.push('\nVERDICT: PASS (Enterprise layout meets strict threshold)\n');
+    fs.writeFileSync(path.join(RUN_DIR, '39_layout_gate.txt'), layoutResults.join(''));
+    console.log(`[TEST] Layout gate written to ${path.join(RUN_DIR, '39_layout_gate.txt')}`);
+    
+    // ========================================================================
+    // SCREENSHOTS (Element-specific + Full page)
+    // ========================================================================
+    console.log('[TEST] Capturing screenshots...');
+    
+    // Full page screenshot
+    const fullScreenshotPath = path.join(RUN_DIR, '35_full_dashboard.png');
+    await page.screenshot({ path: fullScreenshotPath, fullPage: true });
+    console.log(`[TEST] Full page screenshot: ${fullScreenshotPath}`);
+    
+    // Evidence Summary element screenshot
+    const summaryScreenshotPath = path.join(RUN_DIR, '32_summary.png');
+    await summary.screenshot({ path: summaryScreenshotPath });
+    console.log(`[TEST] Evidence Summary screenshot: ${summaryScreenshotPath}`);
+    
+    // Enterprise Contract element screenshot
+    const contractScreenshotPath = path.join(RUN_DIR, '33_contract.png');
+    await contractRoot.screenshot({ path: contractScreenshotPath });
+    console.log(`[TEST] Enterprise Contract screenshot: ${contractScreenshotPath}`);
+    
+    // Snapshot History element screenshot
+    const historyScreenshotPath = path.join(RUN_DIR, '34_history.png');
+    await historyRoot.screenshot({ path: historyScreenshotPath });
+    console.log(`[TEST] Snapshot History screenshot: ${historyScreenshotPath}`);
     
     // === EXTRACT REAL DOM TEXT (CRITICAL FOR PROOF) ===
     console.log('[TEST] Extracting real DOM innerText from contract root...');
     const domText = await contractRoot.innerText();
-    const domTextPath = path.join(RUN_DIR, '33_dashboard_dom_text.txt');
+    const domTextPath = path.join(RUN_DIR, '36_contract_dom_text.txt');
     fs.writeFileSync(domTextPath, domText);
     console.log(`[TEST] DOM text saved to ${domTextPath} (${domText.length} chars)`);
     
@@ -236,7 +291,7 @@ test.describe('Enterprise Contract Dashboard', () => {
     }
     
     // Write contract check results
-    const contractCheckPath = path.join(RUN_DIR, '70_contract_dom_check.txt');
+    const contractCheckPath = path.join(RUN_DIR, '38_contract_dom_check.txt');
     fs.writeFileSync(contractCheckPath, contractResults.join(''));
     console.log(`[TEST] Contract validation written to ${contractCheckPath}`);
     

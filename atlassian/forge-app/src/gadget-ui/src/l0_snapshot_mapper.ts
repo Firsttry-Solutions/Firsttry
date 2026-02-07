@@ -328,11 +328,15 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     
     title.textContent = titleText;
     title.className = "l0-dashboard-title-available";
+    // ENTERPRISE LAYOUT: Minimize top gap for above-fold content
+    title.style.marginBottom = "12px"; // Reduced from default for tighter layout
     content.appendChild(title);
 
     // A5: Snapshot Variant Selector Control
     const variantControls = document.createElement("div");
     variantControls.className = "l0-variant-controls";
+    // ENTERPRISE LAYOUT: Minimize spacing below variant selector
+    variantControls.style.marginBottom = "16px"; // Reduced for tighter layout
     
     const variantLabel = document.createElement("label");
     variantLabel.className = "l0-variant-label";
@@ -358,7 +362,27 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     variantControls.appendChild(variantLabel);
     content.appendChild(variantControls);
 
-    // A2-ui: Build Provenance Strip (always visible, compact layout)
+    // === ENTERPRISE LAYOUT: Evidence Summary FIRST (Above the fold) ===
+    // Order: Summary → Contract → History → Diagnostics
+    // This ensures core audit evidence is visible without scrolling
+    if (state.enterpriseContract && state.enterpriseContract.snapshots && state.enterpriseContract.snapshots.length > 0) {
+      const currentSnapshot = state.enterpriseContract.snapshots[0];
+      
+      // 1) Evidence Summary Card (FIRST major section - enterprise visual hierarchy)
+      const evidenceSummary = renderEvidenceSummaryCard(state.enterpriseContract, currentSnapshot);
+      content.appendChild(evidenceSummary);
+      
+      // 2) Enterprise Contract Section (Contract items A-L immediately after summary)
+      const contractSection = renderEnterpriseContractSection(state.enterpriseContract, currentSnapshot);
+      content.appendChild(contractSection);
+      
+      // 3) Snapshot History (Contract item M immediately after contract)
+      const historySection = renderSnapshotHistoryList(state.enterpriseContract.snapshots);
+      content.appendChild(historySection);
+    }
+
+    // === DIAGNOSTICS / METADATA (Below enterprise sections) ===
+    // Build Provenance Strip: technical metadata for troubleshooting
     const provenanceStrip = document.createElement("div");
     provenanceStrip.className = "l0-provenance-strip";
     
@@ -415,22 +439,6 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     });
     
     content.appendChild(provenanceStrip);
-    
-    // === EVIDENCE SUMMARY CARD (TOP - Above the fold) ===
-    if (state.enterpriseContract && state.enterpriseContract.snapshots && state.enterpriseContract.snapshots.length > 0) {
-      const currentSnapshot = state.enterpriseContract.snapshots[0];
-      const evidenceSummary = renderEvidenceSummaryCard(state.enterpriseContract, currentSnapshot);
-      content.appendChild(evidenceSummary);
-      
-      // === ENTERPRISE CONTRACT SECTION (Contract items A-L) ===
-      // MOVED HERE: Ensure contract/history are visible immediately after summary
-      const contractSection = renderEnterpriseContractSection(state.enterpriseContract, currentSnapshot);
-      content.appendChild(contractSection);
-      
-      // === SNAPSHOT HISTORY (Contract item M) ===
-      const historySection = renderSnapshotHistoryList(state.enterpriseContract.snapshots);
-      content.appendChild(historySection);
-    }
 
     const details = document.createElement("div");
     details.className = "l0-dashboard-details";

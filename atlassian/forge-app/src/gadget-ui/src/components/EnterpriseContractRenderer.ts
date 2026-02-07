@@ -141,6 +141,10 @@ export function renderEvidenceSummaryCard(data: any, currentSnapshot: any): HTML
   const { card, body } = createCard('ft-evidence-summary', 'Evidence Summary');
   card.setAttribute('data-testid', 'ft-evidence-summary-root');
   
+  // ENTERPRISE LAYOUT: Minimize top gap to ensure above-fold visibility (y < 250px)
+  card.style.marginTop = '8px';  // Minimal top margin for enterprise-grade layout
+  card.style.marginBottom = '16px';
+  
   // Snapshot type (human readable)
   const snapshotType = currentSnapshot.snapshotKind === 'SEED' ? 'Seed Snapshot' : 'Governance Snapshot';
   const typeItem = createContractItem('Snapshot type', snapshotType, 'ft-summary-snapshot-type');
@@ -339,9 +343,29 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   immutabilityEl.textContent = immutabilityExact;
   contractFieldsSection.appendChild(immutabilityEl);
   
-  // F) Integrity hash (SHA-256)
+  // F) Integrity hash (SHA-256) - monospace with safe wrapping
   const integrityHash = currentSnapshot.integrity?.value || '';
-  contractFieldsSection.appendChild(createContractItem('Integrity hash (SHA-256)', integrityHash, 'ft-integrity-hash'));
+  if (integrityHash) {
+    const hashItem = document.createElement('div');
+    hashItem.className = 'ft-contract-item';
+    hashItem.setAttribute('data-testid', 'ft-integrity-hash');
+    
+    const label = document.createElement('span');
+    label.className = 'ft-contract-label';
+    label.textContent = 'Integrity hash (SHA-256): ';
+    hashItem.appendChild(label);
+    
+    const value = document.createElement('span');
+    value.className = 'ft-contract-value ft-hash-monospace';
+    value.textContent = integrityHash;
+    value.style.fontFamily = 'monospace';
+    value.style.fontSize = '0.85em';
+    value.style.wordBreak = 'break-all';
+    value.style.overflowWrap = 'break-word';
+    hashItem.appendChild(value);
+    
+    contractFieldsSection.appendChild(hashItem);
+  }
   
   // G) Included evidence scope
   if (currentSnapshot.scope?.included) {
