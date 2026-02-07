@@ -329,7 +329,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     title.textContent = titleText;
     title.className = "l0-dashboard-title-available";
     // ENTERPRISE LAYOUT: Minimize top gap for above-fold content
-    title.style.marginBottom = "12px"; // Reduced from default for tighter layout
+    title.classList.add("ft-snapshot-title");
     content.appendChild(title);
 
     // A5: Snapshot Variant Selector Control
@@ -337,7 +337,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     variantControls.className = "l0-variant-controls ft-snapshot-selector";
     variantControls.setAttribute("data-testid", "ft-snapshot-selector");
     // ENTERPRISE LAYOUT: Minimize spacing below variant selector
-    variantControls.style.marginBottom = "16px"; // Reduced for tighter layout
+    variantControls.classList.add("ft-variant-controls");
     
     const variantLabel = document.createElement("label");
     variantLabel.className = "l0-variant-label";

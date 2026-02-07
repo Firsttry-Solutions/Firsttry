@@ -465,3 +465,12 @@
 .ft-legend-list li {
   margin-bottom: 8px;
 }
+
+/* Snapshot mapper margin utilities (CSP-compliant) */
+.ft-snapshot-title {
+  margin-bottom: 12px;
+}
+
+.ft-variant-controls {
+  margin-bottom: 16px;
+}
