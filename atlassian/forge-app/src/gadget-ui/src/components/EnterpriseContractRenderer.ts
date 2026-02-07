@@ -6,7 +6,7 @@
  * All UI text must match the exact contract specifications.
  */
 
-import { computeEvidenceAgeDays, computeFreshness, formatAgeDays } from '../utils/evidenceMetrics';
+import { computeEvidenceAgeDays, computeFreshness, formatEvidenceAge } from '../utils/evidenceMetrics';
 
 /**
  * Helper: Escape HTML entities
@@ -203,7 +203,7 @@ export function renderEvidenceSummaryCard(data: any, currentSnapshot: any): HTML
   const freshnessItem = createContractItem('Freshness', freshnessStatus, 'ft-summary-freshness');
   body.appendChild(freshnessItem);
   
-  const ageItem = createContractItem('Evidence age', formatAgeDays(evidenceAgeDays), 'ft-summary-evidence-age');
+  const ageItem = createContractItem('Evidence age', formatEvidenceAge(evidenceAgeDays), 'ft-summary-evidence-age');
   body.appendChild(ageItem);
   
   // Export eligibility
@@ -339,7 +339,7 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   const freshnessStatus = computeFreshness(evidenceAgeDays);
   
   contractFieldsSection.appendChild(createContractItem('Freshness', freshnessStatus, 'ft-snapshot-freshness'));
-  contractFieldsSection.appendChild(createContractItem('Evidence age', formatAgeDays(evidenceAgeDays), 'ft-evidence-age'));
+  contractFieldsSection.appendChild(createContractItem('Evidence age', formatEvidenceAge(evidenceAgeDays), 'ft-evidence-age'));
   
   // E) Immutability statement (EXACT)
   const immutabilityExact = 'This snapshot is immutable and cannot be modified after creation.';

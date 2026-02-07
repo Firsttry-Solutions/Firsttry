@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { computeEvidenceAgeDays, computeFreshness, formatAgeDays } from '../../src/shared/evidenceMetrics';
+import { computeEvidenceAgeDays, computeFreshness, formatEvidenceAge, formatAgeDays } from '../../src/shared/evidenceMetrics';
 
 describe('computeEvidenceAgeDays', () => {
   it('should return 0 for newly created snapshot (< 24h)', () => {
@@ -41,16 +41,26 @@ describe('computeEvidenceAgeDays', () => {
     expect(computeEvidenceAgeDays(created, now)).toBe(30);
   });
 
-  it('should return 0 for invalid created date', () => {
+  it('should return null for invalid created date string (FAIL-CLOSED)', () => {
     const now = '2026-02-07T12:00:00.000Z';
     const invalidCreated = 'not-a-date';
-    expect(computeEvidenceAgeDays(invalidCreated, now)).toBe(0);
+    expect(computeEvidenceAgeDays(invalidCreated, now)).toBe(null);
   });
 
-  it('should return 0 for invalid now date', () => {
+  it('should return null for invalid now date (FAIL-CLOSED)', () => {
     const created = '2026-02-07T12:00:00.000Z';
     const invalidNow = 'not-a-date';
-    expect(computeEvidenceAgeDays(created, invalidNow)).toBe(0);
+    expect(computeEvidenceAgeDays(created, invalidNow)).toBe(null);
+  });
+
+  it('should return null for empty string (FAIL-CLOSED)', () => {
+    const now = '2026-02-07T12:00:00.000Z';
+    expect(computeEvidenceAgeDays('', now)).toBe(null);
+  });
+
+  it('should return null for whitespace-only string (FAIL-CLOSED)', () => {
+    const now = '2026-02-07T12:00:00.000Z';
+    expect(computeEvidenceAgeDays('   ', now)).toBe(null);
   });
 
   it('should return 0 when now is before created (future timestamp)', () => {
@@ -95,9 +105,35 @@ describe('computeFreshness', () => {
   it('should return "Out of date" for age 365 days', () => {
     expect(computeFreshness(365)).toBe('Out of date');
   });
+
+  it('should return "Unknown" for null age (FAIL-CLOSED)', () => {
+    expect(computeFreshness(null)).toBe('Unknown');
+  });
 });
 
-describe('formatAgeDays', () => {
+describe('formatEvidenceAge', () => {
+  it('should format 0 days correctly', () => {
+    expect(formatEvidenceAge(0)).toBe('0 days');
+  });
+
+  it('should format 1 day correctly (singular)', () => {
+    expect(formatEvidenceAge(1)).toBe('1 day');
+  });
+
+  it('should format 2 days correctly (plural)', () => {
+    expect(formatEvidenceAge(2)).toBe('2 days');
+  });
+
+  it('should format 30 days correctly', () => {
+    expect(formatEvidenceAge(30)).toBe('30 days');
+  });
+
+  it('should return "Unknown" for null (FAIL-CLOSED)', () => {
+    expect(formatEvidenceAge(null)).toBe('Unknown');
+  });
+});
+
+describe('formatAgeDays (deprecated)', () => {
   it('should format 0 days correctly', () => {
     expect(formatAgeDays(0)).toBe('0 days');
   });
