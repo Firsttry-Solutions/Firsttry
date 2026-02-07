@@ -449,6 +449,60 @@ test.describe('Enterprise Contract Dashboard', () => {
     console.log(`[TEST] UI contract written to ${path.join(RUN_DIR, '40_ui_contract.txt')}`);
     
     // ========================================================================
+    // SNAPSHOT SELECTOR REGRESSION CHECK (must be read-only, not interactive)
+    // ========================================================================
+    console.log('[TEST] Validating snapshot selector is read-only (not misleading)...');
+    const snapshotSelectorResults: string[] = [];
+    snapshotSelectorResults.push('=== SNAPSHOT SELECTOR READ-ONLY CHECK ===\n\n');
+    
+    const snapshotSelector = gadgetFrame.locator('[data-testid="ft-snapshot-selector"]');
+    const selectorCount = await snapshotSelector.count();
+    if (selectorCount === 0) {
+      snapshotSelectorResults.push('✗ FAIL: Snapshot selector not found\n');
+      fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
+      throw new Error('SNAPSHOT_SELECTOR_MISSING');
+    }
+    
+    // Check it's not a <select> element
+    const tagName = await snapshotSelector.evaluate((el) => el.tagName.toLowerCase());
+    snapshotSelectorResults.push(`Tag name: ${tagName}\n`);
+    if (tagName === 'select') {
+      snapshotSelectorResults.push('✗ FAIL: Snapshot selector is a <select> element (misleading)\n');
+      fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
+      const stopFile = path.join(RUN_DIR, 'STOP_SNAPSHOT_SELECTOR_MISLEADING.txt');
+      fs.writeFileSync(stopFile, 'Snapshot selector is implemented as a <select> element, which is misleading since it is not functional.');
+      throw new Error('STOP_SNAPSHOT_SELECTOR_MISLEADING: Uses <select> element');
+    }
+    
+    // Check it doesn't contain a <select> child
+    const selectChild = snapshotSelector.locator('select');
+    const selectChildCount = await selectChild.count();
+    if (selectChildCount > 0) {
+      snapshotSelectorResults.push('✗ FAIL: Snapshot selector contains a <select> child (misleading)\n');
+      fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
+      const stopFile = path.join(RUN_DIR, 'STOP_SNAPSHOT_SELECTOR_MISLEADING.txt');
+      fs.writeFileSync(stopFile, 'Snapshot selector contains a <select> element, which is misleading since it is not functional.');
+      throw new Error('STOP_SNAPSHOT_SELECTOR_MISLEADING: Contains <select> child');
+    }
+    
+    // Check cursor is not pointer (should be default or auto)
+    const cursorStyle = await snapshotSelector.evaluate((el) => {
+      return window.getComputedStyle(el).cursor;
+    });
+    snapshotSelectorResults.push(`Cursor style: ${cursorStyle}\n`);
+    if (cursorStyle === 'pointer') {
+      snapshotSelectorResults.push('✗ FAIL: Snapshot selector has cursor:pointer (misleading)\n');
+      fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
+      const stopFile = path.join(RUN_DIR, 'STOP_SNAPSHOT_SELECTOR_MISLEADING.txt');
+      fs.writeFileSync(stopFile, 'Snapshot selector has cursor:pointer, which suggests it is interactive (misleading).');
+      throw new Error('STOP_SNAPSHOT_SELECTOR_MISLEADING: Has pointer cursor');
+    }
+    
+    snapshotSelectorResults.push('\n✓ VERDICT: Snapshot selector is correctly read-only (not misleading)\n');
+    fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
+    console.log(`[TEST] Snapshot selector check written to ${path.join(RUN_DIR, '41_snapshot_selector_check.txt')}`);
+    
+    // ========================================================================
     // PHASE 4: CSS NETWORK PROOF
     // ========================================================================
     console.log('[TEST] Verifying CSS was requested from network...');

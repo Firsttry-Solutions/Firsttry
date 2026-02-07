@@ -456,14 +456,15 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   const supportBtn = createSupportButton();
   header.appendChild(supportBtn);
   
-  // Snapshot selector (static display for current snapshot)
+  // Snapshot selector (static display for current snapshot - explicitly read-only)
   const snapshotSelector = document.createElement('div');
   snapshotSelector.className = 'ft-snapshot-selector';
   snapshotSelector.setAttribute('data-testid', 'ft-snapshot-selector');
   snapshotSelector.style.marginTop = '12px';
   snapshotSelector.style.fontSize = '0.9em';
   snapshotSelector.style.color = '#5E6C84';
-  snapshotSelector.textContent = 'View Snapshot: Latest';
+  snapshotSelector.style.cursor = 'default';
+  snapshotSelector.textContent = 'View snapshot: Latest (read-only)';
   header.appendChild(snapshotSelector);
   
   shell.appendChild(header);
@@ -522,7 +523,7 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
     exportHint.style.fontSize = '0.9em';
     exportHint.style.color = '#5E6C84';
     exportHint.style.fontStyle = 'italic';
-    exportHint.textContent = 'Create a Governance Snapshot to enable exportable evidence.';
+    exportHint.textContent = 'Export is disabled for Seed snapshots. Create a Governance Snapshot to enable exportable evidence.';
     evidenceCard.appendChild(exportHint);
   }
   
