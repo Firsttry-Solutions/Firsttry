@@ -259,11 +259,11 @@
 
 /* ===== SNAPSHOT SELECTOR (READ-ONLY DISPLAY ONLY) ===== */
 .ft-snapshot-selector {
-  margin-top: 16px;
-  padding: 12px;
+  margin-top: 12px;
+  padding: 0;
   background-color: transparent;
   border: none;
-  font-size: 13px;
+  font-size: 0.9em;
   color: var(--ds-text-subtle, #6b778c);
   cursor: default;
 }
