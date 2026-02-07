@@ -252,6 +252,17 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   container.className = 'ft-enterprise-contract';
   container.setAttribute('data-testid', 'ft-enterprise-contract-root');
   
+  // Brand header (minimal, non-intrusive)
+  const brandHeader = document.createElement('div');
+  brandHeader.className = 'ft-brand-header';
+  brandHeader.style.fontSize = '11px';
+  brandHeader.style.color = '#6B778C';
+  brandHeader.style.marginBottom = '8px';
+  brandHeader.style.fontWeight = '400';
+  brandHeader.setAttribute('data-testid', 'ft-brand-header');
+  brandHeader.textContent = 'FirstTry — Audit Evidence for Jira';
+  container.appendChild(brandHeader);
+  
   const heading = document.createElement('h2');
   heading.className = 'ft-enterprise-contract-heading';
   heading.textContent = 'FirstTry — Jira Governance Evidence';
