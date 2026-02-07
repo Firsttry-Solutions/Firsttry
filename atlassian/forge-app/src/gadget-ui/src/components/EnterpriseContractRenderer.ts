@@ -150,8 +150,8 @@ export function renderEvidenceSummaryCard(data: any, currentSnapshot: any): HTML
   card.setAttribute('data-testid', 'ft-evidence-summary-root');
   
   // ENTERPRISE LAYOUT: Minimize top gap to ensure above-fold visibility (y < 250px)
-  card.style.marginTop = '8px';  // Minimal top margin for enterprise-grade layout
-  card.style.marginBottom = '16px';
+  // All styling via CSS only (CSP compliance - no inline styles)
+  card.classList.add('ft-card-evidence');
   
   // Enterprise-grade validation: Check for required snapshot fields
   if (!currentSnapshot || !currentSnapshot.createdAtUtc || !currentSnapshot.snapshotKind || !currentSnapshot.integrity) {
@@ -159,15 +159,9 @@ export function renderEvidenceSummaryCard(data: any, currentSnapshot: any): HTML
     const errorBanner = document.createElement('div');
     errorBanner.className = 'ft-error-banner';
     errorBanner.setAttribute('data-testid', 'ft-snapshot-error-banner');
-    errorBanner.style.padding = '16px';
-    errorBanner.style.backgroundColor = '#ffebe6';
-    errorBanner.style.border = '2px solid #de350b';
-    errorBanner.style.borderRadius = '3px';
-    errorBanner.style.color = '#172b4d';
     
     const errorTitle = document.createElement('div');
-    errorTitle.style.fontWeight = 'bold';
-    errorTitle.style.marginBottom = '8px';
+    errorTitle.className = 'ft-error-title';
     errorTitle.textContent = 'Snapshot data unavailable';
     errorBanner.appendChild(errorTitle);
     
@@ -176,8 +170,7 @@ export function renderEvidenceSummaryCard(data: any, currentSnapshot: any): HTML
     errorBanner.appendChild(errorMsg);
     
     const statusMsg = document.createElement('div');
-    statusMsg.style.marginTop = '8px';
-    statusMsg.style.fontWeight = 'bold';
+    statusMsg.className = 'ft-status-msg';
     statusMsg.textContent = 'Status: FAILED';
     errorBanner.appendChild(statusMsg);
     
@@ -235,11 +228,8 @@ export function renderEvidenceSummaryCard(data: any, currentSnapshot: any): HTML
     hashItem.appendChild(label);
     
     const value = document.createElement('span');
-    value.className = 'ft-contract-value ft-hash-monospace';
+    value.className = 'ft-contract-value ft-hash-monospace ft-value-mono';
     value.textContent = integrityHash;
-    value.style.wordBreak = 'break-all';
-    value.style.fontFamily = 'monospace';
-    value.style.fontSize = '0.85em';
     hashItem.appendChild(value);
     
     body.appendChild(hashItem);
@@ -264,11 +254,10 @@ function createCopyButton(text: string, testId: string): HTMLButtonElement {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
-        // Fallback for older browsers
+        // Fallback for older browsers (CSP-compliant: use CSS class instead of inline styles)
         const textarea = document.createElement('textarea');
         textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
+        textarea.className = 'ft-clipboard-textarea';
         document.body.appendChild(textarea);
         textarea.select();
         document.execCommand('copy');
@@ -295,7 +284,6 @@ function createCopyButton(text: string, testId: string): HTMLButtonElement {
 function createSupportButton(): HTMLElement {
   const container = document.createElement('div');
   container.className = 'ft-support-container';
-  container.style.marginTop = '12px';
   
   const button = document.createElement('button');
   button.className = 'ft-button';
@@ -320,27 +308,21 @@ function createSupportButton(): HTMLElement {
         fallbackShown = true;
         
         const fallbackMsg = document.createElement('div');
-        fallbackMsg.style.marginTop = '8px';
-        fallbackMsg.style.fontSize = '0.9em';
-        fallbackMsg.style.color = '#5E6C84';
+        fallbackMsg.className = 'ft-fallback-msg';
         fallbackMsg.textContent = 'Support link could not be opened. Copy the URL below:';
         container.appendChild(fallbackMsg);
         
         const urlDiv = document.createElement('div');
         urlDiv.setAttribute('data-testid', 'ft-support-url');
-        urlDiv.style.marginTop = '4px';
-        urlDiv.style.fontFamily = 'monospace';
-        urlDiv.style.fontSize = '0.85em';
-        urlDiv.style.wordBreak = 'break-all';
+        urlDiv.className = 'ft-url-display';
         urlDiv.textContent = SUPPORT_URL;
         container.appendChild(urlDiv);
         
         const copyBtn = document.createElement('button');
-        copyBtn.className = 'ft-button';
+        copyBtn.className = 'ft-button ft-copy-btn';
         copyBtn.setAttribute('data-testid', 'ft-support-copy');
         copyBtn.setAttribute('aria-label', 'Copy support URL');
         copyBtn.textContent = 'Copy support URL';
-        copyBtn.style.marginTop = '8px';
         
         copyBtn.addEventListener('click', async (copyE) => {
           copyE.preventDefault();
@@ -348,11 +330,10 @@ function createSupportButton(): HTMLElement {
             if (navigator.clipboard && navigator.clipboard.writeText) {
               await navigator.clipboard.writeText(SUPPORT_URL);
             } else {
-              // Fallback for older browsers
+              // Fallback for older browsers (CSP-compliant: use CSS class instead of inline styles)
               const textarea = document.createElement('textarea');
               textarea.value = SUPPORT_URL;
-              textarea.style.position = 'fixed';
-              textarea.style.opacity = '0';
+              textarea.className = 'ft-clipboard-textarea';
               document.body.appendChild(textarea);
               textarea.select();
               document.execCommand('copy');
@@ -516,10 +497,6 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
     const exportHint = document.createElement('div');
     exportHint.className = 'ft-hint';
     exportHint.setAttribute('data-testid', 'ft-export-hint');
-    exportHint.style.marginTop = '12px';
-    exportHint.style.fontSize = '0.9em';
-    exportHint.style.color = '#5E6C84';
-    exportHint.style.fontStyle = 'italic';
     exportHint.textContent = 'Export is disabled for Seed snapshots. Create a Governance Snapshot to enable exportable evidence.';
     evidenceCard.appendChild(exportHint);
   }
@@ -528,9 +505,7 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   const integrityHash = currentSnapshot.integrity?.value || '';
   if (integrityHash) {
     const hashKv = document.createElement('div');
-    hashKv.className = 'ft-kv';
-    hashKv.style.flexDirection = 'column';
-    hashKv.style.alignItems = 'flex-start';
+    hashKv.className = 'ft-kv ft-hash-kv';
     
     const hashKey = document.createElement('span');
     hashKey.className = 'ft-kv-key';
@@ -724,24 +699,15 @@ export function renderSnapshotHistoryList(snapshots: any[]): HTMLElement {
  */
 export function renderDefinitionsGuidance(): HTMLElement {
   const container = document.createElement('div');
-  container.className = 'ft-definitions-guidance';
-  container.style.marginTop = '32px';
-  container.style.padding = '16px';
-  container.style.backgroundColor = '#f4f5f7';
-  container.style.borderRadius = '4px';
+  container.className = 'ft-definitions-guidance ft-legend-container';
   
   const heading = document.createElement('h3');
   heading.textContent = 'Definitions & Guidance';
-  heading.style.marginBottom = '12px';
-  heading.style.fontSize = '14px';
-  heading.style.fontWeight = '600';
+  heading.className = 'ft-legend-heading';
   container.appendChild(heading);
   
   const list = document.createElement('ul');
-  list.style.margin = '0';
-  list.style.paddingLeft = '20px';
-  list.style.fontSize = '13px';
-  list.style.lineHeight = '1.6';
+  list.className = 'ft-legend-list';
   
   const listItems = [
     'Governance snapshots appear after evidence is collected by the scheduled backend process. Seed snapshots are provided at installation for testing.',
@@ -752,7 +718,6 @@ export function renderDefinitionsGuidance(): HTMLElement {
   listItems.forEach(text => {
     const li = document.createElement('li');
     li.textContent = text;
-    li.style.marginBottom = '8px';
     list.appendChild(li);
   });
   

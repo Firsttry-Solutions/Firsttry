@@ -361,3 +361,107 @@
   white-space: nowrap;
   border-width: 0;
 }
+
+/* ===== CSP-COMPLIANT UTILITY CLASSES (NO INLINE STYLES) ===== */
+
+/* Card spacing optimized for above-fold visibility */
+.ft-card-evidence {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+/* Error banner styling */
+.ft-error-banner {
+  padding: 16px;
+  background-color: #ffebe6;
+  border: 2px solid #de350b;
+  border-radius: 3px;
+  color: #172b4d;
+}
+
+.ft-error-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.ft-status-msg {
+  margin-top: 8px;
+  font-weight: bold;
+}
+
+/* Monospace value display */
+.ft-value-mono {
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+/* Hidden textarea for clipboard operations */
+.ft-clipboard-textarea {
+  position: fixed;
+  opacity: 0;
+}
+
+/* Support button container */
+.ft-support-container {
+  margin-top: 12px;
+}
+
+/* Fallback message */
+.ft-fallback-msg {
+  margin-top: 8px;
+  font-size: 0.9em;
+  color: #5E6C84;
+}
+
+/* URL display */
+.ft-url-display {
+  margin-top: 4px;
+  font-family: monospace;
+  font-size: 0.85em;
+  word-break: break-all;
+}
+
+/* Copy button spacing */
+.ft-copy-btn {
+  margin-top: 8px;
+}
+
+/* Export hint (italic subdued text) */
+.ft-hint {
+  margin-top: 12px;
+  font-size: 0.9em;
+  color: #5E6C84;
+  font-style: italic;
+}
+
+/* Hash key-value vertical layout */
+.ft-hash-kv {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Legend/guide container */
+.ft-legend-container {
+  margin-top: 32px;
+  padding: 16px;
+  background-color: #f4f5f7;
+  border-radius: 4px;
+}
+
+.ft-legend-heading {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ft-legend-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ft-legend-list li {
+  margin-bottom: 8px;
+}
