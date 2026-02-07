@@ -243,213 +243,321 @@ export function renderEvidenceSummaryCard(data: any, currentSnapshot: any): HTML
 }
 
 /**
+ * Helper: Create copy button with clipboard functionality
+ */
+function createCopyButton(text: string, testId: string): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.className = 'ft-button';
+  button.setAttribute('data-testid', testId);
+  button.setAttribute('aria-label', `Copy ${testId.replace('ft-copy-', '')}`);
+  button.textContent = 'Copy';
+  
+  button.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      
+      // Visual feedback
+      const originalText = button.textContent;
+      button.textContent = 'Copied!';
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 1200);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  });
+  
+  return button;
+}
+
+/**
  * Render the Enterprise Contract section
  * 
  * This renders contract items A-L (Snapshot History is rendered separately)
  */
 export function renderEnterpriseContractSection(data: any, currentSnapshot: any): HTMLElement {
-  const container = document.createElement('div');
-  container.className = 'ft-enterprise-contract';
-  container.setAttribute('data-testid', 'ft-enterprise-contract-root');
+  // ROOT SHELL
+  const shell = document.createElement('div');
+  shell.className = 'ft-shell';
+  shell.setAttribute('data-testid', 'ft-enterprise-shell');
   
-  // Brand header (minimal, non-intrusive)
-  const brandHeader = document.createElement('div');
-  brandHeader.className = 'ft-brand-header';
-  brandHeader.style.fontSize = '11px';
-  brandHeader.style.color = '#6B778C';
-  brandHeader.style.marginBottom = '8px';
-  brandHeader.style.fontWeight = '400';
-  brandHeader.setAttribute('data-testid', 'ft-brand-header');
-  brandHeader.textContent = 'FirstTry — Audit Evidence for Jira';
-  container.appendChild(brandHeader);
+  // === HEADER BAR (COMPACT) ===
+  const header = document.createElement('div');
+  header.className = 'ft-header';
+  header.setAttribute('data-testid', 'ft-enterprise-header');
   
-  const heading = document.createElement('h2');
-  heading.className = 'ft-enterprise-contract-heading';
-  heading.textContent = 'FirstTry — Jira Governance Evidence';
-  container.appendChild(heading);
+  // Title
+  const title = document.createElement('h2');
+  title.setAttribute('data-testid', 'ft-title');
+  title.textContent = 'FirstTry — Jira Governance Evidence';
+  header.appendChild(title);
+  title.textContent = 'FirstTry — Jira Governance Evidence';
+  header.appendChild(title);
   
-  // === READ-ONLY GUARANTEE ===
-  const readonlySection = document.createElement('div');
-  readonlySection.className = 'ft-contract-section';
-  readonlySection.setAttribute('data-testid', 'ft-readonly-statement');
+  // Badges row
+  const badges = document.createElement('div');
+  badges.className = 'ft-badges';
+  badges.setAttribute('data-testid', 'ft-badges');
   
-  const readonlyHeading = document.createElement('h3');
-  readonlyHeading.textContent = 'Read-Only Guarantee';
-  readonlySection.appendChild(readonlyHeading);
+  // Snapshot kind badge
+  const snapshotKindBadge = document.createElement('span');
+  snapshotKindBadge.className = 'ft-badge';
+  snapshotKindBadge.setAttribute('data-testid', 'ft-badge-snapshot-kind');
+  snapshotKindBadge.textContent = currentSnapshot.snapshotKind === 'SEED' ? 'Seed' : 'Governance';
+  badges.appendChild(snapshotKindBadge);
   
-  const readonlyText = document.createElement('p');
-  readonlyText.textContent = data.readOnlyGuarantee || 'FirstTry is a read-only system. It does not modify Jira data, settings, or configurations.';
-  readonlySection.appendChild(readonlyText);
-  
-  container.appendChild(readonlySection);
-  
-  // === SEED VS GOVERNANCE ===
-  const seedGovSection = document.createElement('div');
-  seedGovSection.className = 'ft-contract-section';
-  seedGovSection.setAttribute('data-testid', 'ft-seed-vs-governance');
-  
-  const seedGovHeading = document.createElement('h3');
-  seedGovHeading.textContent = data.seedVsGovernanceExplanation?.title || 'Seed vs Governance';
-  seedGovSection.appendChild(seedGovHeading);
-  
-  if (data.seedVsGovernanceExplanation?.bullets) {
-    data.seedVsGovernanceExplanation.bullets.forEach((bullet: string) => {
-      const p = document.createElement('p');
-      p.textContent = bullet;
-      seedGovSection.appendChild(p);
-    });
-  }
-  
-  container.appendChild(seedGovSection);
-  
-  // === EVIDENCE FRESHNESS ===
-  const freshnessSection = document.createElement('div');
-  freshnessSection.className = 'ft-contract-section';
-  freshnessSection.setAttribute('data-testid', 'ft-freshness');
-  
-  const freshnessHeading = document.createElement('h3');
-  freshnessHeading.textContent = 'Evidence Freshness';
-  freshnessSection.appendChild(freshnessHeading);
-  
-  // Check freshness status - NO_GOVERNANCE means no governance snapshots exist
-  if (data.evidenceFreshness?.status === 'NO_GOVERNANCE') {
-    const noGovMsg = document.createElement('p');
-    noGovMsg.setAttribute('data-testid', 'ft-freshness-no-governance');
-    noGovMsg.textContent = 'No governance snapshots available yet.';
-    freshnessSection.appendChild(noGovMsg);
-    
-    const createMsg = document.createElement('p');
-    createMsg.textContent = 'Create a governance snapshot to generate immutable audit evidence.';
-    freshnessSection.appendChild(createMsg);
-  } else {
-    const freshnessText = document.createElement('p');
-    freshnessText.textContent = `Last Collected: ${data.evidenceFreshness?.lastCollectedUtc || 'N/A'} UTC`;
-    freshnessSection.appendChild(freshnessText);
-  }
-  
-  container.appendChild(freshnessSection);
-  
-  // === CONTRACT FIELDS SECTION (EXACT STRINGS) ===
-  const contractFieldsSection = document.createElement('div');
-  contractFieldsSection.className = 'ft-contract-fields';
-  
-  // A) Snapshot type
-  const snapshotType = getSnapshotTypeLabel(currentSnapshot.snapshotKind);
-  contractFieldsSection.appendChild(createContractItem('', snapshotType, 'ft-snapshot-type'));
-  
-  // B) Origin
-  const originText = getOriginText(currentSnapshot.origin, currentSnapshot.triggerReason);
-  contractFieldsSection.appendChild(createContractItem('Origin', originText, 'ft-snapshot-origin'));
-  
-  // C) Created timestamp
-  const createdTimestamp = formatTimestampUTC(currentSnapshot.createdAtUtc);
-  contractFieldsSection.appendChild(createContractItem('Created', createdTimestamp, 'ft-snapshot-created'));
-  
-  // D) Freshness status (computed from created timestamp using canonical functions)
+  // Freshness badge
   const evidenceAgeDays = computeEvidenceAgeDays(currentSnapshot.createdAtUtc);
   const freshnessStatus = computeFreshness(evidenceAgeDays);
+  const freshnessBadge = document.createElement('span');
+  freshnessBadge.className = 'ft-badge';
+  freshnessBadge.setAttribute('data-testid', 'ft-badge-freshness');
+  freshnessBadge.textContent = freshnessStatus;
+  // Add data-status for CSS styling
+  if (freshnessStatus.toLowerCase().includes('out of date')) {
+    freshnessBadge.setAttribute('data-status', 'out-of-date');
+  } else if (freshnessStatus.toLowerCase().includes('unknown')) {
+    freshnessBadge.setAttribute('data-status', 'unknown');
+  }
+  badges.appendChild(freshnessBadge);
   
-  contractFieldsSection.appendChild(createContractItem('Freshness', freshnessStatus, 'ft-snapshot-freshness'));
-  contractFieldsSection.appendChild(createContractItem('Evidence age', formatEvidenceAge(evidenceAgeDays), 'ft-evidence-age'));
+  // Export badge
+  const exportBadge = document.createElement('span');
+  exportBadge.className = 'ft-badge';
+  exportBadge.setAttribute('data-testid', 'ft-badge-export');
+  if (currentSnapshot.exportEligible) {
+    exportBadge.textContent = 'Export: Enabled';
+    exportBadge.setAttribute('data-status', 'enabled');
+  } else {
+    exportBadge.textContent = 'Export: Disabled';
+    exportBadge.setAttribute('data-status', 'disabled');
+  }
+  badges.appendChild(exportBadge);
   
-  // E) Immutability statement (EXACT)
-  const immutabilityExact = 'This snapshot is immutable and cannot be modified after creation.';
-  const immutabilityEl = document.createElement('p');
-  immutabilityEl.className = 'ft-contract-immutability';
-  immutabilityEl.setAttribute('data-testid', 'ft-immutability-statement');
-  immutabilityEl.textContent = immutabilityExact;
-  contractFieldsSection.appendChild(immutabilityEl);
+  header.appendChild(badges);
   
-  // F) Integrity hash (SHA-256) - monospace with safe wrapping
+  // Read-only guarantee
+  const readonly = document.createElement('div');
+  readonly.className = 'ft-readonly';
+  readonly.setAttribute('data-testid', 'ft-readonly');
+  readonly.textContent = data.readOnlyGuarantee || 'FirstTry is a read-only system. It does not modify Jira data, settings, or configurations.';
+  header.appendChild(readonly);
+  
+  shell.appendChild(header);
+  
+  // === CARD GRID ===
+  const grid = document.createElement('div');
+  grid.className = 'ft-grid';
+  
+  // CARD 1: EVIDENCE SUMMARY (spans full width)
+  const evidenceCard = document.createElement('div');
+  evidenceCard.className = 'ft-card';
+  evidenceCard.setAttribute('data-testid', 'ft-card-evidence-summary');
+  
+  const evidenceTitle = document.createElement('h3');
+  evidenceTitle.className = 'ft-card-title';
+  evidenceTitle.setAttribute('data-testid', 'ft-card-title-evidence-summary');
+  evidenceTitle.textContent = 'Evidence Summary';
+  evidenceCard.appendChild(evidenceTitle);
+  
+  // Key-value rows
+  const kvRows = [
+    { key: 'Snapshot type', value: currentSnapshot.snapshotKind === 'SEED' ? 'Seed Snapshot' : 'Governance Snapshot', testId: 'ft-snapshot-type' },
+    { key: 'Origin', value: getOriginText(currentSnapshot.origin, currentSnapshot.triggerReason), testId: 'ft-snapshot-origin' },
+    { key: 'Created (UTC)', value: formatTimestampUTC(currentSnapshot.createdAtUtc), testId: 'ft-snapshot-created' },
+    { key: 'Freshness', value: freshnessStatus, testId: 'ft-snapshot-freshness' },
+    { key: 'Evidence age', value: formatEvidenceAge(evidenceAgeDays), testId: 'ft-evidence-age' },
+    { key: 'Export status', value: currentSnapshot.exportEligible ? 'Enabled' : 'Disabled', testId: 'ft-export-eligibility' }
+  ];
+  
+  kvRows.forEach(row => {
+    const kvDiv = document.createElement('div');
+    kvDiv.className = 'ft-kv';
+    if (row.testId) {
+      kvDiv.setAttribute('data-testid', row.testId);
+    }
+    
+    const keySpan = document.createElement('span');
+    keySpan.className = 'ft-kv-key';
+    keySpan.textContent = row.key;
+    kvDiv.appendChild(keySpan);
+    
+    const valueSpan = document.createElement('span');
+    valueSpan.className = 'ft-kv-value';
+    valueSpan.textContent = row.value;
+    kvDiv.appendChild(valueSpan);
+    
+    evidenceCard.appendChild(kvDiv);
+  });
+  
+  // Integrity hash (special treatment: monospace + copy button)
   const integrityHash = currentSnapshot.integrity?.value || '';
   if (integrityHash) {
-    const hashItem = document.createElement('div');
-    hashItem.className = 'ft-contract-item';
-    hashItem.setAttribute('data-testid', 'ft-integrity-hash');
+    const hashKv = document.createElement('div');
+    hashKv.className = 'ft-kv';
+    hashKv.style.flexDirection = 'column';
+    hashKv.style.alignItems = 'flex-start';
     
-    const label = document.createElement('span');
-    label.className = 'ft-contract-label';
-    label.textContent = 'Integrity hash (SHA-256): ';
-    hashItem.appendChild(label);
+    const hashKey = document.createElement('span');
+    hashKey.className = 'ft-kv-key';
+    hashKey.textContent = 'Integrity hash (SHA-256)';
+    hashKv.appendChild(hashKey);
     
-    const value = document.createElement('span');
-    value.className = 'ft-contract-value ft-hash-monospace';
-    value.textContent = integrityHash;
-    value.style.fontFamily = 'monospace';
-    value.style.fontSize = '0.85em';
-    value.style.wordBreak = 'break-all';
-    value.style.overflowWrap = 'break-word';
-    hashItem.appendChild(value);
+    const hashValue = document.createElement('span');
+    hashValue.className = 'ft-mono';
+    hashValue.setAttribute('data-testid', 'ft-integrity-hash');
+    hashValue.textContent = integrityHash;
+    hashKv.appendChild(hashValue);
     
-    contractFieldsSection.appendChild(hashItem);
+    const actions = document.createElement('div');
+    actions.className = 'ft-actions';
+    const copyBtn = createCopyButton(integrityHash, 'ft-copy-integrity-hash');
+    actions.appendChild(copyBtn);
+    hashKv.appendChild(actions);
+    
+    evidenceCard.appendChild(hashKv);
   }
   
-  // G) Included evidence scope
+  grid.appendChild(evidenceCard);
+  
+  // CARD 2: SEED VS GOVERNANCE
+  const seedGovCard = document.createElement('div');
+  seedGovCard.className = 'ft-card';
+  seedGovCard.setAttribute('data-testid', 'ft-card-seed-vs-governance');
+  
+  const seedGovTitle = document.createElement('h3');
+  seedGovTitle.className = 'ft-card-title';
+  seedGovTitle.textContent = data.seedVsGovernanceExplanation?.title || 'Seed vs Governance';
+  seedGovCard.appendChild(seedGovTitle);
+  
+  if (data.seedVsGovernanceExplanation?.bullets) {
+    const ul = document.createElement('ul');
+    data.seedVsGovernanceExplanation.bullets.forEach((bullet: string) => {
+      const li = document.createElement('li');
+      li.textContent = bullet;
+      ul.appendChild(li);
+    });
+    seedGovCard.appendChild(ul);
+  }
+  
+  grid.appendChild(seedGovCard);
+  
+  // CARD 3: EVIDENCE SCOPE
+  const scopeCard = document.createElement('div');
+  scopeCard.className = 'ft-card';
+  scopeCard.setAttribute('data-testid', 'ft-card-scope');
+  
+  const scopeTitle = document.createElement('h3');
+  scopeTitle.className = 'ft-card-title';
+  scopeTitle.textContent = 'Evidence Scope';
+  scopeCard.appendChild(scopeTitle);
+  
+  const scopeContainer = document.createElement('div');
+  scopeContainer.className = 'ft-scope-container';
+  
+  // Included section
   if (currentSnapshot.scope?.included) {
-    contractFieldsSection.appendChild(createScopeSection('Included evidence scope:', currentSnapshot.scope.included, 'ft-included-scope'));
+    const includedSection = document.createElement('div');
+    includedSection.className = 'ft-scope-section';
+    
+    const includedHeading = document.createElement('h4');
+    includedHeading.textContent = 'Included';
+    includedSection.appendChild(includedHeading);
+    
+    const includedList = document.createElement('ul');
+    includedList.setAttribute('data-testid', 'ft-scope-included');
+    currentSnapshot.scope.included.forEach((item: string) => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      includedList.appendChild(li);
+    });
+    includedSection.appendChild(includedList);
+    scopeContainer.appendChild(includedSection);
   }
   
-  // H) Excluded evidence scope
+  // Excluded section
   if (currentSnapshot.scope?.excluded) {
-    contractFieldsSection.appendChild(createScopeSection('Excluded evidence scope:', currentSnapshot.scope.excluded, 'ft-excluded-scope'));
+    const excludedSection = document.createElement('div');
+    excludedSection.className = 'ft-scope-section';
+    
+    const excludedHeading = document.createElement('h4');
+    excludedHeading.textContent = 'Excluded';
+    excludedSection.appendChild(excludedHeading);
+    
+    const excludedList = document.createElement('ul');
+    excludedList.setAttribute('data-testid', 'ft-scope-excluded');
+    currentSnapshot.scope.excluded.forEach((item: string) => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      excludedList.appendChild(li);
+    });
+    excludedSection.appendChild(excludedList);
+    scopeContainer.appendChild(excludedSection);
   }
   
-  // I) Export eligibility
-  let exportText = '';
-  if (currentSnapshot.exportEligible) {
-    exportText = 'Export: Enabled (governance snapshots can be exported)';
+  scopeCard.appendChild(scopeContainer);
+  grid.appendChild(scopeCard);
+  
+  // CARD 4: CONTROLS COVERED
+  const controlsCard = document.createElement('div');
+  controlsCard.className = 'ft-card';
+  controlsCard.setAttribute('data-testid', 'ft-card-controls');
+  
+  const controlsTitle = document.createElement('h3');
+  controlsTitle.className = 'ft-card-title';
+  controlsTitle.textContent = 'Controls Covered';
+  controlsCard.appendChild(controlsTitle);
+  
+  if (data.controlsCovered) {
+    const controlsList = document.createElement('ul');
+    data.controlsCovered.forEach((control: string) => {
+      const li = document.createElement('li');
+      li.textContent = control;
+      controlsList.appendChild(li);
+    });
+    controlsCard.appendChild(controlsList);
   } else {
-    exportText = 'Export: Disabled (seed snapshots cannot be exported)';
+    const p = document.createElement('p');
+    p.textContent = 'Configuration governance, access control review, change tracking.';
+    controlsCard.appendChild(p);
   }
-  const exportEl = document.createElement('p');
-  exportEl.className = 'ft-contract-export';
-  exportEl.setAttribute('data-testid', 'ft-export-eligibility');
-  exportEl.textContent = exportText;
-  contractFieldsSection.appendChild(exportEl);
   
-  // J) Data source (EXACT)
-  const dataSourceExact = 'Data source: Live data from your Jira environment.';
-  const dataSourceEl = document.createElement('p');
-  dataSourceEl.className = 'ft-contract-data-source';
-  dataSourceEl.setAttribute('data-testid', 'ft-data-source');
-  dataSourceEl.textContent = dataSourceExact;
-  contractFieldsSection.appendChild(dataSourceEl);
+  grid.appendChild(controlsCard);
   
-  // K) Audit context (EXACT)
-  const auditContextSection = document.createElement('div');
-  auditContextSection.className = 'ft-contract-audit-context';
-  auditContextSection.setAttribute('data-testid', 'ft-audit-context');
+  // CARD 5: NEXT STEP (contextual - only show if no governance snapshots)
+  if (data.evidenceFreshness?.status === 'NO_GOVERNANCE') {
+    const nextStepCard = document.createElement('div');
+    nextStepCard.className = 'ft-card';
+    nextStepCard.setAttribute('data-testid', 'ft-card-next-step');
+    
+    const nextStepTitle = document.createElement('h3');
+    nextStepTitle.className = 'ft-card-title';
+    nextStepTitle.textContent = 'Next Step';
+    nextStepCard.appendChild(nextStepTitle);
+    
+    const nextStepText = document.createElement('p');
+    nextStepText.textContent = 'Create a governance snapshot to generate immutable audit evidence.';
+    nextStepCard.appendChild(nextStepText);
+    
+    grid.appendChild(nextStepCard);
+  }
   
-  const auditHeading = document.createElement('h4');
-  auditHeading.textContent = 'Audit context:';
-  auditContextSection.appendChild(auditHeading);
+  shell.appendChild(grid);
   
-  const auditBodyExact = 'This evidence supports configuration governance, access control review, and change tracking audit questions. It does not certify compliance.';
-  const auditBody = document.createElement('p');
-  auditBody.textContent = auditBodyExact;
-  auditContextSection.appendChild(auditBody);
-  
-  contractFieldsSection.appendChild(auditContextSection);
-  
-  // L) Seed vs governance snapshots (EXACT)
-  const seedVsGovContractSection = document.createElement('div');
-  seedVsGovContractSection.className = 'ft-contract-seed-vs-gov';
-  seedVsGovContractSection.setAttribute('data-testid', 'ft-seed-vs-governance-contract');
-  
-  const seedVsGovContractHeading = document.createElement('h4');
-  seedVsGovContractHeading.textContent = 'Seed vs governance snapshots:';
-  seedVsGovContractSection.appendChild(seedVsGovContractHeading);
-  
-  const seedVsGovBodyExact = 'Seed snapshots are baseline system snapshots and are not exportable. Governance snapshots are created for audit evidence and can be exported.';
-  const seedVsGovBody = document.createElement('p');
-  seedVsGovBody.textContent = seedVsGovBodyExact;
-  seedVsGovContractSection.appendChild(seedVsGovBody);
-  
-  contractFieldsSection.appendChild(seedVsGovContractSection);
-  
-  container.appendChild(contractFieldsSection);
-  
-  return container;
+  return shell;
 }
 
 /**

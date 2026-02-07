@@ -20,7 +20,7 @@
 import { UI_APP_VERSION } from './build/buildIdentity.gen';
 
 // Import enterprise contract renderers
-import { renderEvidenceSummaryCard, renderEnterpriseContractSection, renderSnapshotHistoryList, renderDefinitionsGuidance } from './components/EnterpriseContractRenderer';
+import { renderEnterpriseContractSection, renderSnapshotHistoryList, renderDefinitionsGuidance } from './components/EnterpriseContractRenderer';
 
 // Support link configuration (mailto: for user accessibility)
 // Must match docs/CONTACTS.md canonical value
@@ -334,7 +334,8 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
 
     // A5: Snapshot Variant Selector Control
     const variantControls = document.createElement("div");
-    variantControls.className = "l0-variant-controls";
+    variantControls.className = "l0-variant-controls ft-snapshot-selector";
+    variantControls.setAttribute("data-testid", "ft-snapshot-selector");
     // ENTERPRISE LAYOUT: Minimize spacing below variant selector
     variantControls.style.marginBottom = "16px"; // Reduced for tighter layout
     
@@ -362,21 +363,17 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     variantControls.appendChild(variantLabel);
     content.appendChild(variantControls);
 
-    // === ENTERPRISE LAYOUT: Evidence Summary FIRST (Above the fold) ===
-    // Order: Summary → Contract → History → Diagnostics
-    // This ensures core audit evidence is visible without scrolling
+    // === ENTERPRISE LAYOUT: Enterprise Contract (includes Evidence Summary) ===
+    // Order: Enterprise UI Shell with cards → History → Diagnostics
+    // This ensures core audit evidence is visible in a premium card-based layout
     if (state.enterpriseContract && state.enterpriseContract.snapshots && state.enterpriseContract.snapshots.length > 0) {
       const currentSnapshot = state.enterpriseContract.snapshots[0];
       
-      // 1) Evidence Summary Card (FIRST major section - enterprise visual hierarchy)
-      const evidenceSummary = renderEvidenceSummaryCard(state.enterpriseContract, currentSnapshot);
-      content.appendChild(evidenceSummary);
-      
-      // 2) Enterprise Contract Section (Contract items A-L immediately after summary)
+      // Enterprise Contract Section (includes Evidence Summary card + all other cards)
       const contractSection = renderEnterpriseContractSection(state.enterpriseContract, currentSnapshot);
       content.appendChild(contractSection);
       
-      // 3) Snapshot History (Contract item M immediately after contract)
+      // Snapshot History (rendered separately after the main enterprise section)
       const historySection = renderSnapshotHistoryList(state.enterpriseContract.snapshots);
       content.appendChild(historySection);
     }
