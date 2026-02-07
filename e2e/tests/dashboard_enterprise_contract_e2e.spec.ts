@@ -23,6 +23,7 @@ const JIRA_DASHBOARD_URL = process.env.JIRA_DASHBOARD_URL || 'https://firsttry.a
 test.describe('Enterprise Contract Dashboard', () => {
   let RUN_DIR: string;
   let consoleLogs: string[] = [];
+  let consoleMessages: Array<{type: string, text: string, location?: string}> = [];
   
   test.beforeEach(async () => {
     // Get output directory from E2E_OUTPUT_DIR or RUN_DIR environment variable
@@ -59,14 +60,29 @@ test.describe('Enterprise Contract Dashboard', () => {
   });
   
   test('ENTERPRISE CONTRACT - All fields present and valid', async ({ page }) => {
-    // Capture console logs
-    page.on('console', msg => {
+    // Track brand failures across sanity checks
+    let brandFailureDetected = false;
+    const brandFailures: string[] = [];
+    
+    // Capture console logs with location URLs for hygiene filtering
+    page.on('console', async msg => {
       const text = msg.text();
-      consoleLogs.push(`[${msg.type()}] ${text}`);
+      const type = msg.type();
+      consoleLogs.push(`[${type}] ${text}`);
+      
+      try {
+        const location = msg.location();
+        const url = location?.url || '';
+        consoleMessages.push({ type, text, location: url });
+      } catch (e) {
+        consoleMessages.push({ type, text, location: 'unknown' });
+      }
     });
     
     page.on('pageerror', err => {
-      consoleLogs.push(`[ERROR] ${err.message}`);
+      const msg = err.message;
+      consoleLogs.push(`[ERROR] ${msg}`);
+      consoleMessages.push({ type: 'error', text: msg, location: 'pageerror' });
     });
     
     // Navigate to dashboard (USE domcontentloaded, NOT networkidle)
@@ -221,18 +237,102 @@ test.describe('Enterprise Contract Dashboard', () => {
       throw new Error('STOP_DOM_TEXT_TOO_SHORT');
     }
     
-    // === EXTRACT FULL PAGE TEXT (INCLUDING GADGET HEADER/CHROME) ===
-    console.log('[TEST] Extracting full page text including gadget header...');
-    const fullPageText = await page.locator('body').innerText();
-    const fullPageTextPath = path.join(RUN_DIR, '71_full_page_text.txt');
-    fs.writeFileSync(fullPageTextPath, fullPageText);
-    console.log(`[TEST] Full page text saved to ${fullPageTextPath} (${fullPageText.length} chars)`);
+    // === MULTI-VIEWPORT FULL PAGE TEXT CAPTURES ===
+    console.log('[TEST] Capturing full page text in DESKTOP viewport (1280x720)...');
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.waitForTimeout(1000); // Allow viewport to settle
+    const fullPageTextDesktop = await page.locator('body').innerText();
+    const desktopTextPath = path.join(RUN_DIR, '71_full_page_text_desktop.txt');
+    fs.writeFileSync(desktopTextPath, fullPageTextDesktop);
+    console.log(`[TEST] Desktop full page text saved to ${desktopTextPath} (${fullPageTextDesktop.length} chars)`);
     
-    // Validate full page text is not empty
-    if (fullPageText.length < 200) {
-      const stopFile = path.join(RUN_DIR, 'STOP_FULL_PAGE_TEXT_TOO_SHORT.txt');
-      fs.writeFileSync(stopFile, `Full page text only ${fullPageText.length} chars, expected >= 200`);
-      throw new Error('STOP_FULL_PAGE_TEXT_TOO_SHORT');
+    console.log('[TEST] Capturing full page text in MOBILE viewport (390x844 iPhone 13)...');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(1000); // Allow viewport to settle
+    const fullPageTextMobile = await page.locator('body').innerText();
+    const mobileTextPath = path.join(RUN_DIR, '72_full_page_text_mobile.txt');
+    fs.writeFileSync(mobileTextPath, fullPageTextMobile);
+    console.log(`[TEST] Mobile full page text saved to ${mobileTextPath} (${fullPageTextMobile.length} chars)`);
+    
+    // Reset to desktop viewport for remaining tests
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.waitForTimeout(500);
+    
+    // Validate full page texts are not empty
+    if (fullPageTextDesktop.length < 200) {
+      const stopFile = path.join(RUN_DIR, 'STOP_DESKTOP_TEXT_TOO_SHORT.txt');
+      fs.writeFileSync(stopFile, `Desktop text only ${fullPageTextDesktop.length} chars, expected >= 200`);
+      throw new Error('STOP_DESKTOP_TEXT_TOO_SHORT');
+    }
+    if (fullPageTextMobile.length < 200) {
+      const stopFile = path.join(RUN_DIR, 'STOP_MOBILE_TEXT_TOO_SHORT.txt');
+      fs.writeFileSync(stopFile, `Mobile text only ${fullPageTextMobile.length} chars, expected >= 200`);
+      throw new Error('STOP_MOBILE_TEXT_TOO_SHORT');
+    }
+    
+    // === CONSOLE HYGIENE GATE (OUR APP ONLY) ===
+    console.log('[TEST] Processing console hygiene gate (filtering for our app only)...');
+    const scopedMessages = consoleMessages.filter(msg => {
+      const url = msg.location || '';
+      // Include messages from our Forge app CDN or containing govGadget
+      const isOurApp = (
+        url.includes('cdn.prod.atlassian-dev.net') && url.includes('/govGadget')
+      ) || (
+        url.includes('214ca975') // our commit SHA
+      );
+      return isOurApp;
+    });
+    
+    const scopedLogsText = scopedMessages.map(msg => 
+      `[${msg.type}] ${msg.text}\n  Location: ${msg.location}`
+    ).join('\n\n');
+    
+    const scopedLogsPath = path.join(RUN_DIR, '73_console_scoped_our_app.txt');
+    fs.writeFileSync(scopedLogsPath, scopedLogsText || 'No scoped console messages from our app');
+    console.log(`[TEST] Scoped console logs saved to ${scopedLogsPath} (${scopedMessages.length} messages)`);
+    
+    // Summary of scoped console
+    const scopedErrors = scopedMessages.filter(m => m.type === 'error');
+    const scopedWarnings = scopedMessages.filter(m => m.type === 'warning');
+    const scopedLogs = scopedMessages.filter(m => m.type === 'log' || m.type === 'info');
+    
+    const uniqueErrors = [...new Set(scopedErrors.map(m => m.text))];
+    
+    const scopedSummary = [
+      '=== SCOPED CONSOLE SUMMARY (OUR APP ONLY) ===',
+      '',
+      `Total scoped messages: ${scopedMessages.length}`,
+      `  - Errors: ${scopedErrors.length}`,
+      `  - Warnings: ${scopedWarnings.length}`,
+      `  - Logs/Info: ${scopedLogs.length}`,
+      '',
+      'Unique error messages:',
+      ...uniqueErrors.map(err => `  - ${err}`),
+      '',
+      'VERDICT: ' + (scopedErrors.length === 0 ? 'PASS (no errors)' : `FAIL (${scopedErrors.length} errors)`)
+    ].join('\n');
+    
+    const scopedSummaryPath = path.join(RUN_DIR, '74_console_scoped_summary.txt');
+    fs.writeFileSync(scopedSummaryPath, scopedSummary);
+    console.log(`[TEST] Scoped console summary saved to ${scopedSummaryPath}`);
+    
+    // GATE: Fail if any scoped console errors
+    if (scopedErrors.length > 0) {
+      const stopFile = path.join(RUN_DIR, 'STOP_SCOPED_CONSOLE_ERROR.txt');
+      const stopContent = [
+        '=== SCOPED CONSOLE ERROR GATE FAILURE ===',
+        '',
+        `Found ${scopedErrors.length} error(s) in our app console:`,
+        '',
+        ...scopedErrors.map((err, i) => [
+          `Error ${i + 1}:`,
+          `  Message: ${err.text}`,
+          `  Location: ${err.location}`,
+          ''
+        ].join('\n'))
+      ].join('\n');
+      fs.writeFileSync(stopFile, stopContent);
+      throw new Error(`STOP_SCOPED_CONSOLE_ERROR: Found ${scopedErrors.length} error(s) from our app`);
     }
     
     // Extract envelope JSON from window global in the gadget frame (optional)
@@ -340,28 +440,69 @@ test.describe('Enterprise Contract Dashboard', () => {
       sanityResults.push('✓ PASS: No brand misspelling "Firstry" in gadget DOM\n');
     }
     
-    sanityResults.push('\n--- Full Page Text Check (including header/chrome) ---\n');
+    sanityResults.push('\n--- Full Page Text Check (Multi-Viewport) ---\n');
     
-    // Re-read full page text from file to ensure we're checking what was actually captured
-    const fullPageTextFromFile = fs.readFileSync(fullPageTextPath, 'utf-8');
-    sanityResults.push(`Full page text length: ${fullPageTextFromFile.length} chars\n`);
+    // Re-read both viewport captures from files
+    const desktopTextFromFile = fs.readFileSync(desktopTextPath, 'utf-8');
+    const mobileTextFromFile = fs.readFileSync(mobileTextPath, 'utf-8');
+    sanityResults.push(`Desktop viewport text length: ${desktopTextFromFile.length} chars\n`);
+    sanityResults.push(`Mobile viewport text length: ${mobileTextFromFile.length} chars\n`);
     
-    // Check 3: NO_GOVERNANCE token must NOT appear ANYWHERE on page
-    const hasNoGovTokenInPage = fullPageTextFromFile.includes('NO_GOVERNANCE');
-    if (hasNoGovTokenInPage) {
-      sanityResults.push('✗ FAIL: Internal token "NO_GOVERNANCE" leaked to page\n');
-      throw new Error('SANITY_FAIL: NO_GOVERNANCE token found in full page text');
+    // Check 3a: NO_GOVERNANCE token must NOT appear in DESKTOP viewport
+    const hasNoGovTokenDesktop = desktopTextFromFile.includes('NO_GOVERNANCE');
+    if (hasNoGovTokenDesktop) {
+      sanityResults.push('✗ FAIL: Internal token "NO_GOVERNANCE" leaked to desktop page\n');
+      throw new Error('SANITY_FAIL: NO_GOVERNANCE token found in desktop full page text');
     } else {
-      sanityResults.push('✓ PASS: No internal token "NO_GOVERNANCE" anywhere on page\n');
+      sanityResults.push('✓ PASS: No internal token "NO_GOVERNANCE" on desktop page\n');
     }
     
-    // Check 4: "Firstry" misspelling must NOT appear ANYWHERE on page (CRITICAL)
-    const hasFirstryInPage = fullPageTextFromFile.includes('Firstry');
-    if (hasFirstryInPage) {
-      sanityResults.push('✗ FAIL: Brand misspelling "Firstry" found on page (header/chrome)\n');
-      throw new Error('SANITY_FAIL: Firstry misspelling found in full page text');
+    // Check 3b: NO_GOVERNANCE token must NOT appear in MOBILE viewport
+    const hasNoGovTokenMobile = mobileTextFromFile.includes('NO_GOVERNANCE');
+    if (hasNoGovTokenMobile) {
+      sanityResults.push('✗ FAIL: Internal token "NO_GOVERNANCE" leaked to mobile page\n');
+      throw new Error('SANITY_FAIL: NO_GOVERNANCE token found in mobile full page text');
     } else {
-      sanityResults.push('✓ PASS: No brand misspelling "Firstry" anywhere on page\n');
+      sanityResults.push('✓ PASS: No internal token "NO_GOVERNANCE" on mobile page\n');
+    }
+    
+    // Check 4a: "Firstry" misspelling must NOT appear in DESKTOP viewport (CRITICAL)
+    const hasFirstryDesktop = desktopTextFromFile.includes('Firstry');
+    if (hasFirstryDesktop) {
+      brandFailureDetected = true;
+      const firstryLines = desktopTextFromFile.split('\n').filter(line => line.includes('Firstry')).slice(0, 10);
+      brandFailures.push('DESKTOP viewport has "Firstry" misspelling:');
+      brandFailures.push(...firstryLines.map(line => `  ${line}`));
+      sanityResults.push('✗ FAIL: Brand misspelling "Firstry" found on DESKTOP page\n');
+    } else {
+      sanityResults.push('✓ PASS: No brand misspelling "Firstry" on DESKTOP page\n');
+    }
+    
+    // Check 4b: "Firstry" misspelling must NOT appear in MOBILE viewport (CRITICAL)
+    const hasFirstryMobile = mobileTextFromFile.includes('Firstry');
+    if (hasFirstryMobile) {
+      brandFailureDetected = true;
+      const firstryLines = mobileTextFromFile.split('\n').filter(line => line.includes('Firstry')).slice(0, 10);
+      brandFailures.push('MOBILE viewport has "Firstry" misspelling:');
+      brandFailures.push(...firstryLines.map(line => `  ${line}`));
+      sanityResults.push('✗ FAIL: Brand misspelling "Firstry" found on MOBILE page\n');
+    } else {
+      sanityResults.push('✓ PASS: No brand misspelling "Firstry" on MOBILE page\n');
+    }
+    
+    // If brand failure detected, write STOP file but continue to capture evidence
+    if (brandFailureDetected) {
+      const stopFile = path.join(RUN_DIR, 'STOP_CHROME_BRAND_MISMATCH.txt');
+      const stopContent = [
+        '=== CHROME BRAND MISMATCH DETECTED ===',
+        '',
+        'Viewport failures:',
+        ...brandFailures,
+        '',
+        'This indicates Jira chrome/metadata still shows "Firstry" (caching issue).'
+      ].join('\n');
+      fs.writeFileSync(stopFile, stopContent);
+      // Note: We write the stop file but don't throw immediately - let test complete to gather all evidence
     }
     
     sanityResults.push('\n--- Evidence Metadata Validation ---\n');
@@ -514,6 +655,10 @@ test.describe('Enterprise Contract Dashboard', () => {
       expect(hasDashCtx).toBe(true);
       console.log('[TEST] ✓ [FT_DASH_CTX] marker found');
     }
+    
+    // Final check: If brand failure was detected earlier, fail the test now
+    // (This ensures all evidence was captured before failing)
+    if (brandFailureDetected) {\n      const errorMsg = [\n        'BRAND FAILURE: \"Firstry\" misspelling detected in full page text.',\n        'This indicates Jira chrome/metadata still shows \"Firstry\" (likely caching issue).',\n        'See STOP_CHROME_BRAND_MISMATCH.txt and 71/72 viewport captures for details.'\n      ].join(' ');\n      throw new Error(errorMsg);\n    }
     
     console.log('\n[TEST] ✅ ALL ENTERPRISE CONTRACT CHECKS PASSED\n');
   });
