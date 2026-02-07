@@ -389,7 +389,9 @@ test.describe('Enterprise Contract Dashboard', () => {
       'ft-scope-included',
       'ft-scope-excluded',
       'ft-card-controls',
-      'ft-snapshot-selector'
+      'ft-snapshot-selector',
+      'ft-export-hint',
+      'ft-support-button'
     ];
     
     let missingTestIds: string[] = [];
