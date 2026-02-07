@@ -325,11 +325,11 @@ test.describe('Enterprise Contract Dashboard', () => {
       sanityResults.push('✓ PASS: No brand misspelling "Firstry" in UI\n');
     }
     
-    // Check 3: Freshness must be one of expected labels
+    // Check 3: Freshness must be one of expected labels (including Unknown for invalid dates)
     const freshnessMatch = domText.match(/Freshness:\s*([^\n]+?)(?:\n|$)/);
     if (freshnessMatch) {
       const freshnessValue = freshnessMatch[1].trim();
-      const validFreshness = ['Fresh', 'Stale', 'Out of date'];
+      const validFreshness = ['Fresh', 'Stale', 'Out of date', 'Unknown'];
       if (validFreshness.includes(freshnessValue)) {
         sanityResults.push(`✓ PASS: Freshness is valid ("${freshnessValue}")\n`);
       } else {
@@ -341,11 +341,24 @@ test.describe('Enterprise Contract Dashboard', () => {
       throw new Error('SANITY_FAIL: Freshness label missing');
     }
     
-    // Check 4: Evidence age must exist and be numeric
-    const ageMatch = domText.match(/Evidence age:\s*(\d+)\s*days?/);
+    // Check 4: Evidence age must exist and be either numeric or "Unknown"
+    const ageMatch = domText.match(/Evidence age:\s*([^\n]+?)(?:\n|$)/);
     if (ageMatch) {
-      const ageDays = parseInt(ageMatch[1], 10);
-      sanityResults.push(`✓ PASS: Evidence age is numeric (${ageDays} days)\n`);
+      const ageValue = ageMatch[1].trim();
+      // Valid: "Unknown" or "X day(s)" format
+      const isUnknown = ageValue === 'Unknown';
+      const isNumericDays = /^\d+\s*days?$/.test(ageValue);
+      
+      if (isUnknown || isNumericDays) {
+        sanityResults.push(`✓ PASS: Evidence age is valid ("${ageValue}")\n`);
+      } else {
+        sanityResults.push(`✗ FAIL: Evidence age has invalid format ("${ageValue}")\n`);
+        throw new Error(`SANITY_FAIL: Invalid evidence age format: ${ageValue}`);
+      }
+    } else {
+      sanityResults.push('✗ FAIL: Evidence age not found\n');
+      throw new Error('SANITY_FAIL: Evidence age missing');
+    }
     } else {
       sanityResults.push('✗ FAIL: Evidence age not found or not numeric\n');
       throw new Error('SANITY_FAIL: Evidence age missing or malformed');
