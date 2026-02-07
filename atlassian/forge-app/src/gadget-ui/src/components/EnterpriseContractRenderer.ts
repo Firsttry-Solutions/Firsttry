@@ -456,6 +456,16 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   const supportBtn = createSupportButton();
   header.appendChild(supportBtn);
   
+  // Snapshot selector (static display for current snapshot)
+  const snapshotSelector = document.createElement('div');
+  snapshotSelector.className = 'ft-snapshot-selector';
+  snapshotSelector.setAttribute('data-testid', 'ft-snapshot-selector');
+  snapshotSelector.style.marginTop = '12px';
+  snapshotSelector.style.fontSize = '0.9em';
+  snapshotSelector.style.color = '#5E6C84';
+  snapshotSelector.textContent = 'View Snapshot: Latest';
+  header.appendChild(snapshotSelector);
+  
   shell.appendChild(header);
   
   // === CARD GRID ===
