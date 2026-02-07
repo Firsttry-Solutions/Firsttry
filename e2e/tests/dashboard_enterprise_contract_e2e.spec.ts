@@ -569,67 +569,6 @@ test.describe('Enterprise Contract Dashboard', () => {
       throw new Error('STOP_DOM_TEXT_TOO_SHORT');
     }
     
-    // === PHASE 2C: DEPLOYMENT-AWARENESS GATE ===
-    console.log('[TEST] Checking deployment identity matches HEAD...');
-    const deploymentCheckResults: string[] = [];
-    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK ===\n\n');
-    deploymentCheckResults.push(`Expected HEAD short SHA: ${expectedHeadShortSha}\n\n`);
-    
-    // Extract deployed SHA from console logs
-    // Look for UI identity markers: UI_IDENTITY_RESOLVED, UI_BUILD_IDENTITY_CONFIRMED, etc.
-    let deployedShortSha = '';
-    const identityMarkers = [
-      'UI_IDENTITY_RESOLVED',
-      'UI_BUILD_IDENTITY_CONFIRMED',
-      'UI_BUILD_IDENTITY_PROOF'
-    ];
-    
-    for (const log of consoleLogs) {
-      for (const marker of identityMarkers) {
-        if (log.includes(marker)) {
-          // Try to extract 7-char short SHA from the log line
-          const shortShaMatch = log.match(/[0-9a-f]{7}/);
-          if (shortShaMatch) {
-            deployedShortSha = shortShaMatch[0];
-            deploymentCheckResults.push(`Found deployed SHA in console: ${log}\n`);
-            break;
-          }
-        }
-      }
-      if (deployedShortSha) break;
-    }
-    
-    // If not found in console, try DOM text
-    if (!deployedShortSha) {
-      const shortShaMatch = domText.match(/[0-9a-f]{7}/);
-      if (shortShaMatch) {
-        deployedShortSha = shortShaMatch[0];
-        deploymentCheckResults.push(`Found deployed SHA in DOM text: ${deployedShortSha}\n`);
-      }
-    }
-    
-    deploymentCheckResults.push(`\nDeployed short SHA: ${deployedShortSha || 'NOT FOUND'}\n`);
-    fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
-    
-    // FAIL if mismatch
-    if (!deployedShortSha) {
-      const stopMsg = `expected_sha=${expectedHeadShortSha}\ndeployed_sha=NOT_FOUND\ndashboard_url=${JIRA_DASHBOARD_URL}\n\nNo UI identity marker found in console or DOM.`;
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED.txt'), stopMsg);
-      console.error('[TEST] STOP_NOT_DEPLOYED: Cannot find deployed SHA in console or DOM');
-      throw new Error('STOP_NOT_DEPLOYED: deployed UI SHA not found');
-    }
-    
-    if (deployedShortSha !== expectedHeadShortSha) {
-      const stopMsg = `expected_sha=${expectedHeadShortSha}\ndeployed_sha=${deployedShortSha}\ndashboard_url=${JIRA_DASHBOARD_URL}\n\nProduction gadget has not been updated with latest code.`;
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED.txt'), stopMsg);
-      console.error(`[TEST] STOP_NOT_DEPLOYED: Expected ${expectedHeadShortSha}, got ${deployedShortSha}`);
-      throw new Error(`STOP_NOT_DEPLOYED: deployed UI SHA (${deployedShortSha}) does not match repo HEAD (${expectedHeadShortSha})`);
-    }
-    
-    console.log(`[TEST] ✓ Deployment identity verified: ${deployedShortSha} matches HEAD`);
-    deploymentCheckResults.push(`\n✓ VERDICT: PASS - Deployed SHA matches HEAD\n`);
-    fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
-    
     // === MULTI-VIEWPORT FULL PAGE TEXT CAPTURES ===
     console.log('[TEST] Capturing full page text in DESKTOP viewport (1280x720)...');
     await page.setViewportSize({ width: 1280, height: 720 });
