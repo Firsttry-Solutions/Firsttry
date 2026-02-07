@@ -1,5 +1,5 @@
 /**
- * Design Tokens for Firsttry: Audit Evidence for Jira
+ * Design Tokens for FirstTry: Audit Evidence for Jira
  *
  * Defines spacing, typography, colors, and layout patterns
  * for a professional, accessible, procurement-friendly UI.

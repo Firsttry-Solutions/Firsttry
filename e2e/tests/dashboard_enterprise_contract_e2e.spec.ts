@@ -301,8 +301,62 @@ test.describe('Enterprise Contract Dashboard', () => {
     }
     
     // ========================================================================
-    // ENVELOPE VALIDATION (if available)
+    // ENTERPRISE TEXT SANITY CHECKS
     // ========================================================================
+    console.log('[TEST] Running enterprise text sanity checks...');
+    const sanityResults: string[] = [];
+    sanityResults.push('=== ENTERPRISE TEXT SANITY CHECKS ===\n\n');
+    
+    // Check 1: NO_GOVERNANCE token must NOT appear in DOM
+    const hasNoGovToken = domText.includes('NO_GOVERNANCE');
+    if (hasNoGovToken) {
+      sanityResults.push('✗ FAIL: Internal token "NO_GOVERNANCE" leaked to UI\n');
+      throw new Error('SANITY_FAIL: NO_GOVERNANCE token found in DOM text');
+    } else {
+      sanityResults.push('✓ PASS: No internal token "NO_GOVERNANCE" in UI\n');
+    }
+    
+    // Check 2: "Firstry" misspelling must NOT appear (only "FirstTry" allowed)
+    const hasFirstryMisspelling = domText.includes('Firstry');
+    if (hasFirstryMisspelling) {
+      sanityResults.push('✗ FAIL: Brand misspelling "Firstry" found in UI\n');
+      throw new Error('SANITY_FAIL: Firstry misspelling found in DOM text');
+    } else {
+      sanityResults.push('✓ PASS: No brand misspelling "Firstry" in UI\n');
+    }
+    
+    // Check 3: Freshness must be one of expected labels
+    const freshnessMatch = domText.match(/Freshness:\s*([^\n]+?)(?:\n|$)/);
+    if (freshnessMatch) {
+      const freshnessValue = freshnessMatch[1].trim();
+      const validFreshness = ['Fresh', 'Stale', 'Out of date'];
+      if (validFreshness.includes(freshnessValue)) {
+        sanityResults.push(`✓ PASS: Freshness is valid ("${freshnessValue}")\n`);
+      } else {
+        sanityResults.push(`✗ FAIL: Freshness has invalid value ("${freshnessValue}")\n`);
+        throw new Error(`SANITY_FAIL: Invalid freshness value: ${freshnessValue}`);
+      }
+    } else {
+      sanityResults.push('✗ FAIL: Freshness label not found\n');
+      throw new Error('SANITY_FAIL: Freshness label missing');
+    }
+    
+    // Check 4: Evidence age must exist and be numeric
+    const ageMatch = domText.match(/Evidence age:\s*(\d+)\s*days?/);
+    if (ageMatch) {
+      const ageDays = parseInt(ageMatch[1], 10);
+      sanityResults.push(`✓ PASS: Evidence age is numeric (${ageDays} days)\n`);
+    } else {
+      sanityResults.push('✗ FAIL: Evidence age not found or not numeric\n');
+      throw new Error('SANITY_FAIL: Evidence age missing or malformed');
+    }
+    
+    sanityResults.push('\\nVERDICT: PASS (All enterprise text sanity checks passed)\\n');
+    
+    // Write sanity check results
+    const sanityCheckPath = path.join(RUN_DIR, '70_enterprise_text_sanity.txt');
+    fs.writeFileSync(sanityCheckPath, sanityResults.join(''));
+    console.log(`[TEST] Enterprise text sanity checks written to ${sanityCheckPath}`);
     if (envelope) {
       console.log('[TEST] Validating envelope structure...');
       expect(envelope.envelopeKind).toBe('FT_DASH_ENVELOPE_V1');
