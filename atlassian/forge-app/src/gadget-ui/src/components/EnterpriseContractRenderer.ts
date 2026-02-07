@@ -6,6 +6,8 @@
  * All UI text must match the exact contract specifications.
  */
 
+import { computeEvidenceAgeDays, computeFreshness, formatAgeDays } from '../utils/evidenceMetrics';
+
 /**
  * Helper: Escape HTML entities
  */
@@ -145,6 +147,38 @@ export function renderEvidenceSummaryCard(data: any, currentSnapshot: any): HTML
   card.style.marginTop = '8px';  // Minimal top margin for enterprise-grade layout
   card.style.marginBottom = '16px';
   
+  // Enterprise-grade validation: Check for required snapshot fields
+  if (!currentSnapshot || !currentSnapshot.createdAtUtc || !currentSnapshot.snapshotKind || !currentSnapshot.integrity) {
+    // Render error banner for missing/invalid snapshot data
+    const errorBanner = document.createElement('div');
+    errorBanner.className = 'ft-error-banner';
+    errorBanner.setAttribute('data-testid', 'ft-snapshot-error-banner');
+    errorBanner.style.padding = '16px';
+    errorBanner.style.backgroundColor = '#ffebe6';
+    errorBanner.style.border = '2px solid #de350b';
+    errorBanner.style.borderRadius = '3px';
+    errorBanner.style.color = '#172b4d';
+    
+    const errorTitle = document.createElement('div');
+    errorTitle.style.fontWeight = 'bold';
+    errorTitle.style.marginBottom = '8px';
+    errorTitle.textContent = 'Snapshot data unavailable';
+    errorBanner.appendChild(errorTitle);
+    
+    const errorMsg = document.createElement('div');
+    errorMsg.textContent = 'Snapshot data unavailable. Please refresh or contact support.';
+    errorBanner.appendChild(errorMsg);
+    
+    const statusMsg = document.createElement('div');
+    statusMsg.style.marginTop = '8px';
+    statusMsg.style.fontWeight = 'bold';
+    statusMsg.textContent = 'Status: FAILED';
+    errorBanner.appendChild(statusMsg);
+    
+    body.appendChild(errorBanner);
+    return card;
+  }
+  
   // Snapshot type (human readable)
   const snapshotType = currentSnapshot.snapshotKind === 'SEED' ? 'Seed Snapshot' : 'Governance Snapshot';
   const typeItem = createContractItem('Snapshot type', snapshotType, 'ft-summary-snapshot-type');
@@ -160,29 +194,16 @@ export function renderEvidenceSummaryCard(data: any, currentSnapshot: any): HTML
   const createdItem = createContractItem('Created', createdTimestamp, 'ft-summary-created');
   body.appendChild(createdItem);
   
-  // Freshness + evidence age
-  let freshnessStatus = 'Out of date';
-  let evidenceAgeDays = 0;
+  // Evidence age (computed from created timestamp)
+  const evidenceAgeDays = computeEvidenceAgeDays(currentSnapshot.createdAtUtc);
   
-  if (data.evidenceFreshness?.status === 'NO_GOVERNANCE') {
-    freshnessStatus = 'Out of date';
-    evidenceAgeDays = 0;
-  } else if (data.evidenceFreshness?.status === 'CURRENT') {
-    freshnessStatus = 'Current';
-    if (data.evidenceFreshness.ageSeconds !== null && data.evidenceFreshness.ageSeconds !== undefined) {
-      evidenceAgeDays = Math.floor(data.evidenceFreshness.ageSeconds / 86400);
-    }
-  } else if (data.evidenceFreshness?.status === 'STALE') {
-    freshnessStatus = 'Out of date';
-    if (data.evidenceFreshness.ageSeconds !== null && data.evidenceFreshness.ageSeconds !== undefined) {
-      evidenceAgeDays = Math.floor(data.evidenceFreshness.ageSeconds / 86400);
-    }
-  }
+  // Freshness (derived from age)
+  const freshnessStatus = computeFreshness(evidenceAgeDays);
   
   const freshnessItem = createContractItem('Freshness', freshnessStatus, 'ft-summary-freshness');
   body.appendChild(freshnessItem);
   
-  const ageItem = createContractItem('Evidence age', `${evidenceAgeDays} days`, 'ft-summary-evidence-age');
+  const ageItem = createContractItem('Evidence age', formatAgeDays(evidenceAgeDays), 'ft-summary-evidence-age');
   body.appendChild(ageItem);
   
   // Export eligibility
@@ -279,16 +300,16 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   freshnessHeading.textContent = 'Evidence Freshness';
   freshnessSection.appendChild(freshnessHeading);
   
-  // Check freshness status
+  // Check freshness status - NO_GOVERNANCE means no governance snapshots exist
   if (data.evidenceFreshness?.status === 'NO_GOVERNANCE') {
     const noGovMsg = document.createElement('p');
     noGovMsg.setAttribute('data-testid', 'ft-freshness-no-governance');
-    noGovMsg.textContent = 'No governance snapshots yet.';
+    noGovMsg.textContent = 'No governance snapshots available yet.';
     freshnessSection.appendChild(noGovMsg);
     
-    const statusCode = document.createElement('p');
-    statusCode.textContent = data.evidenceFreshness.status;
-    freshnessSection.appendChild(statusCode);
+    const createMsg = document.createElement('p');
+    createMsg.textContent = 'Create a governance snapshot to generate immutable audit evidence.';
+    freshnessSection.appendChild(createMsg);
   } else {
     const freshnessText = document.createElement('p');
     freshnessText.textContent = `Last Collected: ${data.evidenceFreshness?.lastCollectedUtc || 'N/A'} UTC`;
@@ -313,27 +334,12 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   const createdTimestamp = formatTimestampUTC(currentSnapshot.createdAtUtc);
   contractFieldsSection.appendChild(createContractItem('Created', createdTimestamp, 'ft-snapshot-created'));
   
-  // D) Freshness status
-  let freshnessStatus = 'Out of date';
-  let evidenceAgeDays = 0;
-  
-  if (data.evidenceFreshness?.status === 'NO_GOVERNANCE') {
-    freshnessStatus = 'Out of date';
-    evidenceAgeDays = 0;
-  } else if (data.evidenceFreshness?.status === 'CURRENT') {
-    freshnessStatus = 'Current';
-    if (data.evidenceFreshness.ageSeconds !== null && data.evidenceFreshness.ageSeconds !== undefined) {
-      evidenceAgeDays = Math.floor(data.evidenceFreshness.ageSeconds / 86400);
-    }
-  } else if (data.evidenceFreshness?.status === 'STALE') {
-    freshnessStatus = 'Out of date';
-    if (data.evidenceFreshness.ageSeconds !== null && data.evidenceFreshness.ageSeconds !== undefined) {
-      evidenceAgeDays = Math.floor(data.evidenceFreshness.ageSeconds / 86400);
-    }
-  }
+  // D) Freshness status (computed from created timestamp using canonical functions)
+  const evidenceAgeDays = computeEvidenceAgeDays(currentSnapshot.createdAtUtc);
+  const freshnessStatus = computeFreshness(evidenceAgeDays);
   
   contractFieldsSection.appendChild(createContractItem('Freshness', freshnessStatus, 'ft-snapshot-freshness'));
-  contractFieldsSection.appendChild(createContractItem('Evidence age', `${evidenceAgeDays} days`, 'ft-evidence-age'));
+  contractFieldsSection.appendChild(createContractItem('Evidence age', formatAgeDays(evidenceAgeDays), 'ft-evidence-age'));
   
   // E) Immutability statement (EXACT)
   const immutabilityExact = 'This snapshot is immutable and cannot be modified after creation.';

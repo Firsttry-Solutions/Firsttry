@@ -1,5 +1,5 @@
 /**
- * Firsttry: Audit Evidence for Jira - Main Entrypoint
+ * FirstTry: Audit Evidence for Jira - Main Entrypoint
  * 
  * This module is bundled by Vite and served in the Forge gadget iframe.
  * @forge/bridge is bundled with the gadget and provides invoke() for resolver calls.
@@ -2012,7 +2012,7 @@ function renderExportOutput(title: string, text: string) {
  */
 function toSummaryText(payload: any): string {
     return `═════════════════════════════════════════════════════════════
-Firsttry: Audit Evidence for Jira — Status Summary
+FirstTry: Audit Evidence for Jira — Status Summary
 ═════════════════════════════════════════════════════════════
 Generated: ${payload.timestamp}
 
