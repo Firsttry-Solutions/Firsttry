@@ -221,6 +221,20 @@ test.describe('Enterprise Contract Dashboard', () => {
       throw new Error('STOP_DOM_TEXT_TOO_SHORT');
     }
     
+    // === EXTRACT FULL PAGE TEXT (INCLUDING GADGET HEADER/CHROME) ===
+    console.log('[TEST] Extracting full page text including gadget header...');
+    const fullPageText = await page.locator('body').innerText();
+    const fullPageTextPath = path.join(RUN_DIR, '71_full_page_text.txt');
+    fs.writeFileSync(fullPageTextPath, fullPageText);
+    console.log(`[TEST] Full page text saved to ${fullPageTextPath} (${fullPageText.length} chars)`);
+    
+    // Validate full page text is not empty
+    if (fullPageText.length < 200) {
+      const stopFile = path.join(RUN_DIR, 'STOP_FULL_PAGE_TEXT_TOO_SHORT.txt');
+      fs.writeFileSync(stopFile, `Full page text only ${fullPageText.length} chars, expected >= 200`);
+      throw new Error('STOP_FULL_PAGE_TEXT_TOO_SHORT');
+    }
+    
     // Extract envelope JSON from window global in the gadget frame (optional)
     console.log('[TEST] Checking for envelope global...');
     const envelope = await gadgetFrame.evaluate(() => {
@@ -306,24 +320,51 @@ test.describe('Enterprise Contract Dashboard', () => {
     console.log('[TEST] Running enterprise text sanity checks...');
     const sanityResults: string[] = [];
     sanityResults.push('=== ENTERPRISE TEXT SANITY CHECKS ===\n\n');
+    sanityResults.push('--- Gadget DOM Text Check ---\n');
     
-    // Check 1: NO_GOVERNANCE token must NOT appear in DOM
+    // Check 1: NO_GOVERNANCE token must NOT appear in gadget DOM
     const hasNoGovToken = domText.includes('NO_GOVERNANCE');
     if (hasNoGovToken) {
-      sanityResults.push('✗ FAIL: Internal token "NO_GOVERNANCE" leaked to UI\n');
+      sanityResults.push('✗ FAIL: Internal token "NO_GOVERNANCE" leaked to gadget DOM\n');
       throw new Error('SANITY_FAIL: NO_GOVERNANCE token found in DOM text');
     } else {
-      sanityResults.push('✓ PASS: No internal token "NO_GOVERNANCE" in UI\n');
+      sanityResults.push('✓ PASS: No internal token "NO_GOVERNANCE" in gadget DOM\n');
     }
     
-    // Check 2: "Firstry" misspelling must NOT appear (only "FirstTry" allowed)
-    const hasFirstryMisspelling = domText.includes('Firstry');
-    if (hasFirstryMisspelling) {
-      sanityResults.push('✗ FAIL: Brand misspelling "Firstry" found in UI\n');
-      throw new Error('SANITY_FAIL: Firstry misspelling found in DOM text');
+    // Check 2: "Firstry" misspelling must NOT appear in gadget DOM
+    const hasFirstryInGadget = domText.includes('Firstry');
+    if (hasFirstryInGadget) {
+      sanityResults.push('✗ FAIL: Brand misspelling "Firstry" found in gadget DOM\n');
+      throw new Error('SANITY_FAIL: Firstry misspelling found in gadget DOM text');
     } else {
-      sanityResults.push('✓ PASS: No brand misspelling "Firstry" in UI\n');
+      sanityResults.push('✓ PASS: No brand misspelling "Firstry" in gadget DOM\n');
     }
+    
+    sanityResults.push('\n--- Full Page Text Check (including header/chrome) ---\n');
+    
+    // Re-read full page text from file to ensure we're checking what was actually captured
+    const fullPageTextFromFile = fs.readFileSync(fullPageTextPath, 'utf-8');
+    sanityResults.push(`Full page text length: ${fullPageTextFromFile.length} chars\n`);
+    
+    // Check 3: NO_GOVERNANCE token must NOT appear ANYWHERE on page
+    const hasNoGovTokenInPage = fullPageTextFromFile.includes('NO_GOVERNANCE');
+    if (hasNoGovTokenInPage) {
+      sanityResults.push('✗ FAIL: Internal token "NO_GOVERNANCE" leaked to page\n');
+      throw new Error('SANITY_FAIL: NO_GOVERNANCE token found in full page text');
+    } else {
+      sanityResults.push('✓ PASS: No internal token "NO_GOVERNANCE" anywhere on page\n');
+    }
+    
+    // Check 4: "Firstry" misspelling must NOT appear ANYWHERE on page (CRITICAL)
+    const hasFirstryInPage = fullPageTextFromFile.includes('Firstry');
+    if (hasFirstryInPage) {
+      sanityResults.push('✗ FAIL: Brand misspelling "Firstry" found on page (header/chrome)\n');
+      throw new Error('SANITY_FAIL: Firstry misspelling found in full page text');
+    } else {
+      sanityResults.push('✓ PASS: No brand misspelling "Firstry" anywhere on page\n');
+    }
+    
+    sanityResults.push('\n--- Evidence Metadata Validation ---\n');
     
     // Check 3: Freshness must be one of expected labels (including Unknown for invalid dates)
     const freshnessMatch = domText.match(/Freshness:\s*([^\n]+?)(?:\n|$)/);
@@ -359,12 +400,8 @@ test.describe('Enterprise Contract Dashboard', () => {
       sanityResults.push('✗ FAIL: Evidence age not found\n');
       throw new Error('SANITY_FAIL: Evidence age missing');
     }
-    } else {
-      sanityResults.push('✗ FAIL: Evidence age not found or not numeric\n');
-      throw new Error('SANITY_FAIL: Evidence age missing or malformed');
-    }
     
-    sanityResults.push('\\nVERDICT: PASS (All enterprise text sanity checks passed)\\n');
+    sanityResults.push('\nVERDICT: PASS (All enterprise text sanity checks passed)\n');
     
     // Write sanity check results
     const sanityCheckPath = path.join(RUN_DIR, '70_enterprise_text_sanity.txt');

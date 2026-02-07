@@ -19,7 +19,7 @@ modules:
   # If bridge is not available, the gadget will display a fatal error and stop.
   jira:dashboardGadget:
     - key: governance-dashboard-gadget-v2
-      title: "Firsttry: Audit Evidence for Jira"
+      title: "FirstTry: Audit Evidence for Jira"
       description: FirstTry Governance - real-time status overview
       resource: govGadget2141
       resolver:
