@@ -104,11 +104,11 @@ test.describe('Enterprise Contract Dashboard', () => {
       for (const frame of frames) {
         try {
           const frameUrl = frame.url();
-          // Check if this frame contains our root testid
-          const rootCount = await frame.locator('[data-testid="ft-enterprise-contract-root"]').count();
+          // Check if this frame contains our enterprise shell testid
+          const rootCount = await frame.locator('[data-testid="ft-enterprise-shell"]').count();
           if (rootCount > 0) {
             gadgetFrame = frame;
-            console.log(`[TEST] Found gadget frame with contract root (url: ${frameUrl})`);
+            console.log(`[TEST] Found gadget frame with enterprise shell (url: ${frameUrl})`);
             break;
           }
         } catch (e) {
@@ -120,14 +120,14 @@ test.describe('Enterprise Contract Dashboard', () => {
     }
     
     if (!gadgetFrame) {
-      console.log('[TEST] ERROR: Could not find enterprise contract root within 120s');
+      console.log('[TEST] ERROR: Could not find enterprise shell within 120s');
       
-      // Try to find evidence summary as fallback
+      // Try to find evidence summary card as fallback
       for (const frame of page.frames()) {
         try {
-          const evidenceCount = await frame.locator('[data-testid="ft-evidence-summary-root"]').count();
+          const evidenceCount = await frame.locator('[data-testid="ft-card-evidence-summary"]').count();
           if (evidenceCount > 0) {
-            console.log(`[TEST] Found evidence summary in frame: ${frame.url()}`);
+            console.log(`[TEST] Found evidence summary card in frame: ${frame.url()}`);
           }
         } catch (e) {
           // Continue
@@ -135,13 +135,13 @@ test.describe('Enterprise Contract Dashboard', () => {
       }
       
       const stopFile = path.join(RUN_DIR, 'STOP_NO_GADGET_FRAME.txt');
-      fs.writeFileSync(stopFile, 'Could not find gadget iframe with ft-enterprise-contract-root within 120s');
+      fs.writeFileSync(stopFile, 'Could not find gadget iframe with ft-enterprise-shell within 120s');
       throw new Error('STOP_NO_GADGET_FRAME');
     }
     
-    console.log('[TEST] Gadget frame found, waiting for enterprise contract root...');
-    await gadgetFrame.locator('[data-testid="ft-enterprise-contract-root"]').waitFor({ timeout: 30000 });
-    console.log('[TEST] Enterprise contract root visible');
+    console.log('[TEST] Gadget frame found, waiting for enterprise shell...');
+    await gadgetFrame.locator('[data-testid="ft-enterprise-shell"]').waitFor({ timeout: 30000 });
+    console.log('[TEST] Enterprise shell visible');
     
     // ========================================================================
     // ENTERPRISE-GRADE LAYOUT GATE (STRICT: y < 320 @ 1280x720)
@@ -152,11 +152,11 @@ test.describe('Enterprise Contract Dashboard', () => {
     layoutResults.push('Viewport: 1280x720\n');
     layoutResults.push('Threshold: Evidence Summary y < 320px (enterprise above-the-fold)\n\n');
     
-    // Locate Evidence Summary (must be above the fold)
-    const summary = gadgetFrame.locator('[data-testid="ft-evidence-summary-root"]');
+    // Locate Evidence Summary card (must be above the fold)
+    const summary = gadgetFrame.locator('[data-testid="ft-card-evidence-summary"]');
     await expect(summary).toBeVisible({ timeout: 120000 });
-    console.log('[TEST] ✓ Evidence Summary visible');
-    layoutResults.push('✓ Evidence Summary visible\n');
+    console.log('[TEST] ✓ Evidence Summary card visible');
+    layoutResults.push('✓ Evidence Summary card visible\n');
     
     // Check Evidence Summary is above the fold (bounding box y position)
     const summaryBox = await summary.boundingBox();
@@ -183,10 +183,10 @@ test.describe('Enterprise Contract Dashboard', () => {
     layoutResults.push(`✓ PASS: Evidence Summary y=${summaryBox.y} < 320px\n`);
     layoutResults.push(`Above-the-fold: ${Math.round((summaryBox.y / 720) * 100)}% through 720px viewport\n`);
     
-    // Contract root already verified visible above
-    const contractRoot = gadgetFrame.locator('[data-testid="ft-enterprise-contract-root"]');
-    console.log('[TEST] ✓ Enterprise Contract root confirmed visible');
-    layoutResults.push('✓ Enterprise Contract root visible\n');
+    // Enterprise shell already verified visible above
+    const contractRoot = gadgetFrame.locator('[data-testid="ft-enterprise-shell"]');
+    console.log('[TEST] ✓ Enterprise shell confirmed visible');
+    layoutResults.push('✓ Enterprise shell visible\n');
     
     // Snapshot History
     const historyRoot = gadgetFrame.locator('[data-testid="ft-snapshot-history"]');
@@ -197,6 +197,148 @@ test.describe('Enterprise Contract Dashboard', () => {
     layoutResults.push('\nVERDICT: PASS (Enterprise layout meets strict threshold)\n');
     fs.writeFileSync(path.join(RUN_DIR, '39_layout_gate.txt'), layoutResults.join(''));
     console.log(`[TEST] Layout gate written to ${path.join(RUN_DIR, '39_layout_gate.txt')}`);
+    
+    // ========================================================================
+    // ENTERPRISE UI CONTRACT - All Required TestIDs
+    // ========================================================================
+    console.log('[TEST] Validating enterprise UI contract (all required testids)...');
+    const uiContractResults: string[] = [];
+    uiContractResults.push('=== ENTERPRISE UI CONTRACT VALIDATION ===\n\n');
+    
+    const requiredTestIds = [
+      'ft-enterprise-shell',
+      'ft-enterprise-header',
+      'ft-title',
+      'ft-badges',
+      'ft-badge-snapshot-kind',
+      'ft-badge-freshness',
+      'ft-badge-export',
+      'ft-readonly',
+      'ft-card-evidence-summary',
+      'ft-card-title-evidence-summary',
+      'ft-integrity-hash',
+      'ft-copy-integrity-hash',
+      'ft-card-seed-vs-governance',
+      'ft-card-scope',
+      'ft-scope-included',
+      'ft-scope-excluded',
+      'ft-card-controls',
+      'ft-snapshot-selector'
+    ];
+    
+    let missingTestIds: string[] = [];
+    for (const testId of requiredTestIds) {
+      const element = gadgetFrame.locator(`[data-testid="${testId}"]`);
+      const count = await element.count();
+      if (count === 0) {
+        missingTestIds.push(testId);
+        uiContractResults.push(`✗ MISSING: ${testId}\n`);
+        console.log(`[TEST] ✗ MISSING: ${testId}`);
+      } else {
+        uiContractResults.push(`✓ FOUND: ${testId}\n`);
+        console.log(`[TEST] ✓ FOUND: ${testId}`);
+      }
+    }
+    
+    if (missingTestIds.length > 0) {
+      uiContractResults.push(`\n✗ VERDICT: FAIL (${missingTestIds.length} missing testids)\n`);
+      fs.writeFileSync(path.join(RUN_DIR, '40_ui_contract.txt'), uiContractResults.join(''));
+      throw new Error(`UI_CONTRACT_FAIL: Missing testids: ${missingTestIds.join(', ')}`);
+    }
+    
+    uiContractResults.push('\n✓ VERDICT: PASS (All required testids present)\n');
+    
+    // ========================================================================
+    // BADGE CONTENT VALIDATION
+    // ========================================================================
+    console.log('[TEST] Validating badge content...');
+    uiContractResults.push('\n=== BADGE CONTENT VALIDATION ===\n\n');
+    
+    // Export badge must contain "Export:"
+    const exportBadge = gadgetFrame.locator('[data-testid="ft-badge-export"]');
+    const exportText = await exportBadge.innerText();
+    if (!exportText.includes('Export:')) {
+      uiContractResults.push(`✗ Export badge missing "Export:" - got: "${exportText}"\n`);
+      fs.writeFileSync(path.join(RUN_DIR, '40_ui_contract.txt'), uiContractResults.join(''));
+      throw new Error(`BADGE_FAIL: Export badge missing "Export:" - got: "${exportText}"`);
+    }
+    uiContractResults.push(`✓ Export badge contains "Export:" - text: "${exportText}"\n`);
+    
+    // Freshness badge must contain one of: "Out of date" OR "Unknown" OR "Current"
+    const freshnessBadge = gadgetFrame.locator('[data-testid="ft-badge-freshness"]');
+    const freshnessText = await freshnessBadge.innerText();
+    const validFreshnessValues = ['Out of date', 'Unknown', 'Current'];
+    const hasValidFreshness = validFreshnessValues.some(v => freshnessText.includes(v));
+    if (!hasValidFreshness) {
+      uiContractResults.push(`✗ Freshness badge missing valid value - got: "${freshnessText}"\n`);
+      fs.writeFileSync(path.join(RUN_DIR, '40_ui_contract.txt'), uiContractResults.join(''));
+      throw new Error(`BADGE_FAIL: Freshness badge invalid - got: "${freshnessText}"`);
+    }
+    uiContractResults.push(`✓ Freshness badge valid - text: "${freshnessText}"\n`);
+    
+    uiContractResults.push('\n✓ VERDICT: Badge content valid\n');
+    fs.writeFileSync(path.join(RUN_DIR, '40_ui_contract.txt'), uiContractResults.join(''));
+    console.log(`[TEST] UI contract written to ${path.join(RUN_DIR, '40_ui_contract.txt')}`);
+    
+    // ========================================================================
+    // CSS LOADED PROOF
+    // ========================================================================
+    console.log('[TEST] Checking CSS application (computed styles)...');
+    const cssProofResults: string[] = [];
+    cssProofResults.push('=== CSS COMPUTED STYLE PROOF ===\n\n');
+    
+    // Get computed styles from Evidence Summary card
+    const summaryCardStyles = await summary.evaluate((el) => {
+      const computed = window.getComputedStyle(el);
+      return {
+        borderColor: computed.borderColor,
+        backgroundColor: computed.backgroundColor,
+        borderWidth: computed.borderWidth,
+        borderRadius: computed.borderRadius
+      };
+    });
+    
+    cssProofResults.push(`Evidence Summary card styles:\n`);
+    cssProofResults.push(`  border-color: ${summaryCardStyles.borderColor}\n`);
+    cssProofResults.push(`  background-color: ${summaryCardStyles.backgroundColor}\n`);
+    cssProofResults.push(`  border-width: ${summaryCardStyles.borderWidth}\n`);
+    cssProofResults.push(`  border-radius: ${summaryCardStyles.borderRadius}\n\n`);
+    
+    // Verify CSS is actually applied (border should not be 'none' and background shouldn't be transparent)
+    if (summaryCardStyles.borderWidth === '0px' || summaryCardStyles.borderWidth === 'none') {
+      cssProofResults.push('✗ VERDICT: FAIL (CSS not applied - no border)\n');
+      fs.writeFileSync(path.join(RUN_DIR, '75_css_computed_proof.txt'), cssProofResults.join(''));
+      const stopFile = path.join(RUN_DIR, 'STOP_CSS_NOT_APPLIED.txt');
+      fs.writeFileSync(stopFile, 'CSS not applied: card has no border');
+      throw new Error('STOP_CSS_NOT_APPLIED');
+    }
+    
+    cssProofResults.push('✓ VERDICT: CSS applied (computed styles confirm stylesheet loaded)\n');
+    fs.writeFileSync(path.join(RUN_DIR, '75_css_computed_proof.txt'), cssProofResults.join(''));
+    console.log(`[TEST] CSS proof written to ${path.join(RUN_DIR, '75_css_computed_proof.txt')}`);
+    
+    // ========================================================================
+    // ACCESSIBILITY - Copy Button Check
+    // ========================================================================
+    console.log('[TEST] Checking copy button accessibility...');
+    const a11yResults: string[] = [];
+    a11yResults.push('=== ACCESSIBILITY PROOF ===\n\n');
+    
+    const copyButton = gadgetFrame.locator('[data-testid="ft-copy-integrity-hash"]');
+    const buttonNodeName = await copyButton.evaluate((el) => el.nodeName);
+    
+    a11yResults.push(`Copy button element:\n`);
+    a11yResults.push(`  nodeName: ${buttonNodeName}\n`);
+    
+    if (buttonNodeName !== 'BUTTON') {
+      a11yResults.push('✗ VERDICT: FAIL (Copy button is not a real <button> element)\n');
+      fs.writeFileSync(path.join(RUN_DIR, '76_a11y_button_proof.txt'), a11yResults.join(''));
+      throw new Error(`A11Y_FAIL: Copy button nodeName is ${buttonNodeName}, expected BUTTON`);
+    }
+    
+    a11yResults.push('\n✓ VERDICT: PASS (Copy button is a real <button> element)\n');
+    fs.writeFileSync(path.join(RUN_DIR, '76_a11y_button_proof.txt'), a11yResults.join(''));
+    console.log(`[TEST] A11y proof written to ${path.join(RUN_DIR, '76_a11y_button_proof.txt')}`);
     
     // ========================================================================
     // SCREENSHOTS (Element-specific + Full page)
@@ -359,7 +501,7 @@ test.describe('Enterprise Contract Dashboard', () => {
     const contractResults: string[] = [];
     contractResults.push('=== ENTERPRISE CONTRACT DOM VALIDATION ===\n');
     contractResults.push(`DOM text length: ${domText.length} characters\n`);
-    contractResults.push(`Extracted from: [data-testid="ft-enterprise-contract-root"]\n\n`);
+    contractResults.push(`Extracted from: [data-testid="ft-enterprise-shell"]\n\n`);
     
     // Required contract strings (must appear in visible DOM text)
     const requiredStrings = [
@@ -658,7 +800,14 @@ test.describe('Enterprise Contract Dashboard', () => {
     
     // Final check: If brand failure was detected earlier, fail the test now
     // (This ensures all evidence was captured before failing)
-    if (brandFailureDetected) {\n      const errorMsg = [\n        'BRAND FAILURE: \"Firstry\" misspelling detected in full page text.',\n        'This indicates Jira chrome/metadata still shows \"Firstry\" (likely caching issue).',\n        'See STOP_CHROME_BRAND_MISMATCH.txt and 71/72 viewport captures for details.'\n      ].join(' ');\n      throw new Error(errorMsg);\n    }
+    if (brandFailureDetected) {
+      const errorMsg = [
+        'BRAND FAILURE: "Firstry" misspelling detected in full page text.',
+        'This indicates Jira chrome/metadata still shows "Firstry" (likely caching issue).',
+        'See STOP_CHROME_BRAND_MISMATCH.txt and 71/72 viewport captures for details.'
+      ].join(' ');
+      throw new Error(errorMsg);
+    }
     
     console.log('\n[TEST] ✅ ALL ENTERPRISE CONTRACT CHECKS PASSED\n');
   });
