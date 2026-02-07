@@ -12,6 +12,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 
 // Use persistent auth
 test.use({
@@ -64,6 +65,32 @@ test.describe('Enterprise Contract Dashboard', () => {
     let brandFailureDetected = false;
     const brandFailures: string[] = [];
     
+    // === PHASE 2A: RECORD EXPECTED HEAD SHORT SHA ===
+    console.log('[TEST] Recording expected HEAD short SHA from git...');
+    let expectedHeadShortSha = '';
+    try {
+      expectedHeadShortSha = execSync('git rev-parse --short HEAD', { 
+        cwd: '/workspaces/Firsttry',
+        encoding: 'utf8' 
+      }).trim();
+      console.log(`[TEST] Expected HEAD short SHA: ${expectedHeadShortSha}`);
+      fs.writeFileSync(path.join(RUN_DIR, '01_expected_head_short_sha.txt'), expectedHeadShortSha);
+    } catch (err) {
+      console.error('[TEST] ERROR: Failed to get git HEAD SHA:', err);
+      throw new Error('STOP: Cannot determine expected HEAD SHA');
+    }
+    
+    // === PHASE 2B: CSS NETWORK PROOF LISTENER ===
+    const cssNetworkUrls: string[] = [];
+    page.on('response', async (response) => {
+      const url = response.url();
+      // Check if URL contains our CSS file or enterpriseDashboard pattern
+      if (url.includes('enterpriseDashboard') || url.includes('enterpriseDashboard.css')) {
+        cssNetworkUrls.push(`${response.status()} ${url}`);
+        console.log(`[TEST] CSS Network: ${response.status()} ${url}`);
+      }
+    });
+    
     // Capture console logs with location URLs for hygiene filtering
     page.on('console', async msg => {
       const text = msg.text();
@@ -89,15 +116,138 @@ test.describe('Enterprise Contract Dashboard', () => {
     console.log(`[TEST] Navigating to ${JIRA_DASHBOARD_URL}`);
     await page.goto(JIRA_DASHBOARD_URL, { waitUntil: 'domcontentloaded', timeout: 120000 });
     
+    // Wait for initial page load and console logs to accumulate
+    console.log('[TEST] Waiting for page to stabilize and console logs...');
+    await page.waitForTimeout(5000); // Give time for our app to emit UI_BUILD_IDENTITY markers
+    
+    // ========================================================================
+    // DEPLOYMENT-AWARENESS GATE (RUNS BEFORE IFRAME DISCOVERY)
+    // ========================================================================
+    console.log('[TEST] === DEPLOYMENT-AWARENESS GATE === Checking deployed SHA...');
+    const deploymentCheckResults: string[] = [];
+    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK ===\n\n');
+    deploymentCheckResults.push(`Expected HEAD SHA: ${expectedHeadShortSha}\n\n`);
+    
+    // Extract deployed SHA from console logs
+    // Look for UI identity markers: UI_IDENTITY_RESOLVED, UI_BUILD_IDENTITY_CONFIRMED, backend_git_sha_short, etc.
+    let deployedShortSha = '';
+    let deployedFullSha = '';
+    const identityMarkers = [
+      'UI_IDENTITY_RESOLVED',
+      'UI_BUILD_IDENTITY_CONFIRMED',
+      'UI_BUILD_IDENTITY_PROOF',
+      'backend_git_sha_short',
+      'backend_git_sha',
+      'UI_GIT_SHA'
+    ];
+    
+    deploymentCheckResults.push('Searching console logs for identity markers:\n');
+    for (const log of consoleLogs) {
+      for (const marker of identityMarkers) {
+        if (log.includes(marker)) {
+          deploymentCheckResults.push(`  Found marker in log: ${log.substring(0, 200)}\n`);
+          // Try to extract 7-char short SHA
+          const shortShaMatch = log.match(/\b[0-9a-f]{7}\b/);
+          if (shortShaMatch && !deployedShortSha) {
+            deployedShortSha = shortShaMatch[0];
+            deploymentCheckResults.push(`  Extracted short SHA: ${deployedShortSha}\n`);
+          }
+          // Try to extract 40-char full SHA
+          const fullShaMatch = log.match(/\b[0-9a-f]{40}\b/);
+          if (fullShaMatch && !deployedFullSha) {
+            deployedFullSha = fullShaMatch[0];
+            deploymentCheckResults.push(`  Extracted full SHA: ${deployedFullSha}\n`);
+          }
+        }
+      }
+      if (deployedShortSha && deployedFullSha) break;
+    }
+    
+    // If not found in console, try full page text as fallback
+    if (!deployedShortSha) {
+      deploymentCheckResults.push('\nConsole logs did not contain identity marker, trying page text...\n');
+      try {
+        const pageText = await page.locator('body').innerText();
+        const shortShaMatch = pageText.match(/\b[0-9a-f]{7}\b/);
+        if (shortShaMatch) {
+          deployedShortSha = shortShaMatch[0];
+          deploymentCheckResults.push(`Found short SHA in page text: ${deployedShortSha}\n`);
+        }
+      } catch (e) {
+        deploymentCheckResults.push(`Error reading page text: ${e}\n`);
+      }
+    }
+    
+    deploymentCheckResults.push(`\nDeployed short SHA: ${deployedShortSha || 'NOT FOUND'}\n`);
+    deploymentCheckResults.push(`Deployed full SHA: ${deployedFullSha || 'NOT FOUND'}\n`);
+    fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
+    
+    // GATE: If deployed SHA not found at all
+    if (!deployedShortSha) {
+      const stopMsg = [
+        'STOP: DEPLOYED SHA NOT FOUND',
+        '',
+        `Expected HEAD short SHA: ${expectedHeadShortSha}`,
+        'Deployed SHA: NOT FOUND',
+        `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
+        '',
+        'Production does not expose UI build identity markers.',
+        'This means either:',
+        '  1. The gadget is not loaded on this page',
+        '  2. The gadget build does not emit identity markers',
+        '  3. The page has not fully loaded',
+        '',
+        'Console logs captured: ' + consoleLogs.length,
+        '',
+        'ACTION: Check console logs in 37_console.txt for identity markers.',
+      ].join('\n');
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_DEPLOYED_SHA_NOT_FOUND.txt'), stopMsg);
+      console.error('[TEST] STOP_DEPLOYED_SHA_NOT_FOUND: Cannot find deployed SHA in console or page text');
+      throw new Error('STOP_DEPLOYED_SHA_NOT_FOUND: deployed UI SHA not found');
+    }
+    
+    // GATE: If deployed SHA != expected HEAD SHA
+    if (deployedShortSha !== expectedHeadShortSha) {
+      const stopMsg = [
+        'STOP: NOT DEPLOYED',
+        '',
+        `Expected HEAD short SHA: ${expectedHeadShortSha}`,
+        `Deployed short SHA: ${deployedShortSha}`,
+        `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
+        '',
+        'The production gadget has not been updated with the latest code from this repository.',
+        '',
+        'ACTION REQUIRED:',
+        '  1. Deploy to production:',
+        '     cd /workspaces/Firsttry/atlassian/forge-app',
+        '     forge deploy --environment production',
+        '',
+        '  2. Wait for deployment to complete (~5 minutes)',
+        '',
+        '  3. Re-run this test',
+      ].join('\n');
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED.txt'), stopMsg);
+      console.error(`[TEST] STOP_NOT_DEPLOYED: Expected ${expectedHeadShortSha}, got ${deployedShortSha}`);
+      throw new Error(`STOP_NOT_DEPLOYED: deployed SHA (${deployedShortSha}) != HEAD (${expectedHeadShortSha})`);
+    }
+    
+    console.log(`[TEST] ✓ DEPLOYMENT-AWARENESS GATE PASSED: SHA ${deployedShortSha} matches HEAD`);
+    deploymentCheckResults.push(`\n✓ VERDICT: PASS - Deployed SHA matches HEAD\n`);
+    fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
+    
+    // ========================================================================
+    // NOW PROCEED TO IFRAME DISCOVERY (deployment verified)
+    // ========================================================================
+    
     // Wait for any iframe to appear
     console.log('[TEST] Waiting for iframe...');
     await page.waitForSelector('iframe', { timeout: 90000 });
     
     // Find gadget iframe with improved polling (max 120s for reliability)
-    console.log('[TEST] Finding gadget iframe with enterprise contract root...');
+    console.log('[TEST] Finding gadget iframe with enterprise shell...');
     let gadgetFrame: any = null;
     const startTime = Date.now();
-    const maxWait = 120000; // Increased to 120s for CDN propagation
+    const maxWait = 120000;
     
     while (Date.now() - startTime < maxWait) {
       const frames = page.frames();
@@ -120,7 +270,7 @@ test.describe('Enterprise Contract Dashboard', () => {
     }
     
     if (!gadgetFrame) {
-      console.log('[TEST] ERROR: Could not find enterprise shell within 120s');
+      console.log('[TEST] ERROR: Could not find enterprise shell within 120s (but deployment SHA matches)');
       
       // Try to find evidence summary card as fallback
       for (const frame of page.frames()) {
@@ -134,9 +284,25 @@ test.describe('Enterprise Contract Dashboard', () => {
         }
       }
       
-      const stopFile = path.join(RUN_DIR, 'STOP_NO_GADGET_FRAME.txt');
-      fs.writeFileSync(stopFile, 'Could not find gadget iframe with ft-enterprise-shell within 120s');
-      throw new Error('STOP_NO_GADGET_FRAME');
+      const stopMsg = [
+        'STOP: UI CONTRACT MISSING',
+        '',
+        `Expected testid: ft-enterprise-shell`,
+        `Deployed SHA verified: ${deployedShortSha}`,
+        `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
+        '',
+        'The deployed gadget has the correct SHA but does not contain',
+        'the expected enterprise UI structure (ft-enterprise-shell testid).',
+        '',
+        'This indicates either:',
+        '  1. A build issue (testid not present in built artifact)',
+        '  2. The gadget iframe failed to render',
+        '  3. The testid was removed or renamed',
+        '',
+        'ACTION: Check the gadget frame URLs and content.',
+      ].join('\n');
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_UI_CONTRACT_MISSING.txt'), stopMsg);
+      throw new Error('STOP_UI_CONTRACT_MISSING');
     }
     
     console.log('[TEST] Gadget frame found, waiting for enterprise shell...');
@@ -281,6 +447,30 @@ test.describe('Enterprise Contract Dashboard', () => {
     console.log(`[TEST] UI contract written to ${path.join(RUN_DIR, '40_ui_contract.txt')}`);
     
     // ========================================================================
+    // PHASE 4: CSS NETWORK PROOF
+    // ========================================================================
+    console.log('[TEST] Verifying CSS was requested from network...');
+    const cssNetworkProof: string[] = [];
+    cssNetworkProof.push('=== CSS NETWORK PROOF ===\n\n');
+    
+    if (cssNetworkUrls.length === 0) {
+      cssNetworkProof.push('✗ VERDICT: FAIL - No CSS file matching "enterpriseDashboard" was requested\n');
+      fs.writeFileSync(path.join(RUN_DIR, '03_css_network_proof.txt'), cssNetworkProof.join(''));
+      const stopFile = path.join(RUN_DIR, 'STOP_CSS_NOT_REQUESTED.txt');
+      fs.writeFileSync(stopFile, 'CSS file not requested: no network requests matched "enterpriseDashboard"');
+      console.error('[TEST] STOP_CSS_NOT_REQUESTED: No CSS network requests found');
+      throw new Error('STOP_CSS_NOT_REQUESTED');
+    }
+    
+    cssNetworkProof.push(`CSS network requests (${cssNetworkUrls.length}):\n`);
+    cssNetworkUrls.forEach(url => {
+      cssNetworkProof.push(`  ${url}\n`);
+    });
+    cssNetworkProof.push('\n✓ VERDICT: CSS file was requested from network\n');
+    fs.writeFileSync(path.join(RUN_DIR, '03_css_network_proof.txt'), cssNetworkProof.join(''));
+    console.log(`[TEST] CSS network proof written to ${path.join(RUN_DIR, '03_css_network_proof.txt')}`);
+    
+    // ========================================================================
     // CSS LOADED PROOF
     // ========================================================================
     console.log('[TEST] Checking CSS application (computed styles)...');
@@ -378,6 +568,67 @@ test.describe('Enterprise Contract Dashboard', () => {
       fs.writeFileSync(stopFile, `DOM text only ${domText.length} chars, expected >= 200`);
       throw new Error('STOP_DOM_TEXT_TOO_SHORT');
     }
+    
+    // === PHASE 2C: DEPLOYMENT-AWARENESS GATE ===
+    console.log('[TEST] Checking deployment identity matches HEAD...');
+    const deploymentCheckResults: string[] = [];
+    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK ===\n\n');
+    deploymentCheckResults.push(`Expected HEAD short SHA: ${expectedHeadShortSha}\n\n`);
+    
+    // Extract deployed SHA from console logs
+    // Look for UI identity markers: UI_IDENTITY_RESOLVED, UI_BUILD_IDENTITY_CONFIRMED, etc.
+    let deployedShortSha = '';
+    const identityMarkers = [
+      'UI_IDENTITY_RESOLVED',
+      'UI_BUILD_IDENTITY_CONFIRMED',
+      'UI_BUILD_IDENTITY_PROOF'
+    ];
+    
+    for (const log of consoleLogs) {
+      for (const marker of identityMarkers) {
+        if (log.includes(marker)) {
+          // Try to extract 7-char short SHA from the log line
+          const shortShaMatch = log.match(/[0-9a-f]{7}/);
+          if (shortShaMatch) {
+            deployedShortSha = shortShaMatch[0];
+            deploymentCheckResults.push(`Found deployed SHA in console: ${log}\n`);
+            break;
+          }
+        }
+      }
+      if (deployedShortSha) break;
+    }
+    
+    // If not found in console, try DOM text
+    if (!deployedShortSha) {
+      const shortShaMatch = domText.match(/[0-9a-f]{7}/);
+      if (shortShaMatch) {
+        deployedShortSha = shortShaMatch[0];
+        deploymentCheckResults.push(`Found deployed SHA in DOM text: ${deployedShortSha}\n`);
+      }
+    }
+    
+    deploymentCheckResults.push(`\nDeployed short SHA: ${deployedShortSha || 'NOT FOUND'}\n`);
+    fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
+    
+    // FAIL if mismatch
+    if (!deployedShortSha) {
+      const stopMsg = `expected_sha=${expectedHeadShortSha}\ndeployed_sha=NOT_FOUND\ndashboard_url=${JIRA_DASHBOARD_URL}\n\nNo UI identity marker found in console or DOM.`;
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED.txt'), stopMsg);
+      console.error('[TEST] STOP_NOT_DEPLOYED: Cannot find deployed SHA in console or DOM');
+      throw new Error('STOP_NOT_DEPLOYED: deployed UI SHA not found');
+    }
+    
+    if (deployedShortSha !== expectedHeadShortSha) {
+      const stopMsg = `expected_sha=${expectedHeadShortSha}\ndeployed_sha=${deployedShortSha}\ndashboard_url=${JIRA_DASHBOARD_URL}\n\nProduction gadget has not been updated with latest code.`;
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED.txt'), stopMsg);
+      console.error(`[TEST] STOP_NOT_DEPLOYED: Expected ${expectedHeadShortSha}, got ${deployedShortSha}`);
+      throw new Error(`STOP_NOT_DEPLOYED: deployed UI SHA (${deployedShortSha}) does not match repo HEAD (${expectedHeadShortSha})`);
+    }
+    
+    console.log(`[TEST] ✓ Deployment identity verified: ${deployedShortSha} matches HEAD`);
+    deploymentCheckResults.push(`\n✓ VERDICT: PASS - Deployed SHA matches HEAD\n`);
+    fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
     
     // === MULTI-VIEWPORT FULL PAGE TEXT CAPTURES ===
     console.log('[TEST] Capturing full page text in DESKTOP viewport (1280x720)...');
