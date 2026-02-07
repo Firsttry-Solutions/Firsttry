@@ -112,6 +112,9 @@ export interface Snapshot {
   canonical_hash: string; // SHA256
   hash_algorithm: 'sha256';
   
+  // Snapshot status (v2: fail-closed tracking)
+  status: 'COMPLETE' | 'PARTIAL' | 'FAILED';
+  
   // Clock source
   clock_source: ClockSource;
   

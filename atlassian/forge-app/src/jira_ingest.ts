@@ -17,8 +17,8 @@
  * FAIL HARD if any required scope is unavailable
  */
 
-import api from '@forge/api';
 import { storage } from '@forge/api';
+import { guardedRequestJiraAsApp } from './shared/jiraRequestGuard';
 
 /**
  * Coverage flag: Exactly one per dataset
@@ -151,13 +151,11 @@ async function ingestProjects(): Promise<{
   errorMessage?: string;
 }> {
   try {
-    const response = await api
-      .asApp()
-      .requestJira('/rest/api/3/project', {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+    const response = await guardedRequestJiraAsApp('/rest/api/3/project', {
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
 
     if (!response.ok) {
       if (response.status === 403) {
@@ -214,13 +212,11 @@ async function ingestIssueTypes(): Promise<{
   errorMessage?: string;
 }> {
   try {
-    const response = await api
-      .asApp()
-      .requestJira('/rest/api/3/issuetype', {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+    const response = await guardedRequestJiraAsApp('/rest/api/3/issuetype', {
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
 
     if (!response.ok) {
       if (response.status === 403) {
@@ -277,13 +273,11 @@ async function ingestStatuses(): Promise<{
   errorMessage?: string;
 }> {
   try {
-    const response = await api
-      .asApp()
-      .requestJira('/rest/api/3/status', {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+    const response = await guardedRequestJiraAsApp('/rest/api/3/status', {
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
 
     if (!response.ok) {
       if (response.status === 403) {
@@ -340,13 +334,11 @@ async function ingestFields(): Promise<{
   errorMessage?: string;
 }> {
   try {
-    const response = await api
-      .asApp()
-      .requestJira('/rest/api/3/fields', {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+    const response = await guardedRequestJiraAsApp('/rest/api/3/field', {
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
 
     if (!response.ok) {
       if (response.status === 403) {
@@ -407,19 +399,17 @@ async function ingestIssueEvents(maxIssues: number = 1000): Promise<{
 }> {
   try {
     // Use JQL to query all issues with pagination
-    const response = await api
-      .asApp()
-      .requestJira('/rest/api/3/search', {
-        headers: {
-          'Accept': 'application/json',
-        },
-        queryParameters: {
-          jql: 'order by updated DESC',
-          maxResults: Math.min(maxIssues, 50), // Jira max per request
-          fields: 'created,updated',
-          expand: 'changelog',
-        },
-      });
+    const response = await guardedRequestJiraAsApp('/rest/api/3/search', {
+      headers: {
+        'Accept': 'application/json',
+      },
+      queryParameters: {
+        jql: 'order by updated DESC',
+        maxResults: Math.min(maxIssues, 50), // Jira max per request
+        fields: 'created,updated',
+        expand: 'changelog',
+      },
+    });
 
     if (!response.ok) {
       if (response.status === 403) {
@@ -486,13 +476,11 @@ async function ingestAutomationRules(): Promise<{
 }> {
   try {
     // Automation API endpoint (requires automation admin scope)
-    const response = await api
-      .asApp()
-      .requestJira('/rest/api/3/automations', {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+    const response = await guardedRequestJiraAsApp('/rest/api/3/automations', {
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
 
     if (!response.ok) {
       if (response.status === 403) {
