@@ -9,42 +9,14 @@ import * as os from 'os';
 // ════════════════════════════════════════════════════════════════════════════════
 
 const REPO_ROOT = '/workspaces/Firsttry';
-const CANONICAL_STORAGE_STATE = '/workspaces/Firsttry/.auth/storageState.json';
-
-// Resolve STORAGE_STATE to absolute path
-// Must match logic in storage_state_paths.mjs for consistency
-function resolveStorageStatePath(envPath: string | undefined): { resolved: string | null; isAbsolute: boolean; cwdAtResolution: string } {
-  const cwdAtResolution = process.cwd();
-  
-  // Rule 1: __NONE__ is special (unauth mode)
-  if (envPath === '__NONE__') {
-    return { resolved: '__NONE__', isAbsolute: false, cwdAtResolution };
+const DEFAULT_STORAGE_STATE = path.join(__dirname, '..', '.auth', 'storageState.persistent.json');
+const STORAGE_STATE_PATH = (() => {
+  const raw = (process.env.STORAGE_STATE || DEFAULT_STORAGE_STATE).trim();
+  if (path.isAbsolute(raw)) {
+    return raw;
   }
-
-  // Rule 2: Empty/undefined → canonical default
-  if (!envPath) {
-    return { resolved: CANONICAL_STORAGE_STATE, isAbsolute: true, cwdAtResolution };
-  }
-
-  // Rule 3: Absolute → keep as-is
-  if (path.isAbsolute(envPath)) {
-    return { resolved: envPath, isAbsolute: true, cwdAtResolution };
-  }
-
-  // Rule 4: Relative → resolve against REPO_ROOT (not process.cwd())
-  const resolved = path.resolve(REPO_ROOT, envPath);
-  
-  // Guard: Reject e2e/.auth as a valid location
-  if (resolved.startsWith(path.join(REPO_ROOT, 'e2e', '.auth'))) {
-    throw new Error(
-      `INVALID: e2e/.auth is not a valid storage state location.\n` +
-      `Use canonical: ${CANONICAL_STORAGE_STATE}\n` +
-      `Got: ${resolved}`
-    );
-  }
-
-  return { resolved, isAbsolute: false, cwdAtResolution };
-}
+  return path.resolve(process.cwd(), raw);
+})();
 
 // ════════════════════════════════════════════════════════════════════════════════
 // DETERMINISTIC HELPERS: Auth + Console + PageError filtering
@@ -109,6 +81,36 @@ function isAuthOrCaptchaFrameUrl(u: string): boolean {
     s.includes("saml") ||
     s.includes("oauth")
   );
+}
+
+async function recordAuthRedirectStop(params: {
+  artifactDir: string;
+  expectedUrl: string;
+  observedUrl: string;
+  reason: string;
+  note?: string;
+  page?: any;
+}) {
+  const { artifactDir, expectedUrl, observedUrl, reason, note, page } = params;
+  const stopFile = path.join(artifactDir, 'STOP_AUTH_REDIRECT.txt');
+  const payload = [
+    `ts=${isoNow()}`,
+    `expected_dashboard_url=${expectedUrl}`,
+    `observed_url=${observedUrl}`,
+    `reason=${reason}`,
+    `note=${note || 'Detected redirect to Atlassian login/MFA while running headless proof. Storage state is invalid or expired.'}`,
+    'action=Refresh storageState via an interactive session and rerun this proof.'
+  ].join('\n');
+  fs.writeFileSync(stopFile, `${payload}\n`, 'utf8');
+
+  if (page) {
+    const screenshotPath = path.join(artifactDir, 'auth_redirect.png');
+    try {
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+    } catch (screenshotErr) {
+      console.log(`[PROD_GREEN] Failed to capture auth redirect screenshot: ${screenshotErr}`);
+    }
+  }
 }
 
 function isOurGadgetBundleUrl(u: string): boolean {
@@ -341,9 +343,10 @@ async function detectJiraShell(page: any): Promise<{present: boolean, matched: s
   };
 }
 
-async function enforceAuthenticatedJiraSession(page: any, artifactDir: string, opts?: {timeoutMs?: number, pollMs?: number}): Promise<void> {
+async function enforceAuthenticatedJiraSession(page: any, artifactDir: string, opts?: {timeoutMs?: number, pollMs?: number, expectedDashboardUrl?: string}): Promise<void> {
   const timeoutMs = opts?.timeoutMs ?? 45000;
   const pollMs = opts?.pollMs ?? 1000;
+  const expectedDashboardUrl = opts?.expectedDashboardUrl || process.env.JIRA_DASHBOARD_URL || 'UNKNOWN';
   const start = Date.now();
   const timeline: any[] = [];
 
@@ -369,6 +372,13 @@ async function enforceAuthenticatedJiraSession(page: any, artifactDir: string, o
         timeline
       };
       await writeJson(`${artifactDir}/auth_check.json`, evidence);
+      await recordAuthRedirectStop({
+        artifactDir,
+        expectedUrl: expectedDashboardUrl,
+        observedUrl: pageUrl,
+        reason: 'top_level_auth_url',
+        page,
+      });
       throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: top_level_auth_url. URL=${pageUrl}`);
     }
 
@@ -388,6 +398,14 @@ async function enforceAuthenticatedJiraSession(page: any, artifactDir: string, o
         timeline
       };
       await writeJson(`${artifactDir}/auth_check.json`, evidence);
+      await recordAuthRedirectStop({
+        artifactDir,
+        expectedUrl: expectedDashboardUrl,
+        observedUrl: pageUrl,
+        reason: 'auth_wall_title',
+        page,
+        note: 'Auth wall title detected while verifying Jira shell',
+      });
       throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: auth_wall_title. URL=${pageUrl}`);
     }
 
@@ -429,6 +447,14 @@ async function enforceAuthenticatedJiraSession(page: any, artifactDir: string, o
         timeline
       };
       await writeJson(`${artifactDir}/auth_check.json`, evidence);
+      await recordAuthRedirectStop({
+        artifactDir,
+        expectedUrl: expectedDashboardUrl,
+        observedUrl: pageUrl,
+        reason: 'auth_wall_dom',
+        page,
+        note: 'DOM fingerprint matches Atlassian login form',
+      });
       throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: auth_wall_dom. URL=${pageUrl}`);
     }
 
@@ -499,9 +525,10 @@ async function enforceAuthenticatedJiraSession(page: any, artifactDir: string, o
 
 // Helper function: Poll page.frames() every 500ms to find gadget frame
 // Matches frames from cdn.prod.atlassian-dev.net with gadget-related keywords
-async function waitForGadgetFrame(page: any, timeoutMs: number, artifactDir?: string) {
+async function waitForGadgetFrame(page: any, timeoutMs: number, artifactDir?: string, expectedDashboardUrl?: string) {
   const startTime = Date.now();
   const pollIntervalMs = 500;
+  const expectedUrl = expectedDashboardUrl || process.env.JIRA_DASHBOARD_URL || 'UNKNOWN';
 
   while (Date.now() - startTime < timeoutMs) {
     const frames = page.frames();
@@ -520,6 +547,13 @@ async function waitForGadgetFrame(page: any, timeoutMs: number, artifactDir?: st
         reason: "top-level auth redirect during gadget polling",
       };
       await writeJson(`${artifactDir}/auth_check.json`, evidence);
+      await recordAuthRedirectStop({
+        artifactDir,
+        expectedUrl,
+        observedUrl: currentPageUrl,
+        reason: 'top_level_auth_url_during_frame_poll',
+        page,
+      });
       throw new Error("AUTH_REQUIRED_OR_CAPTCHA_BLOCK: top-level auth redirect during gadget polling.");
     }
     
@@ -557,53 +591,16 @@ async function waitForGadgetFrame(page: any, timeoutMs: number, artifactDir?: st
 test.describe('PROD DASHBOARD GREEN: New 40-hex Bundle Deployed', () => {
   // Lightweight getters: do NOT throw at module scope
   const getJiraDashboardUrl = () => process.env.JIRA_DASHBOARD_URL;
-  const getStorageStatePath = () => process.env.STORAGE_STATE;
+  const getStorageStatePath = () => STORAGE_STATE_PATH;
 
   let artifactDir: string;
-  let storageStatePath: string | null = null;
+  let storageStatePath: string = STORAGE_STATE_PATH;
 
   test.beforeAll(async () => {
     // STEP 1: Validate env + storageState (inside beforeAll, not at module scope)
     const url = getJiraDashboardUrl();
     if (!url) throw new Error("JIRA_DASHBOARD_URL is required");
-    
-    const ss = getStorageStatePath();
-    if (!ss) throw new Error("STORAGE_STATE is required (use __NONE__ for unauth mode)");
-    
-    // Resolve STORAGE_STATE to absolute path
-    const { resolved, isAbsolute, cwdAtResolution } = resolveStorageStatePath(ss);
-    console.log(`[PROD_GREEN] STORAGE_STATE resolved: ${resolved} (isAbsolute=${isAbsolute}, cwd=${cwdAtResolution})`);
-    
-    // Support "__NONE__" for deterministic unauth testing
-    if (!resolved || resolved === "__NONE__") {
-      // Unauth mode: no storage state file needed
-      storageStatePath = null;
-    } else {
-      // Normal mode: require storage state file to exist and have content
-      if (!fs.existsSync(resolved)) {
-        throw new Error(`STORAGE_STATE_INVALID: storage state file missing. resolved_path=${resolved}`);
-      }
-      
-      // Validate file has content
-      const stat = fs.statSync(resolved);
-      if (stat.size === 0) {
-        throw new Error(`STORAGE_STATE_INVALID: storage state file is empty. path=${resolved}`);
-      }
-      
-      // Validate JSON structure
-      try {
-        const content = fs.readFileSync(resolved, "utf8");
-        const parsed = JSON.parse(content);
-        if (!parsed.cookies || !Array.isArray(parsed.cookies)) {
-          throw new Error(`STORAGE_STATE_INVALID: cookies array missing in storage state. path=${resolved}`);
-        }
-      } catch (parseErr) {
-        throw new Error(`STORAGE_STATE_INVALID: storage state JSON invalid. path=${resolved}, error=${parseErr}`);
-      }
-      
-      storageStatePath = resolved;
-    }
-    
+
     // STEP 2: Create artifact directory for this test run
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     artifactDir = `/tmp/prod_dashboard_green_${timestamp}`;
@@ -611,6 +608,48 @@ test.describe('PROD DASHBOARD GREEN: New 40-hex Bundle Deployed', () => {
       fs.mkdirSync(artifactDir, { recursive: true });
     }
     console.log(`[PROD_GREEN] Artifact directory: ${artifactDir}`);
+
+    const resolved = getStorageStatePath();
+    console.log('[PROD_GREEN] COMMANDLINE CONTRACT');
+    console.log(`[PROD_GREEN] JIRA_DASHBOARD_URL=${url}`);
+    console.log(`[PROD_GREEN] STORAGE_STATE_PATH=${resolved}`);
+    console.log(`[PROD_GREEN] artifactDir=${artifactDir}`);
+
+    const stopStorageState = (reason: string) => {
+      const stopPath = path.join(artifactDir, 'STOP_STORAGE_STATE_MISSING.txt');
+      const payload = [
+        `ts=${isoNow()}`,
+        `resolved_storage_state=${resolved}`,
+        `reason=${reason}`,
+        'instruction=Provide a valid Playwright storageState captured from an interactive session; do not attempt OTP/MFA challenges in headless mode.'
+      ].join('\n');
+      fs.writeFileSync(stopPath, `${payload}\n`, 'utf8');
+    };
+
+    if (!fs.existsSync(resolved)) {
+      stopStorageState('storageState file missing');
+      throw new Error('STOP_STORAGE_STATE_MISSING');
+    }
+
+    const stat = fs.statSync(resolved);
+    if (stat.size === 0) {
+      stopStorageState('storageState file empty');
+      throw new Error('STOP_STORAGE_STATE_MISSING');
+    }
+
+    try {
+      const content = fs.readFileSync(resolved, 'utf8');
+      const parsed = JSON.parse(content);
+      if (!parsed.cookies || !Array.isArray(parsed.cookies) || parsed.cookies.length === 0) {
+        stopStorageState('storageState missing cookies array or cookie count');
+        throw new Error('STOP_STORAGE_STATE_MISSING');
+      }
+    } catch (parseErr) {
+      stopStorageState(`storageState JSON invalid: ${parseErr}`);
+      throw new Error('STOP_STORAGE_STATE_MISSING');
+    }
+
+    storageStatePath = resolved;
   });
 
   test('should load gadget iframe with new 40-hex bundle and no fatal markers', async () => {
@@ -627,13 +666,11 @@ test.describe('PROD DASHBOARD GREEN: New 40-hex Bundle Deployed', () => {
     let requestFailed: any[] = [];
     let responseErrors: any[] = [];
 
-    // ─── CREATE BROWSER CONTEXT WITH DETERMINISTIC STORAGE STATE ───
-    // STEP 3: If storageState is null ("__NONE__" mode), explicitly pass undefined
-    // Otherwise pass the file path. This ensures a truly clean context in unauth mode.
+    // ─── CREATE BROWSER CONTEXT WITH PRE-CAPTURED STORAGE STATE ───
     const context = await chromium.launchPersistentContext('', {
       headless: true,
       args: ['--no-sandbox'],
-      ...(storageStatePath !== null ? { storageState: storageStatePath } : { storageState: undefined })
+      storageState: storageStatePath,
     });
 
     const page = await context.newPage();
@@ -716,11 +753,23 @@ test.describe('PROD DASHBOARD GREEN: New 40-hex Bundle Deployed', () => {
       await page.waitForLoadState('domcontentloaded').catch(() => {});
       console.log(`[PROD_GREEN] Page domcontentloaded complete`);
 
+      const landedUrl = page.url();
+      if (isAuthUrl(landedUrl) || landedUrl.includes('/login') || landedUrl.includes('/login/mfa')) {
+        await recordAuthRedirectStop({
+          artifactDir,
+          expectedUrl: jiraDashboardUrl,
+          observedUrl: landedUrl,
+          reason: 'initial_navigation_redirect',
+          page,
+        });
+        throw new Error('STOP_AUTH_REDIRECT');
+      }
+
       // STEP 5: Stabilization wait before enforcement
       await page.waitForTimeout(1000);
       
       // STEP 6: Enforce authentication with shell detection (ONLY call this once)
-      await enforceAuthenticatedJiraSession(page, artifactDir, {timeoutMs: 45000, pollMs: 1000});
+      await enforceAuthenticatedJiraSession(page, artifactDir, {timeoutMs: 45000, pollMs: 1000, expectedDashboardUrl: jiraDashboardUrl});
       console.log(`[PROD_GREEN] ✅ Authentication verified: authenticated Jira dashboard session confirmed`);
 
       // STEP 7: Short stability wait after auth confirmed
@@ -729,7 +778,7 @@ test.describe('PROD DASHBOARD GREEN: New 40-hex Bundle Deployed', () => {
       // Step 3: Find gadget frame robustly by polling page.frames()
       // (Skip generic iframe wait to avoid matching recaptcha iframe)
       console.log(`[PROD_GREEN] Searching for gadget frame...`);
-      gadgetFrame = await waitForGadgetFrame(page, 120000, artifactDir);
+      gadgetFrame = await waitForGadgetFrame(page, 120000, artifactDir, jiraDashboardUrl);
       gadgetFrameUrl = gadgetFrame.url();
       console.log(`[PROD_GREEN] ✅ Gadget frame found: ${gadgetFrameUrl}`);
 
