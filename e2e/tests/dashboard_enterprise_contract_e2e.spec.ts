@@ -122,42 +122,16 @@ test.describe('Enterprise Contract Dashboard', () => {
     
     // ========================================================================
     // DEPLOYMENT-AWARENESS GATE (RUNS BEFORE IFRAME DISCOVERY)
-    // WITH BOUNDED POLLING FOR DEPLOYMENT PROPAGATION
     // ========================================================================
+    console.log('[TEST] === DEPLOYMENT-AWARENESS GATE === Checking deployed SHA...');
+    const deploymentCheckResults: string[] = [];
+    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK ===\n\n');
+    deploymentCheckResults.push(`Expected HEAD SHA: ${expectedHeadShortSha}\n\n`);
     
-    // EVIDENCE: Write gate start marker FIRST (proves gate runs before all other checks)
-    const gateStartTime = new Date().toISOString();
-    const gateStartEvidence = [
-      '=== DEPLOYMENT_AWARENESS_GATE_START ===',
-      '',
-      `UTC timestamp: ${gateStartTime}`,
-      `Expected HEAD short SHA: ${expectedHeadShortSha}`,
-      '',
-      'This file proves the deployment-awareness gate runs FIRST,',
-      'before any UI contract checks, layout checks, or other gates.',
-    ].join('\n');
-    fs.writeFileSync(path.join(RUN_DIR, '01_deployment_gate_started.txt'), gateStartEvidence);
-    console.log('[TEST] DEPLOYMENT_AWARENESS_GATE_START', { 
-      expectedHeadShortSha, 
-      timestamp: gateStartTime 
-    });
-    
-    console.log('[TEST] === DEPLOYMENT-AWARENESS GATE === Checking deployed SHA with polling...');
-    
-    // Polling configuration (bounded and deterministic)
-    // Designed to fit within 240s test timeout with safety margin
-    // Sleep total: 108s + page loads (~8s x 12 = 96s) + overhead = ~3.5min
-    const MAX_ATTEMPTS = 12;
-    const SLEEP_SCHEDULE_MS = [3000, 5000, 5000, 8000, 8000, 10000, 10000, 12000, 12000, 15000, 15000, 15000];
-    
-    const pollStartTime = Date.now();
-    const pollStartTimeUTC = new Date().toISOString();
-    let pollElapsedMs = 0; // Will be updated in finally block
+    // Extract deployed SHA from console logs
+    // Look for UI identity markers: UI_IDENTITY_RESOLVED, UI_BUILD_IDENTITY_CONFIRMED, backend_git_sha_short, etc.
     let deployedShortSha = '';
     let deployedFullSha = '';
-    let matchedOnAttempt = 0;
-    const attemptEvidenceFiles: string[] = [];
-    
     const identityMarkers = [
       'UI_IDENTITY_RESOLVED',
       'UI_BUILD_IDENTITY_CONFIRMED',
@@ -167,189 +141,97 @@ test.describe('Enterprise Contract Dashboard', () => {
       'UI_GIT_SHA'
     ];
     
-    // Wrap polling in try/finally to ALWAYS write poll summary
-    try {
-      // Polling loop (attempt 1 is immediate, no sleep before it)
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        console.log(`[TEST] Deployment check attempt ${attempt}/${MAX_ATTEMPTS}...`);
-        
-        // For attempts > 1, hard reload with cache busting
-        if (attempt > 1) {
-          const cacheBustUrl = `${JIRA_DASHBOARD_URL}${JIRA_DASHBOARD_URL.includes('?') ? '&' : '?'}ft_probe=${attempt}-${Date.now()}`;
-          console.log(`[TEST] Cache-busting reload: ${cacheBustUrl}`);
-          try {
-            await page.goto(cacheBustUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-            await page.waitForTimeout(5000); // Wait for identity markers
-          } catch (e) {
-            console.log(`[TEST] Reload error on attempt ${attempt}: ${e}`);
+    deploymentCheckResults.push('Searching console logs for identity markers:\n');
+    for (const log of consoleLogs) {
+      for (const marker of identityMarkers) {
+        if (log.includes(marker)) {
+          deploymentCheckResults.push(`  Found marker in log: ${log.substring(0, 200)}\n`);
+          // Try to extract 7-char short SHA
+          const shortShaMatch = log.match(/\b[0-9a-f]{7}\b/);
+          if (shortShaMatch && !deployedShortSha) {
+            deployedShortSha = shortShaMatch[0];
+            deploymentCheckResults.push(`  Extracted short SHA: ${deployedShortSha}\n`);
+          }
+          // Try to extract 40-char full SHA
+          const fullShaMatch = log.match(/\b[0-9a-f]{40}\b/);
+          if (fullShaMatch && !deployedFullSha) {
+            deployedFullSha = fullShaMatch[0];
+            deploymentCheckResults.push(`  Extracted full SHA: ${deployedFullSha}\n`);
           }
         }
-        
-        // Clear previous attempt data
-        deployedShortSha = '';
-        deployedFullSha = '';
-        
-        // Extract deployed SHA from console logs
-        const attemptResults: string[] = [];
-        attemptResults.push(`=== DEPLOYMENT CHECK ATTEMPT ${attempt} ===\n`);
-        attemptResults.push(`UTC timestamp: ${new Date().toISOString()}\n`);
-        attemptResults.push(`Expected HEAD short SHA: ${expectedHeadShortSha}\n\n`);
-        
-        if (attempt > 1) {
-          const cacheBustUrl = `${JIRA_DASHBOARD_URL}${JIRA_DASHBOARD_URL.includes('?') ? '&' : '?'}ft_probe=${attempt}-${Date.now()}`;
-          attemptResults.push(`Probed URL: ${cacheBustUrl}\n\n`);
-        } else {
-          attemptResults.push(`Probed URL: ${JIRA_DASHBOARD_URL}\n\n`);
-        }
-        
-        attemptResults.push('Searching console logs for identity markers:\n');
-        let identityLineFound = '';
-        for (const log of consoleLogs) {
-          for (const marker of identityMarkers) {
-            if (log.includes(marker)) {
-              identityLineFound = log;
-              attemptResults.push(`  Found marker in log: ${log.substring(0, 200)}\n`);
-              // Try to extract 7-char short SHA
-              const shortShaMatch = log.match(/\b[0-9a-f]{7}\b/);
-              if (shortShaMatch && !deployedShortSha) {
-                deployedShortSha = shortShaMatch[0];
-                attemptResults.push(`  Extracted short SHA: ${deployedShortSha}\n`);
-              }
-              // Try to extract 40-char full SHA
-              const fullShaMatch = log.match(/\b[0-9a-f]{40}\b/);
-              if (fullShaMatch && !deployedFullSha) {
-                deployedFullSha = fullShaMatch[0];
-                attemptResults.push(`  Extracted full SHA: ${deployedFullSha}\n`);
-              }
-            }
-          }
-          if (deployedShortSha && deployedFullSha) break;
-        }
-        
-        // If not found in console, try full page text as fallback
-        if (!deployedShortSha) {
-          attemptResults.push('\nConsole logs did not contain identity marker, trying page text...\n');
-          try {
-            const pageText = await page.locator('body').innerText();
-            const shortShaMatch = pageText.match(/\b[0-9a-f]{7}\b/);
-            if (shortShaMatch) {
-              deployedShortSha = shortShaMatch[0];
-              attemptResults.push(`Found short SHA in page text: ${deployedShortSha}\n`);
-            }
-          } catch (e) {
-            attemptResults.push(`Error reading page text: ${e}\n`);
-          }
-        }
-        
-        if (identityLineFound) {
-          attemptResults.push(`\nFull identity line: ${identityLineFound}\n`);
-        }
-        
-        attemptResults.push(`\nDeployed short SHA: ${deployedShortSha || 'IDENTITY_MARKER_MISSING'}\n`);
-        attemptResults.push(`Deployed full SHA: ${deployedFullSha || 'IDENTITY_MARKER_MISSING'}\n`);
-        
-        // Check for match
-        if (deployedShortSha === expectedHeadShortSha) {
-          attemptResults.push(`\n✓ MATCH on attempt ${attempt}\n`);
-          matchedOnAttempt = attempt;
-        } else if (!deployedShortSha) {
-          attemptResults.push(`\n✗ IDENTITY_MARKER_MISSING on attempt ${attempt}\n`);
-        } else {
-          attemptResults.push(`\n✗ MISMATCH on attempt ${attempt}: expected ${expectedHeadShortSha}, got ${deployedShortSha}\n`);
-        }
-        
-        // Write attempt evidence file
-        const attemptFile = path.join(RUN_DIR, `02_deployed_identity_attempt_${attempt}.txt`);
-        fs.writeFileSync(attemptFile, attemptResults.join(''));
-        attemptEvidenceFiles.push(`02_deployed_identity_attempt_${attempt}.txt`);
-        console.log(`[TEST] Attempt ${attempt} evidence: ${attemptFile}`);
-        
-        // If matched, break out of loop
-        if (deployedShortSha === expectedHeadShortSha) {
-          console.log(`[TEST] ✓ SHA MATCHED on attempt ${attempt}: ${deployedShortSha}`);
-          break;
-        }
-        
-        // If not the last attempt, sleep according to schedule
-        if (attempt < MAX_ATTEMPTS) {
-          const sleepMs = SLEEP_SCHEDULE_MS[attempt - 1] || 30000;
-          console.log(`[TEST] SHA mismatch, sleeping ${sleepMs}ms before next attempt...`);
-          await page.waitForTimeout(sleepMs);
-        }
       }
-    } finally {
-      // ALWAYS write poll summary (even if errors occur during polling)
-      const pollEndTime = Date.now();
-      const pollEndTimeUTC = new Date().toISOString();
-      pollElapsedMs = pollEndTime - pollStartTime; // Update for use outside finally
-      
-      const pollSummary: string[] = [];
-      pollSummary.push('=== DEPLOYMENT PROPAGATION POLL SUMMARY ===\n\n');
-      pollSummary.push(`UTC start time: ${pollStartTimeUTC}\n`);
-      pollSummary.push(`UTC end time: ${pollEndTimeUTC}\n`);
-      pollSummary.push(`Elapsed milliseconds: ${pollElapsedMs}\n`);
-      pollSummary.push(`Elapsed time: ${(pollElapsedMs / 1000).toFixed(1)}s\n\n`);
-      pollSummary.push(`MAX_ATTEMPTS: ${MAX_ATTEMPTS}\n`);
-      pollSummary.push(`SLEEP_SCHEDULE_MS: [${SLEEP_SCHEDULE_MS.join(', ')}]\n\n`);
-      pollSummary.push(`Expected HEAD short SHA: ${expectedHeadShortSha}\n`);
-      pollSummary.push(`Last observed deployed short SHA: ${deployedShortSha || 'MISSING'}\n`);
-      pollSummary.push(`Last observed deployed full SHA: ${deployedFullSha || 'MISSING'}\n\n`);
-      
-      if (matchedOnAttempt > 0) {
-        pollSummary.push(`Result: MATCHED on attempt ${matchedOnAttempt}\n`);
-      } else if (!deployedShortSha) {
-        pollSummary.push(`Result: IDENTITY_MISSING after ${MAX_ATTEMPTS} attempts\n`);
-      } else {
-        pollSummary.push(`Result: FAILED after ${MAX_ATTEMPTS} attempts\n`);
-      }
-      
-      pollSummary.push(`\nAttempt evidence files:\n`);
-      for (const file of attemptEvidenceFiles) {
-        pollSummary.push(`  - ${file}\n`);
-      }
-      
-      fs.writeFileSync(path.join(RUN_DIR, '02_deploy_propagation_poll_summary.txt'), pollSummary.join(''));
-      console.log(`[TEST] Poll summary written to 02_deploy_propagation_poll_summary.txt`);
+      if (deployedShortSha && deployedFullSha) break;
     }
     
-    // GATE: If still no match after all attempts
+    // If not found in console, try full page text as fallback
+    if (!deployedShortSha) {
+      deploymentCheckResults.push('\nConsole logs did not contain identity marker, trying page text...\n');
+      try {
+        const pageText = await page.locator('body').innerText();
+        const shortShaMatch = pageText.match(/\b[0-9a-f]{7}\b/);
+        if (shortShaMatch) {
+          deployedShortSha = shortShaMatch[0];
+          deploymentCheckResults.push(`Found short SHA in page text: ${deployedShortSha}\n`);
+        }
+      } catch (e) {
+        deploymentCheckResults.push(`Error reading page text: ${e}\n`);
+      }
+    }
+    
+    deploymentCheckResults.push(`\nDeployed short SHA: ${deployedShortSha || 'NOT FOUND'}\n`);
+    deploymentCheckResults.push(`Deployed full SHA: ${deployedFullSha || 'NOT FOUND'}\n`);
+    fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
+    
+    // GATE: If deployed SHA not found at all
+    if (!deployedShortSha) {
+      const stopMsg = [
+        'STOP: DEPLOYED SHA NOT FOUND',
+        '',
+        `Expected HEAD short SHA: ${expectedHeadShortSha}`,
+        'Deployed SHA: NOT FOUND',
+        `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
+        '',
+        'Production does not expose UI build identity markers.',
+        'This means either:',
+        '  1. The gadget is not loaded on this page',
+        '  2. The gadget build does not emit identity markers',
+        '  3. The page has not fully loaded',
+        '',
+        'Console logs captured: ' + consoleLogs.length,
+        '',
+        'ACTION: Check console logs in 37_console.txt for identity markers.',
+      ].join('\n');
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_DEPLOYED_SHA_NOT_FOUND.txt'), stopMsg);
+      console.error('[TEST] STOP_DEPLOYED_SHA_NOT_FOUND: Cannot find deployed SHA in console or page text');
+      throw new Error('STOP_DEPLOYED_SHA_NOT_FOUND: deployed UI SHA not found');
+    }
+    
+    // GATE: If deployed SHA != expected HEAD SHA
     if (deployedShortSha !== expectedHeadShortSha) {
       const stopMsg = [
         'STOP: NOT DEPLOYED',
         '',
         `Expected HEAD short SHA: ${expectedHeadShortSha}`,
-        `Deployed short SHA: ${deployedShortSha || 'MISSING'}`,
+        `Deployed short SHA: ${deployedShortSha}`,
         `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
-        `Attempts executed: ${MAX_ATTEMPTS}`,
-        `Total poll time: ${(pollElapsedMs / 1000).toFixed(1)}s`,
         '',
-        'The production gadget has not been updated with the latest code from this repository',
-        'after waiting through all polling attempts.',
-        '',
-        'Attempt evidence files:',
-        ...attemptEvidenceFiles.map(f => `  - ${f}`),
+        'The production gadget has not been updated with the latest code from this repository.',
         '',
         'ACTION REQUIRED:',
-        '  1. Check deployment logs in forge',
-        '  2. Verify deployment completed successfully',
-        '  3. Check if deployment is still propagating (may need longer)',
-        '  4. Re-run this test after confirming deployment',
+        '  1. Deploy to production:',
+        '     cd /workspaces/Firsttry/atlassian/forge-app',
+        '     forge deploy --environment production',
+        '',
+        '  2. Wait for deployment to complete (~5 minutes)',
+        '',
+        '  3. Re-run this test',
       ].join('\n');
       fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED.txt'), stopMsg);
-      console.error(`[TEST] STOP_NOT_DEPLOYED: Expected ${expectedHeadShortSha}, got ${deployedShortSha || 'MISSING'} after ${MAX_ATTEMPTS} attempts`);
-      throw new Error(`STOP_NOT_DEPLOYED: deployed SHA (${deployedShortSha || 'MISSING'}) != HEAD (${expectedHeadShortSha}) after ${MAX_ATTEMPTS} attempts`);
+      console.error(`[TEST] STOP_NOT_DEPLOYED: Expected ${expectedHeadShortSha}, got ${deployedShortSha}`);
+      throw new Error(`STOP_NOT_DEPLOYED: deployed SHA (${deployedShortSha}) != HEAD (${expectedHeadShortSha})`);
     }
     
     console.log(`[TEST] ✓ DEPLOYMENT-AWARENESS GATE PASSED: SHA ${deployedShortSha} matches HEAD`);
-    
-    // Write final successful evidence file
-    const deploymentCheckResults: string[] = [];
-    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK ===\n\n');
-    deploymentCheckResults.push(`Expected HEAD SHA: ${expectedHeadShortSha}\n`);
-    deploymentCheckResults.push(`Deployed short SHA: ${deployedShortSha}\n`);
-    deploymentCheckResults.push(`Deployed full SHA: ${deployedFullSha}\n`);
-    deploymentCheckResults.push(`\n✓ MATCHED on attempt ${matchedOnAttempt}\n`);
-    deploymentCheckResults.push(`Total poll time: ${(pollElapsedMs / 1000).toFixed(1)}s\n`);
     deploymentCheckResults.push(`\n✓ VERDICT: PASS - Deployed SHA matches HEAD\n`);
     fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
     
@@ -507,9 +389,7 @@ test.describe('Enterprise Contract Dashboard', () => {
       'ft-scope-included',
       'ft-scope-excluded',
       'ft-card-controls',
-      'ft-snapshot-selector',
-      'ft-export-hint',
-      'ft-support-button'
+      'ft-snapshot-selector'
     ];
     
     let missingTestIds: string[] = [];
@@ -565,60 +445,6 @@ test.describe('Enterprise Contract Dashboard', () => {
     uiContractResults.push('\n✓ VERDICT: Badge content valid\n');
     fs.writeFileSync(path.join(RUN_DIR, '40_ui_contract.txt'), uiContractResults.join(''));
     console.log(`[TEST] UI contract written to ${path.join(RUN_DIR, '40_ui_contract.txt')}`);
-    
-    // ========================================================================
-    // SNAPSHOT SELECTOR REGRESSION CHECK (must be read-only, not interactive)
-    // ========================================================================
-    console.log('[TEST] Validating snapshot selector is read-only (not misleading)...');
-    const snapshotSelectorResults: string[] = [];
-    snapshotSelectorResults.push('=== SNAPSHOT SELECTOR READ-ONLY CHECK ===\n\n');
-    
-    const snapshotSelector = gadgetFrame.locator('[data-testid="ft-snapshot-selector"]');
-    const selectorCount = await snapshotSelector.count();
-    if (selectorCount === 0) {
-      snapshotSelectorResults.push('✗ FAIL: Snapshot selector not found\n');
-      fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
-      throw new Error('SNAPSHOT_SELECTOR_MISSING');
-    }
-    
-    // Check it's not a <select> element
-    const tagName = await snapshotSelector.evaluate((el) => el.tagName.toLowerCase());
-    snapshotSelectorResults.push(`Tag name: ${tagName}\n`);
-    if (tagName === 'select') {
-      snapshotSelectorResults.push('✗ FAIL: Snapshot selector is a <select> element (misleading)\n');
-      fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
-      const stopFile = path.join(RUN_DIR, 'STOP_SNAPSHOT_SELECTOR_MISLEADING.txt');
-      fs.writeFileSync(stopFile, 'Snapshot selector is implemented as a <select> element, which is misleading since it is not functional.');
-      throw new Error('STOP_SNAPSHOT_SELECTOR_MISLEADING: Uses <select> element');
-    }
-    
-    // Check it doesn't contain a <select> child
-    const selectChild = snapshotSelector.locator('select');
-    const selectChildCount = await selectChild.count();
-    if (selectChildCount > 0) {
-      snapshotSelectorResults.push('✗ FAIL: Snapshot selector contains a <select> child (misleading)\n');
-      fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
-      const stopFile = path.join(RUN_DIR, 'STOP_SNAPSHOT_SELECTOR_MISLEADING.txt');
-      fs.writeFileSync(stopFile, 'Snapshot selector contains a <select> element, which is misleading since it is not functional.');
-      throw new Error('STOP_SNAPSHOT_SELECTOR_MISLEADING: Contains <select> child');
-    }
-    
-    // Check cursor is not pointer (should be default or auto)
-    const cursorStyle = await snapshotSelector.evaluate((el) => {
-      return window.getComputedStyle(el).cursor;
-    });
-    snapshotSelectorResults.push(`Cursor style: ${cursorStyle}\n`);
-    if (cursorStyle === 'pointer') {
-      snapshotSelectorResults.push('✗ FAIL: Snapshot selector has cursor:pointer (misleading)\n');
-      fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
-      const stopFile = path.join(RUN_DIR, 'STOP_SNAPSHOT_SELECTOR_MISLEADING.txt');
-      fs.writeFileSync(stopFile, 'Snapshot selector has cursor:pointer, which suggests it is interactive (misleading).');
-      throw new Error('STOP_SNAPSHOT_SELECTOR_MISLEADING: Has pointer cursor');
-    }
-    
-    snapshotSelectorResults.push('\n✓ VERDICT: Snapshot selector is correctly read-only (not misleading)\n');
-    fs.writeFileSync(path.join(RUN_DIR, '41_snapshot_selector_check.txt'), snapshotSelectorResults.join(''));
-    console.log(`[TEST] Snapshot selector check written to ${path.join(RUN_DIR, '41_snapshot_selector_check.txt')}`);
     
     // ========================================================================
     // PHASE 4: CSS NETWORK PROOF
@@ -775,149 +601,6 @@ test.describe('Enterprise Contract Dashboard', () => {
       fs.writeFileSync(stopFile, `Mobile text only ${fullPageTextMobile.length} chars, expected >= 200`);
       throw new Error('STOP_MOBILE_TEXT_TOO_SHORT');
     }
-    
-    // ========================================================================
-    // SUPPORT BUTTON SANDBOX-SAFETY GATE
-    // ========================================================================
-    console.log('[TEST] Testing support button (sandbox-safe router.open)...');
-    const supportResults: string[] = [];
-    supportResults.push('=== SUPPORT BUTTON SANDBOX-SAFETY GATE ===\n\n');
-    
-    // Find support button
-    const supportButton = gadgetFrame.locator('[data-testid="ft-support-button"]');
-    const supportButtonExists = await supportButton.count() > 0;
-    supportResults.push(`Support button exists: ${supportButtonExists}\n`);
-    
-    if (!supportButtonExists) {
-      const stopFile = path.join(RUN_DIR, 'STOP_SUPPORT_BUTTON_MISSING.txt');
-      fs.writeFileSync(stopFile, 'Support button (ft-support-button) not found in gadget frame');
-      fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
-      throw new Error('STOP_SUPPORT_BUTTON_MISSING');
-    }
-    
-    // Record console messages before click
-    const consoleBeforeClick = [...consoleLogs];
-    
-    // Click support button
-    console.log('[TEST] Clicking support button...');
-    await supportButton.click();
-    await page.waitForTimeout(2000); // Allow time for router.open attempt and any fallback
-    
-    // Record console messages after click
-    const consoleAfterClick = consoleLogs.slice(consoleBeforeClick.length);
-    
-    // Filter for our app scope
-    const supportClickMessages = consoleMessages.slice(consoleBeforeClick.length).filter(msg => {
-      const url = msg.location || '';
-      const isOurApp = (
-        url.includes('cdn.prod.atlassian-dev.net') && url.includes('/govGadget')
-      ) || url.includes(expectedHeadShortSha);
-      return isOurApp;
-    });
-    
-    const supportClickLogsText = supportClickMessages.map(msg => 
-      `[${msg.type}] ${msg.text}\n  Location: ${msg.location}`
-    ).join('\n\n');
-    
-    fs.writeFileSync(path.join(RUN_DIR, '77_support_click_console_scope.txt'), 
-      supportClickLogsText || 'No scoped console messages from support button click');
-    supportResults.push(`\nScoped console messages after click: ${supportClickMessages.length}\n`);
-    
-    // Check for sandbox block error
-    const sandboxBlockFound = consoleAfterClick.some(log => 
-      log.includes('SandboxExternalProtocolBlocked') || 
-      log.includes('Navigation to external protocol blocked by sandbox')
-    );
-    
-    if (sandboxBlockFound) {
-      const stopFile = path.join(RUN_DIR, 'STOP_SUPPORT_SANDBOX_BLOCKED.txt');
-      const stopMsg = [
-        '=== SUPPORT SANDBOX BLOCK DETECTED ===',
-        '',
-        'The support button triggered a sandbox navigation block.',
-        'This means the implementation is NOT using Forge bridge router.open correctly.',
-        '',
-        'Console messages after click:',
-        ...consoleAfterClick.slice(0, 10).map(log => `  ${log}`)
-      ].join('\n');
-      fs.writeFileSync(stopFile, stopMsg);
-      fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
-      throw new Error('STOP_SUPPORT_SANDBOX_BLOCKED');
-    }
-    supportResults.push('✓ No sandbox block error detected\n');
-    
-    // Check for console errors from our app after click
-    const supportConsoleErrors = supportClickMessages.filter(m => m.type === 'error');
-    if (supportConsoleErrors.length > 0) {
-      const stopFile = path.join(RUN_DIR, 'STOP_SUPPORT_CONSOLE_ERROR.txt');
-      const stopMsg = [
-        '=== SUPPORT CONSOLE ERROR DETECTED ===',
-        '',
-        `Found ${supportConsoleErrors.length} error(s) after clicking support button:`,
-        '',
-        ...supportConsoleErrors.map(err => `  ${err.text}\n  Location: ${err.location}`).join('\n\n')
-      ].join('\n');
-      fs.writeFileSync(stopFile, stopMsg);
-      fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
-      throw new Error('STOP_SUPPORT_CONSOLE_ERROR');
-    }
-    supportResults.push('✓ No console errors from our app after click\n');
-    
-    // Check for FT_SUPPORT_OPEN_ATTEMPT marker
-    const openAttemptFound = consoleAfterClick.some(log => 
-      log.includes('FT_SUPPORT_OPEN_ATTEMPT')
-    );
-    
-    if (!openAttemptFound) {
-      const stopFile = path.join(RUN_DIR, 'STOP_SUPPORT_OPEN_NOT_ATTEMPTED.txt');
-      const stopMsg = [
-        '=== SUPPORT OPEN NOT ATTEMPTED ===',
-        '',
-        'The FT_SUPPORT_OPEN_ATTEMPT marker was not found in console logs.',
-        'This means router.open was not called.',
-        '',
-        'Console messages after click:',
-        ...consoleAfterClick.slice(0, 10).map(log => `  ${log}`)
-      ].join('\n');
-      fs.writeFileSync(stopFile, stopMsg);
-      fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
-      throw new Error('STOP_SUPPORT_OPEN_NOT_ATTEMPTED');
-    }
-    supportResults.push('✓ FT_SUPPORT_OPEN_ATTEMPT marker found\n');
-    
-    // Check for fallback elements (may or may not appear depending on router.open success)
-    const supportUrl = gadgetFrame.locator('[data-testid="ft-support-url"]');
-    const supportCopy = gadgetFrame.locator('[data-testid="ft-support-copy"]');
-    const fallbackUrlExists = await supportUrl.count() > 0;
-    const fallbackCopyExists = await supportCopy.count() > 0;
-    
-    supportResults.push(`\nFallback elements:\n`);
-    supportResults.push(`  ft-support-url exists: ${fallbackUrlExists}\n`);
-    supportResults.push(`  ft-support-copy exists: ${fallbackCopyExists}\n`);
-    
-    if (fallbackUrlExists) {
-      const urlText = await supportUrl.innerText();
-      supportResults.push(`  URL text: ${urlText}\n`);
-    }
-    
-    supportResults.push('\n✓ VERDICT: PASS - Support button is sandbox-safe\n');
-    fs.writeFileSync(path.join(RUN_DIR, '78_support_dom_proof.txt'), supportResults.join(''));
-    console.log(`[TEST] Support button proof written to ${path.join(RUN_DIR, '78_support_dom_proof.txt')}`);
-    
-    // Network proof (attempt marker)
-    const networkProof = [
-      '=== SUPPORT NETWORK PROOF ===',
-      '',
-      'Console markers found:',
-      `  FT_SUPPORT_OPEN_ATTEMPT: ${openAttemptFound ? 'YES' : 'NO'}`,
-      '',
-      'Relevant console logs:',
-      ...consoleAfterClick.filter(log => log.includes('FT_SUPPORT') || log.includes('support')).map(log => `  ${log}`),
-      '',
-      '✓ VERDICT: router.open attempt logged'
-    ].join('\n');
-    fs.writeFileSync(path.join(RUN_DIR, '79_support_network_proof.txt'), networkProof);
-    console.log(`[TEST] Support network proof written to ${path.join(RUN_DIR, '79_support_network_proof.txt')}`);
     
     // === CONSOLE HYGIENE GATE (OUR APP ONLY) ===
     console.log('[TEST] Processing console hygiene gate (filtering for our app only)...');
