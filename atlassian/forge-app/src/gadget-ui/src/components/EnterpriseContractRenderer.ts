@@ -530,7 +530,13 @@ export function renderEnterpriseContractSection(data: any, currentSnapshot: any)
   const summaryStack = document.createElement('div');
   summaryStack.className = 'ft-summary-stack';
   summaryStack.appendChild(evidenceCard);
-  shell.insertBefore(summaryStack, header);
+
+  const insertBeforeNode = header.parentElement === shell ? header : shell.firstChild;
+  if (insertBeforeNode) {
+    shell.insertBefore(summaryStack, insertBeforeNode);
+  } else {
+    shell.appendChild(summaryStack);
+  }
   
   // CARD 2: SEED VS GOVERNANCE
   const seedGovCard = document.createElement('div');
