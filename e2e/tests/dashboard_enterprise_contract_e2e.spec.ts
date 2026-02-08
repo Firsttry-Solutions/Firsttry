@@ -122,16 +122,42 @@ test.describe('Enterprise Contract Dashboard', () => {
     
     // ========================================================================
     // DEPLOYMENT-AWARENESS GATE (RUNS BEFORE IFRAME DISCOVERY)
+    // WITH BOUNDED POLLING FOR DEPLOYMENT PROPAGATION
     // ========================================================================
-    console.log('[TEST] === DEPLOYMENT-AWARENESS GATE === Checking deployed SHA...');
-    const deploymentCheckResults: string[] = [];
-    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK ===\n\n');
-    deploymentCheckResults.push(`Expected HEAD SHA: ${expectedHeadShortSha}\n\n`);
     
-    // Extract deployed SHA from console logs
-    // Look for UI identity markers: UI_IDENTITY_RESOLVED, UI_BUILD_IDENTITY_CONFIRMED, backend_git_sha_short, etc.
+    // EVIDENCE: Write gate start marker FIRST (proves gate runs before all other checks)
+    const gateStartTime = new Date().toISOString();
+    const gateStartEvidence = [
+      '=== DEPLOYMENT_AWARENESS_GATE_START ===',
+      '',
+      `UTC timestamp: ${gateStartTime}`,
+      `Expected HEAD short SHA: ${expectedHeadShortSha}`,
+      '',
+      'This file proves the deployment-awareness gate runs FIRST,',
+      'before any UI contract checks, layout checks, or other gates.',
+    ].join('\n');
+    fs.writeFileSync(path.join(RUN_DIR, '01_deployment_gate_started.txt'), gateStartEvidence);
+    console.log('[TEST] DEPLOYMENT_AWARENESS_GATE_START', { 
+      expectedHeadShortSha, 
+      timestamp: gateStartTime 
+    });
+    
+    console.log('[TEST] === DEPLOYMENT-AWARENESS GATE === Checking deployed SHA with polling...');
+    
+    // Polling configuration (bounded and deterministic)
+    // Designed to fit within 240s test timeout with safety margin
+    // Sleep total: 108s + page loads (~8s x 12 = 96s) + overhead = ~3.5min
+    const MAX_ATTEMPTS = 12;
+    const SLEEP_SCHEDULE_MS = [3000, 5000, 5000, 8000, 8000, 10000, 10000, 12000, 12000, 15000, 15000, 15000];
+    
+    const pollStartTime = Date.now();
+    const pollStartTimeUTC = new Date().toISOString();
+    let pollElapsedMs = 0; // Will be updated in finally block
     let deployedShortSha = '';
     let deployedFullSha = '';
+    let matchedOnAttempt = 0;
+    const attemptEvidenceFiles: string[] = [];
+    
     const identityMarkers = [
       'UI_IDENTITY_RESOLVED',
       'UI_BUILD_IDENTITY_CONFIRMED',
@@ -141,97 +167,189 @@ test.describe('Enterprise Contract Dashboard', () => {
       'UI_GIT_SHA'
     ];
     
-    deploymentCheckResults.push('Searching console logs for identity markers:\n');
-    for (const log of consoleLogs) {
-      for (const marker of identityMarkers) {
-        if (log.includes(marker)) {
-          deploymentCheckResults.push(`  Found marker in log: ${log.substring(0, 200)}\n`);
-          // Try to extract 7-char short SHA
-          const shortShaMatch = log.match(/\b[0-9a-f]{7}\b/);
-          if (shortShaMatch && !deployedShortSha) {
-            deployedShortSha = shortShaMatch[0];
-            deploymentCheckResults.push(`  Extracted short SHA: ${deployedShortSha}\n`);
-          }
-          // Try to extract 40-char full SHA
-          const fullShaMatch = log.match(/\b[0-9a-f]{40}\b/);
-          if (fullShaMatch && !deployedFullSha) {
-            deployedFullSha = fullShaMatch[0];
-            deploymentCheckResults.push(`  Extracted full SHA: ${deployedFullSha}\n`);
+    // Wrap polling in try/finally to ALWAYS write poll summary
+    try {
+      // Polling loop (attempt 1 is immediate, no sleep before it)
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        console.log(`[TEST] Deployment check attempt ${attempt}/${MAX_ATTEMPTS}...`);
+        
+        // For attempts > 1, hard reload with cache busting
+        if (attempt > 1) {
+          const cacheBustUrl = `${JIRA_DASHBOARD_URL}${JIRA_DASHBOARD_URL.includes('?') ? '&' : '?'}ft_probe=${attempt}-${Date.now()}`;
+          console.log(`[TEST] Cache-busting reload: ${cacheBustUrl}`);
+          try {
+            await page.goto(cacheBustUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            await page.waitForTimeout(5000); // Wait for identity markers
+          } catch (e) {
+            console.log(`[TEST] Reload error on attempt ${attempt}: ${e}`);
           }
         }
-      }
-      if (deployedShortSha && deployedFullSha) break;
-    }
-    
-    // If not found in console, try full page text as fallback
-    if (!deployedShortSha) {
-      deploymentCheckResults.push('\nConsole logs did not contain identity marker, trying page text...\n');
-      try {
-        const pageText = await page.locator('body').innerText();
-        const shortShaMatch = pageText.match(/\b[0-9a-f]{7}\b/);
-        if (shortShaMatch) {
-          deployedShortSha = shortShaMatch[0];
-          deploymentCheckResults.push(`Found short SHA in page text: ${deployedShortSha}\n`);
+        
+        // Clear previous attempt data
+        deployedShortSha = '';
+        deployedFullSha = '';
+        
+        // Extract deployed SHA from console logs
+        const attemptResults: string[] = [];
+        attemptResults.push(`=== DEPLOYMENT CHECK ATTEMPT ${attempt} ===\n`);
+        attemptResults.push(`UTC timestamp: ${new Date().toISOString()}\n`);
+        attemptResults.push(`Expected HEAD short SHA: ${expectedHeadShortSha}\n\n`);
+        
+        if (attempt > 1) {
+          const cacheBustUrl = `${JIRA_DASHBOARD_URL}${JIRA_DASHBOARD_URL.includes('?') ? '&' : '?'}ft_probe=${attempt}-${Date.now()}`;
+          attemptResults.push(`Probed URL: ${cacheBustUrl}\n\n`);
+        } else {
+          attemptResults.push(`Probed URL: ${JIRA_DASHBOARD_URL}\n\n`);
         }
-      } catch (e) {
-        deploymentCheckResults.push(`Error reading page text: ${e}\n`);
+        
+        attemptResults.push('Searching console logs for identity markers:\n');
+        let identityLineFound = '';
+        for (const log of consoleLogs) {
+          for (const marker of identityMarkers) {
+            if (log.includes(marker)) {
+              identityLineFound = log;
+              attemptResults.push(`  Found marker in log: ${log.substring(0, 200)}\n`);
+              // Try to extract 7-char short SHA
+              const shortShaMatch = log.match(/\b[0-9a-f]{7}\b/);
+              if (shortShaMatch && !deployedShortSha) {
+                deployedShortSha = shortShaMatch[0];
+                attemptResults.push(`  Extracted short SHA: ${deployedShortSha}\n`);
+              }
+              // Try to extract 40-char full SHA
+              const fullShaMatch = log.match(/\b[0-9a-f]{40}\b/);
+              if (fullShaMatch && !deployedFullSha) {
+                deployedFullSha = fullShaMatch[0];
+                attemptResults.push(`  Extracted full SHA: ${deployedFullSha}\n`);
+              }
+            }
+          }
+          if (deployedShortSha && deployedFullSha) break;
+        }
+        
+        // If not found in console, try full page text as fallback
+        if (!deployedShortSha) {
+          attemptResults.push('\nConsole logs did not contain identity marker, trying page text...\n');
+          try {
+            const pageText = await page.locator('body').innerText();
+            const shortShaMatch = pageText.match(/\b[0-9a-f]{7}\b/);
+            if (shortShaMatch) {
+              deployedShortSha = shortShaMatch[0];
+              attemptResults.push(`Found short SHA in page text: ${deployedShortSha}\n`);
+            }
+          } catch (e) {
+            attemptResults.push(`Error reading page text: ${e}\n`);
+          }
+        }
+        
+        if (identityLineFound) {
+          attemptResults.push(`\nFull identity line: ${identityLineFound}\n`);
+        }
+        
+        attemptResults.push(`\nDeployed short SHA: ${deployedShortSha || 'IDENTITY_MARKER_MISSING'}\n`);
+        attemptResults.push(`Deployed full SHA: ${deployedFullSha || 'IDENTITY_MARKER_MISSING'}\n`);
+        
+        // Check for match
+        if (deployedShortSha === expectedHeadShortSha) {
+          attemptResults.push(`\n✓ MATCH on attempt ${attempt}\n`);
+          matchedOnAttempt = attempt;
+        } else if (!deployedShortSha) {
+          attemptResults.push(`\n✗ IDENTITY_MARKER_MISSING on attempt ${attempt}\n`);
+        } else {
+          attemptResults.push(`\n✗ MISMATCH on attempt ${attempt}: expected ${expectedHeadShortSha}, got ${deployedShortSha}\n`);
+        }
+        
+        // Write attempt evidence file
+        const attemptFile = path.join(RUN_DIR, `02_deployed_identity_attempt_${attempt}.txt`);
+        fs.writeFileSync(attemptFile, attemptResults.join(''));
+        attemptEvidenceFiles.push(`02_deployed_identity_attempt_${attempt}.txt`);
+        console.log(`[TEST] Attempt ${attempt} evidence: ${attemptFile}`);
+        
+        // If matched, break out of loop
+        if (deployedShortSha === expectedHeadShortSha) {
+          console.log(`[TEST] ✓ SHA MATCHED on attempt ${attempt}: ${deployedShortSha}`);
+          break;
+        }
+        
+        // If not the last attempt, sleep according to schedule
+        if (attempt < MAX_ATTEMPTS) {
+          const sleepMs = SLEEP_SCHEDULE_MS[attempt - 1] || 30000;
+          console.log(`[TEST] SHA mismatch, sleeping ${sleepMs}ms before next attempt...`);
+          await page.waitForTimeout(sleepMs);
+        }
       }
+    } finally {
+      // ALWAYS write poll summary (even if errors occur during polling)
+      const pollEndTime = Date.now();
+      const pollEndTimeUTC = new Date().toISOString();
+      pollElapsedMs = pollEndTime - pollStartTime; // Update for use outside finally
+      
+      const pollSummary: string[] = [];
+      pollSummary.push('=== DEPLOYMENT PROPAGATION POLL SUMMARY ===\n\n');
+      pollSummary.push(`UTC start time: ${pollStartTimeUTC}\n`);
+      pollSummary.push(`UTC end time: ${pollEndTimeUTC}\n`);
+      pollSummary.push(`Elapsed milliseconds: ${pollElapsedMs}\n`);
+      pollSummary.push(`Elapsed time: ${(pollElapsedMs / 1000).toFixed(1)}s\n\n`);
+      pollSummary.push(`MAX_ATTEMPTS: ${MAX_ATTEMPTS}\n`);
+      pollSummary.push(`SLEEP_SCHEDULE_MS: [${SLEEP_SCHEDULE_MS.join(', ')}]\n\n`);
+      pollSummary.push(`Expected HEAD short SHA: ${expectedHeadShortSha}\n`);
+      pollSummary.push(`Last observed deployed short SHA: ${deployedShortSha || 'MISSING'}\n`);
+      pollSummary.push(`Last observed deployed full SHA: ${deployedFullSha || 'MISSING'}\n\n`);
+      
+      if (matchedOnAttempt > 0) {
+        pollSummary.push(`Result: MATCHED on attempt ${matchedOnAttempt}\n`);
+      } else if (!deployedShortSha) {
+        pollSummary.push(`Result: IDENTITY_MISSING after ${MAX_ATTEMPTS} attempts\n`);
+      } else {
+        pollSummary.push(`Result: FAILED after ${MAX_ATTEMPTS} attempts\n`);
+      }
+      
+      pollSummary.push(`\nAttempt evidence files:\n`);
+      for (const file of attemptEvidenceFiles) {
+        pollSummary.push(`  - ${file}\n`);
+      }
+      
+      fs.writeFileSync(path.join(RUN_DIR, '02_deploy_propagation_poll_summary.txt'), pollSummary.join(''));
+      console.log(`[TEST] Poll summary written to 02_deploy_propagation_poll_summary.txt`);
     }
     
-    deploymentCheckResults.push(`\nDeployed short SHA: ${deployedShortSha || 'NOT FOUND'}\n`);
-    deploymentCheckResults.push(`Deployed full SHA: ${deployedFullSha || 'NOT FOUND'}\n`);
-    fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
-    
-    // GATE: If deployed SHA not found at all
-    if (!deployedShortSha) {
-      const stopMsg = [
-        'STOP: DEPLOYED SHA NOT FOUND',
-        '',
-        `Expected HEAD short SHA: ${expectedHeadShortSha}`,
-        'Deployed SHA: NOT FOUND',
-        `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
-        '',
-        'Production does not expose UI build identity markers.',
-        'This means either:',
-        '  1. The gadget is not loaded on this page',
-        '  2. The gadget build does not emit identity markers',
-        '  3. The page has not fully loaded',
-        '',
-        'Console logs captured: ' + consoleLogs.length,
-        '',
-        'ACTION: Check console logs in 37_console.txt for identity markers.',
-      ].join('\n');
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_DEPLOYED_SHA_NOT_FOUND.txt'), stopMsg);
-      console.error('[TEST] STOP_DEPLOYED_SHA_NOT_FOUND: Cannot find deployed SHA in console or page text');
-      throw new Error('STOP_DEPLOYED_SHA_NOT_FOUND: deployed UI SHA not found');
-    }
-    
-    // GATE: If deployed SHA != expected HEAD SHA
+    // GATE: If still no match after all attempts
     if (deployedShortSha !== expectedHeadShortSha) {
       const stopMsg = [
         'STOP: NOT DEPLOYED',
         '',
         `Expected HEAD short SHA: ${expectedHeadShortSha}`,
-        `Deployed short SHA: ${deployedShortSha}`,
+        `Deployed short SHA: ${deployedShortSha || 'MISSING'}`,
         `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
+        `Attempts executed: ${MAX_ATTEMPTS}`,
+        `Total poll time: ${(pollElapsedMs / 1000).toFixed(1)}s`,
         '',
-        'The production gadget has not been updated with the latest code from this repository.',
+        'The production gadget has not been updated with the latest code from this repository',
+        'after waiting through all polling attempts.',
+        '',
+        'Attempt evidence files:',
+        ...attemptEvidenceFiles.map(f => `  - ${f}`),
         '',
         'ACTION REQUIRED:',
-        '  1. Deploy to production:',
-        '     cd /workspaces/Firsttry/atlassian/forge-app',
-        '     forge deploy --environment production',
-        '',
-        '  2. Wait for deployment to complete (~5 minutes)',
-        '',
-        '  3. Re-run this test',
+        '  1. Check deployment logs in forge',
+        '  2. Verify deployment completed successfully',
+        '  3. Check if deployment is still propagating (may need longer)',
+        '  4. Re-run this test after confirming deployment',
       ].join('\n');
       fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED.txt'), stopMsg);
-      console.error(`[TEST] STOP_NOT_DEPLOYED: Expected ${expectedHeadShortSha}, got ${deployedShortSha}`);
-      throw new Error(`STOP_NOT_DEPLOYED: deployed SHA (${deployedShortSha}) != HEAD (${expectedHeadShortSha})`);
+      console.error(`[TEST] STOP_NOT_DEPLOYED: Expected ${expectedHeadShortSha}, got ${deployedShortSha || 'MISSING'} after ${MAX_ATTEMPTS} attempts`);
+      throw new Error(`STOP_NOT_DEPLOYED: deployed SHA (${deployedShortSha || 'MISSING'}) != HEAD (${expectedHeadShortSha}) after ${MAX_ATTEMPTS} attempts`);
     }
     
     console.log(`[TEST] ✓ DEPLOYMENT-AWARENESS GATE PASSED: SHA ${deployedShortSha} matches HEAD`);
+    
+    // Write final successful evidence file
+    const deploymentCheckResults: string[] = [];
+    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK ===\n\n');
+    deploymentCheckResults.push(`Expected HEAD SHA: ${expectedHeadShortSha}\n`);
+    deploymentCheckResults.push(`Deployed short SHA: ${deployedShortSha}\n`);
+    deploymentCheckResults.push(`Deployed full SHA: ${deployedFullSha}\n`);
+    deploymentCheckResults.push(`\n✓ MATCHED on attempt ${matchedOnAttempt}\n`);
+    deploymentCheckResults.push(`Total poll time: ${(pollElapsedMs / 1000).toFixed(1)}s\n`);
     deploymentCheckResults.push(`\n✓ VERDICT: PASS - Deployed SHA matches HEAD\n`);
     fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
     
