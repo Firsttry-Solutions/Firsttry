@@ -5,6 +5,8 @@ import * as os from 'os';
 // Safe Rule-C observer helper (alternative to inlined installAuthWallObservers)
 // Both approaches are safe: headerNames-only, no cookies/auth tokens
 import { captureRuleCArtifactsSafe } from '../utils/ruleC_observer_safe';
+// Shared auth-wall detection helper (extracted for reuse in proof specs)
+import { detectAuthWallEvidence } from '../utils/auth_wall_detector';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // REPO ROOT & PATH RESOLUTION CONSTANTS
@@ -586,55 +588,37 @@ async function enforceAuthenticatedJiraSession(page: any, artifactDir: string, o
       const frameUrls = page.frames().map((f: any) => f.url());
       const authFrames = frameUrls.filter(isAuthOrCaptchaFrameUrl);
 
-      // FAIL FAST #1: Top-level auth URL
-      if (isAuthUrl(pageUrl)) {
-        const evidence: any = {
-          ts: isoNow(),
-          pageUrl,
-          title,
-          reason: 'top_level_auth_url',
-          isAuthed: false,
-          authFrames,
-          frameUrls_sample: frameUrls.slice(0, 30),
-          shell,
-          timeline
-        };
-        await writeJson(`${artifactDir}/auth_check.json`, evidence);
-        await recordAuthRedirectStop({
-          artifactDir,
-          expectedUrl: expectedDashboardUrl,
-          observedUrl: pageUrl,
-          reason: 'top_level_auth_url',
-          page,
-        });
-        throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: top_level_auth_url. URL=${pageUrl}`);
-      }
+      // Use shared auth-wall detector (extracted logic, identical semantics)
+      const authDetection = await detectAuthWallEvidence(page);
 
-      // FAIL FAST #2: Auth wall title
-      if (isAuthWallTitle(title)) {
+      // FAIL FAST: Auth wall detected by shared helper
+      if (authDetection.detected && authDetection.rule !== 'A' && authDetection.rule !== 'B') {
+        // Rules A/B are handled in stabilization window below
+        // Handle top_level_auth_url, auth_wall_title, auth_wall_dom here
         const domFingerprint = await collectDomFingerprint(page);
         const evidence: any = {
           ts: isoNow(),
           pageUrl,
           title,
-          reason: 'auth_wall_title',
+          reason: authDetection.rule,
           isAuthed: false,
           authFrames,
           frameUrls_sample: frameUrls.slice(0, 30),
           shell,
           domFingerprint,
-          timeline
+          timeline,
+          detectionEvidence: authDetection.evidenceLines
         };
         await writeJson(`${artifactDir}/auth_check.json`, evidence);
         await recordAuthRedirectStop({
           artifactDir,
           expectedUrl: expectedDashboardUrl,
           observedUrl: pageUrl,
-          reason: 'auth_wall_title',
+          reason: authDetection.rule || 'auth_wall_detected',
           page,
-          note: 'Auth wall title detected while verifying Jira shell',
+          note: authDetection.evidenceLines.join('; '),
         });
-        throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: auth_wall_title. URL=${pageUrl}`);
+        throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: ${authDetection.rule}. URL=${pageUrl}`);
       }
 
       // SUCCESS: Shell found - run stabilization window

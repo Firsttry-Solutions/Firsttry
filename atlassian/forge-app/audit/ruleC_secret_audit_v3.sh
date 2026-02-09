@@ -29,12 +29,20 @@ git status --porcelain=v1 | tee "$RUN_DIR/02_status_before.txt" >/dev/null
 git diff --name-only | tee "$RUN_DIR/03_diff_name_only_before.txt" >/dev/null
 (node -v && npm -v && rg --version && git --version) 2>&1 | tee "$RUN_DIR/05_tool_versions.txt" >/dev/null
 
-# Discover latest bundle deterministically by mtime
-ls -1dt /tmp/prod_dashboard_green_* 2>/dev/null | head -n 10 | tee "$RUN_DIR/10_latest_bundles.txt" >/dev/null
-BUNDLE="$(head -n 1 "$RUN_DIR/10_latest_bundles.txt" | tr -d '\r')"
-echo "BUNDLE=$BUNDLE" | tee "$RUN_DIR/11_bundle_selected.txt" >/dev/null
-test -n "$BUNDLE" || die "STOP_BUNDLE_NOT_FOUND" "$RUN_DIR"
-test -d "$BUNDLE" || die "STOP_BUNDLE_NOT_FOUND" "$RUN_DIR"
+# Bundle discovery: use BUNDLE_OVERRIDE if set, else discover latest deterministically
+if [ -n "${BUNDLE_OVERRIDE:-}" ]; then
+  # Override mode: use provided bundle path
+  BUNDLE="$BUNDLE_OVERRIDE"
+  echo "BUNDLE=$BUNDLE (from BUNDLE_OVERRIDE)" | tee "$RUN_DIR/11_bundle_selected.txt" >/dev/null
+  test -d "$BUNDLE" || die "STOP_BUNDLE_OVERRIDE_NOT_FOUND" "$RUN_DIR"
+else
+  # Discovery mode: find latest by mtime
+  ls -1dt /tmp/prod_dashboard_green_* 2>/dev/null | head -n 10 | tee "$RUN_DIR/10_latest_bundles.txt" >/dev/null
+  BUNDLE="$(head -n 1 "$RUN_DIR/10_latest_bundles.txt" | tr -d '\r')"
+  echo "BUNDLE=$BUNDLE" | tee "$RUN_DIR/11_bundle_selected.txt" >/dev/null
+  test -n "$BUNDLE" || die "STOP_BUNDLE_NOT_FOUND" "$RUN_DIR"
+  test -d "$BUNDLE" || die "STOP_BUNDLE_NOT_FOUND" "$RUN_DIR"
+fi
 
 # Required files
 REQ=(22_auth_wall_detector_summary.txt 23_ruleC_trigger_request.json 24_ruleC_trigger_response.json 25_ruleC_redirect_chain.txt)
