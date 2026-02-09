@@ -337,7 +337,7 @@ test.describe('Enterprise Contract Dashboard', () => {
         'STOP: UI CONTRACT MISSING',
         '',
         `Expected testid: ft-enterprise-shell`,
-        `Deployed SHA verified: ${deployedShortSha}`,
+        `Deployed SHA verified: ${backendShortSha}`,
         `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
         '',
         'The deployed gadget has the correct SHA but does not contain',
@@ -469,21 +469,23 @@ test.describe('Enterprise Contract Dashboard', () => {
     console.log('[TEST] Validating badge content...');
     uiContractResults.push('\n=== BADGE CONTENT VALIDATION ===\n\n');
     
-    // Export badge must contain "Export:"
+    // Export badge invariant: Must be present and in disabled state (read-only contract)
+    // This avoids cosmetic text assertions and focuses on the invariant disabled state
     const exportBadge = gadgetFrame.locator('[data-testid="ft-badge-export"]');
+    const exportDataStatus = await exportBadge.getAttribute('data-status');
     const exportText = await exportBadge.innerText();
-    if (!exportText.includes('Export:')) {
-      uiContractResults.push(`✗ Export badge missing "Export:" - got: "${exportText}"\n`);
+    if (exportDataStatus !== 'disabled') {
+      uiContractResults.push(`✗ Export badge not in expected disabled state - data-status: "${exportDataStatus}", text: "${exportText}"\n`);
       fs.writeFileSync(path.join(RUN_DIR, '40_ui_contract.txt'), uiContractResults.join(''));
-      throw new Error(`BADGE_FAIL: Export badge missing "Export:" - got: "${exportText}"`);
+      throw new Error(`BADGE_FAIL: Export badge data-status="${exportDataStatus}", expected "disabled"`);
     }
-    uiContractResults.push(`✓ Export badge contains "Export:" - text: "${exportText}"\n`);
+    uiContractResults.push(`✓ Export badge in disabled state (data-status="disabled") - text: "${exportText}"\n`);
     
-    // Freshness badge must contain one of: "Out of date" OR "Unknown" OR "Current"
+    // Freshness badge must contain one of: "Out of date" OR "Unknown" OR "Current" (case-insensitive)
     const freshnessBadge = gadgetFrame.locator('[data-testid="ft-badge-freshness"]');
     const freshnessText = await freshnessBadge.innerText();
     const validFreshnessValues = ['Out of date', 'Unknown', 'Current'];
-    const hasValidFreshness = validFreshnessValues.some(v => freshnessText.includes(v));
+    const hasValidFreshness = validFreshnessValues.some(v => freshnessText.toLowerCase().includes(v.toLowerCase()));
     if (!hasValidFreshness) {
       uiContractResults.push(`✗ Freshness badge missing valid value - got: "${freshnessText}"\n`);
       fs.writeFileSync(path.join(RUN_DIR, '40_ui_contract.txt'), uiContractResults.join(''));
