@@ -68,6 +68,25 @@ test.describe('Enterprise Contract Dashboard', () => {
         encoding: 'utf8' 
       }).trim();
       console.log(`[TEST] Expected HEAD short SHA: ${expectedHeadShortSha}`);
+      
+      // Check if HEAD is a freeze lock meta commit (only changes FREEZE_LOCK.json)
+      const changedFiles = execSync('git diff-tree -r --no-commit-id --name-only HEAD', {
+        cwd: '/workspaces/Firsttry',
+        encoding: 'utf8'
+      }).trim().split('\n').filter(f => f);
+      
+      const isFreezeMetaCommit = changedFiles.length === 1 && 
+        changedFiles[0] === 'atlassian/forge-app/audit/marketplace_submission/FREEZE_LOCK.json';
+      
+      if (isFreezeMetaCommit) {
+        const parentSha = execSync('git rev-parse --short=7 HEAD~1', {
+          cwd: '/workspaces/Firsttry',
+          encoding: 'utf8'
+        }).trim();
+        console.log(`[TEST] HEAD is freeze lock meta commit. Using parent SHA: ${parentSha}`);
+        expectedHeadShortSha = parentSha;
+      }
+      
       fs.writeFileSync(path.join(RUN_DIR, '01_expected_head_short_sha.txt'), expectedHeadShortSha);
     } catch (err) {
       console.error('[TEST] ERROR: Failed to get git HEAD SHA:', err);
