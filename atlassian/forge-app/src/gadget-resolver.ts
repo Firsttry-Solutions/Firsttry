@@ -33,6 +33,7 @@ import { storage } from '@forge/api';
 import { FT_RELEASE_VERSION } from './release/release_version';
 import { getStatusSnapshot_resolver } from './resolvers/getStatusSnapshot';
 import { getBuildInfo_resolver } from './resolvers/getBuildInfo';
+import { getBackendBuildIdentity_resolver } from './resolvers/getBackendBuildIdentity';
 import { refreshNow_resolver } from './resolvers/refreshNow';
 import { exportTrustSnapshot } from './resolvers/audit_snapshot_export';
 import { getSnapshotDebug_resolver } from './resolvers/getSnapshotDebug';
@@ -65,6 +66,7 @@ const resolver = new Resolver();
 // CRITICAL: Keys must match UI invoke() calls exactly
 resolver.define('getStatusSnapshot', getStatusSnapshot_resolver);
 resolver.define('getBuildInfo', getBuildInfo_resolver);
+resolver.define('getBackendBuildIdentity', getBackendBuildIdentity_resolver);
 resolver.define('refreshNow', refreshNow_resolver);
 resolver.define('exportTrustSnapshot', exportTrustSnapshot);
 resolver.define('debugSnapshotState', debugSnapshotState_resolver);

@@ -110,106 +110,153 @@ test.describe('Enterprise Contract Dashboard', () => {
     console.log(`[TEST] Navigating to ${JIRA_DASHBOARD_URL}`);
     await page.goto(JIRA_DASHBOARD_URL, { waitUntil: 'domcontentloaded', timeout: 120000 });
     
-    // Wait for initial page load and console logs to accumulate
-    console.log('[TEST] Waiting for page to stabilize and console logs...');
-    await page.waitForTimeout(5000); // Give time for our app to emit UI_BUILD_IDENTITY markers
+    // Wait for initial page load
+    console.log('[TEST] Waiting for page to stabilize...');
+    await page.waitForTimeout(3000);
     
     // ========================================================================
-    // DEPLOYMENT-AWARENESS GATE (RUNS BEFORE IFRAME DISCOVERY)
+    // DEPLOYMENT-AWARENESS GATE (AUTHORITATIVE BACKEND IDENTITY)
     // ========================================================================
-    console.log('[TEST] === DEPLOYMENT-AWARENESS GATE === Checking deployed SHA...');
+    console.log('[TEST] === DEPLOYMENT-AWARENESS GATE === Checking deployed backend SHA...');
     const deploymentCheckResults: string[] = [];
-    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK ===\n\n');
+    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK (BACKEND AUTHORITATIVE) ===\n\n');
     deploymentCheckResults.push(`Expected HEAD SHA: ${expectedHeadShortSha}\n\n`);
     
-    // Extract deployed SHA from console logs
-    // Look for UI identity markers: UI_IDENTITY_RESOLVED, UI_BUILD_IDENTITY_CONFIRMED, backend_git_sha_short, etc.
-    let deployedShortSha = '';
-    let deployedFullSha = '';
-    const identityMarkers = [
-      'UI_IDENTITY_RESOLVED',
-      'UI_BUILD_IDENTITY_CONFIRMED',
-      'UI_BUILD_IDENTITY_PROOF',
-      'backend_git_sha_short',
-      'backend_git_sha',
-      'UI_GIT_SHA'
-    ];
+    // NEW APPROACH: Call backend resolver directly to get authoritative build identity
+    // This bypasses CDN caching issues with frontend console logs and buildinfo.json
+    let backendShortSha = '';
+    let backendFullSha = '';
+    let backendBuildTime = '';
     
-    deploymentCheckResults.push('Searching console logs for identity markers:\n');
-    for (const log of consoleLogs) {
-      for (const marker of identityMarkers) {
-        if (log.includes(marker)) {
-          deploymentCheckResults.push(`  Found marker in log: ${log.substring(0, 200)}\n`);
-          // Try to extract 7-char short SHA
-          const shortShaMatch = log.match(/\b[0-9a-f]{7}\b/);
-          if (shortShaMatch && !deployedShortSha) {
-            deployedShortSha = shortShaMatch[0];
-            deploymentCheckResults.push(`  Extracted short SHA: ${deployedShortSha}\n`);
-          }
-          // Try to extract 40-char full SHA
-          const fullShaMatch = log.match(/\b[0-9a-f]{40}\b/);
-          if (fullShaMatch && !deployedFullSha) {
-            deployedFullSha = fullShaMatch[0];
-            deploymentCheckResults.push(`  Extracted full SHA: ${deployedFullSha}\n`);
+    try {
+      deploymentCheckResults.push('Calling backend resolver getBackendBuildIdentity...\n');
+      
+      // Invoke the backend resolver through the Forge bridge
+      // This requires the gadget iframe to be loaded so we can access the bridge
+      console.log('[TEST] Waiting for gadget iframe to establish Forge bridge...');
+      await page.waitForSelector('iframe', { timeout: 90000 });
+      await page.waitForTimeout(2000); // Give bridge time to initialize
+      
+      // Get backend identity by invoking the resolver from the page context
+      const backendIdentity = await page.evaluate(async () => {
+        // Access all iframes and find the one with Forge bridge
+        const frames = Array.from(document.querySelectorAll('iframe'));
+        for (const frame of frames) {
+          try {
+            const frameWindow = frame.contentWindow as any;
+            if (frameWindow && frameWindow.AP && frameWindow.AP.context) {
+              // Found the Forge gadget iframe with AP bridge
+              // Use the bridge to invoke the resolver
+              const result = await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Backend identity resolver timeout')), 30000);
+                frameWindow.AP.context.getToken((token: string) => {
+                  clearTimeout(timeout);
+                  // Call the resolver through Forge API
+                  frameWindow.AP.request({
+                    url: '/invoke',
+                    type: 'POST',
+                    data: JSON.stringify({
+                      key: 'getBackendBuildIdentity',
+                      payload: {}
+                    }),
+                    contentType: 'application/json',
+                    success: (response: any) => {
+                      try {
+                        const data = typeof response === 'string' ? JSON.parse(response) : response;
+                        resolve(data);
+                      } catch (e: any) {
+                        reject(new Error(`Failed to parse backend identity response: ${e.message}`));
+                      }
+                    },
+                    error: (xhr: any) => {
+                      reject(new Error(`Backend identity resolver error: ${xhr.status} ${xhr.statusText}`));
+                    }
+                  });
+                });
+              });
+              return result;
+            }
+          } catch (e: any) {
+            // Try next frame
+            continue;
           }
         }
-      }
-      if (deployedShortSha && deployedFullSha) break;
+        throw new Error('No Forge gadget iframe found with AP bridge');
+      });
+      
+      backendShortSha = (backendIdentity as any).gitShaShort || '';
+      backendFullSha = (backendIdentity as any).gitShaFull || '';
+      backendBuildTime = (backendIdentity as any).buildTimeUtc || '';
+      
+      deploymentCheckResults.push(`✓ Backend resolver called successfully\n`);
+      deploymentCheckResults.push(`  Backend SHA (short): ${backendShortSha}\n`);
+      deploymentCheckResults.push(`  Backend SHA (full): ${backendFullSha}\n`);
+      deploymentCheckResults.push(`  Backend build time: ${backendBuildTime}\n`);
+      
+      // Emit markers for tooling
+      console.log(`EXPECTED_SHA_SHORT=${expectedHeadShortSha}`);
+      console.log(`BACKEND_SHA_SHORT=${backendShortSha}`);
+      console.log(`BACKEND_BUILD_UTC=${backendBuildTime}`);
+      
+    } catch (error: any) {
+      deploymentCheckResults.push(`✗ Failed to get backend identity: ${error.message}\n`);
+      fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
+      
+      const stopMsg = [
+        'STOP: BACKEND IDENTITY RESOLVER FAILED',
+        '',
+        `Expected HEAD short SHA: ${expectedHeadShortSha}`,
+        'Backend SHA: RESOLVER_FAILED',
+        `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
+        `Error: ${error.message}`,
+        '',
+        'Could not call backend identity resolver.',
+        'This means either:',
+        '  1. The gadget iframe failed to load',
+        '  2. The Forge bridge (AP object) is not available',
+        '  3. The resolver is not registered in manifest',
+        '  4. Network error calling /invoke endpoint',
+        '',
+        'ACTION: Check that gadget loads and Forge bridge is available.',
+      ].join('\n');
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_BACKEND_IDENTITY_RESOLVER_FAILED.txt'), stopMsg);
+      console.error('[TEST] STOP_BACKEND_IDENTITY_RESOLVER_FAILED:', error.message);
+      throw new Error(`STOP_BACKEND_IDENTITY_RESOLVER_FAILED: ${error.message}`);
     }
     
-    // If not found in console, try full page text as fallback
-    if (!deployedShortSha) {
-      deploymentCheckResults.push('\nConsole logs did not contain identity marker, trying page text...\n');
-      try {
-        const pageText = await page.locator('body').innerText();
-        const shortShaMatch = pageText.match(/\b[0-9a-f]{7}\b/);
-        if (shortShaMatch) {
-          deployedShortSha = shortShaMatch[0];
-          deploymentCheckResults.push(`Found short SHA in page text: ${deployedShortSha}\n`);
-        }
-      } catch (e) {
-        deploymentCheckResults.push(`Error reading page text: ${e}\n`);
-      }
-    }
-    
-    deploymentCheckResults.push(`\nDeployed short SHA: ${deployedShortSha || 'NOT FOUND'}\n`);
-    deploymentCheckResults.push(`Deployed full SHA: ${deployedFullSha || 'NOT FOUND'}\n`);
+    deploymentCheckResults.push(`\nBackend short SHA: ${backendShortSha}\n`);
+    deploymentCheckResults.push(`Backend full SHA: ${backendFullSha}\n`);
     fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
     
-    // GATE: If deployed SHA not found at all
-    if (!deployedShortSha) {
+    // GATE: If backend SHA not found
+    if (!backendShortSha) {
       const stopMsg = [
-        'STOP: DEPLOYED SHA NOT FOUND',
+        'STOP: BACKEND SHA NOT FOUND',
         '',
         `Expected HEAD short SHA: ${expectedHeadShortSha}`,
-        'Deployed SHA: NOT FOUND',
+        'Backend SHA: NOT FOUND',
         `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
         '',
-        'Production does not expose UI build identity markers.',
-        'This means either:',
-        '  1. The gadget is not loaded on this page',
-        '  2. The gadget build does not emit identity markers',
-        '  3. The page has not fully loaded',
+        'Backend identity resolver returned empty SHA.',
         '',
-        'Console logs captured: ' + consoleLogs.length,
-        '',
-        'ACTION: Check console logs in 37_console.txt for identity markers.',
+        'ACTION: Check backend build identity generation in forge-app.',
       ].join('\n');
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_DEPLOYED_SHA_NOT_FOUND.txt'), stopMsg);
-      console.error('[TEST] STOP_DEPLOYED_SHA_NOT_FOUND: Cannot find deployed SHA in console or page text');
-      throw new Error('STOP_DEPLOYED_SHA_NOT_FOUND: deployed UI SHA not found');
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_BACKEND_SHA_NOT_FOUND.txt'), stopMsg);
+      console.error('[TEST] STOP_BACKEND_SHA_NOT_FOUND: Backend resolver returned empty SHA');
+      throw new Error('STOP_BACKEND_SHA_NOT_FOUND: backend SHA empty');
     }
     
-    // GATE: If deployed SHA != expected HEAD SHA
-    if (deployedShortSha !== expectedHeadShortSha) {
+    // GATE: If backend SHA != expected HEAD SHA (CRITICAL DEPLOYMENT GATE)
+    if (backendShortSha !== expectedHeadShortSha) {
       const stopMsg = [
-        'STOP: NOT DEPLOYED',
+        'STOP: NOT DEPLOYED (BACKEND)',
         '',
         `Expected HEAD short SHA: ${expectedHeadShortSha}`,
-        `Deployed short SHA: ${deployedShortSha}`,
+        `Backend short SHA: ${backendShortSha}`,
         `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
         '',
-        'The production gadget has not been updated with the latest code from this repository.',
+        'The backend has not been updated with the latest code from this repository.',
+        'This is AUTHORITATIVE - backend identity is not subject to CDN caching.',
         '',
         'ACTION REQUIRED:',
         '  1. Deploy to production:',
@@ -220,17 +267,17 @@ test.describe('Enterprise Contract Dashboard', () => {
         '',
         '  3. Re-run this test',
       ].join('\n');
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED.txt'), stopMsg);
-      console.error(`[TEST] STOP_NOT_DEPLOYED: Expected ${expectedHeadShortSha}, got ${deployedShortSha}`);
-      throw new Error(`STOP_NOT_DEPLOYED: deployed SHA (${deployedShortSha}) != HEAD (${expectedHeadShortSha})`);
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED_BACKEND.txt'), stopMsg);
+      console.error(`[TEST] STOP_NOT_DEPLOYED_BACKEND: Expected ${expectedHeadShortSha}, got ${backendShortSha}`);
+      throw new Error(`STOP_NOT_DEPLOYED_BACKEND: backend SHA (${backendShortSha}) != HEAD (${expectedHeadShortSha})`);
     }
     
-    console.log(`[TEST] ✓ DEPLOYMENT-AWARENESS GATE PASSED: SHA ${deployedShortSha} matches HEAD`);
-    deploymentCheckResults.push(`\n✓ VERDICT: PASS - Deployed SHA matches HEAD\n`);
+    console.log(`[TEST] ✓ DEPLOYMENT-AWARENESS GATE PASSED: Backend SHA ${backendShortSha} matches HEAD`);
+    deploymentCheckResults.push(`\n✓ VERDICT: PASS - Backend SHA matches HEAD (AUTHORITATIVE)\n`);
     fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
     
     // ========================================================================
-    // NOW PROCEED TO IFRAME DISCOVERY (deployment verified)
+    // NOW PROCEED TO IFRAME DISCOVERY (deployment verified via backend)
     // ========================================================================
     
     // Wait for any iframe to appear
