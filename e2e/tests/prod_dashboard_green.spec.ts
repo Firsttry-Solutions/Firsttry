@@ -2,6 +2,9 @@ import { test, expect, chromium } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+// Safe Rule-C observer helper (alternative to inlined installAuthWallObservers)
+// Both approaches are safe: headerNames-only, no cookies/auth tokens
+import { captureRuleCArtifactsSafe } from '../utils/ruleC_observer_safe';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // REPO ROOT & PATH RESOLUTION CONSTANTS
@@ -37,6 +40,19 @@ type PageErrorRec = {
   message: string;
   stack?: string;
 };
+
+type NonFatal401Entry = {
+  ts: string;
+  url: string;
+  status: number;
+  resourceType: string;
+  isNavigationRequest: boolean;
+  hasLocation: boolean;
+};
+
+type AuthWallDetection =
+  | { detected: false }
+  | { detected: true; rule: "A"|"B"|"C"; ts: string; url: string; location?: string };
 
 function isoNow(): string {
   return new Date().toISOString();
@@ -81,6 +97,64 @@ function isAuthOrCaptchaFrameUrl(u: string): boolean {
     s.includes("saml") ||
     s.includes("oauth")
   );
+}
+
+function normalizeLower(input: string | null | undefined): string {
+  return (input || '').toLowerCase();
+}
+
+function containsIdLogin(url: string | null | undefined): boolean {
+  const lower = normalizeLower(url);
+  return lower.includes('id.atlassian.com/login');
+}
+
+function containsLoginJsp(url: string | null | undefined): boolean {
+  const lower = normalizeLower(url);
+  return lower.includes('/login.jsp');
+}
+
+function matchesAuthWallLocation(value: string | null | undefined): boolean {
+  const lower = normalizeLower(value);
+  return lower.includes('id.atlassian.com/login') || lower.includes('/login.jsp');
+}
+
+function isIdLoginUrl(u: string): boolean {
+  return (u || '').includes("id.atlassian.com/login");
+}
+
+function isLoginJspUrl(u: string): boolean {
+  return (u || '').includes("/login.jsp");
+}
+
+function isAuthWallUrl(u: string): boolean {
+  return isIdLoginUrl(u) || isLoginJspUrl(u);
+}
+
+function isRedirectStatus(s: number): boolean {
+  return s === 302 || s === 303 || s === 307 || s === 308;
+}
+
+function authWallLocation(loc: string | null | undefined): string | null {
+  if (!loc) return null;
+  if (loc.includes("id.atlassian.com/login")) return loc;
+  if (loc.includes("/login.jsp")) return loc;
+  return null;
+}
+
+function writeJsonSafe(filePath: string, obj: unknown): void {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(obj, null, 2) + '\n', 'utf8');
+  } catch (e) {
+    console.log(`[PROD_GREEN] Failed to write ${filePath}: ${e}`);
+  }
+}
+
+function writeTextSafe(filePath: string, text: string): void {
+  try {
+    fs.writeFileSync(filePath, text, 'utf8');
+  } catch (e) {
+    console.log(`[PROD_GREEN] Failed to write ${filePath}: ${e}`);
+  }
 }
 
 async function recordAuthRedirectStop(params: {
@@ -343,6 +417,156 @@ async function detectJiraShell(page: any): Promise<{present: boolean, matched: s
   };
 }
 
+function installAuthWallObservers(page: any, bundleDir: string) {
+  const nonfatal: NonFatal401Entry[] = [];
+  let detection: AuthWallDetection = { detected: false };
+  let ruleCTrigger = null as null | {
+    ts: string;
+    req: { ts: string; method: string; url: string; resourceType: string; isNavigationRequest: boolean };
+    resp: { ts: string; status: number; url: string; location: string; headerNames: string[] };
+  };
+  const chain: string[] = [];
+
+  function setDetected(d: AuthWallDetection) {
+    if (!detection.detected) detection = d;
+  }
+
+  function addChainLine(line: string) {
+    chain.push(line);
+    if (chain.length > 30) {
+      chain.shift();
+    }
+  }
+
+  const onFrameNav = (frame: any) => {
+    if (frame === page.mainFrame()) {
+      const u = frame.url();
+      const ts = new Date().toISOString();
+      addChainLine(`${ts} frame.url=${u}`);
+      if (isIdLoginUrl(u)) {
+        setDetected({ detected: true, rule: "A", ts, url: u });
+      } else if (isLoginJspUrl(u)) {
+        setDetected({ detected: true, rule: "B", ts, url: u });
+      }
+    }
+  };
+
+  const onResponse = async (resp: any) => {
+    try {
+      const req = resp.request();
+      const url = resp.url();
+      const status = resp.status();
+      const ts = new Date().toISOString();
+      const isNav = typeof req.isNavigationRequest === "function" ? req.isNavigationRequest() : false;
+      const rtype = typeof req.resourceType === "function" ? req.resourceType() : "unknown";
+
+      if (isNav || rtype === "document") {
+        if (isRedirectStatus(status)) {
+          const headers = resp.headers();
+          const locRaw = headers["location"] || headers["Location"];
+          const loc = authWallLocation(locRaw);
+          if (loc) {
+            if (!ruleCTrigger) {
+              const method = typeof req.method === "function" ? req.method() : "UNKNOWN";
+              ruleCTrigger = {
+                ts,
+                req: {
+                  ts,
+                  method,
+                  url: resp.url(),
+                  resourceType: rtype,
+                  isNavigationRequest: isNav
+                },
+                resp: {
+                  ts,
+                  status,
+                  url: resp.url(),
+                  location: loc,
+                  headerNames: Object.keys(headers).sort()
+                }
+              };
+            }
+            addChainLine(`${ts} status=${status} url=${resp.url()} location=${loc}`);
+            setDetected({ detected: true, rule: "C", ts, url, location: loc });
+          } else {
+            addChainLine(`${ts} status=${status} url=${resp.url()}`);
+          }
+        } else {
+          addChainLine(`${ts} status=${status} url=${resp.url()}`);
+        }
+      } else {
+        if (status === 401 || status === 403) {
+          if (nonfatal.length < 20) {
+            nonfatal.push({
+              ts,
+              url,
+              status,
+              resourceType: rtype,
+              isNavigationRequest: isNav,
+              hasLocation: false
+            });
+          }
+        }
+      }
+    } catch (_) {
+      // ignore
+    }
+  };
+
+  page.on("framenavigated", onFrameNav);
+  page.on("response", onResponse);
+
+  function flushArtifacts() {
+    const p21 = path.join(bundleDir, "21_nonfatal_401_log.json");
+    const p22 = path.join(bundleDir, "22_auth_wall_detector_summary.txt");
+    const p23 = path.join(bundleDir, "23_ruleC_trigger_request.json");
+    const p24 = path.join(bundleDir, "24_ruleC_trigger_response.json");
+    const p25 = path.join(bundleDir, "25_ruleC_redirect_chain.txt");
+
+    writeJsonSafe(p21, nonfatal);
+
+    if (detection.detected) {
+      const lines = [
+        "AUTH_WALL_DETECTED",
+        `rule=${detection.rule}`,
+        `ts=${detection.ts}`,
+        `url=${detection.url}`,
+      ];
+      if (detection.rule === "C" && detection.location) {
+        lines.push(`location=${detection.location}`);
+      }
+      writeTextSafe(p22, lines.join("\n") + "\n");
+    } else {
+      writeTextSafe(p22, "NO_AUTH_WALL_DETECTED\n");
+    }
+
+    // Write Rule C artifacts
+    if (ruleCTrigger) {
+      writeJsonSafe(p23, ruleCTrigger.req);
+      writeJsonSafe(p24, ruleCTrigger.resp);
+    }
+
+    // Write redirect chain
+    if (chain.length > 0 || ruleCTrigger) {
+      const chainContent = chain.length > 0 ? chain.join("\n") + "\n" : "NO_RULE_C_CHAIN_CAPTURED\n";
+      writeTextSafe(p25, chainContent);
+    } else {
+      writeTextSafe(p25, "NO_RULE_C_CHAIN_CAPTURED\n");
+    }
+  }
+
+  function dispose() {
+    page.off("framenavigated", onFrameNav);
+    page.off("response", onResponse);
+  }
+
+  function getDetection() {
+    return detection;
+  }
+
+  return { flushArtifacts, dispose, getDetection };
+}
+
 async function enforceAuthenticatedJiraSession(page: any, artifactDir: string, opts?: {timeoutMs?: number, pollMs?: number, expectedDashboardUrl?: string}): Promise<void> {
   const timeoutMs = opts?.timeoutMs ?? 45000;
   const pollMs = opts?.pollMs ?? 1000;
@@ -350,166 +574,215 @@ async function enforceAuthenticatedJiraSession(page: any, artifactDir: string, o
   const start = Date.now();
   const timeline: any[] = [];
 
-  // Fail-fast auth wall detection loop
-  while (Date.now() - start < timeoutMs) {
-    const pageUrl = page.url();
-    const title = await page.title().catch(() => 'TITLE_UNAVAILABLE');
-    const shell = await detectJiraShell(page);
-    const frameUrls = page.frames().map((f: any) => f.url());
-    const authFrames = frameUrls.filter(isAuthOrCaptchaFrameUrl);
+  // Install auth wall observers immediately
+  const obs = installAuthWallObservers(page, artifactDir);
 
-    // FAIL FAST #1: Top-level auth URL
-    if (isAuthUrl(pageUrl)) {
-      const evidence: any = {
-        ts: isoNow(),
-        pageUrl,
-        title,
-        reason: 'top_level_auth_url',
-        isAuthed: false,
-        authFrames,
-        frameUrls_sample: frameUrls.slice(0, 30),
-        shell,
-        timeline
-      };
-      await writeJson(`${artifactDir}/auth_check.json`, evidence);
-      await recordAuthRedirectStop({
-        artifactDir,
-        expectedUrl: expectedDashboardUrl,
-        observedUrl: pageUrl,
-        reason: 'top_level_auth_url',
-        page,
-      });
-      throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: top_level_auth_url. URL=${pageUrl}`);
-    }
-
-    // FAIL FAST #2: Auth wall title
-    if (isAuthWallTitle(title)) {
-      const domFingerprint = await collectDomFingerprint(page);
-      const evidence: any = {
-        ts: isoNow(),
-        pageUrl,
-        title,
-        reason: 'auth_wall_title',
-        isAuthed: false,
-        authFrames,
-        frameUrls_sample: frameUrls.slice(0, 30),
-        shell,
-        domFingerprint,
-        timeline
-      };
-      await writeJson(`${artifactDir}/auth_check.json`, evidence);
-      await recordAuthRedirectStop({
-        artifactDir,
-        expectedUrl: expectedDashboardUrl,
-        observedUrl: pageUrl,
-        reason: 'auth_wall_title',
-        page,
-        note: 'Auth wall title detected while verifying Jira shell',
-      });
-      throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: auth_wall_title. URL=${pageUrl}`);
-    }
-
-    // SUCCESS: Shell found
-    if (shell.present) {
-      const evidence: any = {
-        ts: isoNow(),
-        pageUrl,
-        title,
-        reason: 'jira_shell_present',
-        isAuthed: true,
-        authFrames,
-        frameUrls_sample: frameUrls.slice(0, 30),
-        shell,
-        timeline
-      };
-      await writeJson(`${artifactDir}/auth_check.json`, evidence);
-      return;
-    }
-
-    // FAIL FAST #3: DOM-based auth wall
-    const domFingerprint = await collectDomFingerprint(page);
-    const authWallByDom =
-      (domFingerprint.counts?.input_password > 0) ||
-      (domFingerprint.h1?.toLowerCase()?.includes('log in')) ||
-      (domFingerprint.body_snippet?.toLowerCase()?.includes('log in'));
-
-    if (authWallByDom) {
-      const evidence: any = {
-        ts: isoNow(),
-        pageUrl,
-        title,
-        reason: 'auth_wall_dom',
-        isAuthed: false,
-        authFrames,
-        frameUrls_sample: frameUrls.slice(0, 30),
-        shell,
-        domFingerprint,
-        timeline
-      };
-      await writeJson(`${artifactDir}/auth_check.json`, evidence);
-      await recordAuthRedirectStop({
-        artifactDir,
-        expectedUrl: expectedDashboardUrl,
-        observedUrl: pageUrl,
-        reason: 'auth_wall_dom',
-        page,
-        note: 'DOM fingerprint matches Atlassian login form',
-      });
-      throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: auth_wall_dom. URL=${pageUrl}`);
-    }
-
-    // Record timeline tick
-    const elapsed_ms = Date.now() - start;
-    timeline.push({
-      elapsed_ms,
-      pageUrl,
-      title,
-      shell_present: shell.present,
-      shell_matched_count: shell.matched.length,
-      authFrames_count: authFrames.length,
-      domCounts: domFingerprint.counts,
-      domH1: domFingerprint.h1
-    });
-
-    // Wait before next poll
-    await page.waitForTimeout(pollMs);
-  }
-
-  // TIMEOUT: Shell never appeared within timeoutMs
-  const finalPageUrl = page.url();
-  const finalTitle = await page.title().catch(() => 'TITLE_UNAVAILABLE');
-  const finalShell = await detectJiraShell(page);
-  const finalFrameUrls = page.frames().map((f: any) => f.url());
-  const finalAuthFrames = finalFrameUrls.filter(isAuthOrCaptchaFrameUrl);
-  const finalDomFingerprint = await collectDomFingerprint(page);
-
-  // Capture page snapshot
   try {
-    const pageContent = await page.content();
-    await writeHtml(`${artifactDir}/page_snapshot.html`, pageContent);
-    console.log(`[PROD_GREEN] Page snapshot saved to page_snapshot.html`);
-  } catch (e) {
-    console.log(`[PROD_GREEN] Failed to capture page snapshot: ${e}`);
+    // Fail-fast auth wall detection loop
+    while (Date.now() - start < timeoutMs) {
+      const pageUrl = page.url();
+      const title = await page.title().catch(() => 'TITLE_UNAVAILABLE');
+      const shell = await detectJiraShell(page);
+      const frameUrls = page.frames().map((f: any) => f.url());
+      const authFrames = frameUrls.filter(isAuthOrCaptchaFrameUrl);
+
+      // FAIL FAST #1: Top-level auth URL
+      if (isAuthUrl(pageUrl)) {
+        const evidence: any = {
+          ts: isoNow(),
+          pageUrl,
+          title,
+          reason: 'top_level_auth_url',
+          isAuthed: false,
+          authFrames,
+          frameUrls_sample: frameUrls.slice(0, 30),
+          shell,
+          timeline
+        };
+        await writeJson(`${artifactDir}/auth_check.json`, evidence);
+        await recordAuthRedirectStop({
+          artifactDir,
+          expectedUrl: expectedDashboardUrl,
+          observedUrl: pageUrl,
+          reason: 'top_level_auth_url',
+          page,
+        });
+        throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: top_level_auth_url. URL=${pageUrl}`);
+      }
+
+      // FAIL FAST #2: Auth wall title
+      if (isAuthWallTitle(title)) {
+        const domFingerprint = await collectDomFingerprint(page);
+        const evidence: any = {
+          ts: isoNow(),
+          pageUrl,
+          title,
+          reason: 'auth_wall_title',
+          isAuthed: false,
+          authFrames,
+          frameUrls_sample: frameUrls.slice(0, 30),
+          shell,
+          domFingerprint,
+          timeline
+        };
+        await writeJson(`${artifactDir}/auth_check.json`, evidence);
+        await recordAuthRedirectStop({
+          artifactDir,
+          expectedUrl: expectedDashboardUrl,
+          observedUrl: pageUrl,
+          reason: 'auth_wall_title',
+          page,
+          note: 'Auth wall title detected while verifying Jira shell',
+        });
+        throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: auth_wall_title. URL=${pageUrl}`);
+      }
+
+      // SUCCESS: Shell found - run stabilization window
+      if (shell.present) {
+        const evidence: any = {
+          ts: isoNow(),
+          pageUrl,
+          title,
+          reason: 'jira_shell_present',
+          isAuthed: true,
+          authFrames,
+          frameUrls_sample: frameUrls.slice(0, 30),
+          shell,
+          timeline
+        };
+        await writeJson(`${artifactDir}/auth_check.json`, evidence);
+
+        // Stabilization window: monitor for auth walls A/B/C
+        const stabilizeMs = 5000;
+        const stabilizeStart = Date.now();
+        const stabilizePoll = 200;
+
+        while (Date.now() - stabilizeStart < stabilizeMs) {
+          const currentUrl = page.url();
+          const det = obs.getDetection();
+
+          // Check rule A/B via current URL
+          if (isIdLoginUrl(currentUrl) || isLoginJspUrl(currentUrl)) {
+            const stopPath = path.join(artifactDir, 'STOP_ENFORCE_AUTH_WALL.txt');
+            const stopPayload = [
+              `ts=${isoNow()}`,
+              `rule=${isIdLoginUrl(currentUrl) ? 'A' : 'B'}`,
+              `url=${currentUrl}`,
+              'See 22_auth_wall_detector_summary.txt for details'
+            ].join('\\n');
+            fs.writeFileSync(stopPath, stopPayload + '\\n', 'utf8');
+            throw new Error('AUTH_WALL_DETECTED_DURING_STABILIZATION');
+          }
+
+          // Check rule C via observers
+          if (det.detected) {
+            const stopPath = path.join(artifactDir, 'STOP_ENFORCE_AUTH_WALL.txt');
+            const stopPayload = [
+              `ts=${isoNow()}`,
+              `rule=${det.rule}`,
+              `url=${det.url}`,
+              det.rule === 'C' && det.location ? `location=${det.location}` : '',
+              'See 22_auth_wall_detector_summary.txt for details'
+            ].filter(Boolean).join('\\n');
+            fs.writeFileSync(stopPath, stopPayload + '\\n', 'utf8');
+            throw new Error('AUTH_WALL_DETECTED_DURING_STABILIZATION');
+          }
+
+          await page.waitForTimeout(stabilizePoll);
+        }
+
+        // Stabilization passed
+        return;
+      }
+
+      // FAIL FAST #3: DOM-based auth wall
+      const domFingerprint = await collectDomFingerprint(page);
+      const authWallByDom =
+        (domFingerprint.counts?.input_password > 0) ||
+        (domFingerprint.h1?.toLowerCase()?.includes('log in')) ||
+        (domFingerprint.body_snippet?.toLowerCase()?.includes('log in'));
+
+      if (authWallByDom) {
+        const evidence: any = {
+          ts: isoNow(),
+          pageUrl,
+          title,
+          reason: 'auth_wall_dom',
+          isAuthed: false,
+          authFrames,
+          frameUrls_sample: frameUrls.slice(0, 30),
+          shell,
+          domFingerprint,
+          timeline
+        };
+        await writeJson(`${artifactDir}/auth_check.json`, evidence);
+        await recordAuthRedirectStop({
+          artifactDir,
+          expectedUrl: expectedDashboardUrl,
+          observedUrl: pageUrl,
+          reason: 'auth_wall_dom',
+          page,
+          note: 'DOM fingerprint matches Atlassian login form',
+        });
+        throw new Error(`AUTH_REQUIRED_OR_CAPTCHA_BLOCK: auth_wall_dom. URL=${pageUrl}`);
+      }
+
+      // Record timeline tick
+      const elapsed_ms = Date.now() - start;
+      timeline.push({
+        elapsed_ms,
+        pageUrl,
+        title,
+        shell_present: shell.present,
+        shell_matched_count: shell.matched.length,
+        authFrames_count: authFrames.length,
+        domCounts: domFingerprint.counts,
+        domH1: domFingerprint.h1
+      });
+
+      // Wait before next poll
+      await page.waitForTimeout(pollMs);
+    }
+
+    // TIMEOUT: Shell never appeared within timeoutMs
+    const finalPageUrl = page.url();
+    const finalTitle = await page.title().catch(() => 'TITLE_UNAVAILABLE');
+    const finalShell = await detectJiraShell(page);
+    const finalFrameUrls = page.frames().map((f: any) => f.url());
+    const finalAuthFrames = finalFrameUrls.filter(isAuthOrCaptchaFrameUrl);
+    const finalDomFingerprint = await collectDomFingerprint(page);
+
+    // Capture page snapshot
+    try {
+      const pageContent = await page.content();
+      await writeHtml(`${artifactDir}/page_snapshot.html`, pageContent);
+      console.log(`[PROD_GREEN] Page snapshot saved to page_snapshot.html`);
+    } catch (e) {
+      console.log(`[PROD_GREEN] Failed to capture page snapshot: ${e}`);
+    }
+
+    // Write final auth_check with comprehensive evidence
+    const evidence: any = {
+      ts: isoNow(),
+      pageUrl: finalPageUrl,
+      title: finalTitle,
+      reason: 'shell_never_appeared_within_timeout',
+      isAuthed: false,
+      authFrames: finalAuthFrames,
+      frameUrls_sample: finalFrameUrls.slice(0, 30),
+      shell: finalShell,
+      domFingerprint: finalDomFingerprint,
+      timeline,
+      timeoutMs,
+      actualWaitMs: Date.now() - start
+    };
+    await writeJson(`${artifactDir}/auth_check.json`, evidence);
+
+    throw new Error(`JIRA_SHELL_NOT_FOUND: shell_never_appeared_within_timeout after ${timeoutMs}ms. URL=${finalPageUrl}`);
+  } finally {
+    obs.flushArtifacts();
+    obs.dispose();
   }
-
-  // Write final auth_check with comprehensive evidence
-  const evidence: any = {
-    ts: isoNow(),
-    pageUrl: finalPageUrl,
-    title: finalTitle,
-    reason: 'shell_never_appeared_within_timeout',
-    isAuthed: false,
-    authFrames: finalAuthFrames,
-    frameUrls_sample: finalFrameUrls.slice(0, 30),
-    shell: finalShell,
-    domFingerprint: finalDomFingerprint,
-    timeline,
-    timeoutMs,
-    actualWaitMs: Date.now() - start
-  };
-  await writeJson(`${artifactDir}/auth_check.json`, evidence);
-
-  throw new Error(`JIRA_SHELL_NOT_FOUND: shell_never_appeared_within_timeout after ${timeoutMs}ms. URL=${finalPageUrl}`);
 }
 
 // Production dashboard green test: verifies the new 40-hex bundle is deployed
