@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 import fs from "fs";
 import path from "path";
 import { captureRuleCArtifactsSafe } from "../utils/ruleC_observer_safe";
-import { detectAuthWallEvidence } from "../utils/auth_wall_detector";
+import { detectAuthWallEvidence, RULEC_AUTH_URL_MATCHERS } from "../utils/auth_wall_detector";
 
 /**
  * PROD DASHBOARD RULE-C PROOF (Deterministic Marketplace Test)
@@ -36,16 +36,15 @@ function writeText(p: string, s: string) {
 }
 
 test("PROD DASHBOARD RULE-C PROOF (deterministic): PASS on auth wall + safe artifacts", async ({ page }) => {
-  // Contract: Environment variables must be set
+  // Contract: Environment variable must be set
   const JIRA_DASHBOARD_URL = process.env.JIRA_DASHBOARD_URL;
-  const RULEC_TRIGGER_SUBSTR = process.env.RULEC_TRIGGER_SUBSTR;
   
   if (!JIRA_DASHBOARD_URL) {
     throw new Error("MISSING_ENV_JIRA_DASHBOARD_URL");
   }
-  if (!RULEC_TRIGGER_SUBSTR) {
-    throw new Error("MISSING_ENV_RULEC_TRIGGER_SUBSTR");
-  }
+
+  // CODE-AUTHORITATIVE Rule-C trigger (no env var - deterministic from checkout)
+  const RULEC_TRIGGER_SUBSTR = RULEC_AUTH_URL_MATCHERS[0];
 
   // Create deterministic bundle directory
   const bundleDir = `/tmp/prod_dashboard_rulec_proof_${utcStampForPath()}`;
@@ -53,13 +52,13 @@ test("PROD DASHBOARD RULE-C PROOF (deterministic): PASS on auth wall + safe arti
   
   console.log(`[RULEC_PROOF] Bundle directory: ${bundleDir}`);
   console.log(`[RULEC_PROOF] JIRA_DASHBOARD_URL=${JIRA_DASHBOARD_URL}`);
-  console.log(`[RULEC_PROOF] RULEC_TRIGGER_SUBSTR=${RULEC_TRIGGER_SUBSTR}`);
+  console.log(`[RULEC_PROOF] RULEC_TRIGGER_SUBSTR=${RULEC_TRIGGER_SUBSTR} (code-authoritative)`);
 
   // Write contract evidence
   writeText(path.join(bundleDir, "00_bundle_dir.txt"), `bundleDir=${bundleDir}\n`);
   writeText(
     path.join(bundleDir, "01_contract.txt"),
-    `JIRA_DASHBOARD_URL=${JIRA_DASHBOARD_URL}\nRULEC_TRIGGER_SUBSTR=${RULEC_TRIGGER_SUBSTR}\n`
+    `JIRA_DASHBOARD_URL=${JIRA_DASHBOARD_URL}\nRULEC_TRIGGER_SUBSTR=${RULEC_TRIGGER_SUBSTR} (code-authoritative from RULEC_AUTH_URL_MATCHERS[0])\n`
   );
 
   // Install safe Rule-C observer

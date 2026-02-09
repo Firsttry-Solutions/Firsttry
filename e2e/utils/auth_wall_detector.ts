@@ -16,6 +16,16 @@ import type { Page } from "@playwright/test";
  * - Title-based: Title contains "log in", "login", "sign in", or "verify"
  */
 
+/**
+ * CODE-AUTHORITATIVE Rule-C trigger URL matchers.
+ * These MUST match the exact substrings used in detection logic below.
+ * NO env vars - deterministic from code checkout.
+ */
+export const RULEC_AUTH_URL_MATCHERS = [
+  "id.atlassian.com/login",
+  "/login.jsp"
+] as const;
+
 // URL pattern checkers (copied from prod_dashboard_green.spec.ts)
 function isIdLoginUrl(u: string): boolean {
   return (u || '').includes("id.atlassian.com/login");
