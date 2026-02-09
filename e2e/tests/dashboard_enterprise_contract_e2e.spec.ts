@@ -63,7 +63,7 @@ test.describe('Enterprise Contract Dashboard', () => {
     console.log('[TEST] Recording expected HEAD short SHA from git...');
     let expectedHeadShortSha = '';
     try {
-      expectedHeadShortSha = execSync('git rev-parse --short HEAD', { 
+      expectedHeadShortSha = execSync('git rev-parse --short=7 HEAD', { 
         cwd: '/workspaces/Firsttry',
         encoding: 'utf8' 
       }).trim();
@@ -122,106 +122,114 @@ test.describe('Enterprise Contract Dashboard', () => {
     deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK (BACKEND AUTHORITATIVE) ===\n\n');
     deploymentCheckResults.push(`Expected HEAD SHA: ${expectedHeadShortSha}\n\n`);
     
-    // NEW APPROACH: Call backend resolver directly to get authoritative build identity
+    // REQUIRED: Backend identity webtrigger URL from environment
+    // NO GUESSING - URL must be provided by Forge CLI: forge webtrigger create -f backend-identity-trigger
+    const BACKEND_IDENTITY_WEBTRIGGER_URL = process.env.BACKEND_IDENTITY_WEBTRIGGER_URL;
+    
+    if (!BACKEND_IDENTITY_WEBTRIGGER_URL) {
+      const stopMsg = [
+        'STOP: BACKEND_IDENTITY_URL_MISSING',
+        '',
+        'Environment variable BACKEND_IDENTITY_WEBTRIGGER_URL is not set.',
+        '',
+        'This URL must be obtained from Forge CLI:',
+        '  forge webtrigger create -f backend-identity-trigger -e production \\',
+        '    -s firsttry.atlassian.net -p jira',
+        '',
+        'Then pass it to this test via:',
+        '  BACKEND_IDENTITY_WEBTRIGGER_URL="<url>" npx playwright test ...',
+        '',
+        'NO GUESSING. URL must be authoritative.',
+      ].join('\n');
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_BACKEND_IDENTITY_URL_MISSING.txt'), stopMsg);
+      console.error('[TEST] STOP_BACKEND_IDENTITY_URL_MISSING');
+      throw new Error('STOP_BACKEND_IDENTITY_URL_MISSING: env var not set');
+    }
+    
+    console.log(`[TEST] Backend identity URL: ${BACKEND_IDENTITY_WEBTRIGGER_URL}`);
+    deploymentCheckResults.push(`Backend identity URL: ${BACKEND_IDENTITY_WEBTRIGGER_URL}\n\n`);
+    
+    // Call backend webtrigger to get authoritative build identity
     // This bypasses CDN caching issues with frontend console logs and buildinfo.json
     let backendShortSha = '';
     let backendFullSha = '';
     let backendBuildTime = '';
     
     try {
-      deploymentCheckResults.push('Calling backend resolver getBackendBuildIdentity...\n');
+      deploymentCheckResults.push('Calling backend webtrigger for build identity...\n');
       
-      // Invoke the backend resolver through the Forge bridge
-      // This requires the gadget iframe to be loaded so we can access the bridge
-      console.log('[TEST] Waiting for gadget iframe to establish Forge bridge...');
-      await page.waitForSelector('iframe', { timeout: 90000 });
-      await page.waitForTimeout(2000); // Give bridge time to initialize
-      
-      // Get backend identity by invoking the resolver from the page context
-      const backendIdentity = await page.evaluate(async () => {
-        // Access all iframes and find the one with Forge bridge
-        const frames = Array.from(document.querySelectorAll('iframe'));
-        for (const frame of frames) {
-          try {
-            const frameWindow = frame.contentWindow as any;
-            if (frameWindow && frameWindow.AP && frameWindow.AP.context) {
-              // Found the Forge gadget iframe with AP bridge
-              // Use the bridge to invoke the resolver
-              const result = await new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => reject(new Error('Backend identity resolver timeout')), 30000);
-                frameWindow.AP.context.getToken((token: string) => {
-                  clearTimeout(timeout);
-                  // Call the resolver through Forge API
-                  frameWindow.AP.request({
-                    url: '/invoke',
-                    type: 'POST',
-                    data: JSON.stringify({
-                      key: 'getBackendBuildIdentity',
-                      payload: {}
-                    }),
-                    contentType: 'application/json',
-                    success: (response: any) => {
-                      try {
-                        const data = typeof response === 'string' ? JSON.parse(response) : response;
-                        resolve(data);
-                      } catch (e: any) {
-                        reject(new Error(`Failed to parse backend identity response: ${e.message}`));
-                      }
-                    },
-                    error: (xhr: any) => {
-                      reject(new Error(`Backend identity resolver error: ${xhr.status} ${xhr.statusText}`));
-                    }
-                  });
-                });
-              });
-              return result;
-            }
-          } catch (e: any) {
-            // Try next frame
-            continue;
+      // Fetch backend identity using the authoritative URL from environment
+      const backendIdentity = await page.evaluate(async (url: string) => {
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            return { 
+              success: false, 
+              error: `HTTP ${response.status}: ${response.statusText}` 
+            };
           }
+          
+          const data = await response.json();
+          return { success: true, data };
+          
+        } catch (e: any) {
+          return { 
+            success: false, 
+            error: `Fetch failed: ${e.message}` 
+          };
         }
-        throw new Error('No Forge gadget iframe found with AP bridge');
-      });
+      }, BACKEND_IDENTITY_WEBTRIGGER_URL);
       
-      backendShortSha = (backendIdentity as any).gitShaShort || '';
-      backendFullSha = (backendIdentity as any).gitShaFull || '';
-      backendBuildTime = (backendIdentity as any).buildTimeUtc || '';
+      if (!backendIdentity.success) {
+        throw new Error(backendIdentity.error || 'Backend identity fetch failed');
+      }
       
-      deploymentCheckResults.push(`✓ Backend resolver called successfully\n`);
+      const data = backendIdentity.data;
+      backendShortSha = data.gitShaShort || '';
+      backendFullSha = data.gitShaFull || '';
+      backendBuildTime = data.buildTimeUtc || data.buildUtc || '';
+      
+      deploymentCheckResults.push(`✓ Backend webtrigger called successfully\n`);
       deploymentCheckResults.push(`  Backend SHA (short): ${backendShortSha}\n`);
       deploymentCheckResults.push(`  Backend SHA (full): ${backendFullSha}\n`);
       deploymentCheckResults.push(`  Backend build time: ${backendBuildTime}\n`);
       
-      // Emit markers for tooling
+      // Emit unambiguous markers for tooling
       console.log(`EXPECTED_SHA_SHORT=${expectedHeadShortSha}`);
       console.log(`BACKEND_SHA_SHORT=${backendShortSha}`);
       console.log(`BACKEND_BUILD_UTC=${backendBuildTime}`);
+      console.log(`BACKEND_IDENTITY_URL=${BACKEND_IDENTITY_WEBTRIGGER_URL}`);
       
     } catch (error: any) {
       deploymentCheckResults.push(`✗ Failed to get backend identity: ${error.message}\n`);
       fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
       
       const stopMsg = [
-        'STOP: BACKEND IDENTITY RESOLVER FAILED',
+        'STOP: BACKEND IDENTITY WEBTRIGGER FAILED',
         '',
         `Expected HEAD short SHA: ${expectedHeadShortSha}`,
-        'Backend SHA: RESOLVER_FAILED',
+        'Backend SHA: WEBTRIGGER_FAILED',
         `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
         `Error: ${error.message}`,
         '',
-        'Could not call backend identity resolver.',
+        'Could not call backend identity webtrigger.',
         'This means either:',
-        '  1. The gadget iframe failed to load',
-        '  2. The Forge bridge (AP object) is not available',
-        '  3. The resolver is not registered in manifest',
-        '  4. Network error calling /invoke endpoint',
+        '  1. The webtrigger is not deployed',
+        '  2. The webtrigger URL is incorrect',
+        '  3. Network error reaching the webtrigger',
+        '  4. Forge platform issue',
         '',
-        'ACTION: Check that gadget loads and Forge bridge is available.',
+        'ACTION: Verify webtrigger is registered in manifest and deployed.',
       ].join('\n');
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_BACKEND_IDENTITY_RESOLVER_FAILED.txt'), stopMsg);
-      console.error('[TEST] STOP_BACKEND_IDENTITY_RESOLVER_FAILED:', error.message);
-      throw new Error(`STOP_BACKEND_IDENTITY_RESOLVER_FAILED: ${error.message}`);
+      fs.writeFileSync(path.join(RUN_DIR, 'STOP_BACKEND_IDENTITY_WEBTRIGGER_FAILED.txt'), stopMsg);
+      console.error('[TEST] STOP_BACKEND_IDENTITY_WEBTRIGGER_FAILED:', error.message);
+      throw new Error(`STOP_BACKEND_IDENTITY_WEBTRIGGER_FAILED: ${error.message}`);
     }
     
     deploymentCheckResults.push(`\nBackend short SHA: ${backendShortSha}\n`);
