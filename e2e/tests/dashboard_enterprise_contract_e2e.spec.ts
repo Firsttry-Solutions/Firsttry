@@ -13,6 +13,7 @@ import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
+import { ensureRunDir, ensureFileExists } from '../utils/e2e_run_dir';
 
 // Use persistent auth
 test.use({
@@ -27,30 +28,23 @@ test.describe('Enterprise Contract Dashboard', () => {
   let consoleMessages: Array<{type: string, text: string, location?: string}> = [];
   
   test.beforeEach(async () => {
-    // Get output directory from E2E_OUTPUT_DIR or RUN_DIR environment variable
-    if (process.env.E2E_OUTPUT_DIR) {
-      RUN_DIR = process.env.E2E_OUTPUT_DIR;
-      console.log(`[TEST] Using E2E_OUTPUT_DIR: ${RUN_DIR}`);
-    } else if (process.env.RUN_DIR) {
-      RUN_DIR = process.env.RUN_DIR;
-      console.log(`[TEST] Using RUN_DIR from env: ${RUN_DIR}`);
-    } else {
-      const runDirPath = '/tmp/current_contract_run_dir.txt';
-      if (!fs.existsSync(runDirPath)) {
-        console.error('[TEST] STOP_NO_RUN_DIR: No E2E_OUTPUT_DIR, RUN_DIR env var, or /tmp/current_contract_run_dir.txt found');
-        throw new Error('STOP_NO_RUN_DIR');
-      }
-      RUN_DIR = fs.readFileSync(runDirPath, 'utf8').trim();
-      console.log(`[TEST] Using RUN_DIR from file: ${RUN_DIR}`);
+    // Create self-contained RUN_DIR (no external setup required)
+    RUN_DIR = ensureRunDir("dashboard_enterprise_contract");
+    fs.writeFileSync(path.join(RUN_DIR, '00_test_run_dir.txt'), `TEST_RUN_DIR=${RUN_DIR}\n`, 'utf8');
+    console.log(`[TEST] Created TEST_RUN_DIR: ${RUN_DIR}`);
+    
+    // Validate required env vars (fail-closed)
+    if (!process.env.JIRA_DASHBOARD_URL) {
+      const stopFile = path.join(RUN_DIR, 'STOP_ENV_MISSING_JIRA_DASHBOARD_URL.txt');
+      fs.writeFileSync(stopFile, 'STOP_ENV_MISSING_JIRA_DASHBOARD_URL: JIRA_DASHBOARD_URL must be set\n', 'utf8');
+      throw new Error('STOP_ENV_MISSING_JIRA_DASHBOARD_URL');
     }
     
-    if (!RUN_DIR) {
-      throw new Error('STOP_NO_RUN_DIR: Output directory not configured');
-    }
-    
-    if (!fs.existsSync(RUN_DIR)) {
-      fs.mkdirSync(RUN_DIR, { recursive: true });
-    }
+    // Validate auth file exists (fail-closed)
+    const authFile = path.join(__dirname, '../.auth/storageState.persistent.json');
+    const stopAuthFile = path.join(RUN_DIR, 'STOP_AUTH_FILE_MISSING.txt');
+    ensureFileExists(authFile, stopAuthFile);
+    console.log(`[TEST] Validated auth file: ${authFile}`);
   });
   
   test.afterEach(async ({ page }) => {
