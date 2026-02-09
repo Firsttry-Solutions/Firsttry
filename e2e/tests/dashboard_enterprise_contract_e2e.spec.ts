@@ -1021,7 +1021,7 @@ test.describe('Enterprise Contract Dashboard', () => {
     sanityResults.push('\n--- Evidence Metadata Validation ---\n');
     
     // Check 3: Freshness must be one of expected labels (including Unknown for invalid dates)
-    const freshnessMatch = domText.match(/Freshness:\s*([^\n]+?)(?:\n|$)/);
+    const freshnessMatch = domText.match(/Freshness:?\s*([^\n]+?)(?:\n|$)/);
     if (freshnessMatch) {
       const freshnessValue = freshnessMatch[1].trim();
       const validFreshness = ['Fresh', 'Stale', 'Out of date', 'Unknown'];
@@ -1037,7 +1037,7 @@ test.describe('Enterprise Contract Dashboard', () => {
     }
     
     // Check 4: Evidence age must exist and be either numeric or "Unknown"
-    const ageMatch = domText.match(/Evidence age:\s*([^\n]+?)(?:\n|$)/);
+    const ageMatch = domText.match(/Evidence age:?\s*([^\n]+?)(?:\n|$)/);
     if (ageMatch) {
       const ageValue = ageMatch[1].trim();
       // Valid: "Unknown" or "X day(s)" format
