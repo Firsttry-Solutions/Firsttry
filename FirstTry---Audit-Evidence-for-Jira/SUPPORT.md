@@ -8,7 +8,7 @@
 
 ## Support Contact
 
-**Email**: `SUPPORT_EMAIL` *(operator must replace this placeholder)*
+**Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*
 
 ---
 
@@ -129,7 +129,7 @@ For critical production issues, include **[URGENT]** in email subject line.
 To report a security vulnerability:
 
 1. **Do NOT use public channels** (e.g., Marketplace reviews, public forums)
-2. Email `SUPPORT_EMAIL` with subject line: **[SECURITY] Vulnerability Report**
+2. Email `support@firsttry-solutions.com` with subject line: **[SECURITY] Vulnerability Report**
 3. Include:
    - Description of vulnerability
    - Steps to reproduce
@@ -146,7 +146,7 @@ To request new features:
 
 1. Visit Atlassian Marketplace app listing
 2. Submit feedback via Marketplace feedback mechanism
-3. Or email `SUPPORT_EMAIL` with subject line: **[FEATURE REQUEST]**
+3. Or email `support@firsttry-solutions.com` with subject line: **[FEATURE REQUEST]**
 
 **Note**: Feature requests are not covered by support response time commitments.
 
@@ -162,6 +162,6 @@ To request new features:
 
 ---
 
-**Support Email**: `SUPPORT_EMAIL` *(operator must replace this placeholder)*  
+**Support Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*  
 **Acknowledgment Time**: Within 2 business days  
 **Last Updated**: 2026-02-10

@@ -121,7 +121,7 @@ See [PRIVACY_POLICY.md](PRIVACY_POLICY.md) for detailed privacy information.
 
 ## Support
 
-**Support Email**: `SUPPORT_EMAIL` *(operator must replace this placeholder)*
+**Support Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*
 
 **Response Time**: Support requests acknowledged within 2 business days.
 
