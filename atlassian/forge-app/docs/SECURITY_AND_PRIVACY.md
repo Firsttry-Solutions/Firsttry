@@ -109,7 +109,7 @@ function wrapJiraGetForInstrumentation(requestJiraFn) {
 
 ### Token Refresh
 
-FirstTry includes a scheduled token refresh job every 12 hours to prevent OAuth expiry.
+FirstTry includes a scheduled token refresh job hourly to prevent OAuth expiry.
 
 **File**: `src/scheduled/token_refresh_scheduler.handle`  
 **Manifest**: `manifest.yml` (line 34, key: `token-refresh-job-fn`)  

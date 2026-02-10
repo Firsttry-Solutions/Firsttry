@@ -55,7 +55,7 @@ FirstTry tracks:
 - **Scopes**: Only `read:jira-work` + `storage:app` (minimal)
 - **Storage**: Encrypted Forge Storage (Atlassian-managed)
 - **Retention**: Automatic cleanup after 90 days
-- **Tests**: 1243 tests pass, zero npm vulnerabilities
+- **Tests**: 1333 tests pass, zero npm vulnerabilities
 - **External**: Zero external API calls
 
 ### For Who?
