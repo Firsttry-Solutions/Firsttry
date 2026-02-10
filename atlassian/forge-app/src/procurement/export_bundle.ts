@@ -110,7 +110,7 @@ function generateComplianceFactSheet(): string {
 
 FirstTry is an Atlassian Jira Cloud Forge App providing governance automation with forensic-grade evidence and regeneration guarantees.
 
-**NOT A:** Security dashboard, access control system, encryption tool, AI system  
+**NOT A:** Security dashboard, access control system, encryption tool  
 **IS A:** Evidence store, determinism verifier, immutability ledger, audit trail  
 
 ---
