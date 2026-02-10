@@ -4,7 +4,7 @@
 # Schema: Forge CLI v12+ for Jira Cloud
 
 app:
-  id: ari:cloud:ecosystem::app/NEW_APP_ID_REQUIRED
+  id: ari:cloud:ecosystem::app/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc
   description: FirstTry - Audit Evidence Dashboard Gadget for Jira
   runtime:
     name: nodejs20.x
