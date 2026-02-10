@@ -26,14 +26,44 @@ console.log(`[BACKEND_BUILD_IDENTITY] output_file=${GENERATED_FILE}`);
 
 try {
   // ============================================================================
-  // STEP 1: Get git SHA (full 40 characters)
+  // STEP 1: Get git SHA (full 40 characters, meta-aware)
   // ============================================================================
-  console.log('[BACKEND_BUILD_IDENTITY] Executing: git rev-parse HEAD');
-  let gitSha;
+  // Check if HEAD is a freeze lock meta commit (only changes FREEZE_LOCK.json)
+  console.log('[BACKEND_BUILD_IDENTITY] Checking if HEAD is a freeze lock meta commit...');
+  let isFreezeMetaCommit = false;
+  let actualHeadSha;
+  
   try {
-    gitSha = execSync('git rev-parse HEAD', { encoding: 'utf-8', cwd: REPO_ROOT }).trim();
+    actualHeadSha = execSync('git rev-parse HEAD', { encoding: 'utf-8', cwd: REPO_ROOT }).trim();
+    const changedFiles = execSync('git diff-tree -r --no-commit-id --name-only HEAD', { 
+      encoding: 'utf-8', 
+      cwd: REPO_ROOT 
+    }).trim().split('\n').filter(f => f);
+    
+    isFreezeMetaCommit = changedFiles.length === 1 && 
+      changedFiles[0] === 'atlassian/forge-app/audit/marketplace_submission/FREEZE_LOCK.json';
+    
+    if (isFreezeMetaCommit) {
+      console.log('[BACKEND_BUILD_IDENTITY] ✓ HEAD is a freeze lock meta commit');
+    } else {
+      console.log('[BACKEND_BUILD_IDENTITY] ✓ HEAD is a code commit');
+    }
   } catch (err) {
-    console.error('[BACKEND_BUILD_IDENTITY] FAIL: git rev-parse HEAD failed');
+    console.error('[BACKEND_BUILD_IDENTITY] FAIL: git commands failed');
+    console.error(err.message);
+    process.exit(1);
+  }
+  
+  // If HEAD is a freeze lock meta commit, use HEAD~1 (the actual code commit)
+  // Otherwise use HEAD directly
+  let gitSha;
+  let commitRef = isFreezeMetaCommit ? 'HEAD~1' : 'HEAD';
+  
+  console.log(`[BACKEND_BUILD_IDENTITY] Executing: git rev-parse ${commitRef}`);
+  try {
+    gitSha = execSync(`git rev-parse ${commitRef}`, { encoding: 'utf-8', cwd: REPO_ROOT }).trim();
+  } catch (err) {
+    console.error(`[BACKEND_BUILD_IDENTITY] FAIL: git rev-parse ${commitRef} failed`);
     console.error(err.message);
     process.exit(1);
   }
@@ -43,7 +73,7 @@ try {
     console.error(`[BACKEND_BUILD_IDENTITY] FAIL: Invalid git SHA format: ${gitSha}`);
     process.exit(1);
   }
-  console.log(`[BACKEND_BUILD_IDENTITY] ✓ git_sha=${gitSha}`);
+  console.log(`[BACKEND_BUILD_IDENTITY] ✓ git_sha=${gitSha} (${isFreezeMetaCommit ? 'from HEAD~1' : 'from HEAD'})`);
 
   // Short form: first 7 characters
   const gitShaShort = gitSha.substring(0, 7);
@@ -52,12 +82,12 @@ try {
   // ============================================================================
   // STEP 2: Get build time UTC from git commit (ISO-8601)
   // ============================================================================
-  console.log('[BACKEND_BUILD_IDENTITY] Executing: git show -s --format=%cI HEAD');
+  console.log(`[BACKEND_BUILD_IDENTITY] Executing: git show -s --format=%cI ${commitRef}`);
   let buildTimeUtc;
   try {
-    buildTimeUtc = execSync('git show -s --format=%cI HEAD', { encoding: 'utf-8', cwd: REPO_ROOT }).trim();
+    buildTimeUtc = execSync(`git show -s --format=%cI ${commitRef}`, { encoding: 'utf-8', cwd: REPO_ROOT }).trim();
   } catch (err) {
-    console.error('[BACKEND_BUILD_IDENTITY] FAIL: git show -s --format=%cI HEAD failed');
+    console.error(`[BACKEND_BUILD_IDENTITY] FAIL: git show -s --format=%cI ${commitRef} failed`);
     console.error(err.message);
     process.exit(1);
   }
