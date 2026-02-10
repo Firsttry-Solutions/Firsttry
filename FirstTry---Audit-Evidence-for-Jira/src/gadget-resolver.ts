@@ -873,9 +873,9 @@ async function ft_getRuntimeProof_v1(request: any): Promise<any> {
     // Use Jira REST API to verify global ADMINISTER permission
     let isAdmin = false;
     try {
-      const resp = await api.asUser().requestJira(async (client: any) => {
+      const resp = await api.asUser().requestJira((async (client: any) => {
         return await client.get('/rest/api/3/mypermissions?permissions=ADMINISTER');
-      });
+      }) as any);
       const permissions = (resp as any)?.permissions || [];
       isAdmin = permissions.some((p: any) => p.key === 'ADMINISTER' && p.havePermission === true);
     } catch (e) {
