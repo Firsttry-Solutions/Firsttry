@@ -1,3 +1,8 @@
+---
+title: Support
+permalink: /support/
+---
+
 > **Source of truth**  
 > This document mirrors the content used for Atlassian Marketplace review.  
 > Any functional claims are constrained by the app manifest, scopes, and runtime behavior.
