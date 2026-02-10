@@ -1,0 +1,41 @@
+---
+# Atlassian Forge App Manifest - FirstTry Marketplace App
+# Dashboard Gadget for Jira Audit Evidence
+# Schema: Forge CLI v12+ for Jira Cloud
+
+app:
+  id: ari:cloud:ecosystem::app/NEW_APP_ID_REQUIRED
+  description: FirstTry - Audit Evidence Dashboard Gadget for Jira
+  runtime:
+    name: nodejs20.x
+
+# Modules
+modules:
+  # Dashboard Gadget (Bundled UI via Vite)
+  # REQUIREMENT: Must run as Custom UI resource within Jira dashboard context.
+  # Forge bridge (@forge/bridge) is injected by the Jira Custom UI runtime.
+  jira:dashboardGadget:
+    - key: governance-dashboard-gadget-v2
+      title: "FirstTry: Audit Evidence for Jira"
+      description: FirstTry Governance - real-time status overview
+      resource: govGadget2141
+      resolver:
+        function: get-status-snapshot-fn
+      thumbnail: https://www.atlassian.com/favicon.ico
+
+  # Function modules
+  function:
+    # Canonical gadget handler: Forge Resolver for all UI invocations
+    - key: get-status-snapshot-fn
+      handler: gadget-resolver.handler
+
+# Permissions
+permissions:
+  scopes:
+    - storage:app
+    - read:jira-work
+
+# Resources
+resources:
+  - key: govGadget2141
+    path: src/gadget-ui/dist

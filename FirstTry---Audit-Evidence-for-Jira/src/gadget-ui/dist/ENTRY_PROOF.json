@@ -1,0 +1,6 @@
+{
+  "build_sha": "613fb705d58d70101c16b549dfac2b73a69dea61",
+  "entry_filename": "app.613fb705d58d70101c16b549dfac2b73a69dea61.js",
+  "cache_bust_method": "filename-based",
+  "verification": "Filename must be unique per build; different SHA guarantees cache miss"
+}
