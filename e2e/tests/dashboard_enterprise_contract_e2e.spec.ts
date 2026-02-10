@@ -62,12 +62,15 @@ test.describe('Enterprise Contract Dashboard', () => {
     // === PHASE 2A: RECORD EXPECTED HEAD SHORT SHA ===
     console.log('[TEST] Recording expected HEAD short SHA from git...');
     let expectedHeadShortSha = '';
+    let actualHeadSha = '';
+    let isFreezeMetaCommit = false;
     try {
-      expectedHeadShortSha = execSync('git rev-parse --short=7 HEAD', { 
+      actualHeadSha = execSync('git rev-parse --short=7 HEAD', { 
         cwd: '/workspaces/Firsttry',
         encoding: 'utf8' 
       }).trim();
-      console.log(`[TEST] Expected HEAD short SHA: ${expectedHeadShortSha}`);
+      expectedHeadShortSha = actualHeadSha;
+      console.log(`[TEST] Actual HEAD short SHA: ${actualHeadSha}`);
       
       // Check if HEAD is a freeze lock meta commit (only changes FREEZE_LOCK.json)
       const changedFiles = execSync('git diff-tree -r --no-commit-id --name-only HEAD', {
@@ -75,7 +78,7 @@ test.describe('Enterprise Contract Dashboard', () => {
         encoding: 'utf8'
       }).trim().split('\n').filter(f => f);
       
-      const isFreezeMetaCommit = changedFiles.length === 1 && 
+      isFreezeMetaCommit = changedFiles.length === 1 && 
         changedFiles[0] === 'atlassian/forge-app/audit/marketplace_submission/FREEZE_LOCK.json';
       
       if (isFreezeMetaCommit) {
@@ -83,7 +86,8 @@ test.describe('Enterprise Contract Dashboard', () => {
           cwd: '/workspaces/Firsttry',
           encoding: 'utf8'
         }).trim();
-        console.log(`[TEST] HEAD is freeze lock meta commit. Using parent SHA: ${parentSha}`);
+        console.log(`[TEST] HEAD is freeze lock meta commit. Preferring parent SHA: ${parentSha}`);
+        console.log(`[TEST] Will accept either ${parentSha} (code) or ${actualHeadSha} (meta)`);
         expectedHeadShortSha = parentSha;
       }
       
@@ -279,11 +283,16 @@ test.describe('Enterprise Contract Dashboard', () => {
     }
     
     // GATE: If backend SHA != expected HEAD SHA (CRITICAL DEPLOYMENT GATE)
-    if (backendShortSha !== expectedHeadShortSha) {
+    // When HEAD is a meta commit, accept either the code commit SHA or the meta commit SHA
+    const acceptableBackendShas = isFreezeMetaCommit 
+      ? [expectedHeadShortSha, actualHeadSha]  // Accept both code commit and meta commit SHA
+      : [expectedHeadShortSha];                // Accept only the expected SHA
+    
+    if (!acceptableBackendShas.includes(backendShortSha)) {
       const stopMsg = [
         'STOP: NOT DEPLOYED (BACKEND)',
         '',
-        `Expected HEAD short SHA: ${expectedHeadShortSha}`,
+        `Expected SHA(s): ${acceptableBackendShas.join(' or ')}`,
         `Backend short SHA: ${backendShortSha}`,
         `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
         '',
@@ -300,12 +309,13 @@ test.describe('Enterprise Contract Dashboard', () => {
         '  3. Re-run this test',
       ].join('\n');
       fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED_BACKEND.txt'), stopMsg);
-      console.error(`[TEST] STOP_NOT_DEPLOYED_BACKEND: Expected ${expectedHeadShortSha}, got ${backendShortSha}`);
-      throw new Error(`STOP_NOT_DEPLOYED_BACKEND: backend SHA (${backendShortSha}) != HEAD (${expectedHeadShortSha})`);
+      console.error(`[TEST] STOP_NOT_DEPLOYED_BACKEND: Expected ${acceptableBackendShas.join(' or ')}, got ${backendShortSha}`);
+      throw new Error(`STOP_NOT_DEPLOYED_BACKEND: backend SHA (${backendShortSha}) not in acceptable list`);
     }
     
-    console.log(`[TEST] ✓ DEPLOYMENT-AWARENESS GATE PASSED: Backend SHA ${backendShortSha} matches HEAD`);
-    deploymentCheckResults.push(`\n✓ VERDICT: PASS - Backend SHA matches HEAD (AUTHORITATIVE)\n`);
+    const matchType = backendShortSha === expectedHeadShortSha ? 'code commit' : 'meta commit';
+    console.log(`[TEST] ✓ DEPLOYMENT-AWARENESS GATE PASSED: Backend SHA ${backendShortSha} matches ${matchType}`);
+    deploymentCheckResults.push(`\n✓ VERDICT: PASS - Backend SHA matches ${matchType} (AUTHORITATIVE)\n`);
     fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
     
     // ========================================================================
