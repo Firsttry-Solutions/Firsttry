@@ -28,6 +28,24 @@ modules:
     # Canonical gadget handler: Forge Resolver for all UI invocations
     - key: get-status-snapshot-fn
       handler: gadget-resolver.handler
+    # Layer-0 Marketplace: Install trigger handler
+    - key: ft-installed-handler
+      handler: lifecycle/installed.handler
+    # Layer-0 Marketplace: Upgrade trigger handler (CRITICAL: runs on forge install --upgrade)
+    - key: ft-upgraded-handler
+      handler: lifecycle/upgraded.handler
+
+  # Layer-0 Marketplace: Lifecycle triggers
+  trigger:
+    - key: ft-installed-trigger
+      events:
+        - avi:forge:installed:app
+      function: ft-installed-handler
+    # Layer-0 Marketplace: Upgrade trigger ensures snapshot is seeded/repaired
+    - key: ft-upgraded-trigger
+      events:
+        - avi:forge:upgraded:app
+      function: ft-upgraded-handler
 
 # Permissions
 permissions:
