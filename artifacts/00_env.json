@@ -1,0 +1,14 @@
+{
+  "JIRA_SITE": "https://firsttry-solutions.atlassian.net",
+  "DASHBOARD_URL": "https://firsttry-solutions.atlassian.net/jira/dashboards/10102",
+  "GADGET_TITLE_CONTAINS": "Firsttry: Audit Evidence for Jira",
+  "EXPECT_TEXT_1": "Overall Health",
+  "EXPECT_TEXT_2": "Read-Only Guarantee",
+  "EXPECT_TEXT_3": "Data Freshness",
+  "FAIL_ON_UNKNOWN": true,
+  "FAIL_ON_INITIALIZING": true,
+  "FAIL_ON_NOT_AVAILABLE": true,
+  "ALLOW_FAILED_REQUESTS_REGEX": "(empty)",
+  "ALLOW_CONSOLE_WARN_ONLY": true,
+  "ALLOW_FAILED_REQUESTS_REGEX_EMPTY": true
+}
