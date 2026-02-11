@@ -74,13 +74,13 @@ Initial marketplace packaging of dashboard gadget app. This release provides a r
 ### Documentation
 
 Initial documentation set:
-- README.md
-- PRIVACY_POLICY.md
-- SECURITY.md
-- SUPPORT.md
-- SUBPROCESSORS.md
-- VERSIONING.md
-- CHANGELOG.md (this file)
+- [Homepage](/) - App overview
+- [Privacy Policy](/privacy/) - Data handling and privacy
+- [Security](/security/) - Security posture
+- [Support](/support/) - Support contact
+- [Subprocessors](/subprocessors/) - Data processors
+- [Versioning](/versioning/) - Version numbering
+- [Changelog](/changelog/) - Release history (this file)
 
 ---
 

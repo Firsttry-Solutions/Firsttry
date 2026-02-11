@@ -130,7 +130,7 @@ See [PRIVACY_POLICY.md](/privacy/) for detailed privacy information.
 
 ## Support
 
-**Support Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*
+**Support Email**: `contact@firsttry.run`
 
 **Response Time**: Support requests acknowledged within 2 business days.
 

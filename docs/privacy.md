@@ -153,7 +153,7 @@ The App is **read-only**. It does not have `write:jira-work`, `delete`, or admin
 - Sandboxed execution on Atlassian Forge platform
 - No external egress beyond Jira APIs
 
-See [SECURITY.md](SECURITY.md) for detailed security information.
+See [Security](/security/) for detailed security information.
 
 ### Forge Platform Security
 
@@ -183,7 +183,7 @@ To delete your data:
 ### Data Portability
 
 Snapshot export feature not currently available. To obtain your data:
-- Contact support at `support@firsttry-solutions.com` *(operator must replace this placeholder)*
+- Contact support at `contact@firsttry.run`
 
 ---
 
@@ -207,11 +207,11 @@ Continued use of the App after updates constitutes acceptance of the updated pol
 
 For privacy-related questions or requests:
 
-**Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*
+**Email**: `contact@firsttry.run`
 
 **Response Time**: Requests acknowledged within 2 business days.
 
-See [SUPPORT.md](SUPPORT.md) for support request guidelines.
+See [Support](/support/) for support request guidelines.
 
 ---
 
