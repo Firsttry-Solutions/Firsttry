@@ -32,22 +32,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Hard fail if /doc doesn't exist (prevents silent "old pages" problems)
-      - name: Verify /doc exists
+      # Hard fail if /docs doesn't exist (prevents silent "old pages" problems)
+      - name: Verify /docs exists
         run: |
           set -euo pipefail
-          test -d doc
-          echo "OK: ./doc exists"
-          ls -la doc | head -50
+          test -d docs
+          echo "OK: ./docs exists"
+          ls -la docs | head -50
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact (doc only)
+      - name: Upload artifact (docs only)
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload ONLY the doc folder
-          path: 'doc'
+          # Upload ONLY the docs folder
+          path: 'docs'
 
       - name: Deploy to GitHub Pages
         id: deployment
