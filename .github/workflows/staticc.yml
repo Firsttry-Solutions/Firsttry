@@ -43,6 +43,7 @@ jobs:
             docs/support.md \
             docs/security.md \
             docs/subprocessors.md \
+            docs/terms.md \
             docs/versioning.md \
             docs/changelog.md \
             docs/ENTERPRISE_ONE_PAGER.md
@@ -81,14 +82,29 @@ jobs:
           # Simple CSS (inline) for readable docs without extra dependencies.
           # Deterministic, no network calls.
           cat > /tmp/site.css << 'CSS'
-          body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height: 1.55; max-width: 980px; margin: 2rem auto; padding: 0 1rem; }
-          h1,h2,h3 { line-height: 1.2; }
-          code, pre { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
-          pre { padding: 1rem; overflow-x: auto; border: 1px solid #ddd; border-radius: 8px; }
-          blockquote { margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid #ddd; color: #333; }
-          a { text-decoration: none; }
+          * { box-sizing: border-box; }
+          body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height: 1.55; margin: 0; padding: 0; }
+          .nav { background: #24292e; color: #fff; padding: 0.75rem 0; border-bottom: 1px solid #444; }
+          .nav-container { max-width: 980px; margin: 0 auto; padding: 0 1rem; display: flex; align-items: center; gap: 1.5rem; }
+          .nav-title { font-weight: 600; font-size: 1.1rem; color: #fff; text-decoration: none; margin-right: auto; }
+          .nav-link { color: #ccc; text-decoration: none; font-size: 0.9rem; padding: 0.25rem 0.5rem; }
+          .nav-link:hover { color: #fff; text-decoration: underline; }
+          .content { max-width: 980px; margin: 2rem auto; padding: 0 1rem; }
+          h1 { font-size: 2rem; margin-top: 0; padding-bottom: 0.5rem; border-bottom: 2px solid #eee; }
+          h2 { font-size: 1.5rem; margin-top: 2rem; padding-bottom: 0.3rem; border-bottom: 1px solid #eee; }
+          h3 { font-size: 1.2rem; margin-top: 1.5rem; }
+          code { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; background: #f6f8fa; padding: 0.2em 0.4em; border-radius: 3px; font-size: 0.9em; }
+          pre { padding: 1rem; overflow-x: auto; background: #f6f8fa; border: 1px solid #ddd; border-radius: 6px; }
+          pre code { background: none; padding: 0; }
+          blockquote { margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid #0366d6; background: #f1f8ff; color: #24292e; }
+          a { color: #0366d6; text-decoration: none; }
           a:hover { text-decoration: underline; }
-          hr { border: none; border-top: 1px solid #eee; margin: 2rem 0; }
+          hr { border: none; border-top: 1px solid #eaecef; margin: 2rem 0; }
+          table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+          th, td { border: 1px solid #ddd; padding: 0.5rem 1rem; text-align: left; }
+          th { background: #f6f8fa; font-weight: 600; }
+          ul, ol { padding-left: 2rem; }
+          li { margin: 0.5rem 0; }
           CSS
 
           # Helper: convert a source md into a destination HTML file
@@ -98,14 +114,29 @@ jobs:
             local title="$3"
             mkdir -p "$(dirname "$dst")"
 
-            # Convert markdown -> body HTML
+            # Calculate relative path to site root for CSS
+            local depth=$(echo "$dst" | sed 's|[^/]||g' | wc -c)
+            local levels=$((depth - 2))  # Subtract 2 for _site/ prefix
+            local css_path="site.css"
+            if [ $levels -gt 0 ]; then
+              css_path="$(printf '../%.0s' $(seq 1 $levels))site.css"
+            fi
+
+            # Convert markdown -> body HTML (no nav yet)
             pandoc "$src" \
               --from gfm \
               --to html5 \
               --metadata title="$title" \
               --standalone \
-              --css /site.css \
+              --css "$css_path" \
               --output "$dst"
+            
+            # Inject navigation bar after <body> tag
+            local nav_html='<div class="nav"><div class="nav-container"><a href="./" class="nav-title">FirstTry Docs</a><a href="./" class="nav-link">Home</a><a href="privacy/" class="nav-link">Privacy</a><a href="support/" class="nav-link">Support</a><a href="security/" class="nav-link">Security</a><a href="subprocessors/" class="nav-link">Subprocessors</a><a href="terms/" class="nav-link">Terms</a><a href="changelog/" class="nav-link">Changelog</a></div></div><div class="content">'
+            
+            # Wrap content in .content div and add nav
+            sed -i "s|<body>|<body>\n$nav_html|" "$dst"
+            sed -i 's|</body>|</div>\n</body>|' "$dst"
           }
 
           # Copy css into site root
@@ -117,6 +148,7 @@ jobs:
           md_to_html "docs/support.md"                "$OUT/support/index.html"                   "Support"
           md_to_html "docs/security.md"               "$OUT/security/index.html"                  "Security"
           md_to_html "docs/subprocessors.md"          "$OUT/subprocessors/index.html"             "Subprocessors"
+          md_to_html "docs/terms.md"                  "$OUT/terms/index.html"                     "Terms of Service"
           md_to_html "docs/versioning.md"             "$OUT/versioning/index.html"                "Versioning"
           md_to_html "docs/changelog.md"              "$OUT/changelog/index.html"                 "Changelog"
           md_to_html "docs/ENTERPRISE_ONE_PAGER.md"   "$OUT/enterprise-one-pager/index.html"      "Enterprise One-Pager"

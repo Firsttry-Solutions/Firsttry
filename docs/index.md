@@ -100,7 +100,7 @@ All data stored in **Atlassian Forge Platform Storage** (managed by Atlassian). 
 - **Sandboxed execution** - Runs on Atlassian Forge platform (isolated environment)
 - **No third-party data sharing** - Data processed by Atlassian Forge platform only
 
-See [PRIVACY_POLICY.md](/privacy/) for detailed privacy information.
+See [Privacy Policy](privacy/) for detailed privacy information.
 
 ---
 
@@ -134,18 +134,18 @@ See [PRIVACY_POLICY.md](/privacy/) for detailed privacy information.
 
 **Response Time**: Support requests acknowledged within 2 business days.
 
-See [SUPPORT.md](/support/) for details on how to submit support requests.
+See [Support](support/) for details on how to submit support requests.
 
 ---
 
 ## Documentation
 
-- [Privacy Policy](/privacy/) - Data handling, storage, and privacy practices
-- [Security](/security/) - Security posture and vulnerability reporting
-- [Support](/support/) - Support contact and request guidelines
-- [Subprocessors](/subprocessors/) - Third-party data processors (none)
-- [Versioning](/versioning/) - Version numbering system explanation
-- [Changelog](/changelog/) - Release history
+- [Privacy Policy](privacy/) - Data handling, storage, and privacy practices
+- [Security](security/) - Security posture and vulnerability reporting
+- [Support](support/) - Support contact and request guidelines
+- [Subprocessors](subprocessors/) - Third-party data processors (none)
+- [Terms of Service](terms/) - Subscription terms and conditions
+- [Changelog](changelog/) - Release history
 
 ---
 
@@ -157,7 +157,7 @@ This app uses multiple version identifiers:
 - **Forge Deploy Version**: Deployment counter (e.g., 4.19.0, increments per deploy)
 - **Internal Release Marker**: Date-based marker (e.g., 2026.01.24.01, appears in logs)
 
-See [VERSIONING.md](/versioning/) for detailed explanation of the version numbering system.
+See [Versioning](versioning/) for detailed explanation of the version numbering system.
 
 ---
 
