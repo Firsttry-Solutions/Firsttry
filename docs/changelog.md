@@ -74,13 +74,13 @@ Initial marketplace packaging of dashboard gadget app. This release provides a r
 ### Documentation
 
 Initial documentation set:
-- [Homepage](./) - App overview
-- [Privacy Policy](privacy/) - Data handling and privacy
-- [Security](security/) - Security posture
-- [Support](support/) - Support contact
-- [Subprocessors](subprocessors/) - Data processors
-- [Terms of Service](terms/) - Subscription terms
-- [Changelog](changelog/) - Release history (this file)
+- [Homepage](/Firsttry/) - App overview
+- [Privacy Policy](/Firsttry/privacy/) - Data handling and privacy
+- [Security](/Firsttry/security/) - Security posture
+- [Support](/Firsttry/support/) - Support contact
+- [Subprocessors](/Firsttry/subprocessors/) - Data processors
+- [Terms of Service](/Firsttry/terms/) - Subscription terms
+- [Changelog](/Firsttry/changelog/) - Release history (this file)
 
 ---
 

@@ -145,7 +145,7 @@ To report a security vulnerability:
    - Potential impact assessment
    - Your contact information
 
-See [Security](security/) for security posture details.
+See [Security](/Firsttry/security/) for security posture details.
 
 ---
 
@@ -163,11 +163,11 @@ To request new features:
 
 ## Additional Resources
 
-- [Homepage](./) - App overview and capabilities
-- [Privacy Policy](privacy/) - Data handling and privacy
-- [Security](security/) - Security posture and vulnerability reporting
-- [Terms of Service](terms/) - Subscription terms
-- [Changelog](changelog/) - Release history
+- [Homepage](/Firsttry/) - App overview and capabilities
+- [Privacy Policy](/Firsttry/privacy/) - Data handling and privacy
+- [Security](/Firsttry/security/) - Security posture and vulnerability reporting
+- [Terms of Service](/Firsttry/terms/) - Subscription terms
+- [Changelog](/Firsttry/changelog/) - Release history
 
 ---
 

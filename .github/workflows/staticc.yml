@@ -132,7 +132,7 @@ jobs:
               --output "$dst"
             
             # Inject navigation bar after <body> tag
-            local nav_html='<div class="nav"><div class="nav-container"><a href="./" class="nav-title">FirstTry Docs</a><a href="./" class="nav-link">Home</a><a href="privacy/" class="nav-link">Privacy</a><a href="support/" class="nav-link">Support</a><a href="security/" class="nav-link">Security</a><a href="subprocessors/" class="nav-link">Subprocessors</a><a href="terms/" class="nav-link">Terms</a><a href="changelog/" class="nav-link">Changelog</a></div></div><div class="content">'
+            local nav_html='<div class="nav"><div class="nav-container"><a href="/Firsttry/" class="nav-title">FirstTry Docs</a><a href="/Firsttry/" class="nav-link">Home</a><a href="/Firsttry/privacy/" class="nav-link">Privacy</a><a href="/Firsttry/support/" class="nav-link">Support</a><a href="/Firsttry/security/" class="nav-link">Security</a><a href="/Firsttry/subprocessors/" class="nav-link">Subprocessors</a><a href="/Firsttry/terms/" class="nav-link">Terms</a><a href="/Firsttry/changelog/" class="nav-link">Changelog</a></div></div><div class="content">'
             
             # Wrap content in .content div and add nav
             sed -i "s|<body>|<body>\n$nav_html|" "$dst"
