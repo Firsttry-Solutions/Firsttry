@@ -1,0 +1,146 @@
+# Deploy /docs as static site to GitHub Pages (no Jekyll).
+# Converts docs/*.md into clean-route HTML (/privacy/, /support/, /security/, etc.)
+name: Deploy Docs (Static) to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate docs presence (fail-closed)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d docs
+
+          # Required marketplace docs (your canonical set)
+          for f in \
+            docs/index.md \
+            docs/privacy.md \
+            docs/support.md \
+            docs/security.md \
+            docs/subprocessors.md \
+            docs/versioning.md \
+            docs/changelog.md
+          do
+            test -f "$f" || { echo "STOP: missing required file: $f"; exit 1; }
+          done
+
+      - name: Block placeholder regressions (fail-closed)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if rg -n "SUPPORT_EMAIL" docs/; then
+            echo "STOP: SUPPORT_EMAIL placeholder found in docs/"
+            exit 1
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install pandoc (markdown -> html)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+
+      - name: Build static site from /docs (clean routes)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OUT="_site"
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
+
+          # Simple CSS (inline) for readable docs without extra dependencies.
+          # Deterministic, no network calls.
+          cat > /tmp/site.css << 'CSS'
+          body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height: 1.55; max-width: 980px; margin: 2rem auto; padding: 0 1rem; }
+          h1,h2,h3 { line-height: 1.2; }
+          code, pre { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
+          pre { padding: 1rem; overflow-x: auto; border: 1px solid #ddd; border-radius: 8px; }
+          blockquote { margin: 1rem 0; padding: 0.5rem 1rem; border-left: 4px solid #ddd; color: #333; }
+          a { text-decoration: none; }
+          a:hover { text-decoration: underline; }
+          hr { border: none; border-top: 1px solid #eee; margin: 2rem 0; }
+          CSS
+
+          # Helper: convert a source md into a destination HTML file
+          md_to_html () {
+            local src="$1"
+            local dst="$2"
+            local title="$3"
+            mkdir -p "$(dirname "$dst")"
+
+            # Convert markdown -> body HTML
+            pandoc "$src" \
+              --from gfm \
+              --to html5 \
+              --metadata title="$title" \
+              --standalone \
+              --css /site.css \
+              --output "$dst"
+          }
+
+          # Copy css into site root
+          cp /tmp/site.css "$OUT/site.css"
+
+          # Build clean-route pages
+          md_to_html "docs/index.md"          "$OUT/index.html"                 "FirstTry Documentation"
+          md_to_html "docs/privacy.md"        "$OUT/privacy/index.html"         "Privacy Policy"
+          md_to_html "docs/support.md"        "$OUT/support/index.html"         "Support"
+          md_to_html "docs/security.md"       "$OUT/security/index.html"        "Security"
+          md_to_html "docs/subprocessors.md"  "$OUT/subprocessors/index.html"   "Subprocessors"
+          md_to_html "docs/versioning.md"     "$OUT/versioning/index.html"      "Versioning"
+          md_to_html "docs/changelog.md"      "$OUT/changelog/index.html"       "Changelog"
+
+          # Optional: basic 404 page to reduce confusion
+          cat > "$OUT/404.html" << 'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>404 - Not Found</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <link rel="stylesheet" href="/Firsttry/site.css">
+          <h1>404 - Page not found</h1>
+          <p>Return to <a href="/Firsttry/">documentation home</a>.</p>
+          HTML
+
+          # Sanity: ensure expected outputs exist
+          test -f "$OUT/index.html"
+          test -f "$OUT/support/index.html"
+          test -f "$OUT/security/index.html"
+          test -f "$OUT/privacy/index.html"
+
+      - name: Upload artifact (static site)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "_site"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
