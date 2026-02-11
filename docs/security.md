@@ -245,7 +245,7 @@ This app **does NOT claim**:
 
 - [PRIVACY_POLICY.md](PRIVACY_POLICY.md) - Data handling and privacy
 - [SUPPORT.md](SUPPORT.md) - Support contact and response times
-- [Homepage](/) - App capabilities and limitations
+- [Homepage](./) - App capabilities and limitations
 - [Atlassian Forge Security Overview](https://developer.atlassian.com/platform/forge/security-overview/)
 
 ---

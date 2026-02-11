@@ -153,7 +153,7 @@ The App is **read-only**. It does not have `write:jira-work`, `delete`, or admin
 - Sandboxed execution on Atlassian Forge platform
 - No external egress beyond Jira APIs
 
-See [Security](/security/) for detailed security information.
+See [Security](security/) for detailed security information.
 
 ### Forge Platform Security
 
@@ -211,7 +211,7 @@ For privacy-related questions or requests:
 
 **Response Time**: Requests acknowledged within 2 business days.
 
-See [Support](/support/) for support request guidelines.
+See [Support](support/) for support request guidelines.
 
 ---
 
