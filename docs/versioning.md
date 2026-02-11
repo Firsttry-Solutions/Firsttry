@@ -176,13 +176,13 @@ Jira Site: yourcompany.atlassian.net
 Issue: Gadget shows "snapshot invalid" error
 ```
 
-See [SUPPORT.md](SUPPORT.md) for support request guidelines.
+See [Support](/Firsttry/support/) for support request guidelines.
 
 ---
 
 ## Version History
 
-See [CHANGELOG.md](CHANGELOG.md) for release history and version-specific changes.
+See [Changelog](/Firsttry/changelog/) for release history and version-specific changes.
 
 ---
 
@@ -206,7 +206,7 @@ When preparing a new release:
    - Forge deploy version increments automatically
    - Note new Forge deploy version from CLI output
 
-4. **Update CHANGELOG.md**:
+4. **Update Changelog**:
    - Document marketplace version changes
    - Include all three version identifiers
    - List user-facing changes
@@ -215,9 +215,9 @@ When preparing a new release:
 
 ## Additional Resources
 
-- [CHANGELOG.md](CHANGELOG.md) - Release history
-- [SUPPORT.md](SUPPORT.md) - How to report issues with version information
-- [README.md](README.md) - App overview
+- [Changelog](/Firsttry/changelog/) - Release history
+- [Support](/Firsttry/support/) - How to report issues with version information
+- [Homepage](/Firsttry/) - App overview
 
 ---
 

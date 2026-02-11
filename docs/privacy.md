@@ -112,7 +112,7 @@ The App **does not share data with third parties**.
 
 **Data Processors**:
 - **Atlassian Corporation Plc**: Processes data as the Forge platform provider
-- **No other third-party subprocessors**: See [SUBPROCESSORS.md](SUBPROCESSORS.md)
+- **No other third-party subprocessors**: See [Subprocessors](/Firsttry/subprocessors/)
 
 ### External Network Requests
 

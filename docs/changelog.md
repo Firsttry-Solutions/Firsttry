@@ -91,7 +91,7 @@ Version numbers will follow semantic versioning:
 - **MINOR** (2.x.0): New features (backward-compatible)
 - **PATCH** (2.0.x): Bug fixes (backward-compatible)
 
-See [VERSIONING.md](VERSIONING.md) for explanation of version numbering system.
+See [Versioning](/Firsttry/versioning/) for explanation of version numbering system.
 
 ---
 

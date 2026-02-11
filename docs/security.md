@@ -93,7 +93,7 @@ A repository network-surface scan confirmed:
 - ✅ No `webtrigger` declarations (no HTTP endpoints exposed)
 - ✅ No `scheduledTrigger` declarations (no background jobs)
 
-See [PRIVACY_POLICY.md](PRIVACY_POLICY.md) for data handling details.
+See [Privacy Policy](/Firsttry/privacy/) for data handling details.
 
 ---
 
@@ -243,8 +243,8 @@ This app **does NOT claim**:
 
 ## Additional Resources
 
-- [PRIVACY_POLICY.md](PRIVACY_POLICY.md) - Data handling and privacy
-- [SUPPORT.md](SUPPORT.md) - Support contact and response times
+- [Privacy Policy](/Firsttry/privacy/) - Data handling and privacy
+- [Support](/Firsttry/support/) - Support contact and response times
 - [Homepage](/Firsttry/) - App capabilities and limitations
 - [Atlassian Forge Security Overview](https://developer.atlassian.com/platform/forge/security-overview/)
 
