@@ -158,15 +158,15 @@ For questions about this app's data processing:
 **Email**: `contact@firsttry.run`  
 **Response Time**: Acknowledged within 2 business days
 
-See [Support](support/) for support request guidelines.
+See [Support](/Firsttry/support/) for support request guidelines.
 
 ---
 
 ## Additional Resources
 
-- [Privacy Policy](privacy/) - Data handling and storage details
-- [Security](security/) - Security posture and data security
-- [Homepage](./) - App capabilities and data access
+- [Privacy Policy](/Firsttry/privacy/) - Data handling and storage details
+- [Security](/Firsttry/security/) - Security posture and data security
+- [Homepage](/Firsttry/) - App capabilities and data access
 - [Atlassian Trust Center](https://www.atlassian.com/trust) - Atlassian compliance and security
 
 ---

@@ -58,7 +58,7 @@ You may NOT:
 - **Storage**: Governance snapshots stored in Atlassian Forge platform storage
 - **Deletion**: All data automatically deleted when you uninstall the App
 
-See [Privacy Policy](privacy/) for detailed data handling information.
+See [Privacy Policy](/Firsttry/privacy/) for detailed data handling information.
 
 ### Security
 
@@ -66,7 +66,7 @@ See [Privacy Policy](privacy/) for detailed data handling information.
 - No external data transmission beyond Atlassian APIs
 - Sandboxed execution on Atlassian Forge platform
 
-See [Security](security/) for security posture details.
+See [Security](/Firsttry/security/) for security posture details.
 
 ---
 
@@ -84,7 +84,7 @@ See [Security](security/) for security posture details.
 - **Response Time**: Best-effort acknowledgment within 2 business days
 - **No Guaranteed Resolution Time**
 
-See [Support](support/) for support request guidelines.
+See [Support](/Firsttry/support/) for support request guidelines.
 
 ---
 
@@ -252,10 +252,10 @@ For questions about these Terms:
 
 ## Additional Resources
 
-- [Privacy Policy](privacy/) - Data handling and storage
-- [Security](security/) - Security posture and vulnerability reporting
-- [Support](support/) - Support contact and request guidelines
-- [Subprocessors](subprocessors/) - Third-party data processors
+- [Privacy Policy](/Firsttry/privacy/) - Data handling and storage
+- [Security](/Firsttry/security/) - Security posture and vulnerability reporting
+- [Support](/Firsttry/support/) - Support contact and request guidelines
+- [Subprocessors](/Firsttry/subprocessors/) - Third-party data processors
 
 ---
 
