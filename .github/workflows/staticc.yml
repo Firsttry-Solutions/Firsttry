@@ -44,7 +44,8 @@ jobs:
             docs/security.md \
             docs/subprocessors.md \
             docs/versioning.md \
-            docs/changelog.md
+            docs/changelog.md \
+            docs/ENTERPRISE_ONE_PAGER.md
           do
             test -f "$f" || { echo "STOP: missing required file: $f"; exit 1; }
           done
@@ -111,13 +112,14 @@ jobs:
           cp /tmp/site.css "$OUT/site.css"
 
           # Build clean-route pages
-          md_to_html "docs/index.md"          "$OUT/index.html"                 "FirstTry Documentation"
-          md_to_html "docs/privacy.md"        "$OUT/privacy/index.html"         "Privacy Policy"
-          md_to_html "docs/support.md"        "$OUT/support/index.html"         "Support"
-          md_to_html "docs/security.md"       "$OUT/security/index.html"        "Security"
-          md_to_html "docs/subprocessors.md"  "$OUT/subprocessors/index.html"   "Subprocessors"
-          md_to_html "docs/versioning.md"     "$OUT/versioning/index.html"      "Versioning"
-          md_to_html "docs/changelog.md"      "$OUT/changelog/index.html"       "Changelog"
+          md_to_html "docs/index.md"                  "$OUT/index.html"                           "FirstTry Documentation"
+          md_to_html "docs/privacy.md"                "$OUT/privacy/index.html"                   "Privacy Policy"
+          md_to_html "docs/support.md"                "$OUT/support/index.html"                   "Support"
+          md_to_html "docs/security.md"               "$OUT/security/index.html"                  "Security"
+          md_to_html "docs/subprocessors.md"          "$OUT/subprocessors/index.html"             "Subprocessors"
+          md_to_html "docs/versioning.md"             "$OUT/versioning/index.html"                "Versioning"
+          md_to_html "docs/changelog.md"              "$OUT/changelog/index.html"                 "Changelog"
+          md_to_html "docs/ENTERPRISE_ONE_PAGER.md"   "$OUT/enterprise-one-pager/index.html"      "Enterprise One-Pager"
 
           # Optional: basic 404 page to reduce confusion
           cat > "$OUT/404.html" << 'HTML'

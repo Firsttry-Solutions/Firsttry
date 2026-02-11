@@ -155,18 +155,18 @@ Compliance is subject to Atlassian Forge platform's compliance posture.
 
 For questions about this app's data processing:
 
-**Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*  
+**Email**: `contact@firsttry.run`  
 **Response Time**: Acknowledged within 2 business days
 
-See [SUPPORT.md](SUPPORT.md) for support request guidelines.
+See [Support](/support/) for support request guidelines.
 
 ---
 
 ## Additional Resources
 
-- [PRIVACY_POLICY.md](PRIVACY_POLICY.md) - Data handling and storage details
-- [SECURITY.md](SECURITY.md) - Security posture and data security
-- [README.md](README.md) - App capabilities and data access
+- [Privacy Policy](/privacy/) - Data handling and storage details
+- [Security](/security/) - Security posture and data security
+- [Homepage](/) - App capabilities and data access
 - [Atlassian Trust Center](https://www.atlassian.com/trust) - Atlassian compliance and security
 
 ---

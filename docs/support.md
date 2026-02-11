@@ -17,7 +17,7 @@ permalink: /support/
 
 ## Support Contact
 
-**Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*
+**Email**: `contact@firsttry.run`
 
 ---
 
@@ -138,14 +138,14 @@ For critical production issues, include **[URGENT]** in email subject line.
 To report a security vulnerability:
 
 1. **Do NOT use public channels** (e.g., Marketplace reviews, public forums)
-2. Email `support@firsttry-solutions.com` with subject line: **[SECURITY] Vulnerability Report**
+2. Email `contact@firsttry.run` with subject line: **[SECURITY] Vulnerability Report**
 3. Include:
    - Description of vulnerability
    - Steps to reproduce
    - Potential impact assessment
    - Your contact information
 
-See [SECURITY.md](SECURITY.md) for security posture details.
+See [Security](/security/) for security posture details.
 
 ---
 
@@ -155,7 +155,7 @@ To request new features:
 
 1. Visit Atlassian Marketplace app listing
 2. Submit feedback via Marketplace feedback mechanism
-3. Or email `support@firsttry-solutions.com` with subject line: **[FEATURE REQUEST]**
+3. Or email `contact@firsttry.run` with subject line: **[FEATURE REQUEST]**
 
 **Note**: Feature requests are not covered by support response time commitments.
 
@@ -163,14 +163,14 @@ To request new features:
 
 ## Additional Resources
 
-- [README.md](README.md) - App overview and capabilities
-- [PRIVACY_POLICY.md](PRIVACY_POLICY.md) - Data handling and privacy
-- [SECURITY.md](SECURITY.md) - Security posture and vulnerability reporting
-- [VERSIONING.md](VERSIONING.md) - Version numbering explanation
-- [CHANGELOG.md](CHANGELOG.md) - Release history
+- [Homepage](/) - App overview and capabilities
+- [Privacy Policy](/privacy/) - Data handling and privacy
+- [Security](/security/) - Security posture and vulnerability reporting
+- [Versioning](/versioning/) - Version numbering explanation
+- [Changelog](/changelog/) - Release history
 
 ---
 
-**Support Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*  
+**Support Email**: `contact@firsttry.run`  
 **Acknowledgment Time**: Within 2 business days  
 **Last Updated**: 2026-02-10
