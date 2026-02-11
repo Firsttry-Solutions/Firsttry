@@ -192,3 +192,4 @@ Proprietary. Licensed to customers via Atlassian Marketplace subscription.
 
 **Maintained by**: FirstTry Solutions  
 **Last Updated**: 2026-02-10
+
