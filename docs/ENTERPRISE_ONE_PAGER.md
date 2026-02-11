@@ -96,13 +96,12 @@ FirstTry is a read-only Jira governance application that provides real-time visi
 
 ## Support Model
 
-Technical support is provided through [SUPPORT_POLICY.md](SUPPORT_POLICY.md). FirstTry support covers troubleshooting, configuration guidance, and operational questions. Support scope is defined in the support policy document. No contractual SLAs or response-time commitments are defined in this repository.
+Technical support is provided through [Support Policy](/Firsttry/support/). FirstTry support covers troubleshooting, configuration guidance, and operational questions. Support scope is defined in the support policy document. No contractual SLAs or response-time commitments are defined in this repository.
 
 ## Contact & Resources
 
-- **Security Details**: [docs/SECURITY_SUMMARY.md](SECURITY_SUMMARY.md)
-- **Change Management**: [docs/CHANGE_MANAGEMENT.md](CHANGE_MANAGEMENT.md)
-- **Support Policy**: [docs/SUPPORT_POLICY.md](SUPPORT_POLICY.md)
+- **Security Details**: [Security Policy](/Firsttry/security/)
+- **Support Policy**: [Support](/Firsttry/support/)
 
 ## Explicit Negative Assertions
 

@@ -68,7 +68,7 @@ Based on code analysis and network-surface scan, this app **does not use third-p
 - ❌ No AI/ML services (e.g., OpenAI, Google Cloud AI)
 
 **Verification Method**: 
-- Repository network-surface scan (see [PRIVACY_POLICY.md](PRIVACY_POLICY.md) Section 6)
+- Repository network-surface scan (see [Privacy Policy](/Firsttry/privacy/) Section 6)
 - Manifest analysis (no `webtrigger` or `scheduledTrigger` declarations)
 - Code analysis (no `fetch()` to external domains)
 
@@ -95,8 +95,8 @@ Based on code analysis and network-surface scan, this app **does not use third-p
 If third-party subprocessors are added in future app versions:
 
 1. This document will be updated with subprocessor details
-2. App version will increment (see [VERSIONING.md](VERSIONING.md))
-3. Change documented in [CHANGELOG.md](CHANGELOG.md)
+2. App version will increment (see [Versioning](/Firsttry/versioning/))
+3. Change documented in [Changelog](/Firsttry/changelog/)
 4. Notice provided via Atlassian Marketplace listing update
 
 **Current Status**: No plans to add third-party subprocessors.

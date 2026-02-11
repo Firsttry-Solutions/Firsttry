@@ -71,7 +71,7 @@ The internal release version appears in:
 
 Visible only to app developer via Forge CLI. Not accessible to customers.
 
-**When Reporting Issues**: Provide all three version identifiers if available. See [VERSIONING.md](VERSIONING.md) for explanation of version numbering system.
+**When Reporting Issues**: Provide all three version identifiers if available. See [Versioning](/Firsttry/versioning/) for explanation of version numbering system.
 
 ---
 
