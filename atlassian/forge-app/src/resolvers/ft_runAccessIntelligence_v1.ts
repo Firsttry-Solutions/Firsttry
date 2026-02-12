@@ -172,6 +172,7 @@ async function fetchAllUsersReadOnly(): Promise<any[]> {
 
   while (true) {
     try {
+      console.log('[FT_ACCESS_ROUTE_PROOF] Fetching users from /rest/api/3/users/search with route template');
       const response = await api.asApp().requestJira(route`/rest/api/3/users/search?startAt=${startAt}&maxResults=${maxResults}`, {
         headers: { 'Content-Type': 'application/json' },
       });
