@@ -3198,6 +3198,39 @@ async function proceedWithBoot() {
               const actionResult = result as any;
               
               if (actionResult && actionResult.ok) {
+                // === FAIL-CLOSED: Phase1 success marker MUST be present ===
+                if (!actionResult.phase1Proof) {
+                  // Marker missing - fail-closed
+                  const failMsg = 'PHASE1_MARKER_MISSING: Backend returned ok:true but no phase1Proof marker';
+                  console.error('[PHASE1_CONTRACT_BREACH_MARKER]', {
+                    got: actionResult.phase1Proof,
+                    expected: '[PHASE1_ACCESS_SCAN_OK] marker object',
+                    envelope: actionResult.envelopeKind,
+                    traceId: actionResult.traceId,
+                  });
+                  runAccessButton.textContent = `Scan Failed: ${failMsg} (traceId=${actionResult.traceId})`;
+                  runAccessButton.style.backgroundColor = '#f44336';
+                  runAccessButton.disabled = false;
+                  throw new Error(failMsg);
+                }
+
+                // === FAIL-CLOSED: Marker field must contain correct text ===
+                if (actionResult.phase1Proof.marker !== '[PHASE1_ACCESS_SCAN_OK]') {
+                  const failMsg = `PHASE1_MARKER_WRONG: Expected '[PHASE1_ACCESS_SCAN_OK]' but got '${actionResult.phase1Proof.marker}'`;
+                  console.error('[PHASE1_CONTRACT_BREACH_MARKER_VALUE]', {
+                    got: actionResult.phase1Proof.marker,
+                    expected: '[PHASE1_ACCESS_SCAN_OK]',
+                    traceId: actionResult.traceId,
+                  });
+                  runAccessButton.textContent = `Scan Failed: ${failMsg}`;
+                  runAccessButton.style.backgroundColor = '#f44336';
+                  runAccessButton.disabled = false;
+                  throw new Error(failMsg);
+                }
+
+                // Log the phase1Proof marker verbatim
+                console.log('[PHASE1_ACCESS_SCAN_OK]', JSON.stringify(actionResult.phase1Proof));
+                
                 console.log('[PHASE1_ACCESS_SCAN_SUCCESS]', actionResult);
                 runAccessButton.textContent = 'Scan Complete!';
                 runAccessButton.style.backgroundColor = '#4CAF50';

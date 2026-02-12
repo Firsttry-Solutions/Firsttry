@@ -979,7 +979,7 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     // === PHASE 1 SUCCESS VALIDATION (NO-INJECTION mode) ===
     // When FT_FORCE_FORGE_CONSOLE_ERROR is NOT set, verify Phase1 scan completed successfully
     if (!FORCE_FORGE_CONSOLE_ERROR) {
-      // Check that Phase1 scan did NOT fail with old error message
+      // === FAIL-CLOSED CHECK 1: Phase1 scan must NOT fail with old error message ===
       const oldErrorPresent = consoleLines.some(line => 
         line.includes('Project fetch returned empty or null result') || 
         line.includes('[PHASE1_ACCESS_SCAN_FAILED]')
@@ -988,15 +988,31 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
         throw new Error('PHASE1_VALIDATION_FAILED: Old failure message or marker found in NO-INJECTION run');
       }
       
-      // Check that Phase1 scan completed with success marker
-      const successMarkerPresent = consoleLines.some(line => 
+      // === FAIL-CLOSED CHECK 2: Success marker MUST be present (not warn-only) ===
+      const successMarkerLine = consoleLines.find(line => 
         line.includes('[PHASE1_ACCESS_SCAN_OK]')
       );
-      if (!successMarkerPresent) {
-        consoleLines.push('[PHASE1_VALIDATION_WARN] Success marker [PHASE1_ACCESS_SCAN_OK] not found in NO-INJECTION run');
-        console.warn('[PHASE1_VALIDATION] Missing success marker - this may indicate Phase1 did not complete or payload changed');
-      } else {
-        consoleLines.push('[PHASE1_VALIDATION_OK] Success marker [PHASE1_ACCESS_SCAN_OK] found');
+      if (!successMarkerLine) {
+        throw new Error('PHASE1_MARKER_FAILED: Success marker [PHASE1_ACCESS_SCAN_OK] NOT FOUND in NO-INJECTION run. Phase1 must return payload marker.');
+      }
+      
+      // === FAIL-CLOSED CHECK 3: Marker JSON must contain correct fields ===
+      try {
+        // Extract JSON from log line: "[PHASE1_ACCESS_SCAN_OK] {...}"
+        const jsonMatch = successMarkerLine.match(/\[PHASE1_ACCESS_SCAN_OK\]\s*(\{.+\})/);
+        if (!jsonMatch || !jsonMatch[1]) {
+          throw new Error('PHASE1_MARKER_FORMAT_FAILED: Marker line found but no JSON payload after it');
+        }
+        const markerData = JSON.parse(jsonMatch[1]);
+        if (markerData.marker !== '[PHASE1_ACCESS_SCAN_OK]') {
+          throw new Error(`PHASE1_MARKER_VALUE_FAILED: marker field is '${markerData.marker}', expected '[PHASE1_ACCESS_SCAN_OK]'`);
+        }
+        if (markerData.action !== 'RUN_ACCESS_REVIEW') {
+          throw new Error(`PHASE1_ACTION_VALUE_FAILED: action field is '${markerData.action}', expected 'RUN_ACCESS_REVIEW'`);
+        }
+        consoleLines.push('[PHASE1_VALIDATION_OK] Success marker [PHASE1_ACCESS_SCAN_OK] found with valid fields');
+      } catch (parseErr: any) {
+        throw new Error(`PHASE1_MARKER_PARSE_FAILED: ${parseErr.message}`);
       }
     }
 
