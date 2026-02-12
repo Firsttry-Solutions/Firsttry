@@ -109,6 +109,7 @@ export const handler = resolver.getDefinitions();
  */
 async function handlePhase1AccessReview(request: any): Promise<any> {
   try {
+    console.log('[FT_PROOF_PHASE1_DISPATCH] entering handlePhase1AccessReview');
     console.log(JSON.stringify({
       marker: '[FT_DASH_ACTION_START]',
       action: 'RUN_ACCESS_REVIEW',
