@@ -141,6 +141,16 @@ export const handler = async (request: any): Promise<any> => {
     // Determine risk tier
     const riskTier = snapshot.riskModel.finalRiskScore > 0.7 ? 'HIGH' : snapshot.riskModel.finalRiskScore > 0.4 ? 'MEDIUM' : 'LOW';
 
+    // Emit success marker (deterministic, no timestamps)
+    console.log(JSON.stringify({
+      marker: '[PHASE1_ACCESS_SCAN_OK]',
+      action: 'RUN_ACCESS_REVIEW',
+      snapshotId,
+      riskTier,
+      totalUsers: users.length,
+      projectsCount: projects.length,
+    }));
+
     return {
       ok: true,
       status: 'SUCCESS',
