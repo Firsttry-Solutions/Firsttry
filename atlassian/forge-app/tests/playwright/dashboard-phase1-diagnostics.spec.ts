@@ -188,6 +188,50 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     await page.screenshot({ path: afterReadySS, fullPage: true });
     consoleLines.push('[SCREENSHOT] after-ready.png');
 
+    // === BACKBONE FIX 3: Check for snapshot-not-available early (deterministic terminal state) ===
+    const snapshotNotAvailableMarkers = consoleLines.filter(
+      (line) =>
+        line.includes('[FT_STATE]') ||
+        (line.includes('[FT_GUARD]') && line.includes('BLOCK_RUN_ACCESS_REVIEW'))
+    );
+
+    if (snapshotNotAvailableMarkers.length > 0) {
+      consoleLines.push('[SNAPSHOT_GUARD] Snapshot NOT_AVAILABLE - blocking action execution');
+
+      // Parse and dump snapshot status
+      const snapshotStatus: any[] = [];
+      for (const markerLine of snapshotNotAvailableMarkers) {
+        try {
+          // Extract JSON from [FT_STATE]/[FT_GUARD] lines
+          const jsonMatch = markerLine.match(/\{.*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            snapshotStatus.push(parsed);
+          }
+        } catch (e) {
+          // JSON parse failed, just include raw line
+          snapshotStatus.push({ rawLine: markerLine });
+        }
+      }
+
+      // Write snapshot-status.json
+      fs.writeFileSync(
+        path.join(outDir, 'snapshot-status.json'),
+        JSON.stringify(snapshotStatus, null, 2)
+      );
+      consoleLines.push('[INVENTORY] snapshot-status.json written');
+
+      // Take screenshot showing the blocked state
+      const snapshotRequiredSS = path.join(outDir, 'snapshot-required.png');
+      await page.screenshot({ path: snapshotRequiredSS, fullPage: true });
+      consoleLines.push('[SCREENSHOT] snapshot-required.png');
+
+      // Fail-closed but with explicit error message
+      throw new Error(
+        `SNAPSHOT_REQUIRED: snapshot not available (see snapshot-status.json in OUT_DIR=${outDir})`
+      );
+    }
+
     // === BACKBONE FIX 2: Find gadget frame by atlassian-dev.net URL detection ===
     let gadgetFrame = null;
     let selectedFrameUrl = 'NONE';
