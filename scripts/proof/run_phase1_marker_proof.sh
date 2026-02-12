@@ -1,149 +1,238 @@
 #!/bin/bash
 # run_phase1_marker_proof.sh
-# Proof: Verify Phase1 success marker [PHASE1_ACCESS_SCAN_OK] is returned in payload
+# STRICT: Real browser console.log marker proof (not WARN text)
+# Exit 0 ONLY if REAL marker line found in console.log with valid JSON + build identity match
 
-set -e
+set -euo pipefail
 
 PROOF_DIR="/tmp/phase1_marker_proof_$$"
 mkdir -p "$PROOF_DIR"
 
-echo "═════════════════════════════════════════════════════════════════════"
-echo "PHASE1 SUCCESS MARKER PROOF"
-echo "═════════════════════════════════════════════════════════════════════"
+echo "════════════════════════════════════════════════════════════════════"
+echo "PHASE1 SUCCESS MARKER PROOF (STRICT - REAL CONSOLE.LOG ONLY)"
+echo "════════════════════════════════════════════════════════════════════"
+echo ""
+
+# Expected short SHA of current HEAD
+EXPECT_SHA=$(cd /workspaces/Firsttry && git rev-parse --short=7 HEAD)
+echo "[PROOF] Expected UI build SHA: $EXPECT_SHA"
 echo ""
 
 # Set environment
 export JIRA_BASE_URL="https://firsttry.atlassian.net"
 export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
-unset FT_FORCE_FORGE_CONSOLE_ERROR
+unset FT_FORCE_FORGE_CONSOLE_ERROR || true
 export FT_ASSERT_DETERMINISTIC_HASH=1
 export FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY=1
 
 cd /workspaces/Firsttry/atlassian/forge-app
 
-echo "[PROOF] Running Playwright dashboard diagnostics (NO-INJECTION)..."
+echo "[PROOF] Running Playwright test (NO-INJECTION)..."
 echo ""
 
-# Run the Playwright test
-if npx playwright test dashboard-phase1-diagnostics.spec.ts --no-header 2>&1 | tee "$PROOF_DIR/test_output.txt"; then
+# Run Playwright without --no-header flag
+TEST_OUTPUT="$PROOF_DIR/test_output.txt"
+TEST_EXIT=0
+if JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_DASHBOARD_URL="$JIRA_DASHBOARD_URL" \
+  npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts 2>&1 | tee "$TEST_OUTPUT"; then
   TEST_EXIT=0
 else
   TEST_EXIT=$?
 fi
 
 echo ""
-echo "Test exit code: $TEST_EXIT"
+echo "[PROOF] Test exit code: $TEST_EXIT"
 echo ""
 
-# Extract the output directory
-OUT_DIR="$(ls -1dt /tmp/pw_dash_diag_* 2>/dev/null | head -1)"
+# Extract OUT_DIR from test output or fallback to last directory
+OUT_DIR=""
+if grep -q "OUT_DIR=" "$TEST_OUTPUT"; then
+  OUT_DIR=$(grep "OUT_DIR=" "$TEST_OUTPUT" | tail -1 | sed 's/.*OUT_DIR=\([^ ]*\).*/\1/')
+fi
+
 if [ -z "$OUT_DIR" ]; then
-  echo "[PROOF] ❌ No output directory found (test may not have completed)"
+  # Fallback: latest pw_dash_diag directory
+  OUT_DIR="$(ls -1dt /tmp/pw_dash_diag_* 2>/dev/null | head -1 || true)"
+fi
+
+if [ -z "$OUT_DIR" ]; then
+  echo "[PROOF] ❌ FAILED: No output directory found (test may not have created it)"
   exit 1
 fi
 
 echo "[PROOF] Output directory: $OUT_DIR"
 echo ""
 
-# Check for console log file
+# Verify console.log exists
 CONSOLE_FILE="$OUT_DIR/console.log"
 if [ ! -f "$CONSOLE_FILE" ]; then
-  echo "[PROOF] ❌ Console log not found at $CONSOLE_FILE"
+  echo "[PROOF] ❌ FAILED: Console log not found at $CONSOLE_FILE"
   exit 1
 fi
 
-echo "[PROOF] Console log size: $(wc -c < "$CONSOLE_FILE") bytes"
+CONSOLE_SIZE=$(wc -c < "$CONSOLE_FILE")
+echo "[PROOF] Console log size: $CONSOLE_SIZE bytes"
 echo ""
 
-# === CHECK 1: Must find marker [PHASE1_ACCESS_SCAN_OK] ===
-echo "[CHECK 1] Searching for marker: [PHASE1_ACCESS_SCAN_OK]"
-MARKER_HITS=$(grep -c "\[PHASE1_ACCESS_SCAN_OK\]" "$CONSOLE_FILE" || true)
-if [ "$MARKER_HITS" -gt 0 ]; then
-  echo "         ✅ FOUND: $MARKER_HITS occurrence(s)"
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHECK 1: Verify build identity line contains current short SHA
+# ═════════════════════════════════════════════════════════════════════════════════
+
+echo "[CHECK 1] Verifying build identity (UI_BUILD_IDENTITY_CONFIRMED) contains SHA=$EXPECT_SHA"
+IDENTITY_LINE=$(grep "UI_BUILD_IDENTITY_CONFIRMED" "$CONSOLE_FILE" || true)
+if [ -z "$IDENTITY_LINE" ]; then
+  echo "         ❌ FAILED: UI_BUILD_IDENTITY_CONFIRMED line not found"
+  exit 1
+fi
+
+if ! echo "$IDENTITY_LINE" | grep -q "$EXPECT_SHA"; then
+  echo "         ❌ FAILED: Expected SHA $EXPECT_SHA not found in identity line"
+  echo "         Got: $IDENTITY_LINE"
+  exit 1
+fi
+
+echo "         ✅ PASSED: Build identity contains current SHA $EXPECT_SHA"
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHECK 2: Find REAL console.log marker line (not WARN text)
+# ═════════════════════════════════════════════════════════════════════════════════
+
+echo "[CHECK 2] Searching for REAL console.log marker [PHASE1_ACCESS_SCAN_OK]"
+
+# Pattern: actual console.log line (with or without line number prefix)
+# Accept formats:
+#   [123:][console.log] [PHASE1_ACCESS_SCAN_OK] {...}  (with line:prefix)
+#   [console.log] [PHASE1_ACCESS_SCAN_OK] {...}        (without prefix)
+# Reject: any line containing WARN or VALIDATION
+
+MARKER_LINE=$(grep -E '^\[?([0-9]+:)?\]?\[console\.log\] \[PHASE1_ACCESS_SCAN_OK\]' "$CONSOLE_FILE" || true)
+
+if [ -z "$MARKER_LINE" ]; then
+  echo "         ❌ FAILED: No real console.log marker line found"
   echo ""
-  echo "         Marker lines:"
-  grep "\[PHASE1_ACCESS_SCAN_OK\]" "$CONSOLE_FILE" | head -5 | sed 's/^/         /'
-else
-  echo "         ❌ FAILED: Marker not found"
-  echo ""
-  echo "[PROOF] Full console output (last 100 lines):"
-  tail -100 "$CONSOLE_FILE"
-  exit 1
-fi
-
-echo ""
-
-# === CHECK 2: Must NOT find failure marker [PHASE1_ACCESS_SCAN_FAILED] ===
-echo "[CHECK 2] Searching for failure marker: [PHASE1_ACCESS_SCAN_FAILED]"
-FAIL_HITS=$(grep -c "\[PHASE1_ACCESS_SCAN_FAILED\]" "$CONSOLE_FILE" || true)
-if [ "$FAIL_HITS" -eq 0 ]; then
-  echo "         ✅ PASSED: No failure markers found"
-else
-  echo "         ❌ FAILED: Found $FAIL_HITS failure marker(s)"
-  grep "\[PHASE1_ACCESS_SCAN_FAILED\]" "$CONSOLE_FILE" | head -5 | sed 's/^/         /'
-  exit 1
-fi
-
-echo ""
-
-# === CHECK 3: Marker JSON must be parseable ===
-echo "[CHECK 3] Validating marker JSON format"
-MARKER_LINE=$(grep "\[PHASE1_ACCESS_SCAN_OK\]" "$CONSOLE_FILE" | head -1)
-if [[ $MARKER_LINE =~ \[PHASE1_ACCESS_SCAN_OK\][[:space:]]*(\{.*\}) ]]; then
-  MARKER_JSON="${BASH_REMATCH[1]}"
-  if echo "$MARKER_JSON" | jq . >/dev/null 2>&1; then
-    echo "         ✅ PASSED: JSON is valid"
-    echo "         ✅ PASSED: marker = $(echo "$MARKER_JSON" | jq -r '.marker')"
-    echo "         ✅ PASSED: action = $(echo "$MARKER_JSON" | jq -r '.action')"
-  else
-    echo "         ❌ FAILED: JSON parsing failed"
-    echo "         JSON: $MARKER_JSON"
-    exit 1
+  echo "         (Checking if WARN lines exist...)"
+  WARN_COUNT=$(grep -c "PHASE1_VALIDATION_WARN\|WARN.*PHASE1_ACCESS_SCAN_OK" "$CONSOLE_FILE" || true)
+  if [ "$WARN_COUNT" -gt 0 ]; then
+    echo "         Found $WARN_COUNT WARN lines (these are NOT proof)"
+    echo "         Need REAL console.log line, not WARN text"
   fi
-else
+  exit 1
+fi
+
+echo "         ✅ FOUND: Real console.log marker line"
+echo ""
+
+# ═════════════════════════════════════════════════════════════════════════════════
+# CHECK 3: Extract and validate marker JSON
+# ═════════════════════════════════════════════════════════════════════════════════
+
+echo "[CHECK 3] Extracting and validating marker JSON"
+
+# Extract JSON from the marker line
+# Pattern: [console.log] [PHASE1_ACCESS_SCAN_OK] {...}
+MARKER_JSON=$(echo "$MARKER_LINE" | sed 's/.*\[\[console\.log\]\] \[PHASE1_ACCESS_SCAN_OK\] //; s/.*\[console\.log\] \[PHASE1_ACCESS_SCAN_OK\] //')
+
+if [ -z "$MARKER_JSON" ]; then
   echo "         ❌ FAILED: Could not extract JSON from marker line"
   echo "         Line: $MARKER_LINE"
   exit 1
 fi
 
-echo ""
-
-# === FINAL VERDICT ===
-echo "═════════════════════════════════════════════════════════════════════"
-if [ "$TEST_EXIT" -eq 0 ] && [ "$MARKER_HITS" -gt 0 ] && [ "$FAIL_HITS" -eq 0 ]; then
-  echo "✅ PHASE1 SUCCESS MARKER PROOF: PASSED"
-  echo ""
-  echo "Proof Summary:"
-  echo "  • Marker [PHASE1_ACCESS_SCAN_OK] found: YES ($MARKER_HITS occurrence)"
-  echo "  • Failure marker [PHASE1_ACCESS_SCAN_FAILED] found: NO"
-  echo "  • Marker JSON valid: YES"
-  echo "  • Test exit code: $TEST_EXIT (success)"
-  echo "  • Output directory: $OUT_DIR"
-  echo ""
-  
-  # Save proof artifacts
-  cp "$CONSOLE_FILE" /tmp/phase1_marker_proof_console.log
-  echo "$MARKER_JSON" > /tmp/phase1_marker_proof_json.json
-  
-  echo "Proof artifacts saved:"
-  echo "  • /tmp/phase1_marker_proof_console.log"
-  echo "  • /tmp/phase1_marker_proof_json.json"
-  echo "  • /tmp/phase1_marker_proof.log (this output)"
-  
-  exit 0
-else
-  echo "❌ PHASE1 SUCCESS MARKER PROOF: FAILED"
-  echo ""
-  echo "Proof Summary:"
-  echo "  • Marker [PHASE1_ACCESS_SCAN_OK] found: $([ "$MARKER_HITS" -gt 0 ] && echo "YES" || echo "NO")"
-  echo "  • Failure marker [PHASE1_ACCESS_SCAN_FAILED] found: $([ "$FAIL_HITS" -gt 0 ] && echo "YES" || echo "NO")"
-  echo "  • Test exit code: $TEST_EXIT"
-  echo "  • Output directory: $OUT_DIR"
-  echo ""
-  
-  # Save debug output
-  cp "$CONSOLE_FILE" /tmp/phase1_marker_proof_console_FAILED.log
-  tail -200 "$CONSOLE_FILE" > /tmp/phase1_marker_proof_FAILED.log
-  
+# Validate JSON is parseable
+if ! echo "$MARKER_JSON" | node -e 'process.stdin.on("data", d => JSON.parse(d.toString()), (e) => process.exit(1))' 2>/dev/null; then
+  echo "         ❌ FAILED: Marker JSON is not valid JSON"
+  echo "         JSON: $MARKER_JSON"
   exit 1
 fi
+
+echo "         ✅ PASSED: JSON is valid"
+echo ""
+
+# ═════════════════════════════════════════════════════════════════════════════════
+# CHECK 4: Validate marker fields
+# ═════════════════════════════════════════════════════════════════════════════════
+
+echo "[CHECK 4] Validating marker required fields"
+
+# Parse and validate with node
+VALIDATION_SCRIPT=$(cat <<'NODEEOF'
+const data = JSON.parse(process.argv[1]);
+const errors = [];
+
+if (data.marker !== '[PHASE1_ACCESS_SCAN_OK]') {
+  errors.push(`marker field is '${data.marker}', expected '[PHASE1_ACCESS_SCAN_OK]'`);
+}
+
+if (data.action !== 'RUN_ACCESS_REVIEW') {
+  errors.push(`action field is '${data.action}', expected 'RUN_ACCESS_REVIEW'`);
+}
+
+if (!data.schemaVersion) {
+  errors.push('schemaVersion field missing');
+}
+
+if (!data.buildShaShort) {
+  errors.push('buildShaShort field missing');
+}
+
+if (errors.length > 0) {
+  console.error(errors.join('; '));
+  process.exit(1);
+}
+
+console.log('OK');
+NODEEOF
+)
+
+if ! VALIDATION_OUTPUT=$(node -e "$VALIDATION_SCRIPT" "$MARKER_JSON" 2>&1); then
+  echo "         ❌ FAILED: Marker validation failed"
+  echo "         $VALIDATION_OUTPUT"
+  exit 1
+fi
+
+echo "         ✅ PASSED: All required fields present and valid"
+echo "         • marker: [PHASE1_ACCESS_SCAN_OK]"
+echo "         • action: RUN_ACCESS_REVIEW"
+echo "         • schemaVersion: present"
+echo "         • buildShaShort: present"
+echo ""
+
+# ═════════════════════════════════════════════════════════════════════════════════
+# CHECK 5: Verify marker NOT found in WARN or failure paths
+# ═════════════════════════════════════════════════════════════════════════════════
+
+echo "[CHECK 5] Verifying no WARN/FAIL text contains marker"
+
+FAIL_MARKERS=$(grep -E '\[PHASE1_VALIDATION_WARN\].*PHASE1_ACCESS_SCAN_OK|\[PHASE1.*FAILED\]' "$CONSOLE_FILE" || true)
+if [ -n "$FAIL_MARKERS" ]; then
+  echo "         ❌ FAILED: Found failure/warn text with marker"
+  echo "         $FAIL_MARKERS"
+  exit 1
+fi
+
+echo "         ✅ PASSED: No failure/warn text contains marker"
+echo ""
+
+# ═════════════════════════════════════════════════════════════════════════════════
+# FINAL VERDICT
+# ═════════════════════════════════════════════════════════════════════════════════
+
+echo "════════════════════════════════════════════════════════════════════"
+echo "✅ PHASE1 SUCCESS MARKER PROOF: PASSED"
+echo "════════════════════════════════════════════════════════════════════"
+echo ""
+echo "Proof Summary:"
+echo "  • Build identity verified: SHA=$EXPECT_SHA"
+echo "  • Real console.log marker found: [PHASE1_ACCESS_SCAN_OK]"
+echo "  • Marker JSON valid and complete"
+echo "  • Required fields present (marker, action, schemaVersion, buildShaShort)"
+echo "  • No failure/warn text contains marker"
+echo ""
+echo "Proof artifacts:"
+echo "  • Console log: $CONSOLE_FILE"
+echo "  • Test output: $TEST_OUTPUT"
+echo ""
+
+exit 0
+

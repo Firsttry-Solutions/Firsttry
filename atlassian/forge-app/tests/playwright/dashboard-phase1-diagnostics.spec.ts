@@ -990,27 +990,27 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
       
       // === FAIL-CLOSED CHECK 2: Success marker MUST be present (not warn-only) ===
       const successMarkerLine = consoleLines.find(line => 
-        line.includes('[PHASE1_ACCESS_SCAN_OK]')
+        line.includes('[PHASE1_ACCESS_SCAN_OK]') && line.includes('[console.log]')
       );
       if (!successMarkerLine) {
-        throw new Error('PHASE1_MARKER_FAILED: Success marker [PHASE1_ACCESS_SCAN_OK] NOT FOUND in NO-INJECTION run. Phase1 must return payload marker.');
+        throw new Error('PHASE1_MARKER_MISSING: expected console.log marker line not found in NO-INJECTION run');
       }
       
       // === FAIL-CLOSED CHECK 3: Marker JSON must contain correct fields ===
       try {
-        // Extract JSON from log line: "[PHASE1_ACCESS_SCAN_OK] {...}"
+        // Extract JSON from log line: "[console.log] [PHASE1_ACCESS_SCAN_OK] {...}"
         const jsonMatch = successMarkerLine.match(/\[PHASE1_ACCESS_SCAN_OK\]\s*(\{.+\})/);
         if (!jsonMatch || !jsonMatch[1]) {
-          throw new Error('PHASE1_MARKER_FORMAT_FAILED: Marker line found but no JSON payload after it');
+          throw new Error('PHASE1_MARKER_FORMAT_MISSING: no JSON payload found after marker');
         }
         const markerData = JSON.parse(jsonMatch[1]);
         if (markerData.marker !== '[PHASE1_ACCESS_SCAN_OK]') {
-          throw new Error(`PHASE1_MARKER_VALUE_FAILED: marker field is '${markerData.marker}', expected '[PHASE1_ACCESS_SCAN_OK]'`);
+          throw new Error('PHASE1_MARKER_VALUE_WRONG: marker field has unexpected value');
         }
         if (markerData.action !== 'RUN_ACCESS_REVIEW') {
-          throw new Error(`PHASE1_ACTION_VALUE_FAILED: action field is '${markerData.action}', expected 'RUN_ACCESS_REVIEW'`);
+          throw new Error('PHASE1_ACTION_VALUE_WRONG: action field has unexpected value');
         }
-        consoleLines.push('[PHASE1_VALIDATION_OK] Success marker [PHASE1_ACCESS_SCAN_OK] found with valid fields');
+        consoleLines.push('[PHASE1_VALIDATION_OK] Success marker found with valid fields');
       } catch (parseErr: any) {
         throw new Error(`PHASE1_MARKER_PARSE_FAILED: ${parseErr.message}`);
       }
