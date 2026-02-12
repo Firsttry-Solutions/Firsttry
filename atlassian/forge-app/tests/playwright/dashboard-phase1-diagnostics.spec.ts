@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// === ENV FLAG: Inject Forge iframe console error for proof (deterministic, default OFF) ===
+const FORCE_FORGE_CONSOLE_ERROR = process.env.FT_FORCE_FORGE_CONSOLE_ERROR === '1';
+
 function isoTimestampZ() {
   const now = new Date();
   const iso = now.toISOString(); // YYYY-MM-DDTHH:MM:SS.sssZ
@@ -551,6 +554,15 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
       JSON.stringify(iframeSelectionSuccess, null, 2)
     );
 
+    // === INJECT FORGE IFRAME CONSOLE ERROR (if FORCE_FORGE_CONSOLE_ERROR enabled) ===
+    if (FORCE_FORGE_CONSOLE_ERROR) {
+      await gadgetFrame.evaluate(() => console.error('[FT_FORCED_FORGE_ERROR]'));
+      await page.waitForTimeout(250); // Ensure listener captures deterministically
+      consoleLines.push('[FORGE_ERROR_INJECTED] ok');
+    } else {
+      consoleLines.push('[FORGE_ERROR_INJECTED] skipped');
+    }
+
     // === DETERMINE CONSOLE ERROR CLASSIFICATION CONTEXT ===
     const bundleUrl = extractBundleUrl(consoleLines);
     const iframeOriginHost = extractHostFromUrl(iframeSrc);
@@ -706,7 +718,7 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
 
     if (forgeConsoleErrorCount > 0) {
       throw new Error(
-        `forgeConsoleErrorCount=${forgeConsoleErrorCount} (expected 0). hostConsoleErrorCount=${hostConsoleErrorCount}. OUT_DIR=${outDir}`
+        `forgeConsoleErrorCount=${forgeConsoleErrorCount} (expected 0). hostConsoleErrorCount=${hostConsoleErrorCount}. FORCE_FORGE_CONSOLE_ERROR=${FORCE_FORGE_CONSOLE_ERROR}. OUT_DIR=${outDir}`
       );
     }
 
@@ -815,5 +827,42 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
       path.join(outDir, 'console-errors.json'),
       JSON.stringify(consoleErrorsReport, null, 2)
     );
+
+    // === Write forge-error-injection.json (always, enabled or disabled) ===
+    const forgeErrorInjectionReport = {
+      marker: 'FORGE_ERROR_INJECTION_V1',
+      enabled: FORCE_FORGE_CONSOLE_ERROR,
+      iframeSrc: iframeSrc,
+      selectedFrameUrl: selectedFrameUrl || iframeSrc,
+      injectedText: FORCE_FORGE_CONSOLE_ERROR ? '[FT_FORCED_FORGE_ERROR]' : null,
+      ts: new Date().toISOString(),
+    };
+    fs.writeFileSync(
+      path.join(outDir, 'forge-error-injection.json'),
+      JSON.stringify(forgeErrorInjectionReport, null, 2)
+    );
   }
 });
+
+/*
+========== PROOF COMMANDS (TEST-ONLY: Forge Iframe Console Error Injection) ==========
+
+Normal run (should not fail due to host noise):
+  rm -rf /tmp/pw_dash_diag_* /tmp/pw_novnc_run_* && \
+  export JIRA_BASE_URL="https://firsttry.atlassian.net" && \
+  export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102" && \
+  unset FT_FORCE_FORGE_CONSOLE_ERROR && \
+  timeout 180 bash scripts/proof/run_playwright_with_novnc.sh 2>&1 | tee /tmp/pw_latest_stdout.log
+
+Forced Forge error run (must fail due to forgeConsoleErrorCount):
+  rm -rf /tmp/pw_dash_diag_* /tmp/pw_novnc_run_* && \
+  export JIRA_BASE_URL="https://firsttry.atlassian.net" && \
+  export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102" && \
+  export FT_FORCE_FORGE_CONSOLE_ERROR=1 && \
+  timeout 180 bash scripts/proof/run_playwright_with_novnc.sh 2>&1 | tee /tmp/pw_latest_stdout.log
+
+Evidence checks:
+  OUT="$(ls -1dt /tmp/pw_dash_diag_* | head -1)"
+  node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log(j.counts);console.log("forge=",j.forgeIframeErrors.map(e=>e.text));console.log("host=",j.hostPageErrors.length);' "$OUT/console-errors.json"
+  cat "$OUT/forge-error-injection.json"
+*/
