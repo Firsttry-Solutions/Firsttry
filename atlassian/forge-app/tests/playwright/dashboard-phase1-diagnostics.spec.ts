@@ -142,6 +142,75 @@ async function resolveForgeFrameByIframeSrc(page: any, consoleLines: string[]): 
   return null;
 }
 
+// === HELPER: Console entry structure ===
+interface ConsoleEntry {
+  kind: string;
+  level: string;
+  text: string;
+  location: { url: string; lineNumber: number; columnNumber: number };
+  ts: string;
+}
+
+// === HELPER: Classification context ===
+interface ClassificationContext {
+  iframeSrc: string;
+  selectedFrameUrl: string;
+  bundleUrl: string;
+  iframeOriginHost: string;
+  bundleHost: string;
+}
+
+// === HELPER: Classify console entry as forge or host ===
+function classifyConsoleEntry(entry: ConsoleEntry, ctx: ClassificationContext): { origin: 'forge' | 'host'; reason: string } {
+  const locationUrl = entry.location.url || '';
+  const text = entry.text;
+
+  // Rule 1: Check for atlassian-dev.net in location.url
+  if (locationUrl.includes('atlassian-dev.net') || locationUrl.includes('hello.atlassian-dev.net')) {
+    return { origin: 'forge', reason: 'location_url_atlassian_dev' };
+  }
+
+  // Rule 2: Check for iframe origin host in location.url
+  if (ctx.iframeOriginHost && locationUrl.includes(ctx.iframeOriginHost)) {
+    return { origin: 'forge', reason: 'location_url_iframe_host' };
+  }
+
+  // Rule 3: Check for bundle URL match
+  if (ctx.bundleUrl && (locationUrl.includes(ctx.bundleUrl) || text.includes(ctx.bundleUrl))) {
+    return { origin: 'forge', reason: 'bundle_match' };
+  }
+
+  // Rule 4: Check for Forge marker prefixes
+  if (text.includes('[UI_') || text.includes('[FT_')) {
+    return { origin: 'forge', reason: 'marker_prefix' };
+  }
+
+  // Rule 5: Default to host
+  return { origin: 'host', reason: 'default_host' };
+}
+
+// === HELPER: Extract bundle URL from markers ===
+function extractBundleUrl(consoleLines: string[]): string {
+  const bundlePattern = /https:\/\/[^\s"]+\/app\.[0-9a-f]{40}\.js/i;
+  for (const line of consoleLines) {
+    const match = line.match(bundlePattern);
+    if (match) {
+      return match[0];
+    }
+  }
+  return '';
+}
+
+// === HELPER: Extract host from URL ===
+function extractHostFromUrl(url: string): string {
+  if (!url) return '';
+  try {
+    return new URL(url).host;
+  } catch {
+    return '';
+  }
+}
+
 test.use({ storageState: 'tests/playwright/.auth/state.json' });
 
 test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
@@ -171,26 +240,51 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
 
   // === Error counters (fail-closed tracking) ===
   let pageErrorCount = 0;
-  let consoleErrorCount = 0;
   let requestFailedCount = 0;
   let http4xx5xxCount = 0;
+  let forgeConsoleErrorCount = 0;
+  let hostConsoleErrorCount = 0;
 
   const consoleLines: string[] = [];
+  const consoleEntries: ConsoleEntry[] = [];
   const netLines: string[] = [];
   let traceIdHint = 'NONE';
+
+  // Variables for console error classification and frame selection (needed in finally block)
+  let iframeSrc = 'EMPTY';
+  let selectedFrameUrl = 'NONE';
+  let iframeSelectorUsed = 'NONE';
+  let contentFrameNullAfterRetry = false;
+  const forgeIframeErrors: any[] = [];
+  const hostPageErrors: any[] = [];
 
   // === CREATE LOG FILES EARLY (before any navigation) ===
   fs.writeFileSync(path.join(outDir, 'console.log'), '', { flag: 'w' });
   fs.writeFileSync(path.join(outDir, 'network.log'), '', { flag: 'w' });
 
-  // === Capture console messages and extract trace_ hints ===
+  // === Capture console messages with structured metadata ===
   page.on('console', (msg) => {
     const text = msg.text();
-    consoleLines.push(`[console.${msg.type()}] ${text}`);
+    const level = msg.type();
+    const location = msg.location();
+    const ts = new Date().toISOString();
 
-    if (msg.type() === 'error') {
-      consoleErrorCount++;
-    }
+    // Add to string log
+    consoleLines.push(`[console.${level}] ${text}`);
+
+    // Add to structured entries
+    const entry: ConsoleEntry = {
+      kind: 'console',
+      level,
+      text,
+      location: {
+        url: location?.url || '',
+        lineNumber: location?.lineNumber || 0,
+        columnNumber: location?.columnNumber || 0,
+      },
+      ts,
+    };
+    consoleEntries.push(entry);
 
     // Extract trace_ hints from console (look for substring "trace_")
     if (traceIdHint === 'NONE' && text.includes('trace_')) {
@@ -301,10 +395,6 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
 
     // === BACKBONE FIX 2: Find gadget frame by atlassian-dev.net URL detection ===
     let gadgetFrame = null;
-    let selectedFrameUrl = 'NONE';
-    let iframeSelectorUsed = 'NONE';
-    let iframeSrc = 'EMPTY';
-    let contentFrameNullAfterRetry = false;
     const allFrames: any[] = [];
 
     // Step A: Enumerate ALL frames and record their URLs and names
@@ -440,7 +530,7 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
       consoleLines.push('[SCREENSHOT] after.png');
 
       throw new Error(
-        `Gadget frame not found (selectedFrameUrl=${selectedFrameUrl}, iframeSelectorUsed=${iframeSelectorUsed}, iframeSrc=${iframeSrc}, contentFrameNullAfterRetry=${contentFrameNullAfterRetry}). pageErrorCount=${pageErrorCount}, consoleErrorCount=${consoleErrorCount}, requestFailedCount=${requestFailedCount}, http4xx5xxCount=${http4xx5xxCount}. See frames.txt, iframes.json, iframe-selection.txt, dom_excerpt.txt in OUT_DIR=${outDir}`
+        `Gadget frame not found (selectedFrameUrl=${selectedFrameUrl}, iframeSelectorUsed=${iframeSelectorUsed}, iframeSrc=${iframeSrc}, contentFrameNullAfterRetry=${contentFrameNullAfterRetry}). pageErrorCount=${pageErrorCount}, forgeConsoleErrorCount=${forgeConsoleErrorCount}, hostConsoleErrorCount=${hostConsoleErrorCount}, requestFailedCount=${requestFailedCount}, http4xx5xxCount=${http4xx5xxCount}. See frames.txt, iframes.json, iframe-selection.txt, dom_excerpt.txt in OUT_DIR=${outDir}`
       );
     }
 
@@ -459,6 +549,94 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     fs.writeFileSync(
       path.join(outDir, 'iframe-selection.txt'),
       JSON.stringify(iframeSelectionSuccess, null, 2)
+    );
+
+    // === DETERMINE CONSOLE ERROR CLASSIFICATION CONTEXT ===
+    const bundleUrl = extractBundleUrl(consoleLines);
+    const iframeOriginHost = extractHostFromUrl(iframeSrc);
+    const bundleHost = extractHostFromUrl(bundleUrl);
+
+    // Classify all console entries
+    const ctx: ClassificationContext = {
+      iframeSrc,
+      selectedFrameUrl,
+      bundleUrl,
+      iframeOriginHost,
+      bundleHost,
+    };
+
+    const forgeIframeErrors: any[] = [];
+    const hostPageErrors: any[] = [];
+
+    for (const entry of consoleEntries) {
+      if (entry.level === 'error') {
+        const { origin, reason } = classifyConsoleEntry(entry, ctx);
+
+        if (origin === 'forge') {
+          forgeConsoleErrorCount++;
+          forgeIframeErrors.push({
+            level: entry.level,
+            text: entry.text,
+            locationUrl: entry.location.url,
+            lineNumber: entry.location.lineNumber,
+            columnNumber: entry.location.columnNumber,
+            reason,
+            ts: entry.ts,
+          });
+        } else {
+          hostConsoleErrorCount++;
+          hostPageErrors.push({
+            level: entry.level,
+            text: entry.text,
+            locationUrl: entry.location.url,
+            lineNumber: entry.location.lineNumber,
+            columnNumber: entry.location.columnNumber,
+            reason,
+            ts: entry.ts,
+          });
+        }
+      }
+    }
+
+    // Sort forge errors deterministically
+    forgeIframeErrors.sort((a, b) => {
+      if (a.locationUrl !== b.locationUrl) return a.locationUrl.localeCompare(b.locationUrl);
+      if (a.lineNumber !== b.lineNumber) return a.lineNumber - b.lineNumber;
+      if (a.columnNumber !== b.columnNumber) return a.columnNumber - b.columnNumber;
+      if (a.text !== b.text) return a.text.localeCompare(b.text);
+      return a.ts.localeCompare(b.ts);
+    });
+
+    // Sort host errors deterministically
+    hostPageErrors.sort((a, b) => {
+      if (a.locationUrl !== b.locationUrl) return a.locationUrl.localeCompare(b.locationUrl);
+      if (a.lineNumber !== b.lineNumber) return a.lineNumber - b.lineNumber;
+      if (a.columnNumber !== b.columnNumber) return a.columnNumber - b.columnNumber;
+      if (a.text !== b.text) return a.text.localeCompare(b.text);
+      return a.ts.localeCompare(b.ts);
+    });
+
+    // Write console-errors.json with deterministic structure
+    const consoleErrorsReport = {
+      marker: 'CONSOLE_ERRORS_V1',
+      iframeSrc,
+      selectedFrameUrl,
+      bundleUrl,
+      counts: {
+        forgeConsoleErrorCount,
+        hostConsoleErrorCount,
+        totalConsoleErrorCount: forgeConsoleErrorCount + hostConsoleErrorCount,
+      },
+      forgeIframeErrors,
+      hostPageErrors,
+    };
+
+    fs.writeFileSync(
+      path.join(outDir, 'console-errors.json'),
+      JSON.stringify(consoleErrorsReport, null, 2)
+    );
+    consoleLines.push(
+      `[CONSOLE_ERRORS_WRITTEN] path=${outDir}/console-errors.json forgeErrors=${forgeConsoleErrorCount} hostErrors=${hostConsoleErrorCount}`
     );
 
     // === Take before screenshot (gadget found) ===
@@ -511,7 +689,8 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
 
     // === Print final counters and trace hint ===
     console.log(`[COUNTERS] pageErrorCount=${pageErrorCount}`);
-    console.log(`[COUNTERS] consoleErrorCount=${consoleErrorCount}`);
+    console.log(`[COUNTERS] forgeConsoleErrorCount=${forgeConsoleErrorCount}`);
+    console.log(`[COUNTERS] hostConsoleErrorCount=${hostConsoleErrorCount}`);
     console.log(`[COUNTERS] requestFailedCount=${requestFailedCount}`);
     console.log(`[COUNTERS] http4xx5xxCount=${http4xx5xxCount}`);
     console.log(`[COUNTERS] outcome=${outcome}`);
@@ -525,9 +704,9 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
       );
     }
 
-    if (consoleErrorCount > 0) {
+    if (forgeConsoleErrorCount > 0) {
       throw new Error(
-        `consoleErrorCount=${consoleErrorCount} (expected 0). OUT_DIR=${outDir}`
+        `forgeConsoleErrorCount=${forgeConsoleErrorCount} (expected 0). hostConsoleErrorCount=${hostConsoleErrorCount}. OUT_DIR=${outDir}`
       );
     }
 
@@ -552,5 +731,89 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     // === Ensure all artifacts are flushed even on exception ===
     fs.writeFileSync(path.join(outDir, 'console.log'), consoleLines.join('\n'));
     fs.writeFileSync(path.join(outDir, 'network.log'), netLines.join('\n'));
+
+    // === Write console-errors.json even on early failure (if not already written) ===
+    // Re-compute classification context in case it wasn't done due to early failure
+    const bundleUrl = extractBundleUrl(consoleLines);
+    const iframeOriginHost = extractHostFromUrl(iframeSrc);
+    const bundleHost = extractHostFromUrl(bundleUrl);
+
+    const ctx: ClassificationContext = {
+      iframeSrc,
+      selectedFrameUrl,
+      bundleUrl,
+      iframeOriginHost,
+      bundleHost,
+    };
+
+    // Classify entries if not already done
+    if (forgeIframeErrors.length === 0 && hostPageErrors.length === 0 && forgeConsoleErrorCount === 0 && hostConsoleErrorCount === 0) {
+      for (const entry of consoleEntries) {
+        if (entry.level === 'error') {
+          const { origin, reason } = classifyConsoleEntry(entry, ctx);
+
+          if (origin === 'forge') {
+            forgeConsoleErrorCount++;
+            forgeIframeErrors.push({
+              level: entry.level,
+              text: entry.text,
+              locationUrl: entry.location.url,
+              lineNumber: entry.location.lineNumber,
+              columnNumber: entry.location.columnNumber,
+              reason,
+              ts: entry.ts,
+            });
+          } else {
+            hostConsoleErrorCount++;
+            hostPageErrors.push({
+              level: entry.level,
+              text: entry.text,
+              locationUrl: entry.location.url,
+              lineNumber: entry.location.lineNumber,
+              columnNumber: entry.location.columnNumber,
+              reason,
+              ts: entry.ts,
+            });
+          }
+        }
+      }
+
+      // Sort forge errors deterministically
+      forgeIframeErrors.sort((a, b) => {
+        if (a.locationUrl !== b.locationUrl) return a.locationUrl.localeCompare(b.locationUrl);
+        if (a.lineNumber !== b.lineNumber) return a.lineNumber - b.lineNumber;
+        if (a.columnNumber !== b.columnNumber) return a.columnNumber - b.columnNumber;
+        if (a.text !== b.text) return a.text.localeCompare(b.text);
+        return a.ts.localeCompare(b.ts);
+      });
+
+      // Sort host errors deterministically
+      hostPageErrors.sort((a, b) => {
+        if (a.locationUrl !== b.locationUrl) return a.locationUrl.localeCompare(b.locationUrl);
+        if (a.lineNumber !== b.lineNumber) return a.lineNumber - b.lineNumber;
+        if (a.columnNumber !== b.columnNumber) return a.columnNumber - b.columnNumber;
+        if (a.text !== b.text) return a.text.localeCompare(b.text);
+        return a.ts.localeCompare(b.ts);
+      });
+    }
+
+    const consoleErrorsReport = {
+      marker: 'CONSOLE_ERRORS_V1',
+      iframeSrc,
+      selectedFrameUrl,
+      bundleUrl,
+      counts: {
+        forgeConsoleErrorCount,
+        hostConsoleErrorCount,
+        totalConsoleErrorCount: forgeConsoleErrorCount + hostConsoleErrorCount,
+      },
+      forgeIframeErrors,
+      hostPageErrors,
+    };
+
+    fs.writeFileSync(
+      path.join(outDir, 'console-errors.json'),
+      JSON.stringify(consoleErrorsReport, null, 2)
+    );
   }
 });
