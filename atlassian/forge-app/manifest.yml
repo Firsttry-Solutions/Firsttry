@@ -59,18 +59,12 @@ modules:
     # Layer-0 Marketplace: Upgrade trigger handler (CRITICAL: runs on forge install --upgrade)
     - key: ft-upgraded-handler
       handler: lifecycle/upgraded.handler
-    # Diagnostic probe handler (webtrigger): proves live Jira backend without UI
-    - key: ft-diag-probe-fn
-      handler: diagnostic/probe.handler
     # Layer-0 Debug: Snapshot state endpoint (read-only, for testing)
     - key: debug-snapshot-state-fn
       handler: gadget-resolver.handler
     # ENTERPRISE R2: Phase 6 admin page for evidence ledger + drift history
     - key: phase6-admin-page-fn
       handler: admin/phase6_admin_page.handler
-    # Backend identity webtrigger (read-only, public): for E2E deployment verification
-    - key: backend-identity-fn
-      handler: webtriggers/backend_identity.handler
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # Supported intervals: day, week, hour, minute, fiveMinute
@@ -111,12 +105,6 @@ modules:
       events:
         - avi:forge:upgraded:app
       function: ft-upgraded-handler
-
-  # Web Triggers (HTTP endpoints for external access)
-  webtrigger:
-    # Backend identity endpoint: returns deployed git SHA for E2E verification
-    - key: backend-identity-trigger
-      function: backend-identity-fn
 
   # Permissions (following module definitions)
 
