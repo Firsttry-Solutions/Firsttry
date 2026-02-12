@@ -322,13 +322,28 @@ async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1>
       ts: new Date().toISOString(),
     }));
 
-    // Return canonical success envelope
+    // Build phase1Proof marker (deterministic, no timestamps) for return in envelope
+    const phase1Proof = handlerResult?.ok === true ? {
+      marker: '[PHASE1_ACCESS_SCAN_OK]',
+      action: 'RUN_ACCESS_REVIEW',
+      buildShaShort: build.buildShaShort,
+      schemaVersion: '1.0',
+      projectsCount: handlerResult?.counts?.projectAdmins !== undefined ? 
+        (Array.isArray(handlerResult.counts.projectAdmins) ? handlerResult.counts.projectAdmins.length : 0) :
+        0,
+      totalUsers: handlerResult?.counts?.totalUsers || 0,
+      riskTier: handlerResult?.riskTier || 'UNKNOWN',
+      snapshotId: handlerResult?.snapshotId || 'NONE',
+    } : undefined;
+
+    // Return canonical success envelope with phase1Proof marker
     return {
       envelopeKind: 'FT_ACTION_RESULT_V1',
       ok: handlerResult?.ok === true,
       action: 'RUN_ACCESS_REVIEW',
       traceId,
       build,
+      phase1Proof,
       data: handlerResult,
     };
   } catch (error: any) {
