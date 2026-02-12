@@ -20,7 +20,9 @@
  * - No audit logging (to avoid PII leakage)
  */
 
-import api, { route } from "@forge/api";
+import api from "@forge/api";
+// @ts-ignore route() is exported from @forge/api but TS definitions may lag
+const { route } = require("@forge/api") as typeof import("@forge/api");
 
 // Require token match for access
 const getDiagToken = (): string => {
