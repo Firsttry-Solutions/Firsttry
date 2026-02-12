@@ -75,6 +75,64 @@ describe('GATE: phase1_action_response_envelope_kind', () => {
     expect(fnBody).toContain("action: 'EXPORT_PHASE1_PACK'");
   });
 
+  it('FAIL: handlePhase1AccessReview MUST detect soft failures (ok:false without throw)', () => {
+    const fnStartIdx = resolverCode.indexOf('async function handlePhase1AccessReview');
+    const nextFnIdx = resolverCode.indexOf('async function handlePhase1ExportPack', fnStartIdx + 1);
+    const fnBody = resolverCode.substring(fnStartIdx, nextFnIdx);
+
+    // Must explicitly check: handlerResult.ok === false
+    expect(fnBody).toContain('handlerResult.ok === false');
+    
+    // Soft-fail branch must map to reason/error fields
+    expect(fnBody).toContain('softFailureMessage');
+    expect(fnBody).toContain('softFailureCode');
+    
+    // Must log [FT_PROOF_PHASE1_FAIL] on soft-fail
+    expect(fnBody).toContain('[FT_PROOF_PHASE1_FAIL]');
+    expect(fnBody).toContain("source: 'soft_failure'");
+    
+    // Soft-fail return must include top-level reason and error object
+    expect(fnBody).toMatch(/return\s+\{[\s\S]*?reason: softFailureMessage/);
+    expect(fnBody).toMatch(/error:\s*\{[\s\S]*?code: softFailureCode/);
+  });
+
+  it('FAIL: handlePhase1ExportPack MUST detect soft failures (ok:false without throw)', () => {
+    const fnStartIdx = resolverCode.indexOf('async function handlePhase1ExportPack');
+    const nextFnIdx = resolverCode.indexOf('export async function ft_getDashboardState_v1', fnStartIdx + 1);
+    const fnBody = resolverCode.substring(fnStartIdx, nextFnIdx);
+
+    // Must explicitly check: handlerResult.ok === false
+    expect(fnBody).toContain('handlerResult.ok === false');
+    
+    // Soft-fail branch must map to reason/error fields
+    expect(fnBody).toContain('softFailureMessage');
+    expect(fnBody).toContain('softFailureCode');
+    
+    // Must log [FT_PROOF_PHASE1_FAIL] on soft-fail
+    expect(fnBody).toContain('[FT_PROOF_PHASE1_FAIL]');
+    expect(fnBody).toContain("source: 'soft_failure'");
+    
+    // Soft-fail return must include top-level reason and error object
+    expect(fnBody).toMatch(/return\s+\{[\s\S]*?reason: softFailureMessage/);
+    expect(fnBody).toMatch(/error:\s*\{[\s\S]*?code: softFailureCode/);
+  });
+
+  it('FAIL: Soft-fail envelopes must ALWAYS include reason and error fields on ok:false', () => {
+    const fnStartIdx = resolverCode.indexOf('async function handlePhase1AccessReview');
+    const nextFnIdx = resolverCode.indexOf('export async function ft_getDashboardState_v1', fnStartIdx + 1);
+    const fnBody = resolverCode.substring(fnStartIdx, nextFnIdx);
+
+    // Count return statements with ok:false
+    const failureReturns = fnBody.match(/ok:\s*false/g);
+    expect(failureReturns && failureReturns.length > 0).toBe(true);
+    
+    // For each failure return, must have reason and error.{code,message,traceId}
+    expect(fnBody).toContain('reason:');
+    expect(fnBody).toContain('error: {');
+    expect(fnBody).toContain('code:');
+    expect(fnBody).toContain('message:');
+  });
+
   it('FAIL: ft_getDashboardState_v1 action branch must return envelope directly', () => {
     const fnStartIdx = resolverCode.indexOf('export async function ft_getDashboardState_v1');
     const returnIdx = resolverCode.indexOf('return actionResult as any', fnStartIdx);

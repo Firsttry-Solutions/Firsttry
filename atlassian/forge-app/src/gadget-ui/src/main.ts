@@ -3179,9 +3179,15 @@ async function proceedWithBoot() {
               } else {
                 console.error('[PHASE1_ACCESS_SCAN_FAILED]', actionResult);
                 
-                // Sanity check: error/build fields must exist on failure
-                if (!actionResult.error || !actionResult.build) {
-                  console.error('[PHASE1_CONTRACT_BREACH]', 'Missing error or build object in failure response', actionResult);
+                // Sanity check: error/build/reason/traceId fields must exist on failure
+                if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
+                  console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'Missing required fields on ok:false response', {
+                    hasError: !!actionResult.error,
+                    hasBuild: !!actionResult.build,
+                    hasReason: !!actionResult.reason,
+                    hasTraceId: !!actionResult.traceId,
+                    response: actionResult,
+                  });
                   runAccessButton.textContent = `Scan Failed: CONTRACT_BREACH missing fields (traceId=${actionResult.traceId || 'unknown'})`;
                 } else {
                   const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
@@ -3255,8 +3261,14 @@ async function proceedWithBoot() {
                 exportAccessButton.textContent = 'Export Complete';
               } else {
                 console.error('[PHASE1_EXPORT_FAILED]', exportData);
-                if (!actionResult.error || !actionResult.build) {
-                  console.error('[PHASE1_CONTRACT_BREACH]', 'Missing error or build object in failure response', actionResult);
+                if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
+                  console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'Missing required fields on ok:false response', {
+                    hasError: !!actionResult.error,
+                    hasBuild: !!actionResult.build,
+                    hasReason: !!actionResult.reason,
+                    hasTraceId: !!actionResult.traceId,
+                    response: actionResult,
+                  });
                   exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH missing fields (traceId=${actionResult.traceId || 'unknown'})`;
                 } else {
                   const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
