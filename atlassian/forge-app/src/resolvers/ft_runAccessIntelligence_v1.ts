@@ -18,7 +18,9 @@
  * - Deterministic: Same data = same snapshot hash
  */
 
-import api, { storage, route } from '@forge/api';
+import api, { storage } from '@forge/api';
+// @ts-ignore route() is exported from @forge/api but TS definitions may lag
+const { route } = require('@forge/api') as typeof import('@forge/api');
 
 /**
  * Main entry point invoked by gadget UI

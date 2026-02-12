@@ -26,7 +26,9 @@
  * - Never "as returned by Jira"
  */
 
-import api, { route } from '@forge/api';
+import api from '@forge/api';
+// @ts-ignore route() is exported from @forge/api but TS definitions may lag
+const { route } = require('@forge/api') as typeof import('@forge/api');
 import type { ConfigInventory } from '../models';
 import { canonicalizeValue } from '../canonicalize';
 
