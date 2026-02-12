@@ -1,8 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// === STRICT ENV VALIDATION AT CONFIG LOAD TIME ===
 const baseUrl = process.env.JIRA_BASE_URL;
 if (!baseUrl) {
   throw new Error('JIRA_BASE_URL environment variable is required');
+}
+const expectedBaseUrl = 'https://firsttry.atlassian.net';
+if (baseUrl !== expectedBaseUrl) {
+  throw new Error(
+    `JIRA_BASE_URL must equal exactly '${expectedBaseUrl}', got '${baseUrl}'`
+  );
 }
 
 export default defineConfig({

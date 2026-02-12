@@ -1,0 +1,248 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Playwright Dashboard Diagnostics with noVNC Viewer
+# Runs headed Playwright via Xvfb + noVNC for observation in Codespaces
+# Guarantees auth setup runs first with project dependencies
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../" && pwd)"
+
+# === STRICT ENV VALIDATION ===
+if [[ -z "${JIRA_BASE_URL:-}" ]]; then
+  echo "[PW_NOVNC] ERROR: JIRA_BASE_URL not set"
+  exit 1
+fi
+
+EXPECTED_BASE_URL="https://firsttry.atlassian.net"
+if [[ "${JIRA_BASE_URL}" != "${EXPECTED_BASE_URL}" ]]; then
+  echo "[PW_NOVNC] ERROR: JIRA_BASE_URL must equal exactly '${EXPECTED_BASE_URL}', got '${JIRA_BASE_URL}'"
+  exit 1
+fi
+
+if [[ -z "${JIRA_DASHBOARD_URL:-}" ]]; then
+  echo "[PW_NOVNC] ERROR: JIRA_DASHBOARD_URL not set"
+  exit 1
+fi
+
+EXPECTED_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
+if [[ "${JIRA_DASHBOARD_URL}" != "${EXPECTED_DASHBOARD_URL}" ]]; then
+  echo "[PW_NOVNC] ERROR: JIRA_DASHBOARD_URL must equal exactly '${EXPECTED_DASHBOARD_URL}', got '${JIRA_DASHBOARD_URL}'"
+  exit 1
+fi
+
+# === CREATE DETERMINISTIC RUN ROOT ===
+RUN_TS=$(date -u +%Y%m%dT%H%M%SZ)
+RUN_ROOT="/tmp/pw_novnc_run_${RUN_TS}"
+mkdir -p "$RUN_ROOT"
+echo "[PW_NOVNC] RUN_ROOT=${RUN_ROOT}"
+
+# === DISPLAY AND XVFB CONFIGURATION ===
+export DISPLAY=":99"
+XVFB_WHD="${XVFB_WHD:-1920x1080x24}"
+VNC_PORT="${VNC_PORT:-5901}"
+NOVNC_PORT="${NOVNC_PORT:-6080}"
+
+# === CHECK REQUIRED BINARIES ===
+check_cmd() {
+  if ! command -v "$1" &> /dev/null; then
+    echo "[PW_NOVNC] WARNING: $1 not found, attempting to install..."
+    return 1
+  fi
+  return 0
+}
+
+# List of required binaries and their packages
+declare -A BINARIES=(
+  ["Xvfb"]="xvfb"
+  ["fluxbox"]="fluxbox"
+  ["x11vnc"]="x11vnc"
+  ["websockify"]="websockify"
+  ["xdpyinfo"]="x11-utils"
+)
+
+MISSING=()
+for bin in "${!BINARIES[@]}"; do
+  if ! check_cmd "${bin,,}"; then
+    MISSING+=("${BINARIES[$bin]}")
+  fi
+done
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  echo "[PW_NOVNC] Installing missing packages: ${MISSING[*]}"
+  if command -v sudo &> /dev/null; then
+    sudo apt-get update -qq
+    sudo apt-get install -y -qq "${MISSING[@]}"
+  else
+    echo "[PW_NOVNC] ERROR: Missing packages and sudo not available"
+    exit 1
+  fi
+fi
+
+# === START XVFB ===
+echo "[PW_NOVNC] Starting Xvfb on DISPLAY=${DISPLAY} with resolution ${XVFB_WHD}..."
+Xvfb "$DISPLAY" -screen 0 "$XVFB_WHD" > "$RUN_ROOT/xvfb.log" 2>&1 &
+XVFB_PID=$!
+echo "[PW_NOVNC] Xvfb PID: $XVFB_PID"
+
+# Wait for Xvfb to start
+sleep 2
+if ! xdpyinfo -display "${DISPLAY}" > /dev/null 2>&1; then
+  echo "[PW_NOVNC] ERROR: Xvfb failed to start. Check ${RUN_ROOT}/xvfb.log"
+  exit 1
+fi
+echo "[PW_NOVNC] ✓ Xvfb ready"
+
+# === START FLUXBOX WINDOW MANAGER ===
+echo "[PW_NOVNC] Starting fluxbox window manager..."
+fluxbox -display "${DISPLAY}" > "$RUN_ROOT/fluxbox.log" 2>&1 &
+FLUXBOX_PID=$!
+echo "[PW_NOVNC] Fluxbox PID: $FLUXBOX_PID"
+sleep 1
+
+# === START X11VNC ===
+echo "[PW_NOVNC] Starting x11vnc on port ${VNC_PORT}..."
+X11VNC_OPTS=(
+  "-display" "$DISPLAY"
+  "-rfbport" "$VNC_PORT"
+  "-localhost"
+  "-forever"
+  "-shared"
+  "-noxrecord"
+  "-nodragging"
+)
+
+# Add password if provided
+if [[ -n "${VNC_PASS:-}" ]]; then
+  echo "$VNC_PASS" | vncpasswd -f > "$RUN_ROOT/.vncpass"
+  X11VNC_OPTS+=("-rfbauth" "$RUN_ROOT/.vncpass")
+fi
+
+x11vnc "${X11VNC_OPTS[@]}" > "$RUN_ROOT/x11vnc.log" 2>&1 &
+X11VNC_PID=$!
+echo "[PW_NOVNC] x11vnc PID: $X11VNC_PID"
+sleep 1
+
+# === START WEBSOCKIFY + noVNC ===
+echo "[PW_NOVNC] Starting websockify + noVNC on port ${NOVNC_PORT}..."
+NOVNC_DIR="${NOVNC_DIR:-/usr/share/novnc}"
+
+# Fallback if standard dir doesn't exist
+if [[ ! -d "$NOVNC_DIR" ]]; then
+  if command -v python3 &> /dev/null; then
+    NOVNC_DIR=$(python3 -c "import novnc; print(novnc.__path__[0])" 2>/dev/null || echo "/usr/share/novnc")
+  fi
+fi
+
+websockify \
+  --web "$NOVNC_DIR" \
+  "$NOVNC_PORT" \
+  "localhost:${VNC_PORT}" \
+  > "$RUN_ROOT/websockify.log" 2>&1 &
+WEBSOCKIFY_PID=$!
+echo "[PW_NOVNC] Websockify PID: $WEBSOCKIFY_PID"
+sleep 1
+
+echo "[PW_NOVNC]"
+echo "[PW_NOVNC] ✅ DISPLAY STACK READY"
+echo "[PW_NOVNC] noVNC_URL=http://localhost:${NOVNC_PORT}/vnc.html"
+echo "[PW_NOVNC] ⚠️  Forward port ${NOVNC_PORT} as PRIVATE in Codespaces to access from browser"
+echo "[PW_NOVNC]"
+
+# === CLEANUP ON EXIT ===
+cleanup() {
+  echo "[PW_NOVNC] Cleaning up display stack..."
+  kill $WEBSOCKIFY_PID 2>/dev/null || true
+  kill $X11VNC_PID 2>/dev/null || true
+  kill $FLUXBOX_PID 2>/dev/null || true
+  kill $XVFB_PID 2>/dev/null || true
+  wait $WEBSOCKIFY_PID 2>/dev/null || true
+  wait $X11VNC_PID 2>/dev/null || true
+  wait $FLUXBOX_PID 2>/dev/null || true
+  wait $XVFB_PID 2>/dev/null || true
+  echo "[PW_NOVNC] Cleanup complete"
+}
+trap cleanup EXIT
+
+# === RUN PLAYWRIGHT ===
+cd "${REPO_ROOT}"
+export JIRA_BASE_URL
+export JIRA_DASHBOARD_URL
+
+echo "[PW_NOVNC] Playwright version:"
+npx playwright --version | tee "$RUN_ROOT/playwright-version.log"
+
+echo "[PW_NOVNC]"
+echo "[PW_NOVNC] === PHASE 1: AUTH SETUP (headed) ==="
+if npx playwright test --project=setup --headed \
+  --reporter=list \
+  --workers=1 \
+  --retries=0 \
+  2>&1 | tee "$RUN_ROOT/setup.log"; then
+  SETUP_EXIT=0
+  echo "[PW_NOVNC] ✅ Auth setup PASSED"
+else
+  SETUP_EXIT=$?
+  echo "[PW_NOVNC] ❌ Auth setup FAILED (exit code: $SETUP_EXIT)"
+fi
+
+echo "[PW_NOVNC]"
+echo "[PW_NOVNC] === PHASE 2: DASHBOARD DIAGNOSTICS (headed) ==="
+if npx playwright test --project=chromium --headed \
+  --reporter=list \
+  --workers=1 \
+  --retries=0 \
+  2>&1 | tee "$RUN_ROOT/diagnostics.log"; then
+  DIAG_EXIT=0
+  echo "[PW_NOVNC] ✅ Dashboard diagnostics PASSED"
+else
+  DIAG_EXIT=$?
+  echo "[PW_NOVNC] ❌ Dashboard diagnostics FAILED (exit code: $DIAG_EXIT)"
+fi
+
+# === POST-RUN EVIDENCE ===
+echo "[PW_NOVNC]"
+echo "[PW_NOVNC] === POST-RUN EVIDENCE ==="
+
+LATEST_OUT="$(ls -td /tmp/pw_dash_diag_* 2>/dev/null | head -1 || true)"
+if [[ -n "${LATEST_OUT:-}" ]]; then
+  echo "[PW_NOVNC] LATEST_OUT_DIR=${LATEST_OUT}"
+  echo "[PW_NOVNC]"
+  echo "[PW_NOVNC] === OUT_DIR files ===" 
+  ls -lah "$LATEST_OUT"
+  echo "[PW_NOVNC]"
+  echo "[PW_NOVNC] === console.log (tail -200) ==="
+  tail -200 "$LATEST_OUT/console.log" 2>/dev/null || echo "(no console.log)"
+  echo "[PW_NOVNC]"
+  echo "[PW_NOVNC] === network.log (tail -200) ==="
+  tail -200 "$LATEST_OUT/network.log" 2>/dev/null || echo "(no network.log)"
+  echo "[PW_NOVNC]"
+  echo "[PW_NOVNC] === HTTP 4xx/5xx errors (first 50) ==="
+  grep -E "\[response\.(4|5)[0-9]{2}\]" "$LATEST_OUT/network.log" 2>/dev/null | head -50 || echo "(none)"
+else
+  echo "[PW_NOVNC] No /tmp/pw_dash_diag_* directories found"
+fi
+
+echo "[PW_NOVNC]"
+echo "[PW_NOVNC] === RUN LOGS ==="
+echo "[PW_NOVNC]"
+echo "[PW_NOVNC] === setup.log (tail -200) ==="
+tail -200 "$RUN_ROOT/setup.log"
+echo "[PW_NOVNC]"
+echo "[PW_NOVNC] === diagnostics.log (tail -200) ==="
+tail -200 "$RUN_ROOT/diagnostics.log"
+
+# === FINAL STATUS ===
+OVERALL_EXIT=0
+if [[ $SETUP_EXIT -ne 0 ]]; then OVERALL_EXIT=$SETUP_EXIT; fi
+if [[ $DIAG_EXIT -ne 0 ]]; then OVERALL_EXIT=$DIAG_EXIT; fi
+
+echo "[PW_NOVNC]"
+if [[ $OVERALL_EXIT -eq 0 ]]; then
+  echo "[PW_NOVNC] ✅ OVERALL: ALL PHASES PASSED"
+else
+  echo "[PW_NOVNC] ❌ OVERALL: SOME PHASES FAILED (exit code: $OVERALL_EXIT)"
+fi
+echo "[PW_NOVNC] RUN_ROOT=${RUN_ROOT}"
+
+exit $OVERALL_EXIT
