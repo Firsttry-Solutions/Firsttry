@@ -104,7 +104,7 @@ X11VNC_OPTS=(
   "-nodragging"
 )
 
-# Handle VNC password using x11vnc -storepasswd
+# Handle VNC password (optional)
 if [[ -n "${VNC_PASS:-}" ]]; then
   # Validate VNC password length (x11vnc -storepasswd requires 6-8 chars)
   VNC_PASS_LEN=${#VNC_PASS}
@@ -130,6 +130,9 @@ if [[ -n "${VNC_PASS:-}" ]]; then
   fi
   X11VNC_OPTS+=("-rfbauth" "$PASSFILE")
   echo "[PW_NOVNC] ✓ VNC password stored"
+else
+  echo "[PW_NOVNC] ⚠️  VNC_PASS not set - VNC will be open WITHOUT password (localhost only)"
+fi
 fi
 
 x11vnc "${X11VNC_OPTS[@]}" > "$RUN_ROOT/x11vnc.log" 2>&1 &
