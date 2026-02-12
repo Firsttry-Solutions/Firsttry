@@ -405,15 +405,15 @@ async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1>
 
     // Build phase1Proof marker (deterministic, no timestamps) for return in envelope
     const phase1Proof = handlerResult?.ok === true ? {
-      marker: '[PHASE1_ACCESS_SCAN_OK]',
-      action: 'RUN_ACCESS_REVIEW',
+      marker: '[PHASE1_ACCESS_SCAN_OK]' as const,
+      action: 'RUN_ACCESS_REVIEW' as const,
       buildShaShort: build.buildShaShort,
-      schemaVersion: '1.0',
+      schemaVersion: '1.0' as const,
       projectsCount: handlerResult?.counts?.projectAdmins !== undefined ? 
         (Array.isArray(handlerResult.counts.projectAdmins) ? handlerResult.counts.projectAdmins.length : 0) :
         0,
       totalUsers: handlerResult?.counts?.totalUsers || 0,
-      riskTier: handlerResult?.riskTier || 'UNKNOWN',
+      riskTier: (handlerResult?.riskTier || 'UNKNOWN') as ('LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN'),
       snapshotId: handlerResult?.snapshotId || 'NONE',
     } : undefined;
 
