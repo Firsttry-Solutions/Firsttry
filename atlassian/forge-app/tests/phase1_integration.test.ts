@@ -283,8 +283,8 @@ describe("Phase 1 Production Readiness", () => {
 
   it("should have proper function entries in manifest", async () => {
     // Manifest should have:
-    // - ft-run-access-intelligence-v1-fn
-    // - ft-export-access-pack-v1-fn
+    // - ft-access-v1-fn
+    // - ft-export-v1-fn
     // Both pointing to gadget-resolver.handler
     
     // This is verified during build (verify:manifest:diag-webtrigger passes)
