@@ -3149,7 +3149,23 @@ async function proceedWithBoot() {
               console.log('[PHASE1_ACCESS_SCAN_CLICK] User triggered access review scan');
               
               const result = await invokeWithUiReqId('ft_getDashboardState_v1', { action: 'RUN_ACCESS_REVIEW' });
-              const actionResult = result?.actionResult || result;
+              
+              // Validate envelope schema (FAIL-CLOSED)
+              if (!result || result.envelopeKind !== 'FT_ACTION_RESULT_V1') {
+                const traceIdForBreach = (result?.traceId || result?.error?.traceId || 'unknown');
+                console.error('[PHASE1_CONTRACT_BREACH_KIND]', {
+                  got: result?.envelopeKind,
+                  expected: 'FT_ACTION_RESULT_V1',
+                  fullResponse: result,
+                });
+                runAccessButton.textContent = `Scan Failed: CONTRACT_BREACH wrong envelopeKind (traceId=${traceIdForBreach})`;
+                runAccessButton.style.backgroundColor = '#f44336';
+                runAccessButton.disabled = false;
+                return;
+              }
+
+              // Response has correct envelope kind - process action result
+              const actionResult = result as any;
               
               if (actionResult && actionResult.ok) {
                 console.log('[PHASE1_ACCESS_SCAN_SUCCESS]', actionResult);
@@ -3163,10 +3179,10 @@ async function proceedWithBoot() {
               } else {
                 console.error('[PHASE1_ACCESS_SCAN_FAILED]', actionResult);
                 
-                // Contract compliance check
-                if (!actionResult || !actionResult.error) {
-                  console.error('[PHASE1_CONTRACT_BREACH]', 'Missing error object in failure response');
-                  runAccessButton.textContent = 'Scan Failed: CONTRACT_BREACH missing error object';
+                // Sanity check: error/build fields must exist on failure
+                if (!actionResult.error || !actionResult.build) {
+                  console.error('[PHASE1_CONTRACT_BREACH]', 'Missing error or build object in failure response', actionResult);
+                  runAccessButton.textContent = `Scan Failed: CONTRACT_BREACH missing fields (traceId=${actionResult.traceId || 'unknown'})`;
                 } else {
                   const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
                   const traceId = actionResult.error.traceId || actionResult.traceId || 'unknown';
@@ -3199,7 +3215,22 @@ async function proceedWithBoot() {
                 action: 'EXPORT_PHASE1_PACK',
                 snapshotId: dashState.snapshotId,
               });
-              const actionResult = result?.actionResult || result;
+
+              // Validate envelope schema (FAIL-CLOSED)
+              if (!result || result.envelopeKind !== 'FT_ACTION_RESULT_V1') {
+                const traceIdForBreach = (result?.traceId || result?.error?.traceId || 'unknown');
+                console.error('[PHASE1_CONTRACT_BREACH_KIND]', {
+                  got: result?.envelopeKind,
+                  expected: 'FT_ACTION_RESULT_V1',
+                  fullResponse: result,
+                });
+                exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH wrong envelopeKind (traceId=${traceIdForBreach})`;
+                exportAccessButton.disabled = false;
+                return;
+              }
+
+              // Response has correct envelope kind - process action result
+              const actionResult = result as any;
               const exportData = actionResult?.data || actionResult;
               
               if (exportData && exportData.ok && exportData.zipBase64) {
@@ -3224,7 +3255,14 @@ async function proceedWithBoot() {
                 exportAccessButton.textContent = 'Export Complete';
               } else {
                 console.error('[PHASE1_EXPORT_FAILED]', exportData);
-                exportAccessButton.textContent = 'Export Failed: ' + (exportData?.error?.message || exportData?.reason || 'Unknown error');
+                if (!actionResult.error || !actionResult.build) {
+                  console.error('[PHASE1_CONTRACT_BREACH]', 'Missing error or build object in failure response', actionResult);
+                  exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH missing fields (traceId=${actionResult.traceId || 'unknown'})`;
+                } else {
+                  const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
+                  const traceId = actionResult.error.traceId || actionResult.traceId || 'unknown';
+                  exportAccessButton.textContent = `Export Failed: ${errorMsg} (traceId=${traceId})`;
+                }
               }
             } catch (error: any) {
               console.error('[PHASE1_EXPORT_ERROR]', error);
