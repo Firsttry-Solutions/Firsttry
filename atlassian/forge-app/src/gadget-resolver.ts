@@ -101,6 +101,87 @@ resolver.define('ft_uiLogRelay_v1', ft_uiLogRelay_v1);
 export const handler = resolver.getDefinitions();
 
 // ============================================================================
+// HELPER FUNCTIONS: Error Handling & Metadata
+// ============================================================================
+
+/**
+ * Generates a UUID-style traceId or returns existing one from request
+ */
+function getOrCreateTraceId(request: any): string {
+  // Try to extract traceId from request
+  const existing = request?.traceId || request?.trace_id;
+  if (typeof existing === 'string' && existing.length > 0) {
+    return existing;
+  }
+  // Generate new traceId: trace_<timestamp>_<random>
+  const newId = `trace_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  return newId;
+}
+
+/**
+ * Extracts short build SHA from full SHA (first 12 chars)
+ */
+function getBuildShaShort(fullSha: string | null | undefined): string {
+  if (!fullSha || typeof fullSha !== 'string') return 'unknown';
+  return fullSha.slice(0, 12);
+}
+
+/**
+ * Normalizes action errors into a structured error response
+ * Ensures NEVER returns empty strings for critical fields
+ */
+function normalizeActionError(
+  action: string,
+  traceId: string,
+  err: any
+): {
+  reason: string;
+  error: { code: string; message: string; traceId: string };
+} {
+  let code = 'PHASE1_FAILED';
+  let message = 'Phase 1 failed';
+  let reason = 'UNSPECIFIED_FAILURE';
+
+  if (err) {
+    // Extract message
+    if (err.message && typeof err.message === 'string' && err.message.length > 0) {
+      message = err.message;
+    }
+
+    // Map HTTP status to error code and reason
+    const status = err.status || err.statusCode || err.code;
+    if (typeof status === 'number') {
+      if (status >= 500) {
+        code = 'JIRA_5XX';
+        reason = 'Jira service error';
+      } else if (status === 429) {
+        code = 'JIRA_429';
+        reason = 'Rate limited by Jira';
+      } else if (status === 403) {
+        code = 'JIRA_403';
+        reason = 'Permission denied';
+      } else if (status === 401) {
+        code = 'JIRA_401';
+        reason = 'Authentication failed';
+      } else if (status >= 400) {
+        code = `JIRA_${status}`;
+        reason = 'Jira API error';
+      }
+    }
+  }
+
+  // Ensure no empty strings
+  return {
+    reason: reason && reason.length > 0 ? reason : 'UNSPECIFIED_FAILURE',
+    error: {
+      code: code && code.length > 0 ? code : 'PHASE1_FAILED',
+      message: message && message.length > 0 ? message : 'Phase 1 failed',
+      traceId: traceId && traceId.length > 0 ? traceId : 'unknown',
+    },
+  };
+}
+
+// ============================================================================
 // LAYER-0 BACKBONE RESOLVERS (NEW)
 // ============================================================================
 
@@ -109,6 +190,9 @@ export const handler = resolver.getDefinitions();
  * Wraps ft_runAccessIntelligence_v1_handler with action result structure
  */
 async function handlePhase1AccessReview(request: any): Promise<any> {
+  const traceId = getOrCreateTraceId(request);
+  const buildShaShort = getBuildShaShort(FT_BUILD_SHA);
+
   try {
     console.log('[FT_PROOF_PHASE1_DISPATCH]', 'entering handlePhase1AccessReview');
     console.log('[FT_PROOF_PHASE1_PRE_HANDLER_CALL]', 'about to call ft_runAccessIntelligence_v1_handler');
@@ -124,7 +208,7 @@ async function handlePhase1AccessReview(request: any): Promise<any> {
       throw handlerErr;
     }
     
-    
+    // Handler call succeeded
     console.log('[FT_PROOF_PHASE1_AFTER_HANDLER_SUCCESS]', 'handler returned successfully');
     console.log(JSON.stringify({
       marker: '[FT_DASH_ACTION_END]',
@@ -133,24 +217,47 @@ async function handlePhase1AccessReview(request: any): Promise<any> {
       ts: new Date().toISOString(),
     }));
 
+    // Return success response with traceId and build info
     return {
       ok: result?.ok === true,
       action: 'RUN_ACCESS_REVIEW',
+      traceId,
+      build: {
+        buildShaShort,
+        buildUtc: BACKEND_BUILD_TIME_UTC || 'unknown',
+        version: BACKEND_APP_VERSION || 'unknown',
+      },
       data: result,
     };
   } catch (error: any) {
+    // Action failed - use normalizer for structured error
+    const normalized = normalizeActionError('RUN_ACCESS_REVIEW', traceId, error);
+    
+    console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
+      action: 'RUN_ACCESS_REVIEW',
+      traceId,
+      code: normalized.error.code,
+      reason: normalized.reason,
+      ts: new Date().toISOString(),
+    }));
+
     console.error(JSON.stringify({
       marker: '[FT_DASH_ACTION_ERROR]',
       action: 'RUN_ACCESS_REVIEW',
       error: error?.message || String(error),
       ts: new Date().toISOString(),
     }));
+
     return {
       ok: false,
       action: 'RUN_ACCESS_REVIEW',
-      error: {
-        code: 'FT_ACCESS_REVIEW_FAILED',
-        message: error?.message || 'Access review failed',
+      traceId,
+      reason: normalized.reason,
+      error: normalized.error,
+      build: {
+        buildShaShort,
+        buildUtc: BACKEND_BUILD_TIME_UTC || 'unknown',
+        version: BACKEND_APP_VERSION || 'unknown',
       },
     };
   }

@@ -3162,7 +3162,16 @@ async function proceedWithBoot() {
                 }, 1500);
               } else {
                 console.error('[PHASE1_ACCESS_SCAN_FAILED]', actionResult);
-                runAccessButton.textContent = 'Scan Failed: ' + (actionResult?.error?.message || actionResult?.reason || 'Unknown error');
+                
+                // Contract compliance check
+                if (!actionResult || !actionResult.error) {
+                  console.error('[PHASE1_CONTRACT_BREACH]', 'Missing error object in failure response');
+                  runAccessButton.textContent = 'Scan Failed: CONTRACT_BREACH missing error object';
+                } else {
+                  const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
+                  const traceId = actionResult.error.traceId || actionResult.traceId || 'unknown';
+                  runAccessButton.textContent = `Scan Failed: ${errorMsg} (traceId=${traceId})`;
+                }
                 runAccessButton.style.backgroundColor = '#f44336';
               }
             } catch (error: any) {

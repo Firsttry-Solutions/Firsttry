@@ -165,6 +165,23 @@ else
 fi
 echo ""
 
+# ASSERTION 4b: Phase 1 fail marker (informational - shows if action failed)
+FAIL_COUNT=$(grep -c '\[FT_PROOF_PHASE1_FAIL\]' "$PROOF_DIR/prod_after.log" || true)
+if [ "$FAIL_COUNT" -gt 0 ]; then
+  echo -e "${YELLOW}ℹ️  INFORMATIONAL: FT_PROOF_PHASE1_FAIL markers found${NC}"
+  echo "   Count: $FAIL_COUNT"
+  echo ""
+  echo "   This means Phase 1 action encountered error(s). Sample lines:"
+  grep '\[FT_PROOF_PHASE1_FAIL\]' "$PROOF_DIR/prod_after.log" | head -3 | sed 's/^/     /'
+  echo ""
+  echo "   Note: Fail markers only appear when Phase 1 encounters errors."
+  echo "   If this is expected (testing error handling), then proof is valid."
+  echo "   If unexpected, check the error details above."
+else
+  echo -e "${GREEN}✅ No Phase 1 fail markers (action succeeded)${NC}"
+fi
+echo ""
+
 # ASSERTION 5: Route blocker error must be absent
 ROUTE_ERR_COUNT=$(grep -c 'You must create your route using the.*route.*export from.*@forge/api' "$PROOF_DIR/prod_after.log" || true)
 if [ "$ROUTE_ERR_COUNT" -gt 0 ]; then
@@ -206,10 +223,11 @@ if [ "$PASSED" = true ]; then
   echo "  - [FT_PROOF_PHASE1_DISPATCH]: $DISPATCH_COUNT"
   echo "  - [FT_PROOF_PHASE1_HANDLER_ENTRY]: $HANDLER_COUNT"
   echo "  - [FT_ACCESS_ROUTE_PROOF]: $ROUTE_COUNT"
+  echo "  - [FT_PROOF_PHASE1_FAIL]: $FAIL_COUNT (0 = success, >0 = action encountered errors)"
   echo ""
   echo "Blockers absent:"
   echo "  - Route() errors: 0 ✅"
-  echo "  -Storage where() errors: 0 ✅"
+  echo "  - Storage where() errors: 0 ✅"
   echo ""
   echo "Proof files saved to:"
   echo "  - $PROOF_DIR/prod_baseline.log"
@@ -235,6 +253,12 @@ if [ "$PASSED" = true ]; then
   echo "  Route proof:"
   grep '\[FT_ACCESS_ROUTE_PROOF\]' "$PROOF_DIR/prod_after.log" | head -3 | sed 's/^/    /'
   echo ""
+  
+  if [ "$FAIL_COUNT" -gt 0 ]; then
+    echo "  Fail markers:"
+    grep '\[FT_PROOF_PHASE1_FAIL\]' "$PROOF_DIR/prod_after.log" | head -3 | sed 's/^/    /'
+    echo ""
+  fi
   
   echo "Execution proof: SUCCESSFUL ✅"
   exit 0
