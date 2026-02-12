@@ -70,17 +70,47 @@ setup('auth', async ({ page }) => {
     const jiraPassword = process.env.JIRA_PASSWORD;
 
     if (!jiraEmail || !jiraPassword) {
-      // === Manual login mode ===
-      console.log('[AUTH] MANUAL_LOGIN_REQUIRED: complete Atlassian login in the visible browser within 180s');
-      console.log('[AUTH] Waiting for user to complete login (180s timeout)...');
-      try {
-        await page.waitForURL(`${baseUrl}/jira/**`, { timeout: 180_000 });
-        console.log('[AUTH] ✓ Manual login completed - navigated to Jira');
-      } catch (err) {
+      // === Manual login mode (polling loop) ===
+      console.log('[AUTH] MANUAL_LOGIN_REQUIRED: complete Atlassian login/MFA in visible browser within 600s');
+      console.log('[AUTH] Keeping browser open, polling for authentication proof...');
+
+      const deadline = Date.now() + 600_000; // 10 minutes
+      let lastStatus = 0;
+      let authenticated = false;
+
+      // === Polling loop: keep page open and attempt proof every 2s ===
+      while (Date.now() < deadline && !authenticated) {
+        try {
+          const resp = await page.request.get(`${baseUrl}/rest/api/3/myself`);
+          lastStatus = resp.status();
+          console.log(`[AUTH_POLL] /myself status: ${lastStatus}`);
+
+          if (lastStatus === 200) {
+            console.log('[AUTH_POLL] ✓ Authentication detected, breaking loop');
+            authenticated = true;
+            break;
+          }
+        } catch (err) {
+          console.log(`[AUTH_POLL] Request error (will retry): ${(err as Error).message}`);
+          lastStatus = 0;
+        }
+
+        // Wait 2 seconds before next attempt
+        if (!authenticated) {
+          await page.waitForTimeout(2000);
+        }
+      }
+
+      // === Check if we reached success ===
+      if (!authenticated) {
+        // Deadline exceeded without auth proof
+        await page.screenshot({ path: `${authDir}/auth-failure.png` });
         throw new Error(
-          'FATAL: Manual login not completed within 180s; set JIRA_EMAIL/JIRA_PASSWORD or login via noVNC'
+          `FATAL: Manual MFA not completed within 600s (myself status=${lastStatus})`
         );
       }
+
+      console.log('[AUTH] ✓ Manual login polling succeeded');
     } else {
       // === Automated login mode ===
       console.log('[AUTH] Attempting automated login with provided credentials...');
