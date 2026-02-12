@@ -15,11 +15,32 @@ async function dumpFrames(page: any, outDir: string): Promise<void> {
   framesList.push(`Total frames: ${page.frames().length}`);
   framesList.push('');
 
+  // Collect all frames and sort deterministically by url then name
+  const framesData: Array<{ frame: any; name: string; url: string }> = [];
   for (let i = 0; i < page.frames().length; i++) {
     const frame = page.frames()[i];
+    framesData.push({
+      frame,
+      name: frame.name(),
+      url: frame.url(),
+    });
+  }
+
+  // Sort by url ascending, then name ascending (empty strings first)
+  framesData.sort((a, b) => {
+    const urlA = a.url || '';
+    const urlB = b.url || '';
+    if (urlA !== urlB) return urlA.localeCompare(urlB);
+    const nameA = a.name || '';
+    const nameB = b.name || '';
+    return nameA.localeCompare(nameB);
+  });
+
+  // Write sorted frames
+  for (let i = 0; i < framesData.length; i++) {
     framesList.push(`[Frame ${i}]`);
-    framesList.push(`  name: ${frame.name()}`);
-    framesList.push(`  url: ${frame.url()}`);
+    framesList.push(`  name: ${framesData[i].name}`);
+    framesList.push(`  url: ${framesData[i].url}`);
   }
 
   fs.writeFileSync(path.join(outDir, 'frames.txt'), framesList.join('\n'));
@@ -59,6 +80,14 @@ async function dumpIframeInventory(page: any, outDir: string): Promise<void> {
     }
   }
 
+  // Sort deterministically by src ascending, then index ascending
+  iframes.sort((a, b) => {
+    const srcA = a.src || '';
+    const srcB = b.src || '';
+    if (srcA !== srcB) return srcA.localeCompare(srcB);
+    return a.index - b.index;
+  });
+
   fs.writeFileSync(path.join(outDir, 'iframes.json'), JSON.stringify(iframes, null, 2));
 }
 
@@ -73,6 +102,44 @@ async function dumpDomExcerpt(page: any, outDir: string): Promise<void> {
   } catch (e) {
     fs.writeFileSync(path.join(outDir, 'dom_excerpt.txt'), `Error dumping DOM: ${String(e)}`);
   }
+}
+
+// === HELPER: Resolve Forge iframe by src + contentFrame mapping ===
+async function resolveForgeFrameByIframeSrc(page: any, consoleLines: string[]): Promise<{ frame: any, iframeSrc: string, usedSelector: string, contentFrameNull: boolean } | null> {
+  const selectors = [
+    'iframe[data-testid="hosted-resources-iframe"][data-forge-iframe="true"]',
+    'iframe[data-forge-iframe="true"]',
+  ];
+
+  for (const selector of selectors) {
+    const handle = await page.$(selector);
+    if (!handle) {
+      continue;
+    }
+
+    const src = (await handle.getAttribute('src')) || '';
+    consoleLines.push(`[IFRAME_FOUND] selector=${selector} src=${src || 'EMPTY'}`);
+
+    if (!src) {
+      continue;
+    }
+
+    // Retry loop: poll contentFrame() for up to 30s with 250ms intervals
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      const frame = await handle.contentFrame();
+      if (frame) {
+        return { frame, iframeSrc: src, usedSelector: selector, contentFrameNull: false };
+      }
+      await page.waitForTimeout(250);
+    }
+
+    // After deadline, contentFrame() is still null
+    consoleLines.push(`[IFRAME_CONTENTFRAME_NULL] selector=${selector} src=${src}`);
+  }
+
+  // No iframe matched or no valid frame found
+  return null;
 }
 
 test.use({ storageState: 'tests/playwright/.auth/state.json' });
@@ -235,6 +302,9 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     // === BACKBONE FIX 2: Find gadget frame by atlassian-dev.net URL detection ===
     let gadgetFrame = null;
     let selectedFrameUrl = 'NONE';
+    let iframeSelectorUsed = 'NONE';
+    let iframeSrc = 'EMPTY';
+    let contentFrameNullAfterRetry = false;
     const allFrames: any[] = [];
 
     // Step A: Enumerate ALL frames and record their URLs and names
@@ -250,26 +320,41 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     await dumpFrames(page, outDir);
     consoleLines.push('[FRAME_DUMP] Enumerated all frames to frames.txt');
 
-    // Step B: Determine gadget frame by matching atlassian-dev.net URL
+    // Step A1: PRIMARY - Try iframe[data-testid] + iframe[data-forge-iframe] with contentFrame mapping
+    const iframeResult = await resolveForgeFrameByIframeSrc(page, consoleLines);
+    if (iframeResult && iframeResult.frame) {
+      gadgetFrame = iframeResult.frame;
+      selectedFrameUrl = iframeResult.iframeSrc;
+      iframeSelectorUsed = iframeResult.usedSelector;
+      iframeSrc = iframeResult.iframeSrc;
+      contentFrameNullAfterRetry = iframeResult.contentFrameNull;
+      consoleLines.push(`[FRAME_SELECTED_IFRAME] selector=${iframeSelectorUsed} src=${selectedFrameUrl}`);
+    } else {
+      consoleLines.push('[FRAME_SELECTED_IFRAME] NONE');
+    }
+
+    // Step B: Fallback - Determine gadget frame by matching atlassian-dev.net URL
     // Sort deterministically by URL ascending, then by name ascending
     const sortedFrames = [...allFrames].sort((a, b) => {
       if (a.url !== b.url) return a.url.localeCompare(b.url);
       return a.name.localeCompare(b.name);
     });
 
-    // Find first frame with atlassian-dev.net in URL
-    for (const frameInfo of sortedFrames) {
-      if (
-        frameInfo.url.includes('atlassian-dev.net') ||
-        frameInfo.url.includes('hello.atlassian-dev.net') ||
-        frameInfo.url.includes('/global-bridge.js')
-      ) {
-        gadgetFrame = frameInfo.frame;
-        selectedFrameUrl = frameInfo.url;
-        consoleLines.push(
-          `[FRAME_SELECTED] url=${selectedFrameUrl}, name=${frameInfo.name}`
-        );
-        break;
+    // Find first frame with atlassian-dev.net in URL (only if iframe selection failed)
+    if (!gadgetFrame) {
+      for (const frameInfo of sortedFrames) {
+        if (
+          frameInfo.url.includes('atlassian-dev.net') ||
+          frameInfo.url.includes('hello.atlassian-dev.net') ||
+          frameInfo.url.includes('/global-bridge.js')
+        ) {
+          gadgetFrame = frameInfo.frame;
+          selectedFrameUrl = frameInfo.url;
+          consoleLines.push(
+            `[FRAME_SELECTED] url=${selectedFrameUrl}, name=${frameInfo.name}`
+          );
+          break;
+        }
       }
     }
 
@@ -324,6 +409,21 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     if (!gadgetFrame) {
       consoleLines.push('[FAILURE] Gadget frame not found - collecting inventory...');
 
+      // Write iframe selection evidence
+      const iframeSelectionEvidence = {
+        marker: 'IFRAME_SELECTION_V1',
+        selected: false,
+        selector: iframeSelectorUsed,
+        iframeSrc: iframeSrc,
+        contentFrameNullAfterRetry: contentFrameNullAfterRetry,
+        ts: new Date().toISOString(),
+      };
+      fs.writeFileSync(
+        path.join(outDir, 'iframe-selection.txt'),
+        JSON.stringify(iframeSelectionEvidence, null, 2)
+      );
+      consoleLines.push('[INVENTORY] iframe-selection.txt written');
+
       // Dump all diagnostic artifacts
       await dumpFrames(page, outDir);
       consoleLines.push('[INVENTORY] frames.txt written');
@@ -340,11 +440,28 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
       consoleLines.push('[SCREENSHOT] after.png');
 
       throw new Error(
-        `Gadget frame not found (selectedFrameUrl=${selectedFrameUrl}). pageErrorCount=${pageErrorCount}, consoleErrorCount=${consoleErrorCount}, requestFailedCount=${requestFailedCount}, http4xx5xxCount=${http4xx5xxCount}. See frames.txt, iframes.json, dom_excerpt.txt in OUT_DIR=${outDir}`
+        `Gadget frame not found (selectedFrameUrl=${selectedFrameUrl}, iframeSelectorUsed=${iframeSelectorUsed}, iframeSrc=${iframeSrc}, contentFrameNullAfterRetry=${contentFrameNullAfterRetry}). pageErrorCount=${pageErrorCount}, consoleErrorCount=${consoleErrorCount}, requestFailedCount=${requestFailedCount}, http4xx5xxCount=${http4xx5xxCount}. See frames.txt, iframes.json, iframe-selection.txt, dom_excerpt.txt in OUT_DIR=${outDir}`
       );
     }
 
-    // === Print frame selection result ===\n    console.log(`FRAME_SELECTED url=${selectedFrameUrl}`);\n\n    // === Take before screenshot (gadget found) ===
+    // === Print frame selection result ===
+    console.log(`FRAME_SELECTED url=${selectedFrameUrl}`);
+
+    // === Write iframe selection evidence (success case) ===
+    const iframeSelectionSuccess = {
+      marker: 'IFRAME_SELECTION_V1',
+      selected: true,
+      selector: iframeSelectorUsed,
+      iframeSrc: iframeSrc,
+      contentFrameNullAfterRetry: contentFrameNullAfterRetry,
+      ts: new Date().toISOString(),
+    };
+    fs.writeFileSync(
+      path.join(outDir, 'iframe-selection.txt'),
+      JSON.stringify(iframeSelectionSuccess, null, 2)
+    );
+
+    // === Take before screenshot (gadget found) ===
     const preSS = path.join(outDir, 'before.png');
     await page.screenshot({ path: preSS, fullPage: true });
     consoleLines.push('[SCREENSHOT] before.png');
