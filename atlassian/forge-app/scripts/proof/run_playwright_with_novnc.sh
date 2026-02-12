@@ -5,6 +5,11 @@ set -euo pipefail
 # Runs headed Playwright via Xvfb + noVNC for observation in Codespaces
 # Guarantees auth setup runs first with project dependencies
 
+# === MANUAL LOGIN MODE DETECTION ===
+if [[ "${PW_MANUAL_LOGIN:-}" == "1" ]]; then
+  echo "[PW_NOVNC] MANUAL MODE: do NOT run this script under 'timeout' or login will be interrupted."
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../" && pwd)"
 

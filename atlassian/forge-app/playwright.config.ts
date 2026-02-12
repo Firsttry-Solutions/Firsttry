@@ -23,6 +23,7 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /tests\/playwright\/auth\.setup\.ts/,
+      timeout: 600_000,
       use: {
         ...devices['chromium'],
         baseURL: baseUrl,
