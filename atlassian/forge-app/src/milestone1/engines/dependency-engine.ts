@@ -15,7 +15,7 @@
  * - No duplicates
  */
 
-import api from '@forge/api';
+import api, { route } from '@forge/api';
 import type { DependencyGraph } from '../models';
 import { canonicalizeValue } from '../canonicalize';
 
@@ -56,7 +56,7 @@ export async function buildDependencyGraph(
     try {
       projectsRes = await api
         .asUser()
-        .requestJira(`/rest/api/3/project`);
+        .requestJira(route`/rest/api/3/project`);
     } catch (err) {
       console.warn('[DependencyEngine] Could not fetch projects:', err);
       projectsRes = [];

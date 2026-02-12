@@ -15,7 +15,7 @@
  * If org scope missing -> must populate inaccessibleScopes.
  */
 
-import api from '@forge/api';
+import api, { route } from '@forge/api';
 import type { Snapshot, PrivilegeBoundary } from '../models';
 import { canonicalizeValue } from '../canonicalize';
 
@@ -37,7 +37,7 @@ export async function buildPrivilegeBoundaryDeclaration(
     try {
       const meRes = await api
         .asUser()
-        .requestJira(`/rest/api/3/myself`);
+        .requestJira(route`/rest/api/3/myself`);
       
       if (meRes && meRes.accountType === 'atlassian') {
         // Try to determine if admin
