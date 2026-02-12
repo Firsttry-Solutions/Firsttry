@@ -13,119 +13,124 @@ setup('auth', async ({ page }) => {
     );
   }
 
-  // === Ensure .auth directory exists ===
-  const authDir = path.join(__dirname, '.auth');
+  // === Ensure .auth directory exists (deterministic) ===
+  const statePath = 'tests/playwright/.auth/state.json';
+  const authDir = path.dirname(statePath);
   fs.mkdirSync(authDir, { recursive: true });
 
-  // === Navigate to Jira ===
-  console.log(`[AUTH] Navigating to ${baseUrl}`);
-  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  // === Navigate to deterministic Jira route ===
+  const jiraRoute = `${baseUrl}/jira/your-work`;
+  console.log(`[AUTH] Navigating to ${jiraRoute}`);
+  await page.goto(jiraRoute, { waitUntil: 'domcontentloaded' });
 
-  // === Check if login is required ===
+  // === Check if login is required (robust detection) ===
   const currentUrl = page.url();
-  const isLoginRequired = currentUrl.includes('login') || currentUrl.includes('auth');
+  const isLoginRequired = !currentUrl.startsWith(`${baseUrl}/jira/`);
 
   if (isLoginRequired) {
-    console.log('[AUTH] Login page detected');
+    console.log('[AUTH] Login page detected (URL does not start with Jira route)');
 
     const jiraEmail = process.env.JIRA_EMAIL;
     const jiraPassword = process.env.JIRA_PASSWORD;
 
     if (!jiraEmail || !jiraPassword) {
-      throw new Error(
-        'Login required but JIRA_EMAIL and/or JIRA_PASSWORD not provided'
-      );
-    }
-
-    // === Attempt login with robust selectors ===
-    console.log('[AUTH] Attempting login...');
-
-    // Email input (try multiple selectors)
-    const emailLocators = [
-      page.locator('input[type="email"]'),
-      page.locator('input[name="username"]'),
-      page.locator('#username'),
-      page.locator('input[name="email"]'),
-    ];
-
-    let emailFound = false;
-    for (const locator of emailLocators) {
-      if ((await locator.count()) > 0) {
-        await locator.fill(jiraEmail);
-        emailFound = true;
-        break;
+      // === Manual login mode ===
+      console.log('[AUTH] MANUAL_LOGIN_REQUIRED: complete Atlassian login in the visible browser within 180s');
+      console.log('[AUTH] Waiting for user to complete login (180s timeout)...');
+      try {
+        await page.waitForURL(`${baseUrl}/jira/**`, { timeout: 180_000 });
+        console.log('[AUTH] ✓ Manual login completed - navigated to Jira');
+      } catch (err) {
+        throw new Error(
+          'FATAL: Manual login not completed within 180s; set JIRA_EMAIL/JIRA_PASSWORD or login via noVNC'
+        );
       }
-    }
+    } else {
+      // === Automated login mode ===
+      console.log('[AUTH] Attempting automated login with provided credentials...');
 
-    if (!emailFound) {
-      throw new Error('Email input field not found');
-    }
+      // Email input (try multiple selectors)
+      const emailLocators = [
+        page.locator('input[type="email"]'),
+        page.locator('input[name="username"]'),
+        page.locator('#username'),
+        page.locator('input[name="email"]'),
+      ];
 
-    // Submit / Continue button
-    const submitLocators = [
-      page.locator('button[type="submit"]'),
-      page.locator('button:has-text("Continue")'),
-      page.locator('button:has-text("Log in")'),
-      page.locator('input[type="submit"]'),
-    ];
-
-    let submitFound = false;
-    for (const locator of submitLocators) {
-      if ((await locator.count()) > 0) {
-        await locator.click();
-        submitFound = true;
-        break;
+      let emailFound = false;
+      for (const locator of emailLocators) {
+        if ((await locator.count()) > 0) {
+          await locator.fill(jiraEmail);
+          emailFound = true;
+          break;
+        }
       }
-    }
 
-    if (!submitFound) {
-      throw new Error('Submit button not found after email entry');
-    }
-
-    // Wait a bit for redirect to password page
-    await page.waitForTimeout(2000);
-
-    // Password input (try multiple selectors)
-    const passwordLocators = [
-      page.locator('input[type="password"]'),
-      page.locator('input[name="password"]'),
-      page.locator('#password'),
-    ];
-
-    let passwordFound = false;
-    for (const locator of passwordLocators) {
-      if ((await locator.count()) > 0) {
-        await locator.fill(jiraPassword);
-        passwordFound = true;
-        break;
+      if (!emailFound) {
+        throw new Error('Email input field not found');
       }
-    }
 
-    if (!passwordFound) {
-      throw new Error('Password input field not found');
-    }
+      // Submit / Continue button
+      const submitLocators = [
+        page.locator('button[type="submit"]'),
+        page.locator('button:has-text("Continue")'),
+        page.locator('button:has-text("Log in")'),
+        page.locator('input[type="submit"]'),
+      ];
 
-    // Submit password form
-    for (const locator of submitLocators) {
-      if ((await locator.count()) > 0) {
-        await locator.click();
-        break;
+      let submitFound = false;
+      for (const locator of submitLocators) {
+        if ((await locator.count()) > 0) {
+          await locator.click();
+          submitFound = true;
+          break;
+        }
       }
-    }
 
-    // Wait for Jira dashboard to load
-    console.log('[AUTH] Waiting for Jira dashboard...');
-    await page.waitForURL('**/jira/**', { timeout: 120_000 });
+      if (!submitFound) {
+        throw new Error('Submit button not found after email entry');
+      }
+
+      // Wait a bit for redirect to password page
+      await page.waitForTimeout(2000);
+
+      // Password input (try multiple selectors)
+      const passwordLocators = [
+        page.locator('input[type="password"]'),
+        page.locator('input[name="password"]'),
+        page.locator('#password'),
+      ];
+
+      let passwordFound = false;
+      for (const locator of passwordLocators) {
+        if ((await locator.count()) > 0) {
+          await locator.fill(jiraPassword);
+          passwordFound = true;
+          break;
+        }
+      }
+
+      if (!passwordFound) {
+        throw new Error('Password input field not found');
+      }
+
+      // Submit password form
+      for (const locator of submitLocators) {
+        if ((await locator.count()) > 0) {
+          await locator.click();
+          break;
+        }
+      }
+
+      // Wait for Jira dashboard to load
+      console.log('[AUTH] Waiting for Jira dashboard...');
+      await page.waitForURL(`${baseUrl}/jira/**`, { timeout: 120_000 });
+    }
   } else {
     console.log('[AUTH] Already authenticated or at Jira page');
-    // If not at Jira yet, wait for it
-    await page.waitForURL('**/jira/**', { timeout: 30_000 }).catch(() => {
-      // It's okay if this fails; the user might already be on a Jira page
-    });
   }
 
   // === Save auth state ===
-  const statePath = 'tests/playwright/.auth/state.json';
   await page.context().storageState({ path: statePath });
 
   // === Verify state file exists and is non-trivial ===
