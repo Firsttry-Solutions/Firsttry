@@ -78,10 +78,10 @@ echo ""
 # CHECK 1: Verify build identity line contains current short SHA
 # ═════════════════════════════════════════════════════════════════════════════════
 
-echo "[CHECK 1] Verifying build identity (UI_BUILD_IDENTITY_CONFIRMED) contains SHA=$EXPECT_SHA"
-IDENTITY_LINE=$(grep "UI_BUILD_IDENTITY_CONFIRMED" "$CONSOLE_FILE" || true)
+echo "[CHECK 1] Verifying build identity (UI_BUILD_IDENTITY_FINAL) contains SHA=$EXPECT_SHA"
+IDENTITY_LINE=$(grep "UI_BUILD_IDENTITY_FINAL\|UI_BUILD_IDENTITY_EARLY\|UI_BUILD_IDENTITY_PROOF" "$CONSOLE_FILE" | tail -1 || true)
 if [ -z "$IDENTITY_LINE" ]; then
-  echo "         ❌ FAILED: UI_BUILD_IDENTITY_CONFIRMED line not found"
+  echo "         ❌ FAILED: UI_BUILD_IDENTITY line not found"
   exit 1
 fi
 
@@ -104,18 +104,18 @@ echo "[CHECK 2] Searching for REAL console.log marker [PHASE1_ACCESS_SCAN_OK]"
 # Accept formats:
 #   [123:][console.log] [PHASE1_ACCESS_SCAN_OK] {...}  (with line:prefix)
 #   [console.log] [PHASE1_ACCESS_SCAN_OK] {...}        (without prefix)
-# Reject: any line containing WARN or VALIDATION
+# REJECT: any line containing WARN, VALIDATION, MISSING, FORMAT, PARSE, VALUE
 
 MARKER_LINE=$(grep -E '^\[?([0-9]+:)?\]?\[console\.log\] \[PHASE1_ACCESS_SCAN_OK\]' "$CONSOLE_FILE" || true)
 
 if [ -z "$MARKER_LINE" ]; then
   echo "         ❌ FAILED: No real console.log marker line found"
   echo ""
-  echo "         (Checking if WARN lines exist...)"
-  WARN_COUNT=$(grep -c "PHASE1_VALIDATION_WARN\|WARN.*PHASE1_ACCESS_SCAN_OK" "$CONSOLE_FILE" || true)
-  if [ "$WARN_COUNT" -gt 0 ]; then
-    echo "         Found $WARN_COUNT WARN lines (these are NOT proof)"
-    echo "         Need REAL console.log line, not WARN text"
+  echo "         (Checking if error/warn text contains marker string...)"
+  FAKE_MARKER_COUNT=$(grep -c "PHASE1_VALIDATION_WARN\|PHASE1_MARKER_MISSING\|PHASE1_MARKER_FORMAT\|PHASE1_MARKER_PARSE\|PHASE1_MARKER_VALUE\|PHASE1_ACTION_VALUE" "$CONSOLE_FILE" || true)
+  if [ "$FAKE_MARKER_COUNT" -gt 0 ]; then
+    echo "         Found $FAKE_MARKER_COUNT error/warn lines with marker string (these are NOT proof)"
+    echo "         Need REAL console.log line with [console.log] prefix"
   fi
   exit 1
 fi
