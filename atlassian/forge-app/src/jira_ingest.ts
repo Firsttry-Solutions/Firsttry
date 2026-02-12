@@ -399,15 +399,10 @@ async function ingestIssueEvents(maxIssues: number = 1000): Promise<{
 }> {
   try {
     // Use JQL to query all issues with pagination
-    const response = await guardedRequestJiraAsApp('/rest/api/3/search', {
+    const searchPath = `/rest/api/3/search?jql=${encodeURIComponent('order by updated DESC')}&maxResults=${Math.min(maxIssues, 50)}&fields=created,updated&expand=changelog`;
+    const response = await guardedRequestJiraAsApp(searchPath, {
       headers: {
         'Accept': 'application/json',
-      },
-      queryParameters: {
-        jql: 'order by updated DESC',
-        maxResults: Math.min(maxIssues, 50), // Jira max per request
-        fields: 'created,updated',
-        expand: 'changelog',
       },
     });
 

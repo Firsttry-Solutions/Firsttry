@@ -6,6 +6,7 @@
   "scripts": {
     "pretest": "node tools/build_meta.mjs",
     "type-check": "tsc --noEmit",
+    "build:ts": "tsc -p tsconfig.json",
     "verify:bridge-installed": "node tools/verify_forge_bridge_installed.js",
     "verify:ui:no-fatal-dist": "bash tools/verify_no_fatal_ui_bridge_in_dist.sh",
     "verify:ui:no-top-level-throw": "bash tools/verify_no_top_level_throw_in_entry.sh",
