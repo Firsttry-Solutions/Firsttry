@@ -15,7 +15,7 @@
  * Maps into snapshot.platformFeatureFlags with stable shape
  */
 
-import api from '@forge/api';
+import api, { route } from '@forge/api';
 import type { PlatformFeatures, Snapshot } from '../models';
 import { canonicalizeValue } from '../canonicalize';
 
@@ -35,7 +35,7 @@ async function detectFieldSchemeModel(): Promise<FieldSchemeModel> {
     
     const fieldsRes = await api
       .asUser()
-      .requestJira(`/rest/api/3/fieldconfiguration/groups`);
+      .requestJira(route`/rest/api/3/fieldconfiguration/groups`);
     
     // If we get a response with new-style structure, it's NEW
     // Otherwise assume LEGACY

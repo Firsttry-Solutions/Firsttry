@@ -20,7 +20,7 @@
  * - Missing strings must be "" (not null)
  */
 
-import api from '@forge/api';
+import api, { route } from '@forge/api';
 import type { AccessReport } from '../models';
 import { canonicalizeValue, sha256Hex } from '../canonicalize';
 
@@ -65,7 +65,7 @@ export async function buildAccessReport(
     try {
       globalPermsRes = await api
         .asUser()
-        .requestJira(`/rest/api/3/permissions`);
+        .requestJira(route`/rest/api/3/permissions`);
     } catch (err) {
       console.warn('[AccessEngine] Could not fetch global permissions:', err);
       globalPermsRes = null;
