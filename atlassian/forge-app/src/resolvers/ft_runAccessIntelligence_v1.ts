@@ -37,6 +37,7 @@ const { route } = require('@forge/api') as typeof import('@forge/api');
  * }
  */
 export const handler = async (request: any): Promise<any> => {
+  console.log('[FT_PROOF_PHASE1_HANDLER_ENTRY] ft_runAccessIntelligence_v1 handler entered');
   const startTimestamp = new Date().toISOString();
   const correlationId = request?.correlationId || request?.correlation_id || 'unknown';
   
