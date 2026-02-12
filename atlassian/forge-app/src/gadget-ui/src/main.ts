@@ -3081,6 +3081,17 @@ async function proceedWithBoot() {
         // Store current state for next update
         currentL0DashboardState = dashState;
         
+        // === BACKBONE FIX: Log deterministic state marker immediately after dash state is fixed ===
+        const stateStatus = dashState.status || 'UNKNOWN';
+        const stateReason = dashState.reason || dashState.error || 'NONE';
+        console.log(JSON.stringify({
+          marker: '[FT_STATE]',
+          status: stateStatus,
+          reason: stateReason,
+          uiReqId: FT_UI_REQ_ID,
+          ts: new Date().toISOString(),
+        }));
+        
         // STEP 4: Render dashboard (AVAILABLE, NO_SNAPSHOT, INVALID_SNAPSHOT, or HARD_ERROR only)
         const dashboard = renderL0Dashboard(dashState);
         document.body.innerHTML = '';
@@ -3148,6 +3159,25 @@ async function proceedWithBoot() {
               ensureCorrelationId();
               console.log('[PHASE1_ACCESS_SCAN_CLICK] User triggered access review scan');
               
+              // === BACKBONE FIX 1: Guard - block RUN_ACCESS_REVIEW if snapshot NOT_AVAILABLE ===
+              if (dashState.status !== 'AVAILABLE') {
+                const guardReason = dashState.reason || dashState.error || dashState.status;
+                const guardMarker = JSON.stringify({
+                  marker: '[FT_GUARD]',
+                  guard: 'BLOCK_RUN_ACCESS_REVIEW',
+                  status: dashState.status,
+                  reason: guardReason,
+                  uiReqId: FT_UI_REQ_ID,
+                  ts: new Date().toISOString(),
+                });
+                console.log(guardMarker);
+                
+                runAccessButton.textContent = 'Snapshot required';
+                runAccessButton.style.backgroundColor = '#FFA500';
+                runAccessButton.disabled = false;
+                return;
+              }
+              
               const result = await invokeWithUiReqId('ft_getDashboardState_v1', { action: 'RUN_ACCESS_REVIEW' });
               
               // Validate envelope schema (FAIL-CLOSED)
@@ -3177,7 +3207,23 @@ async function proceedWithBoot() {
                   location.reload();
                 }, 1500);
               } else {
-                console.error('[PHASE1_ACCESS_SCAN_FAILED]', actionResult);
+                // === BACKBONE FIX 2: Enhanced error evidence for PHASE1_ACCESS_SCAN_FAILED ===
+                const failureMarker = JSON.stringify({
+                  marker: '[FT_ACTION_FAIL]',
+                  action: 'RUN_ACCESS_REVIEW',
+                  ok: false,
+                  traceId: actionResult?.traceId || actionResult?.error?.traceId || 'unknown',
+                  resolver: 'ft_getDashboardState_v1',
+                  errorCode: actionResult?.error?.code || actionResult?.code || null,
+                  message: actionResult?.error?.message || actionResult?.reason || null,
+                  cause: actionResult?.error?.cause ? String(actionResult.error.cause) : null,
+                  uiReqId: FT_UI_REQ_ID,
+                  ts: new Date().toISOString(),
+                });
+                console.error('[PHASE1_ACCESS_SCAN_FAILED]', failureMarker);
+                
+                // Legacy error log for backward compatibility
+                console.error('[PHASE1_ACCESS_SCAN_FAILED_LEGACY]', actionResult);
                 
                 // Sanity check: error/build/reason/traceId fields must exist on failure
                 if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
