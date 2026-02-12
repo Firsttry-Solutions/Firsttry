@@ -43,41 +43,28 @@ XVFB_WHD="${XVFB_WHD:-1920x1080x24}"
 VNC_PORT="${VNC_PORT:-5901}"
 NOVNC_PORT="${NOVNC_PORT:-6080}"
 
-# === CHECK REQUIRED BINARIES ===
-check_cmd() {
-  if ! command -v "$1" &> /dev/null; then
-    echo "[PW_NOVNC] WARNING: $1 not found, attempting to install..."
-    return 1
-  fi
-  return 0
-}
+# === DETERMINISTIC FULL STACK INSTALL ===
+echo "[PW_NOVNC] Installing full noVNC display stack (xvfb, fluxbox, x11vnc, novnc, websockify, x11-utils)..."
+if ! sudo apt-get update -qq; then
+  echo "[PW_NOVNC] ERROR: apt-get update failed"
+  exit 1
+fi
 
-# List of required binaries and their packages
-declare -A BINARIES=(
-  ["Xvfb"]="xvfb"
-  ["fluxbox"]="fluxbox"
-  ["x11vnc"]="x11vnc"
-  ["websockify"]="websockify"
-  ["xdpyinfo"]="x11-utils"
-)
+if ! sudo apt-get install -y -qq xvfb fluxbox x11vnc novnc websockify x11-utils; then
+  echo "[PW_NOVNC] ERROR: apt-get install failed"
+  exit 1
+fi
 
-MISSING=()
-for bin in "${!BINARIES[@]}"; do
-  if ! check_cmd "${bin,,}"; then
-    MISSING+=("${BINARIES[$bin]}")
-  fi
-done
-
-if [[ ${#MISSING[@]} -gt 0 ]]; then
-  echo "[PW_NOVNC] Installing missing packages: ${MISSING[*]}"
-  if command -v sudo &> /dev/null; then
-    sudo apt-get update -qq
-    sudo apt-get install -y -qq "${MISSING[@]}"
-  else
-    echo "[PW_NOVNC] ERROR: Missing packages and sudo not available"
+# === VERIFY REQUIRED BINARIES AFTER INSTALL ===
+echo "[PW_NOVNC] Verifying required binaries..."
+declare -A REQUIRED=([Xvfb]=1 [fluxbox]=1 [x11vnc]=1 [websockify]=1 [xdpyinfo]=1)
+for cmd in "${!REQUIRED[@]}"; do
+  if ! command -v "$cmd" &> /dev/null; then
+    echo "[PW_NOVNC] ERROR: Required command '$cmd' not found after install attempt"
     exit 1
   fi
-fi
+done
+echo "[PW_NOVNC] ✓ All required binaries present"
 
 # === START XVFB ===
 echo "[PW_NOVNC] Starting Xvfb on DISPLAY=${DISPLAY} with resolution ${XVFB_WHD}..."
@@ -112,10 +99,20 @@ X11VNC_OPTS=(
   "-nodragging"
 )
 
-# Add password if provided
+# Handle VNC password using x11vnc -storepasswd
 if [[ -n "${VNC_PASS:-}" ]]; then
-  echo "$VNC_PASS" | vncpasswd -f > "$RUN_ROOT/.vncpass"
-  X11VNC_OPTS+=("-rfbauth" "$RUN_ROOT/.vncpass")
+  PASSFILE="$RUN_ROOT/.vncpass"
+  echo "[PW_NOVNC] Storing VNC password..."
+  if ! x11vnc -storepasswd "$VNC_PASS" "$PASSFILE" >/dev/null 2>&1; then
+    echo "[PW_NOVNC] ERROR: x11vnc -storepasswd failed"
+    exit 1
+  fi
+  if [[ ! -f "$PASSFILE" ]]; then
+    echo "[PW_NOVNC] ERROR: VNC password file not created at $PASSFILE"
+    exit 1
+  fi
+  X11VNC_OPTS+=("-rfbauth" "$PASSFILE")
+  echo "[PW_NOVNC] ✓ VNC password stored"
 fi
 
 x11vnc "${X11VNC_OPTS[@]}" > "$RUN_ROOT/x11vnc.log" 2>&1 &
@@ -138,7 +135,7 @@ websockify \
   --web "$NOVNC_DIR" \
   "$NOVNC_PORT" \
   "localhost:${VNC_PORT}" \
-  > "$RUN_ROOT/websockify.log" 2>&1 &
+  > "$RUN_ROOT/novnc.log" 2>&1 &
 WEBSOCKIFY_PID=$!
 echo "[PW_NOVNC] Websockify PID: $WEBSOCKIFY_PID"
 sleep 1
