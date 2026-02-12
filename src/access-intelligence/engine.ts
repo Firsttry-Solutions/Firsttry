@@ -46,10 +46,16 @@ export class AccessIntelligenceEngine {
       // STEP 2: Fetch all projects with pagination
       console.log(`${FT_LOG_PREFIX} [FT_ACCESS_FETCH_PROJECTS] Starting project enumeration`);
       const projects = await this.fetchAllProjects();
-      if (!projects || projects.length === 0) {
-        throw new Error('Project fetch returned empty or null result');
+      if (!projects) {
+        // Null/undefined is an error - but empty array is OK
+        throw new Error('Project fetch returned null (API error)');
       }
       console.log(`${FT_LOG_PREFIX} [FT_ACCESS_FETCH_PROJECTS] Fetched ${projects.length} projects`);
+
+      // SPECIAL CASE: Handle 0 projects as valid result (scan can continue with empty project set)
+      if (projects.length === 0) {
+        console.log(`${FT_LOG_PREFIX} [FT_ACCESS_FETCH_PROJECTS] Project count is 0 - this is OK`);
+      }
 
       // STEP 3: Detect global admins
       console.log(`${FT_LOG_PREFIX} [FT_ACCESS_DETECT_GLOBAL_ADMINS] Analyzing global admin assignments`);

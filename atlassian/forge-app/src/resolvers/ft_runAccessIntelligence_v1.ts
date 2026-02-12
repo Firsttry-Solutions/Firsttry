@@ -65,16 +65,23 @@ export const handler = async (request: any): Promise<any> => {
     // STEP 2: Fetch all projects with pagination (read-only)
     console.log('[FT_ACCESS_FETCH_PROJECTS] Starting project enumeration');
     const projects = await fetchAllProjectsReadOnly();
-    if (!projects || projects.length === 0) {
-      const failureMsg = 'Project fetch returned empty or null result';
+    if (!projects) {
+      // Null/undefined is an error - but empty array is OK
+      const failureMsg = 'Project fetch returned null (API error)';
       console.error(`[FT_ACCESS_SCAN_ERROR] ${failureMsg}`);
       return {
         ok: false,
         status: 'FAILED',
         reason: failureMsg,
+        reasonCode: 'JIRA_PROJECTS_API_ERROR',
       };
     }
     console.log(`[FT_ACCESS_FETCH_PROJECTS] Fetched ${projects.length} projects`);
+
+    // SPECIAL CASE: Handle 0 projects as valid (tenant may have no projects yet)
+    if (projects.length === 0) {
+      console.log('[FT_ACCESS_FETCH_PROJECTS] Project count is 0 (empty tenant) - this is OK, continuing scan');
+    }
 
     // STEP 3: Detect global admins (read-only)
     console.log('[FT_ACCESS_DETECT_ADMIN_GROUP] Checking for global admins');
