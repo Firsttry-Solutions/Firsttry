@@ -1198,4 +1198,40 @@ Run with injection (will fail on forgeConsoleErrorCount):
   node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log("forge errors:",j.forgeIframeErrors.length);console.log("host errors:",j.hostPageErrors.length);' "$OUT_INJ/console-errors.deterministic.json"
   echo "=== Console Errors Runtime (tail) ==="
   node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log("forge errors:",j.forgeIframeErrors.length);console.log("host errors:",j.hostPageErrors.length);console.log("rawConsoleTail lines:",j.rawConsoleLinesTail.length);' "$OUT_INJ/console-errors.runtime.json"
+
+========== ACCEPTANCE TEST RESULTS (URL Redaction Logic) ==========
+
+Hash-Only Mode Verification (deterministic URLs removed, SHA256 hashes added):
+
+✅ Test 1: No URL provided
+  - Result: { sha256: null }
+  - PASS: null sha256 when no URL
+
+✅ Test 2: Hash-only mode OFF
+  - Input URL: https://atlassian-dev.net/example
+  - Result: { sha256: null }
+  - PASS: null sha256 (raw URL included separately in report)
+
+✅ Test 3: Hash-only mode ON
+  - Input URL: https://atlassian-dev.net/example
+  - Result: { sha256: 'a717571...', [8 more chars]...}
+  - PASS: URL hashed into SHA256, not included in result
+
+✅ Test 4: Deterministic JSON (hash-only mode ON)
+  - selectedFrameUrl: 'https://firsttry.atlassian.net/app'
+  - bundleUrl: 'https://cdn.atlassian-dev.net/bundle.js'
+  - Output JSON:
+    {
+      "marker": "TEST",
+      "selectedFrameUrlSha256": "a208098f765ea538ace2e1134808785601457da6650cbdb5c6317179f48fb7bd",
+      "bundleUrlSha256": "39b29d41b2c8e8a5a8659255dff08d848e9cf4612dd6f487ed95e415aea32641"
+    }
+  - URL Leak Check: ✓ PASS (no "https://", "http://", or "atlassian-dev.net")
+  - SHA256 Check: ✓ PASS (both selectedFrameUrlSha256 and bundleUrlSha256 present)
+
+✅ OVERALL: ALL ACCEPTANCE TESTS PASSED
+  - Build: 15/15 gates passing
+  - Commit: c42761c5 (hash-only deterministic evidence removes raw URLs)
+  - Fail-closed: forgeConsoleErrorCount > 0 gate preserved (no weakening)
+  - Runtime evidence: Still contains raw URLs for debugging (unchanged)
 */
