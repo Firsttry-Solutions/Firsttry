@@ -3148,10 +3148,11 @@ async function proceedWithBoot() {
               ensureCorrelationId();
               console.log('[PHASE1_ACCESS_SCAN_CLICK] User triggered access review scan');
               
-              const result = await invokeWithUiReqId('ft_runAccessIntelligence_v1', {});
+              const result = await invokeWithUiReqId('ft_getDashboardState_v1', { action: 'RUN_ACCESS_REVIEW' });
+              const actionResult = result?.actionResult || result;
               
-              if (result && result.ok) {
-                console.log('[PHASE1_ACCESS_SCAN_SUCCESS]', result);
+              if (actionResult && actionResult.ok) {
+                console.log('[PHASE1_ACCESS_SCAN_SUCCESS]', actionResult);
                 runAccessButton.textContent = 'Scan Complete!';
                 runAccessButton.style.backgroundColor = '#4CAF50';
                 
@@ -3160,8 +3161,8 @@ async function proceedWithBoot() {
                   location.reload();
                 }, 1500);
               } else {
-                console.error('[PHASE1_ACCESS_SCAN_FAILED]', result);
-                runAccessButton.textContent = 'Scan Failed: ' + (result?.reason || 'Unknown error');
+                console.error('[PHASE1_ACCESS_SCAN_FAILED]', actionResult);
+                runAccessButton.textContent = 'Scan Failed: ' + (actionResult?.error?.message || actionResult?.reason || 'Unknown error');
                 runAccessButton.style.backgroundColor = '#f44336';
               }
             } catch (error: any) {
@@ -3185,15 +3186,18 @@ async function proceedWithBoot() {
               ensureCorrelationId();
               console.log('[PHASE1_EXPORT_CLICK] User triggered access pack export');
               
-              const result = await invokeWithUiReqId('ft_exportAccessPack_v1', {
+              const result = await invokeWithUiReqId('ft_getDashboardState_v1', {
+                action: 'EXPORT_PHASE1_PACK',
                 snapshotId: dashState.snapshotId,
               });
+              const actionResult = result?.actionResult || result;
+              const exportData = actionResult?.data || actionResult;
               
-              if (result && result.ok && result.zipBase64) {
-                console.log('[PHASE1_EXPORT_SUCCESS]', { hash: result.zipHash, fileCount: result.fileCount });
+              if (exportData && exportData.ok && exportData.zipBase64) {
+                console.log('[PHASE1_EXPORT_SUCCESS]', { hash: exportData.zipHash, fileCount: exportData.fileCount });
                 
                 // Trigger download
-                const binaryString = atob(result.zipBase64);
+                const binaryString = atob(exportData.zipBase64);
                 const bytes = new Uint8Array(binaryString.length);
                 for (let i = 0; i < binaryString.length; i++) {
                   bytes[i] = binaryString.charCodeAt(i);
@@ -3210,8 +3214,8 @@ async function proceedWithBoot() {
                 
                 exportAccessButton.textContent = 'Export Complete';
               } else {
-                console.error('[PHASE1_EXPORT_FAILED]', result);
-                exportAccessButton.textContent = 'Export Failed: ' + (result?.reason || 'Unknown error');
+                console.error('[PHASE1_EXPORT_FAILED]', exportData);
+                exportAccessButton.textContent = 'Export Failed: ' + (exportData?.error?.message || exportData?.reason || 'Unknown error');
               }
             } catch (error: any) {
               console.error('[PHASE1_EXPORT_ERROR]', error);

@@ -81,10 +81,6 @@ resolver.define('probe', probe);  // FORENSIC_PROBE
 // Enterprise dashboard resolver (NEW - Phase 9)
 resolver.define('getDashboardSnapshotV1', getDashboardSnapshotV1_resolver);
 
-// Phase 1 Access Intelligence Resolvers (NEW)
-resolver.define('ft_runAccessIntelligence_v1', ft_runAccessIntelligence_v1_handler);
-resolver.define('ft_exportAccessPack_v1', ft_exportAccessPack_v1_handler);
-
 // Layer-0 Backbone resolvers
 resolver.define('ft_getDashboardState_v1', ft_getDashboardState_v1);
 resolver.define('ft_setUiBuildSha_v1', ft_setUiBuildSha_v1);
@@ -107,6 +103,94 @@ export const handler = resolver.getDefinitions();
 // LAYER-0 BACKBONE RESOLVERS (NEW)
 // ============================================================================
 
+/**
+ * Internal handler for Phase 1 Access Intelligence actions
+ * Wraps ft_runAccessIntelligence_v1_handler with action result structure
+ */
+async function handlePhase1AccessReview(request: any): Promise<any> {
+  try {
+    console.log(JSON.stringify({
+      marker: '[FT_DASH_ACTION_START]',
+      action: 'RUN_ACCESS_REVIEW',
+      ts: new Date().toISOString(),
+    }));
+
+    const result = await ft_runAccessIntelligence_v1_handler(request);
+    
+    console.log(JSON.stringify({
+      marker: '[FT_DASH_ACTION_END]',
+      action: 'RUN_ACCESS_REVIEW',
+      ok: result?.ok,
+      ts: new Date().toISOString(),
+    }));
+
+    return {
+      ok: result?.ok === true,
+      action: 'RUN_ACCESS_REVIEW',
+      data: result,
+    };
+  } catch (error: any) {
+    console.error(JSON.stringify({
+      marker: '[FT_DASH_ACTION_ERROR]',
+      action: 'RUN_ACCESS_REVIEW',
+      error: error?.message || String(error),
+      ts: new Date().toISOString(),
+    }));
+    return {
+      ok: false,
+      action: 'RUN_ACCESS_REVIEW',
+      error: {
+        code: 'FT_ACCESS_REVIEW_FAILED',
+        message: error?.message || 'Access review failed',
+      },
+    };
+  }
+}
+
+/**
+ * Internal handler for Phase 1 Export Pack actions
+ * Wraps ft_exportAccessPack_v1_handler with action result structure
+ */
+async function handlePhase1ExportPack(request: any): Promise<any> {
+  try {
+    console.log(JSON.stringify({
+      marker: '[FT_DASH_ACTION_START]',
+      action: 'EXPORT_PHASE1_PACK',
+      ts: new Date().toISOString(),
+    }));
+
+    const result = await ft_exportAccessPack_v1_handler(request);
+    
+    console.log(JSON.stringify({
+      marker: '[FT_DASH_ACTION_END]',
+      action: 'EXPORT_PHASE1_PACK',
+      ok: result?.ok,
+      ts: new Date().toISOString(),
+    }));
+
+    return {
+      ok: result?.ok === true,
+      action: 'EXPORT_PHASE1_PACK',
+      data: result,
+    };
+  } catch (error: any) {
+    console.error(JSON.stringify({
+      marker: '[FT_DASH_ACTION_ERROR]',
+      action: 'EXPORT_PHASE1_PACK',
+      error: error?.message || String(error),
+      ts: new Date().toISOString(),
+    }));
+    return {
+      ok: false,
+      action: 'EXPORT_PHASE1_PACK',
+      error: {
+        code: 'FT_EXPORT_PACK_FAILED',
+        message: error?.message || 'Export pack failed',
+      },
+    };
+  }
+}
+
 export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvelopeV1> {
   try {
     // Extract correlation_id and ui_req_id from request (sent by UI)
@@ -121,6 +205,72 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       uiReqId,
       ts: new Date().toISOString(),
     }));
+
+    // STEP 1: Check for optional action parameter (NEW - BACKBONE LAYER 1)
+    // If action is present, execute it backend-side and return result
+    const action = request?.action || request?.payload?.action;
+    if (action && typeof action === 'string') {
+      console.log(JSON.stringify({
+        marker: '[FT_DASH_ACTION_DISPATCH]',
+        action,
+        correlationId,
+        ts: new Date().toISOString(),
+      }));
+
+      if (action === 'RUN_ACCESS_REVIEW') {
+        const actionResult = await handlePhase1AccessReview(request);
+        // Return action result with dashboard context
+        return {
+          ok: actionResult.ok,
+          status: actionResult.ok ? 'AVAILABLE' : 'HARD_ERROR',
+          schemaVersion: 'v1',
+          envelopeKind: 'FT_DASH_ENVELOPE_V1',
+          actionResult,
+          meta: {
+            ui_req_id: uiReqId,
+            backend_build_sha: BACKEND_BUILD_SHA || 'UNSET',
+            now_iso: new Date().toISOString(),
+          },
+        } as any;
+      } else if (action === 'EXPORT_PHASE1_PACK') {
+        const actionResult = await handlePhase1ExportPack(request);
+        // Return action result with dashboard context
+        return {
+          ok: actionResult.ok,
+          status: actionResult.ok ? 'AVAILABLE' : 'HARD_ERROR',
+          schemaVersion: 'v1',
+          envelopeKind: 'FT_DASH_ENVELOPE_V1',
+          actionResult,
+          meta: {
+            ui_req_id: uiReqId,
+            backend_build_sha: BACKEND_BUILD_SHA || 'UNSET',
+            now_iso: new Date().toISOString(),
+          },
+        } as any;
+      } else {
+        // Invalid action string
+        console.error(JSON.stringify({
+          marker: '[FT_DASH_ACTION_INVALID]',
+          action,
+          reason: 'Unknown action name',
+          ts: new Date().toISOString(),
+        }));
+        return {
+          ok: false,
+          status: 'HARD_ERROR',
+          schemaVersion: 'v1',
+          envelopeKind: 'FT_DASH_ENVELOPE_V1',
+          error: { code: 'FT_ACTION_INVALID', message: `Unknown action: ${action}` },
+          meta: {
+            ui_req_id: uiReqId,
+            backend_build_sha: BACKEND_BUILD_SHA || 'UNSET',
+            now_iso: new Date().toISOString(),
+          },
+        } as any;
+      }
+    }
+
+    // STEP 2: No action present - return normal dashboard state
     
     // ENTERPRISE PROOF PACK: Extract dashboard context (non-PII)
     const dashboardId = request?.payload?.dashboardId || request?.dashboardId || 'MISSING';
