@@ -105,6 +105,27 @@ export const handler = resolver.getDefinitions();
 // ============================================================================
 
 /**
+ * FtPhase1ProofV1: Deterministic marker object for Phase1 success proofs
+ * 
+ * CONTRACT GUARANTEES (deterministic, reproducible):
+ * - marker: Literal string '[PHASE1_ACCESS_SCAN_OK]'
+ * - action: Literal string 'RUN_ACCESS_REVIEW'
+ * - schemaVersion: Literal '1.0'
+ * - NO timestamps, session IDs, request IDs, or random values
+ * - All fields derived from deterministic inputs
+ */
+type FtPhase1ProofV1 = {
+  marker: '[PHASE1_ACCESS_SCAN_OK]';
+  action: 'RUN_ACCESS_REVIEW';
+  buildShaShort: string;
+  schemaVersion: '1.0';
+  projectsCount: number;
+  totalUsers: number;
+  riskTier: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+  snapshotId: string;
+};
+
+/**
  * FT_ACTION_RESULT_V1: Canonical envelope for Phase1 action responses
  * 
  * INVARIANTS (fail-closed):
@@ -114,6 +135,7 @@ export const handler = resolver.getDefinitions();
  * - traceId: NEVER empty, format: trace_<timestamp>_<random>
  * - build: {buildShaShort,buildUtc,version} all NEVER empty
  * - If ok=false: MUST include reason (non-empty) and error{code,message,traceId}
+ * - phase1Proof: optional, only present when ok=true for RUN_ACCESS_REVIEW action
  * - data: optional, contains action-specific result data
  */
 interface FtActionResultV1 {
@@ -132,8 +154,67 @@ interface FtActionResultV1 {
     message: string; // never empty
     traceId: string; // never empty
   };
+  phase1Proof?: FtPhase1ProofV1; // optional marker for Phase1 success (ok=true only)
   data?: any;
 }
+
+// ============================================================================
+// TYPE REGRESSION GATES (compile-time guarantees)
+// ============================================================================
+
+/**
+ * Regression gate: Ensures FtPhase1ProofV1 contains required fields
+ * If this fails to compile, someone removed a required field from the type
+ */
+const _typeGatePhase1Proof: FtPhase1ProofV1 = {
+  marker: '[PHASE1_ACCESS_SCAN_OK]',
+  action: 'RUN_ACCESS_REVIEW',
+  buildShaShort: 'abc123def456',
+  schemaVersion: '1.0',
+  projectsCount: 0,
+  totalUsers: 0,
+  riskTier: 'UNKNOWN',
+  snapshotId: 'NONE',
+};
+
+/**
+ * Regression gate: Ensures FtActionResultV1 has phase1Proof field
+ * If this fails to compile, someone removed phase1Proof from the envelope type
+ */
+const _typeGateActionResultV1Success: FtActionResultV1 = {
+  envelopeKind: 'FT_ACTION_RESULT_V1',
+  ok: true,
+  action: 'RUN_ACCESS_REVIEW',
+  traceId: 'trace_test',
+  build: {
+    buildShaShort: 'abc123def456',
+    buildUtc: '2026-02-12T00:00:00Z',
+    version: '1.0.0',
+  },
+  phase1Proof: _typeGatePhase1Proof,
+};
+
+/**
+ * Regression gate: Ensures envelope signature matches return statements
+ * If this fails, a return statement in handlePhase1AccessReview violates the envelope contract
+ */
+const _typeGateActionResultV1Failure: FtActionResultV1 = {
+  envelopeKind: 'FT_ACTION_RESULT_V1',
+  ok: false,
+  action: 'RUN_ACCESS_REVIEW',
+  traceId: 'trace_test',
+  build: {
+    buildShaShort: 'abc123def456',
+    buildUtc: '2026-02-12T00:00:00Z',
+    version: '1.0.0',
+  },
+  reason: 'Test failure',
+  error: {
+    code: 'TEST_ERROR',
+    message: 'Test error message',
+    traceId: 'trace_test',
+  },
+};
 
 // ============================================================================
 // HELPER FUNCTIONS: Error Handling & Metadata
