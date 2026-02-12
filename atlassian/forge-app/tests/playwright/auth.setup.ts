@@ -1,4 +1,6 @@
 import { test as setup } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 
 setup('auth', async ({ page }) => {
   const baseUrl = process.env.JIRA_BASE_URL;
@@ -10,6 +12,10 @@ setup('auth', async ({ page }) => {
       `JIRA_BASE_URL must be '${expectedUrl}', got '${baseUrl}'`
     );
   }
+
+  // Ensure .auth directory exists
+  const authDir = path.join(__dirname, '.auth');
+  fs.mkdirSync(authDir, { recursive: true });
 
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
 

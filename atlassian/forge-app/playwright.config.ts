@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 const baseUrl = process.env.JIRA_BASE_URL;
 if (!baseUrl) {
@@ -12,13 +12,30 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   reporter: [['list']],
-  use: {
-    browserName: 'chromium',
-    headless: true,
-    trace: 'on',
-    screenshot: 'off',
-    video: 'off',
-    baseURL: baseUrl,
-    storageState: 'tests/playwright/.auth/state.json',
-  },
+  projects: [
+    {
+      name: 'setup',
+      testMatch: /tests\/playwright\/auth\.setup\.ts/,
+      use: {
+        ...devices['chromium'],
+        baseURL: baseUrl,
+        headless: true,
+        trace: 'off',
+      },
+    },
+    {
+      name: 'chromium',
+      testMatch: /tests\/playwright\/dashboard-phase1-diagnostics\.spec\.ts/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['chromium'],
+        baseURL: baseUrl,
+        storageState: 'tests/playwright/.auth/state.json',
+        headless: true,
+        trace: 'on',
+        screenshot: 'off',
+        video: 'off',
+      },
+    },
+  ],
 });
