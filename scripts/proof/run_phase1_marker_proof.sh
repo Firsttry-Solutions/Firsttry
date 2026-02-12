@@ -1,6 +1,6 @@
 #!/bin/bash
 # run_phase1_marker_proof.sh
-# STRICT: Real browser console.log marker proof (not WARN text)
+# STRICT: Real browser console.log marker proof via noVNC headed browser
 # Exit 0 ONLY if REAL marker line found in console.log with valid JSON + build identity match
 
 set -euo pipefail
@@ -9,7 +9,7 @@ PROOF_DIR="/tmp/phase1_marker_proof_$$"
 mkdir -p "$PROOF_DIR"
 
 echo "════════════════════════════════════════════════════════════════════"
-echo "PHASE1 SUCCESS MARKER PROOF (STRICT - REAL CONSOLE.LOG ONLY)"
+echo "PHASE1 SUCCESS MARKER PROOF (STRICT - HEADED BROWSER VIA NOVNC)"
 echo "════════════════════════════════════════════════════════════════════"
 echo ""
 
@@ -27,14 +27,16 @@ export FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY=1
 
 cd /workspaces/Firsttry/atlassian/forge-app
 
-echo "[PROOF] Running Playwright test (NO-INJECTION)..."
+echo "[PROOF] Starting Playwright via noVNC headed browser (manual login required)..."
+echo "[PROOF] noVNC URL will be displayed in output - forward port as PRIVATE in Codespaces"
 echo ""
 
-# Run Playwright without --no-header flag
+# Run Playwright via noVNC runner
+NOVNC_RUNNER_SCRIPT="./scripts/proof/run_playwright_with_novnc.sh"
 TEST_OUTPUT="$PROOF_DIR/test_output.txt"
 TEST_EXIT=0
-if JIRA_BASE_URL="$JIRA_BASE_URL" JIRA_DASHBOARD_URL="$JIRA_DASHBOARD_URL" \
-  npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts 2>&1 | tee "$TEST_OUTPUT"; then
+
+if bash "$NOVNC_RUNNER_SCRIPT" 2>&1 | tee "$TEST_OUTPUT"; then
   TEST_EXIT=0
 else
   TEST_EXIT=$?
@@ -46,17 +48,19 @@ echo ""
 
 # Extract OUT_DIR from test output or fallback to last directory
 OUT_DIR=""
-if grep -q "OUT_DIR=" "$TEST_OUTPUT"; then
-  OUT_DIR=$(grep "OUT_DIR=" "$TEST_OUTPUT" | tail -1 | sed 's/.*OUT_DIR=\([^ ]*\).*/\1/')
+if grep -q "LATEST_OUT_DIR=" "$TEST_OUTPUT"; then  
+  OUT_DIR=$(grep "LATEST_OUT_DIR=" "$TEST_OUTPUT" | tail -1 | sed 's/.*LATEST_OUT_DIR=\([^ ]*\).*/\1/')
 fi
 
+# If exit code > 1, test runner failed (but we still check for evidence)
 if [ -z "$OUT_DIR" ]; then
   # Fallback: latest pw_dash_diag directory
   OUT_DIR="$(ls -1dt /tmp/pw_dash_diag_* 2>/dev/null | head -1 || true)"
 fi
 
 if [ -z "$OUT_DIR" ]; then
-  echo "[PROOF] ❌ FAILED: No output directory found (test may not have created it)"
+  echo "[PROOF] ❌ FAILED: No output directory found (test may not have run successfully)"
+  echo "[PROOF] Check above output for Playwright errors or authentication issues"
   exit 1
 fi
 
@@ -67,6 +71,8 @@ echo ""
 CONSOLE_FILE="$OUT_DIR/console.log"
 if [ ! -f "$CONSOLE_FILE" ]; then
   echo "[PROOF] ❌ FAILED: Console log not found at $CONSOLE_FILE"
+  echo "[PROOF] Available files in $OUT_DIR:"
+  ls -lah "$OUT_DIR" || true
   exit 1
 fi
 
@@ -78,7 +84,7 @@ echo ""
 # CHECK 1: Verify build identity line contains current short SHA
 # ═════════════════════════════════════════════════════════════════════════════════
 
-echo "[CHECK 1] Verifying build identity (UI_BUILD_IDENTITY_FINAL) contains SHA=$EXPECT_SHA"
+echo "[CHECK 1] Verifying build identity (UI_BUILD_IDENTITY_*) contains SHA=$EXPECT_SHA"
 IDENTITY_LINE=$(grep "UI_BUILD_IDENTITY_FINAL\|UI_BUILD_IDENTITY_EARLY\|UI_BUILD_IDENTITY_PROOF" "$CONSOLE_FILE" | tail -1 || true)
 if [ -z "$IDENTITY_LINE" ]; then
   echo "         ❌ FAILED: UI_BUILD_IDENTITY line not found"
@@ -104,7 +110,7 @@ echo "[CHECK 2] Searching for REAL console.log marker [PHASE1_ACCESS_SCAN_OK]"
 # Accept formats:
 #   [123:][console.log] [PHASE1_ACCESS_SCAN_OK] {...}  (with line:prefix)
 #   [console.log] [PHASE1_ACCESS_SCAN_OK] {...}        (without prefix)
-# REJECT: any line containing WARN, VALIDATION, MISSING, FORMAT, PARSE, VALUE
+# REJECT: any line containing WARN, VALIDATION, MISSING, FORMAT, PARSE, VALUE, ACTION
 
 MARKER_LINE=$(grep -E '^\[?([0-9]+:)?\]?\[console\.log\] \[PHASE1_ACCESS_SCAN_OK\]' "$CONSOLE_FILE" || true)
 
@@ -140,7 +146,7 @@ if [ -z "$MARKER_JSON" ]; then
 fi
 
 # Validate JSON is parseable
-if ! echo "$MARKER_JSON" | node -e 'process.stdin.on("data", d => JSON.parse(d.toString()), (e) => process.exit(1))' 2>/dev/null; then
+if ! echo "$MARKER_JSON" | node -e 'process.stdin.on("data", d => JSON.parse(d.toString())); process.on("error", () => process.exit(1))' 2>/dev/null; then
   echo "         ❌ FAILED: Marker JSON is not valid JSON"
   echo "         JSON: $MARKER_JSON"
   exit 1
@@ -168,12 +174,28 @@ if (data.action !== 'RUN_ACCESS_REVIEW') {
   errors.push(`action field is '${data.action}', expected 'RUN_ACCESS_REVIEW'`);
 }
 
-if (!data.schemaVersion) {
-  errors.push('schemaVersion field missing');
+if (!data.schemaVersion || data.schemaVersion !== '1.0') {
+  errors.push(`schemaVersion is '${data.schemaVersion || '(missing)'}', expected '1.0'`);
 }
 
-if (!data.buildShaShort) {
-  errors.push('buildShaShort field missing');
+if (!data.buildShaShort || typeof data.buildShaShort !== 'string' || data.buildShaShort.length < 7) {
+  errors.push(`buildShaShort is '${data.buildShaShort || '(missing)'}', expected string length >= 7`);
+}
+
+if (typeof data.projectsCount !== 'number') {
+  errors.push(`projectsCount is '${data.projectsCount}', expected number`);
+}
+
+if (typeof data.totalUsers !== 'number') {
+  errors.push(`totalUsers is '${data.totalUsers}', expected number`);
+}
+
+if (!data.riskTier || typeof data.riskTier !== 'string') {
+  errors.push(`riskTier is '${data.riskTier || '(missing)'}', expected string`);
+}
+
+if (!data.snapshotId || typeof data.snapshotId !== 'string') {
+  errors.push(`snapshotId is '${data.snapshotId || '(missing)'}', expected string`);
 }
 
 if (errors.length > 0) {
@@ -194,8 +216,12 @@ fi
 echo "         ✅ PASSED: All required fields present and valid"
 echo "         • marker: [PHASE1_ACCESS_SCAN_OK]"
 echo "         • action: RUN_ACCESS_REVIEW"
-echo "         • schemaVersion: present"
-echo "         • buildShaShort: present"
+echo "         • schemaVersion: 1.0"
+echo "         • buildShaShort: (valid)"
+echo "         • projectsCount: (numeric)"
+echo "         • totalUsers: (numeric)"
+echo "         • riskTier: (string)"
+echo "         • snapshotId: (string)"
 echo ""
 
 # ═════════════════════════════════════════════════════════════════════════════════
@@ -226,7 +252,7 @@ echo "Proof Summary:"
 echo "  • Build identity verified: SHA=$EXPECT_SHA"
 echo "  • Real console.log marker found: [PHASE1_ACCESS_SCAN_OK]"
 echo "  • Marker JSON valid and complete"
-echo "  • Required fields present (marker, action, schemaVersion, buildShaShort)"
+echo "  • All required fields present and valid"
 echo "  • No failure/warn text contains marker"
 echo ""
 echo "Proof artifacts:"
