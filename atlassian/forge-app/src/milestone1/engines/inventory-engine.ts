@@ -26,7 +26,7 @@
  * - Never "as returned by Jira"
  */
 
-import api, { route } from '@forge/api';
+import api from '@forge/api';
 import type { ConfigInventory } from '../models';
 import { canonicalizeValue } from '../canonicalize';
 
@@ -73,7 +73,7 @@ export async function buildConfigInventory(
     try {
       const permsRes = await api
         .asUser()
-        .requestJira(route`/rest/api/3/permissions`);
+        .requestJira(`/rest/api/3/permissions`);
       
       if (permsRes && permsRes.permissions) {
         for (const perm of permsRes.permissions) {
@@ -92,7 +92,7 @@ export async function buildConfigInventory(
     try {
       const schemesRes = await api
         .asUser()
-        .requestJira(route`/rest/api/3/permissionscheme`);
+        .requestJira(`/rest/api/3/permissionscheme`);
       
       if (schemesRes && schemesRes.values) {
         for (const scheme of schemesRes.values) {
@@ -111,7 +111,7 @@ export async function buildConfigInventory(
     try {
       const projectsRes = await api
         .asUser()
-        .requestJira(route`/rest/api/3/project`);
+        .requestJira(`/rest/api/3/project`);
       
       if (Array.isArray(projectsRes)) {
         for (const proj of projectsRes) {

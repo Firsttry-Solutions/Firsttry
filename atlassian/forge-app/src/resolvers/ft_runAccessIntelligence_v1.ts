@@ -18,7 +18,7 @@
  * - Deterministic: Same data = same snapshot hash
  */
 
-import api, { route, storage } from '@forge/api';
+import api, { storage } from '@forge/api';
 
 /**
  * Main entry point invoked by gadget UI
@@ -170,7 +170,7 @@ async function fetchAllUsersReadOnly(): Promise<any[]> {
 
   while (true) {
     try {
-      const response = await api.asApp().requestJira(route`/rest/api/3/users/search?startAt=${startAt}&maxResults=${maxResults}`, {
+      const response = await api.asApp().requestJira(`/rest/api/3/users/search?startAt=${startAt}&maxResults=${maxResults}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const data: any[] = await response.json();
@@ -199,7 +199,7 @@ async function fetchAllProjectsReadOnly(): Promise<any[]> {
 
   while (true) {
     try {
-      const response = await api.asApp().requestJira(route`/rest/api/3/projects/search?startAt=${startAt}&maxResults=${maxResults}`, {
+      const response = await api.asApp().requestJira(`/rest/api/3/projects/search?startAt=${startAt}&maxResults=${maxResults}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const data: any = await response.json();
@@ -227,7 +227,7 @@ async function detectGlobalAdminsReadOnly(users: any[]): Promise<string[]> {
   for (const user of users) {
     try {
       // Check if user is in jira-administrators group
-      const response = await api.asApp().requestJira(route`/rest/api/3/user/groups?username=${encodeURIComponent(user.name || user.accountId)}`, {
+      const response = await api.asApp().requestJira(`/rest/api/3/user/groups?username=${encodeURIComponent(user.name || user.accountId)}`, {
         headers: { 'Content-Type': 'application/json' },
       });
       const groups: any[] = await response.json();

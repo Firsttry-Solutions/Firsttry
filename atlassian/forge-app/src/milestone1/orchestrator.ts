@@ -14,7 +14,7 @@
  * 8. Store all entities
  */
 
-import api, { route } from '@forge/api';
+import api from '@forge/api';
 import type { Snapshot, AccessReport, ConfigInventory } from './models';
 import { computeCanonicalHash, canonicalJsonString } from './canonicalize';
 import {
@@ -57,7 +57,7 @@ async function getJiraSiteId(): Promise<string> {
   try {
     const myself = await api
       .asUser()
-      .requestJira(route`/rest/api/3/myself`);
+      .requestJira(`/rest/api/3/myself`);
     
     // Jira site ID is typically extracted from the API base URL
     // For now, return a placeholder
@@ -75,7 +75,7 @@ async function determinePrivilegeContext(): Promise<Snapshot['privilegeContext']
   try {
     const myself = await api
       .asUser()
-      .requestJira(route`/rest/api/3/myself`);
+      .requestJira(`/rest/api/3/myself`);
 
     return {
       jiraAdmin: myself.isAdmin === true,

@@ -20,7 +20,7 @@
  * - No audit logging (to avoid PII leakage)
  */
 
-import api, { route } from "@forge/api";
+import api from "@forge/api";
 
 // Require token match for access
 const getDiagToken = (): string => {
@@ -50,11 +50,11 @@ export const handler = async (req: any) => {
     const [serverInfo, projectCount] = await Promise.all([
       api
         .asUser()
-        .requestJira(route`/rest/api/3/serverInfo`)
+        .requestJira(`/rest/api/3/serverInfo`)
         .then((r: any) => r?.json?.()),
       api
         .asUser()
-        .requestJira(route`/rest/api/3/project/search?maxResults=1`)
+        .requestJira(`/rest/api/3/project/search?maxResults=1`)
         .then((r: any) => r?.json?.()),
     ]);
 
