@@ -181,6 +181,9 @@ if npx playwright test --project=setup --headed \
 else
   SETUP_EXIT=$?
   echo "[PW_NOVNC] ❌ Auth setup FAILED (exit code: $SETUP_EXIT)"
+  echo "[PW_NOVNC] EXITING: chromium project depends on setup; no point running Phase 2"
+  echo "[PW_NOVNC] RUN_ROOT=${RUN_ROOT}"
+  exit $SETUP_EXIT
 fi
 
 echo "[PW_NOVNC]"
@@ -230,9 +233,7 @@ echo "[PW_NOVNC] === diagnostics.log (tail -200) ==="
 tail -200 "$RUN_ROOT/diagnostics.log"
 
 # === FINAL STATUS ===
-OVERALL_EXIT=0
-if [[ $SETUP_EXIT -ne 0 ]]; then OVERALL_EXIT=$SETUP_EXIT; fi
-if [[ $DIAG_EXIT -ne 0 ]]; then OVERALL_EXIT=$DIAG_EXIT; fi
+OVERALL_EXIT=${DIAG_EXIT:-0}
 
 echo "[PW_NOVNC]"
 if [[ $OVERALL_EXIT -eq 0 ]]; then
