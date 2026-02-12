@@ -273,6 +273,17 @@ function computeStringSha256(content: string): string {
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
+// === HELPER: Conditionally redact URL in deterministic mode ===
+function maybeRedactUrlDeterministic(rawUrl: string | null | undefined, modeHashOnly: boolean): { sha256: string | null; } {
+  if (!rawUrl) {
+    return { sha256: null };
+  }
+  if (modeHashOnly) {
+    return { sha256: computeStringSha256(rawUrl) };
+  }
+  return { sha256: null };
+}
+
 // === HELPER: Write clean determinism hashes (path-independent format for clean diffs) ===
 function writeCleanDeterminismHashes(outDir: string, detConsoleErrorsPath: string, detInjectionPath: string | null): void {
   const detConsoleErrorsSha = computeFileSha256(detConsoleErrorsPath);
@@ -345,8 +356,26 @@ function writeConsoleErrorsEvidence(params: {
     deterministicReport.iframeSrc = iframeSrc;
   }
 
-  deterministicReport.selectedFrameUrl = selectedFrameUrl;
-  deterministicReport.bundleUrl = bundleUrl;
+  // Conditionally include selectedFrameUrl (redacted in hash-only mode)
+  if (FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY) {
+    const selectedFrameUrlHash = maybeRedactUrlDeterministic(selectedFrameUrl, true);
+    if (selectedFrameUrlHash.sha256) {
+      deterministicReport.selectedFrameUrlSha256 = selectedFrameUrlHash.sha256;
+    }
+  } else {
+    deterministicReport.selectedFrameUrl = selectedFrameUrl;
+  }
+
+  // Conditionally include bundleUrl (redacted in hash-only mode)
+  if (FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY) {
+    const bundleUrlHash = maybeRedactUrlDeterministic(bundleUrl, true);
+    if (bundleUrlHash.sha256) {
+      deterministicReport.bundleUrlSha256 = bundleUrlHash.sha256;
+    }
+  } else {
+    deterministicReport.bundleUrl = bundleUrl;
+  }
+
   deterministicReport.counts = {
     forgeConsoleErrorCount: forgeIframeErrors.length,
     hostConsoleErrorCount: hostPageErrors.length,
@@ -416,7 +445,16 @@ function writeForgeErrorInjectionEvidence(params: {
     deterministicInjection.iframeSrc = iframeSrc;
   }
 
-  deterministicInjection.selectedFrameUrl = selectedFrameUrl;
+  // Conditionally include selectedFrameUrl (redacted in hash-only mode)
+  if (FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY) {
+    const selectedFrameUrlHash = maybeRedactUrlDeterministic(selectedFrameUrl, true);
+    if (selectedFrameUrlHash.sha256) {
+      deterministicInjection.selectedFrameUrlSha256 = selectedFrameUrlHash.sha256;
+    }
+  } else {
+    deterministicInjection.selectedFrameUrl = selectedFrameUrl;
+  }
+
   deterministicInjection.injectedText = enabled ? '[FT_FORCED_FORGE_ERROR]' : null;
 
   fs.writeFileSync(
@@ -1139,9 +1177,12 @@ Run 3 with iframe src hashing enabled (clean diff + no raw iframeSrc in determin
   timeout 180 bash scripts/proof/run_playwright_with_novnc.sh 2>&1 | tee /tmp/pw_run3.log
   OUT3="$(ls -1dt /tmp/pw_dash_diag_* | head -1)"
   echo "=== Run 3 Console Errors Deterministic (has iframeHost & iframeSrcSha256, NO raw iframeSrc) ==="
-  node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log(JSON.stringify(j,null,2));' "$OUT3/console-errors.deterministic.json" | head -15
+  node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log(JSON.stringify(j,null,2));' "$OUT3/console-errors.deterministic.json" | head -20
   echo "=== Run 3 Console Errors Runtime (still has raw iframeSrc for debugging) ==="
   node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log("iframeSrc present:", !!j.iframeSrc);console.log("iframeSrc starts with:", j.iframeSrc?.substring(0,60));' "$OUT3/console-errors.runtime.json"
+  echo "=== DETERMINISTIC_URL_LEAK_CHECK (should print NOTHING) ==="
+  grep -R --line-number -E "https://|http://|atlassian-dev.net" \
+    "$OUT3/console-errors.deterministic.json" "$OUT3/forge-error-injection.deterministic.json" || echo "✓ PASS: No raw URLs found in deterministic files"
 
 Run with injection (will fail on forgeConsoleErrorCount):
   rm -rf /tmp/pw_dash_diag_* /tmp/pw_novnc_run_*
