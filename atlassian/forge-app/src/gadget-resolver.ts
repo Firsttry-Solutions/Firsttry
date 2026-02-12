@@ -43,6 +43,8 @@ import { debugSnapshotState_resolver } from './resolvers/debugSnapshotState';
 import { ensureFirstSnapshot } from './resolvers/ensureFirstSnapshot';
 import { probe } from './resolvers/probe'; // FORENSIC_PROBE
 import { getDashboardSnapshotV1_resolver } from './resolvers/getDashboardSnapshotV1';
+import { handler as ft_runAccessIntelligence_v1_handler } from './resolvers/ft_runAccessIntelligence_v1'; // PHASE 1
+import { handler as ft_exportAccessPack_v1_handler } from './resolvers/ft_exportAccessPack_v1'; // PHASE 1
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -78,6 +80,10 @@ resolver.define('probe', probe);  // FORENSIC_PROBE
 
 // Enterprise dashboard resolver (NEW - Phase 9)
 resolver.define('getDashboardSnapshotV1', getDashboardSnapshotV1_resolver);
+
+// Phase 1 Access Intelligence Resolvers (NEW)
+resolver.define('ft_runAccessIntelligence_v1', ft_runAccessIntelligence_v1_handler);
+resolver.define('ft_exportAccessPack_v1', ft_exportAccessPack_v1_handler);
 
 // Layer-0 Backbone resolvers
 resolver.define('ft_getDashboardState_v1', ft_getDashboardState_v1);
@@ -450,6 +456,14 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       
       const integrityHash = computeIntegrityHash(snapshot);
       
+      // PHASE 1: Check for governance snapshots (newer than seed)
+      let governanceSnapshot = null;
+      try {
+        governanceSnapshot = await storage.get('ft:snapshot:latest:governance');
+      } catch (e) {
+        console.warn('[FT_GOVERNANCE_SNAPSHOT_NOT_FOUND]', 'No Phase 1 governance snapshot yet');
+      }
+      
       // ENTERPRISE CONTRACT: Detect snapshot kind (SEED vs GOVERNANCE)
       // For now, all snapshots from seedSnapshot are SEED
       // Future: Governance snapshots will be created via scheduled/triggered/on-demand collectors
@@ -500,46 +514,104 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
           bullets: SEED_BULLETS_EXACT,
         },
         evidenceFreshness,
-        // Snapshots array (currently only one)
-        snapshots: [
-          {
-            snapshotId: snapshot.snapshotId,
-            snapshotKind,
-            origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
-            initiator: snapshotKind === "SEED" ? "system" : "user",
-            triggerReason: undefined, // Only for TRIGGERED snapshots
-            createdAtUtc: snapshot.createdAtUtc,
-            immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
-            integrity: {
-              algorithm: "sha256",
-              value: integrityHash,
-            },
-            scope: {
-              included: [
-                "Jira projects configuration metadata",
-                "Workflow schemes and statuses",
-                "Permission schemes and roles",
-                "Automation rules metadata",
-                "App/plugin installation list"
+        // Snapshots array (currently only one, but may include governance if available)
+        snapshots: (() => {
+          const snapshotsArray = [
+            {
+              snapshotId: snapshot.snapshotId,
+              snapshotKind,
+              origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
+              initiator: snapshotKind === "SEED" ? "system" : "user",
+              triggerReason: undefined, // Only for TRIGGERED snapshots
+              createdAtUtc: snapshot.createdAtUtc,
+              immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+              integrity: {
+                algorithm: "sha256",
+                value: integrityHash,
+              },
+              scope: {
+                included: [
+                  "Jira projects configuration metadata",
+                  "Workflow schemes and statuses",
+                  "Permission schemes and roles",
+                  "Automation rules metadata",
+                  "App/plugin installation list"
+                ],
+                excluded: [
+                  "Issue contents (summaries, descriptions, comments, attachments)",
+                  "User profile data (names, emails, avatars)",
+                  "Personally Identifiable Information (PII)",
+                  "Authentication tokens or credentials",
+                  "Real-time activity or audit logs"
+                ],
+              },
+              controls: [
+                "Change management (workflow configuration)",
+                "Access control configuration (permission schemes)",
+                "Automation governance (rule inventory)",
+                "Third-party app risk assessment (installed apps list)"
               ],
-              excluded: [
-                "Issue contents (summaries, descriptions, comments, attachments)",
-                "User profile data (names, emails, avatars)",
-                "Personally Identifiable Information (PII)",
-                "Authentication tokens or credentials",
-                "Real-time activity or audit logs"
+              exportEligible: snapshotKind === "GOVERNANCE",
+              exportDeclaration: EXPORT_DECLARATION_EXACT,
+            }
+          ];
+          
+          // PHASE 1: Add governance snapshot if available
+          if (governanceSnapshot && governanceSnapshot.data) {
+            const govIntegrityHash = computeIntegrityHash(governanceSnapshot);
+            snapshotsArray.unshift({
+              snapshotId: governanceSnapshot.snapshotId,
+              snapshotKind: "GOVERNANCE",
+              origin: "ON_DEMAND",
+              initiator: "user",
+              triggerReason: "Phase 1 Access Intelligence Scan",
+              createdAtUtc: governanceSnapshot.createdAtUtc,
+              immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+              integrity: {
+                algorithm: "sha256",
+                value: govIntegrityHash,
+              },
+              scope: {
+                included: [
+                  "Global admin assignments",
+                  "Project admin assignments",
+                  "External user detection",
+                  "Public project visibility",
+                  "Permission scheme analysis"
+                ],
+                excluded: [
+                  "Issue contents",
+                  "User profile data",
+                  "Personally Identifiable Information (PII)",
+                  "Authentication tokens",
+                  "Real-time activity"
+                ],
+              },
+              controls: [
+                "Admin assignment governance",
+                "External access control",
+                "Project visibility governance",
+                "Permission boundary definition"
               ],
-            },
-            controls: [
-              "Change management (workflow configuration)",
-              "Access control configuration (permission schemes)",
-              "Automation governance (rule inventory)",
-              "Third-party app risk assessment (installed apps list)"
-            ],
-            exportEligible: snapshotKind === "GOVERNANCE",
-            exportDeclaration: EXPORT_DECLARATION_EXACT,
+              exportEligible: true,
+              exportDeclaration: EXPORT_DECLARATION_EXACT,
+            });
+            
+            // Update freshness to reflect governance snapshot if it's newer
+            if (!evidenceFreshness.lastCollectedUtc || 
+                new Date(governanceSnapshot.createdAtUtc) > new Date(evidenceFreshness.lastCollectedUtc)) {
+              const govAgeSeconds = Math.floor((Date.now() - new Date(governanceSnapshot.createdAtUtc).getTime()) / 1000);
+              const govFreshnessStatus = govAgeSeconds > (FRESHNESS_STALE_AFTER_DAYS * 86400) ? "STALE" : "CURRENT";
+              Object.assign(evidenceFreshness, {
+                lastCollectedUtc: governanceSnapshot.createdAtUtc,
+                ageSeconds: govAgeSeconds,
+                status: govFreshnessStatus,
+              });
+            }
           }
-        ],
+          
+          return snapshotsArray;
+        })(),
         // Backend build identity fields (canonical names with full/short SHA distinction)
         backend_git_sha: BACKEND_GIT_SHA,
         backend_git_sha_short: BACKEND_GIT_SHA_SHORT,
