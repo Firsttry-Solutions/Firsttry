@@ -104,37 +104,7 @@ X11VNC_OPTS=(
   "-nodragging"
 )
 
-# Handle VNC password (optional)
-if [[ -n "${VNC_PASS:-}" ]]; then
-  # Validate VNC password length (x11vnc -storepasswd requires 6-8 chars)
-  VNC_PASS_LEN=${#VNC_PASS}
-  if [[ ${VNC_PASS_LEN} -lt 6 ]]; then
-    echo "[PW_NOVNC] ERROR: VNC_PASS must be at least 6 characters (got ${VNC_PASS_LEN})"
-    exit 1
-  fi
-  if [[ ${VNC_PASS_LEN} -gt 8 ]]; then
-    echo "[PW_NOVNC] ERROR: VNC_PASS must be at most 8 characters for x11vnc (got ${VNC_PASS_LEN})"
-    echo "[PW_NOVNC]   Hint: use a password like 'test123' or 'mypass1'"
-    exit 1
-  fi
-  
-  PASSFILE="$RUN_ROOT/.vncpass"
-  echo "[PW_NOVNC] Storing VNC password..."
-  if ! x11vnc -storepasswd "$VNC_PASS" "$PASSFILE" >/dev/null 2>&1; then
-    echo "[PW_NOVNC] ERROR: x11vnc -storepasswd failed (check password format)"
-    exit 1
-  fi
-  if [[ ! -f "$PASSFILE" ]]; then
-    echo "[PW_NOVNC] ERROR: VNC password file not created at $PASSFILE"
-    exit 1
-  fi
-  X11VNC_OPTS+=("-rfbauth" "$PASSFILE")
-  echo "[PW_NOVNC] ✓ VNC password stored (6-8 chars)"
-else
-  # Use /dev/null as password file to disable authentication entirely
-  X11VNC_OPTS+=("-passwdfile" "/dev/null")
-  echo "[PW_NOVNC] ✓ VNC running WITHOUT authentication (/dev/null password file)"
-fi
+echo "[PW_NOVNC] ✓ VNC running on localhost without password"
 
 x11vnc "${X11VNC_OPTS[@]}" > "$RUN_ROOT/x11vnc.log" 2>&1 &
 X11VNC_PID=$!
