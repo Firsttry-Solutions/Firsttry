@@ -59,9 +59,27 @@ setup('auth', async ({ page }) => {
   console.log(`[AUTH] Navigating to ${jiraRoute}`);
   await page.goto(jiraRoute, { waitUntil: 'domcontentloaded' });
 
-  // === Check if login is required (robust detection) ===
-  const currentUrl = page.url();
-  const isLoginRequired = !currentUrl.startsWith(`${baseUrl}/jira/`);
+  // === Check if login is required (check URL AND API status) ===
+  let currentUrl = page.url();
+  let isLoginRequired = !currentUrl.startsWith(`${baseUrl}/jira/`);
+
+  // === If at Jira URL, verify authentication with API ===
+  let apiStatus = 0;
+  if (!isLoginRequired) {
+    try {
+      const resp = await page.request.get(`${baseUrl}/rest/api/3/myself`);
+      apiStatus = resp.status();
+      console.log(`[AUTH] Initial /myself API status: ${apiStatus}`);
+      // If API returns non-200, we need login despite being at /jira/ URL
+      if (apiStatus !== 200) {
+        console.log('[AUTH] API returned non-200; treating as login required (stale/invalid auth)');
+        isLoginRequired = true;
+      }
+    } catch (err) {
+      console.log(`[AUTH] API check failed; treating as login required`);
+      isLoginRequired = true;
+    }
+  }
 
   if (isLoginRequired) {
     console.log('[AUTH] Login page detected (URL does not start with Jira route)');
