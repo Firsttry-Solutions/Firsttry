@@ -976,6 +976,30 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     console.log(`TRACE_ID_HINT=${traceIdHint}`);
     console.log(`OUT_DIR=${outDir}`);
 
+    // === PHASE 1 SUCCESS VALIDATION (NO-INJECTION mode) ===
+    // When FT_FORCE_FORGE_CONSOLE_ERROR is NOT set, verify Phase1 scan completed successfully
+    if (!FORCE_FORGE_CONSOLE_ERROR) {
+      // Check that Phase1 scan did NOT fail with old error message
+      const oldErrorPresent = consoleLines.some(line => 
+        line.includes('Project fetch returned empty or null result') || 
+        line.includes('[PHASE1_ACCESS_SCAN_FAILED]')
+      );
+      if (oldErrorPresent) {
+        throw new Error('PHASE1_VALIDATION_FAILED: Old failure message or marker found in NO-INJECTION run');
+      }
+      
+      // Check that Phase1 scan completed with success marker
+      const successMarkerPresent = consoleLines.some(line => 
+        line.includes('[PHASE1_ACCESS_SCAN_OK]')
+      );
+      if (!successMarkerPresent) {
+        consoleLines.push('[PHASE1_VALIDATION_WARN] Success marker [PHASE1_ACCESS_SCAN_OK] not found in NO-INJECTION run');
+        console.warn('[PHASE1_VALIDATION] Missing success marker - this may indicate Phase1 did not complete or payload changed');
+      } else {
+        consoleLines.push('[PHASE1_VALIDATION_OK] Success marker [PHASE1_ACCESS_SCAN_OK] found');
+      }
+    }
+
     // === FAIL-CLOSED: ONLY fail if Forge iframe-origin error exists ===
     // Host noise, request failures, and 4xx/5xx are logged but do NOT cause failure
     if (forgeConsoleErrorCount > 0) {
