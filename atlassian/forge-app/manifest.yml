@@ -54,9 +54,9 @@ modules:
     - key: get-ops-state-fn
       handler: resolvers/gadget-handlers.handler
     # Phase 1 Access Intelligence Resolvers: Run access scan and export pack
-    - key: ft-run-access-intelligence-v1-fn
+    - key: ft-access-v1-fn
       handler: gadget-resolver.handler
-    - key: ft-export-access-pack-v1-fn
+    - key: ft-export-v1-fn
       handler: gadget-resolver.handler
     # Diagnostic Probe (Deprecated - Webhooks module not available in Forge v12)
     - key: ft-diag-probe-fn
