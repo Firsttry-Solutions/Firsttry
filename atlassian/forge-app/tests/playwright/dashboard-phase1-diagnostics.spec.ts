@@ -45,6 +45,10 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
   const netLines: string[] = [];
   let traceIdHint = 'NONE';
 
+  // === CREATE LOG FILES EARLY (before any navigation) ===
+  fs.writeFileSync(path.join(outDir, 'console.log'), '', { flag: 'w' });
+  fs.writeFileSync(path.join(outDir, 'network.log'), '', { flag: 'w' });
+
   // === Capture console messages and extract trace_ hints ===
   page.on('console', (msg) => {
     const text = msg.text();
@@ -88,12 +92,8 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     }
   });
 
-  // === Start tracing ===
-  await context.tracing.start({
-    screenshots: true,
-    snapshots: true,
-    sources: true
-  });
+  // === NOTE: Tracing is already started by Playwright config (trace: "on") ===
+  // === Do NOT manually call context.tracing.start() ===
 
   // === Navigate to dashboard ===
   consoleLines.push(`[NAV] Navigating to ${dashboardUrl}`);
@@ -159,10 +159,7 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     fs.writeFileSync(path.join(outDir, 'console.log'), consoleLines.join('\n'));
     fs.writeFileSync(path.join(outDir, 'network.log'), netLines.join('\n'));
 
-    // Save trace
-    await context.tracing.stop({
-      path: path.join(outDir, 'trace.zip')
-    });
+    // === NOTE: Tracing is managed by Playwright config, no manual stop needed ===
 
     throw new Error(
       `Gadget frame not found. pageErrorCount=${pageErrorCount}, consoleErrorCount=${consoleErrorCount}, requestFailedCount=${requestFailedCount}, http4xx5xxCount=${http4xx5xxCount}. OUT_DIR=${outDir}`
@@ -217,10 +214,8 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
   fs.writeFileSync(path.join(outDir, 'console.log'), consoleLines.join('\n'));
   fs.writeFileSync(path.join(outDir, 'network.log'), netLines.join('\n'));
 
-  // === Save trace ===
-  await context.tracing.stop({
-    path: path.join(outDir, 'trace.zip')
-  });
+  // === NOTE: Tracing is managed by Playwright config, no manual stop needed ===
+  // === Playwright will automatically save trace.zip when config has trace: "on" ===
 
   // === Print final counters and trace hint ===
   console.log(`[COUNTERS] pageErrorCount=${pageErrorCount}`);
