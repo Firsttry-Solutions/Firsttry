@@ -3136,6 +3136,91 @@ async function proceedWithBoot() {
         if (variantSelect && dashState.status === 'AVAILABLE') {
           attachVariantSelectHandler(variantSelect);
         }
+
+        // PHASE 1: Attach event listener for "Run Access Review" button
+        const runAccessButton = document.getElementById('ft-run-access-review-btn') as HTMLButtonElement | null;
+        if (runAccessButton) {
+          runAccessButton.addEventListener('click', async () => {
+            runAccessButton.disabled = true;
+            runAccessButton.textContent = 'Running...';
+            
+            try {
+              ensureCorrelationId();
+              console.log('[PHASE1_ACCESS_SCAN_CLICK] User triggered access review scan');
+              
+              const result = await invokeWithUiReqId('ft_runAccessIntelligence_v1', {});
+              
+              if (result && result.ok) {
+                console.log('[PHASE1_ACCESS_SCAN_SUCCESS]', result);
+                runAccessButton.textContent = 'Scan Complete!';
+                runAccessButton.style.backgroundColor = '#4CAF50';
+                
+                // Re-fetch dashboard to show new governance snapshot
+                setTimeout(() => {
+                  location.reload();
+                }, 1500);
+              } else {
+                console.error('[PHASE1_ACCESS_SCAN_FAILED]', result);
+                runAccessButton.textContent = 'Scan Failed: ' + (result?.reason || 'Unknown error');
+                runAccessButton.style.backgroundColor = '#f44336';
+              }
+            } catch (error: any) {
+              console.error('[PHASE1_ACCESS_SCAN_ERROR]', error);
+              runAccessButton.textContent = 'Error: ' + error.message;
+              runAccessButton.style.backgroundColor = '#f44336';
+            } finally {
+              runAccessButton.disabled = false;
+            }
+          });
+        }
+
+        // PHASE 1: Attach event listener for "Export Phase 1 Pack" button
+        const exportAccessButton = document.getElementById('ft-export-access-pack-btn') as HTMLButtonElement | null;
+        if (exportAccessButton && dashState.snapshotId) {
+          exportAccessButton.addEventListener('click', async () => {
+            exportAccessButton.disabled = true;
+            exportAccessButton.textContent = 'Exporting...';
+            
+            try {
+              ensureCorrelationId();
+              console.log('[PHASE1_EXPORT_CLICK] User triggered access pack export');
+              
+              const result = await invokeWithUiReqId('ft_exportAccessPack_v1', {
+                snapshotId: dashState.snapshotId,
+              });
+              
+              if (result && result.ok && result.zipBase64) {
+                console.log('[PHASE1_EXPORT_SUCCESS]', { hash: result.zipHash, fileCount: result.fileCount });
+                
+                // Trigger download
+                const binaryString = atob(result.zipBase64);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                  bytes[i] = binaryString.charCodeAt(i);
+                }
+                const blob = new Blob([bytes], { type: 'application/zip' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `ft-access-pack-${dashState.snapshotId}.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                exportAccessButton.textContent = 'Export Complete';
+              } else {
+                console.error('[PHASE1_EXPORT_FAILED]', result);
+                exportAccessButton.textContent = 'Export Failed: ' + (result?.reason || 'Unknown error');
+              }
+            } catch (error: any) {
+              console.error('[PHASE1_EXPORT_ERROR]', error);
+              exportAccessButton.textContent = 'Error: ' + error.message;
+            } finally {
+              exportAccessButton.disabled = false;
+            }
+          });
+        }
         
         // RELAY: Send dashboard rendered marker with status and reason code
         // ========================================================================

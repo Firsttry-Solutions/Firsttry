@@ -363,6 +363,44 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     variantControls.appendChild(variantLabel);
     content.appendChild(variantControls);
 
+    // === PHASE 1: Action Buttons for Access Review ===
+    const phase1Actions = document.createElement("div");
+    phase1Actions.className = "ft-phase1-actions";
+    phase1Actions.style.display = "flex";
+    phase1Actions.style.gap = "10px";
+    phase1Actions.style.marginTop = "15px";
+    phase1Actions.style.flexWrap = "wrap";
+    
+    const runAccessBtn = document.createElement("button");
+    runAccessBtn.id = "ft-run-access-review-btn";
+    runAccessBtn.textContent = "Run Access Review (Phase 1)";
+    runAccessBtn.style.padding = "10px 15px";
+    runAccessBtn.style.backgroundColor = "#0052CC";
+    runAccessBtn.style.color = "white";
+    runAccessBtn.style.border = "none";
+    runAccessBtn.style.borderRadius = "4px";
+    runAccessBtn.style.cursor = "pointer";
+    runAccessBtn.style.fontSize = "14px";
+    runAccessBtn.style.fontWeight = "500";
+    
+    phase1Actions.appendChild(runAccessBtn);
+    
+    const exportAccessBtn = document.createElement("button");
+    exportAccessBtn.id = "ft-export-access-pack-btn";
+    exportAccessBtn.textContent = "Export Phase 1 Pack";
+    exportAccessBtn.style.padding = "10px 15px";
+    exportAccessBtn.style.backgroundColor = "#36B37E";
+    exportAccessBtn.style.color = "white";
+    exportAccessBtn.style.border = "none";
+    exportAccessBtn.style.borderRadius = "4px";
+    exportAccessBtn.style.cursor = "pointer";
+    exportAccessBtn.style.fontSize = "14px";
+    exportAccessBtn.style.fontWeight = "500";
+    
+    phase1Actions.appendChild(exportAccessBtn);
+    
+    content.appendChild(phase1Actions);
+
     // === ENTERPRISE LAYOUT: Enterprise Contract (includes Evidence Summary) ===
     // Order: Enterprise UI Shell with cards → History → Diagnostics
     // This ensures core audit evidence is visible in a premium card-based layout
