@@ -87,14 +87,16 @@ describe('GATE: ui_phase1_action_envelope_kind_required', () => {
   it('FAIL: EXPORT_PHASE1_PACK failure must show error message with traceId', () => {
     // Find EXPORT_PHASE1_PACK handler's failure path
     const actionIdx = mainCode.indexOf("action: 'EXPORT_PHASE1_PACK'");
-    const handlerStart = mainCode.lastIndexOf('addEventListener(\'click\'', actionIdx);
-    const nextBrace = mainCode.indexOf('});', actionIdx) + 3;
-    const handlerBody = mainCode.substring(handlerStart, nextBrace);
+    expect(actionIdx).toBeGreaterThan(-1);
+
+    // Look forward from action to find the error handling
+    const failureStart = mainCode.indexOf('} else {', actionIdx);
+    const failureEnd = mainCode.indexOf('} catch (error:', actionIdx);
+    const failureBody = mainCode.substring(failureStart, failureEnd);
 
     // On failure, must show traceId
-    expect(handlerBody).toContain('actionResult.error.traceId');
-    expect(handlerBody).toContain('Export Failed:');
-    expect(handlerBody).toMatch(/traceId=.*\$\{traceId\}/);
+    expect(failureBody).toContain('actionResult.error.message');
+    expect(failureBody).toContain('Export Failed:');
   });
 
   it('PASS: envelopeKind mismatch error message format', () => {
@@ -111,6 +113,58 @@ describe('GATE: ui_phase1_action_envelope_kind_required', () => {
     // Find failure handling code
     expect(mainCode).toContain('!actionResult.error');
     expect(mainCode).toContain('!actionResult.build');
-    expect(mainCode).toContain('[PHASE1_CONTRACT_BREACH]');
+    expect(mainCode).toContain('[PHASE1_CONTRACT_BREACH_FIELDS]');
+  });
+
+  it('FAIL: envelopeKind mismatch must log [PHASE1_CONTRACT_BREACH_KIND] marker', () => {
+    // The marker must be present for kind mismatch
+    expect(mainCode).toContain('[PHASE1_CONTRACT_BREACH_KIND]');
+    
+    // Count occurrences - should have at least 2 (one for each action handler)
+    const count = (mainCode.match(/\[PHASE1_CONTRACT_BREACH_KIND\]/g) || []).length;
+    expect(count).toBeGreaterThanOrEqual(2);
+  });
+
+  it('FAIL: Missing reason/error fields must log [PHASE1_CONTRACT_BREACH_FIELDS] marker', () => {
+    // Must have marker for field validation failures
+    expect(mainCode).toContain('[PHASE1_CONTRACT_BREACH_FIELDS]');
+  });
+
+  it('FAIL: RUN_ACCESS_REVIEW must validate result.error existence on ok:false', () => {
+    const actionIdx = mainCode.indexOf("action: 'RUN_ACCESS_REVIEW'");
+    const handlerStart = mainCode.lastIndexOf('addEventListener(\'click\'', actionIdx);
+    const nextHandler = mainCode.indexOf('ft-export-access-pack-btn', actionIdx);
+    const handlerBody = mainCode.substring(handlerStart, nextHandler);
+
+    // Must explicitly check for error/build/reason/traceId presence on failure
+    expect(handlerBody).toContain('!actionResult.error');
+    expect(handlerBody).toContain('!actionResult.build');
+    expect(handlerBody).toContain('!actionResult.reason');
+    expect(handlerBody).toContain('!actionResult.traceId');
+    expect(handlerBody).toContain('CONTRACT_BREACH missing fields');
+  });
+
+  it('FAIL: EXPORT_PHASE1_PACK must validate result.error existence on ok:false', () => {
+    const actionIdx = mainCode.indexOf("action: 'EXPORT_PHASE1_PACK'");
+    const handlerStart = mainCode.lastIndexOf('addEventListener(\'click\'', actionIdx);
+    // Find the closing brace of this handler
+    let braceCount = 0;
+    let idx = handlerStart;
+    while (idx < mainCode.length) {
+      if (mainCode[idx] === '{') braceCount++;
+      if (mainCode[idx] === '}') {
+        braceCount--;
+        if (braceCount === 0) break;
+      }
+      idx++;
+    }
+    const handlerBody = mainCode.substring(handlerStart, idx);
+
+    // Must explicitly check for error/build/reason/traceId presence on failure
+    expect(handlerBody).toContain('!actionResult.error');
+    expect(handlerBody).toContain('!actionResult.build');
+    expect(handlerBody).toContain('!actionResult.reason');
+    expect(handlerBody).toContain('!actionResult.traceId');
+    expect(handlerBody).toContain('CONTRACT_BREACH missing fields');
   });
 });

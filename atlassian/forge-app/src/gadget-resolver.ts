@@ -235,6 +235,10 @@ function normalizeActionError(
 /**
  * Internal handler for Phase 1 Access Intelligence actions
  * Returns FT_ACTION_RESULT_V1 envelope (never wrapped in dashboard state)
+ * 
+ * Handles both:
+ * A) thrown exceptions → normalizeActionError
+ * B) soft failures (result.ok === false) → maps to compliant envelope
  */
 async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1> {
   const traceId = getOrCreateTraceId(request);
@@ -244,9 +248,9 @@ async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1>
     console.log('[FT_PROOF_PHASE1_DISPATCH]', 'entering handlePhase1AccessReview');
     console.log('[FT_PROOF_PHASE1_PRE_HANDLER_CALL]', 'about to call ft_runAccessIntelligence_v1_handler');
     
-    let result: any;
+    let handlerResult: any;
     try {
-      result = await ft_runAccessIntelligence_v1_handler(request);
+      handlerResult = await ft_runAccessIntelligence_v1_handler(request);
     } catch (handlerErr: any) {
       console.log('[FT_PROOF_PHASE1_HANDLER_THROWN]', JSON.stringify({
         name: handlerErr?.name || 'unknown',
@@ -255,19 +259,63 @@ async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1>
       throw handlerErr;
     }
     
-    // Handler call succeeded
+    // **SOFT FAILURE DETECTION**: Handler may return { ok:false } without throwing
+    if (handlerResult && typeof handlerResult === 'object' && handlerResult.ok === false) {
+      // Handler returned a soft failure - map to compliant error envelope
+      const softFailureMessage = String(handlerResult.reason || handlerResult.error?.message || 'Phase 1 failed');
+      const softFailureCode = String(handlerResult.error?.code || 'PHASE1_SOFT_FAILED');
+      
+      console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
+        action: 'RUN_ACCESS_REVIEW',
+        traceId,
+        code: softFailureCode,
+        reason: softFailureMessage,
+        source: 'soft_failure',
+        ts: new Date().toISOString(),
+      }));
+
+      // Log action envelope proof marker on soft failure
+      console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+        action: 'RUN_ACCESS_REVIEW',
+        ok: false,
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        traceId,
+        buildShaShort: build.buildShaShort,
+        code: softFailureCode,
+        reason: softFailureMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      // Return compliant failure envelope from soft failure
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'RUN_ACCESS_REVIEW',
+        traceId,
+        build,
+        reason: softFailureMessage,
+        error: {
+          code: softFailureCode,
+          message: softFailureMessage,
+          traceId,
+        },
+        data: handlerResult, // Include handler result for debugging
+      };
+    }
+
+    // Handler call succeeded (ok === true or success case)
     console.log('[FT_PROOF_PHASE1_AFTER_HANDLER_SUCCESS]', 'handler returned successfully');
     console.log(JSON.stringify({
       marker: '[FT_DASH_ACTION_END]',
       action: 'RUN_ACCESS_REVIEW',
-      ok: result?.ok,
+      ok: handlerResult?.ok,
       ts: new Date().toISOString(),
     }));
 
     // Log action envelope proof marker
     console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
       action: 'RUN_ACCESS_REVIEW',
-      ok: true,
+      ok: handlerResult?.ok === true,
       envelopeKind: 'FT_ACTION_RESULT_V1',
       traceId,
       buildShaShort: build.buildShaShort,
@@ -277,14 +325,14 @@ async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1>
     // Return canonical success envelope
     return {
       envelopeKind: 'FT_ACTION_RESULT_V1',
-      ok: result?.ok === true,
+      ok: handlerResult?.ok === true,
       action: 'RUN_ACCESS_REVIEW',
       traceId,
       build,
-      data: result,
+      data: handlerResult,
     };
   } catch (error: any) {
-    // Action failed - use normalizer for structured error
+    // Exception thrown - use normalizer for structured error
     const normalized = normalizeActionError('RUN_ACCESS_REVIEW', traceId, error);
     
     console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
@@ -292,6 +340,7 @@ async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1>
       traceId,
       code: normalized.error.code,
       reason: normalized.reason,
+      source: 'thrown_exception',
       ts: new Date().toISOString(),
     }));
 
@@ -330,6 +379,10 @@ async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1>
 /**
  * Internal handler for Phase 1 Export Pack actions
  * Returns FT_ACTION_RESULT_V1 envelope (never wrapped in dashboard state)
+ * 
+ * Handles both:
+ * A) thrown exceptions → normalizeActionError
+ * B) soft failures (result.ok === false) → maps to compliant envelope
  */
 async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
   const traceId = getOrCreateTraceId(request);
@@ -342,19 +395,72 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
       ts: new Date().toISOString(),
     }));
 
-    const result = await ft_exportAccessPack_v1_handler(request);
+    let handlerResult: any;
+    try {
+      handlerResult = await ft_exportAccessPack_v1_handler(request);
+    } catch (handlerErr: any) {
+      console.log('[FT_PROOF_PHASE1_HANDLER_THROWN]', JSON.stringify({
+        name: handlerErr?.name || 'unknown',
+        message: handlerErr?.message || 'unknown',
+      }));
+      throw handlerErr;
+    }
     
     console.log(JSON.stringify({
       marker: '[FT_DASH_ACTION_END]',
       action: 'EXPORT_PHASE1_PACK',
-      ok: result?.ok,
+      ok: handlerResult?.ok,
       ts: new Date().toISOString(),
     }));
 
-    // Log action envelope proof marker
+    // **SOFT FAILURE DETECTION**: Handler may return { ok:false } without throwing
+    if (handlerResult && typeof handlerResult === 'object' && handlerResult.ok === false) {
+      // Handler returned a soft failure - map to compliant error envelope
+      const softFailureMessage = String(handlerResult.reason || handlerResult.error?.message || 'Export failed');
+      const softFailureCode = String(handlerResult.error?.code || 'PHASE1_SOFT_FAILED');
+      
+      console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
+        action: 'EXPORT_PHASE1_PACK',
+        traceId,
+        code: softFailureCode,
+        reason: softFailureMessage,
+        source: 'soft_failure',
+        ts: new Date().toISOString(),
+      }));
+
+      // Log action envelope proof marker on soft failure
+      console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+        action: 'EXPORT_PHASE1_PACK',
+        ok: false,
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        traceId,
+        buildShaShort: build.buildShaShort,
+        code: softFailureCode,
+        reason: softFailureMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      // Return compliant failure envelope from soft failure
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        traceId,
+        build,
+        reason: softFailureMessage,
+        error: {
+          code: softFailureCode,
+          message: softFailureMessage,
+          traceId,
+        },
+        data: handlerResult, // Include handler result for debugging
+      };
+    }
+
+    // Log action envelope proof marker on success
     console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
       action: 'EXPORT_PHASE1_PACK',
-      ok: result?.ok === true,
+      ok: handlerResult?.ok === true,
       envelopeKind: 'FT_ACTION_RESULT_V1',
       traceId,
       buildShaShort: build.buildShaShort,
@@ -363,14 +469,23 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
 
     return {
       envelopeKind: 'FT_ACTION_RESULT_V1',
-      ok: result?.ok === true,
+      ok: handlerResult?.ok === true,
       action: 'EXPORT_PHASE1_PACK',
       traceId,
       build,
-      data: result,
+      data: handlerResult,
     };
   } catch (error: any) {
     const normalized = normalizeActionError('EXPORT_PHASE1_PACK', traceId, error);
+
+    console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
+      action: 'EXPORT_PHASE1_PACK',
+      traceId,
+      code: normalized.error.code,
+      reason: normalized.reason,
+      source: 'thrown_exception',
+      ts: new Date().toISOString(),
+    }));
 
     console.error(JSON.stringify({
       marker: '[FT_DASH_ACTION_ERROR]',

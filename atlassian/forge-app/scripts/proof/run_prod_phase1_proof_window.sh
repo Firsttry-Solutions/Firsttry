@@ -182,6 +182,47 @@ else
 fi
 echo ""
 
+# ASSERTION 4c: Action envelope marker MUST be present (NEW - soft-fail compliance)
+ENVELOPE_COUNT=$(grep -c '\[FT_PROOF_ACTION_ENVELOPE\]' "$PROOF_DIR/prod_after.log" || true)
+if [ "$ENVELOPE_COUNT" -lt 1 ]; then
+  echo -e "${RED}❌ ASSERTION FAILED: FT_PROOF_ACTION_ENVELOPE${NC}"
+  echo "   Expected: >= 1 occurrences"
+  echo "   Actual: $ENVELOPE_COUNT"
+  echo ""
+  echo "   Diagnosis: Action envelope was not logged. This is critical for soft-fail detection."
+  echo "   Fix: Ensure [FT_PROOF_ACTION_ENVELOPE] marker is logged on all action returns."
+  PASSED=false
+else
+  echo -e "${GREEN}✅ PASS: FT_PROOF_ACTION_ENVELOPE${NC}"
+  echo "   Count: $ENVELOPE_COUNT"
+fi
+echo ""
+
+# Extract traceId from last action envelope marker for traceId-correlated proof
+LAST_TRACE_ID=$(grep '\[FT_PROOF_ACTION_ENVELOPE\]' "$PROOF_DIR/prod_after.log" | tail -1 | grep -o '"traceId":"[^"]*"' | cut -d'"' -f4 || echo "unknown")
+echo -e "${YELLOW}Selected traceId for this run: ${LAST_TRACE_ID}${NC}"
+echo ""
+
+# ASSERTION 4d: If soft-fail occurred, ensure corresponding compliant envelope exists (NEW)
+SOFT_FAIL_IN_LOG=$(grep '\[FT_PROOF_PHASE1_FAIL\].*soft_failure' "$PROOF_DIR/prod_after.log" || true)
+if [ -n "$SOFT_FAIL_IN_LOG" ]; then
+  echo -e "${YELLOW}ℹ️  Soft-failure detected - validating envelope compliance${NC}"
+  
+  # For each soft-fail, validate that a corresponding action envelope exists
+  SOFT_FAIL_COUNT=$(grep -c '\[FT_PROOF_PHASE1_FAIL\].*soft_failure' "$PROOF_DIR/prod_after.log" || true)
+  FAIL_ENVELOPES=$(grep '\[FT_PROOF_ACTION_ENVELOPE\].*"ok":false' "$PROOF_DIR/prod_after.log" || true)
+  
+  if [ -n "$FAIL_ENVELOPES" ]; then
+    echo -e "${GREEN}✅ Soft-failures correctly mapped to compliant failure envelopes${NC}"
+    echo "   Soft-fail markers: $SOFT_FAIL_COUNT"
+    echo "   Failure envelopes: $(echo "$FAIL_ENVELOPES" | wc -l)"
+  else
+    echo -e "${YELLOW}⚠️  Soft-failure detected but no failure envelope found (may indicate recovery)${NC}"
+  fi
+  echo ""
+fi
+echo ""
+
 # ASSERTION 5: Route blocker error must be absent
 ROUTE_ERR_COUNT=$(grep -c 'You must create your route using the.*route.*export from.*@forge/api' "$PROOF_DIR/prod_after.log" || true)
 if [ "$ROUTE_ERR_COUNT" -gt 0 ]; then
@@ -210,6 +251,22 @@ else
 fi
 echo ""
 
+# ASSERTION 7: Contract breach markers must be absent (NEW - soft-fail compliance)
+BREACH_KIND=$(grep -c '\[PHASE1_CONTRACT_BREACH_KIND\]' "$PROOF_DIR/prod_after.log" || true)
+BREACH_FIELDS=$(grep -c '\[PHASE1_CONTRACT_BREACH_FIELDS\]' "$PROOF_DIR/prod_after.log" || true)
+if [ "$BREACH_KIND" -gt 0 ] || [ "$BREACH_FIELDS" -gt 0 ]; then
+  echo -e "${RED}❌ ASSERTION FAILED: Contract breach markers must be absent${NC}"
+  echo "   Envelope kind breaches: $BREACH_KIND"
+  echo "   Field breaches: $BREACH_FIELDS"
+  echo ""
+  echo "   Diagnosis: UI detected malformed envelopes from backend."
+  echo "   Fix: Ensure backend returns compliant FT_ACTION_RESULT_V1 with all required fields."
+  PASSED=false
+else
+  echo -e "${GREEN}✅ PASS: No contract breach markers detected${NC}"
+fi
+echo ""
+
 # FINAL RESULT
 echo "========================================================================"
 if [ "$PASSED" = true ]; then
@@ -223,11 +280,13 @@ if [ "$PASSED" = true ]; then
   echo "  - [FT_PROOF_PHASE1_DISPATCH]: $DISPATCH_COUNT"
   echo "  - [FT_PROOF_PHASE1_HANDLER_ENTRY]: $HANDLER_COUNT"
   echo "  - [FT_ACCESS_ROUTE_PROOF]: $ROUTE_COUNT"
+  echo "  - [FT_PROOF_ACTION_ENVELOPE]: $ENVELOPE_COUNT (soft-fail compliance)"
   echo "  - [FT_PROOF_PHASE1_FAIL]: $FAIL_COUNT (0 = success, >0 = action encountered errors)"
   echo ""
   echo "Blockers absent:"
   echo "  - Route() errors: 0 ✅"
   echo "  - Storage where() errors: 0 ✅"
+  echo "  - Contract breach markers: $BREACH_KIND kind + $BREACH_FIELDS fields ✅"
   echo ""
   echo "Proof files saved to:"
   echo "  - $PROOF_DIR/prod_baseline.log"
@@ -252,6 +311,10 @@ if [ "$PASSED" = true ]; then
   
   echo "  Route proof:"
   grep '\[FT_ACCESS_ROUTE_PROOF\]' "$PROOF_DIR/prod_after.log" | head -3 | sed 's/^/    /'
+  echo ""
+  
+  echo "  Action envelopes:"
+  grep '\[FT_PROOF_ACTION_ENVELOPE\]' "$PROOF_DIR/prod_after.log" | head -3 | sed 's/^/    /'
   echo ""
   
   if [ "$FAIL_COUNT" -gt 0 ]; then
