@@ -131,6 +131,8 @@ if [[ -n "${VNC_PASS:-}" ]]; then
   X11VNC_OPTS+=("-rfbauth" "$PASSFILE")
   echo "[PW_NOVNC] ✓ VNC password stored"
 else
+  # Explicitly disable password authentication
+  X11VNC_OPTS+=("-nopw")
   echo "[PW_NOVNC] ⚠️  VNC_PASS not set - VNC will be open WITHOUT password (localhost only)"
 fi
 
