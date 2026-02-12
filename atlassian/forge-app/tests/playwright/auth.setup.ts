@@ -18,6 +18,43 @@ setup('auth', async ({ page }) => {
   const authDir = path.dirname(statePath);
   fs.mkdirSync(authDir, { recursive: true });
 
+  // === Helper: Prove Jira authentication (strict proof) ===
+  async function proveJiraAuthentication(): Promise<void> {
+    // 1) Verify URL starts with baseUrl/jira/
+    const currentUrl = page.url();
+    if (!currentUrl.startsWith(`${baseUrl}/jira/`)) {
+      throw new Error(
+        `FATAL: Jira authentication proof failed (url not under /jira/: ${currentUrl})`
+      );
+    }
+    console.log('[AUTH_PROOF] URL verified: starts with /jira/');
+
+    // 2) Verify main element is visible
+    try {
+      await page.locator('main').first().waitFor({ state: 'visible', timeout: 30_000 });
+      console.log('[AUTH_PROOF] Main element verified: visible');
+    } catch (err) {
+      throw new Error(
+        `FATAL: Jira authentication proof failed (main element not visible after 30s)`
+      );
+    }
+
+    // 3) Call Jira REST API /rest/api/3/myself and require 200
+    const resp = await page.request.get(`${baseUrl}/rest/api/3/myself`);
+    const statusCode = resp.status();
+    console.log(`[AUTH_PROOF] Jira /myself API status: ${statusCode}`);
+
+    if (statusCode !== 200) {
+      // Capture screenshot for debugging
+      await page.screenshot({ path: `${authDir}/auth-failure.png` });
+      throw new Error(
+        `FATAL: Jira authentication proof failed (myself status=${statusCode}, url=${currentUrl})`
+      );
+    }
+
+    console.log('[AUTH_PROOF] ✓ All proofs passed - Jira authentication confirmed');
+  }
+
   // === Navigate to deterministic Jira route ===
   const jiraRoute = `${baseUrl}/jira/your-work`;
   console.log(`[AUTH] Navigating to ${jiraRoute}`);
@@ -127,10 +164,13 @@ setup('auth', async ({ page }) => {
       await page.waitForURL(`${baseUrl}/jira/**`, { timeout: 120_000 });
     }
   } else {
-    console.log('[AUTH] Already authenticated or at Jira page');
+    console.log('[AUTH] Already at Jira page - will verify authentication');
   }
 
-  // === Save auth state ===
+  // === Run Jira authentication proof (strict fail-closed) ===
+  await proveJiraAuthentication();
+
+  // === Save auth state (ONLY after proof passes) ===
   await page.context().storageState({ path: statePath });
 
   // === Verify state file exists and is non-trivial ===
