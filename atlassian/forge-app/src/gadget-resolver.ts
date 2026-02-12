@@ -101,6 +101,41 @@ resolver.define('ft_uiLogRelay_v1', ft_uiLogRelay_v1);
 export const handler = resolver.getDefinitions();
 
 // ============================================================================
+// CANONICAL ACTION RESULT ENVELOPE TYPE
+// ============================================================================
+
+/**
+ * FT_ACTION_RESULT_V1: Canonical envelope for Phase1 action responses
+ * 
+ * INVARIANTS (fail-closed):
+ * - envelopeKind ALWAYS 'FT_ACTION_RESULT_V1'
+ * - ok: boolean
+ * - action: 'RUN_ACCESS_REVIEW' | 'EXPORT_PHASE1_PACK'
+ * - traceId: NEVER empty, format: trace_<timestamp>_<random>
+ * - build: {buildShaShort,buildUtc,version} all NEVER empty
+ * - If ok=false: MUST include reason (non-empty) and error{code,message,traceId}
+ * - data: optional, contains action-specific result data
+ */
+interface FtActionResultV1 {
+  envelopeKind: 'FT_ACTION_RESULT_V1';
+  ok: boolean;
+  action: 'RUN_ACCESS_REVIEW' | 'EXPORT_PHASE1_PACK';
+  traceId: string; // never empty
+  build: {
+    buildShaShort: string; // never empty, 12-char or 'unknown'
+    buildUtc: string; // never empty, ISO-8601 or 'unknown'
+    version: string; // never empty, semver or 'unknown'
+  };
+  reason?: string; // required if ok=false, must be non-empty
+  error?: {
+    code: string; // never empty
+    message: string; // never empty
+    traceId: string; // never empty
+  };
+  data?: any;
+}
+
+// ============================================================================
 // HELPER FUNCTIONS: Error Handling & Metadata
 // ============================================================================
 
@@ -123,7 +158,19 @@ function getOrCreateTraceId(request: any): string {
  */
 function getBuildShaShort(fullSha: string | null | undefined): string {
   if (!fullSha || typeof fullSha !== 'string') return 'unknown';
-  return fullSha.slice(0, 12);
+  const short = fullSha.slice(0, 12);
+  return short && short.length > 0 ? short : 'unknown';
+}
+
+/**
+ * Builds canonical build metadata object (no empty fields)
+ */
+function buildMeta(): { buildShaShort: string; buildUtc: string; version: string } {
+  return {
+    buildShaShort: getBuildShaShort(FT_BUILD_SHA),
+    buildUtc: BACKEND_BUILD_TIME_UTC && BACKEND_BUILD_TIME_UTC.length > 0 ? BACKEND_BUILD_TIME_UTC : 'unknown',
+    version: BACKEND_APP_VERSION && BACKEND_APP_VERSION.length > 0 ? BACKEND_APP_VERSION : 'unknown',
+  };
 }
 
 /**
@@ -187,11 +234,11 @@ function normalizeActionError(
 
 /**
  * Internal handler for Phase 1 Access Intelligence actions
- * Wraps ft_runAccessIntelligence_v1_handler with action result structure
+ * Returns FT_ACTION_RESULT_V1 envelope (never wrapped in dashboard state)
  */
-async function handlePhase1AccessReview(request: any): Promise<any> {
+async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1> {
   const traceId = getOrCreateTraceId(request);
-  const buildShaShort = getBuildShaShort(FT_BUILD_SHA);
+  const build = buildMeta();
 
   try {
     console.log('[FT_PROOF_PHASE1_DISPATCH]', 'entering handlePhase1AccessReview');
@@ -217,16 +264,23 @@ async function handlePhase1AccessReview(request: any): Promise<any> {
       ts: new Date().toISOString(),
     }));
 
-    // Return success response with traceId and build info
+    // Log action envelope proof marker
+    console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+      action: 'RUN_ACCESS_REVIEW',
+      ok: true,
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      traceId,
+      buildShaShort: build.buildShaShort,
+      ts: new Date().toISOString(),
+    }));
+
+    // Return canonical success envelope
     return {
+      envelopeKind: 'FT_ACTION_RESULT_V1',
       ok: result?.ok === true,
       action: 'RUN_ACCESS_REVIEW',
       traceId,
-      build: {
-        buildShaShort,
-        buildUtc: BACKEND_BUILD_TIME_UTC || 'unknown',
-        version: BACKEND_APP_VERSION || 'unknown',
-      },
+      build,
       data: result,
     };
   } catch (error: any) {
@@ -248,26 +302,39 @@ async function handlePhase1AccessReview(request: any): Promise<any> {
       ts: new Date().toISOString(),
     }));
 
+    // Log action envelope proof marker on failure
+    console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+      action: 'RUN_ACCESS_REVIEW',
+      ok: false,
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      traceId,
+      buildShaShort: build.buildShaShort,
+      code: normalized.error.code,
+      reason: normalized.reason,
+      ts: new Date().toISOString(),
+    }));
+
+    // Return canonical failure envelope with structured error
     return {
+      envelopeKind: 'FT_ACTION_RESULT_V1',
       ok: false,
       action: 'RUN_ACCESS_REVIEW',
       traceId,
+      build,
       reason: normalized.reason,
       error: normalized.error,
-      build: {
-        buildShaShort,
-        buildUtc: BACKEND_BUILD_TIME_UTC || 'unknown',
-        version: BACKEND_APP_VERSION || 'unknown',
-      },
     };
   }
 }
 
 /**
  * Internal handler for Phase 1 Export Pack actions
- * Wraps ft_exportAccessPack_v1_handler with action result structure
+ * Returns FT_ACTION_RESULT_V1 envelope (never wrapped in dashboard state)
  */
-async function handlePhase1ExportPack(request: any): Promise<any> {
+async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
+  const traceId = getOrCreateTraceId(request);
+  const build = buildMeta();
+
   try {
     console.log(JSON.stringify({
       marker: '[FT_DASH_ACTION_START]',
@@ -284,25 +351,54 @@ async function handlePhase1ExportPack(request: any): Promise<any> {
       ts: new Date().toISOString(),
     }));
 
+    // Log action envelope proof marker
+    console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+      action: 'EXPORT_PHASE1_PACK',
+      ok: result?.ok === true,
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      traceId,
+      buildShaShort: build.buildShaShort,
+      ts: new Date().toISOString(),
+    }));
+
     return {
+      envelopeKind: 'FT_ACTION_RESULT_V1',
       ok: result?.ok === true,
       action: 'EXPORT_PHASE1_PACK',
+      traceId,
+      build,
       data: result,
     };
   } catch (error: any) {
+    const normalized = normalizeActionError('EXPORT_PHASE1_PACK', traceId, error);
+
     console.error(JSON.stringify({
       marker: '[FT_DASH_ACTION_ERROR]',
       action: 'EXPORT_PHASE1_PACK',
       error: error?.message || String(error),
       ts: new Date().toISOString(),
     }));
+
+    // Log action envelope proof marker on failure
+    console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+      action: 'EXPORT_PHASE1_PACK',
+      ok: false,
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      traceId,
+      buildShaShort: build.buildShaShort,
+      code: normalized.error.code,
+      reason: normalized.reason,
+      ts: new Date().toISOString(),
+    }));
+
     return {
+      envelopeKind: 'FT_ACTION_RESULT_V1',
       ok: false,
       action: 'EXPORT_PHASE1_PACK',
-      error: {
-        code: 'FT_EXPORT_PACK_FAILED',
-        message: error?.message || 'Export pack failed',
-      },
+      traceId,
+      build,
+      reason: normalized.reason,
+      error: normalized.error,
     };
   }
 }
@@ -334,7 +430,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
     }));
 
     // STEP 1: Check for optional action parameter (NEW - BACKBONE LAYER 1)
-    // If action is present, execute it backend-side and return result
+    // If action is present, return the action result envelope DIRECTLY (no wrapping)
     if (action && typeof action === 'string') {
       console.log(JSON.stringify({
         marker: '[FT_DASH_ACTION_DISPATCH]',
@@ -346,53 +442,34 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       if (action === 'RUN_ACCESS_REVIEW') {
         console.log('[FT_PROOF_PHASE1_ACTION_START]', 'RUN_ACCESS_REVIEW action triggered');
         const actionResult = await handlePhase1AccessReview(request);
-        // Return action result with dashboard context
-        return {
-          ok: actionResult.ok,
-          status: actionResult.ok ? 'AVAILABLE' : 'HARD_ERROR',
-          schemaVersion: 'v1',
-          envelopeKind: 'FT_DASH_ENVELOPE_V1',
-          actionResult,
-          meta: {
-            ui_req_id: uiReqId,
-            backend_build_sha: BACKEND_BUILD_SHA || 'UNSET',
-            now_iso: new Date().toISOString(),
-          },
-        } as any;
+        // Return FT_ACTION_RESULT_V1 envelope DIRECTLY (no dashboard wrapping)
+        return actionResult as any;
       } else if (action === 'EXPORT_PHASE1_PACK') {
         const actionResult = await handlePhase1ExportPack(request);
-        // Return action result with dashboard context
-        return {
-          ok: actionResult.ok,
-          status: actionResult.ok ? 'AVAILABLE' : 'HARD_ERROR',
-          schemaVersion: 'v1',
-          envelopeKind: 'FT_DASH_ENVELOPE_V1',
-          actionResult,
-          meta: {
-            ui_req_id: uiReqId,
-            backend_build_sha: BACKEND_BUILD_SHA || 'UNSET',
-            now_iso: new Date().toISOString(),
-          },
-        } as any;
+        // Return FT_ACTION_RESULT_V1 envelope DIRECTLY (no dashboard wrapping)
+        return actionResult as any;
       } else {
-        // Invalid action string
+        // Invalid action string - return failure envelope in canonical form
+        const traceId = getOrCreateTraceId(request);
+        const build = buildMeta();
+        const normalized = normalizeActionError(action, traceId, new Error(`Unknown action: ${action}`));
+
         console.error(JSON.stringify({
           marker: '[FT_DASH_ACTION_INVALID]',
           action,
           reason: 'Unknown action name',
           ts: new Date().toISOString(),
         }));
+
+        // Return canonical action failure envelope
         return {
+          envelopeKind: 'FT_ACTION_RESULT_V1',
           ok: false,
-          status: 'HARD_ERROR',
-          schemaVersion: 'v1',
-          envelopeKind: 'FT_DASH_ENVELOPE_V1',
-          error: { code: 'FT_ACTION_INVALID', message: `Unknown action: ${action}` },
-          meta: {
-            ui_req_id: uiReqId,
-            backend_build_sha: BACKEND_BUILD_SHA || 'UNSET',
-            now_iso: new Date().toISOString(),
-          },
+          action: action as any,
+          traceId,
+          build,
+          reason: normalized.reason,
+          error: normalized.error,
         } as any;
       }
     }
