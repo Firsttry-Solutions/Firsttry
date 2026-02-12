@@ -3,8 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-// === ENV FLAG: Inject Forge iframe console error for proof (deterministic, default OFF) ===
+// === ENV FLAGS ===
 const FORCE_FORGE_CONSOLE_ERROR = process.env.FT_FORCE_FORGE_CONSOLE_ERROR === '1';
+const FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY = process.env.FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY === '1';
 
 function isoTimestampZ() {
   const now = new Date();
@@ -267,6 +268,35 @@ function computeFileSha256(filePath: string): string {
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
+// === HELPER: Compute SHA256 hash of string content ===
+function computeStringSha256(content: string): string {
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+// === HELPER: Write clean determinism hashes (path-independent format for clean diffs) ===
+function writeCleanDeterminismHashes(outDir: string, detConsoleErrorsPath: string, detInjectionPath: string | null): void {
+  const detConsoleErrorsSha = computeFileSha256(detConsoleErrorsPath);
+  let detInjectionSha = '';
+  if (detInjectionPath && fs.existsSync(detInjectionPath)) {
+    detInjectionSha = computeFileSha256(detInjectionPath);
+  }
+
+  const cleanLines: string[] = [];
+  cleanLines.push(`HASH_console_errors_deterministic=${detConsoleErrorsSha}`);
+  if (detInjectionSha) {
+    cleanLines.push(`HASH_forge_error_injection_deterministic=${detInjectionSha}`);
+  }
+
+  // Write clean hashes file, then compute its hash for inclusion
+  const cleanHashesPath = path.join(outDir, 'determinism-hashes.clean.txt');
+  fs.writeFileSync(cleanHashesPath, cleanLines.join('\n') + '\n');
+
+  // Now compute hash of the clean hashes file and add it to itself
+  const cleanHashesSha = computeFileSha256(cleanHashesPath);
+  cleanLines.push(`HASH_determinism_hashes_txt=${cleanHashesSha}`);
+  fs.writeFileSync(cleanHashesPath, cleanLines.join('\n') + '\n');
+}
+
 // === HELPER: Write split deterministic + runtime evidence files ===
 function writeConsoleErrorsEvidence(params: {
   outDir: string;
@@ -293,20 +323,37 @@ function writeConsoleErrorsEvidence(params: {
     consoleLinesTail,
   } = params;
 
+  // Determine iframe hash fields based on flag
+  let deterministicIframeSrc = iframeSrc;
+  let deterministicIframeHost = '';
+  let deterministicIframeSrcSha256 = '';
+  if (FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY && iframeSrc && iframeSrc !== 'EMPTY') {
+    deterministicIframeSrcSha256 = computeStringSha256(iframeSrc);
+    deterministicIframeHost = extractHostnameFromUrl(iframeSrc);
+    deterministicIframeSrc = ''; // Don't include raw src in deterministic
+  }
+
   // === DETERMINISTIC FILE: console-errors.deterministic.json ===
-  const deterministicReport = {
+  const deterministicReport: any = {
     marker: 'CONSOLE_ERRORS_V1_DETERMINISTIC',
-    iframeSrc,
-    selectedFrameUrl,
-    bundleUrl,
-    counts: {
-      forgeConsoleErrorCount: forgeIframeErrors.length,
-      hostConsoleErrorCount: hostPageErrors.length,
-      totalConsoleErrorCount: forgeIframeErrors.length + hostPageErrors.length,
-    },
-    forgeIframeErrors,
-    hostPageErrors,
   };
+
+  if (FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY && iframeSrc && iframeSrc !== 'EMPTY') {
+    deterministicReport.iframeHost = deterministicIframeHost;
+    deterministicReport.iframeSrcSha256 = deterministicIframeSrcSha256;
+  } else {
+    deterministicReport.iframeSrc = iframeSrc;
+  }
+
+  deterministicReport.selectedFrameUrl = selectedFrameUrl;
+  deterministicReport.bundleUrl = bundleUrl;
+  deterministicReport.counts = {
+    forgeConsoleErrorCount: forgeIframeErrors.length,
+    hostConsoleErrorCount: hostPageErrors.length,
+    totalConsoleErrorCount: forgeIframeErrors.length + hostPageErrors.length,
+  };
+  deterministicReport.forgeIframeErrors = forgeIframeErrors;
+  deterministicReport.hostPageErrors = hostPageErrors;
 
   fs.writeFileSync(
     path.join(outDir, 'console-errors.deterministic.json'),
@@ -348,14 +395,29 @@ function writeForgeErrorInjectionEvidence(params: {
 }): void {
   const { outDir, enabled, iframeSrc, selectedFrameUrl } = params;
 
+  // Determine iframe hash fields based on flag
+  let deterministicIframeHost = '';
+  let deterministicIframeSrcSha256 = '';
+  if (FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY && iframeSrc && iframeSrc !== 'EMPTY') {
+    deterministicIframeSrcSha256 = computeStringSha256(iframeSrc);
+    deterministicIframeHost = extractHostnameFromUrl(iframeSrc);
+  }
+
   // === DETERMINISTIC FILE ===
-  const deterministicInjection = {
+  const deterministicInjection: any = {
     marker: 'FORGE_ERROR_INJECTION_V1_DETERMINISTIC',
     enabled,
-    iframeSrc,
-    selectedFrameUrl,
-    injectedText: enabled ? '[FT_FORCED_FORGE_ERROR]' : null,
   };
+
+  if (FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY && iframeSrc && iframeSrc !== 'EMPTY') {
+    deterministicInjection.iframeHost = deterministicIframeHost;
+    deterministicInjection.iframeSrcSha256 = deterministicIframeSrcSha256;
+  } else {
+    deterministicInjection.iframeSrc = iframeSrc;
+  }
+
+  deterministicInjection.selectedFrameUrl = selectedFrameUrl;
+  deterministicInjection.injectedText = enabled ? '[FT_FORCED_FORGE_ERROR]' : null;
 
   fs.writeFileSync(
     path.join(outDir, 'forge-error-injection.deterministic.json'),
@@ -974,6 +1036,14 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     // Get last 60 lines of console for runtime evidence
     const consoleLinesTail = consoleLines.slice(-60);
 
+    // Compute iframe hashing params for deterministic evidence (if enabled)
+    let iframeHost = '';
+    let iframeSrcSha256 = '';
+    if (FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY && iframeSrc && iframeSrc !== 'EMPTY') {
+      iframeHost = extractHostnameFromUrl(iframeSrc);
+      iframeSrcSha256 = computeStringSha256(iframeSrc);
+    }
+
     // Write split evidence files (even if already written, this ensures consistency)
     writeConsoleErrorsEvidence({
       outDir,
@@ -1016,7 +1086,11 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
         deterministicHashes.join('\n')
       );
 
+      // Write clean determinism hashes (path-independent format)
+      writeCleanDeterminismHashes(outDir, detConsoleErrorsPath, detInjectionPath);
+
       consoleLines.push('[DETERMINISM] determinism-hashes.txt written');
+      consoleLines.push('[DETERMINISM] determinism-hashes.clean.txt written');
       fs.writeFileSync(path.join(outDir, 'console.log'), consoleLines.join('\n'));
     }
   }
@@ -1035,6 +1109,8 @@ Run 1 without injection (deterministic hashing enabled):
   OUT1="$(ls -1dt /tmp/pw_dash_diag_* | head -1)"
   echo "=== Run 1 Hashes ==="
   cat "$OUT1/determinism-hashes.txt"
+  echo "=== Run 1 Clean Hashes ==="
+  cat "$OUT1/determinism-hashes.clean.txt"
 
 Run 2 without injection (must match Run 1 hashes for determinism):
   rm -rf /tmp/pw_dash_diag_* /tmp/pw_novnc_run_*
@@ -1046,8 +1122,26 @@ Run 2 without injection (must match Run 1 hashes for determinism):
   OUT2="$(ls -1dt /tmp/pw_dash_diag_* | head -1)"
   echo "=== Run 2 Hashes ==="
   cat "$OUT2/determinism-hashes.txt"
-  echo "=== Determinism Check (should match) ==="
+  echo "=== Run 2 Clean Hashes ==="
+  cat "$OUT2/determinism-hashes.clean.txt"
+  echo "=== Determinism Check (hashes should match) ==="
   diff "$OUT1/determinism-hashes.txt" "$OUT2/determinism-hashes.txt" && echo "✓ DETERMINISTIC" || echo "✗ NOT deterministic"
+  echo "=== Clean Diff Check (should be empty/no paths) ==="
+  diff "$OUT1/determinism-hashes.clean.txt" "$OUT2/determinism-hashes.clean.txt" && echo "✓ CLEAN DIFF (identical)" || echo "✗ Clean hashes differ"
+
+Run 3 with iframe src hashing enabled (clean diff + no raw iframeSrc in deterministic):
+  rm -rf /tmp/pw_dash_diag_* /tmp/pw_novnc_run_*
+  export JIRA_BASE_URL="https://firsttry.atlassian.net"
+  export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
+  unset FT_FORCE_FORGE_CONSOLE_ERROR
+  export FT_ASSERT_DETERMINISTIC_HASH=1
+  export FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY=1
+  timeout 180 bash scripts/proof/run_playwright_with_novnc.sh 2>&1 | tee /tmp/pw_run3.log
+  OUT3="$(ls -1dt /tmp/pw_dash_diag_* | head -1)"
+  echo "=== Run 3 Console Errors Deterministic (has iframeHost & iframeSrcSha256, NO raw iframeSrc) ==="
+  node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log(JSON.stringify(j,null,2));' "$OUT3/console-errors.deterministic.json" | head -15
+  echo "=== Run 3 Console Errors Runtime (still has raw iframeSrc for debugging) ==="
+  node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log("iframeSrc present:", !!j.iframeSrc);console.log("iframeSrc starts with:", j.iframeSrc?.substring(0,60));' "$OUT3/console-errors.runtime.json"
 
 Run with injection (will fail on forgeConsoleErrorCount):
   rm -rf /tmp/pw_dash_diag_* /tmp/pw_novnc_run_*
