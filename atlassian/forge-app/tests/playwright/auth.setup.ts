@@ -1,4 +1,5 @@
 import { test as setup } from '@playwright/test';
+import { chromium } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -17,6 +18,54 @@ setup('auth', async ({ page }) => {
   const statePath = 'tests/playwright/.auth/state.json';
   const authDir = path.dirname(statePath);
   fs.mkdirSync(authDir, { recursive: true });
+
+  // === BACKBONE FIX 1: Try to reuse valid state.json (skip MFA if possible) ===
+  if (fs.existsSync(statePath)) {
+    const statSize = fs.statSync(statePath).size;
+    if (statSize >= 10) {
+      console.log(`[AUTH] Found existing state.json (${statSize} bytes) - attempting reuse...`);
+
+      try {
+        // Create a new context with the stored state
+        const testBrowser = await chromium.launch({ headless: false });
+        const testContext = await testBrowser.newContext({ storageState: statePath });
+        const testPage = await testContext.newPage();
+
+        // Navigate and verify auth
+        const jiraRoute = `${baseUrl}/jira/your-work`;
+        await testPage.goto(jiraRoute, { waitUntil: 'domcontentloaded' });
+
+        // Call /myself API to verify state is still valid
+        const resp = await testPage.request.get(`${baseUrl}/rest/api/3/myself`);
+        const statusCode = resp.status();
+        console.log(`[AUTH_REUSE_CHECK] /myself API status: ${statusCode}`);
+
+        // Clean up test context/browser
+        await testContext.close();
+        await testBrowser.close();
+
+        if (statusCode === 200) {
+          // State is valid!
+          console.log('[AUTH] ✓ AUTH_STATE_REUSED_OK - stored credentials are still valid');
+          console.log(`AUTH_STATE_SAVED: ${statePath}`);
+          return; // Exit setup successfully WITHOUT logging in again
+        } else {
+          // State is stale (status !== 200)
+          console.log(`[AUTH] AUTH_STATE_REUSE_FAILED status=${statusCode} → deleting stale state.json`);
+          fs.unlinkSync(statePath);
+          // Continue into normal login flow below
+        }
+      } catch (err) {
+        // Error during reuse check - delete state and proceed with login
+        console.log(`[AUTH] AUTH_STATE_REUSE_CHECK_ERROR: ${(err as Error).message} → deleting state and logging in`);
+        if (fs.existsSync(statePath)) {
+          fs.unlinkSync(statePath);
+        }
+        // Continue into normal login flow below
+      }
+    }
+  }
+  console.log('[AUTH] No valid cached state found; proceeding with login...');
 
   // === Helper: Prove Jira authentication (strict proof) ===
   async function proveJiraAuthentication(): Promise<void> {

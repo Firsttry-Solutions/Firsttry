@@ -188,74 +188,86 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
     await page.screenshot({ path: afterReadySS, fullPage: true });
     consoleLines.push('[SCREENSHOT] after-ready.png');
 
-    // === Find gadget frame (enhanced robust search) ===
+    // === BACKBONE FIX 2: Find gadget frame by atlassian-dev.net URL detection ===
     let gadgetFrame = null;
-    const candidates: any[] = [];
+    let selectedFrameUrl = 'NONE';
+    const allFrames: any[] = [];
 
-    // Collect iframe candidates
+    // Step A: Enumerate ALL frames and record their URLs and names
     for (const frame of page.frames()) {
-      try {
-        const el = frame.owner();
-        if (!el) continue;
+      const frameUrl = frame.url();
+      const frameName = frame.name();
+      const isMain = frame === page.mainFrame();
+      allFrames.push({ frame, url: frameUrl, name: frameName, isMain });
+      consoleLines.push(`[FRAME_ENUM] url=${frameUrl}, name=${frameName}, main=${isMain}`);
+    }
 
-        const name = (await el.getAttribute('name')) || '';
-        const src = (await el.getAttribute('src')) || '';
+    // Also write frames info to frames.txt
+    await dumpFrames(page, outDir);
+    consoleLines.push('[FRAME_DUMP] Enumerated all frames to frames.txt');
 
-        // Match criteria: forge, atlassian, hello, or iframe keywords
-        const isCandidate = 
-          name.toLowerCase().includes('forge') ||
-          src.toLowerCase().includes('forge') ||
-          src.toLowerCase().includes('atlassian') ||
-          src.toLowerCase().includes('hello') ||
-          src.toLowerCase().includes('iframe');
+    // Step B: Determine gadget frame by matching atlassian-dev.net URL
+    // Sort deterministically by URL ascending, then by name ascending
+    const sortedFrames = [...allFrames].sort((a, b) => {
+      if (a.url !== b.url) return a.url.localeCompare(b.url);
+      return a.name.localeCompare(b.name);
+    });
 
-        if (isCandidate) {
-          const box = await el.boundingBox().catch(() => null);
-          const area = box ? box.width * box.height : 0;
-          candidates.push({ frame, name, src, area, index: candidates.length, el });
-        }
-      } catch (e) {
-        // continue
+    // Find first frame with atlassian-dev.net in URL
+    for (const frameInfo of sortedFrames) {
+      if (
+        frameInfo.url.includes('atlassian-dev.net') ||
+        frameInfo.url.includes('hello.atlassian-dev.net') ||
+        frameInfo.url.includes('/global-bridge.js')
+      ) {
+        gadgetFrame = frameInfo.frame;
+        selectedFrameUrl = frameInfo.url;
+        consoleLines.push(
+          `[FRAME_SELECTED] url=${selectedFrameUrl}, name=${frameInfo.name}`
+        );
+        break;
       }
     }
 
-    consoleLines.push(`[CANDIDATES] Found ${candidates.length} iframe candidate(s)`);
-
-    // Try to find button in candidates, prioritizing by area (deterministic tie-breaker: lowest index)
-    if (candidates.length > 0) {
-      candidates.sort((a, b) => (b.area - a.area) || (a.index - b.index));
-
-      for (const candidate of candidates) {
-        try {
-          const btnCount = await candidate.frame
-            .locator('#ft-run-access-review-btn')
-            .count()
-            .catch(() => 0);
-          if (btnCount > 0) {
-            gadgetFrame = candidate.frame;
-            consoleLines.push(
-              `[FRAME_FOUND] Selected candidate with button (name=${candidate.name}, area=${candidate.area})`
-            );
-            break;
-          }
-        } catch {
-          // continue
-        }
-      }
-    }
-
-    // Attempt 2: Brute-force search all frames for button (fallback)
+    // Step C: If no URL match found, fall back to searching by console marker UI_ENTRY_RUNTIME_PROOF
     if (!gadgetFrame) {
-      consoleLines.push('[FRAME_SEARCH] No candidates with button; brute-force scanning all frames...');
-      for (const frame of page.frames()) {
+      consoleLines.push('[FRAME_FALLBACK] No atlassian-dev.net frame found; checking console markers...');
+      // Console lines are already captured; look for UI_ENTRY_RUNTIME_PROOF patterns
+      const uiEntryLine = consoleLines.find((line) => line.includes('[UI_ENTRY_RUNTIME_PROOF]'));
+      if (uiEntryLine && uiEntryLine.includes('atlassian-dev.net')) {
+        // Extract domain hint and match frames by that
+        const match = uiEntryLine.match(/(https?:\/\/[\w.-]+\.atlassian-dev\.net)/i);
+        if (match) {
+          const domainHint = match[1];
+          for (const frameInfo of sortedFrames) {
+            if (frameInfo.url.includes('atlassian-dev.net')) {
+              gadgetFrame = frameInfo.frame;
+              selectedFrameUrl = frameInfo.url;
+              consoleLines.push(
+                `[FRAME_SELECTED_FALLBACK] via console hint, url=${selectedFrameUrl}`
+              );
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // Step D: If still no gadget frame, brute-force search all frames for the button
+    if (!gadgetFrame) {
+      consoleLines.push('[FRAME_BRUTE_FORCE] Attempting brute-force button search across all frames...');
+      for (const frameInfo of sortedFrames) {
         try {
-          const btnCount = await frame
+          const btnCount = await frameInfo.frame
             .locator('#ft-run-access-review-btn')
             .count()
             .catch(() => 0);
           if (btnCount > 0) {
-            gadgetFrame = frame;
-            consoleLines.push('[FRAME_FOUND] Found gadget frame via brute-force scan');
+            gadgetFrame = frameInfo.frame;
+            selectedFrameUrl = frameInfo.url;
+            consoleLines.push(
+              `[FRAME_SELECTED_BUTTON] Found button in frame, url=${selectedFrameUrl}`
+            );
             break;
           }
         } catch {
@@ -284,11 +296,11 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
       consoleLines.push('[SCREENSHOT] after.png');
 
       throw new Error(
-        `Gadget frame not found. pageErrorCount=${pageErrorCount}, consoleErrorCount=${consoleErrorCount}, requestFailedCount=${requestFailedCount}, http4xx5xxCount=${http4xx5xxCount}. See frames.txt, iframes.json, dom_excerpt.txt in OUT_DIR=${outDir}`
+        `Gadget frame not found (selectedFrameUrl=${selectedFrameUrl}). pageErrorCount=${pageErrorCount}, consoleErrorCount=${consoleErrorCount}, requestFailedCount=${requestFailedCount}, http4xx5xxCount=${http4xx5xxCount}. See frames.txt, iframes.json, dom_excerpt.txt in OUT_DIR=${outDir}`
       );
     }
 
-    // === Take before screenshot (gadget found) ===
+    // === Print frame selection result ===\n    console.log(`FRAME_SELECTED url=${selectedFrameUrl}`);\n\n    // === Take before screenshot (gadget found) ===
     const preSS = path.join(outDir, 'before.png');
     await page.screenshot({ path: preSS, fullPage: true });
     consoleLines.push('[SCREENSHOT] before.png');
