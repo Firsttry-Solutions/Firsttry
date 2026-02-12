@@ -102,10 +102,14 @@ X11VNC_OPTS=(
   "-shared"
   "-noxrecord"
   "-nodragging"
+  "-nopw"
 )
 
-# Handle VNC password (optional)
+# Handle VNC password (optional - override -nopw if provided)
 if [[ -n "${VNC_PASS:-}" ]]; then
+  # Remove -nopw and use password auth instead
+  X11VNC_OPTS=("${X11VNC_OPTS[@]/-nopw/}")
+  
   # Validate VNC password length (x11vnc -storepasswd requires 6-8 chars)
   VNC_PASS_LEN=${#VNC_PASS}
   if [[ ${VNC_PASS_LEN} -lt 6 ]]; then
@@ -131,9 +135,7 @@ if [[ -n "${VNC_PASS:-}" ]]; then
   X11VNC_OPTS+=("-rfbauth" "$PASSFILE")
   echo "[PW_NOVNC] ✓ VNC password stored"
 else
-  # Explicitly disable password authentication
-  X11VNC_OPTS+=("-nopw")
-  echo "[PW_NOVNC] ⚠️  VNC_PASS not set - VNC will be open WITHOUT password (localhost only)"
+  echo "[PW_NOVNC] ✓ VNC running WITHOUT password (-nopw flag enabled)"
 fi
 
 x11vnc "${X11VNC_OPTS[@]}" > "$RUN_ROOT/x11vnc.log" 2>&1 &
