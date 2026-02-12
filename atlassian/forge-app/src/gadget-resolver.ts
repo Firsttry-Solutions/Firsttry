@@ -52,6 +52,7 @@ import { nowUtcIso } from './backbone/time';
 import { dashOk, dashErr, DashEnvelopeV1 } from './shared/dashEnvelopeV1';
 import { BACKEND_BUILD_SHA } from './build/backend_build';
 import { BACKEND_GIT_SHA, BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC, BACKEND_APP_VERSION } from './build/buildIdentityBackend.gen';
+import { FT_BUILD_SHA } from './shared/backend_build_meta';
 import {
   FT_DASH_ENVELOPE_MARKER_V1,
   okEnvelope,
@@ -109,15 +110,22 @@ export const handler = resolver.getDefinitions();
  */
 async function handlePhase1AccessReview(request: any): Promise<any> {
   try {
-    console.log('[FT_PROOF_PHASE1_DISPATCH] entering handlePhase1AccessReview');
-    console.log(JSON.stringify({
-      marker: '[FT_DASH_ACTION_START]',
-      action: 'RUN_ACCESS_REVIEW',
-      ts: new Date().toISOString(),
-    }));
-
-    const result = await ft_runAccessIntelligence_v1_handler(request);
+    console.log('[FT_PROOF_PHASE1_DISPATCH]', 'entering handlePhase1AccessReview');
+    console.log('[FT_PROOF_PHASE1_PRE_HANDLER_CALL]', 'about to call ft_runAccessIntelligence_v1_handler');
     
+    let result: any;
+    try {
+      result = await ft_runAccessIntelligence_v1_handler(request);
+    } catch (handlerErr: any) {
+      console.log('[FT_PROOF_PHASE1_HANDLER_THROWN]', JSON.stringify({
+        name: handlerErr?.name || 'unknown',
+        message: handlerErr?.message || 'unknown',
+      }));
+      throw handlerErr;
+    }
+    
+    
+    console.log('[FT_PROOF_PHASE1_AFTER_HANDLER_SUCCESS]', 'handler returned successfully');
     console.log(JSON.stringify({
       marker: '[FT_DASH_ACTION_END]',
       action: 'RUN_ACCESS_REVIEW',
@@ -194,6 +202,17 @@ async function handlePhase1ExportPack(request: any): Promise<any> {
 
 export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvelopeV1> {
   try {
+    // ALWAYS-ON build fingerprint - logs on every resolver call (critical for proof window)
+    const action = request?.action || request?.payload?.action;
+    console.log('[FT_PROOF_BUILD_FINGERPRINT]', JSON.stringify({
+      marker: 'FT_PROOF_BUILD_FINGERPRINT',
+      ts: new Date().toISOString(),
+      action: action || null,
+      buildSha: FT_BUILD_SHA || null,
+      buildUtc: BACKEND_BUILD_TIME_UTC || null,
+      version: BACKEND_APP_VERSION || null,
+    }));
+
     // Extract correlation_id and ui_req_id from request (sent by UI)
     const correlationId = request?.correlation_id || request?.correlationId || 'unknown';
     const uiReqId = request?.ui_req_id || request?.uiReqId || 'unknown';
@@ -209,7 +228,6 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
 
     // STEP 1: Check for optional action parameter (NEW - BACKBONE LAYER 1)
     // If action is present, execute it backend-side and return result
-    const action = request?.action || request?.payload?.action;
     if (action && typeof action === 'string') {
       console.log(JSON.stringify({
         marker: '[FT_DASH_ACTION_DISPATCH]',
@@ -219,6 +237,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       }));
 
       if (action === 'RUN_ACCESS_REVIEW') {
+        console.log('[FT_PROOF_PHASE1_ACTION_START]', 'RUN_ACCESS_REVIEW action triggered');
         const actionResult = await handlePhase1AccessReview(request);
         // Return action result with dashboard context
         return {
