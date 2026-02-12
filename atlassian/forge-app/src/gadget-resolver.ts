@@ -336,6 +336,107 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                   "Only governance snapshots can be exported as evidence."
                 ];
                 
+                // Build snapshots array with main snapshot + Phase 1 governance snapshots
+                const snapshotsArray = [
+                  {
+                    snapshotId: repairedSnapshot.snapshotId,
+                    snapshotKind,
+                    origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
+                    initiator: snapshotKind === "SEED" ? "system" : "user",
+                    triggerReason: undefined,
+                    createdAtUtc: repairedSnapshot.createdAtUtc,
+                    immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+                    integrity: {
+                      algorithm: "sha256",
+                      value: integrityHash,
+                    },
+                    scope: {
+                      included: [
+                        "Jira projects configuration metadata",
+                        "Workflow schemes and statuses",
+                        "Permission schemes and roles",
+                        "Automation rules metadata",
+                        "App/plugin installation list"
+                      ],
+                      excluded: [
+                        "Issue contents (summaries, descriptions, comments, attachments)",
+                        "User profile data (names, emails, avatars)",
+                        "Personally Identifiable Information (PII)",
+                        "Authentication tokens or credentials",
+                        "Real-time activity or audit logs"
+                      ],
+                    },
+                    controls: [
+                      "Change management (workflow configuration)",
+                      "Access control configuration (permission schemes)",
+                      "Automation governance (rule inventory)",
+                      "Third-party app risk assessment (installed apps list)"
+                    ],
+                    exportEligible: snapshotKind === "GOVERNANCE",
+                    exportDeclaration: EXPORT_DECLARATION_EXACT,
+                  }
+                ];
+                
+                // PHASE 1: Add governance snapshots scanned by ft_runAccessIntelligence_v1
+                try {
+                  const lastGovernanceSnapshot = await storage.get('ft:snapshot:last:v1');
+                  if (lastGovernanceSnapshot && lastGovernanceSnapshot.canonicalHash && lastGovernanceSnapshot.riskModel) {
+                    // This is a Phase 1 access intelligence snapshot
+                    const phase1SnapshotMeta = {
+                      snapshotId: lastGovernanceSnapshot.canonicalHash,
+                      snapshotKind: "GOVERNANCE",
+                      phase1: true,
+                      scanType: "ACCESS_INTELLIGENCE",
+                      origin: "ON_DEMAND",
+                      initiator: "user",
+                      triggerReason: "Phase 1 Access Governance Scan",
+                      createdAtUtc: lastGovernanceSnapshot.buildUtc || new Date().toISOString(),
+                      immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+                      integrity: {
+                        algorithm: "sha256",
+                        value: lastGovernanceSnapshot.canonicalHash,
+                      },
+                      scope: {
+                        included: [
+                          "User enumeration (active, external)",
+                          "Project access visibility",
+                          "Global admin detection",
+                          "Toxic rule evaluation",
+                          "Risk model computation"
+                        ],
+                        excluded: [
+                          "Issue contents",
+                          "User profile data (names, emails)",
+                          "Audit logs",
+                          "Authentication tokens"
+                        ],
+                      },
+                      controls: [
+                        "External user proliferation detection",
+                        "Admin density assessment",
+                        "Public project exposure",
+                        "Toxic permission combinations"
+                      ],
+                      exportEligible: true,
+                      exportDeclaration: EXPORT_DECLARATION_EXACT,
+                      riskTier: computeRiskTier(lastGovernanceSnapshot.riskModel.finalRiskScore),
+                      counts: {
+                        totalUsers: lastGovernanceSnapshot.totals?.totalUsers,
+                        externalUsers: lastGovernanceSnapshot.totals?.externalUsers,
+                        globalAdmins: lastGovernanceSnapshot.exposure?.globalAdmins?.length,
+                        publicProjects: lastGovernanceSnapshot.exposure?.publicProjects?.length,
+                        toxicFindings: lastGovernanceSnapshot.toxicFindings?.length,
+                      },
+                    };
+                    snapshotsArray.push(phase1SnapshotMeta);
+                  }
+                } catch (e: any) {
+                  console.debug('[FT_PHASE1_SNAPSHOT_LOAD]', {
+                    status: 'error',
+                    reason: e?.message || String(e),
+                  });
+                }
+                
                 return {
                   status: "AVAILABLE",
                   readOnlyGuarantee: READ_ONLY_STATEMENT_EXACT,
@@ -344,45 +445,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                     bullets: SEED_BULLETS_EXACT,
                   },
                   evidenceFreshness,
-                  snapshots: [
-                    {
-                      snapshotId: repairedSnapshot.snapshotId,
-                      snapshotKind,
-                      origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
-                      initiator: snapshotKind === "SEED" ? "system" : "user",
-                      triggerReason: undefined,
-                      createdAtUtc: repairedSnapshot.createdAtUtc,
-                      immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
-                      integrity: {
-                        algorithm: "sha256",
-                        value: integrityHash,
-                      },
-                      scope: {
-                        included: [
-                          "Jira projects configuration metadata",
-                          "Workflow schemes and statuses",
-                          "Permission schemes and roles",
-                          "Automation rules metadata",
-                          "App/plugin installation list"
-                        ],
-                        excluded: [
-                          "Issue contents (summaries, descriptions, comments, attachments)",
-                          "User profile data (names, emails, avatars)",
-                          "Personally Identifiable Information (PII)",
-                          "Authentication tokens or credentials",
-                          "Real-time activity or audit logs"
-                        ],
-                      },
-                      controls: [
-                        "Change management (workflow configuration)",
-                        "Access control configuration (permission schemes)",
-                        "Automation governance (rule inventory)",
-                        "Third-party app risk assessment (installed apps list)"
-                      ],
-                      exportEligible: snapshotKind === "GOVERNANCE",
-                      exportDeclaration: EXPORT_DECLARATION_EXACT,
-                    }
-                  ],
+                  snapshots: snapshotsArray,
                   snapshotId: repairedSnapshot.snapshotId,
                   createdAtUtc: repairedSnapshot.createdAtUtc,
                   schemaVersion: "L0",
@@ -1073,5 +1136,17 @@ export async function ft_uiLogRelay_v1(request: any): Promise<{ ok: boolean }> {
     console.error("[UI_RELAY_ERROR]", { error: (e as any)?.message });
     return { ok: true };  // Still return ok so UI doesn't break
   }
+}
+
+/**
+ * Compute risk tier from Phase 1 risk score (0-1)
+ * HIGH: > 0.7
+ * MEDIUM: 0.4-0.7
+ * LOW: < 0.4
+ */
+function computeRiskTier(score: number): string {
+  if (score > 0.7) return 'HIGH';
+  if (score > 0.4) return 'MEDIUM';
+  return 'LOW';
 }
 
