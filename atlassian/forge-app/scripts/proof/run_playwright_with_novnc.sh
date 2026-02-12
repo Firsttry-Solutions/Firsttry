@@ -133,7 +133,6 @@ if [[ -n "${VNC_PASS:-}" ]]; then
 else
   echo "[PW_NOVNC] ⚠️  VNC_PASS not set - VNC will be open WITHOUT password (localhost only)"
 fi
-fi
 
 x11vnc "${X11VNC_OPTS[@]}" > "$RUN_ROOT/x11vnc.log" 2>&1 &
 X11VNC_PID=$!
