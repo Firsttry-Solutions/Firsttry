@@ -106,10 +106,22 @@ X11VNC_OPTS=(
 
 # Handle VNC password using x11vnc -storepasswd
 if [[ -n "${VNC_PASS:-}" ]]; then
+  # Validate VNC password length (x11vnc -storepasswd requires 6-8 chars)
+  VNC_PASS_LEN=${#VNC_PASS}
+  if [[ ${VNC_PASS_LEN} -lt 6 ]]; then
+    echo "[PW_NOVNC] ERROR: VNC_PASS must be at least 6 characters (got ${VNC_PASS_LEN})"
+    exit 1
+  fi
+  if [[ ${VNC_PASS_LEN} -gt 8 ]]; then
+    echo "[PW_NOVNC] ERROR: VNC_PASS must be at most 8 characters for x11vnc (got ${VNC_PASS_LEN})"
+    echo "[PW_NOVNC]   Hint: use a password like 'test123' or 'mypass1'"
+    exit 1
+  fi
+  
   PASSFILE="$RUN_ROOT/.vncpass"
   echo "[PW_NOVNC] Storing VNC password..."
   if ! x11vnc -storepasswd "$VNC_PASS" "$PASSFILE" >/dev/null 2>&1; then
-    echo "[PW_NOVNC] ERROR: x11vnc -storepasswd failed"
+    echo "[PW_NOVNC] ERROR: x11vnc -storepasswd failed (check password format)"
     exit 1
   fi
   if [[ ! -f "$PASSFILE" ]]; then
