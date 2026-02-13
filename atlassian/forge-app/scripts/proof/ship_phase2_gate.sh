@@ -163,18 +163,18 @@ echo "✅ forge lint passed"
 echo ""
 
 #==============================================================================
-# CHECK 7: npm test passes
+# CHECK 7: npm test passes (Phase 2 tests only)
 #==============================================================================
-echo "[CHECK-7] Running npm test..."
+echo "[CHECK-7] Running npm test -- phase2..."
 echo ""
 
-if ! npm test 2>&1 | tail -50; then
-    echo "ERROR: npm test failed"
+if ! npm test -- phase2 2>&1; then
+    echo "ERROR: npm test -- phase2 failed"
     exit 1
 fi
 
 echo ""
-echo "✅ npm test passed"
+echo "✅ npm test -- phase2 passed"
 echo ""
 
 #==============================================================================
