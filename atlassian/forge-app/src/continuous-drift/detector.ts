@@ -5,7 +5,7 @@
  */
 
 import crypto from "crypto";
-import * as api from "@forge/api";
+import api from "@forge/api";
 import { DriftEvent, DriftScanResult, DriftType, MonitoringConfig } from "./types";
 import { acquireLock, releaseLock } from "../storage/lock";
 import { storeDriftBufferEntry, getDriftCountLast30Days } from "../storage/ringBuffer";

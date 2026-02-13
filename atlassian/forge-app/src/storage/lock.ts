@@ -3,8 +3,7 @@
  * TTL 330s prevents overlapping scans.
  */
 
-import { getSecret } from "@forge/api";
-import * as api from "@forge/api";
+import api from "@forge/api";
 import crypto from "crypto";
 
 const LOCK_KEY = "phase2.lock";

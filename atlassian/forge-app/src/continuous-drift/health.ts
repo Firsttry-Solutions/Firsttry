@@ -3,7 +3,7 @@
  * Provides health data to UI dashboard
  */
 
-import * as api from "@forge/api";
+import api from "@forge/api";
 import { MonitoringHealth } from "./types";
 import { getDriftCountLast30Days, loadDriftBuffer } from "../storage/ringBuffer";
 
