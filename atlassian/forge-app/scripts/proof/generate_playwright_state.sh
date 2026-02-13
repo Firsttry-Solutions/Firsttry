@@ -100,12 +100,14 @@ echo ""
 # === STEP 2B: Verify .gitignore protects state.json ===
 print_section "Step 2B: .gitignore Enforcement Check"
 
-bash scripts/proof/verify_gitignore_state_json.sh
-if [[ $? -ne 0 ]]; then
-  echo -e "${RED}ERROR: .gitignore does not protect state.json${NC}"
+if ! git check-ignore -q tests/playwright/.auth/state.json 2>/dev/null; then
+  echo -e "${RED}ERROR: state.json is NOT in .gitignore${NC}"
+  echo "Add to .gitignore:"
+  echo '  tests/playwright/.auth/state.json'
   exit 1
 fi
 
+echo -e "${GREEN}✓${NC} state.json is protected by .gitignore"
 echo ""
 
 # === STEP 3: Check for display server (MANDATORY) ===
