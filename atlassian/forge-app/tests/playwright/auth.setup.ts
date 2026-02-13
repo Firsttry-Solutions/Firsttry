@@ -288,6 +288,16 @@ async function detectLoginVariant(page: Page): Promise<AuthObservations> {
   };
 }
 
+// === HELPER: Detect CAPTCHA/bot-guard signals (no timestamps, deterministic) ===
+function hasCaptchaSignals(obs: AuthObservations): boolean {
+  const hosts = obs.frameHosts || [];
+  // Check for known CAPTCHA/recaptcha domains
+  return hosts.some(host => 
+    host.includes('recaptcha.net') || 
+    host.includes('www.google.com') ||
+    host.includes('google.com')
+  );
+}
 
 // === HELPER: Try to find and fill email field (frame-aware) ===
 async function findAndFillEmail(page: Page, email: string): Promise<boolean> {
@@ -582,7 +592,8 @@ setup('auth', async ({ page }) => {
         const atlassianIdUrl = buildAtlassianIdLoginUrl(baseUrlNorm);
         console.log(`[AUTH] Forcing Atlassian ID login entry: ${atlassianIdUrl}`);
         await page.goto(atlassianIdUrl, { waitUntil: 'domcontentloaded' });
-        await page.waitForLoadState('networkidle');
+        // Bounded settle instead of networkidle (recaptcha/telemetry can keep network indefinitely busy)
+        await page.waitForTimeout(500);
 
         // === PHASE 6: Fail-fast detection for bot-guard/MFA/CAPTCHA (state-first mode optimization) ===
         // Poll for login variant with early exit on bot-guard/MFA detection
@@ -592,18 +603,32 @@ setup('auth', async ({ page }) => {
         
         console.log(`[AUTH] Fail-fast window: checking for bot-guard/MFA for up to ${AUTH_INTERACTIVE_MAX_SECONDS}s`);
 
-        // Poll loop: detect MFA/CAPTCHA/bot-guard early and fail immediately
+        // Poll loop: detect CAPTCHA/SSO/MFA early and fail immediately (no 120s timeout)
         while (Date.now() < failFastDeadline) {
-          // Check for MFA challenge (requires manual intervention)
+          // Check 1: CAPTCHA/bot-guard detection (deterministic frame hosts check)
+          if (hasCaptchaSignals(variant)) {
+            console.log('[AUTH] [FAIL-FAST] CAPTCHA/bot-guard detected (recaptcha frames present)');
+            await captureAuthFailureEvidence(page, 'CAPTCHA_OR_BOT_GUARD', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
+            throw new Error('CAPTCHA_OR_BOT_GUARD: Bot verification required. Use FT_AUTH_MODE=state-only with a valid cached state.json to bypass interactive login.');
+          }
+
+          // Check 2: SSO-only (no username/password inputs available)
+          if (variant.hasSsoButtons && !variant.hasEmailInput && !variant.hasPasswordInput) {
+            console.log('[AUTH] [FAIL-FAST] SSO-only login detected (no direct email/password flow)');
+            await captureAuthFailureEvidence(page, 'SSO_REQUIRED', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
+            throw new Error('SSO_REQUIRED: Single sign-on required. Cannot proceed with email/password flow.');
+          }
+
+          // Check 3: MFA challenge (requires manual intervention)
           if (variant.hasMfaChallenge) {
             console.log('[AUTH] [FAIL-FAST] MFA challenge detected early (will not wait 120s)');
             await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
-            throw new Error('MFA_REQUIRED: Multi-factor authentication required. Use FT_AUTH_MODE=state-only with valid cached state or set JIRA_EMAIL/JIRA_PASSWORD=empty for manual login.');
+            throw new Error('MFA_REQUIRED: Multi-factor authentication required. Use FT_AUTH_MODE=state-only with valid cached state.json or provide manual intervention.');
           }
 
-          // Check if we found acceptable login form (email input visible)
+          // Check if we found acceptable login form (email input visible) - exit fail-fast window to proceed with login
           if (variant.hasEmailInput && variant.hasContinueButton) {
-            console.log('[AUTH] [FAIL-FAST] Login form found, exiting fail-fast window');
+            console.log('[AUTH] [FAIL-FAST] Login form found, exiting fail-fast window to proceed with credentials');
             break; // Exit polling loop, proceed with login
           }
 

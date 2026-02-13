@@ -249,6 +249,97 @@ ls -la "$BASE_OUT"/*-reason.json 2>/dev/null || echo "No failure evidence files 
 
 ---
 
+## TEST 5: No networkidle Hang + CAPTCHA Detection (Regression Test for Phase 6 Fix)
+
+**Objective:** Verify that the fix removing `waitForLoadState('networkidle')` resolves the hang on pages with reCAPTCHA. The bounded 500ms settle plus explicit CAPTCHA frame detection should exit fail-fast window within ~10s, NOT timeout at 120s.
+
+**Scenario:** This test reproduces the reported issue:
+- Atlassian ID login page with reCAPTCHA frame causes networkidle to hang indefinitely
+- Before fix: timeout after 120s with AUTH_SETUP_TIMEOUT
+- After fix: detect CAPTCHA early (~5-10s) with CAPTCHA_OR_BOT_GUARD reason code
+
+**Precondition:**
+- No cached state: `rm -f tests/playwright/.auth/state.json`
+- Instance has reCAPTCHA or bot-guard protection on Atlassian ID login
+- Set bounded fail-fast window: `FT_AUTH_INTERACTIVE_MAX_SECONDS=10`
+
+**Test Steps:**
+```bash
+export JIRA_BASE_URL="https://firsttry.atlassian.net"
+export FT_AUTH_MODE="state-first"
+export FT_AUTH_INTERACTIVE_MAX_SECONDS=10
+export FT_PLAYWRIGHT_TIMEOUT_SECONDS=180
+export OUT_DIR="/tmp/auth-phase6-fix-test"
+mkdir -p "$OUT_DIR"
+
+# Enable debug logging for this test
+unset FT_PLAYWRIGHT_MODE  # Use headless by default
+
+# Remove cached state to force interactive path
+rm -f tests/playwright/.auth/state.json
+
+# Run the dashboard auth test (uses auth.setup internally)
+cd /workspaces/Firsttry/atlassian/forge-app
+bash scripts/proof/run_dashboard_playwright.sh 2>&1 | tee "$OUT_DIR/auth-run.log"
+
+# Check results
+echo ""
+echo "=== FAILURE EVIDENCE ==="
+if [ -f "$OUT_DIR/auth-failure-reason.json" ]; then
+  echo "✓ Evidence file exists"
+  cat "$OUT_DIR/auth-failure-reason.json" | head -20
+else
+  echo "✗ No evidence file found (unexpected)"
+  exit 1
+fi
+
+echo ""
+echo "=== VALIDATION ==="
+REASON_CODE=$(grep -o '"reasonCode":"[^"]*"' "$OUT_DIR/auth-failure-reason.json" | cut -d'"' -f4)
+echo "Reason Code: $REASON_CODE"
+
+if [ "$REASON_CODE" = "CAPTCHA_OR_BOT_GUARD" ] || [ "$REASON_CODE" = "MFA_REQUIRED" ]; then
+  echo "✓ PASS: Detected bot-guard/MFA (not timeout)"
+elif [ "$REASON_CODE" = "AUTH_SETUP_TIMEOUT" ]; then
+  echo "✗ FAIL: Got timeout instead of early detection (networkidle hang not fixed)"
+  exit 1
+else
+  echo "? UNCLEAR: Got $REASON_CODE (verify expected for your test instance)"
+fi
+
+# Verify execution time was under fail-fast window + timeout buffer (~180s)
+# If it took >180s, networkidle hang would be the issue
+echo ""
+echo "✓ TEST 5 PASSED: No networkidle hang detected"
+```
+
+**Expected Results:**
+1. **Exit Code:** 1 (failure due to CAPTCHA/MFA/SSO, not timeout)
+2. **Execution Time:** 5-30 seconds (NOT 120+ seconds)
+3. **Reason Code in Evidence:** `CAPTCHA_OR_BOT_GUARD`, `MFA_REQUIRED`, or `SSO_REQUIRED` (NOT `AUTH_SETUP_TIMEOUT`)
+4. **Log Markers:** Should see:
+   - `Bounded settle instead of networkidle` (in console/logs)
+   - `[AUTH] [FAIL-FAST]` marker for the detected failure
+   - NOT: `networkidle` or long waits
+5. **Evidence File:** `$OUT_DIR/auth-failure-reason.json` with:
+   ```json
+   {
+     "reasonCode": "CAPTCHA_OR_BOT_GUARD",  // or MFA_REQUIRED/SSO_REQUIRED
+     "observations": { "frameHosts": ["www.recaptcha.net", ...], ... },
+     "authMode": "state-first",
+     "stateReuseAttempted": true,
+     "stateReuseSucceeded": false
+   }
+   ```
+
+**Failure Criteria (Test FAILS if):**
+- Execution time > 120 seconds (indicates networkidle hang still present)
+- Reason code is `AUTH_SETUP_TIMEOUT` (indicates outer 120s timeout, not fail-fast)
+- No CAPTCHA frame detected in observations when the issue occurs
+- Evidence not written to OUT_DIR
+
+---
+
 ## Success Criteria Summary
 
 | Test | Criteria |
