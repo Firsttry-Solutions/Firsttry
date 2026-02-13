@@ -269,74 +269,66 @@ export JIRA_BASE_URL="https://firsttry.atlassian.net"
 export FT_AUTH_MODE="state-first"
 export FT_AUTH_INTERACTIVE_MAX_SECONDS=10
 export FT_PLAYWRIGHT_TIMEOUT_SECONDS=180
-export OUT_DIR="/tmp/auth-phase6-fix-test"
-mkdir -p "$OUT_DIR"
-
-# Enable debug logging for this test
 unset FT_PLAYWRIGHT_MODE  # Use headless by default
 
 # Remove cached state to force interactive path
 rm -f tests/playwright/.auth/state.json
 
-# Run the dashboard auth test (uses auth.setup internally)
+# Run the dashboard auth test (runner creates OUT_DIR automatically)
 cd /workspaces/Firsttry/atlassian/forge-app
-bash scripts/proof/run_dashboard_playwright.sh 2>&1 | tee "$OUT_DIR/auth-run.log"
+bash scripts/proof/run_dashboard_playwright.sh
+echo "EXIT=$?"
 
-# Check results
-echo ""
-echo "=== FAILURE EVIDENCE ==="
-if [ -f "$OUT_DIR/auth-failure-reason.json" ]; then
-  echo "✓ Evidence file exists"
-  cat "$OUT_DIR/auth-failure-reason.json" | head -20
-else
-  echo "✗ No evidence file found (unexpected)"
-  exit 1
-fi
+# Retrieve runner-created OUT_DIR
+OUT_DIR=$(ls -1dt /tmp/pw_dash_diag_* | head -1)
+echo "OUT_DIR=$OUT_DIR"
 
-echo ""
-echo "=== VALIDATION ==="
-REASON_CODE=$(grep -o '"reasonCode":"[^"]*"' "$OUT_DIR/auth-failure-reason.json" | cut -d'"' -f4)
-echo "Reason Code: $REASON_CODE"
-
-if [ "$REASON_CODE" = "CAPTCHA_OR_BOT_GUARD" ] || [ "$REASON_CODE" = "MFA_REQUIRED" ]; then
-  echo "✓ PASS: Detected bot-guard/MFA (not timeout)"
-elif [ "$REASON_CODE" = "AUTH_SETUP_TIMEOUT" ]; then
-  echo "✗ FAIL: Got timeout instead of early detection (networkidle hang not fixed)"
-  exit 1
-else
-  echo "? UNCLEAR: Got $REASON_CODE (verify expected for your test instance)"
-fi
-
-# Verify execution time was under fail-fast window + timeout buffer (~180s)
-# If it took >180s, networkidle hang would be the issue
-echo ""
-echo "✓ TEST 5 PASSED: No networkidle hang detected"
+# Examine evidence
+ls -la "$OUT_DIR" | sed -n '1,220p'
+cat "$OUT_DIR/auth-failure-reason.json" | sed -n '1,260p'
 ```
 
 **Expected Results:**
-1. **Exit Code:** 1 (failure due to CAPTCHA/MFA/SSO, not timeout)
-2. **Execution Time:** 5-30 seconds (NOT 120+ seconds)
-3. **Reason Code in Evidence:** `CAPTCHA_OR_BOT_GUARD`, `MFA_REQUIRED`, or `SSO_REQUIRED` (NOT `AUTH_SETUP_TIMEOUT`)
-4. **Log Markers:** Should see:
-   - `Bounded settle instead of networkidle` (in console/logs)
-   - `[AUTH] [FAIL-FAST]` marker for the detected failure
-   - NOT: `networkidle` or long waits
-5. **Evidence File:** `$OUT_DIR/auth-failure-reason.json` with:
+1. **Exit Code:** 1 (failure due to bot-guard/MFA/SSO detection, NOT 0 or timeout)
+2. **Execution Time:** Typically 5-30 seconds; MUST be << 120 seconds (strict assertion: fail-fast detection must not allow 120s timeout to fire)
+3. **Reason Code in Evidence:** MUST be ONE OF:
+   - `CAPTCHA_OR_BOT_GUARD` (recaptcha.net or google.com frame detected)
+   - `SSO_REQUIRED` (SSO buttons present, no email/password inputs)
+   - `MFA_REQUIRED` (MFA challenge detected after email entered)
+   
+   **MUST NOT be:** `AUTH_SETUP_TIMEOUT` (this would indicate networkidle hang not fixed, or outer timeout fired)
+4. **Log Markers in Stderr:** Should appear:
+   - `[AUTH] [FAIL-FAST]` marker indicating early detection
+   - NOT: `waitForLoadState('networkidle')` or indefinite waits
+5. **Evidence File Structure:** `$OUT_DIR/auth-failure-reason.json` must contain:
    ```json
    {
-     "reasonCode": "CAPTCHA_OR_BOT_GUARD",  // or MFA_REQUIRED/SSO_REQUIRED
-     "observations": { "frameHosts": ["www.recaptcha.net", ...], ... },
+     "reasonCode": "CAPTCHA_OR_BOT_GUARD",  // or SSO_REQUIRED / MFA_REQUIRED
+     "observations": {
+       "frameHosts": ["www.recaptcha.net", ...],
+       ...
+     },
      "authMode": "state-first",
      "stateReuseAttempted": true,
      "stateReuseSucceeded": false
    }
    ```
 
+**Deterministic Priority Note:**
+In the fail-fast loop, checks are evaluated in strict priority order (not randomized):
+1. **CAPTCHA/bot-guard detection** (checks `hasCaptchaSignals()` via frame hosts)
+2. **SSO-only detection** (checks for SSO buttons WITHOUT email/password inputs)
+3. **MFA detection** (checks for MFA challenge)
+
+If multiple signals are present (e.g., SSO buttons AND MFA challenge), the first matching check wins and emits that reason code. For example, if both SSO-only and MFA are detectable, `SSO_REQUIRED` will be emitted (not `MFA_REQUIRED`), because SSO check comes first in the loop.
+
 **Failure Criteria (Test FAILS if):**
-- Execution time > 120 seconds (indicates networkidle hang still present)
-- Reason code is `AUTH_SETUP_TIMEOUT` (indicates outer 120s timeout, not fail-fast)
-- No CAPTCHA frame detected in observations when the issue occurs
-- Evidence not written to OUT_DIR
+- Exit code is not 1 (e.g., 0 success, 124 timeout, or 137 signal)
+- Execution time > 120 seconds (indicates networkidle hang persists)
+- `reasonCode` is `AUTH_SETUP_TIMEOUT` (outer timeout fired, fail-fast did not work)
+- `reasonCode` is not one of the three allowed values above
+- Evidence file not written to OUT_DIR
+- No `[AUTH] [FAIL-FAST]` log marker in output
 
 ---
 
