@@ -3287,51 +3287,88 @@ async function proceedWithBoot() {
 
         // PHASE 1: Attach event listener for "Export Phase 1 Pack" button
         const exportAccessButton = document.getElementById('ft-export-access-pack-btn') as HTMLButtonElement | null;
-        if (exportAccessButton && dashState.snapshotId) {
-          // COMPUTE EXPORT ALLOWED STATE
-          // Export is allowed if: snapshot has canonicalHash AND exportEligible is true
-          const hasCanonicalHash = !!(dashState as any).canonicalHash;
-          const exportEligible = (dashState as any).exportEligible === true && (dashState as any).snapshotKind !== 'SEED';
-          const exportAllowed = hasCanonicalHash && exportEligible;
-
-          // DISABLE BUTTON IF NOT ALLOWED
+        if (exportAccessButton) {
+          // NORMALIZED EXPORT ELIGIBILITY CONTRACT (from resolver response)
+          // Use explicit fields from response for deterministic UI state
+          const snapshotIdNormalized = (dashState as any).snapshotIdNormalized || (dashState as any).snapshotId || null;
+          const snapshotKindNormalized = (dashState as any).snapshotKindNormalized || 'UNKNOWN';
+          const exportEligibleNormalized = (dashState as any).exportEligibleNormalized === true;
+          const canonicalHashNormalized = (dashState as any).canonicalHashNormalized || null;
+          const hasCanonicalHashNorm = !!canonicalHashNormalized && typeof canonicalHashNormalized === 'string' && canonicalHashNormalized.trim() !== '';
+          
+          // COMPUTE EXPORT ALLOWED STATE (deterministic)
+          // Export allowed if: canonical hash exists (non-empty string) AND exportEligible is true AND snapshotKind is GOVERNANCE
+          const exportAllowed = hasCanonicalHashNorm && exportEligibleNormalized && snapshotKindNormalized === 'GOVERNANCE';
+          
+          // Compute reasonCode (deterministic, enum-based)
+          let reasonCode: string;
+          if (!snapshotIdNormalized) {
+            reasonCode = 'SNAPSHOT_NOT_FOUND';
+          } else if (snapshotKindNormalized === 'SEED') {
+            reasonCode = 'NOT_EXPORT_ELIGIBLE';
+          } else if (!exportEligibleNormalized) {
+            reasonCode = 'NOT_EXPORT_ELIGIBLE';
+          } else if (!hasCanonicalHashNorm) {
+            reasonCode = 'MISSING_CANONICAL_HASH';
+          } else {
+            reasonCode = 'OK';
+          }
+          
+          // EMIT [UI_EXPORT_STATE] MARKER (deterministic JSON)
+          const uiExportState = {
+            snapshotId: snapshotIdNormalized,
+            snapshotKind: snapshotKindNormalized,
+            exportEligible: exportEligibleNormalized,
+            hasCanonicalHash: hasCanonicalHashNorm,
+            exportAllowed,
+            reasonCode,
+            ts: new Date().toISOString(),
+          };
+          console.log('[UI_EXPORT_STATE]', JSON.stringify(uiExportState));
+          
+          // GATE: Disable button if export not allowed
           if (!exportAllowed) {
             exportAccessButton.disabled = true;
-            const snapshotKind = (dashState as any).snapshotKind || 'UNKNOWN';
-            const reason = !hasCanonicalHash 
+            const reason = !hasCanonicalHashNorm 
               ? 'missing canonical hash'
-              : snapshotKind === 'SEED'
+              : snapshotKindNormalized === 'SEED'
               ? 'seed snapshots cannot be exported'
               : 'snapshot not eligible for export';
             
             exportAccessButton.title = `Export disabled: ${reason}`;
             exportAccessButton.setAttribute('aria-disabled', 'true');
             
-            // Do NOT add click handler for disabled state
-            // If user somehow clicks, log the blocked marker
+            // Prevent click from invoking resolver
             exportAccessButton.addEventListener('click', (e) => {
               e.preventDefault();
               e.stopPropagation();
               console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify({
                 reason,
-                snapshotKind,
-                hasCanonicalHash,
-                exportEligible,
+                snapshotKind: snapshotKindNormalized,
+                hasCanonicalHash: hasCanonicalHashNorm,
+                exportEligible: exportEligibleNormalized,
               }));
             });
           } else {
-            // Export is allowed - attach normal click handler
+            // GATE PASSED: Attach normal click handler that invokes resolver
             exportAccessButton.addEventListener('click', async () => {
               exportAccessButton.disabled = true;
               exportAccessButton.textContent = 'Exporting...';
               
               try {
                 ensureCorrelationId();
-                console.log('[PHASE1_EXPORT_CLICK] User triggered access pack export');
                 
+                // EMIT [PHASE1_EXPORT_CLICK] BEFORE invoking resolver
+                console.log('[PHASE1_EXPORT_CLICK]', JSON.stringify({
+                  snapshotId: snapshotIdNormalized,
+                  snapshotKind: snapshotKindNormalized,
+                  ts: new Date().toISOString(),
+                }));
+                
+                // INVOKE RESOLVER with snapshotId parameter (resolver is authoritative)
                 const result = await invokeWithUiReqId('ft_getDashboardState_v1', {
                   action: 'EXPORT_PHASE1_PACK',
-                  snapshotId: dashState.snapshotId,
+                  snapshotId: snapshotIdNormalized,
                 });
 
                 // Validate envelope schema (FAIL-CLOSED)
@@ -3351,7 +3388,7 @@ async function proceedWithBoot() {
                 const actionResult = result as any;
                 const exportData = actionResult?.data || actionResult;
                 
-                // Check if response has exportGate field (indicates gating)
+                // Check if response has exportGate field (indicates resolver-side gating)
                 if (actionResult?.exportGate && !actionResult.exportGate.allowed) {
                   console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify(actionResult.exportGate));
                   exportAccessButton.textContent = `Export disabled: ${actionResult.exportGate.reasonCode}`;
@@ -3372,7 +3409,7 @@ async function proceedWithBoot() {
                   const url = URL.createObjectURL(blob);
                   const link = document.createElement('a');
                   link.href = url;
-                  link.download = `ft-access-pack-${dashState.snapshotId}.zip`;
+                  link.download = `ft-access-pack-${snapshotIdNormalized}.zip`;
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);

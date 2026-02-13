@@ -509,15 +509,64 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
     console.log(JSON.stringify({
       marker: '[FT_DASH_ACTION_START]',
       action: 'EXPORT_PHASE1_PACK',
+      requestSnapshotId: request?.snapshotId || null,
       ts: new Date().toISOString(),
     }));
 
-    // STEP 1: Load snapshot and check export eligibility BEFORE any export work
-    console.log('[FT_PHASE1_EXPORT_GATE_CHECK] Checking export eligibility');
-    const snapshot = await storage.get('ft:snapshot:last:v1');
+    // STEP 1: Load snapshot by selected snapshotId (authoritative: resolver uses UI selection)
+    // Fail-closed: require snapshotId
+    const requestSnapshotId = request?.snapshotId;
+    if (!requestSnapshotId || typeof requestSnapshotId !== 'string' || !requestSnapshotId.trim()) {
+      const msg = 'Export requires snapshotId parameter';
+      console.log(JSON.stringify({
+        marker: '[PHASE1_EXPORT_BLOCKED]',
+        reason: 'MISSING_SNAPSHOT_ID',
+        message: msg,
+        ts: new Date().toISOString(),
+      }));
+
+      const exportGate: FtExportGateV1 = {
+        allowed: false,
+        reasonCode: 'SNAPSHOT_NOT_FOUND',
+        snapshotId: 'none',
+        hasCanonicalHash: false,
+        exportEligible: false,
+        message: msg,
+      };
+
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        traceId,
+        build,
+        reason: msg,
+        error: { code: 'EXPORT_GATED', message: msg, traceId },
+        exportGate,
+      };
+    }
+
+    // Load snapshot (try Phase 1 governance snapshot first, then fall back to "last")
+    console.log('[FT_PHASE1_EXPORT_GATE_CHECK] Checking export eligibility for snapshotId=' + requestSnapshotId);
+    let snapshot = null;
+    try {
+      // Try to load from Phase 1 governance snapshot storage
+      snapshot = await storage.get('ft:snapshot:last:v1');
+      if (snapshot?.canonicalHash === requestSnapshotId) {
+        // This is the Phase 1 governance snapshot
+      } else if (snapshot?.snapshotId === requestSnapshotId) {
+        // This is the "last" snapshot
+      } else {
+        // Requested snapshot not found
+        snapshot = null;
+      }
+    } catch (e) {
+      console.warn('[FT_SNAPSHOT_LOAD_ERROR]', e);
+      snapshot = null;
+    }
     
     // Build export gate info
-    const snapshotId = snapshot?.id || 'unknown';
+    const snapshotId = snapshot?.snapshotId || snapshot?.canonicalHash || requestSnapshotId;
     const snapshotKind = snapshot?.snapshotKind || 'UNKNOWN';
     const hasCanonicalHash = !!snapshot?.canonicalHash;
     const exportEligible = snapshot?.exportEligible === true && snapshotKind !== 'SEED';
@@ -1453,6 +1502,17 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         }
       }
       
+      // NORMALIZED EXPORT ELIGIBILITY FIELDS (for UI export gating contract)
+      // These are added at the top level for deterministic UI state computation
+      const selectedSnapshot = enterpriseContractData.snapshots?.[0];
+      const exportGateReasonCode: string = (() => {
+        if (!selectedSnapshot) return 'SNAPSHOT_NOT_FOUND';
+        if (selectedSnapshot.snapshotKind === 'SEED') return 'NOT_EXPORT_ELIGIBLE';
+        if (!selectedSnapshot.exportEligible) return 'NOT_EXPORT_ELIGIBLE';
+        if (!snapshot.canonicalHash) return 'MISSING_CANONICAL_HASH';
+        return 'OK';
+      })();
+      
       // Backend logging (MANDATORY for corroboration)
       console.log(JSON.stringify({
         marker: "[FT_ENTERPRISE_CONTRACT_BACKEND_OK]",
@@ -1461,12 +1521,19 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         governanceSnapshotCount: governanceSnapshots.length,
         lastCollectedUtc: evidenceFreshness.lastCollectedUtc,  // null for NO_GOVERNANCE
         freshnessStatus: evidenceFreshness.status,
+        exportGateReasonCode,
         ts: new Date().toISOString(),
       }));
       
       return {
         status: "AVAILABLE",
         ...enterpriseContractData,
+        // NORMALIZED EXPORT ELIGIBILITY: Single source of truth for UI
+        snapshotIdNormalized: selectedSnapshot?.snapshotId || null,
+        snapshotKindNormalized: selectedSnapshot?.snapshotKind || 'UNKNOWN',
+        exportEligibleNormalized: selectedSnapshot?.exportEligible === true,
+        canonicalHashNormalized: snapshot?.canonicalHash || null,
+        exportGateReasonCodeNormalized: exportGateReasonCode,
       };
     };
 
