@@ -6,6 +6,17 @@
 3. Interactive mode: Proceed with login attempt
 4. Fail-fast window: Detect bot-guard/MFA within 25s (default), don't wait 120s
 
+## Runner Enforced Guardrails
+
+**Important:** The dashboard runner (`scripts/proof/run_dashboard_playwright.sh`) is now a non-bypassable choke point for auth-state safety:
+- **Pre-guard:** Runs before Playwright to ensure state.json is not tracked/staged by git
+- **Post-guard:** Runs after Playwright (via trap) to verify:
+  - state.json is deleted before artifact upload
+  - No secrets leaked to logs or artifacts
+  - Guard evidence: `/tmp/pw_state_guard_<UTC>/state-guard-result.json`
+
+**Developer note:** Do NOT run the guard manually; the runner runs both pre and post guards automatically.
+
 ## Test Environment Setup
 
 Before running tests:
