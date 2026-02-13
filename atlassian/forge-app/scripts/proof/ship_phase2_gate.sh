@@ -58,6 +58,31 @@ echo "✅ No write scopes"
 echo ""
 
 #==============================================================================
+# CHECK 2B: Ensure Playwright state.json is never tracked
+#==============================================================================
+echo "[CHECK-2B] Verifying Playwright state.json is not tracked by git..."
+
+bash scripts/proof/guard_no_state_json_commit.sh
+if [[ $? -ne 0 ]]; then
+  echo "ERROR: state.json guard failed"
+  exit 1
+fi
+
+# Additional check: if state.json exists, it must have provenance
+STATE_JSON_PATH="tests/playwright/.auth/state.json"
+STATE_PROVENANCE_PATH="${STATE_JSON_PATH}.provenance.json"
+
+if [[ -f "$STATE_JSON_PATH" ]]; then
+  if [[ ! -f "$STATE_PROVENANCE_PATH" ]]; then
+    echo "ERROR: state.json exists but provenance file is missing"
+    exit 1
+  fi
+  echo "✅ state.json provenance verified"
+fi
+
+echo ""
+
+#==============================================================================
 # CHECK 3: Manifest has scheduled trigger with interval=day
 #==============================================================================
 echo "[CHECK-3] Validating manifest scheduledTrigger configuration..."
