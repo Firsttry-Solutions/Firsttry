@@ -39,7 +39,7 @@ const baselineSnapshot = {
 };
 
 storage["phase2.baselineSnapshot"] = canonicalJson(baselineSnapshot);
-console.log("[TEST] Baseline seeded");
+// Note: No console.log (silent mode for test framework)
 
 // Phase 2b: Inject drift scenario (new admin added)
 const currentSnapshot = {
@@ -78,8 +78,6 @@ for (const admin of currentSnapshot.admins) {
   }
 }
 
-console.log(`[TEST] Detected ${drifts.length} drift event(s)`);
-
 // Phase 2d: Assert eventId is stable (deterministic)
 const eventId1 = crypto
   .createHash("sha256")
@@ -95,8 +93,6 @@ if (eventId1 !== eventId2) {
   console.error("[FAIL] eventId not stable");
   process.exit(1);
 }
-
-console.log(`[TEST] eventId stable: ${eventId1.substring(0, 16)}...`);
 
 // Phase 2e: Store ring buffer entry
 const bufferEntry = {
@@ -120,7 +116,6 @@ if (buffer.length > 180) {
 }
 
 storage["phase2.driftBuffer"] = canonicalJson(buffer);
-console.log(`[TEST] Buffer stored: ${buffer.length} entries`);
 
 // Phase 2f: Assert buffer size rule
 if (buffer.length > 180) {
@@ -128,11 +123,8 @@ if (buffer.length > 180) {
   process.exit(1);
 }
 
-console.log("[TEST] Buffer size within 180 limit");
-
 // Phase 2g: Advance baseline only after buffer write
 storage["phase2.baselineSnapshot"] = canonicalJson(currentSnapshot);
-console.log("[TEST] Baseline advanced after buffer write");
 
 // Phase 2h: Test drift count from last 30 days
 const now = new Date();
@@ -146,8 +138,6 @@ for (const entry of buffer) {
   }
 }
 
-console.log(`[TEST] Drift count (30d): ${count30d}`);
-
-// SUCCESS
+// SUCCESS: Output only the marker
 console.log("[FT_PHASE2_PROOF_PASS]");
 process.exit(0);

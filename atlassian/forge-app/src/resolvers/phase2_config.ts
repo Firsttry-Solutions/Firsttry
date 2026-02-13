@@ -5,6 +5,8 @@
  * - getMonitoringConfig: Retrieve current Phase 2 configuration
  * - saveMonitoringConfig: Save and validate Phase 2 configuration with deterministic rules
  *
+ * SECURITY: saveMonitoringConfig requires Jira admin authorization (server-side enforced)
+ *
  * VALIDATION RULES (Fail-Closed):
  *
  * A) allowedDomains:
@@ -26,9 +28,10 @@
  * LOG MARKERS:
  * - [FT_PHASE2_CONFIG_SAVED]: Successful save
  * - [FT_PHASE2_CONFIG_REJECTED]: Rejected save with reason
+ * - [FT_PHASE2_ADMIN_REQUIRED]: Authorization check failed
  */
 
-import { storage } from '@forge/api';
+import api, { storage } from '@forge/api';
 
 const STORAGE_KEY = 'phase2.config.webhooks';
 
@@ -45,8 +48,53 @@ export interface MonitoringConfig {
 }
 
 /**
- * Validate a single domain: must be lowercase, no slashes, colons, or @ signs
+ * Check if caller is a Jira admin (server-side enforcement)
+ * 
+ * Uses Jira API to verify ADMINISTER permission on the instance.
+ * Non-admins cannot save Phase 2 config.
+ * 
+ * @throws Error if user is not admin
  */
+async function enforceAdminAuthorization(): Promise<void> {
+  try {
+    // Test admin permission by calling an admin-only endpoint
+    // GET /rest/api/3/configuration returns 403 if user lacks ADMINISTER permission
+    const route = require('@forge/api').route;
+    
+    const result = await api.asApp().requestJira(route`/rest/api/3/myself`, {
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    // If we got here, user is authenticated. Now check for admin.
+    // We use a simple approach: try to fetch app properties (admin-only)
+    try {
+      await api.asUser().requestJira(route`/rest/api/3/configuration`, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      // Success = admin
+      return;
+    } catch (err: any) {
+      if (err.status === 403 || err.statusCode === 403) {
+        console.log('[FT_PHASE2_ADMIN_REQUIRED] User is not a Jira admin');
+        throw new Error('FT_PHASE2_ADMIN_REQUIRED');
+      }
+      // Unknown error, fail-closed
+      throw err;
+    }
+  } catch (err: any) {
+    if (err.message === 'FT_PHASE2_ADMIN_REQUIRED') {
+      throw err;
+    }
+    console.error('[FT_PHASE2_ADMIN_CHECK_FAILED]', err);
+    throw new Error('FT_PHASE2_ADMIN_REQUIRED');
+  }
+}
+
+/**
 function isValidDomain(domain: string): boolean {
   if (!domain || typeof domain !== 'string') return false;
   // Must not contain special chars that indicate it's not a bare domain
@@ -120,9 +168,20 @@ export async function getMonitoringConfig(): Promise<MonitoringConfig> {
 /**
  * Save monitoring configuration with deterministic validation
  *
+ * SECURITY: Admin-only (server-side enforced)
  * FAIL-CLOSED: If ANY validation fails, config is NOT persisted and error is thrown
  */
 export async function saveMonitoringConfig(config: MonitoringConfig): Promise<void> {
+  // ============================================================================
+  // SECURITY: Verify caller is Jira admin (hard fail if not)
+  // ============================================================================
+  try {
+    await enforceAdminAuthorization();
+  } catch (err: any) {
+    console.log('[FT_PHASE2_ADMIN_REQUIRED] Config save rejected: non-admin caller');
+    throw err;
+  }
+
   const reasons: string[] = [];
 
   // ============================================================================

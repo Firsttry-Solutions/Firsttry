@@ -31,8 +31,8 @@ fi
 
 # Check 2: FORGE_EMAIL must not be a placeholder
 if [[ "$FORGE_EMAIL" == "test@example.com" ]] || [[ "$FORGE_EMAIL" == *"@example.com" ]]; then
-  echo -e "${RED}ERROR: FORGE_EMAIL is a placeholder (${FORGE_EMAIL}).${NC}"
-  echo "Use your real Atlassian account email."
+  echo -e "${RED}ERROR: FORGE_EMAIL is a placeholder.${NC}"
+  echo "Use your real Atlassian account email (not example.com)."
   exit 1
 fi
 
@@ -44,7 +44,7 @@ if [ -z "${FORGE_API_TOKEN:-}" ]; then
 fi
 
 # Check 4: Run forge whoami to validate credentials
-echo "Validating Forge credentials for: $FORGE_EMAIL"
+echo "Validating Forge credentials..."
 if ! forge whoami 2>/dev/null; then
   echo -e "${RED}ERROR: Forge authentication failed.${NC}"
   echo "Ensure FORGE_EMAIL and FORGE_API_TOKEN are set to a valid Atlassian account."
