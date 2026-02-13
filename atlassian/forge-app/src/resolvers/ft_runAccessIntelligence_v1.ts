@@ -401,6 +401,8 @@ function buildAccessSnapshot(context: any): any {
     siteId: 'jira-site-001',
     privilegeContext: 'read-only',
     ruleSetVersion: '1.0',
+    snapshotKind: 'GOVERNANCE',        // Mark as governance snapshot (not SEED)
+    exportEligible: true,              // Mark as eligible for export
     totals: {
       totalUsers: users.length,
       activeUsers: users.filter((u: any) => u.active).length,

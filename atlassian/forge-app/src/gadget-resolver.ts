@@ -155,7 +155,28 @@ interface FtActionResultV1 {
     traceId: string; // never empty
   };
   phase1Proof?: FtPhase1ProofV1; // optional marker for Phase1 success (ok=true only)
+  exportGate?: FtExportGateV1; // export eligibility gating info
   data?: any;
+}
+
+/**
+ * Export eligibility gating contract
+ * Used to distinguish export failures due to ineligibility vs actual export errors
+ */
+type FtExportGateReasonCode =
+  | 'NOT_EXPORT_ELIGIBLE'      // e.g., seed snapshot (snapshotKind === 'SEED')
+  | 'MISSING_CANONICAL_HASH'   // snapshot.canonicalHash absent
+  | 'SNAPSHOT_NOT_FOUND'       // no snapshot in storage
+  | 'UNSUPPORTED_SNAPSHOT_KIND'; // unknown snapshot type
+
+interface FtExportGateV1 {
+  allowed: boolean;               // true if export is gated/allowed
+  reasonCode: FtExportGateReasonCode;  // specific reason enum (not free-text)
+  snapshotId: string;             // snapshot ID being checked
+  snapshotKind?: string;          // snapshot type (e.g., 'SEED', 'GOVERNANCE')
+  hasCanonicalHash: boolean;      // whether canonicalHash is present
+  exportEligible: boolean;        // whether snapshot is marked export-eligible
+  message: string;                // human-readable message for UI
 }
 
 // ============================================================================
@@ -491,6 +512,148 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
       ts: new Date().toISOString(),
     }));
 
+    // STEP 1: Load snapshot and check export eligibility BEFORE any export work
+    console.log('[FT_PHASE1_EXPORT_GATE_CHECK] Checking export eligibility');
+    const snapshot = await storage.get('ft:snapshot:last:v1');
+    
+    // Build export gate info
+    const snapshotId = snapshot?.id || 'unknown';
+    const snapshotKind = snapshot?.snapshotKind || 'UNKNOWN';
+    const hasCanonicalHash = !!snapshot?.canonicalHash;
+    const exportEligible = snapshot?.exportEligible === true && snapshotKind !== 'SEED';
+    
+    let exportGateReason: FtExportGateReasonCode = 'NOT_EXPORT_ELIGIBLE';
+    let exportGateMessage = 'Export disabled';
+
+    // Check 1: Snapshot exists
+    if (!snapshot) {
+      exportGateReason = 'SNAPSHOT_NOT_FOUND';
+      exportGateMessage = 'Export disabled: No snapshot found. Run "Access Review (Phase 1)" first.';
+      
+      const exportGate: FtExportGateV1 = {
+        allowed: false,
+        reasonCode: exportGateReason,
+        snapshotId: 'none',
+        snapshotKind: undefined,
+        hasCanonicalHash: false,
+        exportEligible: false,
+        message: exportGateMessage,
+      };
+
+      console.log(JSON.stringify({
+        marker: '[PHASE1_EXPORT_BLOCKED]',
+        reason: exportGateReason,
+        message: exportGateMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        traceId,
+        build,
+        reason: exportGateMessage,
+        error: {
+          code: 'EXPORT_GATED',
+          message: exportGateMessage,
+          traceId,
+        },
+        exportGate,
+      };
+    }
+
+    // Check 2: Snapshot is export-eligible (not SEED, not explicitly marked ineligible)
+    if (!exportEligible) {
+      if (snapshotKind === 'SEED') {
+        exportGateReason = 'NOT_EXPORT_ELIGIBLE';
+        exportGateMessage = 'Export disabled: Seed snapshots cannot be exported. Run "Access Review (Phase 1)" to create a governance snapshot.';
+      } else if (!hasCanonicalHash) {
+        exportGateReason = 'MISSING_CANONICAL_HASH';
+        exportGateMessage = 'Export disabled: Snapshot missing canonical hash. Run "Access Review (Phase 1)" again.';
+      } else if (snapshotKind && snapshotKind !== 'GOVERNANCE') {
+        exportGateReason = 'UNSUPPORTED_SNAPSHOT_KIND';
+        exportGateMessage = `Export disabled: Unsupported snapshot type "${snapshotKind}".`;
+      } else {
+        exportGateReason = 'NOT_EXPORT_ELIGIBLE';
+        exportGateMessage = 'Export disabled: Snapshot is not eligible for export.';
+      }
+
+      const exportGate: FtExportGateV1 = {
+        allowed: false,
+        reasonCode: exportGateReason,
+        snapshotId: snapshotId,
+        snapshotKind,
+        hasCanonicalHash,
+        exportEligible,
+        message: exportGateMessage,
+      };
+
+      console.log(JSON.stringify({
+        marker: '[PHASE1_EXPORT_BLOCKED]',
+        reason: exportGateReason,
+        snapshotKind,
+        message: exportGateMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        traceId,
+        build,
+        reason: exportGateMessage,
+        error: {
+          code: 'EXPORT_GATED',
+          message: exportGateMessage,
+          traceId,
+        },
+        exportGate,
+      };
+    }
+
+    // Check 3: Snapshot must have canonical hash
+    if (!hasCanonicalHash) {
+      exportGateReason = 'MISSING_CANONICAL_HASH';
+      exportGateMessage = 'Export disabled: Snapshot missing canonical hash. Cannot generate deterministic export.';
+
+      const exportGate: FtExportGateV1 = {
+        allowed: false,
+        reasonCode: exportGateReason,
+        snapshotId: snapshotId,
+        snapshotKind,
+        hasCanonicalHash: false,
+        exportEligible: false,
+        message: exportGateMessage,
+      };
+
+      console.log(JSON.stringify({
+        marker: '[PHASE1_EXPORT_BLOCKED]',
+        reason: exportGateReason,
+        message: exportGateMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        traceId,
+        build,
+        reason: exportGateMessage,
+        error: {
+          code: 'EXPORT_GATED',
+          message: exportGateMessage,
+          traceId,
+        },
+        exportGate,
+      };
+    }
+
+    // Export is gated/allowed - proceed with actual export
+    console.log('[FT_PHASE1_EXPORT_GATE_ALLOWED] Export eligibility check passed');
+
     let handlerResult: any;
     try {
       handlerResult = await ft_exportAccessPack_v1_handler(request);
@@ -512,6 +675,7 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
     // **SOFT FAILURE DETECTION**: Handler may return { ok:false } without throwing
     if (handlerResult && typeof handlerResult === 'object' && handlerResult.ok === false) {
       // Handler returned a soft failure - map to compliant error envelope
+      // Note: This is a TRUE export failure (not gating), so status may be 'FAILED'
       const softFailureMessage = String(handlerResult.reason || handlerResult.error?.message || 'Export failed');
       const softFailureCode = String(handlerResult.error?.code || 'PHASE1_SOFT_FAILED');
       
