@@ -181,40 +181,70 @@ echo "✅ npm test passed"
 echo ""
 
 #==============================================================================
-# CHECK 8: Proof harness output is EXACTLY [FT_PHASE2_PROOF_PASS]
+# CHECK 8: Proof harness output is EXACTLY [FT_PHASE2_PROOF_PASS] (strict purity)
 #==============================================================================
-echo "[CHECK-8] Running proof harness with strict output validation..."
+echo "[CHECK-8] Running proof harness with STRICT output validation (no truncation)..."
 echo ""
 
-# Capture proof harness output
+# Capture FULL proof harness output (no head/tail, full text must match)
 PROOF_OUTPUT=$(node tests/run_phase2_proof.mjs 2>&1)
-EXPECTED_OUTPUT="[FT_PHASE2_PROOF_PASS]"
+EXPECTED="[FT_PHASE2_PROOF_PASS]"
 
-# Trim trailing newlines and normalize
-PROOF_TRIMMED=$(echo -n "$PROOF_OUTPUT" | tail -1)
+# Enforce EXACT match (full output including any leading/trailing whitespace)
+if ! echo "$PROOF_OUTPUT" | grep -q "^\[FT_PHASE2_PROOF_PASS\]$"; then
+    echo "ERROR: Proof harness output PURITY violation (must be exactly: [FT_PHASE2_PROOF_PASS])"
+    echo ""
+    echo "Full output (with visible line/char endings):"
+    echo "$PROOF_OUTPUT" | cat -A
+    echo ""
+    echo "Expected: [FT_PHASE2_PROOF_PASS] (single line, no extra output)"
+    exit 1
+fi
 
-if [ "$PROOF_TRIMMED" != "$EXPECTED_OUTPUT" ]; then
-    echo "ERROR: Proof harness output does not match expected"
-    echo ""
-    echo "Expected:"
-    echo "$EXPECTED_OUTPUT"
-    echo ""
-    echo "Got (with visible line endings):"
+# Verify no extra output
+LINE_COUNT=$(echo "$PROOF_OUTPUT" | wc -l)
+if [ "$LINE_COUNT" -gt 1 ]; then
+    echo "ERROR: Proof harness has EXTRA output lines ($LINE_COUNT instead of 1)"
     echo "$PROOF_OUTPUT" | cat -A
     exit 1
 fi
 
-echo "✅ Proof harness output is deterministic: $EXPECTED_OUTPUT"
+echo "✅ Proof harness output PURE: exactly one line with [FT_PHASE2_PROOF_PASS]"
 echo ""
 
 #==============================================================================
-# CHECK 9: Optional Playwright tests
+# CHECK 9: Verify Phase 2 config resolver is wired (backend enforced)
 #==============================================================================
-echo "[CHECK-9] Checking for Playwright..."
+echo "[CHECK-9] Verifying Phase 2 config resolver registration..."
+echo ""
+
+if ! grep -q "phase2_config" src/gadget-resolver.ts; then
+    echo "ERROR: phase2_config resolver not registered in gadget-resolver.ts"
+    exit 1
+fi
+
+if ! grep -q "getMonitoringConfig" src/gadget-resolver.ts; then
+    echo "ERROR: getMonitoringConfig handler not found in resolver registry"
+    exit 1
+fi
+
+if ! grep -q "saveMonitoringConfig" src/gadget-resolver.ts; then
+    echo "ERROR: saveMonitoringConfig handler not found in resolver registry"
+    exit 1
+fi
+
+echo "✅ Phase 2 config resolvers properly wired in gadget-resolver"
+echo ""
+
+#==============================================================================
+# CHECK 10: Optional Playwright tests
+#==============================================================================
+echo "[CHECK-10] Checking for Playwright..."
+echo ""
 
 if grep -q "playwright" package.json 2>/dev/null; then
     echo "Found Playwright in package.json - running tests..."
-    if ! npx playwright test 2>&1 | tail -30; then
+    if ! npx playwright test 2>&1; then
         echo "ERROR: Playwright tests failed"
         exit 1
     fi
@@ -234,15 +264,16 @@ echo "✅ PHASE2 SHIP GATE PASS"
 echo "════════════════════════════════════════════════════════════════════════════"
 echo ""
 echo "All checks passed:"
-echo "  ✅ Working directory and required files"
-echo "  ✅ No write scopes in manifest"
-echo "  ✅ ScheduledTrigger correctly configured (interval=day)"
-echo "  ✅ Webhook allowlist is secure (Slack only)"
-echo "  ✅ Forge CLI auth is env-var based (Codespaces-safe)"
-echo "  ✅ forge lint passed"
-echo "  ✅ npm test passed"
-echo "  ✅ Proof harness output is deterministic"
-echo "  ✅ Playwright tests (if installed)"
+echo "  ✅ CHECK-1: Working directory and required files"
+echo "  ✅ CHECK-2: No write scopes in manifest"
+echo "  ✅ CHECK-3: ScheduledTrigger correctly configured (interval=day)"
+echo "  ✅ CHECK-4: Webhook allowlist is secure (Slack only)"
+echo "  ✅ CHECK-5: Forge CLI auth is env-var based (Codespaces-safe)"
+echo "  ✅ CHECK-6: forge lint passed"
+echo "  ✅ CHECK-7: npm test passed"
+echo "  ✅ CHECK-8: Proof harness output is PURE and deterministic"
+echo "  ✅ CHECK-9: Phase 2 config resolvers properly wired"
+echo "  ✅ CHECK-10: Playwright tests (if installed)" 
 echo ""
 echo "Ready for deployment."
 echo ""

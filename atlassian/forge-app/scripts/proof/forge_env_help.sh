@@ -47,8 +47,10 @@ echo "  - Do NOT commit API tokens to git"
 echo "  - Do NOT print tokens in logs or terminal output"
 echo "  - Tokens are only stored in memory (they are not persisted to files)"
 echo ""
-echo "Once set, verify with:"
-echo "  bash scripts/proof/ship_phase2_gate.sh"
+echo "Steps:"
+echo "  1. Set the environment variables as shown above"
+echo "  2. Verify with: forge whoami"
+echo "  3. Run ship gate with: bash scripts/proof/ship_phase2_gate.sh"
 echo ""
 
 exit 0

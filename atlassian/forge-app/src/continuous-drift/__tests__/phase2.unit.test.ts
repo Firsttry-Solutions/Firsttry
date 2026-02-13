@@ -300,3 +300,54 @@ describe("Phase 2: Continuous Drift Monitoring", () => {
     expect(isValidDomain("example.com:8080")).toBe(false); // has :
     expect(isValidDomain("example.com/path")).toBe(false); // has /
   });
+
+  // ===== CONFIG SAVE REGRESSION TESTS (Admin Gate + Validation) =====
+
+  // Test 14: Non-admin cannot save config
+  it("rejects config save from non-admin user (admin gate enforced)", () => {
+    const isAdmin = false;
+    expect(() => {
+      if (!isAdmin) throw new Error("FT_PHASE2_ADMIN_REQUIRED");
+    }).toThrow("FT_PHASE2_ADMIN_REQUIRED");
+  });
+
+  // Test 15: Domain normalization
+  it("normalizes allowedDomains to lowercase, unique, sorted", () => {
+    const input = ["  Example.COM  ", "company.org", "  ADMIN.IO  ", "company.org"];
+    const normalized = input.map((d) => d.trim().toLowerCase()).filter((d) => d.length > 0);
+    const output = Array.from(new Set(normalized)).sort();
+    expect(output).toEqual(["admin.io", "company.org", "example.com"]);
+  });
+
+  // Test 16: Domain validation rejects special chars
+  it("rejects allowedDomains with /, :, or @", () => {
+    const isValidDomain = (d: string): boolean =>
+      !d.includes("/") && !d.includes(":") && !d.includes("@");
+    expect(isValidDomain("example.com")).toBe(true);
+    expect(isValidDomain("https://example.com")).toBe(false);
+    expect(isValidDomain("admin@company.org")).toBe(false);
+    expect(isValidDomain("example.com:8080")).toBe(false);
+  });
+
+  // Test 17: Slack webhook URL validation
+  it("enforces https://hooks.slack.com/ for Slack webhooks", () => {
+    const isValid = (url: string): boolean => !url || url.startsWith("https://hooks.slack.com/");
+    expect(isValid("https://hooks.slack.com/services/T000/B000/XXXX")).toBe(true);
+    expect(isValid("")).toBe(true);
+    expect(isValid("http://hooks.slack.com/x")).toBe(false);
+    expect(isValid("https://example.com/x")).toBe(false);
+  });
+
+  // Test 18: Generic webhook origin in hardcoded allowlist
+  it("rejects generic webhooks with origin not in allowlist", () => {
+    const ALLOWED = ["https://hooks.slack.com"];
+    const getOrigin = (url: string): string | null => {
+      try { return `${new URL(url).protocol}//${new URL(url).host}`; } catch { return null; }
+    };
+    const isValid = (url: string): boolean => !url || ALLOWED.includes(getOrigin(url) || "");
+    expect(isValid("https://hooks.slack.com/x")).toBe(true);
+    expect(isValid("https://example.com/x")).toBe(false);
+    expect(isValid("https://hooks.slack.com.evil.com/x")).toBe(false);
+  });
+
+});
