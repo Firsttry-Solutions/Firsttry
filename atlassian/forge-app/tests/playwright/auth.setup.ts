@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 // === CONSTANTS ===
-const AUTH_SETUP_TIMEOUT_MS = 120_000; // 120s fixed, deterministic
+const AUTH_SETUP_TIMEOUT_MS = 120_000; // 120s fixed, deterministic (outer guard)
+const AUTH_INTERACTIVE_MAX_SECONDS = parseInt(process.env.FT_AUTH_INTERACTIVE_MAX_SECONDS || '25', 10); // 25s fail-fast window for bot-guard/MFA
+const AUTH_MODE = (process.env.FT_AUTH_MODE || 'state-first') as 'state-first' | 'state-only' | 'interactive'; // state-first (default), state-only, interactive
 
 // === HELPER: Get output directory for failure evidence ===
 function getOutDir(): string {
@@ -21,7 +23,10 @@ type AuthFailureReasonCode =
   | 'CAPTCHA_OR_BOT_GUARD'
   | 'INVALID_CREDENTIALS'
   | 'AUTH_SETUP_TIMEOUT'
+  | 'AUTH_STATE_REQUIRED'
   | 'UNKNOWN_LOGIN_VARIANT';
+
+type AuthMode = 'state-first' | 'state-only' | 'interactive';
 
 interface AuthObservations {
   hasAtlassianIdHost: boolean;
@@ -33,6 +38,14 @@ interface AuthObservations {
   hasMfaChallenge: boolean;
   finalUrlHost?: string;
   frameHosts?: string[];
+}
+
+interface AuthFailureEvidence {
+  reasonCode: AuthFailureReasonCode;
+  observations: AuthObservations & { finalUrlHost?: string; frameHosts?: string[] };
+  authMode: AuthMode;
+  stateReuseAttempted: boolean;
+  stateReuseSucceeded: boolean;
 }
 
 // === HELPER: Build Atlassian ID login URL with continue parameter ===
@@ -102,7 +115,10 @@ async function findVisibleLocatorAcrossFrames(
 async function captureAuthFailureEvidence(
   page: Page,
   reasonCode: AuthFailureReasonCode,
-  observations: AuthObservations
+  observations: AuthObservations,
+  authMode: AuthMode = 'state-first',
+  stateReuseAttempted: boolean = false,
+  stateReuseSucceeded: boolean = false
 ): Promise<void> {
   const outDir = getOutDir();
 
@@ -132,12 +148,15 @@ async function captureAuthFailureEvidence(
   try {
     // Write reason code with frame info (no timestamps, deterministic)
     const finalUrlHost = new URL(page.url()).host;
-    const reasonJson = {
+    const reasonJson: AuthFailureEvidence = {
       reasonCode,
       observations: {
         ...observations,
         finalUrlHost,
       },
+      authMode,
+      stateReuseAttempted,
+      stateReuseSucceeded,
     };
     
     // Add unique sorted frame hosts if available
@@ -389,10 +408,15 @@ setup('auth', async ({ page }) => {
   const headless = mode !== 'headed';
   console.log('[AUTH_MODE]', JSON.stringify({ mode, headless }));
 
+  // === State reuse tracking ===
+  let stateReuseAttempted = false;
+  let stateReuseSucceeded = false;
+
   // === BACKBONE FIX 1: Try to reuse valid state.json (skip MFA if possible) ===
   if (fs.existsSync(statePath)) {
     const statSize = fs.statSync(statePath).size;
     if (statSize >= 10) {
+      stateReuseAttempted = true;
       console.log(`[AUTH] Found existing state.json (${statSize} bytes) - attempting reuse...`);
 
       try {
@@ -416,6 +440,7 @@ setup('auth', async ({ page }) => {
 
         if (statusCode === 200) {
           // State is valid!
+          stateReuseSucceeded = true;
           console.log('[AUTH] ✓ AUTH_STATE_REUSED_OK - stored credentials are still valid');
           console.log(`AUTH_STATE_SAVED: ${statePath}`);
           return; // Exit setup successfully WITHOUT logging in again
@@ -435,7 +460,52 @@ setup('auth', async ({ page }) => {
       }
     }
   }
-  console.log('[AUTH] No valid cached state found; proceeding with login...');
+
+  // === PHASE 6: Mode-aware branching after state reuse check ===
+  if (!stateReuseSucceeded) {
+    // State reuse was not successful (either not attempted or failed)
+    
+    if (AUTH_MODE === 'state-only') {
+      // Fail-closed: state-only mode requires valid cached state
+      console.log('[AUTH] Fail-closed: state-only mode activated but no valid state available');
+      
+      let failureVariant: AuthObservations = {
+        hasAtlassianIdHost: false,
+        hasEmailInput: false,
+        hasPasswordInput: false,
+        hasContinueButton: false,
+        hasSsoButtons: false,
+        hasTwoStep: false,
+        hasMfaChallenge: false,
+        frameHosts: [],
+      };
+
+      try {
+        // Try to capture page state for evidence
+        await page.goto(`${baseUrlNorm}/jira/your-work`, { waitUntil: 'domcontentloaded' });
+        failureVariant = await detectLoginVariant(page);
+      } catch (err) {
+        console.log(`[AUTH] Note: Could not capture variant on state-only failure: ${(err as Error).message}`);
+      }
+
+      await captureAuthFailureEvidence(
+        page,
+        'AUTH_STATE_REQUIRED',
+        failureVariant,
+        'state-only',
+        stateReuseAttempted,
+        stateReuseSucceeded
+      );
+
+      throw new Error(
+        'AUTH_STATE_REQUIRED: state-only mode requires valid cached state, but no valid state exists. ' +
+        'Run with FT_AUTH_MODE=interactive to attempt login.'
+      );
+    }
+
+    // If state-first or interactive, fall through to interactive login below
+    console.log(`[AUTH] State reuse unsuccessful; proceeding to interactive login (authMode: ${AUTH_MODE})`);
+  }
 
   // === Helper: Prove Jira authentication (strict fail-closed) ===
   async function proveJiraAuthentication(): Promise<void> {
@@ -514,21 +584,52 @@ setup('auth', async ({ page }) => {
         await page.goto(atlassianIdUrl, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle');
 
-        // Detect current login page variant
-        const variant = await detectLoginVariant(page);
+        // === PHASE 6: Fail-fast detection for bot-guard/MFA/CAPTCHA (state-first mode optimization) ===
+        // Poll for login variant with early exit on bot-guard/MFA detection
+        const failFastDeadline = Date.now() + (AUTH_INTERACTIVE_MAX_SECONDS * 1000);
+        const pollIntervalMs = 500;
+        let variant = await detectLoginVariant(page);
+        
+        console.log(`[AUTH] Fail-fast window: checking for bot-guard/MFA for up to ${AUTH_INTERACTIVE_MAX_SECONDS}s`);
+
+        // Poll loop: detect MFA/CAPTCHA/bot-guard early and fail immediately
+        while (Date.now() < failFastDeadline) {
+          // Check for MFA challenge (requires manual intervention)
+          if (variant.hasMfaChallenge) {
+            console.log('[AUTH] [FAIL-FAST] MFA challenge detected early (will not wait 120s)');
+            await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
+            throw new Error('MFA_REQUIRED: Multi-factor authentication required. Use FT_AUTH_MODE=state-only with valid cached state or set JIRA_EMAIL/JIRA_PASSWORD=empty for manual login.');
+          }
+
+          // Check if we found acceptable login form (email input visible)
+          if (variant.hasEmailInput && variant.hasContinueButton) {
+            console.log('[AUTH] [FAIL-FAST] Login form found, exiting fail-fast window');
+            break; // Exit polling loop, proceed with login
+          }
+
+          // Not ready yet, poll again after brief delay
+          const remainingMs = failFastDeadline - Date.now();
+          if (remainingMs > 0) {
+            await page.waitForTimeout(Math.min(pollIntervalMs, remainingMs));
+            variant = await detectLoginVariant(page); // Re-detect for next iteration
+          } else {
+            break; // Deadline reached
+          }
+        }
+
         console.log(`[AUTH] Login page detected - variant detection: ${JSON.stringify(variant)}`);
 
         // === Check for SSO-only (no username/password inputs) ===
         if (variant.hasSsoButtons && !variant.hasEmailInput && !variant.hasPasswordInput) {
           console.log('[AUTH] SSO-only login detected (no email/password inputs)');
-          await captureAuthFailureEvidence(page, 'SSO_REQUIRED', variant);
+          await captureAuthFailureEvidence(page, 'SSO_REQUIRED', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
           throw new Error('SSO_REQUIRED: This instance requires single sign-on (no direct email/password login available)');
         }
 
         // === Check for MFA challenge ===
         if (variant.hasMfaChallenge) {
           console.log('[AUTH] MFA challenge detected (requires 2FA/OTP)');
-          await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variant);
+          await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
           throw new Error('MFA_REQUIRED: This login requires multi-factor authentication (OTP/Authenticator). Manual intervention needed.');
         }
 
@@ -571,7 +672,7 @@ setup('auth', async ({ page }) => {
           if (!authenticated) {
             // Deadline exceeded without auth proof
             const variant = await detectLoginVariant(page);
-            await captureAuthFailureEvidence(page, 'UNKNOWN_LOGIN_VARIANT', variant);
+            await captureAuthFailureEvidence(page, 'UNKNOWN_LOGIN_VARIANT', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
             throw new Error(
               `FATAL: Manual login not completed within 600s (myself status=${lastStatus})`
             );
@@ -586,7 +687,7 @@ setup('auth', async ({ page }) => {
           const emailFound = await findAndFillEmail(page, jiraEmail);
           if (!emailFound) {
             const variant = await detectLoginVariant(page);
-            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
+            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
             throw new Error('LOGIN_FORM_NOT_FOUND: Email input field not found (may be SSO variant, MFA challenge, or unknown login page)');
           }
 
@@ -594,7 +695,7 @@ setup('auth', async ({ page }) => {
           const continueFound = await findAndClickContinue(page);
           if (!continueFound) {
             const variant = await detectLoginVariant(page);
-            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
+            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
             throw new Error('LOGIN_FORM_NOT_FOUND: Continue button not found');
           }
 
@@ -608,7 +709,7 @@ setup('auth', async ({ page }) => {
           // === Check if MFA appeared after email ===
           if (variantAfterEmail.hasMfaChallenge) {
             console.log('[AUTH] MFA challenge detected after email entry');
-            await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variantAfterEmail);
+            await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variantAfterEmail, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
             throw new Error('MFA_REQUIRED: Multi-factor authentication required (cannot automate OTP/Authenticator)');
           }
 
@@ -616,7 +717,7 @@ setup('auth', async ({ page }) => {
           const passwordFound = await findAndFillPassword(page, jiraPassword);
           if (!passwordFound) {
             const variant = await detectLoginVariant(page);
-            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
+            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
             throw new Error('LOGIN_FORM_NOT_FOUND: Password input field not found');
           }
 
@@ -624,7 +725,7 @@ setup('auth', async ({ page }) => {
           const loginFound = await findAndClickLogin(page);
           if (!loginFound) {
             const variant = await detectLoginVariant(page);
-            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
+            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
             throw new Error('LOGIN_FORM_NOT_FOUND: Login/submit button not found');
           }
 
@@ -639,12 +740,12 @@ setup('auth', async ({ page }) => {
 
             // Check if we got login error page
             if (currentUrl.includes('error') || currentUrl.includes('login')) {
-              await captureAuthFailureEvidence(page, 'INVALID_CREDENTIALS', variant);
+              await captureAuthFailureEvidence(page, 'INVALID_CREDENTIALS', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
               throw new Error('INVALID_CREDENTIALS: Login failed (possibly invalid email/password)');
             }
 
             // Unknown error after login attempt
-            await captureAuthFailureEvidence(page, 'UNKNOWN_LOGIN_VARIANT', variant);
+            await captureAuthFailureEvidence(page, 'UNKNOWN_LOGIN_VARIANT', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
             throw new Error(`UNKNOWN_LOGIN_VARIANT: Expected Jira URL but got: ${currentUrl}`);
           }
         }
@@ -700,7 +801,7 @@ setup('auth', async ({ page }) => {
 
         // Only capture if not already done
         if (!fs.existsSync(reasonFile)) {
-          await captureAuthFailureEvidence(page, extractedReason, variant);
+          await captureAuthFailureEvidence(page, extractedReason, variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
         }
       } catch (captureErr) {
         console.log(`[AUTH] Warning: failed to capture evidence on failure - ${(captureErr as Error).message}`);
@@ -727,7 +828,7 @@ setup('auth', async ({ page }) => {
         // This ensures page context is not torn down mid-capture
         try {
           const variant = await detectLoginVariant(page);
-          await captureAuthFailureEvidence(page, 'AUTH_SETUP_TIMEOUT', variant);
+          await captureAuthFailureEvidence(page, 'AUTH_SETUP_TIMEOUT', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
         } catch (captureErr) {
           console.log(`[AUTH_TIMEOUT] Warning: failed to capture timeout evidence - ${(captureErr as Error).message}`);
         }
