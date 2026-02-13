@@ -32,7 +32,7 @@ permissions:
   external:
     fetch:
       backend:
-        - 'https://hooks.slack.com'
+        - address: https://hooks.slack.com
 
 resources:
   - key: govGadget2141
