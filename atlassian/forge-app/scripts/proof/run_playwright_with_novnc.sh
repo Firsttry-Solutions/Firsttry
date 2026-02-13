@@ -55,36 +55,64 @@ echo "[PW_NOVNC] Installing full noVNC display stack (xvfb, fluxbox, x11vnc, nov
 # Yarn repo not required - remove to avoid signature verification failures
 sudo rm -f /etc/apt/sources.list.d/yarn.list 2>/dev/null || true
 
-# Capture apt update output and check for signature failures
-APT_UPDATE_LOG="$RUN_ROOT/apt-update.log"
-if ! sudo apt-get update -qq > "$APT_UPDATE_LOG" 2>&1; then
-  echo "[PW_NOVNC] ERROR: apt-get update failed"
-  cat "$APT_UPDATE_LOG" >&2
+# === APT SUPPLY CHAIN INTEGRITY GATE (FAIL-CLOSED) ===
+# All apt operations logged to single file for reviewable audit
+APT_LOG="$RUN_ROOT/apt.log"
+echo "[PW_NOVNC] APT_INTEGRITY_LOG=${APT_LOG}"
+
+# Run apt-get update with integrity verification
+if ! sudo apt-get update -qq > "$APT_LOG" 2>&1; then
+  echo "[PW_NOVNC] ERROR: apt-get update command failed (exit code $?)"
+  cat "$APT_LOG" >&2
   exit 1
 fi
 
-# Fail-closed: check for APT signature verification errors
-if grep -qE "NO_PUBKEY|signatures couldn't be verified|The repository is not updated|Failed to fetch" "$APT_UPDATE_LOG"; then
-  echo "[PW_NOVNC] ERROR: APT_INTEGRITY - Signature verification failed in apt update"
-  echo "[PW_NOVNC] ERROR: Log: $APT_UPDATE_LOG"
-  grep -nE "NO_PUBKEY|signatures couldn't be verified|The repository is not updated|Failed to fetch" "$APT_UPDATE_LOG"
+# Fail-closed: Check for ANY apt signature/trust verification errors
+# These patterns indicate supply-chain compromise or key rotation issues
+APT_ERROR_PATTERNS=("NO_PUBKEY" "signatures couldn't be verified" "The repository is not updated" "Failed to fetch" "GPG error:")
+APT_ERRORS_FOUND=0
+
+for pattern in "${APT_ERROR_PATTERNS[@]}"; do
+  if grep -q "$pattern" "$APT_LOG"; then
+    echo "[PW_NOVNC] ❌ FAILED: APT_INTEGRITY - Found '$pattern' in apt update output"
+    echo "[PW_NOVNC] ERROR: Log: ${APT_LOG}"
+    echo "[PW_NOVNC] ERROR: Matching lines:"
+    grep -n "$pattern" "$APT_LOG" >&2
+    APT_ERRORS_FOUND=1
+  fi
+done
+
+if [ "$APT_ERRORS_FOUND" -eq 1 ]; then
   exit 1
 fi
 
-APT_INSTALL_LOG="$RUN_ROOT/apt-install.log"
-if ! sudo apt-get install -y -qq xvfb fluxbox x11vnc novnc websockify x11-utils > "$APT_INSTALL_LOG" 2>&1; then
-  echo "[PW_NOVNC] ERROR: apt-get install failed"
-  cat "$APT_INSTALL_LOG" >&2
+# Run apt-get install and append to same audit log
+echo "" >> "$APT_LOG"
+echo "[apt-get install command]" >> "$APT_LOG"
+if ! sudo apt-get install -y -qq xvfb fluxbox x11vnc novnc websockify x11-utils >> "$APT_LOG" 2>&1; then
+  echo "[PW_NOVNC] ERROR: apt-get install command failed (exit code $?)"
+  tail -100 "$APT_LOG" >&2
   exit 1
 fi
 
-# Fail-closed: check for APT signature verification errors in install
-if grep -qE "NO_PUBKEY|signatures couldn't be verified|The repository is not updated|Failed to fetch" "$APT_INSTALL_LOG"; then
-  echo "[PW_NOVNC] ERROR: APT_INTEGRITY - Signature verification failed in apt install"
-  echo "[PW_NOVNC] ERROR: Log: $APT_INSTALL_LOG"
-  grep -nE "NO_PUBKEY|signatures couldn't be verified|The repository is not updated|Failed to fetch" "$APT_INSTALL_LOG"
+# Fail-closed: Check install output for same error patterns
+APT_ERRORS_FOUND=0
+for pattern in "${APT_ERROR_PATTERNS[@]}"; do
+  if grep -q "$pattern" "$APT_LOG"; then
+    echo "[PW_NOVNC] ❌ FAILED: APT_INTEGRITY - Found '$pattern' in apt install output"
+    echo "[PW_NOVNC] ERROR: Log: ${APT_LOG}"
+    echo "[PW_NOVNC] ERROR: Matching lines:"
+    grep -n "$pattern" "$APT_LOG" >&2
+    APT_ERRORS_FOUND=1
+  fi
+done
+
+if [ "$APT_ERRORS_FOUND" -eq 1 ]; then
   exit 1
 fi
+
+echo "[PW_NOVNC] ✅ APT_INTEGRITY: apt tools installed with verified signatures"
+
 
 # === VERIFY REQUIRED BINARIES AFTER INSTALL ===
 echo "[PW_NOVNC] Verifying required binaries..."
