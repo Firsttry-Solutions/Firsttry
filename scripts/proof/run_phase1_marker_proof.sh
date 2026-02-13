@@ -13,9 +13,11 @@ echo "PHASE1 SUCCESS MARKER PROOF (STRICT - HEADED BROWSER VIA NOVNC)"
 echo "════════════════════════════════════════════════════════════════════"
 echo ""
 
-# Expected short SHA of current HEAD
+# Expected SHAs of current HEAD
 EXPECT_SHA=$(cd /workspaces/Firsttry && git rev-parse --short=7 HEAD)
-echo "[PROOF] Expected UI build SHA: $EXPECT_SHA"
+EXPECT_FULL=$(cd /workspaces/Firsttry && git rev-parse HEAD)
+echo "[PROOF] Expected UI build SHA7:  $EXPECT_SHA"
+echo "[PROOF] Expected UI build SHA40: $EXPECT_FULL"
 echo ""
 
 # Set environment
@@ -81,7 +83,127 @@ echo "[PROOF] Console log size: $CONSOLE_SIZE bytes"
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# CHECK 1: Verify build identity line contains current short SHA
+# CHECK 0: Network failure allowlist gate
+# ═════════════════════════════════════════════════════════════════════════════════
+
+echo "[CHECK 0] Validating network.log against allowlist"
+
+NETWORK_FILE="$OUT_DIR/network.log"
+if [ ! -f "$NETWORK_FILE" ]; then
+  echo "         ⚠ Network log not found (may proceed if no network failures)"
+else
+  # Extract failed requests from network.log
+  # Allowed patterns: /rest/internal/2/log/safe/info, /gateway/api/townsquare/, /gateway/api/watermelon/, /rest/api/3/mypreferences, mauTag
+  ALLOWED_PATTERNS=("/rest/internal/2/log/safe/info" "/gateway/api/townsquare/" "/gateway/api/watermelon/" "/rest/api/3/mypreferences" "mauTag")
+  
+  # Count total failures in network.log (requestfailed lines)
+  TOTAL_FAILURES=$(grep -c '\[response\.(4|5)[0-9]\{2\}\]\|requestfailed' "$NETWORK_FILE" || echo 0)
+  ALLOWED_FAILURES=0
+  DISALLOWED_FAILURES=0
+  DISALLOWED_LINES=()
+  
+  if [ "$TOTAL_FAILURES" -gt 0 ]; then
+    # Check each failure line against allowlist
+    while IFS= read -r line; do
+      IS_ALLOWED=0
+      for pattern in "${ALLOWED_PATTERNS[@]}"; do
+        if echo "$line" | grep -q "$pattern"; then
+          IS_ALLOWED=1
+          ((ALLOWED_FAILURES++))
+          break
+        fi
+      done
+      
+      # Fail-closed: disallow forge CDN bundle failures and resolver failures
+      if echo "$line" | grep -qE 'forge\.cdn\.prod\.atlassian-dev\.net|cdn\.prod\.atlassian-dev\.net.*(/app\.|gadget)|resolver|govGadget'; then
+        IS_ALLOWED=0
+      fi
+      
+      if [ "$IS_ALLOWED" -eq 0 ] && [ -n "$line" ]; then
+        DISALLOWED_FAILURES=$((DISALLOWED_FAILURES + 1))
+        DISALLOWED_LINES+=("$line")
+      fi
+    done < <(grep -E '\[response\.(4|5)[0-9]\{2\}\]|requestfailed' "$NETWORK_FILE" || true)
+  fi
+  
+  if [ "$DISALLOWED_FAILURES" -gt 0 ]; then
+    echo "         ❌ FAILED: Found $DISALLOWED_FAILURES disallowed network failures"
+    echo "         Allowed: $ALLOWED_FAILURES | Disallowed: $DISALLOWED_FAILURES"
+    echo "         First disallowed failures:"
+    for (( i=0; i<${#DISALLOWED_LINES[@]} && i<20; i++ )); do
+      echo "           ${DISALLOWED_LINES[i]}"
+    done
+    exit 1
+  else
+    echo "         ✅ PASSED: Network failures validation (allowed=$ALLOWED_FAILURES, disallowed=0)"
+  fi
+fi
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHECK 1A: Verify UI_ENTRY_RUNTIME_PROOF binds runtime bundle to EXPECT_FULL
+# ═════════════════════════════════════════════════════════════════════════════════
+
+echo "[CHECK 1A] Verifying UI_ENTRY_RUNTIME_PROOF binds runtime bundle to EXPECT_FULL"
+
+# Find the last UI_ENTRY_RUNTIME_PROOF line (use last occurrence)
+RUNTIME_PROOF_LINE=$(grep '\[console\.log\] \[UI_ENTRY_RUNTIME_PROOF\]' "$CONSOLE_FILE" | tail -1 || true)
+
+if [ -z "$RUNTIME_PROOF_LINE" ]; then
+  echo "         ❌ FAILED: UI_ENTRY_RUNTIME_PROOF line not found in console.log"
+  exit 1
+fi
+
+echo "         Found: $RUNTIME_PROOF_LINE"
+
+# Extract JSON from the runtime proof line
+RUNTIME_JSON=$(echo "$RUNTIME_PROOF_LINE" | sed 's/.*\[console\.log\] \[UI_ENTRY_RUNTIME_PROOF\] //')
+
+if [ -z "$RUNTIME_JSON" ]; then
+  echo "         ❌ FAILED: Could not extract JSON from UI_ENTRY_RUNTIME_PROOF line"
+  exit 1
+fi
+
+# Parse and validate runtime proof JSON with node
+RUNTIME_VALIDATION=$(cat <<'NODEEOF'
+const data = JSON.parse(process.argv[1]);
+const errors = [];
+const expectFull = process.argv[2];
+const expectSha7 = process.argv[3];
+
+if (data.ui_entry_bundle_hash !== expectFull) {
+  errors.push(`ui_entry_bundle_hash '${data.ui_entry_bundle_hash}' !== expectFull '${expectFull}'`);
+}
+
+if (!data.ui_entry_bundle_url || !data.ui_entry_bundle_url.includes(`app.${expectFull}.js`)) {
+  errors.push(`ui_entry_bundle_url '${data.ui_entry_bundle_url || '(missing)'}' must contain 'app.${expectFull}.js'`);
+}
+
+if (!data.ui_git_sha || data.ui_git_sha !== expectFull) {
+  errors.push(`ui_git_sha '${data.ui_git_sha || '(missing)'}' !== expectFull '${expectFull}'`);
+}
+
+if (errors.length > 0) {
+  console.error(errors.join('; '));
+  process.exit(1);
+}
+
+console.log(`OK: bundle_hash=${data.ui_entry_bundle_hash.substring(0,7)}, git_sha=${data.ui_git_sha.substring(0,7)}, url_contains=app.${expectSha7}.js`);
+NODEEOF
+)
+
+if ! RUNTIME_OUTPUT=$(node -e "$RUNTIME_VALIDATION" "$RUNTIME_JSON" "$EXPECT_FULL" "$EXPECT_SHA" 2>&1); then
+  echo "         ❌ FAILED: Runtime proof validation failed"
+  echo "         $RUNTIME_OUTPUT"
+  exit 1
+fi
+
+echo "         ✅ PASSED: UI_ENTRY_RUNTIME_PROOF validated"
+echo "           $RUNTIME_OUTPUT"
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHECK 1B: Verify build identity line (UI_BUILD_IDENTITY_CONFIRMED) contains EXPECT_FULL
 # ═════════════════════════════════════════════════════════════════════════════════
 
 echo "[CHECK 1] Verifying build identity (UI_BUILD_IDENTITY_*) contains SHA=$EXPECT_SHA"

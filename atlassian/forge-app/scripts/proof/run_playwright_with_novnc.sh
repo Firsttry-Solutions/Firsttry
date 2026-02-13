@@ -50,13 +50,39 @@ NOVNC_PORT="${NOVNC_PORT:-6080}"
 
 # === DETERMINISTIC FULL STACK INSTALL ===
 echo "[PW_NOVNC] Installing full noVNC display stack (xvfb, fluxbox, x11vnc, novnc, websockify, x11-utils)..."
-if ! sudo apt-get update -qq; then
+
+# Remove problematic repos not needed for proof harness (if they exist)
+# Yarn repo not required - remove to avoid signature verification failures
+sudo rm -f /etc/apt/sources.list.d/yarn.list 2>/dev/null || true
+
+# Capture apt update output and check for signature failures
+APT_UPDATE_LOG="$RUN_ROOT/apt-update.log"
+if ! sudo apt-get update -qq > "$APT_UPDATE_LOG" 2>&1; then
   echo "[PW_NOVNC] ERROR: apt-get update failed"
+  cat "$APT_UPDATE_LOG" >&2
   exit 1
 fi
 
-if ! sudo apt-get install -y -qq xvfb fluxbox x11vnc novnc websockify x11-utils; then
+# Fail-closed: check for APT signature verification errors
+if grep -qE "NO_PUBKEY|signatures couldn't be verified|The repository is not updated|Failed to fetch" "$APT_UPDATE_LOG"; then
+  echo "[PW_NOVNC] ERROR: APT_INTEGRITY - Signature verification failed in apt update"
+  echo "[PW_NOVNC] ERROR: Log: $APT_UPDATE_LOG"
+  grep -nE "NO_PUBKEY|signatures couldn't be verified|The repository is not updated|Failed to fetch" "$APT_UPDATE_LOG"
+  exit 1
+fi
+
+APT_INSTALL_LOG="$RUN_ROOT/apt-install.log"
+if ! sudo apt-get install -y -qq xvfb fluxbox x11vnc novnc websockify x11-utils > "$APT_INSTALL_LOG" 2>&1; then
   echo "[PW_NOVNC] ERROR: apt-get install failed"
+  cat "$APT_INSTALL_LOG" >&2
+  exit 1
+fi
+
+# Fail-closed: check for APT signature verification errors in install
+if grep -qE "NO_PUBKEY|signatures couldn't be verified|The repository is not updated|Failed to fetch" "$APT_INSTALL_LOG"; then
+  echo "[PW_NOVNC] ERROR: APT_INTEGRITY - Signature verification failed in apt install"
+  echo "[PW_NOVNC] ERROR: Log: $APT_INSTALL_LOG"
+  grep -nE "NO_PUBKEY|signatures couldn't be verified|The repository is not updated|Failed to fetch" "$APT_INSTALL_LOG"
   exit 1
 fi
 
