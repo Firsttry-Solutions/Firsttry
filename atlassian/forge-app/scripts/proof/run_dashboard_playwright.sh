@@ -326,6 +326,90 @@ export OUT_DIR="$OUT_DIR_VALUE"
 echo "Output directory: $OUT_DIR"
 echo ""
 
+# ============================================================================
+# PRE-GUARD: Non-bypassable auth-state safety check (runs BEFORE Playwright)
+# ============================================================================
+print_section "Step 4b: Pre-Guard Auth-State Safety Check"
+
+# Run pre-guard and capture its directory
+FT_GUARD_PHASE="pre" bash scripts/proof/guard_no_auth_state_leak.sh || {
+  echo "[ERROR] Pre-guard failed: auth-state safety check violated"
+  exit 1
+}
+
+GUARD_DIR_PRE=$(ls -1dt /tmp/pw_state_guard_* 2>/dev/null | head -1)
+if [[ -z "$GUARD_DIR_PRE" ]] || [[ ! -f "$GUARD_DIR_PRE/state-guard-result.json" ]]; then
+  echo "[ERROR] Pre-guard evidence file not created"
+  exit 1
+fi
+
+echo "[GUARD] PRE_GUARD_DIR=$GUARD_DIR_PRE"
+echo -e "${GREEN}✓${NC} Pre-guard passed"
+echo ""
+
+# ============================================================================
+# STATE VALIDATION: Enforce auth-state based on FT_AUTH_MODE
+# ============================================================================
+print_section "Step 4c: Auth-State Validation"
+
+FT_AUTH_MODE="${FT_AUTH_MODE:-interactive}"
+STATE_FILE="tests/playwright/.auth/state.json"
+
+if [[ "$FT_AUTH_MODE" == "state-only" ]]; then
+  echo "Mode: state-only (requires cached state.json)"
+  if [[ ! -f "$STATE_FILE" ]]; then
+    echo "[AUTH_STATE] MISSING state.json for state-only mode"
+    echo -e "${RED}ERROR: state-only mode requires tests/playwright/.auth/state.json${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}✓${NC} state.json exists (injected by CI)"
+else
+  echo "Mode: $FT_AUTH_MODE (state.json will be managed by runner)"
+  # For non-state-only modes, remove any lingering state unless explicitly allowed
+  if [[ "${FT_ALLOW_LOCAL_STATE_FILE:-0}" != "1" ]]; then
+    if [[ -f "$STATE_FILE" ]]; then
+      rm -f "$STATE_FILE"
+      echo "[STATE_CLEANUP] Removed lingering state.json before Playwright"
+    fi
+  fi
+fi
+
+echo ""
+
+# ============================================================================
+# TRAP: Ensure POST-GUARD sempre runs on exit (trap covers all exit paths)
+# ============================================================================
+cleanup_and_post_guard() {
+  local exit_code=$?
+  
+  # Always delete state before post-guard (defense-in-depth)
+  rm -f tests/playwright/.auth/state.json 2>/dev/null || true
+  
+  # Run post-guard with cleanup expectation
+  echo ""
+  print_section "Step X: Post-Guard Auth-State Safety Check (ON EXIT)"
+  
+  FT_GUARD_PHASE="post" \
+  FT_GUARD_EXPECT_STATE_CLEANUP=1 \
+  bash scripts/proof/guard_no_auth_state_leak.sh || {
+    echo "[ERROR] Post-guard failed: auth-state safety violation"
+    exit 1
+  }
+  
+  GUARD_DIR_POST=$(ls -1dt /tmp/pw_state_guard_* 2>/dev/null | head -1)
+  if [[ -z "$GUARD_DIR_POST" ]] || [[ ! -f "$GUARD_DIR_POST/state-guard-result.json" ]]; then
+    echo "[ERROR] Post-guard evidence file not created"
+    exit 1
+  fi
+  
+  echo "[GUARD] POST_GUARD_DIR=$GUARD_DIR_POST"
+  echo -e "${GREEN}✓${NC} Post-guard passed"
+  
+  return $exit_code
+}
+
+trap cleanup_and_post_guard EXIT
+
 # === STEP 5: Clean stale directories ===
 print_section "Step 5: Clean Stale Output Directories"
 
