@@ -1,7 +1,6 @@
 #!/bin/bash
 # selftest_auth_state_leak_guard.sh
-# Purpose: Local self-test to verify guard_no_auth_state_leak.sh works correctly.
-# No secrets, no CI dependencies. Tests pre/post phases and failure scenarios.
+# Purpose: Validate guard_no_auth_state_leak.sh matches contract-true schema and behavior.
 
 set -euo pipefail
 
@@ -10,7 +9,7 @@ echo "========== AUTH STATE LEAK GUARD SELF-TEST =========="
 TEST_PASSED=0
 TEST_FAILED=0
 
-# Determine the repo directory (assuming script is in scripts/proof/)
+# Determine the repo directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
@@ -18,122 +17,230 @@ echo "[INFO] Repository root: $REPO_ROOT"
 cd "$REPO_ROOT" || exit 1
 
 # ============================================================================
-# Helper: Run a single test
+# Helper: Verify JSON schema contract
 # ============================================================================
-run_test() {
-  local name="$1"
-  local expected_exit="$2"
-  shift 2
+verify_json_schema() {
+  local json_file="$1"
+  local expect_result="$2"  # OK or FAIL
+  local expect_reason="$3"  # UNKNOWN, STATE_FILE_TRACKED, etc
   
-  echo -n "[TEST] $name ... "
+  if [ ! -f "$json_file" ]; then
+    echo "✗ FAIL: JSON file not created: $json_file"
+    TEST_FAILED=$((TEST_FAILED + 1))
+    return 1
+  fi
   
-  # Execute the command and capture exit code
-  actual_exit=0
-  "$@" >/dev/null 2>&1 || actual_exit=$?
+  # Use node to parse and verify schema
+  local verify_output=$(node -e "
+    const fs = require('fs');
+    const j = JSON.parse(fs.readFileSync('$json_file', 'utf-8'));
+    const topKeys = Object.keys(j);
+    const expectedKeys = ['result', 'reasonCode', 'details'];
+    
+    // Check exact top-level keys in order
+    if (topKeys.length !== 3 || 
+        topKeys[0] !== 'result' || 
+        topKeys[1] !== 'reasonCode' || 
+        topKeys[2] !== 'details') {
+      console.log('SCHEMA_FAIL: unexpected top-level keys');
+      process.exit(1);
+    }
+    
+    // Check result value
+    if (j.result !== '$expect_result') {
+      console.log('RESULT_MISMATCH: got ' + j.result);
+      process.exit(1);
+    }
+    
+    // Check reasonCode value
+    if (j.reasonCode !== '$expect_reason') {
+      console.log('REASON_MISMATCH: got ' + j.reasonCode);
+      process.exit(1);
+    }
+    
+    // Check details exists and is an object
+    if (typeof j.details !== 'object' || j.details === null || Array.isArray(j.details)) {
+      console.log('DETAILS_INVALID');
+      process.exit(1);
+    }
+    
+    // Check required detail fields
+    const requiredDetails = ['echoRisk', 'newestOutDir', 'outDirHasState', 'phase', 'staged', 'stateExists', 'statePath', 'tracked', 'violations'];
+    const detailKeys = Object.keys(j.details);
+    
+    if (detailKeys.length !== requiredDetails.length) {
+      console.log('DETAIL_COUNT_MISMATCH: expected ' + requiredDetails.length + ' got ' + detailKeys.length);
+      process.exit(1);
+    }
+    
+    for (const k of requiredDetails) {
+      if (!detailKeys.includes(k)) {
+        console.log('DETAIL_MISSING: ' + k);
+        process.exit(1);
+      }
+    }
+    
+    // Check no 'phase' at top level
+    if (j.hasOwnProperty('phase')) {
+      console.log('TOPLEVEL_PHASE_INVALID');
+      process.exit(1);
+    }
+    
+    // Check no 'reason_code' at top level (should be reasonCode)
+    if (j.hasOwnProperty('reason_code')) {
+      console.log('TOPLEVEL_REASON_CODE_INVALID');
+      process.exit(1);
+    }
+    
+    console.log('SCHEMA_OK');
+  " 2>&1 || true)
   
-  if [ "$actual_exit" -eq "$expected_exit" ]; then
+  if [ "$verify_output" = "SCHEMA_OK" ]; then
     echo "✓ PASS"
     TEST_PASSED=$((TEST_PASSED + 1))
+    return 0
   else
-    echo "✗ FAIL (expected exit $expected_exit, got $actual_exit)"
+    echo "✗ FAIL: $verify_output"
     TEST_FAILED=$((TEST_FAILED + 1))
+    return 1
   fi
 }
 
 # ============================================================================
-# SUB-TEST 1: Pre-phase guard 
+# SUB-TEST 1: Pre-phase OK with correct schema
 # ============================================================================
 echo ""
-echo "[SUBTEST 1] Pre-phase guard (should PASS: no state.json, no tracking violations)"
+echo "[SUBTEST 1] Pre-phase guard returns OK with correct JSON schema"
 
 rm -f "$REPO_ROOT/tests/playwright/.auth/state.json" 2>/dev/null || true
 
-run_test "Pre-phase with no state.json" 0 \
-  env FT_GUARD_PHASE=pre bash "$REPO_ROOT/scripts/proof/guard_no_auth_state_leak.sh"
+export FT_GUARD_PHASE="pre"
+bash "$REPO_ROOT/scripts/proof/guard_no_auth_state_leak.sh" >/dev/null 2>&1
+
+LATEST_GUARD=$(ls -1dt /tmp/pw_state_guard_* 2>/dev/null | head -1)
+if [ -n "$LATEST_GUARD" ] && [ -f "$LATEST_GUARD/state-guard-result.json" ]; then
+  echo -n "[TEST] Pre-phase JSON schema correct ... "
+  verify_json_schema "$LATEST_GUARD/state-guard-result.json" "OK" "UNKNOWN"
+else
+  echo "[TEST] Pre-phase JSON schema correct ... ✗ FAIL: no evidence file"
+  TEST_FAILED=$((TEST_FAILED + 1))
+fi
+
+unset FT_GUARD_PHASE
 
 # ============================================================================
-# SUB-TEST 2: Pre-phase with untracked state.json  
+# SUB-TEST 2: Post-phase FAIL when state leaked to artifact dir
 # ============================================================================
 echo ""
-echo "[SUBTEST 2] Pre-phase with untracked state.json (should PASS: not tracked)"
+echo "[SUBTEST 2] Post-phase detects state.json in artifact dir"
 
 mkdir -p "$REPO_ROOT/tests/playwright/.auth"
 cat > "$REPO_ROOT/tests/playwright/.auth/state.json" << 'EOF'
-{"cookies": [{"name": "fake_cookie", "value": "xxx"}], "origins": [{"origin": "https://test.example.com"}]}
+{"cookies": [{"name": "test", "value": "x"}], "origins": []}
 EOF
 chmod 0600 "$REPO_ROOT/tests/playwright/.auth/state.json"
 
-run_test "Pre-phase with untracked fake state.json" 0 \
-  env FT_GUARD_PHASE=pre bash "$REPO_ROOT/scripts/proof/guard_no_auth_state_leak.sh"
+# Create fake artifact directory with leaked state
+FAKE_ARTIFACT="/tmp/pw_dash_diag_fake_$(date +%s)"
+mkdir -p "$FAKE_ARTIFACT"
+cp "$REPO_ROOT/tests/playwright/.auth/state.json" "$FAKE_ARTIFACT/state.json"
+
+export FT_GUARD_PHASE="post"
+bash "$REPO_ROOT/scripts/proof/guard_no_auth_state_leak.sh" >/dev/null 2>&1 || true
+
+LATEST_GUARD=$(ls -1dt /tmp/pw_state_guard_* 2>/dev/null | head -1)
+if [ -n "$LATEST_GUARD" ] && [ -f "$LATEST_GUARD/state-guard-result.json" ]; then
+  echo -n "[TEST] Post-phase detects artifact leak ... "
+  verify_json_schema "$LATEST_GUARD/state-guard-result.json" "FAIL" "STATE_FILE_PRESENT_IN_ARTIFACT_DIR"
+else
+  echo "[TEST] Post-phase detects artifact leak ... ✗ FAIL: no evidence file"
+  TEST_FAILED=$((TEST_FAILED + 1))
+fi
+
+rm -rf "$FAKE_ARTIFACT"
+unset FT_GUARD_PHASE
 
 # ============================================================================
-# SUB-TEST 3: Post-phase with state in artifact dir
+# SUB-TEST 3: Post-phase FAIL when state exists with cleanup expectation
 # ============================================================================
 echo ""
-echo "[SUBTEST 3] Post-phase with state.json in artifact dir (should FAIL)"
+echo "[SUBTEST 3] Post-phase detects state.json with cleanup expectation"
 
-FAKE_ARTIFACT_DIR="/tmp/pw_dash_diag_fake_test_$(date +%s)"
-mkdir -p "$FAKE_ARTIFACT_DIR"
-cp "$REPO_ROOT/tests/playwright/.auth/state.json" "$FAKE_ARTIFACT_DIR/state.json"
+# state.json still exists from subtest 2
+export FT_GUARD_PHASE="post"
+export FT_GUARD_EXPECT_STATE_CLEANUP=1
 
-run_test "Post-phase detects state.json in artifact dir" 1 \
-  env FT_GUARD_PHASE=post bash "$REPO_ROOT/scripts/proof/guard_no_auth_state_leak.sh"
+bash "$REPO_ROOT/scripts/proof/guard_no_auth_state_leak.sh" >/dev/null 2>&1 || true
 
-rm -rf "$FAKE_ARTIFACT_DIR"
+LATEST_GUARD=$(ls -1dt /tmp/pw_state_guard_* 2>/dev/null | head -1)
+if [ -n "$LATEST_GUARD" ] && [ -f "$LATEST_GUARD/state-guard-result.json" ]; then
+  echo -n "[TEST] Post-phase detects uncleaned state ... "
+  verify_json_schema "$LATEST_GUARD/state-guard-result.json" "FAIL" "STATE_FILE_PRESENT_IN_REPO"
+else
+  echo "[TEST] Post-phase detects uncleaned state ... ✗ FAIL: no evidence file"
+  TEST_FAILED=$((TEST_FAILED + 1))
+fi
+
+rm -f "$REPO_ROOT/tests/playwright/.auth/state.json" 2>/dev/null || true
+unset FT_GUARD_PHASE
+unset FT_GUARD_EXPECT_STATE_CLEANUP
 
 # ============================================================================
-# SUB-TEST 4: .gitignore patterns
+# SUB-TEST 4: Verify .gitignore patterns
 # ============================================================================
 echo ""
 echo "[SUBTEST 4] Verify .gitignore contains state.json patterns"
 
-run_test ".gitignore has tests/playwright/.auth/state.json" 0 \
-  grep -q "tests/playwright/.auth/state.json" "$REPO_ROOT/.gitignore"
-
-run_test ".gitignore has wildcard *.json pattern" 0 \
-  grep "tests/playwright/.auth/.*json" "$REPO_ROOT/.gitignore"
-
-# ============================================================================
-# SUB-TEST 5: install_state_from_env.sh validation
-# ============================================================================
-echo ""
-echo "[SUBTEST 5] Verify install_state_from_env.sh fail-closed + no set -x"
-
-run_test "install_state_from_env.sh has set -euo pipefail" 0 \
-  grep -q "set -euo pipefail" "$REPO_ROOT/scripts/proof/install_state_from_env.sh"
-
-# Check it doesn't have set -x
-if grep -E "^set -x|^[[:space:]]*set -x" "$REPO_ROOT/scripts/proof/install_state_from_env.sh" 2>/dev/null | grep -v "^#"; then
-  echo "[TEST] install_state_from_env.sh does NOT have set -x ... ✗ FAIL"
-  TEST_FAILED=$((TEST_FAILED + 1))
-else
-  echo "[TEST] install_state_from_env.sh does NOT have set -x ... ✓ PASS"
+echo -n "[TEST] .gitignore has tests/playwright/.auth/state.json ... "
+if grep -q "tests/playwright/.auth/state.json" "$REPO_ROOT/.gitignore"; then
+  echo "✓ PASS"
   TEST_PASSED=$((TEST_PASSED + 1))
+else
+  echo "✗ FAIL"
+  TEST_FAILED=$((TEST_FAILED + 1))
+fi
+
+echo -n "[TEST] .gitignore has wildcard *.json pattern ... "
+if grep "tests/playwright/.auth.*json" "$REPO_ROOT/.gitignore" | grep -q '\*'; then
+  echo "✓ PASS"
+  TEST_PASSED=$((TEST_PASSED + 1))
+else
+  echo "✗ FAIL"
+  TEST_FAILED=$((TEST_FAILED + 1))
 fi
 
 # ============================================================================
-# SUB-TEST 6: Workflow YAML secret safety
+# SUB-TEST 5: Verify scripts don't echo secrets
 # ============================================================================
 echo ""
-echo "[SUBTEST 6] Verify workflow YAML does NOT echo FT_AUTH_STATE_JSON_B64"
+echo "[SUBTEST 5] Verify scripts don't echo secrets"
 
-if grep -E 'echo.*\$' "$REPO_ROOT/.github/workflows/pw_dashboard_state_only.yml" 2>/dev/null | grep -q "FT_AUTH_STATE_JSON_B64"; then
-  echo "[TEST] Workflow does NOT echo FT_AUTH_STATE_JSON_B64 ... ✗ FAIL"
-  TEST_FAILED=$((TEST_FAILED + 1))
-else
-  echo "[TEST] Workflow does NOT echo FT_AUTH_STATE_JSON_B64 ... ✓ PASS"
+echo -n "[TEST] install_state_from_env.sh has set -euo pipefail ... "
+if grep -q "set -euo pipefail" "$REPO_ROOT/scripts/proof/install_state_from_env.sh"; then
+  echo "✓ PASS"
   TEST_PASSED=$((TEST_PASSED + 1))
+else
+  echo "✗ FAIL"
+  TEST_FAILED=$((TEST_FAILED + 1))
 fi
 
-# ============================================================================
-# SUB-TEST 7: Cleanup
-# ============================================================================
-echo ""
-echo "[SUBTEST 7] Clean up"
+echo -n "[TEST] install_state_from_env.sh does NOT have set -x ... "
+if ! grep -E "^set -x|^[[:space:]]*set -x" "$REPO_ROOT/scripts/proof/install_state_from_env.sh" 2>/dev/null | grep -v "^#" >/dev/null; then
+  echo "✓ PASS"
+  TEST_PASSED=$((TEST_PASSED + 1))
+else
+  echo "✗ FAIL"
+  TEST_FAILED=$((TEST_FAILED + 1))
+fi
 
-rm -f "$REPO_ROOT/tests/playwright/.auth/state.json" 2>/dev/null || true
-run_test "Fake state.json cleaned up" 0 \
-  test ! -f "$REPO_ROOT/tests/playwright/.auth/state.json"
+echo -n "[TEST] workflow does NOT echo FT_AUTH_STATE_JSON_B64 ... "
+if ! grep -E '(echo|printenv|env\s*\|).*FT_AUTH_STATE_JSON_B64' "$REPO_ROOT/.github/workflows/pw_dashboard_state_only.yml" 2>/dev/null | grep -v "^[[:space:]]*#" >/dev/null; then
+  echo "✓ PASS"
+  TEST_PASSED=$((TEST_PASSED + 1))
+else
+  echo "✗ FAIL"
+  TEST_FAILED=$((TEST_FAILED + 1))
+fi
 
 # ============================================================================
 # Summary
