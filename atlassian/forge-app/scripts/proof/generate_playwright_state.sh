@@ -52,12 +52,27 @@ if [[ -z "${FT_AUTH_GENERATE_STATE:-}" ]] || [[ "${FT_AUTH_GENERATE_STATE}" != "
   echo "  $STATE_PATH"
   echo ""
   echo "To proceed (understanding the security implications):"
-  echo "  FT_AUTH_GENERATE_STATE=1 bash $0"
+  echo "  FT_AUTH_GENERATE_STATE=1 FT_PLAYWRIGHT_MODE=headed bash $0"
   echo ""
   exit 1
 fi
 
 echo -e "${GREEN}✓${NC} Explicit opt-in confirmed (FT_AUTH_GENERATE_STATE=1)"
+echo ""
+
+# === STEP 1B: Require headed mode ===
+print_section "Step 1B: Headed Mode Requirement"
+
+if [[ -z "${FT_PLAYWRIGHT_MODE:-}" ]] || [[ "${FT_PLAYWRIGHT_MODE}" != "headed" ]]; then
+  echo -e "${RED}ERROR: FT_PLAYWRIGHT_MODE must be 'headed' for state generation${NC}"
+  echo ""
+  echo "Set it explicitly:"
+  echo "  export FT_PLAYWRIGHT_MODE=headed"
+  echo ""
+  exit 1
+fi
+
+echo -e "${GREEN}✓${NC} Headed mode required (FT_PLAYWRIGHT_MODE=headed)"
 echo ""
 
 # === STEP 2: Validate required environment ===
@@ -82,23 +97,35 @@ fi
 
 echo ""
 
-# === STEP 3: Check for display server (mandatory for headed mode) ===
+# === STEP 2B: Verify .gitignore protects state.json ===
+print_section "Step 2B: .gitignore Enforcement Check"
+
+bash scripts/proof/verify_gitignore_state_json.sh
+if [[ $? -ne 0 ]]; then
+  echo -e "${RED}ERROR: .gitignore does not protect state.json${NC}"
+  exit 1
+fi
+
+echo ""
+
+# === STEP 3: Check for display server (MANDATORY) ===
 print_section "Step 3: Display Server Check (Headed Mode Required)"
 
 if [[ -z "${DISPLAY:-}" ]] && ! command -v xvfb-run &> /dev/null; then
-  echo -e "${RED}ERROR: No display server available${NC}"
+  echo -e "${RED}ERROR: No display available. Run this script on a machine with a GUI OR install xvfb-run.${NC}"
   echo ""
   echo "This script requires headed (interactive) Playwright mode for SSO login."
+  echo "It cannot be run in CI/automation without a display server."
   echo ""
   echo "Options:"
   echo "  1. If using local machine with display:"
   echo "     export DISPLAY=:0  # or your actual DISPLAY value"
   echo ""
-  echo "  2. If using container/VNC:"
-  echo "     apt-get install xvfb  # will enable virtual display"
+  echo "  2. If your environment has xvfb-run available:"
+  echo "     apt-get install xvfb"
   echo ""
-  echo "  3. If using AWS/CI with X11 forwarding:"
-  echo "     ssh -X user@host  # enable X11 forwarding"
+  echo "  3. For CI with X11 forwarding:"
+  echo "     ssh -X user@host"
   echo ""
   exit 1
 fi
@@ -276,6 +303,55 @@ fi
 
 echo ""
 
+# === STEP 7B: Generate state provenance file ===
+print_section "Step 7B: Generate State Provenance"
+
+STATE_PROVENANCE_PATH="${STATE_PATH}.provenance.json"
+
+# Extract JIRA origin only (scheme + origin, no path)
+JIRA_ORIGIN=$(echo "$JIRA_BASE_URL_NORM" | sed -E 's|^(https?://[^/]+).*|\1|')
+
+# Get current git HEAD
+GIT_HEAD=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+
+# Hash the generator script itself
+if command -v sha256sum &> /dev/null; then
+  GENERATOR_HASH=$(sha256sum scripts/proof/generate_playwright_state.sh | awk '{print $1}')
+elif command -v shasum &> /dev/null; then
+  GENERATOR_HASH=$(shasum -a 256 scripts/proof/generate_playwright_state.sh | awk '{print $1}')
+else
+  GENERATOR_HASH="<unavailable>"
+fi
+
+# Create provenance JSON
+{
+  cat << PROVENANCE_EOF
+{
+  "marker": "FT_PLAYWRIGHT_STATE_PROVENANCE_V1",
+  "createdUtc": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+  "jiraBaseUrlOrigin": "$JIRA_ORIGIN",
+  "stateSha256": "$STATE_HASH",
+  "generatorScriptSha256": "$GENERATOR_HASH",
+  "gitHead": "$GIT_HEAD"
+}
+PROVENANCE_EOF
+} > "$STATE_PROVENANCE_PATH"
+
+echo -e "${GREEN}✓${NC} Provenance file created: $STATE_PROVENANCE_PATH"
+echo ""
+
+# Verify provenance
+if [[ -f "$STATE_PROVENANCE_PATH" ]]; then
+  echo "Provenance contents:"
+  cat "$STATE_PROVENANCE_PATH"
+  echo ""
+else
+  echo -e "${RED}ERROR: Failed to create provenance file${NC}"
+  exit 1
+fi
+
+echo ""
+
 # === STEP 8: Security reminder ===
 print_section "Step 8: Security Reminder"
 
@@ -311,8 +387,8 @@ fi
 
 echo ""
 
-# === STEP 10: Evidence summary ===
-print_section "Step 10: Generation Evidence (Non-Truncated)"
+# === STEP 10: Enterprise Proof Marker ===
+print_section "Step 10: Generation Complete (Enterprise Proof)"
 
 echo "✅ State generation completed successfully"
 echo ""
@@ -321,6 +397,8 @@ echo "  State file path: $STATE_PATH"
 echo "  File size: $STATE_SIZE bytes"
 echo "  SHA256: $STATE_HASH"
 echo "  Timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+echo ""
+echo "[FT_PLAYWRIGHT_STATE_GENERATED]"
 echo ""
 echo "Next steps:"
 echo "  1. Securely store this state.json (do not commit to git)"
