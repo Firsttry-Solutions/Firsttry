@@ -103,6 +103,45 @@ print_section() {
 # === MAIN ===
 print_header
 
+# === Trap Ctrl+C and SIGTERM for graceful interrupt handling ===
+on_interrupt() {
+  local exit_code=$?
+  echo ""
+  print_section "INTERRUPTED: Ctrl+C/SIGTERM Detected"
+  
+  # Write interrupt evidence (no timestamps, deterministic)
+  local interrupt_reason='{
+  "reasonCode": "RUNNER_INTERRUPTED",
+  "step": "PLAYWRIGHT_EXEC"
+}'
+  
+  if [[ -n "${OUT_DIR:-}" && -d "$OUT_DIR" ]]; then
+    echo "$interrupt_reason" > "$OUT_DIR/runner-interrupt-reason.json"
+    echo "Interrupt evidence written: $OUT_DIR/runner-interrupt-reason.json"
+  fi
+  
+  echo "Interrupt details:"
+  echo "  - Occurred during Playwright execution"
+  echo "  - Evidence saved to: ${OUT_DIR:-not available}"
+  echo ""
+  
+  # Print available logs if OUT_DIR exists
+  if [[ -n "${OUT_DIR:-}" && -d "$OUT_DIR" ]]; then
+    echo "Logs available:"
+    if [[ -f "$OUT_DIR/playwright.stderr.log" ]]; then
+      echo "  - stderr: $OUT_DIR/playwright.stderr.log"
+    fi
+    if [[ -f "$OUT_DIR/playwright.stdout.log" ]]; then
+      echo "  - stdout: $OUT_DIR/playwright.stdout.log"
+    fi
+  fi
+  echo ""
+  
+  exit 130
+}
+
+trap on_interrupt INT TERM
+
 # === STEP 1: Validate REQUIRED env vars ===
 print_section "Step 1: Validate Required Environment Variables"
 REQUIRED_VARS=("JIRA_BASE_URL" "JIRA_EMAIL" "JIRA_PASSWORD")
@@ -257,13 +296,32 @@ for var in $FOUND_VARS; do
 done
 echo ""
 
+# === STEP 3b: Timeout configuration ===
+print_section "Step 3b: Timeout Configuration"
+
+FT_PLAYWRIGHT_TIMEOUT_SECONDS="${FT_PLAYWRIGHT_TIMEOUT_SECONDS:-240}"
+echo "Playwright timeout: ${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s"
+
+if command -v timeout &> /dev/null; then
+  echo -e "${GREEN}✓${NC} timeout command available (will enforce hard limit)"
+else
+  echo -e "${RED}ERROR: timeout command not found on system${NC}"
+  echo "Cannot guarantee deterministic failure on hangs - exiting fail-closed."
+  echo ""
+  exit 2
+fi
+echo ""
+
 # === STEP 4: Create OUT_DIR early (fail-closed) ===
 print_section "Step 4: Create Output Directory"
 
 # Create deterministic OUT_DIR with UTC-based timestamp (NO seconds variation)
-OUT_DIR="/tmp/pw_dash_diag_$(date -u +%Y-%m-%dT%H%M%SZ)"
-mkdir -p "$OUT_DIR"
-export OUT_DIR
+OUT_DIR_VALUE="/tmp/pw_dash_diag_$(date -u +%Y-%m-%dT%H%M%SZ)"
+mkdir -p "$OUT_DIR_VALUE"
+
+# Force override any caller-provided OUT_DIR to avoid evidence going elsewhere
+unset OUT_DIR || true
+export OUT_DIR="$OUT_DIR_VALUE"
 
 echo "Output directory: $OUT_DIR"
 echo ""
@@ -306,16 +364,66 @@ if [[ "$FT_PLAYWRIGHT_MODE" == "headed" && -z "${DISPLAY:-}" ]]; then
   echo "Using xvfb-run (virtual display server for headless containers)"
   echo ""
   set +e
-  xvfb-run -a npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts > "$PW_STDOUT" 2> "$PW_STDERR"
+  timeout --preserve-status "${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s" xvfb-run -a npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts > "$PW_STDOUT" 2> "$PW_STDERR"
   PW_EXIT=$?
   set -e
 else
-  echo "Executing: npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts"
+  echo "Executing: timeout ${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts"
   echo ""
   set +e
-  npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts > "$PW_STDOUT" 2> "$PW_STDERR"
+  timeout --preserve-status "${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s" \
+    env OUT_DIR="$OUT_DIR" \
+    JIRA_BASE_URL="$JIRA_BASE_URL" \
+    npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts > "$PW_STDOUT" 2> "$PW_STDERR"
   PW_EXIT=$?
   set -e
+fi
+
+# === Check for timeout signal (exit code 124 = timeout) ===
+if [[ $PW_EXIT -eq 124 ]]; then
+  print_section "Step 6a: Timeout Occurred"
+  
+  # Write timeout evidence (no timestamps, deterministic)
+  local timeout_reason='{
+  "reasonCode": "RUNNER_TIMEOUT",
+  "timeoutSeconds": '"${FT_PLAYWRIGHT_TIMEOUT_SECONDS}"',
+  "step": "PLAYWRIGHT_EXEC"
+}'
+  echo "$timeout_reason" > "$OUT_DIR/runner-timeout-reason.json"
+  echo "Timeout evidence written: $OUT_DIR/runner-timeout-reason.json"
+  echo ""
+  
+  echo -e "${RED}Playwright test exceeded ${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s timeout${NC}"
+  echo ""
+  
+  # Print failure excerpt from logs
+  print_section "Step 6b: Timeout Failure Excerpt"
+  
+  STDOUT_SIZE=$(wc -c < "$PW_STDOUT" 2>/dev/null || echo "0")
+  STDERR_SIZE=$(wc -c < "$PW_STDERR" 2>/dev/null || echo "0")
+  
+  echo "Output file sizes:"
+  echo "  stdout: $STDOUT_SIZE bytes"
+  echo "  stderr: $STDERR_SIZE bytes"
+  echo ""
+  
+  if [[ $STDERR_SIZE -gt 0 ]] && [[ -s "$PW_STDERR" ]]; then
+    echo "Last 80 lines from stderr (timeout context):"
+    tail -80 "$PW_STDERR" | sanitize_output | sed 's/^/  /'
+  elif [[ $STDOUT_SIZE -gt 0 ]] && [[ -s "$PW_STDOUT" ]]; then
+    echo "Last 80 lines from stdout (timeout context):"
+    tail -80 "$PW_STDOUT" | sanitize_output | sed 's/^/  /'
+  else
+    echo "No output captured (likely killed before any output)"
+  fi
+  echo ""
+  
+  echo "Full logs available:"
+  echo "  stdout: $PW_STDOUT"
+  echo "  stderr: $PW_STDERR"
+  echo ""
+  
+  exit 124
 fi
 
 # === STEP 7: Handle Playwright exit ===
