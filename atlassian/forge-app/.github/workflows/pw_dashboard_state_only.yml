@@ -42,6 +42,12 @@ jobs:
           cd atlassian/forge-app
           npx playwright install --with-deps
 
+      - name: Pre-flight guard (no tracked state.json)
+        run: |
+          cd atlassian/forge-app
+          export FT_GUARD_PHASE="pre"
+          bash scripts/proof/guard_no_auth_state_leak.sh
+
       - name: Install auth state from CI secret
         env:
           FT_AUTH_STATE_JSON_B64: ${{ secrets.FT_AUTH_STATE_JSON_B64 }}
@@ -94,6 +100,13 @@ jobs:
               cat "$INSTALL_DIR/state-install-result.json"
             fi
           fi
+
+      - name: Post-flight guard (no leaked state in artifacts)
+        if: always()
+        run: |
+          cd atlassian/forge-app
+          export FT_GUARD_PHASE="post"
+          bash scripts/proof/guard_no_auth_state_leak.sh
 
       - name: Upload test artifacts
         if: always()

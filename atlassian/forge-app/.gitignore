@@ -14,6 +14,7 @@ proof_run_basic.sh
 e2e/.auth/
 # Playwright auth state (local only, not tracked)
 tests/playwright/.auth/state.json
+tests/playwright/.auth/*.json
 # Backbone fix proof documents (for cleanup/evidence only, not tracked)
 BACKBONE_SNAPSHOT_FIX_COMPLETE.md# Playwright test artifacts (deterministic proofs)
 test-results/
