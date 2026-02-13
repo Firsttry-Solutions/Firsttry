@@ -1,0 +1,107 @@
+name: Playwright Dashboard State-Only Proof Gate
+
+# Deterministic CI proof gate for SSO tenants using cached auth state.
+# Why state-only is required: SSO/MFA/CAPTCHA blocks headless automation.
+# Why interactive is banned: Would fail on login, making CI unreliable.
+# This workflow ONLY runs if state.json is provided via CI secret.
+
+on:
+  workflow_dispatch:
+    inputs:
+      jira_base_url:
+        description: "JIRA_BASE_URL (default: https://firsttry.atlassian.net/)"
+        required: false
+        default: "https://firsttry.atlassian.net/"
+      jira_dashboard_url:
+        description: "JIRA_DASHBOARD_URL (default: https://firsttry.atlassian.net/jira/dashboards/10102)"
+        required: false
+        default: "https://firsttry.atlassian.net/jira/dashboards/10102"
+
+jobs:
+  pw-dashboard-state-only:
+    name: Playwright Dashboard (State-Only Mode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install npm dependencies
+        run: |
+          cd atlassian/forge-app
+          npm ci
+
+      - name: Install Playwright with dependencies
+        run: |
+          cd atlassian/forge-app
+          npx playwright install --with-deps
+
+      - name: Install auth state from CI secret
+        env:
+          FT_AUTH_STATE_JSON_B64: ${{ secrets.FT_AUTH_STATE_JSON_B64 }}
+        run: |
+          cd atlassian/forge-app
+          bash scripts/proof/install_state_from_env.sh
+
+      - name: Run Playwright Dashboard (State-Only)
+        env:
+          JIRA_BASE_URL: ${{ inputs.jira_base_url || 'https://firsttry.atlassian.net/' }}
+          JIRA_DASHBOARD_URL: ${{ inputs.jira_dashboard_url || 'https://firsttry.atlassian.net/jira/dashboards/10102' }}
+          FT_AUTH_MODE: state-only
+          FT_PLAYWRIGHT_TIMEOUT_SECONDS: "180"
+        run: |
+          cd atlassian/forge-app
+          bash scripts/proof/run_dashboard_playwright.sh
+          echo "EXIT=$?"
+
+      - name: Collect evidence on success
+        if: success()
+        run: |
+          OUT_DIR=$(ls -1dt /tmp/pw_dash_diag_* 2>/dev/null | head -1)
+          if [ -d "$OUT_DIR" ]; then
+            echo "OUT_DIR=$OUT_DIR"
+            ls -la "$OUT_DIR" | head -50
+            if [ -f "$OUT_DIR/auth-failure-reason.json" ]; then
+              echo "⚠️  Found auth-failure-reason.json (unexpected on success path)"
+              cat "$OUT_DIR/auth-failure-reason.json"
+            fi
+          fi
+
+      - name: Collect evidence on failure
+        if: failure()
+        run: |
+          OUT_DIR=$(ls -1dt /tmp/pw_dash_diag_* 2>/dev/null | head -1)
+          if [ -d "$OUT_DIR" ]; then
+            echo "OUT_DIR=$OUT_DIR"
+            ls -la "$OUT_DIR"
+            echo "=== Playwright logs ==="
+            find "$OUT_DIR" -name "*.log" -exec cat {} \;
+            if [ -f "$OUT_DIR/auth-failure-reason.json" ]; then
+              echo "=== Auth failure reason ==="
+              cat "$OUT_DIR/auth-failure-reason.json"
+            fi
+          fi
+          INSTALL_DIR=$(ls -1dt /tmp/pw_state_install_* 2>/dev/null | head -1)
+          if [ -d "$INSTALL_DIR" ]; then
+            echo "INSTALL_DIR=$INSTALL_DIR"
+            if [ -f "$INSTALL_DIR/state-install-result.json" ]; then
+              cat "$INSTALL_DIR/state-install-result.json"
+            fi
+          fi
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-state-only-artifacts
+          path: |
+            /tmp/pw_dash_diag_*
+            /tmp/pw_state_install_*
+            /tmp/pw_state_bootstrap_*
+          retention-days: 7
