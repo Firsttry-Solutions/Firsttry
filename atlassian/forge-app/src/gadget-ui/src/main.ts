@@ -3361,16 +3361,20 @@ async function proceedWithBoot() {
               try {
                 ensureCorrelationId();
                 
-                // EMIT [PHASE1_EXPORT_INVOKE] marker BEFORE resolver call (deterministic proof of real export invoke)
+                // === BIND RESOLVER KEY: Use const so marker and invoke are mechanically identical ===
+                const exportResolverKey = 'ft_getDashboardState_v1';
+                const exportActionType = 'EXPORT_PHASE1_PACK';
+                
+                // EMIT [PHASE1_EXPORT_INVOKE] marker BEFORE resolver call (tied to real invoke key/action)
                 console.log('[PHASE1_EXPORT_INVOKE]', JSON.stringify({
                   snapshotId: snapshotIdNormalized,
-                  resolver: 'ft_getDashboardState_v1',
-                  action: 'EXPORT_PHASE1_PACK',
+                  resolver: exportResolverKey,
+                  action: exportActionType,
                 }));
                 
-                // INVOKE RESOLVER with snapshotId parameter (resolver is authoritative for export)
-                const result = await invokeWithUiReqId('ft_getDashboardState_v1', {
-                  action: 'EXPORT_PHASE1_PACK',
+                // INVOKE RESOLVER with SAME KEY and ACTION (non-lying, mechanically verified)
+                const result = await invokeWithUiReqId(exportResolverKey, {
+                  action: exportActionType,
                   snapshotId: snapshotIdNormalized,
                 });
 
