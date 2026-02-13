@@ -1,10 +1,21 @@
 #!/bin/bash
 # Deterministic Playwright Proof Runner (Reviewer-Grade)
+# Non-Bypassable Guardrail Runner: pre-guard → cleanup → playwright → post-guard (always)
 # Fail-closed: validates required env vars (incl auth), origin binding, headed/headless modes
 # No secret leaks: PASSWORD/TOKEN/SECRET/KEY vars masked, JIRA_EMAIL masked
 # Exit codes: 0 = success, 1 = env/validation failure, 2 = other error
+# GUARDRAIL CONTRACT: PRE_GUARD and POST_GUARD ALWAYS run; cleanup always executes; exit code reflects primary failure
 
 set -euo pipefail
+IFS=$'\n\t'
+umask 077
+
+# === EXIT CODE TRACKING (NON-BYPASSABLE TRAP INFRASTRUCTURE) ===
+RUNNER_EXIT=0
+PLAYWRIGHT_EXIT=0
+POST_GUARD_EXIT=0
+PRE_GUARD_EXIT=0
+CLEANUP_EXIT=0
 
 # === COLOR OUTPUT ===
 RED='\033[0;31m'
@@ -103,44 +114,87 @@ print_section() {
 # === MAIN ===
 print_header
 
-# === Trap Ctrl+C and SIGTERM for graceful interrupt handling ===
-on_interrupt() {
-  local exit_code=$?
+# === TRAP INFRASTRUCTURE: Non-bypassable cleanup and post-guard (ALWAYS runs) ===
+
+# cleanup_and_postguard: Executes state cleanup and post-guard verification
+# MUST run on any exit: success, failure, timeout, CTRL-C
+cleanup_and_postguard() {
+  local trap_exit_code=$?
+  RUNNER_EXIT=$trap_exit_code
+  
+  # === DEFENSE-IN-DEPTH: Delete state file ===
+  rm -f tests/playwright/.auth/state.json 2>/dev/null || true
+  CLEANUP_EXIT=$?
+  
+  # === POST-GUARD: Always runs, even if cleanup failed ===
   echo ""
-  print_section "INTERRUPTED: Ctrl+C/SIGTERM Detected"
+  print_section "Step X: Post-Guard Auth-State Safety Check (ON EXIT)"
   
-  # Write interrupt evidence (no timestamps, deterministic)
-  local interrupt_reason='{
-  "reasonCode": "RUNNER_INTERRUPTED",
-  "step": "PLAYWRIGHT_EXEC"
-}'
+  export FT_GUARD_PHASE="post"
+  export FT_GUARD_EXPECT_STATE_CLEANUP=1
+  bash scripts/proof/guard_no_auth_state_leak.sh >/dev/null 2>&1
+  POST_GUARD_EXIT=$?
   
-  if [[ -n "${OUT_DIR:-}" && -d "$OUT_DIR" ]]; then
-    echo "$interrupt_reason" > "$OUT_DIR/runner-interrupt-reason.json"
-    echo "Interrupt evidence written: $OUT_DIR/runner-interrupt-reason.json"
+  # Get guard evidence directory
+  local guard_dir_post=$(ls -1dt /tmp/pw_state_guard_* 2>/dev/null | head -1)
+  if [[ -z "$guard_dir_post" ]] || [[ ! -f "$guard_dir_post/state-guard-result.json" ]]; then
+    echo "[ERROR] Post-guard evidence file not created"
+    POST_GUARD_EXIT=1
+  else
+    echo "[GUARD] POST_GUARD_DIR=$guard_dir_post"
+    if [[ $POST_GUARD_EXIT -eq 0 ]]; then
+      echo -e "${GREEN}✓${NC} Post-guard passed"
+    else
+      echo -e "${RED}✗${NC} Post-guard failed (exit $POST_GUARD_EXIT)"
+    fi
   fi
   
-  echo "Interrupt details:"
-  echo "  - Occurred during Playwright execution"
-  echo "  - Evidence saved to: ${OUT_DIR:-not available}"
   echo ""
   
-  # Print available logs if OUT_DIR exists
-  if [[ -n "${OUT_DIR:-}" && -d "$OUT_DIR" ]]; then
-    echo "Logs available:"
-    if [[ -f "$OUT_DIR/playwright.stderr.log" ]]; then
-      echo "  - stderr: $OUT_DIR/playwright.stderr.log"
-    fi
-    if [[ -f "$OUT_DIR/playwright.stdout.log" ]]; then
-      echo "  - stdout: $OUT_DIR/playwright.stdout.log"
-    fi
-  fi
-  echo ""
-  
-  exit 130
+  # Return 0 to avoid trap recursion; exit_final() will handle actual exit
+  return 0
 }
 
-trap on_interrupt INT TERM
+# exit_final: Determines final exit code with strict priority
+# Priority (highest to lowest):
+#   1. PRE_GUARD_EXIT (pre-guard must pass before Playwright runs)
+#   2. PLAYWRIGHT_EXIT (Playwright failure is primary outcome)
+#   3. CLEANUP_EXIT (should be 0; non-zero is unexpected)
+#   4. POST_GUARD_EXIT (post-guard is defense-in-depth)
+#   5. RUNNER_EXIT (general exit code)
+exit_final() {
+  local final_exit=0
+  
+  if [[ $PRE_GUARD_EXIT -ne 0 ]]; then
+    final_exit=$PRE_GUARD_EXIT
+    echo "[EXIT] PRE_GUARD_EXIT=$PRE_GUARD_EXIT (blocking Playwright execution)"
+  elif [[ $PLAYWRIGHT_EXIT -ne 0 ]]; then
+    final_exit=$PLAYWRIGHT_EXIT
+    echo "[EXIT] PLAYWRIGHT_EXIT=$PLAYWRIGHT_EXIT (primary test failure)"
+  elif [[ $CLEANUP_EXIT -ne 0 ]]; then
+    final_exit=$CLEANUP_EXIT
+    echo "[EXIT] CLEANUP_EXIT=$CLEANUP_EXIT (unexpected cleanup failure)"
+  elif [[ $POST_GUARD_EXIT -ne 0 ]]; then
+    final_exit=$POST_GUARD_EXIT
+    echo "[EXIT] POST_GUARD_EXIT=$POST_GUARD_EXIT (defense-in-depth guard failure)"
+  else
+    final_exit=$RUNNER_EXIT
+    if [[ $RUNNER_EXIT -eq 0 ]]; then
+      echo "[EXIT] All gates passed (exit 0)"
+    else
+      echo "[EXIT] RUNNER_EXIT=$RUNNER_EXIT"
+    fi
+  fi
+  
+  exit $final_exit
+}
+
+# === TRAP: Handle EXIT, INT, TERM ===
+trap 'cleanup_and_postguard; exit_final' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# === TRAP: Interrupt handler for explicit messaging ===
 
 # === STEP 1: Validate REQUIRED env vars ===
 print_section "Step 1: Validate Required Environment Variables"
@@ -331,15 +385,28 @@ echo ""
 # ============================================================================
 print_section "Step 4b: Pre-Guard Auth-State Safety Check"
 
-# Run pre-guard and capture its directory
-FT_GUARD_PHASE="pre" bash scripts/proof/guard_no_auth_state_leak.sh || {
-  echo "[ERROR] Pre-guard failed: auth-state safety check violated"
-  exit 1
-}
+export FT_GUARD_PHASE="pre"
+unset FT_GUARD_EXPECT_STATE_CLEANUP
+bash scripts/proof/guard_no_auth_state_leak.sh >/dev/null 2>&1
+PRE_GUARD_EXIT=$?
+
+if [[ $PRE_GUARD_EXIT -ne 0 ]]; then
+  echo "[ERROR] PRE_GUARD_EXIT=$PRE_GUARD_EXIT (auth-state safety check violated)"
+  GUARD_DIR_PRE=$(ls -1dt /tmp/pw_state_guard_* 2>/dev/null | head -1 || true)
+  if [[ -n "$GUARD_DIR_PRE" ]] && [[ -f "$GUARD_DIR_PRE/state-guard-result.json" ]]; then
+    echo "[GUARD] PRE_GUARD_DIR=$GUARD_DIR_PRE"
+    echo "Evidence:"
+    cat "$GUARD_DIR_PRE/state-guard-result.json" | sed 's/^/  /'
+  fi
+  echo ""
+  # Exit immediately; trap will still run post-guard
+  exit $PRE_GUARD_EXIT
+fi
 
 GUARD_DIR_PRE=$(ls -1dt /tmp/pw_state_guard_* 2>/dev/null | head -1)
 if [[ -z "$GUARD_DIR_PRE" ]] || [[ ! -f "$GUARD_DIR_PRE/state-guard-result.json" ]]; then
-  echo "[ERROR] Pre-guard evidence file not created"
+  echo "[ERROR] PRE_GUARD_EXIT=0 but evidence file not created"
+  PRE_GUARD_EXIT=1
   exit 1
 fi
 
@@ -449,7 +516,7 @@ if [[ "$FT_PLAYWRIGHT_MODE" == "headed" && -z "${DISPLAY:-}" ]]; then
   echo ""
   set +e
   timeout --preserve-status "${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s" xvfb-run -a npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts > "$PW_STDOUT" 2> "$PW_STDERR"
-  PW_EXIT=$?
+  PLAYWRIGHT_EXIT=$?
   set -e
 else
   echo "Executing: timeout ${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts"
@@ -459,7 +526,7 @@ else
     env OUT_DIR="$OUT_DIR" \
     JIRA_BASE_URL="$JIRA_BASE_URL" \
     npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts > "$PW_STDOUT" 2> "$PW_STDERR"
-  PW_EXIT=$?
+  PLAYWRIGHT_EXIT=$?
   set -e
 fi
 
@@ -467,17 +534,17 @@ fi
 # 124 = timeout standard
 # 137 = killed (SIGKILL)
 # 143 = SIGTERM (what we observe with timeout --preserve-status)
-if [[ $PW_EXIT -eq 124 || $PW_EXIT -eq 137 || $PW_EXIT -eq 143 ]]; then
-  print_section "Step 6a: Timeout Occurred (Exit Code: $PW_EXIT)"
+if [[ $PLAYWRIGHT_EXIT -eq 124 || $PLAYWRIGHT_EXIT -eq 137 || $PLAYWRIGHT_EXIT -eq 143 ]]; then
+  print_section "Step 6a: Timeout Occurred (Exit Code: $PLAYWRIGHT_EXIT)"
   
   # Write timeout evidence (no timestamps, deterministic, preserves exit code)
   # Key ordering: reasonCode, timeoutSeconds, exitCode, step (stable)
-  timeout_reason="{\"reasonCode\":\"RUNNER_TIMEOUT\",\"timeoutSeconds\":${FT_PLAYWRIGHT_TIMEOUT_SECONDS},\"exitCode\":${PW_EXIT},\"step\":\"PLAYWRIGHT_EXEC\"}"
+  timeout_reason="{\"reasonCode\":\"RUNNER_TIMEOUT\",\"timeoutSeconds\":${FT_PLAYWRIGHT_TIMEOUT_SECONDS},\"exitCode\":${PLAYWRIGHT_EXIT},\"step\":\"PLAYWRIGHT_EXEC\"}"
   echo "$timeout_reason" > "$OUT_DIR/runner-timeout-reason.json"
   echo "Timeout evidence written: $OUT_DIR/runner-timeout-reason.json"
   echo ""
   
-  echo -e "${RED}Playwright test exceeded ${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s timeout (exit code $PW_EXIT)${NC}"
+  echo -e "${RED}Playwright test exceeded ${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s timeout (exit code $PLAYWRIGHT_EXIT)${NC}"
   echo ""
   
   # Print failure excerpt from logs
@@ -520,13 +587,13 @@ fi
 # === STEP 7: Handle Playwright exit ===
 print_section "Step 7: Playwright Test Result"
 
-if [[ $PW_EXIT -eq 0 ]]; then
+if [[ $PLAYWRIGHT_EXIT -eq 0 ]]; then
   echo -e "${GREEN}✓${NC} Playwright test completed successfully"
   echo ""
   echo "First 40 lines of stdout:"
   head -40 "$PW_STDOUT" | sed 's/^/  /'
 else
-  echo -e "${RED}✗${NC} Playwright test exited with code $PW_EXIT"
+  echo -e "${RED}✗${NC} Playwright test exited with code $PLAYWRIGHT_EXIT"
   echo ""
   
   # === STEP 7a: Print Failure Excerpt (deterministic, non-empty) ===
@@ -557,7 +624,7 @@ else
     echo "Command run: npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts"
     echo "Output dir:  $OUT_DIR"
     echo ""
-    exit $PW_EXIT
+    exit $PLAYWRIGHT_EXIT
   fi
   
   echo "Using ${CHOSEN_LABEL} (has content)"
@@ -613,7 +680,7 @@ else
     fi
   fi
   
-  exit $PW_EXIT
+  exit $PLAYWRIGHT_EXIT
 fi
 echo ""
 
