@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 // === FAIL-CLOSED ENV VALIDATION: Format-based, no tenant-lock ===
 // Required env vars (must be set before playwright config loads)
-const REQUIRED_VARS = ['JIRA_BASE_URL'];
+const REQUIRED_VARS = ['JIRA_BASE_URL', 'JIRA_EMAIL', 'JIRA_PASSWORD'];
 
 // === VALIDATION GATE: Check required vars and validate URL format ===
 function validateRequiredEnvVars(): void {
@@ -26,14 +26,10 @@ function validateRequiredEnvVars(): void {
       '',
       ...missing.map(v => `  - ${v} (REQUIRED)`),
       '',
-      'Example export commands:',
-      '',
-      ...missing.map(v => `  export ${v}="<SET_YOUR_VALUE>"`),
-      '',
-      'JIRA_BASE_URL must be: a valid HTTPS URL (e.g., https://your-tenant.atlassian.net)',
-      '',
       'To run deterministically:',
       '  export JIRA_BASE_URL="https://your-tenant.atlassian.net"',
+      '  export JIRA_EMAIL="your-email@example.com"',
+      '  export JIRA_PASSWORD="your-password"',
       '  export JIRA_DASHBOARD_URL="https://your-tenant.atlassian.net/jira/dashboards/XXXXX"  # optional',
       '  npm run dashboard:playwright:proof',
       '',
