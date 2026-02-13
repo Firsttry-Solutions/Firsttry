@@ -332,6 +332,90 @@ If multiple signals are present (e.g., SSO buttons AND MFA challenge), the first
 
 ---
 
+## TEST 6: PASS Path — State-Only with Valid Cached State (Enterprise SSO)
+
+**Objective:** Verify the success case on SSO tenants: when `FT_AUTH_MODE=state-only` and a valid `state.json` exists, dashboard proof succeeds (exit 0, no auth errors).
+
+**Why this test matters:** Enterprise SSO tenants cannot use interactive login in automation (bot-guard blocks headless). The only viable CI path is state-only reuse. This test validates that path works end-to-end.
+
+**Precondition:**
+- A valid `tests/playwright/.auth/state.json` must exist. To generate it:
+  ```bash
+  cd /workspaces/Firsttry/atlassian/forge-app
+  bash scripts/proof/bootstrap_auth_state_headed.sh
+  ```
+  (Follow on-screen prompts to complete login in headed browser.)
+- The generated state should be < 1 week old (token lifetime varies by Jira instance).
+
+**Test Steps:**
+```bash
+export JIRA_BASE_URL="https://firsttry.atlassian.net"
+export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
+export FT_AUTH_MODE="state-only"
+export FT_PLAYWRIGHT_TIMEOUT_SECONDS=180
+unset FT_PLAYWRIGHT_MODE
+
+# Verify state exists
+if [ ! -f tests/playwright/.auth/state.json ]; then
+  echo "ERROR: No state.json found. Run bootstrap_auth_state_headed.sh first."
+  exit 1
+fi
+
+echo "Running dashboard proof with cached state..."
+cd /workspaces/Firsttry/atlassian/forge-app
+bash scripts/proof/run_dashboard_playwright.sh
+DASHBOARD_EXIT=$?
+echo "EXIT=$DASHBOARD_EXIT"
+
+# Retrieve test output
+OUT_DIR=$(ls -1dt /tmp/pw_dash_diag_* 2>/dev/null | head -1)
+echo "OUT_DIR=$OUT_DIR"
+
+# Examine results
+if [ -d "$OUT_DIR" ]; then
+  ls -la "$OUT_DIR" | sed -n '1,50p'
+  
+  # On success, should NOT have auth-failure-reason.json
+  if [ -f "$OUT_DIR/auth-failure-reason.json" ]; then
+    echo "FAILURE: Unexpected auth-failure-reason.json found (expected success path)"
+    cat "$OUT_DIR/auth-failure-reason.json"
+    exit 1
+  fi
+fi
+```
+
+**Expected Results:**
+
+1. **Exit Code:** 0 (success, proof completed)
+2. **State Reuse:** Logs should include marker indicating state was reused:
+   - `[AUTH] ✓ AUTH_STATE_REUSED_OK - stored credentials are still valid`
+3. **No Auth Failure:**
+   - `$OUT_DIR/auth-failure-reason.json` must NOT exist
+   - If it exists, the state was invalid (likely expired)
+4. **Dashboard Proof:**
+   - Dashboard URL successfully fetched and parsed
+   - Evidence file exists showing successful snapshot with meaningful data
+
+**Failure Scenarios & Troubleshooting:**
+
+| Symptom | Reason | Fix |
+|---------|--------|-----|
+| Exit 1, `AUTH_STATE_REQUIRED` | state.json missing | Run bootstrap_auth_state_headed.sh |
+| Exit 1, `AUTH_STATE_REUSE_FAILED` (status != 200 in evidence) | State expired or invalid token | Re-bootstrap with fresh login |
+| Exit 1, `MFA_REQUIRED` in evidence | State exists but bot-guard reappeared | Re-bootstrap; token may be stale |
+| Exit 124 | Timeout > 180s | Check network connectivity or Jira instance health |
+| Exit 0 but `auth-failure-reason.json` present | Contradictory success/failure | Manual inspection of evidence needed |
+
+**Enterprise SSO Note:**
+This test validates the recommended production flow for SSO tenants:
+- **Local**: One-time headed bootstrap to generate state.json (don human completes MFA/SSO once)
+- **CI**: Use state-only mode with base64-encoded state from GitHub secret
+- **Advantage**: Unblocked by bot-guard; deterministic (no login automation fail points)
+
+For CI automation, see `.github/workflows/pw_dashboard_state_only.yml` and `README_AUTH_STATE.md` for state injection via secrets.
+
+---
+
 ## Success Criteria Summary
 
 | Test | Criteria |
@@ -339,7 +423,7 @@ If multiple signals are present (e.g., SSO buttons AND MFA challenge), the first
 | STATE-ONLY (no state) | Exit 1, ~10-30s, AUTH_STATE_REQUIRED in evidence |
 | STATE-FIRST (MFA/bot) | Exit 1, ~10-25s, [FAIL-FAST] marker, authMode=state-first |
 | INTERACTIVE (MFA/bot) | Exit 1, ~5-25s, [FAIL-FAST] marker, authMode=interactive |
-| STATE REUSE | Exit 0, <15s, no failure evidence |
+| **STATE REUSE (PASS)** | **Exit 0, <15s, state reused, no failure evidence** |
 
 ---
 
