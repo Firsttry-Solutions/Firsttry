@@ -3337,11 +3337,16 @@ async function proceedWithBoot() {
             exportAccessButton.title = `Export disabled: ${reason}`;
             exportAccessButton.setAttribute('aria-disabled', 'true');
             
-            // Prevent click from invoking resolver
+            // EMIT [PHASE1_EXPORT_BLOCKED_RENDERED] marker at render time (reliable, not click-dependent)
+            console.log('[PHASE1_EXPORT_BLOCKED_RENDERED]', JSON.stringify({
+              snapshotId: snapshotIdNormalized,
+              reasonCode,
+            }));
+            
+            // Prevent click from invoking resolver if button somehow becomes clickable
             exportAccessButton.addEventListener('click', (e) => {
               e.preventDefault();
               e.stopPropagation();
-              // EMIT [PHASE1_EXPORT_BLOCKED] marker (deterministic)
               console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify({
                 snapshotId: snapshotIdNormalized,
                 reasonCode,
@@ -3356,13 +3361,14 @@ async function proceedWithBoot() {
               try {
                 ensureCorrelationId();
                 
-                // EMIT [PHASE1_EXPORT_INVOKE] marker BEFORE resolver call (deterministic proof)
+                // EMIT [PHASE1_EXPORT_INVOKE] marker BEFORE resolver call (deterministic proof of real export invoke)
                 console.log('[PHASE1_EXPORT_INVOKE]', JSON.stringify({
                   snapshotId: snapshotIdNormalized,
                   resolver: 'ft_getDashboardState_v1',
+                  action: 'EXPORT_PHASE1_PACK',
                 }));
                 
-                // INVOKE RESOLVER with snapshotId parameter (resolver is authoritative)
+                // INVOKE RESOLVER with snapshotId parameter (resolver is authoritative for export)
                 const result = await invokeWithUiReqId('ft_getDashboardState_v1', {
                   action: 'EXPORT_PHASE1_PACK',
                   snapshotId: snapshotIdNormalized,

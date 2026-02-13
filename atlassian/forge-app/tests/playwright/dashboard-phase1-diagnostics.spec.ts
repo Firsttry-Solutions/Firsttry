@@ -1072,13 +1072,17 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
         const invokeMarkers = consoleLines.filter(line =>
           line.includes('[PHASE1_EXPORT_INVOKE]')
         );
-        const blockedMarkers = consoleLines.filter(line =>
-          line.includes('[PHASE1_EXPORT_BLOCKED]')
+        const blockedRenderedMarkers = consoleLines.filter(line =>
+          line.includes('[PHASE1_EXPORT_BLOCKED_RENDERED]')
         );
+        const blockedClickMarkers = consoleLines.filter(line =>
+          line.includes('[PHASE1_EXPORT_BLOCKED]') && !line.includes('[PHASE1_EXPORT_BLOCKED_RENDERED]')
+        );
+        const allBlockedMarkers = blockedRenderedMarkers.concat(blockedClickMarkers);
         
         // Enforce deterministic evidence
-        let foundInvokeMarker = false;
-        let foundBlockedMarker = false;
+        let blockedCount = blockedRenderedMarkers.length;
+        let invokeCount = invokeMarkers.length;
         
         if (uiExportState.exportAllowed) {
           // Export allowed: MUST invoke exactly once
@@ -1088,50 +1092,60 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
           if (invokeMarkers.length > 1) {
             throw new Error(`PHASE1_EXPORT_INVOKE_MULTIPLE: exportAllowed=true but found ${invokeMarkers.length} invoke markers (expected 1)`);
           }
-          foundInvokeMarker = true;
           
-          // Parse invoke marker to validate structure
+          // Parse invoke marker to validate structure and action field
           const invokeJsonMatch = invokeMarkers[0].match(/\[PHASE1_EXPORT_INVOKE\]\s*(\{.+\})/);
           if (invokeJsonMatch && invokeJsonMatch[1]) {
             try {
               const invokeData = JSON.parse(invokeJsonMatch[1]);
-              if (!('snapshotId' in invokeData) || !('resolver' in invokeData)) {
-                throw new Error('PHASE1_EXPORT_INVOKE_INVALID: missing snapshotId or resolver field');
+              if (!('snapshotId' in invokeData) || !('resolver' in invokeData) || !('action' in invokeData)) {
+                throw new Error('PHASE1_EXPORT_INVOKE_INVALID: missing snapshotId, resolver, or action field');
+              }
+              if (invokeData.action !== 'EXPORT_PHASE1_PACK') {
+                throw new Error(`PHASE1_EXPORT_INVOKE_ACTION_WRONG: expected 'EXPORT_PHASE1_PACK', got '${invokeData.action}'`);
               }
             } catch (e) {
               throw new Error(`PHASE1_EXPORT_INVOKE_JSON_INVALID: ${e instanceof Error ? e.message : String(e)}`);
             }
           }
+          
+          // Verify no blocked markers when allowed
+          if (blockedRenderedMarkers.length > 0) {
+            throw new Error('PHASE1_EXPORT_BLOCKED_RENDERED_FOUND: exportAllowed=true but found blocked marker (contract violation)');
+          }
         } else {
-          // Export NOT allowed: MUST NOT invoke
+          // Export NOT allowed: MUST have blocked marker at render time
+          if (blockedRenderedMarkers.length === 0) {
+            throw new Error('PHASE1_EXPORT_BLOCKED_RENDERED_MISSING: exportAllowed=false but no render-time blocked marker found');
+          }
+          if (blockedRenderedMarkers.length > 1) {
+            throw new Error(`PHASE1_EXPORT_BLOCKED_RENDERED_MULTIPLE: found ${blockedRenderedMarkers.length} markers (expected 1)`);
+          }
+          
+          // Parse blocked marker to validate structure
+          const blockedJsonMatch = blockedRenderedMarkers[0].match(/\[PHASE1_EXPORT_BLOCKED_RENDERED\]\s*(\{.+\})/);
+          if (blockedJsonMatch && blockedJsonMatch[1]) {
+            try {
+              const blockedData = JSON.parse(blockedJsonMatch[1]);
+              if (!('snapshotId' in blockedData) || !('reasonCode' in blockedData)) {
+                throw new Error('PHASE1_EXPORT_BLOCKED_RENDERED_INVALID: missing snapshotId or reasonCode field');
+              }
+            } catch (e) {
+              throw new Error(`PHASE1_EXPORT_BLOCKED_RENDERED_JSON_INVALID: ${e instanceof Error ? e.message : String(e)}`);
+            }
+          }
+          
+          // Verify no invoke markers when blocked
           if (invokeMarkers.length > 0) {
             throw new Error(`PHASE1_EXPORT_INVOKE_FOUND: exportAllowed=false but found ${invokeMarkers.length} invoke marker(s) - UI gating bypass!`);
-          }
-          foundInvokeMarker = false;
-          
-          // Blocked marker may exist (but not required)
-          if (blockedMarkers.length > 0) {
-            foundBlockedMarker = true;
-            // Parse blocked marker to validate structure
-            const blockedJsonMatch = blockedMarkers[0].match(/\[PHASE1_EXPORT_BLOCKED\]\s*(\{.+\})/);
-            if (blockedJsonMatch && blockedJsonMatch[1]) {
-              try {
-                const blockedData = JSON.parse(blockedJsonMatch[1]);
-                if (!('snapshotId' in blockedData) || !('reasonCode' in blockedData)) {
-                  throw new Error('PHASE1_EXPORT_BLOCKED_INVALID: missing snapshotId or reasonCode field');
-                }
-              } catch (e) {
-                throw new Error(`PHASE1_EXPORT_BLOCKED_JSON_INVALID: ${e instanceof Error ? e.message : String(e)}`);
-              }
-            }
           }
         }
         
         // Write deterministic export invoke proof (no timestamps)
         const exportInvokeProof = {
           exportAllowed: uiExportState.exportAllowed,
-          foundInvokeMarker,
-          foundBlockedMarker,
+          blockedCount: blockedCount,
+          invokeCount: invokeCount,
           snapshotId: uiExportState.snapshotId,
           reasonCode: uiExportState.reasonCode,
         };
