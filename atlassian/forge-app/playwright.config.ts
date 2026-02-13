@@ -1,17 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// === FAIL-CLOSED ENV VALIDATION: Mechanically correct, deterministic ===
+// === FAIL-CLOSED ENV VALIDATION: Format-based, no tenant-lock ===
 // Required env vars (must be set before playwright config loads)
 const REQUIRED_VARS = ['JIRA_BASE_URL'];
 
-// Optional env vars (may be set for specific test behavior)
-const OPTIONAL_VARS = [
-  'JIRA_DASHBOARD_URL',  // Used in test (defaults to base URL + path if not set)
-  'FT_FORCE_FORGE_CONSOLE_ERROR',
-  'FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY',
-];
-
-// === VALIDATION GATE: List all env vars and fail if required ones missing ===
+// === VALIDATION GATE: Check required vars and validate URL format ===
 function validateRequiredEnvVars(): void {
   const missing: string[] = [];
   
@@ -37,9 +30,11 @@ function validateRequiredEnvVars(): void {
       '',
       ...missing.map(v => `  export ${v}="<SET_YOUR_VALUE>"`),
       '',
+      'JIRA_BASE_URL must be: a valid HTTPS URL (e.g., https://your-tenant.atlassian.net)',
+      '',
       'To run deterministically:',
-      '  export JIRA_BASE_URL="https://firsttry.atlassian.net"',
-      '  export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/XXXXX"',
+      '  export JIRA_BASE_URL="https://your-tenant.atlassian.net"',
+      '  export JIRA_DASHBOARD_URL="https://your-tenant.atlassian.net/jira/dashboards/XXXXX"  # optional',
       '  npm run dashboard:playwright:proof',
       '',
     ].join('\n');
@@ -48,20 +43,42 @@ function validateRequiredEnvVars(): void {
     process.exit(1);
   }
   
-  // Additional validation: JIRA_BASE_URL must be exact value
+  // Format validation: JIRA_BASE_URL must be valid HTTPS URL
   const baseUrl = process.env.JIRA_BASE_URL!;
-  const expectedBaseUrl = 'https://firsttry.atlassian.net';
-  if (baseUrl !== expectedBaseUrl) {
+  try {
+    const parsed = new URL(baseUrl);
+    
+    // Reject http:// (must be https://)
+    if (parsed.protocol !== 'https:') {
+      const errorBlock = [
+        '╔════════════════════════════════════════════════════════════════════════════╗',
+        '║              JIRA_BASE_URL VALIDATION FAILED                              ║',
+        '╚════════════════════════════════════════════════════════════════════════════╝',
+        '',
+        `Protocol Error: ${parsed.protocol}`,
+        'JIRA_BASE_URL must use HTTPS (not HTTP)',
+        '',
+        'Valid example:',
+        '  export JIRA_BASE_URL="https://your-tenant.atlassian.net"',
+        '',
+        'Invalid (rejected):',
+        '  export JIRA_BASE_URL="http://your-tenant.atlassian.net"  # ← HTTP not allowed',
+        '',
+      ].join('\n');
+      
+      console.error(errorBlock);
+      process.exit(1);
+    }
+  } catch (err) {
     const errorBlock = [
       '╔════════════════════════════════════════════════════════════════════════════╗',
       '║              JIRA_BASE_URL VALIDATION FAILED                              ║',
       '╚════════════════════════════════════════════════════════════════════════════╝',
       '',
-      `Expected: ${expectedBaseUrl}`,
-      `Got:      ${baseUrl}`,
+      `Invalid URL format: ${baseUrl}`,
       '',
-      'To fix, set the correct URL:',
-      `  export JIRA_BASE_URL="${expectedBaseUrl}"`,
+      'Valid example:',
+      '  export JIRA_BASE_URL="https://your-tenant.atlassian.net"',
       '',
     ].join('\n');
     
@@ -72,7 +89,10 @@ function validateRequiredEnvVars(): void {
 
 // Run validation at config load time (fail-closed)
 validateRequiredEnvVars();
-const baseUrl = process.env.JIRA_BASE_URL!;
+
+// Normalize JIRA_BASE_URL: remove trailing slash
+const rawBaseUrl = process.env.JIRA_BASE_URL!;
+const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
 
 export default defineConfig({
   testDir: './tests/playwright',

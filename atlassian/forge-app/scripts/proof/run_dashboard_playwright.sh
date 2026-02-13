@@ -70,17 +70,35 @@ if [[ ${#MISSING_VARS[@]} -gt 0 ]]; then
   done
   echo ""
   echo "Example export commands:"
-  echo '  export JIRA_BASE_URL="https://firsttry.atlassian.net"'
-  echo '  export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/XXXXX"'
+  echo '  export JIRA_BASE_URL="https://your-tenant.atlassian.net"'
   echo ""
   exit 1
 fi
 
-# === STEP 2: Show optional vars ===
-print_section "Step 2: Optional Environment Variables"
-OPTIONAL_VARS=("JIRA_DASHBOARD_URL" "FT_FORCE_FORGE_CONSOLE_ERROR" "FT_DETERMINISTIC_IFRAME_SRC_HASH_ONLY")
+# === STEP 1b: Normalize JIRA_BASE_URL (remove trailing slash) ===
+print_section "Step 1b: Normalize Base URL"
+RAW_BASE_URL="${JIRA_BASE_URL}"
+NORM_BASE_URL="${RAW_BASE_URL%/}"  # Remove trailing slash
 
-for var in "${OPTIONAL_VARS[@]}"; do
+echo "Raw value:        $RAW_BASE_URL"
+echo "Normalized value: $NORM_BASE_URL"
+echo ""
+echo "[ENV] JIRA_BASE_URL_NORM=$NORM_BASE_URL"
+echo ""
+
+# Export normalized value for Playwright
+export JIRA_BASE_URL="$NORM_BASE_URL"
+
+# === STEP 2: Show actually-used environment variables ===
+print_section "Step 2: Environment Variables Used by Tests"
+echo "Scanning playwright.config.ts and tests for process.env references..."
+echo ""
+
+# Dynamically discover env vars from grep (truthful, not hard-coded)
+FOUND_VARS=$(grep -RIhn "process\.env\." playwright.config.ts tests/playwright 2>/dev/null | sed 's/.*process\.env\.//' | sed 's/[^A-Z_0-9].*//' | sort | uniq)
+
+echo "Found environment variables:"
+for var in $FOUND_VARS; do
   if [[ -n "${!var:-}" ]]; then
     check_var "$var"
   else
@@ -88,8 +106,6 @@ for var in "${OPTIONAL_VARS[@]}"; do
   fi
 done
 
-echo ""
-echo "Note: JIRA_DASHBOARD_URL is optional (defaults to base URL if not set)"
 echo ""
 
 # === STEP 3: Clean stale directories (fail-closed) ===
