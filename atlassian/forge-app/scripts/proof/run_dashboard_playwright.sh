@@ -379,21 +379,21 @@ else
   set -e
 fi
 
-# === Check for timeout signal (exit code 124 = timeout) ===
-if [[ $PW_EXIT -eq 124 ]]; then
-  print_section "Step 6a: Timeout Occurred"
+# === Check for timeout-class exit codes (124, 137, 143) ===
+# 124 = timeout standard
+# 137 = killed (SIGKILL)
+# 143 = SIGTERM (what we observe with timeout --preserve-status)
+if [[ $PW_EXIT -eq 124 || $PW_EXIT -eq 137 || $PW_EXIT -eq 143 ]]; then
+  print_section "Step 6a: Timeout Occurred (Exit Code: $PW_EXIT)"
   
-  # Write timeout evidence (no timestamps, deterministic)
-  local timeout_reason='{
-  "reasonCode": "RUNNER_TIMEOUT",
-  "timeoutSeconds": '"${FT_PLAYWRIGHT_TIMEOUT_SECONDS}"',
-  "step": "PLAYWRIGHT_EXEC"
-}'
+  # Write timeout evidence (no timestamps, deterministic, preserves exit code)
+  # Key ordering: reasonCode, timeoutSeconds, exitCode, step (stable)
+  timeout_reason="{\"reasonCode\":\"RUNNER_TIMEOUT\",\"timeoutSeconds\":${FT_PLAYWRIGHT_TIMEOUT_SECONDS},\"exitCode\":${PW_EXIT},\"step\":\"PLAYWRIGHT_EXEC\"}"
   echo "$timeout_reason" > "$OUT_DIR/runner-timeout-reason.json"
   echo "Timeout evidence written: $OUT_DIR/runner-timeout-reason.json"
   echo ""
   
-  echo -e "${RED}Playwright test exceeded ${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s timeout${NC}"
+  echo -e "${RED}Playwright test exceeded ${FT_PLAYWRIGHT_TIMEOUT_SECONDS}s timeout (exit code $PW_EXIT)${NC}"
   echo ""
   
   # Print failure excerpt from logs
@@ -407,14 +407,20 @@ if [[ $PW_EXIT -eq 124 ]]; then
   echo "  stderr: $STDERR_SIZE bytes"
   echo ""
   
+  # Prefer stderr if non-empty, else stdout, else say empty
+  CHOSEN_FILE=""
   if [[ $STDERR_SIZE -gt 0 ]] && [[ -s "$PW_STDERR" ]]; then
+    CHOSEN_FILE="$PW_STDERR"
     echo "Last 80 lines from stderr (timeout context):"
-    tail -80 "$PW_STDERR" | sanitize_output | sed 's/^/  /'
   elif [[ $STDOUT_SIZE -gt 0 ]] && [[ -s "$PW_STDOUT" ]]; then
+    CHOSEN_FILE="$PW_STDOUT"
     echo "Last 80 lines from stdout (timeout context):"
-    tail -80 "$PW_STDOUT" | sanitize_output | sed 's/^/  /'
   else
     echo "No output captured (likely killed before any output)"
+  fi
+  
+  if [[ -n "$CHOSEN_FILE" ]]; then
+    tail -80 "$CHOSEN_FILE" | sanitize_output | sed 's/^/  /'
   fi
   echo ""
   
@@ -423,6 +429,7 @@ if [[ $PW_EXIT -eq 124 ]]; then
   echo "  stderr: $PW_STDERR"
   echo ""
   
+  # Normalize exit code to 124 for determinism
   exit 124
 fi
 
@@ -506,6 +513,21 @@ else
   echo "  stdout: $PW_STDOUT"
   echo "  stderr: $PW_STDERR"
   echo ""
+  
+  # === DETERMINISTIC EVIDENCE CONTRACT CHECK ===
+  # If Playwright failed during setup (auth timeout) and we find relevant error messages,
+  # VERIFY that auth-failure-reason.json exists. Fail-closed if missing.
+  if grep -q "AUTH_SETUP_TIMEOUT\|auth.setup" "$PW_STDERR" "$PW_STDOUT" 2>/dev/null; then
+    if [[ ! -f "$OUT_DIR/auth-failure-reason.json" ]]; then
+      echo -e "${RED}ERROR: Expected auth-failure-reason.json missing (evidence contract breach)${NC}"
+      echo "Auth setup timeout or failure detected, but no evidence captured."
+      echo "OUT_DIR: $OUT_DIR"
+      echo "Files in OUT_DIR:"
+      ls -lh "$OUT_DIR" 2>/dev/null || true
+      echo ""
+      exit 1
+    fi
+  fi
   
   exit $PW_EXIT
 fi

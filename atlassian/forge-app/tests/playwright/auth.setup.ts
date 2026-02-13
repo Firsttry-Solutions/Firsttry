@@ -710,29 +710,37 @@ setup('auth', async ({ page }) => {
     }
   }
 
+  // === HELPER: Simple delay utility (deterministic, not logged) ===
+  async function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // === HELPER: Auth flow with timeout protection ===
+  async function authFlowWithTimeout(): Promise<void> {
+    return await Promise.race([
+      performAuthFlow(),
+      (async () => {
+        // Wait for timeout duration
+        await delay(AUTH_SETUP_TIMEOUT_MS);
+        
+        // CRITICAL: MUST await evidence capture before throwing
+        // This ensures page context is not torn down mid-capture
+        try {
+          const variant = await detectLoginVariant(page);
+          await captureAuthFailureEvidence(page, 'AUTH_SETUP_TIMEOUT', variant);
+        } catch (captureErr) {
+          console.log(`[AUTH_TIMEOUT] Warning: failed to capture timeout evidence - ${(captureErr as Error).message}`);
+        }
+        
+        // Throw AFTER evidence is captured
+        throw new Error('AUTH_SETUP_TIMEOUT: Authentication setup exceeded 120s timeout');
+      })(),
+    ]);
+  }
+
   // === Wrap auth flow with timeout protection ===
   try {
-    await Promise.race([
-      performAuthFlow(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => {
-          // Timeout occurred - capture timeout evidence
-          detectLoginVariant(page)
-            .then(variant => {
-              captureAuthFailureEvidence(page, 'AUTH_SETUP_TIMEOUT', {
-                ...variant,
-              }).catch(err => {
-                console.log(`[AUTH_TIMEOUT] Warning: failed to capture timeout evidence - ${(err as Error).message}`);
-              });
-            })
-            .catch(err => {
-              console.log(`[AUTH_TIMEOUT] Warning: failed to detect variant for timeout evidence - ${(err as Error).message}`);
-            });
-
-          reject(new Error('AUTH_SETUP_TIMEOUT: Authentication setup exceeded 120s timeout'));
-        }, AUTH_SETUP_TIMEOUT_MS)
-      ),
-    ]);
+    await authFlowWithTimeout();
   } catch (err) {
     // If it's a timeout error, it's already captured above
     if ((err as Error).message.includes('AUTH_SETUP_TIMEOUT')) {
