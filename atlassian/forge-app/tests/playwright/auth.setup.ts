@@ -659,7 +659,10 @@ setup('auth', async ({ page }) => {
         }
 
         const jiraEmail = process.env.JIRA_EMAIL;
-        const jiraPassword = process.env.JIRA_PASSWORD;
+        // NOTE: JIRA_PASSWORD is NEVER used for interactive login (SSO vulnerability).
+        // Only JIRA_API_TOKEN is allowed for API calls, never for UI login.
+        // For environments requiring interactive login or SSO, use state-only mode with cached state.json.
+        const jiraPassword = undefined; // Explicitly disabled: SSO-safe practice
 
         if (!jiraEmail || !jiraPassword) {
           // === Manual login mode (polling loop) ===
@@ -704,76 +707,10 @@ setup('auth', async ({ page }) => {
           }
 
           console.log('[AUTH] ✓ Manual login polling succeeded');
-        } else {
-          // === Automated login mode ===
-          console.log('[AUTH] Attempting automated login with provided credentials...');
-
-          // Try to fill email field
-          const emailFound = await findAndFillEmail(page, jiraEmail);
-          if (!emailFound) {
-            const variant = await detectLoginVariant(page);
-            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
-            throw new Error('LOGIN_FORM_NOT_FOUND: Email input field not found (may be SSO variant, MFA challenge, or unknown login page)');
-          }
-
-          // Click continue/next button
-          const continueFound = await findAndClickContinue(page);
-          if (!continueFound) {
-            const variant = await detectLoginVariant(page);
-            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
-            throw new Error('LOGIN_FORM_NOT_FOUND: Continue button not found');
-          }
-
-          // Wait for password page or secondary flow
-          await page.waitForLoadState('domcontentloaded');
-          await page.waitForTimeout(2000);
-
-          // Detect again after email submission
-          const variantAfterEmail = await detectLoginVariant(page);
-
-          // === Check if MFA appeared after email ===
-          if (variantAfterEmail.hasMfaChallenge) {
-            console.log('[AUTH] MFA challenge detected after email entry');
-            await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variantAfterEmail, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
-            throw new Error('MFA_REQUIRED: Multi-factor authentication required (cannot automate OTP/Authenticator)');
-          }
-
-          // Try to fill password field
-          const passwordFound = await findAndFillPassword(page, jiraPassword);
-          if (!passwordFound) {
-            const variant = await detectLoginVariant(page);
-            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
-            throw new Error('LOGIN_FORM_NOT_FOUND: Password input field not found');
-          }
-
-          // Click login/submit button
-          const loginFound = await findAndClickLogin(page);
-          if (!loginFound) {
-            const variant = await detectLoginVariant(page);
-            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
-            throw new Error('LOGIN_FORM_NOT_FOUND: Login/submit button not found');
-          }
-
-          // Wait for Jira dashboard to load
-          console.log('[AUTH] Waiting for Jira dashboard...');
-          try {
-            await page.waitForURL(`${baseUrlNorm}/jira/**`, { timeout: 30_000 });
-          } catch (err) {
-            // Timeout or navigation failed
-            const variant = await detectLoginVariant(page);
-            const currentUrl = page.url();
-
-            // Check if we got login error page
-            if (currentUrl.includes('error') || currentUrl.includes('login')) {
-              await captureAuthFailureEvidence(page, 'INVALID_CREDENTIALS', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
-              throw new Error('INVALID_CREDENTIALS: Login failed (possibly invalid email/password)');
-            }
-
-            // Unknown error after login attempt
-            await captureAuthFailureEvidence(page, 'UNKNOWN_LOGIN_VARIANT', variant, AUTH_MODE, stateReuseAttempted, stateReuseSucceeded);
-            throw new Error(`UNKNOWN_LOGIN_VARIANT: Expected Jira URL but got: ${currentUrl}`);
-          }
         }
+        // NOTE: Automated password-based login is REMOVED for SSO safety.
+        // Password-based flows cannot authenticate SSO-only tenants and represent a security anti-pattern.
+        // Supported paths: (1) state-only mode with valid cached state.json, (2) manual headed login for SSO
       } else {
         console.log('[AUTH] Already at Jira page - will verify authentication');
       }

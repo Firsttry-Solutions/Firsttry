@@ -67,8 +67,13 @@ sanitize_output() {
     text="$1"
   fi
   
-  # Redact PASSWORD/TOKEN/SECRET/KEY env var values
+  # Redact JIRA_API_TOKEN/TOKEN/SECRET/KEY env var values (if used for API)
+  # NOTE: JIRA_PASSWORD is no longer used, but sanitize if present in logs for backwards compat
+  if [[ -n "${JIRA_API_TOKEN:-}" ]]; then
+    text="${text//"${JIRA_API_TOKEN}"/<REDACTED_API_TOKEN>}"
+  fi
   if [[ -n "${JIRA_PASSWORD:-}" ]]; then
+    # Legacy: sanitize if found in logs (not used in new flow)
     text="${text//"${JIRA_PASSWORD}"/<REDACTED_PASSWORD>}"
   fi
   if [[ -n "${JIRA_EMAIL:-}" ]]; then
@@ -198,7 +203,10 @@ trap 'exit 143' TERM
 
 # === STEP 1: Validate REQUIRED env vars ===
 print_section "Step 1: Validate Required Environment Variables"
-REQUIRED_VARS=("JIRA_BASE_URL" "JIRA_EMAIL" "JIRA_PASSWORD")
+# NOTE: JIRA_PASSWORD is NO LONGER required (SSO-incompatible).
+# For API-only calls, use JIRA_API_TOKEN.
+# For UI automation with SSO tenants, use FT_AUTH_MODE=state-only with valid state.json.
+REQUIRED_VARS=("JIRA_BASE_URL" "JIRA_EMAIL")
 MISSING_VARS=()
 
 for var in "${REQUIRED_VARS[@]}"; do
@@ -217,8 +225,10 @@ if [[ ${#MISSING_VARS[@]} -gt 0 ]]; then
   echo "To run deterministically:"
   echo '  export JIRA_BASE_URL="https://your-tenant.atlassian.net"'
   echo '  export JIRA_EMAIL="your-email@example.com"'
-  echo '  export JIRA_PASSWORD="your-password"'
-  echo '  export JIRA_DASHBOARD_URL="https://your-tenant.atlassian.net/jira/dashboards/XXXXX"  # optional'
+  echo '  # Optional for API calls: export JIRA_API_TOKEN="your-api-token"'
+  echo '  # IMPORTANT: For SSO tenants, generate state.json:'
+  echo '  #   FT_AUTH_GENERATE_STATE=1 bash scripts/proof/generate_playwright_state.sh'
+  echo '  #   Then rerun with: FT_AUTH_MODE=state-only'
   echo ""
   exit 1
 fi
@@ -228,6 +238,11 @@ for var in "${REQUIRED_VARS[@]}"; do
   masked_value=$(mask_env_value "$var")
   echo "  ${GREEN}✓${NC} ${var} = ${masked_value}"
 done
+
+# Optional API token (allowed but not required for UI tests)
+if [[ -n "${JIRA_API_TOKEN:-}" ]]; then
+  echo "  ${GREEN}✓${NC} JIRA_API_TOKEN = (set)"
+fi
 echo ""
 
 # === STEP 1b: Normalize JIRA_BASE_URL and validate format ===
@@ -664,8 +679,36 @@ else
   echo "  stdout: $PW_STDOUT"
   echo "  stderr: $PW_STDERR"
   echo ""
-  
-  # === DETERMINISTIC EVIDENCE CONTRACT CHECK ===
+    # === STEP 7c: FAIL-CLOSED on SSO_REQUIRED ===
+  # SSO_REQUIRED is a hard gate failure, not a "conditional pass"
+  # If tenant requires SSO, it must be handled via state-only mode with valid state.json
+  if grep -qiE "SSO_REQUIRED|SSO_REQUIRED_STATE" "$PW_STDERR" "$PW_STDOUT" 2>/dev/null; then
+    echo ""
+    print_section "Step 7c: GATE FAILURE - SSO REQUIRED (Tenant is SSO-Only)"
+    echo ""
+    echo -e "${RED}❌ FAIL: Tenant is single sign-on (SSO) only${NC}"
+    echo ""
+    echo "Root cause: Email/password authentication cannot work with SSO tenants."
+    echo ""
+    echo "Remediation (choose one):"
+    echo ""
+    echo "  Option 1: Use state-only mode (RECOMMENDED for enterprise)"
+    echo "    1. Run interactive login once to generate state.json:"
+    echo "       FT_AUTH_GENERATE_STATE=1 bash scripts/proof/generate_playwright_state.sh"
+    echo "    2. Verify state.json was created:"
+    echo "       ls -la tests/playwright/.auth/state.json"
+    echo "    3. Rerun tests with state-only mode:"
+    echo "       FT_AUTH_MODE=state-only npm test -- playwright"
+    echo ""
+    echo "  Option 2: Use headed mode for manual SSO flow (local dev only)"
+    echo "    FT_PLAYWRIGHT_MODE=headed FT_AUTH_MODE=interactive npm test -- playwright"
+    echo ""
+    echo "Proof standard: Gate MUST fail-closed when SSO is detected and no state.json is available."
+    echo "This is not a code defect; it is correct enterprise security posture."
+    echo ""
+    exit 1
+  fi
+    # === DETERMINISTIC EVIDENCE CONTRACT CHECK ===
   # If Playwright failed during setup (auth timeout) and we find relevant error messages,
   # VERIFY that auth-failure-reason.json exists. Fail-closed if missing.
   if grep -q "AUTH_SETUP_TIMEOUT\|auth.setup" "$PW_STDERR" "$PW_STDOUT" 2>/dev/null; then
