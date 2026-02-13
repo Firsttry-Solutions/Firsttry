@@ -2,7 +2,7 @@
  * Phase 2: Ring buffer for drift history (max 180 entries).
  */
 
-import * as api from "@forge/api";
+import api from "@forge/api";
 import { DriftBufferEntry } from "../continuous-drift/types";
 
 const BUFFER_KEY = "phase2.driftBuffer";

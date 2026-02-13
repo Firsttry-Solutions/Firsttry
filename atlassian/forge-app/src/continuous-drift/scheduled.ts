@@ -3,7 +3,7 @@
  * Orchestrates drift scan with time budget enforcement
  */
 
-import * as api from "@forge/api";
+import api from "@forge/api";
 import { runDriftScan } from "./detector";
 import { sendAlerts } from "./alerting";
 import { updateHealth, getMonitoringHealth } from "./health";
