@@ -11,23 +11,7 @@ app:
   runtime:
     name: nodejs20.x
 
-# Modules
-modules:
-  # Dashboard Gadget (Bundled UI via Vite)
-  # REQUIREMENT: Must run as Custom UI resource within Jira dashboard context.
-  # Forge bridge (@forge/bridge) is injected by the Jira Custom UI runtime.
-  # If bridge is not available, the gadget will display a fatal error and stop.
-  jira:dashboardGadget:
-    - key: governance-dashboard-gadget-v2
-      title: "FirstTry: Audit Evidence for Jira"
-      description: FirstTry Governance - real-time status overview
-      resource: govGadget2141
-      resolver:
-        function: get-status-snapshot-fn
-      thumbnail: https://www.atlassian.com/favicon.ico
-
-  # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
-  function:
+function:
     - key: ftBackboneScheduled
       handler: backbone/forge-entry.scheduled
     - key: ftRunNow
@@ -73,6 +57,9 @@ modules:
     # ENTERPRISE R2: Phase 6 admin page for evidence ledger + drift history
     - key: phase6-admin-page-fn
       handler: admin/phase6_admin_page.handler
+    # PHASE 2: Drift Monitor
+    - key: driftMonitorScheduled
+      handler: src/continuous-drift/scheduled.run
 
   # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
   # Supported intervals: day, week, hour, minute, fiveMinute
@@ -81,7 +68,7 @@ modules:
   # SEV-2-003: OAuth token refresh (hourly to maintain freshness)
   # PHASE 2: Config visibility scheduler (daily config complexity snapshot)
   # Layer-0 Backbone: ftBackboneScheduled runs on fiveMinute to maintain ledger
-  scheduledTrigger:
+scheduledTrigger:
     - key: ft-backbone-scheduler
       function: ftBackboneScheduled
       interval: fiveMinute
@@ -102,8 +89,13 @@ modules:
       function: daily-dispatcher-fn
       interval: day
 
+    # PHASE 2: Continuous Drift Monitor (Daily)
+    - key: drift-monitor-daily
+      function: driftMonitorScheduled
+      interval: day
+
   # Layer-0 Marketplace: Install trigger creates snapshot anchor
-  trigger:
+trigger:
     - key: ft-installed-trigger
       events:
         - avi:forge:installed:app
@@ -122,6 +114,15 @@ permissions:
     - storage:app
     - read:jira-work
     - read:jira-user  # Required for Phase 1: user enumeration and group detection
+    - read:jira-project  # PHASE 2: Project permission scheme enumeration
+    - read:jira-configuration  # PHASE 2: Jira configuration and permission scheme access
+  external:
+    fetch:
+      backend:
+        # PHASE 2: Webhook delivery (Slack-only, or custom relay if customer operates one)
+        - 'https://hooks.slack.com'
+        # Customer can add their own relay here if they route webhooks to email
+        # NO WILDCARDS. NO ARBITRARY DOMAINS.
 
 # Resource pages
 resources:
