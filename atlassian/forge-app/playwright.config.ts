@@ -86,6 +86,11 @@ function validateRequiredEnvVars(): void {
 // Run validation at config load time (fail-closed)
 validateRequiredEnvVars();
 
+// === BACKBONE FIX: Ensure headless is controlled by FT_PLAYWRIGHT_MODE consistently ===
+const mode = process.env.FT_PLAYWRIGHT_MODE || 'headless';
+const headless = (mode !== 'headed');
+console.log('[CONFIG_MODE]', JSON.stringify({ mode, headless }));
+
 // Normalize JIRA_BASE_URL: remove trailing slash
 const rawBaseUrl = process.env.JIRA_BASE_URL!;
 const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
@@ -105,7 +110,7 @@ export default defineConfig({
       use: {
         ...devices['chromium'],
         baseURL: baseUrl,
-        headless: true,
+        headless,
         trace: 'off',
       },
     },
@@ -117,7 +122,7 @@ export default defineConfig({
         ...devices['chromium'],
         baseURL: baseUrl,
         storageState: 'tests/playwright/.auth/state.json',
-        headless: true,
+        headless,
         trace: 'on',
         screenshot: 'off',
         video: 'off',

@@ -220,14 +220,30 @@ for var in $FOUND_VARS; do
 done
 echo ""
 
-# === STEP 4: Clean stale directories ===
-print_section "Step 4: Clean Stale Output Directories"
+# === STEP 4: Create OUT_DIR early (fail-closed) ===
+print_section "Step 4: Create Output Directory"
 
-echo "Removing stale /tmp/pw_dash_diag_* directories..."
-if rm -rf /tmp/pw_dash_diag_* 2>/dev/null; then
-  echo "  ${GREEN}✓${NC} Cleaned (if existed)"
+# Create deterministic OUT_DIR with UTC-based timestamp (NO seconds variation)
+OUT_DIR="/tmp/pw_dash_diag_$(date -u +%Y-%m-%dT%H%M%SZ)"
+mkdir -p "$OUT_DIR"
+export OUT_DIR
+
+echo "Output directory: $OUT_DIR"
+echo ""
+
+# === STEP 5: Clean stale directories ===
+print_section "Step 5: Clean Stale Output Directories"
+
+# Find all previous pw_dash_diag_* directories and remove them (keep only current)
+if find /tmp/pw_dash_diag_* -maxdepth 0 -type d 2>/dev/null | grep -v "^${OUT_DIR}$" > /tmp/stale_dirs.txt 2>&1; then
+  while read -r stale_dir; do
+    if [[ -n "$stale_dir" && "$stale_dir" != "$OUT_DIR" ]]; then
+      rm -rf "$stale_dir" 2>/dev/null || true
+    fi
+  done < /tmp/stale_dirs.txt
+  echo "  ${GREEN}✓${NC} Cleaned stale directories"
 else
-  echo "  ${YELLOW}⊘${NC} None found"
+  echo "  ${YELLOW}⊘${NC} No stale directories found"
 fi
 
 echo "Removing stale /tmp/playwright-evidence directory..."
@@ -238,45 +254,55 @@ else
 fi
 echo ""
 
-# === STEP 5: Run Playwright test ===
-print_section "Step 5: Running Playwright Test"
+# === STEP 6: Run Playwright test (capture output to files) ===
+print_section "Step 6: Running Playwright Test"
+
+PW_STDOUT="$OUT_DIR/playwright.stdout.log"
+PW_STDERR="$OUT_DIR/playwright.stderr.log"
+
+echo "Playwright output will be captured to:"
+echo "  stdout: $PW_STDOUT"
+echo "  stderr: $PW_STDERR"
+echo ""
 
 if [[ "$FT_PLAYWRIGHT_MODE" == "headed" && -z "${DISPLAY:-}" ]]; then
-  echo "[RUN] Using xvfb-run (virtual display server for headless containers)"
+  echo "Using xvfb-run (virtual display server for headless containers)"
   echo ""
-  TEST_EXIT_CODE=0
-  xvfb-run -a npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts ${PLAYWRIGHT_ARGS[@]+"${PLAYWRIGHT_ARGS[@]}"} || TEST_EXIT_CODE=$?
+  set +e
+  xvfb-run -a npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts > "$PW_STDOUT" 2> "$PW_STDERR"
+  PW_EXIT=$?
+  set -e
 else
-  echo "Executing: npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts ${PLAYWRIGHT_ARGS[@]+"${PLAYWRIGHT_ARGS[@]}"}"
+  echo "Executing: npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts"
   echo ""
-  TEST_EXIT_CODE=0
-  npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts ${PLAYWRIGHT_ARGS[@]+"${PLAYWRIGHT_ARGS[@]}"} || TEST_EXIT_CODE=$?
+  set +e
+  npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts > "$PW_STDOUT" 2> "$PW_STDERR"
+  PW_EXIT=$?
+  set -e
 fi
 
-if [[ $TEST_EXIT_CODE -eq 0 ]]; then
-  echo -e "${GREEN}✓ Playwright test completed successfully${NC}"
+# === STEP 7: Handle Playwright exit ===
+print_section "Step 7: Playwright Test Result"
+
+if [[ $PW_EXIT -eq 0 ]]; then
+  echo -e "${GREEN}✓${NC} Playwright test completed successfully"
+  echo ""
+  echo "First 40 lines of stdout:"
+  head -40 "$PW_STDOUT" | sed 's/^/  /'
 else
-  echo -e "${RED}✗ Playwright test exited with code ${TEST_EXIT_CODE}${NC}"
-  echo "  (This may be due to auth/login issues in test; env gate passed)"
+  echo -e "${RED}✗${NC} Playwright test exited with code $PW_EXIT"
+  echo ""
+  echo "ERROR OUTPUT (first 160 lines of stderr):"
+  head -160 "$PW_STDERR" | sed 's/^/  /'
+  echo ""
+  echo "See full logs at: $PW_STDERR"
+  echo ""
+  exit $PW_EXIT
 fi
 echo ""
 
-# === STEP 6: Find and validate OUT_DIR ===
-print_section "Step 6: Locate Fresh Output Directory"
-
-OUT_DIR=$(ls -1dt /tmp/pw_dash_diag_* 2>/dev/null | head -1 || echo "")
-
-if [[ -z "$OUT_DIR" ]]; then
-  echo -e "${RED}ERROR: No output directory found (/tmp/pw_dash_diag_*)${NC}"
-  echo "Test may have failed to create evidence directory."
-  exit 2
-fi
-
-echo -e "${GREEN}✓${NC} Found output directory: $OUT_DIR"
-echo ""
-
-# === STEP 7: List generated files ===
-print_section "Step 7: Generated Evidence Files"
+# === STEP 8: List generated files ===
+print_section "Step 8: Generated Evidence Files"
 
 if [[ -d "$OUT_DIR" ]]; then
   echo "Contents of $OUT_DIR:"
@@ -288,7 +314,7 @@ else
 fi
 
 # === STEP 8: Verify markers in console.log ===
-print_section "Step 8: Console Markers Verification"
+print_section "Step 9: Console Markers Verification"
 
 CONSOLE_LOG="$OUT_DIR/console.log"
 if [[ -f "$CONSOLE_LOG" ]]; then
@@ -317,7 +343,7 @@ fi
 echo ""
 
 # === STEP 9: Verify proof JSON ===
-print_section "Step 9: Evidence Proof JSON Verification"
+print_section "Step 10: Evidence Proof JSON Verification"
 
 PROOF_JSON="$OUT_DIR/export-invoke-proof.json"
 if [[ ! -f "$PROOF_JSON" ]]; then
@@ -351,7 +377,7 @@ echo -e "${GREEN}✓${NC} Proof JSON is valid and contains all required fields"
 echo ""
 
 # === STEP 10: Final status ===
-print_section "Step 10: Proof Generation Complete"
+print_section "Step 11: Proof Generation Complete"
 
 echo -e "${GREEN}✓${NC} All checks passed"
 echo ""
