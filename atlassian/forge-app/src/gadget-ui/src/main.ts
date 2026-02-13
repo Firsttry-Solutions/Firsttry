@@ -3314,7 +3314,7 @@ async function proceedWithBoot() {
             reasonCode = 'OK';
           }
           
-          // EMIT [UI_EXPORT_STATE] MARKER (deterministic JSON)
+          // EMIT [UI_EXPORT_STATE] MARKER (deterministic JSON - NO TIMESTAMP)
           const uiExportState = {
             snapshotId: snapshotIdNormalized,
             snapshotKind: snapshotKindNormalized,
@@ -3322,7 +3322,6 @@ async function proceedWithBoot() {
             hasCanonicalHash: hasCanonicalHashNorm,
             exportAllowed,
             reasonCode,
-            ts: new Date().toISOString(),
           };
           console.log('[UI_EXPORT_STATE]', JSON.stringify(uiExportState));
           
@@ -3342,11 +3341,10 @@ async function proceedWithBoot() {
             exportAccessButton.addEventListener('click', (e) => {
               e.preventDefault();
               e.stopPropagation();
+              // EMIT [PHASE1_EXPORT_BLOCKED] marker (deterministic)
               console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify({
-                reason,
-                snapshotKind: snapshotKindNormalized,
-                hasCanonicalHash: hasCanonicalHashNorm,
-                exportEligible: exportEligibleNormalized,
+                snapshotId: snapshotIdNormalized,
+                reasonCode,
               }));
             });
           } else {
@@ -3358,11 +3356,10 @@ async function proceedWithBoot() {
               try {
                 ensureCorrelationId();
                 
-                // EMIT [PHASE1_EXPORT_CLICK] BEFORE invoking resolver
-                console.log('[PHASE1_EXPORT_CLICK]', JSON.stringify({
+                // EMIT [PHASE1_EXPORT_INVOKE] marker BEFORE resolver call (deterministic proof)
+                console.log('[PHASE1_EXPORT_INVOKE]', JSON.stringify({
                   snapshotId: snapshotIdNormalized,
-                  snapshotKind: snapshotKindNormalized,
-                  ts: new Date().toISOString(),
+                  resolver: 'ft_getDashboardState_v1',
                 }));
                 
                 // INVOKE RESOLVER with snapshotId parameter (resolver is authoritative)
