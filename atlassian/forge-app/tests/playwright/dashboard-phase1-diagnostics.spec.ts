@@ -1012,13 +1012,19 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
         }
         consoleLines.push('[PHASE1_VALIDATION_OK] Success marker found with valid fields');
 
-        // === FAIL-CLOSED CHECK 4: Parse [UI_EXPORT_STATE] marker (deterministic export eligibility contract) ===
-        const uiExportStateMarker = consoleLines.find(line => 
+        // === FAIL-CLOSED CHECK 4: Parse [UI_EXPORT_STATE] marker (deterministic, no timestamp) ===
+        // Enforce exactly 1 UI_EXPORT_STATE marker (determinism requirement)
+        const uiExportStateMarkers = consoleLines.filter(line => 
           line.includes('[UI_EXPORT_STATE]')
         );
-        if (!uiExportStateMarker) {
+        if (uiExportStateMarkers.length === 0) {
           throw new Error('UI_EXPORT_STATE_MISSING: expected [UI_EXPORT_STATE] marker not found');
         }
+        if (uiExportStateMarkers.length > 1) {
+          throw new Error(`UI_EXPORT_STATE_MULTIPLE: found ${uiExportStateMarkers.length} markers, expected exactly 1 (determinism violation)`);
+        }
+        
+        const uiExportStateMarker = uiExportStateMarkers[0];
         
         // Extract JSON from marker
         const uiExportStateJsonMatch = uiExportStateMarker.match(/\[UI_EXPORT_STATE\]\s*(\{.+\})/);
@@ -1032,12 +1038,17 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
           throw new Error('UI_EXPORT_STATE_JSON_INVALID: failed to parse JSON from marker');
         }
         
-        // Validate all required fields exist and have correct types
+        // Validate all required fields exist and have correct types (NO timestamp field)
         const requiredFields = ['snapshotId', 'snapshotKind', 'exportEligible', 'hasCanonicalHash', 'exportAllowed', 'reasonCode'];
         for (const field of requiredFields) {
           if (!(field in uiExportState)) {
             throw new Error(`UI_EXPORT_STATE_MISSING_FIELD: field "${field}" not found in marker`);
           }
+        }
+        
+        // Fail-closed: ts field MUST NOT be present (determinism)
+        if ('ts' in uiExportState) {
+          throw new Error('UI_EXPORT_STATE_INVALID: ts field found (violates determinism requirement - remove timestamp)');
         }
         
         // Validate field types
@@ -1057,11 +1068,77 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
           throw new Error('UI_EXPORT_STATE_INVALID: exportAllowed must be boolean');
         }
         
-        // Write UI export state to evidence file (deterministic JSON)
-        fs.writeFileSync(path.join(outDir, 'export-ui-state.json'), JSON.stringify(uiExportState, null, 2));
-        consoleLines.push(`[UI_EXPORT_STATE_WRITTEN] export-ui-state.json exported`);
+        // === FAIL-CLOSED CHECK 5: Validate invoke vs blocked markers match contract ===
+        const invokeMarkers = consoleLines.filter(line =>
+          line.includes('[PHASE1_EXPORT_INVOKE]')
+        );
+        const blockedMarkers = consoleLines.filter(line =>
+          line.includes('[PHASE1_EXPORT_BLOCKED]')
+        );
         
-        // === FAIL-CLOSED CHECK 5: Validate export button state matches computed exportAllowed ===
+        // Enforce deterministic evidence
+        let foundInvokeMarker = false;
+        let foundBlockedMarker = false;
+        
+        if (uiExportState.exportAllowed) {
+          // Export allowed: MUST invoke exactly once
+          if (invokeMarkers.length === 0) {
+            throw new Error('PHASE1_EXPORT_INVOKE_MISSING: exportAllowed=true but no invoke marker found');
+          }
+          if (invokeMarkers.length > 1) {
+            throw new Error(`PHASE1_EXPORT_INVOKE_MULTIPLE: exportAllowed=true but found ${invokeMarkers.length} invoke markers (expected 1)`);
+          }
+          foundInvokeMarker = true;
+          
+          // Parse invoke marker to validate structure
+          const invokeJsonMatch = invokeMarkers[0].match(/\[PHASE1_EXPORT_INVOKE\]\s*(\{.+\})/);
+          if (invokeJsonMatch && invokeJsonMatch[1]) {
+            try {
+              const invokeData = JSON.parse(invokeJsonMatch[1]);
+              if (!('snapshotId' in invokeData) || !('resolver' in invokeData)) {
+                throw new Error('PHASE1_EXPORT_INVOKE_INVALID: missing snapshotId or resolver field');
+              }
+            } catch (e) {
+              throw new Error(`PHASE1_EXPORT_INVOKE_JSON_INVALID: ${e instanceof Error ? e.message : String(e)}`);
+            }
+          }
+        } else {
+          // Export NOT allowed: MUST NOT invoke
+          if (invokeMarkers.length > 0) {
+            throw new Error(`PHASE1_EXPORT_INVOKE_FOUND: exportAllowed=false but found ${invokeMarkers.length} invoke marker(s) - UI gating bypass!`);
+          }
+          foundInvokeMarker = false;
+          
+          // Blocked marker may exist (but not required)
+          if (blockedMarkers.length > 0) {
+            foundBlockedMarker = true;
+            // Parse blocked marker to validate structure
+            const blockedJsonMatch = blockedMarkers[0].match(/\[PHASE1_EXPORT_BLOCKED\]\s*(\{.+\})/);
+            if (blockedJsonMatch && blockedJsonMatch[1]) {
+              try {
+                const blockedData = JSON.parse(blockedJsonMatch[1]);
+                if (!('snapshotId' in blockedData) || !('reasonCode' in blockedData)) {
+                  throw new Error('PHASE1_EXPORT_BLOCKED_INVALID: missing snapshotId or reasonCode field');
+                }
+              } catch (e) {
+                throw new Error(`PHASE1_EXPORT_BLOCKED_JSON_INVALID: ${e instanceof Error ? e.message : String(e)}`);
+              }
+            }
+          }
+        }
+        
+        // Write deterministic export invoke proof (no timestamps)
+        const exportInvokeProof = {
+          exportAllowed: uiExportState.exportAllowed,
+          foundInvokeMarker,
+          foundBlockedMarker,
+          snapshotId: uiExportState.snapshotId,
+          reasonCode: uiExportState.reasonCode,
+        };
+        fs.writeFileSync(path.join(outDir, 'export-invoke-proof.json'), JSON.stringify(exportInvokeProof, null, 2));
+        consoleLines.push(`[EXPORT_INVOKE_PROOF_WRITTEN] export-invoke-proof.json created (deterministic)`);
+        
+        // === FAIL-CLOSED CHECK 6: Validate export button state matches computed exportAllowed ===
         const exportBtn = gadgetFrame.locator('#ft-export-access-pack-btn');
         const exportBtnVisible = await exportBtn.isVisible({ timeout: 5000 }).catch(() => false);
         
@@ -1099,19 +1176,6 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
           }
         } else {
           consoleLines.push('[PHASE1_EXPORT_BUTTON_NOT_VISIBLE] Export button not visible (may be expected if no governance snapshots)');
-        }
-        
-        // === FAIL-CLOSED CHECK 6: Verify no resolver invocation on gated export ===
-        // If exportAllowed=false, there should be NO request to EXPORT_PHASE1_PACK in network log
-        if (!uiExportState.exportAllowed) {
-          const hasExportResolverCall = netLines.some(line => 
-            line.includes('EXPORT_PHASE1_PACK') || 
-            line.includes('Export Phase 1 Pack')
-          );
-          if (hasExportResolverCall) {
-            throw new Error('PHASE1_EXPORT_GATING_FAILED: resolver invocation detected despite UI gating');
-          }
-          consoleLines.push('[PHASE1_EXPORT_GATING_VALIDATED] No resolver calls on gated export');
         }
       } catch (parseErr: any) {
         throw new Error(`PHASE1_MARKER_PARSE_FAILED: ${parseErr.message}`);
