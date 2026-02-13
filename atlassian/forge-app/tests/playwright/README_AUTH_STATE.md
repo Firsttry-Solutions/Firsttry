@@ -168,6 +168,30 @@ The CI workflow includes automated checks:
 - `Post-flight guard`: Ensures state.json does NOT appear in artifact directories
 - Scripts never echo `FT_AUTH_STATE_JSON_B64` or decoded content
 
+**Guard Evidence Path:** `/tmp/pw_state_guard_<UTC>/state-guard-result.json`  
+Schema:
+```json
+{
+  "result": "OK" | "FAIL",
+  "reasonCode": "UNKNOWN" | "STATE_FILE_TRACKED" | "STATE_FILE_PRESENT_IN_ARTIFACT_DIR" | "STATE_FILE_PRESENT_IN_REPO" | "STATE_SECRET_ECHO_RISK",
+  "details": {
+    "phase": "pre" | "post",
+    "violations": number,
+    "tracked": boolean,
+    "staged": boolean,
+    "stateExists": boolean,
+    "statePath": string,
+    "newestOutDir": string,
+    "outDirHasState": boolean,
+    "echoRisk": boolean
+  }
+}
+```
+
+**CI Cleanup:** The workflow explicitly deletes `tests/playwright/.auth/state.json`:
+- Before post-flight guard (defense-in-depth)
+- At end of job (final cleanup)
+
 If guards detect violations, the workflow **fails immediately**.
 
 ## Rotate the CI secret safely

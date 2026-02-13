@@ -105,8 +105,17 @@ jobs:
         if: always()
         run: |
           cd atlassian/forge-app
+          # Defense-in-depth: delete state file before guard check
+          rm -f tests/playwright/.auth/state.json
           export FT_GUARD_PHASE="post"
+          export FT_GUARD_EXPECT_STATE_CLEANUP=1
           bash scripts/proof/guard_no_auth_state_leak.sh
+
+      - name: Final cleanup (delete any remaining state.json)
+        if: always()
+        run: |
+          cd atlassian/forge-app
+          rm -f tests/playwright/.auth/state.json
 
       - name: Upload test artifacts
         if: always()
@@ -117,4 +126,5 @@ jobs:
             /tmp/pw_dash_diag_*
             /tmp/pw_state_install_*
             /tmp/pw_state_bootstrap_*
+            /tmp/pw_state_guard_*
           retention-days: 7
