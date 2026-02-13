@@ -138,16 +138,87 @@ Auth tokens have limited lifetime. If CI fails with `AUTH_STATE_REUSE_FAILED`, r
 1. `bash scripts/proof/bootstrap_auth_state_headed.sh` (local)
 2. Update GitHub secret with new base64
 
-No time estimates for token expiration; check manually when CI fails unexpectedly.
-
 ## Never Commit state.json
 
-`.gitignore` should include:
+**CRITICAL:** `state.json` is a secret — it contains session cookies and credentials.
+
+### Verify it's not tracked
+
+`.gitignore` blocks all files matching these patterns:
 ```
-tests/playwright/.auth/
+tests/playwright/.auth/state.json
+tests/playwright/.auth/*.json
 ```
 
-Verify with: `git status tests/playwright/.auth/state.json` — should show "not tracked".
+Verify state.json is NOT tracked:
+```bash
+git status tests/playwright/.auth/state.json
+# Should output: "fatal: pathspec 'tests/playwright/.auth/state.json' did not match any files"
+# or: "not tracked by git"
+
+# If it IS tracked, remove it:
+git rm --cached tests/playwright/.auth/state.json
+git commit -m "remove: accidentally tracked state.json"
+```
+
+### Guardrails prevent leaks
+
+The CI workflow includes automated checks:
+- `Pre-flight guard`: Ensures state.json is NOT tracked or staged before injection
+- `Post-flight guard`: Ensures state.json does NOT appear in artifact directories
+- Scripts never echo `FT_AUTH_STATE_JSON_B64` or decoded content
+
+If guards detect violations, the workflow **fails immediately**.
+
+## Rotate the CI secret safely
+
+Auth tokens have limited lifetime (~1-4 weeks depending on your Jira instance). When CI fails with `AUTH_STATE_REUSE_FAILED`, re-bootstrap and rotate the secret:
+
+### Step 1: Bootstrap fresh (local)
+
+```bash
+bash scripts/proof/bootstrap_auth_state_headed.sh
+# Complete login in the browser window that appears
+# Exit 0 when done
+```
+
+### Step 2: Encode to base64 (safe, no secrets in shell history)
+
+**Linux:**
+```bash
+cat tests/playwright/.auth/state.json | base64 -w 0 > /tmp/state.b64
+cat /tmp/state.b64  # Copy output
+```
+
+**macOS:**
+```bash
+cat tests/playwright/.auth/state.json | base64 -w 0 | tr -d '\n'
+# or
+(cat tests/playwright/.auth/state.json | base64) | tr -d '\n'
+# Copy output
+```
+
+### Step 3: Update GitHub secret
+
+- Go to: Settings → Secrets and variables → Actions
+- Select secret: **FT_AUTH_STATE_JSON_B64**
+- Update value with new base64
+- Click "Update secret"
+
+### Step 4: Clean up locally
+
+```bash
+# DO NOT commit state.json
+rm tests/playwright/.auth/state.json
+
+# Verify it's gone
+git status tests/playwright/
+```
+
+**WARNING:** 
+- NEVER paste state.json or base64 into logs, comments, or Slack.
+- NEVER store state.json in your git clone; it's generated locally only.
+- Treat base64 as a secret; only paste into GitHub's secret form.
 
 ## Troubleshooting
 
@@ -155,10 +226,12 @@ Verify with: `git status tests/playwright/.auth/state.json` — should show "not
 |-------|----------|
 | Bootstrap timeout (no browser window) | Ensure GUI/X11 available; try increasing FT_BOOTSTRAP_TIMEOUT_SECONDS |
 | state.json invalid JSON after bootstrap | Playwright crashed; check logs in bootstrap.stderr.log |
-| CI fails with AUTH_STATE_REUSE_FAILED | State expired; re-bootstrap and update GitHub secret |
+| CI fails with AUTH_STATE_REUSE_FAILED | State expired; re-bootstrap and update GitHub secret (see "Rotate the CI secret safely") |
 | CI says state not installed | FT_AUTH_STATE_JSON_B64 secret missing or empty |
+| Pre-flight or post-flight guard fails | Git contamination or artifact leak; check /tmp/pw_state_guard_* evidence |
 
 ## References
 
 - Playwright docs: https://playwright.dev/docs/auth
 - Atlassian SSO: Check your instance's authentication policy
+
