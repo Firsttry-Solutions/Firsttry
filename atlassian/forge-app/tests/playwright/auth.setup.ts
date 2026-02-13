@@ -3,6 +3,9 @@ import { chromium, Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// === CONSTANTS ===
+const AUTH_SETUP_TIMEOUT_MS = 120_000; // 120s fixed, deterministic
+
 // === HELPER: Get output directory for failure evidence ===
 function getOutDir(): string {
   const outDir = process.env.OUT_DIR || '/tmp/playwright-evidence';
@@ -17,6 +20,7 @@ type AuthFailureReasonCode =
   | 'SSO_REQUIRED'
   | 'CAPTCHA_OR_BOT_GUARD'
   | 'INVALID_CREDENTIALS'
+  | 'AUTH_SETUP_TIMEOUT'
   | 'UNKNOWN_LOGIN_VARIANT';
 
 interface AuthObservations {
@@ -473,232 +477,269 @@ setup('auth', async ({ page }) => {
     console.log('[AUTH_PROOF] ✓ All proofs passed - Jira authentication confirmed');
   }
 
-  try {
-    // === Navigate to deterministic Jira route ===
-    const jiraRoute = `${baseUrlNorm}/jira/your-work`;
-    console.log(`[AUTH] Navigating to ${jiraRoute}`);
-    await page.goto(jiraRoute, { waitUntil: 'domcontentloaded' });
+  // === Helper: Perform authentication with timeout protection ===
+  async function performAuthFlow(): Promise<void> {
+    try {
+      // === Navigate to deterministic Jira route ===
+      const jiraRoute = `${baseUrlNorm}/jira/your-work`;
+      console.log(`[AUTH] Navigating to ${jiraRoute}`);
+      await page.goto(jiraRoute, { waitUntil: 'domcontentloaded' });
 
-    // === Check if login is required (check URL AND API status) ===
-    let currentUrl = page.url();
-    let isLoginRequired = !currentUrl.startsWith(`${baseUrlNorm}/jira/`);
+      // === Check if login is required (check URL AND API status) ===
+      let currentUrl = page.url();
+      let isLoginRequired = !currentUrl.startsWith(`${baseUrlNorm}/jira/`);
 
-    // === If at Jira URL, verify authentication with API ===
-    let apiStatus = 0;
-    if (!isLoginRequired) {
-      try {
-        const resp = await page.request.get(`${baseUrlNorm}/rest/api/3/myself`);
-        apiStatus = resp.status();
-        console.log(`[AUTH] Initial /myself API status: ${apiStatus}`);
-        // If API returns non-200, we need login despite being at /jira/ URL
-        if (apiStatus !== 200) {
-          console.log('[AUTH] API returned non-200; treating as login required (stale/invalid auth)');
+      // === If at Jira URL, verify authentication with API ===
+      let apiStatus = 0;
+      if (!isLoginRequired) {
+        try {
+          const resp = await page.request.get(`${baseUrlNorm}/rest/api/3/myself`);
+          apiStatus = resp.status();
+          console.log(`[AUTH] Initial /myself API status: ${apiStatus}`);
+          // If API returns non-200, we need login despite being at /jira/ URL
+          if (apiStatus !== 200) {
+            console.log('[AUTH] API returned non-200; treating as login required (stale/invalid auth)');
+            isLoginRequired = true;
+          }
+        } catch (err) {
+          console.log(`[AUTH] API check failed; treating as login required`);
           isLoginRequired = true;
         }
-      } catch (err) {
-        console.log(`[AUTH] API check failed; treating as login required`);
-        isLoginRequired = true;
-      }
-    }
-
-    if (isLoginRequired) {
-      // === Force Atlassian ID login entry point (deterministic) ===
-      const atlassianIdUrl = buildAtlassianIdLoginUrl(baseUrlNorm);
-      console.log(`[AUTH] Forcing Atlassian ID login entry: ${atlassianIdUrl}`);
-      await page.goto(atlassianIdUrl, { waitUntil: 'domcontentloaded' });
-      await page.waitForLoadState('networkidle');
-
-      // Detect current login page variant
-      const variant = await detectLoginVariant(page);
-      console.log(`[AUTH] Login page detected - variant detection: ${JSON.stringify(variant)}`);
-
-      // === Check for SSO-only (no username/password inputs) ===
-      if (variant.hasSsoButtons && !variant.hasEmailInput && !variant.hasPasswordInput) {
-        console.log('[AUTH] SSO-only login detected (no email/password inputs)');
-        await captureAuthFailureEvidence(page, 'SSO_REQUIRED', variant);
-        throw new Error('SSO_REQUIRED: This instance requires single sign-on (no direct email/password login available)');
       }
 
-      // === Check for MFA challenge ===
-      if (variant.hasMfaChallenge) {
-        console.log('[AUTH] MFA challenge detected (requires 2FA/OTP)');
-        await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variant);
-        throw new Error('MFA_REQUIRED: This login requires multi-factor authentication (OTP/Authenticator). Manual intervention needed.');
-      }
+      if (isLoginRequired) {
+        // === Force Atlassian ID login entry point (deterministic) ===
+        const atlassianIdUrl = buildAtlassianIdLoginUrl(baseUrlNorm);
+        console.log(`[AUTH] Forcing Atlassian ID login entry: ${atlassianIdUrl}`);
+        await page.goto(atlassianIdUrl, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle');
 
-      const jiraEmail = process.env.JIRA_EMAIL;
-      const jiraPassword = process.env.JIRA_PASSWORD;
+        // Detect current login page variant
+        const variant = await detectLoginVariant(page);
+        console.log(`[AUTH] Login page detected - variant detection: ${JSON.stringify(variant)}`);
 
-      if (!jiraEmail || !jiraPassword) {
-        // === Manual login mode (polling loop) ===
-        console.log('[AUTH] MANUAL_LOGIN_REQUIRED: complete Atlassian login/MFA in visible browser within 600s');
-        console.log('[AUTH] Keeping browser open, polling for authentication proof...');
+        // === Check for SSO-only (no username/password inputs) ===
+        if (variant.hasSsoButtons && !variant.hasEmailInput && !variant.hasPasswordInput) {
+          console.log('[AUTH] SSO-only login detected (no email/password inputs)');
+          await captureAuthFailureEvidence(page, 'SSO_REQUIRED', variant);
+          throw new Error('SSO_REQUIRED: This instance requires single sign-on (no direct email/password login available)');
+        }
 
-        const deadline = Date.now() + 600_000; // 10 minutes
-        let lastStatus = 0;
-        let authenticated = false;
+        // === Check for MFA challenge ===
+        if (variant.hasMfaChallenge) {
+          console.log('[AUTH] MFA challenge detected (requires 2FA/OTP)');
+          await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variant);
+          throw new Error('MFA_REQUIRED: This login requires multi-factor authentication (OTP/Authenticator). Manual intervention needed.');
+        }
 
-        // === Polling loop: keep page open and attempt proof every 2s ===
-        while (Date.now() < deadline && !authenticated) {
-          try {
-            const resp = await page.request.get(`${baseUrlNorm}/rest/api/3/myself`);
-            lastStatus = resp.status();
-            console.log(`[AUTH_POLL] /myself status: ${lastStatus}`);
+        const jiraEmail = process.env.JIRA_EMAIL;
+        const jiraPassword = process.env.JIRA_PASSWORD;
 
-            if (lastStatus === 200) {
-              console.log('[AUTH_POLL] ✓ Authentication detected, breaking loop');
-              authenticated = true;
-              break;
+        if (!jiraEmail || !jiraPassword) {
+          // === Manual login mode (polling loop) ===
+          console.log('[AUTH] MANUAL_LOGIN_REQUIRED: complete Atlassian login/MFA in visible browser within 600s');
+          console.log('[AUTH] Keeping browser open, polling for authentication proof...');
+
+          const deadline = Date.now() + 600_000; // 10 minutes
+          let lastStatus = 0;
+          let authenticated = false;
+
+          // === Polling loop: keep page open and attempt proof every 2s ===
+          while (Date.now() < deadline && !authenticated) {
+            try {
+              const resp = await page.request.get(`${baseUrlNorm}/rest/api/3/myself`);
+              lastStatus = resp.status();
+              console.log(`[AUTH_POLL] /myself status: ${lastStatus}`);
+
+              if (lastStatus === 200) {
+                console.log('[AUTH_POLL] ✓ Authentication detected, breaking loop');
+                authenticated = true;
+                break;
+              }
+            } catch (err) {
+              console.log(`[AUTH_POLL] Request error (will retry): ${(err as Error).message}`);
+              lastStatus = 0;
             }
-          } catch (err) {
-            console.log(`[AUTH_POLL] Request error (will retry): ${(err as Error).message}`);
-            lastStatus = 0;
+
+            // Wait 2 seconds before next attempt
+            if (!authenticated) {
+              await page.waitForTimeout(2000);
+            }
           }
 
-          // Wait 2 seconds before next attempt
+          // === Check if we reached success ===
           if (!authenticated) {
-            await page.waitForTimeout(2000);
+            // Deadline exceeded without auth proof
+            const variant = await detectLoginVariant(page);
+            await captureAuthFailureEvidence(page, 'UNKNOWN_LOGIN_VARIANT', variant);
+            throw new Error(
+              `FATAL: Manual login not completed within 600s (myself status=${lastStatus})`
+            );
+          }
+
+          console.log('[AUTH] ✓ Manual login polling succeeded');
+        } else {
+          // === Automated login mode ===
+          console.log('[AUTH] Attempting automated login with provided credentials...');
+
+          // Try to fill email field
+          const emailFound = await findAndFillEmail(page, jiraEmail);
+          if (!emailFound) {
+            const variant = await detectLoginVariant(page);
+            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
+            throw new Error('LOGIN_FORM_NOT_FOUND: Email input field not found (may be SSO variant, MFA challenge, or unknown login page)');
+          }
+
+          // Click continue/next button
+          const continueFound = await findAndClickContinue(page);
+          if (!continueFound) {
+            const variant = await detectLoginVariant(page);
+            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
+            throw new Error('LOGIN_FORM_NOT_FOUND: Continue button not found');
+          }
+
+          // Wait for password page or secondary flow
+          await page.waitForLoadState('domcontentloaded');
+          await page.waitForTimeout(2000);
+
+          // Detect again after email submission
+          const variantAfterEmail = await detectLoginVariant(page);
+
+          // === Check if MFA appeared after email ===
+          if (variantAfterEmail.hasMfaChallenge) {
+            console.log('[AUTH] MFA challenge detected after email entry');
+            await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variantAfterEmail);
+            throw new Error('MFA_REQUIRED: Multi-factor authentication required (cannot automate OTP/Authenticator)');
+          }
+
+          // Try to fill password field
+          const passwordFound = await findAndFillPassword(page, jiraPassword);
+          if (!passwordFound) {
+            const variant = await detectLoginVariant(page);
+            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
+            throw new Error('LOGIN_FORM_NOT_FOUND: Password input field not found');
+          }
+
+          // Click login/submit button
+          const loginFound = await findAndClickLogin(page);
+          if (!loginFound) {
+            const variant = await detectLoginVariant(page);
+            await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
+            throw new Error('LOGIN_FORM_NOT_FOUND: Login/submit button not found');
+          }
+
+          // Wait for Jira dashboard to load
+          console.log('[AUTH] Waiting for Jira dashboard...');
+          try {
+            await page.waitForURL(`${baseUrlNorm}/jira/**`, { timeout: 30_000 });
+          } catch (err) {
+            // Timeout or navigation failed
+            const variant = await detectLoginVariant(page);
+            const currentUrl = page.url();
+
+            // Check if we got login error page
+            if (currentUrl.includes('error') || currentUrl.includes('login')) {
+              await captureAuthFailureEvidence(page, 'INVALID_CREDENTIALS', variant);
+              throw new Error('INVALID_CREDENTIALS: Login failed (possibly invalid email/password)');
+            }
+
+            // Unknown error after login attempt
+            await captureAuthFailureEvidence(page, 'UNKNOWN_LOGIN_VARIANT', variant);
+            throw new Error(`UNKNOWN_LOGIN_VARIANT: Expected Jira URL but got: ${currentUrl}`);
           }
         }
-
-        // === Check if we reached success ===
-        if (!authenticated) {
-          // Deadline exceeded without auth proof
-          const variant = await detectLoginVariant(page);
-          await captureAuthFailureEvidence(page, 'UNKNOWN_LOGIN_VARIANT', variant);
-          throw new Error(
-            `FATAL: Manual login not completed within 600s (myself status=${lastStatus})`
-          );
-        }
-
-        console.log('[AUTH] ✓ Manual login polling succeeded');
       } else {
-        // === Automated login mode ===
-        console.log('[AUTH] Attempting automated login with provided credentials...');
+        console.log('[AUTH] Already at Jira page - will verify authentication');
+      }
 
-        // Try to fill email field
-        const emailFound = await findAndFillEmail(page, jiraEmail);
-        if (!emailFound) {
-          const variant = await detectLoginVariant(page);
-          await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
-          throw new Error('LOGIN_FORM_NOT_FOUND: Email input field not found (may be SSO variant, MFA challenge, or unknown login page)');
-        }
+      // === Run Jira authentication proof (strict fail-closed) ===
+      await proveJiraAuthentication();
 
-        // Click continue/next button
-        const continueFound = await findAndClickContinue(page);
-        if (!continueFound) {
-          const variant = await detectLoginVariant(page);
-          await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
-          throw new Error('LOGIN_FORM_NOT_FOUND: Continue button not found');
-        }
+      // === Save auth state (ONLY after proof passes) ===
+      await page.context().storageState({ path: statePath });
 
-        // Wait for password page or secondary flow
-        await page.waitForLoadState('domcontentloaded');
-        await page.waitForTimeout(2000);
+      // === Verify state file exists and is non-trivial ===
+      if (!fs.existsSync(statePath)) {
+        throw new Error(`Auth state file not created at ${statePath}`);
+      }
 
-        // Detect again after email submission
-        const variantAfterEmail = await detectLoginVariant(page);
+      const statSize = fs.statSync(statePath).size;
+      if (statSize < 10) {
+        throw new Error(`Auth state file too small (${statSize} bytes), likely empty`);
+      }
 
-        // === Check if MFA appeared after email ===
-        if (variantAfterEmail.hasMfaChallenge) {
-          console.log('[AUTH] MFA challenge detected after email entry');
-          await captureAuthFailureEvidence(page, 'MFA_REQUIRED', variantAfterEmail);
-          throw new Error('MFA_REQUIRED: Multi-factor authentication required (cannot automate OTP/Authenticator)');
-        }
+      console.log(`AUTH_STATE_SAVED: ${statePath}`);
+      console.log('[AUTH_OK]', JSON.stringify({ usedStateReuse: false, finalHost: page.url() }));
+    } catch (err) {
+      // On any error, ensure we've captured evidence
+      const errorMessage = (err as Error).message || String(err);
 
-        // Try to fill password field
-        const passwordFound = await findAndFillPassword(page, jiraPassword);
-        if (!passwordFound) {
-          const variant = await detectLoginVariant(page);
-          await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
-          throw new Error('LOGIN_FORM_NOT_FOUND: Password input field not found');
-        }
+      // Extract reason code from error message if present
+      const reasonCodes: AuthFailureReasonCode[] = [
+        'SSO_REQUIRED',
+        'MFA_REQUIRED',
+        'LOGIN_FORM_NOT_FOUND',
+        'INVALID_CREDENTIALS',
+        'AUTH_SETUP_TIMEOUT',
+        'UNKNOWN_LOGIN_VARIANT',
+      ];
 
-        // Click login/submit button
-        const loginFound = await findAndClickLogin(page);
-        if (!loginFound) {
-          const variant = await detectLoginVariant(page);
-          await captureAuthFailureEvidence(page, 'LOGIN_FORM_NOT_FOUND', variant);
-          throw new Error('LOGIN_FORM_NOT_FOUND: Login/submit button not found');
-        }
-
-        // Wait for Jira dashboard to load
-        console.log('[AUTH] Waiting for Jira dashboard...');
-        try {
-          await page.waitForURL(`${baseUrlNorm}/jira/**`, { timeout: 30_000 });
-        } catch (err) {
-          // Timeout or navigation failed
-          const variant = await detectLoginVariant(page);
-          const currentUrl = page.url();
-
-          // Check if we got login error page
-          if (currentUrl.includes('error') || currentUrl.includes('login')) {
-            await captureAuthFailureEvidence(page, 'INVALID_CREDENTIALS', variant);
-            throw new Error('INVALID_CREDENTIALS: Login failed (possibly invalid email/password)');
-          }
-
-          // Unknown error after login attempt
-          await captureAuthFailureEvidence(page, 'UNKNOWN_LOGIN_VARIANT', variant);
-          throw new Error(`UNKNOWN_LOGIN_VARIANT: Expected Jira URL but got: ${currentUrl}`);
+      let extractedReason: AuthFailureReasonCode = 'UNKNOWN_LOGIN_VARIANT';
+      for (const code of reasonCodes) {
+        if (errorMessage.includes(code)) {
+          extractedReason = code;
+          break;
         }
       }
-    } else {
-      console.log('[AUTH] Already at Jira page - will verify authentication');
+
+      // Make sure we have evidence captured
+      try {
+        const variant = await detectLoginVariant(page);
+        const outDir = getOutDir();
+        const reasonFile = path.join(outDir, 'auth-failure-reason.json');
+
+        // Only capture if not already done
+        if (!fs.existsSync(reasonFile)) {
+          await captureAuthFailureEvidence(page, extractedReason, variant);
+        }
+      } catch (captureErr) {
+        console.log(`[AUTH] Warning: failed to capture evidence on failure - ${(captureErr as Error).message}`);
+      }
+
+      throw err;  // Re-throw the original error
     }
+  }
 
-    // === Run Jira authentication proof (strict fail-closed) ===
-    await proveJiraAuthentication();
+  // === Wrap auth flow with timeout protection ===
+  try {
+    await Promise.race([
+      performAuthFlow(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => {
+          // Timeout occurred - capture timeout evidence
+          detectLoginVariant(page)
+            .then(variant => {
+              captureAuthFailureEvidence(page, 'AUTH_SETUP_TIMEOUT', {
+                ...variant,
+              }).catch(err => {
+                console.log(`[AUTH_TIMEOUT] Warning: failed to capture timeout evidence - ${(err as Error).message}`);
+              });
+            })
+            .catch(err => {
+              console.log(`[AUTH_TIMEOUT] Warning: failed to detect variant for timeout evidence - ${(err as Error).message}`);
+            });
 
-    // === Save auth state (ONLY after proof passes) ===
-    await page.context().storageState({ path: statePath });
-
-    // === Verify state file exists and is non-trivial ===
-    if (!fs.existsSync(statePath)) {
-      throw new Error(`Auth state file not created at ${statePath}`);
-    }
-
-    const statSize = fs.statSync(statePath).size;
-    if (statSize < 10) {
-      throw new Error(`Auth state file too small (${statSize} bytes), likely empty`);
-    }
-
-    console.log(`AUTH_STATE_SAVED: ${statePath}`);
-    console.log('[AUTH_OK]', JSON.stringify({ usedStateReuse: false, finalHost: page.url() }));
+          reject(new Error('AUTH_SETUP_TIMEOUT: Authentication setup exceeded 120s timeout'));
+        }, AUTH_SETUP_TIMEOUT_MS)
+      ),
+    ]);
   } catch (err) {
-    // On any error, ensure we've captured evidence
-    const errorMessage = (err as Error).message || String(err);
-
-    // Extract reason code from error message if present
-    const reasonCodes: AuthFailureReasonCode[] = [
-      'SSO_REQUIRED',
-      'MFA_REQUIRED',
-      'LOGIN_FORM_NOT_FOUND',
-      'INVALID_CREDENTIALS',
-      'UNKNOWN_LOGIN_VARIANT',
-    ];
-
-    let extractedReason: AuthFailureReasonCode = 'UNKNOWN_LOGIN_VARIANT';
-    for (const code of reasonCodes) {
-      if (errorMessage.includes(code)) {
-        extractedReason = code;
-        break;
-      }
+    // If it's a timeout error, it's already captured above
+    if ((err as Error).message.includes('AUTH_SETUP_TIMEOUT')) {
+      console.log('[AUTH] Timeout occurred during auth setup');
+      throw err;
     }
-
-    // Make sure we have evidence captured
-    try {
-      const variant = await detectLoginVariant(page);
-      const outDir = getOutDir();
-      const reasonFile = path.join(outDir, 'auth-failure-reason.json');
-
-      // Only capture if not already done
-      if (!fs.existsSync(reasonFile)) {
-        await captureAuthFailureEvidence(page, extractedReason, variant);
-      }
-    } catch (captureErr) {
-      console.log(`[AUTH] Warning: failed to capture evidence on failure - ${(captureErr as Error).message}`);
-    }
-
-    throw err;  // Re-throw the original error
+    // Otherwise, let the performAuthFlow error handling take care of it
+    throw err;
   }
 });
