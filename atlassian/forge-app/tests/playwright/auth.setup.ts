@@ -27,7 +27,72 @@ interface AuthObservations {
   hasSsoButtons: boolean;
   hasTwoStep: boolean;
   hasMfaChallenge: boolean;
+  finalUrlHost?: string;
+  frameHosts?: string[];
 }
+
+// === HELPER: Build Atlassian ID login URL with continue parameter ===
+function buildAtlassianIdLoginUrl(baseUrlNorm: string): string {
+  const continueUrl = `${baseUrlNorm}/jira/your-work`;
+  const encodedContinue = encodeURIComponent(continueUrl);
+  return `https://id.atlassian.com/login?continue=${encodedContinue}`;
+}
+
+// === HELPER: Find visible locator across main frame and iframes ===
+interface FrameLocatorResult {
+  frameUrl: string;
+  selector: string;
+  locator: any; // Playwright Locator type
+}
+
+async function findVisibleLocatorAcrossFrames(
+  page: Page,
+  selectors: string[]
+): Promise<FrameLocatorResult | null> {
+  // Try main frame first
+  for (const selector of selectors) {
+    try {
+      const locator = page.locator(selector).first();
+      if ((await locator.count()) > 0 && await locator.isVisible({ timeout: 1500 })) {
+        return {
+          frameUrl: page.url(),
+          selector,
+          locator,
+        };
+      }
+    } catch (err) {
+      // Continue to next selector
+    }
+  }
+
+  // Try all child frames in DOM order
+  try {
+    const frames = page.frames();
+    for (const frame of frames) {
+      if (frame === page.mainFrame()) continue; // Skip main frame (already tried)
+
+      for (const selector of selectors) {
+        try {
+          const locator = frame.locator(selector).first();
+          if ((await locator.count()) > 0 && await locator.isVisible({ timeout: 1500 })) {
+            return {
+              frameUrl: frame.url(),
+              selector,
+              locator,
+            };
+          }
+        } catch (err) {
+          // Continue to next selector or frame
+        }
+      }
+    }
+  } catch (err) {
+    console.log(`[AUTH] Warning: frame enumeration error - ${(err as Error).message}`);
+  }
+
+  return null;
+}
+
 
 // === HELPER: Capture auth failure evidence (no secrets) ===
 async function captureAuthFailureEvidence(
@@ -61,11 +126,21 @@ async function captureAuthFailureEvidence(
   }
 
   try {
-    // Write reason code (no timestamps, deterministic)
+    // Write reason code with frame info (no timestamps, deterministic)
+    const finalUrlHost = new URL(page.url()).host;
     const reasonJson = {
       reasonCode,
-      observations,
+      observations: {
+        ...observations,
+        finalUrlHost,
+      },
     };
+    
+    // Add unique sorted frame hosts if available
+    if (observations.frameHosts && observations.frameHosts.length > 0) {
+      reasonJson.observations.frameHosts = Array.from(new Set(observations.frameHosts)).sort();
+    }
+    
     fs.writeFileSync(
       path.join(outDir, 'auth-failure-reason.json'),
       JSON.stringify(reasonJson, null, 2),
@@ -77,54 +152,106 @@ async function captureAuthFailureEvidence(
   }
 }
 
-// === HELPER: Detect login page variant and SSO/MFA indicators ===
+// === HELPER: Detect login page variant and SSO/MFA indicators (frame-aware) ===
 async function detectLoginVariant(page: Page): Promise<AuthObservations> {
   const url = new URL(page.url());
-  const hasAtlassianIdHost = url.host.includes('id.atlassian.com') || url.host.includes('login.atlassian.com');
+  const mainHostIsAtlassianId = url.host.includes('id.atlassian.com') || url.host.includes('login.atlassian.com');
 
-  // Check for email/username inputs
-  const hasEmailInput =
-    (await page.locator('input[type="email"]').count()) > 0 ||
-    (await page.locator('input#username').count()) > 0 ||
-    (await page.locator('input[name="username"]').count()) > 0 ||
-    (await page.locator('input[name="email"]').count()) > 0 ||
-    (await page.locator('input[autocomplete="username"]').count()) > 0;
+  // Collect all frame URLs for observations
+  const frameHosts: string[] = [];
+  try {
+    const frames = page.frames();
+    for (const frame of frames) {
+      try {
+        const frameUrl = frame.url();
+        const frameHost = new URL(frameUrl).host;
+        frameHosts.push(frameHost);
+      } catch (err) {
+        // Skip frames with invalid URLs
+      }
+    }
+  } catch (err) {
+    // Ignore frame enumeration errors
+  }
 
-  // Check for password input
-  const hasPasswordInput =
-    (await page.locator('input[type="password"]').count()) > 0 ||
-    (await page.locator('input#password').count()) > 0 ||
-    (await page.locator('input[name="password"]').count()) > 0 ||
-    (await page.locator('input[autocomplete="current-password"]').count()) > 0;
+  // Check if any frame is Atlassian ID
+  const hasAtlassianIdHost =
+    mainHostIsAtlassianId ||
+    frameHosts.some(host => host.includes('id.atlassian.com') || host.includes('login.atlassian.com'));
 
-  // Check for buttons
-  const hasContinueButton =
-    (await page.locator('button:has-text("Continue")').count()) > 0 ||
-    (await page.locator('button:has-text("Next")').count()) > 0 ||
-    (await page.locator('input[type="submit"]').count()) > 0;
+  // Check for email/username inputs (main + frames)
+  let hasEmailInput = false;
+  const emailSelectors = [
+    'input[type="email"]',
+    'input#username',
+    'input[name="username"]',
+    'input[name="email"]',
+    'input[autocomplete="username"]',
+  ];
+  const emailResult = await findVisibleLocatorAcrossFrames(page, emailSelectors);
+  hasEmailInput = emailResult !== null;
 
-  // Check for SSO indicators
-  const hasSsoButtons =
-    (await page.locator('button:has-text("Google")').count()) > 0 ||
-    (await page.locator('button:has-text("Microsoft")').count()) > 0 ||
-    (await page.locator('button:has-text("SSO")').count()) > 0 ||
-    (await page.locator('button:has-text("organization")').count()) > 0 ||
-    (await page.locator('text=/saml|sso|Continue with/i').count()) > 0;
+  // Check for password input (main + frames)
+  let hasPasswordInput = false;
+  const passwordSelectors = [
+    'input[type="password"]',
+    'input#password',
+    'input[name="password"]',
+    'input[autocomplete="current-password"]',
+  ];
+  const passwordResult = await findVisibleLocatorAcrossFrames(page, passwordSelectors);
+  hasPasswordInput = passwordResult !== null;
 
-  // Check for MFA/2FA indicators
-  const hasTwoStep =
-    (await page.locator('text=/two.?step|2fa|two-factor/i').count()) > 0 ||
-    (await page.locator('text=/Verification code|OTP/i').count()) > 0;
+  // Check for continue/next button (main + frames)
+  let hasContinueButton = false;
+  const continueSelectors = [
+    'button:has-text("Continue")',
+    'button:has-text("Next")',
+    'input[type="submit"]',
+  ];
+  const continueResult = await findVisibleLocatorAcrossFrames(page, continueSelectors);
+  hasContinueButton = continueResult !== null;
 
-  const hasMfaChallenge =
-    (await page.locator('input[name="verification_code"]').count()) > 0 ||
-    (await page.locator('input[name="otp"]').count()) > 0 ||
-    (await page.locator('text=/Enter your authentication code|Authenticator/i').count()) > 0;
+  // Check for SSO indicators in main content
+  let hasSsoButtons = false;
+  try {
+    const mainContent = await page.content();
+    if (
+      mainContent.includes('Google') ||
+      mainContent.includes('Microsoft') ||
+      mainContent.includes('SSO') ||
+      mainContent.includes('organization') ||
+      /saml|sso|Continue with/i.test(mainContent)
+    ) {
+      hasSsoButtons = true;
+    }
+  } catch (err) {
+    // Ignore content fetch errors
+  }
 
-  // Check for CAPTCHA
-  const hasCaptcha =
-    (await page.locator('iframe[src*="recaptcha"]').count()) > 0 ||
-    (await page.locator('text=/robot|captcha|verify/i').count()) > 0;
+  // Check for MFA/2FA indicators in main content
+  let hasTwoStep = false;
+  let hasMfaChallenge = false;
+  try {
+    const mainContent = await page.content();
+    if (/two.?step|2fa|two-factor|Verification code|OTP/i.test(mainContent)) {
+      hasTwoStep = true;
+    }
+    if (
+      /Enter your authentication code|Authenticator/i.test(mainContent) ||
+      mainContent.includes('verification_code') ||
+      mainContent.includes('otp')
+    ) {
+      hasMfaChallenge = true;
+    }
+
+    // Check for CAPTCHA
+    if (mainContent.includes('recaptcha') || /robot|captcha|verify/i.test(mainContent)) {
+      hasMfaChallenge = true;
+    }
+  } catch (err) {
+    // Ignore content fetch errors
+  }
 
   return {
     hasAtlassianIdHost,
@@ -133,106 +260,101 @@ async function detectLoginVariant(page: Page): Promise<AuthObservations> {
     hasContinueButton,
     hasSsoButtons,
     hasTwoStep,
-    hasMfaChallenge: hasMfaChallenge || hasCaptcha,
+    hasMfaChallenge,
+    frameHosts: frameHosts.length > 0 ? frameHosts : undefined,
   };
 }
 
-// === HELPER: Try to find and fill email field (ordered fallback strategy) ===
+
+// === HELPER: Try to find and fill email field (frame-aware) ===
 async function findAndFillEmail(page: Page, email: string): Promise<boolean> {
   const emailSelectors = [
-    { locator: page.locator('input[type="email"]'), name: 'input[type="email"]' },
-    { locator: page.locator('input#username'), name: 'input#username' },
-    { locator: page.locator('input[name="username"]'), name: 'input[name="username"]' },
-    { locator: page.locator('input[name="email"]'), name: 'input[name="email"]' },
-    { locator: page.locator('input[autocomplete="username"]'), name: 'input[autocomplete="username"]' },
+    'input[type="email"]',
+    'input#username',
+    'input[name="username"]',
+    'input[name="email"]',
+    'input[autocomplete="username"]',
   ];
 
-  for (const { locator, name } of emailSelectors) {
+  const result = await findVisibleLocatorAcrossFrames(page, emailSelectors);
+  if (result) {
     try {
-      if ((await locator.count()) > 0) {
-        const firstElement = locator.first();
-        await firstElement.waitFor({ state: 'visible', timeout: 4000 });
-        await firstElement.fill(email);
-        console.log(`[AUTH] Email field found via selector: ${name}`);
-        return true;
-      }
+      await result.locator.fill(email);
+      console.log(`[AUTH] Email field found and filled via: ${result.selector} (frame: ${result.frameUrl})`);
+      return true;
     } catch (err) {
-      // Selector not found or not visible, try next
-      continue;
+      console.log(`[AUTH] Failed to fill email field - ${(err as Error).message}`);
+      return false;
     }
   }
 
   return false;
 }
 
-// === HELPER: Try to find and click continue/next button ===
+// === HELPER: Try to find and click continue/next button (frame-aware) ===
 async function findAndClickContinue(page: Page): Promise<boolean> {
   const continueSelectors = [
-    { locator: page.locator('button:has-text("Continue")'), name: 'button:has-text("Continue")' },
-    { locator: page.locator('button:has-text("Next")'), name: 'button:has-text("Next")' },
-    { locator: page.locator('input[type="submit"]').first(), name: 'input[type="submit"]' },
+    'button:has-text("Continue")',
+    'button:has-text("Next")',
+    'input[type="submit"]',
   ];
 
-  for (const { locator, name } of continueSelectors) {
+  const result = await findVisibleLocatorAcrossFrames(page, continueSelectors);
+  if (result) {
     try {
-      if ((await locator.count()) > 0) {
-        await locator.waitFor({ state: 'visible', timeout: 4000 });
-        await locator.click();
-        console.log(`[AUTH] Continue button clicked via selector: ${name}`);
-        return true;
-      }
+      await result.locator.click();
+      console.log(`[AUTH] Continue button clicked via: ${result.selector} (frame: ${result.frameUrl})`);
+      return true;
     } catch (err) {
-      continue;
+      console.log(`[AUTH] Failed to click continue - ${(err as Error).message}`);
+      return false;
     }
   }
 
   return false;
 }
 
-// === HELPER: Try to find and fill password field ===
+// === HELPER: Try to find and fill password field (frame-aware) ===
 async function findAndFillPassword(page: Page, password: string): Promise<boolean> {
   const passwordSelectors = [
-    { locator: page.locator('input[type="password"]'), name: 'input[type="password"]' },
-    { locator: page.locator('input#password'), name: 'input#password' },
-    { locator: page.locator('input[name="password"]'), name: 'input[name="password"]' },
-    { locator: page.locator('input[autocomplete="current-password"]'), name: 'input[autocomplete="current-password"]' },
+    'input[type="password"]',
+    'input#password',
+    'input[name="password"]',
+    'input[autocomplete="current-password"]',
   ];
 
-  for (const { locator, name } of passwordSelectors) {
+  const result = await findVisibleLocatorAcrossFrames(page, passwordSelectors);
+  if (result) {
     try {
-      if ((await locator.count()) > 0) {
-        const firstElement = locator.first();
-        await firstElement.waitFor({ state: 'visible', timeout: 4000 });
-        await firstElement.fill(password);
-        console.log(`[AUTH] Password field found via selector: ${name}`);
-        return true;
-      }
+      await result.locator.fill(password);
+      console.log(`[AUTH] Password field found and filled via: ${result.selector} (frame: ${result.frameUrl})`);
+      return true;
     } catch (err) {
-      continue;
+      console.log(`[AUTH] Failed to fill password field - ${(err as Error).message}`);
+      return false;
     }
   }
 
   return false;
 }
 
-// === HELPER: Try to find and click login/submit button ===
+// === HELPER: Try to find and click login/submit button (frame-aware) ===
 async function findAndClickLogin(page: Page): Promise<boolean> {
   const loginSelectors = [
-    { locator: page.locator('button:has-text("Log in")'), name: 'button:has-text("Log in")' },
-    { locator: page.locator('button:has-text("Sign in")'), name: 'button:has-text("Sign in")' },
-    { locator: page.locator('input[type="submit"]').first(), name: 'input[type="submit"]' },
+    'button:has-text("Log in")',
+    'button:has-text("Sign in")',
+    'input[type="submit"]',
   ];
 
-  for (const { locator, name } of loginSelectors) {
+  const result = await findVisibleLocatorAcrossFrames(page, loginSelectors);
+  if (result) {
     try {
-      if ((await locator.count()) > 0) {
-        await locator.waitFor({ state: 'visible', timeout: 4000 });
-        await locator.click();
-        console.log(`[AUTH] Login button clicked via selector: ${name}`);
-        return true;
-      }
+      await result.locator.click();
+      console.log(`[AUTH] Login button clicked via: ${result.selector} (frame: ${result.frameUrl})`);
+      return true;
     } catch (err) {
-      continue;
+      console.log(`[AUTH] Failed to click login - ${(err as Error).message}`);
+      return false;
     }
   }
 
@@ -380,6 +502,12 @@ setup('auth', async ({ page }) => {
     }
 
     if (isLoginRequired) {
+      // === Force Atlassian ID login entry point (deterministic) ===
+      const atlassianIdUrl = buildAtlassianIdLoginUrl(baseUrlNorm);
+      console.log(`[AUTH] Forcing Atlassian ID login entry: ${atlassianIdUrl}`);
+      await page.goto(atlassianIdUrl, { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle');
+
       // Detect current login page variant
       const variant = await detectLoginVariant(page);
       console.log(`[AUTH] Login page detected - variant detection: ${JSON.stringify(variant)}`);
