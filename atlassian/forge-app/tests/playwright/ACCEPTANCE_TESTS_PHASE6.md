@@ -17,6 +17,52 @@
 
 **Developer note:** Do NOT run the guard manually; the runner runs both pre and post guards automatically.
 
+---
+
+## Runner Non-Bypassable Guardrail Proof
+
+**Objective:** Demonstrate that the runner's pre-guard and post-guard always execute, even on failure/timeout/interrupt.
+
+**Contract:** The runner (`scripts/proof/run_dashboard_playwright.sh`) uses shell trap infrastructure to guarantee:
+1. **Pre-guard always runs** before Playwright (blocks execution if violated)
+2. **Post-guard always runs** on exit (via `trap ... EXIT`, catches success/failure/timeout/CTRL-C)
+3. **Cleanup always executes** (state.json deleted before post-guard)
+4. **Evidence always written** (JSON in `/tmp/pw_state_guard_<UTC>/state-guard-result.json`)
+
+**Proof Method:**
+
+Run the runner when PRE-GUARD must fail (missing required env validation):
+```bash
+cd atlassian/forge-app
+
+# Omit JIRA_PASSWORD to trigger ENV validation failure (before Playwright)
+JIRA_BASE_URL="https://example.invalid" JIRA_EMAIL="test@example.invalid" \
+  timeout 5s bash scripts/proof/run_dashboard_playwright.sh 2>&1 || true
+
+# Check that pre-guard evidence was created
+LATEST_GUARD=$(ls -1dt /tmp/pw_state_guard_* 2>/dev/null | head -1)
+echo "Guard evidence dir: $LATEST_GUARD"
+cat "$LATEST_GUARD/state-guard-result.json"
+```
+
+**Expected Results:**
+1. **Pre-guard ran:** Evidence file exists at `$LATEST_GUARD/state-guard-result.json`
+2. **Post-guard ran:** Another guard dir created *after* pre-guard (check timestamps)
+3. **Exit code non-zero:** Runner blocked due to env validation or pre-guard failure
+4. **JSON valid:** Both guard evidence files have `{ result, reasonCode, details }` structure
+
+**Verify Trap Implementation:**
+```bash
+# Confirm runner has trap infrastructure
+grep "^trap 'cleanup_and_postguard; exit_final' EXIT" atlassian/forge-app/scripts/proof/run_dashboard_playwright.sh
+grep "^exit_final()" atlassian/forge-app/scripts/proof/run_dashboard_playwright.sh
+grep "PRE_GUARD_EXIT=" atlassian/forge-app/scripts/proof/run_dashboard_playwright.sh
+grep "POST_GUARD_EXIT=" atlassian/forge-app/scripts/proof/run_dashboard_playwright.sh
+grep "PLAYWRIGHT_EXIT=" atlassian/forge-app/scripts/proof/run_dashboard_playwright.sh
+```
+
+---
+
 ## Test Environment Setup
 
 Before running tests:
