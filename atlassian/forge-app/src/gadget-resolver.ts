@@ -45,6 +45,7 @@ import { probe } from './resolvers/probe'; // FORENSIC_PROBE
 import { getDashboardSnapshotV1_resolver } from './resolvers/getDashboardSnapshotV1';
 import { handler as ft_runAccessIntelligence_v1_handler } from './resolvers/ft_runAccessIntelligence_v1'; // PHASE 1
 import { handler as ft_exportAccessPack_v1_handler } from './resolvers/ft_exportAccessPack_v1'; // PHASE 1
+import { getMonitoringConfig, saveMonitoringConfig } from './resolvers/phase2_config'; // PHASE 2
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -96,6 +97,19 @@ resolver.define('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1);
 
 // UI log relay resolver (UI → backend log relay for markers)
 resolver.define('ft_uiLogRelay_v1', ft_uiLogRelay_v1);
+
+// PHASE 2: Monitoring configuration resolvers
+resolver.define('getMonitoringConfig', async () => getMonitoringConfig());
+resolver.define('saveMonitoringConfig', async (req: any) => {
+  try {
+    await saveMonitoringConfig(req);
+    return { ok: true };
+  } catch (err) {
+    throw new Error(
+      err instanceof Error ? err.message : 'Failed to save monitoring config'
+    );
+  }
+});
 
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
