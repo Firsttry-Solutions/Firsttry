@@ -15,8 +15,18 @@ set -euo pipefail
 
 REPO_ROOT="/workspaces/Firsttry/atlassian/forge-app"
 
+# Support FT_ONLY_CHECK for isolated testing (e.g., selftest)
+FT_ONLY_CHECK="${FT_ONLY_CHECK:-}"
+if [[ -n "$FT_ONLY_CHECK" ]] && [[ "$FT_ONLY_CHECK" != "11" ]]; then
+  echo "ERROR: FT_ONLY_CHECK=$FT_ONLY_CHECK not supported (only '11' allowed)"
+  exit 1
+fi
+
 echo "[SHIP_GATE] Starting Phase 2 validation..."
 echo ""
+
+# If FT_ONLY_CHECK=11 is set, skip to CHECK-11 directly
+if [[ -z "$FT_ONLY_CHECK" ]]; then
 
 #==============================================================================
 # CHECK 1: Working directory and required files
@@ -423,24 +433,136 @@ fi
 echo "✅ Phase 2 config resolvers properly wired in gadget-resolver"
 echo ""
 
+# End of early all-checks block (if FT_ONLY_CHECK not set)
+fi  # End "if [[ -z $FT_ONLY_CHECK ]]"
+
+# cd back to REPO_ROOT in case CHECK-11 runs isolated
+cd "$REPO_ROOT" || { echo "ERROR: Cannot cd to $REPO_ROOT"; exit 1; }
+
 #==============================================================================
-# CHECK 11: Optional Playwright tests
+# CHECK 11: Fail-Closed Playwright Gate (Explicit Skip + Provenance Verification)
 #==============================================================================
-echo "[CHECK-11] Checking for Playwright..."
+echo "[CHECK-11] Playwright Tests (Fail-Closed with Explicit Skip Option)..."
 echo ""
 
-if grep -q "playwright" package.json 2>/dev/null; then
-    echo "Found Playwright in package.json - running tests..."
-    if ! npx playwright test 2>&1; then
-        echo "ERROR: Playwright tests failed"
+# Determine gate mode: run (default) or skip (explicit)
+FT_PLAYWRIGHT_GATE="${FT_PLAYWRIGHT_GATE:-run}"
+FT_PLAYWRIGHT_SKIP_REASON="${FT_PLAYWRIGHT_SKIP_REASON:-}"
+
+if [[ "$FT_PLAYWRIGHT_GATE" == "skip" ]]; then
+    # SKIP MODE: Require explicit reason
+    if [[ -z "$FT_PLAYWRIGHT_SKIP_REASON" ]]; then
+        echo "[FT_PROOF] PLAYWRIGHT_SKIP_REASON_MISSING"
+        echo "ERROR: FT_PLAYWRIGHT_GATE=skip requires non-empty FT_PLAYWRIGHT_SKIP_REASON"
         exit 1
     fi
-    echo "✅ Playwright tests passed"
-else
-    echo "SKIP: Playwright not installed"
-fi
+    echo "[FT_PROOF] PLAYWRIGHT_SKIPPED_EXPLICIT"
+    echo "Skip reason: $FT_PLAYWRIGHT_SKIP_REASON"
+    echo "✅ Playwright tests skipped (explicit)"
+    
+    # Write evidence if dir exists
+    if [[ -n "${EVIDENCE_DIR:-}" ]]; then
+        echo "[FT_PROOF] PLAYWRIGHT_SKIPPED_EXPLICIT" >> "$EVIDENCE_DIR/ship_gate_check11.txt"
+        echo "Reason: $FT_PLAYWRIGHT_SKIP_REASON" >> "$EVIDENCE_DIR/ship_gate_check11.txt"
+    fi
+    echo ""
 
-echo ""
+elif [[ "$FT_PLAYWRIGHT_GATE" == "run" ]]; then
+    # RUN MODE: Verify environment, state + provenance, then execute
+    
+    # 1) Check if Playwright is installed
+    if ! grep -q "playwright" package.json 2>/dev/null; then
+        echo "SKIP: Playwright not in package.json (no tests to run)"
+        echo "✅ CHECK-11 PASS (Playwright not installed)"
+        echo ""
+        if [[ -n "${EVIDENCE_DIR:-}" ]]; then
+            echo "Playwright not installed - nothing to verify" >> "$EVIDENCE_DIR/ship_gate_check11.txt"
+        fi
+    else
+        # Playwright is installed - HARD requirements:
+        echo "Playwright found in package.json - verifying environment and state..."
+        echo ""
+        
+        # 2) Require JIRA env vars for test execution
+        if [[ -z "${JIRA_BASE_URL:-}" ]]; then
+            echo "[FT_PROOF] PLAYWRIGHT_ENV_MISSING_FAIL"
+            echo "ERROR: JIRA_BASE_URL not set (required for Playwright tests)"
+            exit 1
+        fi
+        if [[ -z "${JIRA_EMAIL:-}" ]]; then
+            echo "[FT_PROOF] PLAYWRIGHT_ENV_MISSING_FAIL"
+            echo "ERROR: JIRA_EMAIL not set (required for Playwright tests)"
+            exit 1
+        fi
+        if [[ -z "${JIRA_API_TOKEN:-}" ]]; then
+            echo "[FT_PROOF] PLAYWRIGHT_ENV_MISSING_FAIL"
+            echo "ERROR: JIRA_API_TOKEN not set (required for Playwright tests)"
+            exit 1
+        fi
+        echo "✓ Required Jira environment variables set"
+        
+        # 3) Require provenance-backed state.json
+        STATE_JSON_PATH="tests/playwright/.auth/state.json"
+        STATE_PROVENANCE_PATH="${STATE_JSON_PATH}.provenance.json"
+        
+        if [[ ! -f "$STATE_JSON_PATH" ]]; then
+            echo "[FT_PROOF] PLAYWRIGHT_STATE_MISSING_FAIL"
+            echo "ERROR: $STATE_JSON_PATH not found"
+            echo "Generate it with: FT_AUTH_GENERATE_STATE=1 FT_PLAYWRIGHT_MODE=headed bash scripts/proof/generate_playwright_state.sh"
+            exit 1
+        fi
+        
+        if [[ ! -f "$STATE_PROVENANCE_PATH" ]]; then
+            echo "[FT_PROOF] PLAYWRIGHT_STATE_MISSING_FAIL"
+            echo "ERROR: $STATE_PROVENANCE_PATH not found (state must have provenance)"
+            exit 1
+        fi
+        
+        echo "✓ State + provenance files present"
+        
+        # 4) Verify provenance hash matches state.json hash
+        ACTUAL_SHA=$(sha256sum "$STATE_JSON_PATH" | awk '{print $1}')
+        PROVENANCE_SHA=$(grep -o '"stateSha256"[[:space:]]*:[[:space:]]*"[^"]*"' "$STATE_PROVENANCE_PATH" | sed 's/.*"\([^"]*\)".*/\1/' || echo "")
+        
+        if [[ -z "$PROVENANCE_SHA" ]]; then
+            echo "[FT_PROOF] PLAYWRIGHT_PROVENANCE_MISMATCH_FAIL"
+            echo "ERROR: Cannot extract stateSha256 from provenance"
+            exit 1
+        fi
+        
+        if [[ "$ACTUAL_SHA" != "$PROVENANCE_SHA" ]]; then
+            echo "[FT_PROOF] PLAYWRIGHT_PROVENANCE_MISMATCH_FAIL"
+            echo "ERROR: State hash mismatch"
+            echo "  Expected (provenance): $PROVENANCE_SHA"
+            echo "  Actual (state.json):   $ACTUAL_SHA"
+            exit 1
+        fi
+        
+        echo "✓ Provenance hash verified (SHA256=$ACTUAL_SHA)"
+        echo ""
+        
+        # 5) Run Playwright via deterministic proof runner (state-only mode)
+        echo "Running Playwright enterprise proof (state-only mode)..."
+        if ! bash scripts/proof/run_playwright_enterprise_proof.sh; then
+            echo "ERROR: Playwright proof runner failed"
+            exit 1
+        fi
+        
+        echo "[FT_PROOF] PLAYWRIGHT_PASS"
+        echo "✅ Playwright tests passed (state-backed, provenance-verified)"
+        
+        if [[ -n "${EVIDENCE_DIR:-}" ]]; then
+            echo "[FT_PROOF] PLAYWRIGHT_PASS" >> "$EVIDENCE_DIR/ship_gate_check11.txt"
+        fi
+    fi
+    
+    echo ""
+
+else
+    echo "[FT_PROOF] PLAYWRIGHT_GATE_INVALID"
+    echo "ERROR: FT_PLAYWRIGHT_GATE=$FT_PLAYWRIGHT_GATE (expected 'run' or 'skip')"
+    exit 1
+fi
 
 #==============================================================================
 # FINAL: Success
