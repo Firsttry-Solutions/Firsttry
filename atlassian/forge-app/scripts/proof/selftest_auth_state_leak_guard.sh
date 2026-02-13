@@ -10,23 +10,26 @@ echo "========== AUTH STATE LEAK GUARD SELF-TEST =========="
 TEST_PASSED=0
 TEST_FAILED=0
 
-# Ensure we're in the repo root
-cd "$(git rev-parse --show-toplevel)" || exit 1
+# Determine the repo directory (assuming script is in scripts/proof/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+echo "[INFO] Repository root: $REPO_ROOT"
+cd "$REPO_ROOT" || exit 1
 
 # ============================================================================
-# Helper functions
+# Helper: Run a single test
 # ============================================================================
-test_assert() {
+run_test() {
   local name="$1"
   local expected_exit="$2"
-  local cmd="$3"
+  shift 2
   
   echo -n "[TEST] $name ... "
-  if eval "$cmd" >/dev/null 2>&1; then
-    local actual_exit=0
-  else
-    local actual_exit=$?
-  fi
+  
+  # Execute the command and capture exit code
+  actual_exit=0
+  "$@" >/dev/null 2>&1 || actual_exit=$?
   
   if [ "$actual_exit" -eq "$expected_exit" ]; then
     echo "✓ PASS"
@@ -38,108 +41,99 @@ test_assert() {
 }
 
 # ============================================================================
-# SUB-TEST 1: Pre-phase guard (no state.json, no tracking issues)
+# SUB-TEST 1: Pre-phase guard 
 # ============================================================================
 echo ""
 echo "[SUBTEST 1] Pre-phase guard (should PASS: no state.json, no tracking violations)"
 
-# Ensure state.json does NOT exist for this test
-rm -f tests/playwright/.auth/state.json
+rm -f "$REPO_ROOT/tests/playwright/.auth/state.json" 2>/dev/null || true
 
-export FT_GUARD_PHASE="pre"
-test_assert "Pre-phase with no state.json" 0 \
-  "bash scripts/proof/guard_no_auth_state_leak.sh"
-
-unset FT_GUARD_PHASE
+run_test "Pre-phase with no state.json" 0 \
+  env FT_GUARD_PHASE=pre bash "$REPO_ROOT/scripts/proof/guard_no_auth_state_leak.sh"
 
 # ============================================================================
-# SUB-TEST 2: Create fake state.json and re-verify pre-phase still passes
+# SUB-TEST 2: Pre-phase with untracked state.json  
 # ============================================================================
 echo ""
 echo "[SUBTEST 2] Pre-phase with untracked state.json (should PASS: not tracked)"
 
-mkdir -p tests/playwright/.auth
-
-# Create a minimal fake state (NOT a real secret, just test data)
-cat > tests/playwright/.auth/state.json << 'EOF'
-{
-  "cookies": [{"name": "fake_cookie", "value": "xxx"}],
-  "origins": [{"origin": "https://test.example.com"}]
-}
+mkdir -p "$REPO_ROOT/tests/playwright/.auth"
+cat > "$REPO_ROOT/tests/playwright/.auth/state.json" << 'EOF'
+{"cookies": [{"name": "fake_cookie", "value": "xxx"}], "origins": [{"origin": "https://test.example.com"}]}
 EOF
+chmod 0600 "$REPO_ROOT/tests/playwright/.auth/state.json"
 
-chmod 0600 tests/playwright/.auth/state.json
-
-export FT_GUARD_PHASE="pre"
-test_assert "Pre-phase with untracked fake state.json" 0 \
-  "bash scripts/proof/guard_no_auth_state_leak.sh"
-
-unset FT_GUARD_PHASE
+run_test "Pre-phase with untracked fake state.json" 0 \
+  env FT_GUARD_PHASE=pre bash "$REPO_ROOT/scripts/proof/guard_no_auth_state_leak.sh"
 
 # ============================================================================
-# SUB-TEST 3: Post-phase guard with fake state in artifact dir
+# SUB-TEST 3: Post-phase with state in artifact dir
 # ============================================================================
 echo ""
 echo "[SUBTEST 3] Post-phase with state.json in artifact dir (should FAIL)"
 
-# Simulate a Playwright test output directory
 FAKE_ARTIFACT_DIR="/tmp/pw_dash_diag_fake_test_$(date +%s)"
 mkdir -p "$FAKE_ARTIFACT_DIR"
+cp "$REPO_ROOT/tests/playwright/.auth/state.json" "$FAKE_ARTIFACT_DIR/state.json"
 
-# Copy fake state.json into artifact dir (simulating a leak)
-cp tests/playwright/.auth/state.json "$FAKE_ARTIFACT_DIR/state.json"
+run_test "Post-phase detects state.json in artifact dir" 1 \
+  env FT_GUARD_PHASE=post bash "$REPO_ROOT/scripts/proof/guard_no_auth_state_leak.sh"
 
-export FT_GUARD_PHASE="post"
-test_assert "Post-phase detects state.json in artifact dir" 1 \
-  "bash scripts/proof/guard_no_auth_state_leak.sh"
-
-unset FT_GUARD_PHASE
-
-# Clean up
 rm -rf "$FAKE_ARTIFACT_DIR"
 
 # ============================================================================
-# SUB-TEST 4: Verify .gitignore has correct patterns
+# SUB-TEST 4: .gitignore patterns
 # ============================================================================
 echo ""
 echo "[SUBTEST 4] Verify .gitignore contains state.json patterns"
 
-test_assert ".gitignore has tests/playwright/.auth/state.json" 0 \
-  "grep -q 'tests/playwright/.auth/state.json' .gitignore"
+run_test ".gitignore has tests/playwright/.auth/state.json" 0 \
+  grep -q "tests/playwright/.auth/state.json" "$REPO_ROOT/.gitignore"
 
-test_assert ".gitignore has tests/playwright/.auth/*.json" 0 \
-  "grep -q 'tests/playwright/.auth/\*\.json' .gitignore"
+run_test ".gitignore has wildcard *.json pattern" 0 \
+  grep "tests/playwright/.auth/.*json" "$REPO_ROOT/.gitignore"
 
 # ============================================================================
-# SUB-TEST 5: Verify install_state_from_env.sh does NOT have set -x
+# SUB-TEST 5: install_state_from_env.sh validation
 # ============================================================================
 echo ""
-echo "[SUBTEST 5] Verify install_state_from_env.sh has fail-closed + no set -x"
+echo "[SUBTEST 5] Verify install_state_from_env.sh fail-closed + no set -x"
 
-test_assert "install_state_from_env.sh has set -euo pipefail" 0 \
-  "grep -q 'set -euo pipefail' scripts/proof/install_state_from_env.sh"
+run_test "install_state_from_env.sh has set -euo pipefail" 0 \
+  grep -q "set -euo pipefail" "$REPO_ROOT/scripts/proof/install_state_from_env.sh"
 
-test_assert "install_state_from_env.sh does NOT have set -x" 0 \
-  "! grep -E '^set -x' scripts/proof/install_state_from_env.sh"
+# Check it doesn't have set -x
+if grep -E "^set -x|^[[:space:]]*set -x" "$REPO_ROOT/scripts/proof/install_state_from_env.sh" 2>/dev/null | grep -v "^#"; then
+  echo "[TEST] install_state_from_env.sh does NOT have set -x ... ✗ FAIL"
+  TEST_FAILED=$((TEST_FAILED + 1))
+else
+  echo "[TEST] install_state_from_env.sh does NOT have set -x ... ✓ PASS"
+  TEST_PASSED=$((TEST_PASSED + 1))
+fi
 
 # ============================================================================
-# SUB-TEST 6: Verify workflow does NOT echo secrets
+# SUB-TEST 6: Workflow YAML secret safety
 # ============================================================================
 echo ""
 echo "[SUBTEST 6] Verify workflow YAML does NOT echo FT_AUTH_STATE_JSON_B64"
 
-test_assert "Workflow does NOT echo FT_AUTH_STATE_JSON_B64" 0 \
-  "! grep -E 'echo.*\\\$.*FT_AUTH_STATE_JSON_B64|echo.*FT_AUTH_STATE_JSON_B64' .github/workflows/pw_dashboard_state_only.yml"
+if grep -E 'echo.*\$' "$REPO_ROOT/.github/workflows/pw_dashboard_state_only.yml" 2>/dev/null | grep -q "FT_AUTH_STATE_JSON_B64"; then
+  echo "[TEST] Workflow does NOT echo FT_AUTH_STATE_JSON_B64 ... ✗ FAIL"
+  TEST_FAILED=$((TEST_FAILED + 1))
+else
+  echo "[TEST] Workflow does NOT echo FT_AUTH_STATE_JSON_B64 ... ✓ PASS"
+  TEST_PASSED=$((TEST_PASSED + 1))
+fi
 
 # ============================================================================
-# SUB-TEST 7: Clean up fake state.json
+# SUB-TEST 7: Cleanup
 # ============================================================================
 echo ""
 echo "[SUBTEST 7] Clean up"
 
-rm -f tests/playwright/.auth/state.json
-test_assert "Fake state.json cleaned up" 0 \
-  "[ ! -f tests/playwright/.auth/state.json ]"
+rm -f "$REPO_ROOT/tests/playwright/.auth/state.json" 2>/dev/null || true
+run_test "Fake state.json cleaned up" 0 \
+  test ! -f "$REPO_ROOT/tests/playwright/.auth/state.json"
 
 # ============================================================================
 # Summary
