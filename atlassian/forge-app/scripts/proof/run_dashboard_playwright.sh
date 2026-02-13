@@ -29,12 +29,12 @@ mask_env_value() {
     return
   fi
   
-  # Mask JIRA_EMAIL: show only first 2 chars + domain
+  # Mask JIRA_EMAIL: show only first 2 chars + *** + @domain
   if [[ "$var_name" == "JIRA_EMAIL" ]]; then
     local first_two="${var_value:0:2}"
     local at_index=$(expr index "$var_value" "@" || true)
     if [[ $at_index -gt 0 ]]; then
-      local domain="${var_value:$at_index}"
+      local domain="${var_value:$((at_index - 1))}"  # domain includes @
       echo "${first_two}***${domain}"
     else
       echo "${first_two}***"
@@ -44,6 +44,43 @@ mask_env_value() {
   
   # Normal vars: print value
   echo "$var_value"
+}
+
+# === HELPER: Sanitize output text (remove secrets) ===
+sanitize_output() {
+  # Read from stdin if no argument provided (for pipeline use)
+  local text
+  if [[ $# -eq 0 ]]; then
+    text=$(cat)
+  else
+    text="$1"
+  fi
+  
+  # Redact PASSWORD/TOKEN/SECRET/KEY env var values
+  if [[ -n "${JIRA_PASSWORD:-}" ]]; then
+    text="${text//"${JIRA_PASSWORD}"/<REDACTED_PASSWORD>}"
+  fi
+  if [[ -n "${JIRA_EMAIL:-}" ]]; then
+    # Redact exact email first
+    text="${text//"${JIRA_EMAIL}"/<REDACTED_EMAIL>}"
+  fi
+  
+  # Redact email patterns: replace with generic redaction
+  text=$(echo "$text" | sed -E 's/[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+/[redacted-email]/g')
+  
+  # Redact JWT-like tokens (e.g., "ey...yJ....Xy...")
+  text=$(echo "$text" | sed -E 's/[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}/<REDACTED_JWT>/g')
+  
+  # Redact "Authorization: Bearer ..." patterns
+  text=$(echo "$text" | sed -E 's/Authorization: Bearer [A-Za-z0-9._\-]+/Authorization: Bearer <REDACTED>/g')
+  
+  # Redact "Bearer " tokens (anything after Bearer)
+  text=$(echo "$text" | sed -E 's/Bearer [A-Za-z0-9._\-]+/Bearer <REDACTED>/g')
+  
+  # Redact any line with "password" or "token" containing a value
+  text=$(echo "$text" | sed -E 's/(password|token|secret|authorization)=([^ ;,\)]+)/\1=<REDACTED>/gi')
+  
+  echo "$text"
 }
 
 # === HELPER: Print header ===
@@ -292,11 +329,76 @@ if [[ $PW_EXIT -eq 0 ]]; then
 else
   echo -e "${RED}✗${NC} Playwright test exited with code $PW_EXIT"
   echo ""
-  echo "ERROR OUTPUT (first 160 lines of stderr):"
-  head -160 "$PW_STDERR" | sed 's/^/  /'
+  
+  # === STEP 7a: Print Failure Excerpt (deterministic, non-empty) ===
+  print_section "Step 7a: Failure Excerpt (Sanitized)"
+  
+  # Get file sizes
+  STDOUT_SIZE=$(wc -c < "$PW_STDOUT" 2>/dev/null || echo "0")
+  STDERR_SIZE=$(wc -c < "$PW_STDERR" 2>/dev/null || echo "0")
+  
+  echo "Output file sizes:"
+  echo "  stdout: $STDOUT_SIZE bytes"
+  echo "  stderr: $STDERR_SIZE bytes"
   echo ""
-  echo "See full logs at: $PW_STDERR"
+  
+  # Determine which stream to show (prefer stderr if non-empty, fallback to stdout)
+  CHOSEN_FILE=""
+  CHOSEN_LABEL=""
+  
+  if [[ $STDERR_SIZE -gt 0 ]] && [[ -s "$PW_STDERR" ]]; then
+    CHOSEN_FILE="$PW_STDERR"
+    CHOSEN_LABEL="stderr"
+  elif [[ $STDOUT_SIZE -gt 0 ]] && [[ -s "$PW_STDOUT" ]]; then
+    CHOSEN_FILE="$PW_STDOUT"
+    CHOSEN_LABEL="stdout"
+  else
+    # Both empty - print error message
+    echo -e "${RED}No output captured from either stdout or stderr${NC}"
+    echo "Command run: npx playwright test tests/playwright/dashboard-phase1-diagnostics.spec.ts"
+    echo "Output dir:  $OUT_DIR"
+    echo ""
+    exit $PW_EXIT
+  fi
+  
+  echo "Using ${CHOSEN_LABEL} (has content)"
   echo ""
+  
+  echo "First 160 lines from $CHOSEN_LABEL:"
+  head -160 "$CHOSEN_FILE" | sanitize_output | sed 's/^/  /'
+  echo ""
+  
+  echo "Last 80 lines from $CHOSEN_LABEL (summary often at end):"
+  tail -80 "$CHOSEN_FILE" | sanitize_output | sed 's/^/  /'
+  echo ""
+  
+  # === STEP 7b: Grep for error keywords ===
+  print_section "Step 7b: Error Keyword Search"
+  
+  echo "Searching both stdout and stderr for error keywords..."
+  echo ""
+  
+  # Merge both logs, grep for error keywords (case-insensitive), limit to first 40 matches
+  ERROR_LINES=$(
+    {
+      grep -iE "(error:|failed|exception|timeout|navigation|net::|ERR_|AUTH)" "$PW_STDERR" 2>/dev/null || true
+      grep -iE "(error:|failed|exception|timeout|navigation|net::|ERR_|AUTH)" "$PW_STDOUT" 2>/dev/null || true
+    } | head -40
+  )
+  
+  if [[ -z "$ERROR_LINES" ]]; then
+    echo -e "${YELLOW}⊘${NC} No error keywords found (may be a silent failure or non-standard error format)"
+  else
+    echo "Found error keywords (up to 40 lines, sanitized):"
+    echo "$ERROR_LINES" | sanitize_output | sed 's/^/  /'
+  fi
+  echo ""
+  
+  echo "Full logs available:"
+  echo "  stdout: $PW_STDOUT"
+  echo "  stderr: $PW_STDERR"
+  echo ""
+  
   exit $PW_EXIT
 fi
 echo ""
