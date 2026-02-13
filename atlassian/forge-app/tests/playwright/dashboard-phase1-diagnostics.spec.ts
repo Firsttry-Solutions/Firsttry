@@ -1012,28 +1012,106 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
         }
         consoleLines.push('[PHASE1_VALIDATION_OK] Success marker found with valid fields');
 
-        // === NEW: FAIL-CLOSED CHECK 4: Export button visibility and eligibility ===
-        // After Phase1 scan succeeds, check export button state
+        // === FAIL-CLOSED CHECK 4: Parse [UI_EXPORT_STATE] marker (deterministic export eligibility contract) ===
+        const uiExportStateMarker = consoleLines.find(line => 
+          line.includes('[UI_EXPORT_STATE]')
+        );
+        if (!uiExportStateMarker) {
+          throw new Error('UI_EXPORT_STATE_MISSING: expected [UI_EXPORT_STATE] marker not found');
+        }
+        
+        // Extract JSON from marker
+        const uiExportStateJsonMatch = uiExportStateMarker.match(/\[UI_EXPORT_STATE\]\s*(\{.+\})/);
+        if (!uiExportStateJsonMatch || !uiExportStateJsonMatch[1]) {
+          throw new Error('UI_EXPORT_STATE_FORMAT_WRONG: no JSON payload found after marker');
+        }
+        let uiExportState: any;
+        try {
+          uiExportState = JSON.parse(uiExportStateJsonMatch[1]);
+        } catch (e) {
+          throw new Error('UI_EXPORT_STATE_JSON_INVALID: failed to parse JSON from marker');
+        }
+        
+        // Validate all required fields exist and have correct types
+        const requiredFields = ['snapshotId', 'snapshotKind', 'exportEligible', 'hasCanonicalHash', 'exportAllowed', 'reasonCode'];
+        for (const field of requiredFields) {
+          if (!(field in uiExportState)) {
+            throw new Error(`UI_EXPORT_STATE_MISSING_FIELD: field "${field}" not found in marker`);
+          }
+        }
+        
+        // Validate field types
+        if (typeof uiExportState.snapshotId !== 'string' || !uiExportState.snapshotId) {
+          throw new Error('UI_EXPORT_STATE_INVALID: snapshotId must be non-empty string');
+        }
+        if (!['SEED', 'GOVERNANCE', 'UNKNOWN'].includes(uiExportState.snapshotKind)) {
+          throw new Error(`UI_EXPORT_STATE_INVALID: snapshotKind must be SEED|GOVERNANCE|UNKNOWN, got ${uiExportState.snapshotKind}`);
+        }
+        if (typeof uiExportState.exportEligible !== 'boolean') {
+          throw new Error('UI_EXPORT_STATE_INVALID: exportEligible must be boolean');
+        }
+        if (typeof uiExportState.hasCanonicalHash !== 'boolean') {
+          throw new Error('UI_EXPORT_STATE_INVALID: hasCanonicalHash must be boolean');
+        }
+        if (typeof uiExportState.exportAllowed !== 'boolean') {
+          throw new Error('UI_EXPORT_STATE_INVALID: exportAllowed must be boolean');
+        }
+        
+        // Write UI export state to evidence file (deterministic JSON)
+        fs.writeFileSync(path.join(outDir, 'export-ui-state.json'), JSON.stringify(uiExportState, null, 2));
+        consoleLines.push(`[UI_EXPORT_STATE_WRITTEN] export-ui-state.json exported`);
+        
+        // === FAIL-CLOSED CHECK 5: Validate export button state matches computed exportAllowed ===
         const exportBtn = gadgetFrame.locator('#ft-export-access-pack-btn');
         const exportBtnVisible = await exportBtn.isVisible({ timeout: 5000 }).catch(() => false);
         
         if (exportBtnVisible) {
           const exportBtnDisabled = await exportBtn.isDisabled();
-          const snapshotKind = markerData.snapshotKind || 'UNKNOWN';
           
-          // Governance snapshots (from Phase1 Access Review) MUST have export enabled
-          if (snapshotKind === 'GOVERNANCE') {
+          // Export button must be ENABLED if and only if exportAllowed=true
+          const expectedDisabled = !uiExportState.exportAllowed;
+          const actualDisabled = exportBtnDisabled;
+          
+          if (actualDisabled !== expectedDisabled) {
+            throw new Error(
+              `PHASE1_EXPORT_BUTTON_STATE_MISMATCH: ` +
+              `UI computed exportAllowed=${uiExportState.exportAllowed}, ` +
+              `but button disabled=${actualDisabled} (expected=${expectedDisabled})`
+            );
+          }
+          
+          // Deterministic validation (fail-closed)
+          if (uiExportState.snapshotKind === 'GOVERNANCE' && uiExportState.hasCanonicalHash) {
+            // Governance snapshots with canonical hash MUST have export ENABLED
             if (exportBtnDisabled) {
-              throw new Error('PHASE1_EXPORT_GATING_FAILED: export button disabled for GOVERNANCE snapshot');
+              throw new Error('PHASE1_EXPORT_GATE_FAILED: export button disabled for eligible GOVERNANCE snapshot');
             }
-            consoleLines.push('[PHASE1_EXPORT_GATE_OK] Export button enabled for GOVERNANCE snapshot');
-          } else if (snapshotKind === 'SEED') {
-            // Seed snapshots MUST have export disabled
+            consoleLines.push('[PHASE1_EXPORT_GATE_OK] Export button enabled for eligible GOVERNANCE snapshot');
+          } else if (uiExportState.snapshotKind === 'SEED') {
+            // Seed snapshots MUST have export DISABLED
             if (!exportBtnDisabled) {
               throw new Error('PHASE1_EXPORT_GATE_FAILED: export button not disabled for SEED snapshot');
             }
             consoleLines.push('[PHASE1_EXPORT_GATE_OK] Export button disabled for SEED snapshot');
+          } else {
+            // All other cases: button state must match contract
+            console.log('[PHASE1_EXPORT_GATE_OK] Export button state matches UI contract');
           }
+        } else {
+          consoleLines.push('[PHASE1_EXPORT_BUTTON_NOT_VISIBLE] Export button not visible (may be expected if no governance snapshots)');
+        }
+        
+        // === FAIL-CLOSED CHECK 6: Verify no resolver invocation on gated export ===
+        // If exportAllowed=false, there should be NO request to EXPORT_PHASE1_PACK in network log
+        if (!uiExportState.exportAllowed) {
+          const hasExportResolverCall = netLines.some(line => 
+            line.includes('EXPORT_PHASE1_PACK') || 
+            line.includes('Export Phase 1 Pack')
+          );
+          if (hasExportResolverCall) {
+            throw new Error('PHASE1_EXPORT_GATING_FAILED: resolver invocation detected despite UI gating');
+          }
+          consoleLines.push('[PHASE1_EXPORT_GATING_VALIDATED] No resolver calls on gated export');
         }
       } catch (parseErr: any) {
         throw new Error(`PHASE1_MARKER_PARSE_FAILED: ${parseErr.message}`);
