@@ -44,6 +44,20 @@ echo "✅ All required files present"
 echo ""
 
 #==============================================================================
+# CHECK 1B: Commit allowlist self-check (prevent rogue scripts)
+#==============================================================================
+echo "[CHECK-1B] Verifying HEAD commit file allowlist..."
+
+HEAD=$(git rev-parse HEAD)
+bash scripts/proof/verify_commit_allowlist.sh "$HEAD"
+if [[ $? -ne 0 ]]; then
+  echo "ERROR: Commit allowlist check failed"
+  exit 1
+fi
+
+echo ""
+
+#==============================================================================
 # CHECK 2: No write scopes in manifest
 #==============================================================================
 echo "[CHECK-2] Verifying no write scopes exist..."
