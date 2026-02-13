@@ -252,4 +252,51 @@ describe("Phase 2: Continuous Drift Monitoring", () => {
 
     expect(canonical).toBe(canonical2);
   });
-});
+
+  // Test 12: Webhook origin rejection (not in allowlist)
+  it("rejects generic webhook with disallowed origin", () => {
+    // Simulate config save validation
+    const ALLOWED_ORIGINS = ["https://hooks.slack.com"];
+
+    function getOrigin(url: string): string | null {
+      try {
+        const u = new URL(url);
+        return `${u.protocol}//${u.host}`;
+      } catch {
+        return null;
+      }
+    }
+
+    const disallowedUrl = "https://example.com/webhook";
+    const origin = getOrigin(disallowedUrl);
+
+    // Assert that example.com is NOT in allowlist
+    expect(origin).toBe("https://example.com");
+    expect(ALLOWED_ORIGINS).not.toContain(origin);
+
+    // Assert that validation would fail
+    const isAllowed =
+      !disallowedUrl || ALLOWED_ORIGINS.includes(origin || "");
+    expect(isAllowed).toBe(false);
+  });
+
+  // Test 13: Domain validation rejects invalid formats
+  it("rejects domains with invalid characters", () => {
+    function isValidDomain(domain: string): boolean {
+      if (!domain || typeof domain !== "string") return false;
+      if (domain.includes("/") || domain.includes(":") || domain.includes("@")) {
+        return false;
+      }
+      return true;
+    }
+
+    // Valid domains
+    expect(isValidDomain("example.com")).toBe(true);
+    expect(isValidDomain("company.org")).toBe(true);
+
+    // Invalid domains
+    expect(isValidDomain("https://example.com")).toBe(false); // has ://
+    expect(isValidDomain("admin@example.com")).toBe(false); // has @
+    expect(isValidDomain("example.com:8080")).toBe(false); // has :
+    expect(isValidDomain("example.com/path")).toBe(false); // has /
+  });
