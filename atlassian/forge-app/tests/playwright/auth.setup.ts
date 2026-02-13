@@ -19,6 +19,11 @@ setup('auth', async ({ page }) => {
   const authDir = path.dirname(statePath);
   fs.mkdirSync(authDir, { recursive: true });
 
+  // === BACKBONE FIX: Use FT_PLAYWRIGHT_MODE to control headless/headed launching ===
+  const mode = process.env.FT_PLAYWRIGHT_MODE || 'headless';
+  const headless = (mode !== 'headed');
+  console.log('[AUTH_MODE]', JSON.stringify({ mode, headless }));
+
   // === BACKBONE FIX 1: Try to reuse valid state.json (skip MFA if possible) ===
   if (fs.existsSync(statePath)) {
     const statSize = fs.statSync(statePath).size;
@@ -27,7 +32,7 @@ setup('auth', async ({ page }) => {
 
       try {
         // Create a new context with the stored state
-        const testBrowser = await chromium.launch({ headless: false });
+        const testBrowser = await chromium.launch({ headless });
         const testContext = await testBrowser.newContext({ storageState: statePath });
         const testPage = await testContext.newPage();
 
