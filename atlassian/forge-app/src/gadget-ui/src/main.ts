@@ -3288,80 +3288,122 @@ async function proceedWithBoot() {
         // PHASE 1: Attach event listener for "Export Phase 1 Pack" button
         const exportAccessButton = document.getElementById('ft-export-access-pack-btn') as HTMLButtonElement | null;
         if (exportAccessButton && dashState.snapshotId) {
-          exportAccessButton.addEventListener('click', async () => {
+          // COMPUTE EXPORT ALLOWED STATE
+          // Export is allowed if: snapshot has canonicalHash AND exportEligible is true
+          const hasCanonicalHash = !!(dashState as any).canonicalHash;
+          const exportEligible = (dashState as any).exportEligible === true && (dashState as any).snapshotKind !== 'SEED';
+          const exportAllowed = hasCanonicalHash && exportEligible;
+
+          // DISABLE BUTTON IF NOT ALLOWED
+          if (!exportAllowed) {
             exportAccessButton.disabled = true;
-            exportAccessButton.textContent = 'Exporting...';
+            const snapshotKind = (dashState as any).snapshotKind || 'UNKNOWN';
+            const reason = !hasCanonicalHash 
+              ? 'missing canonical hash'
+              : snapshotKind === 'SEED'
+              ? 'seed snapshots cannot be exported'
+              : 'snapshot not eligible for export';
             
-            try {
-              ensureCorrelationId();
-              console.log('[PHASE1_EXPORT_CLICK] User triggered access pack export');
+            exportAccessButton.title = `Export disabled: ${reason}`;
+            exportAccessButton.setAttribute('aria-disabled', 'true');
+            
+            // Do NOT add click handler for disabled state
+            // If user somehow clicks, log the blocked marker
+            exportAccessButton.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify({
+                reason,
+                snapshotKind,
+                hasCanonicalHash,
+                exportEligible,
+              }));
+            });
+          } else {
+            // Export is allowed - attach normal click handler
+            exportAccessButton.addEventListener('click', async () => {
+              exportAccessButton.disabled = true;
+              exportAccessButton.textContent = 'Exporting...';
               
-              const result = await invokeWithUiReqId('ft_getDashboardState_v1', {
-                action: 'EXPORT_PHASE1_PACK',
-                snapshotId: dashState.snapshotId,
-              });
-
-              // Validate envelope schema (FAIL-CLOSED)
-              if (!result || result.envelopeKind !== 'FT_ACTION_RESULT_V1') {
-                const traceIdForBreach = (result?.traceId || result?.error?.traceId || 'unknown');
-                console.error('[PHASE1_CONTRACT_BREACH_KIND]', {
-                  got: result?.envelopeKind,
-                  expected: 'FT_ACTION_RESULT_V1',
-                  fullResponse: result,
+              try {
+                ensureCorrelationId();
+                console.log('[PHASE1_EXPORT_CLICK] User triggered access pack export');
+                
+                const result = await invokeWithUiReqId('ft_getDashboardState_v1', {
+                  action: 'EXPORT_PHASE1_PACK',
+                  snapshotId: dashState.snapshotId,
                 });
-                exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH wrong envelopeKind (traceId=${traceIdForBreach})`;
-                exportAccessButton.disabled = false;
-                return;
-              }
 
-              // Response has correct envelope kind - process action result
-              const actionResult = result as any;
-              const exportData = actionResult?.data || actionResult;
-              
-              if (exportData && exportData.ok && exportData.zipBase64) {
-                console.log('[PHASE1_EXPORT_SUCCESS]', { hash: exportData.zipHash, fileCount: exportData.fileCount });
-                
-                // Trigger download
-                const binaryString = atob(exportData.zipBase64);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                  bytes[i] = binaryString.charCodeAt(i);
-                }
-                const blob = new Blob([bytes], { type: 'application/zip' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `ft-access-pack-${dashState.snapshotId}.zip`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                
-                exportAccessButton.textContent = 'Export Complete';
-              } else {
-                console.error('[PHASE1_EXPORT_FAILED]', exportData);
-                if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
-                  console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'Missing required fields on ok:false response', {
-                    hasError: !!actionResult.error,
-                    hasBuild: !!actionResult.build,
-                    hasReason: !!actionResult.reason,
-                    hasTraceId: !!actionResult.traceId,
-                    response: actionResult,
+                // Validate envelope schema (FAIL-CLOSED)
+                if (!result || result.envelopeKind !== 'FT_ACTION_RESULT_V1') {
+                  const traceIdForBreach = (result?.traceId || result?.error?.traceId || 'unknown');
+                  console.error('[PHASE1_CONTRACT_BREACH_KIND]', {
+                    got: result?.envelopeKind,
+                    expected: 'FT_ACTION_RESULT_V1',
+                    fullResponse: result,
                   });
-                  exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH missing fields (traceId=${actionResult.traceId || 'unknown'})`;
-                } else {
-                  const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
-                  const traceId = actionResult.error.traceId || actionResult.traceId || 'unknown';
-                  exportAccessButton.textContent = `Export Failed: ${errorMsg} (traceId=${traceId})`;
+                  exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH wrong envelopeKind (traceId=${traceIdForBreach})`;
+                  exportAccessButton.disabled = false;
+                  return;
                 }
+
+                // Response has correct envelope kind - process action result
+                const actionResult = result as any;
+                const exportData = actionResult?.data || actionResult;
+                
+                // Check if response has exportGate field (indicates gating)
+                if (actionResult?.exportGate && !actionResult.exportGate.allowed) {
+                  console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify(actionResult.exportGate));
+                  exportAccessButton.textContent = `Export disabled: ${actionResult.exportGate.reasonCode}`;
+                  exportAccessButton.disabled = false;
+                  return;
+                }
+                
+                if (exportData && exportData.ok && exportData.zipBase64) {
+                  console.log('[PHASE1_EXPORT_SUCCESS]', { hash: exportData.zipHash, fileCount: exportData.fileCount });
+                  
+                  // Trigger download
+                  const binaryString = atob(exportData.zipBase64);
+                  const bytes = new Uint8Array(binaryString.length);
+                  for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                  }
+                  const blob = new Blob([bytes], { type: 'application/zip' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `ft-access-pack-${dashState.snapshotId}.zip`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                  
+                  exportAccessButton.textContent = 'Export Complete';
+                } else {
+                  console.error('[PHASE1_EXPORT_FAILED]', exportData);
+                  if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
+                    console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'Missing required fields on ok:false response', {
+                      hasError: !!actionResult.error,
+                      hasBuild: !!actionResult.build,
+                      hasReason: !!actionResult.reason,
+                      hasTraceId: !!actionResult.traceId,
+                      response: actionResult,
+                    });
+                    exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH missing fields (traceId=${actionResult.traceId || 'unknown'})`;
+                  } else {
+                    const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
+                    const traceId = actionResult.error.traceId || actionResult.traceId || 'unknown';
+                    exportAccessButton.textContent = `Export Failed: ${errorMsg} (traceId=${traceId})`;
+                  }
+                }
+              } catch (error: any) {
+                console.error('[PHASE1_EXPORT_ERROR]', error);
+                exportAccessButton.textContent = 'Error: ' + error.message;
+              } finally {
+                exportAccessButton.disabled = false;
               }
-            } catch (error: any) {
-              console.error('[PHASE1_EXPORT_ERROR]', error);
-              exportAccessButton.textContent = 'Error: ' + error.message;
-            } finally {
-              exportAccessButton.disabled = false;
-            }
-          });
+            });
+          }
         }
         
         // RELAY: Send dashboard rendered marker with status and reason code

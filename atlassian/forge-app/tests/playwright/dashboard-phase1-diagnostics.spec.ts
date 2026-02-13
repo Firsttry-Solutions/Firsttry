@@ -1011,6 +1011,30 @@ test('Dashboard gadget Phase1 click diagnostics', async ({ page, context }) => {
           throw new Error('PHASE1_ACTION_VALUE_WRONG: action field has unexpected value');
         }
         consoleLines.push('[PHASE1_VALIDATION_OK] Success marker found with valid fields');
+
+        // === NEW: FAIL-CLOSED CHECK 4: Export button visibility and eligibility ===
+        // After Phase1 scan succeeds, check export button state
+        const exportBtn = gadgetFrame.locator('#ft-export-access-pack-btn');
+        const exportBtnVisible = await exportBtn.isVisible({ timeout: 5000 }).catch(() => false);
+        
+        if (exportBtnVisible) {
+          const exportBtnDisabled = await exportBtn.isDisabled();
+          const snapshotKind = markerData.snapshotKind || 'UNKNOWN';
+          
+          // Governance snapshots (from Phase1 Access Review) MUST have export enabled
+          if (snapshotKind === 'GOVERNANCE') {
+            if (exportBtnDisabled) {
+              throw new Error('PHASE1_EXPORT_GATING_FAILED: export button disabled for GOVERNANCE snapshot');
+            }
+            consoleLines.push('[PHASE1_EXPORT_GATE_OK] Export button enabled for GOVERNANCE snapshot');
+          } else if (snapshotKind === 'SEED') {
+            // Seed snapshots MUST have export disabled
+            if (!exportBtnDisabled) {
+              throw new Error('PHASE1_EXPORT_GATE_FAILED: export button not disabled for SEED snapshot');
+            }
+            consoleLines.push('[PHASE1_EXPORT_GATE_OK] Export button disabled for SEED snapshot');
+          }
+        }
       } catch (parseErr: any) {
         throw new Error(`PHASE1_MARKER_PARSE_FAILED: ${parseErr.message}`);
       }
