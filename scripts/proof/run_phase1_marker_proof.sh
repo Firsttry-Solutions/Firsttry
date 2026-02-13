@@ -363,6 +363,114 @@ echo "         ✅ PASSED: No failure/warn text contains marker"
 echo ""
 
 # ═════════════════════════════════════════════════════════════════════════════════
+# EVIDENCE BUNDLE: CREATE DETERMINISTIC REVIEWER-GRADE ZIP
+# ═════════════════════════════════════════════════════════════════════════════════
+
+echo "[EVIDENCE] Creating deterministic reviewer evidence bundle..."
+echo ""
+
+# Create evidence directory with timestamp and git SHA
+EVID_TS=$(date -u +%Y%m%dT%H%M%SZ)
+EVID_DIR="/tmp/phase1_reviewer_grade_evidence_${EVID_TS}_${EXPECT_SHA7}"
+mkdir -p "$EVID_DIR"
+echo "[EVIDENCE] EVID_DIR=${EVID_DIR}"
+
+# Copy all evidence files (fail if any required file missing)
+declare -a EVIDENCE_FILES=(
+  "$TEST_OUTPUT"
+  "$OUT_DIR/console.log"
+  "$OUT_DIR/network.log"
+  "$OUT_DIR/frames.txt"
+  "$OUT_DIR/iframe-selection.txt"
+)
+
+# Conditionally include determinism hashes if they exist
+if [ -f "$OUT_DIR/determinism-hashes.txt" ]; then
+  EVIDENCE_FILES+=("$OUT_DIR/determinism-hashes.txt")
+fi
+if [ -f "$OUT_DIR/determinism-hashes.clean.txt" ]; then
+  EVIDENCE_FILES+=("$OUT_DIR/determinism-hashes.clean.txt")
+fi
+
+# Copy all core evidence files
+for evid_file in "${EVIDENCE_FILES[@]}"; do
+  if [ ! -f "$evid_file" ]; then
+    echo "[EVIDENCE] ❌ ERROR: Required evidence file not found: $evid_file"
+    exit 1
+  fi
+  cp "$evid_file" "$EVID_DIR/"
+  echo "[EVIDENCE] ✓ Copied: $(basename "$evid_file")"
+done
+
+# Conditionally include apt.log if available (fail-safe, don't require if RUN_ROOT not accessible)
+RUN_ROOT_VALUE="${RUN_ROOT:-/tmp/pw_novnc_run}"
+if [ -f "$RUN_ROOT_VALUE/apt.log" ]; then
+  cp "$RUN_ROOT_VALUE/apt.log" "$EVID_DIR/"
+  echo "[EVIDENCE] ✓ Copied: apt.log (from RUN_ROOT)"
+fi
+
+# Create manifest.json with schema and metadata
+MANIFEST_FILE="$EVID_DIR/manifest.json"
+cat > "$MANIFEST_FILE" <<MANIFEST_EOF
+{
+  "schemaVersion": "phase1-evidence-v1",
+  "gitShaFull": "${EXPECT_FULL}",
+  "gitShaShort": "${EXPECT_SHA7}",
+  "outDir": "${OUT_DIR}",
+  "proofScript": "/workspaces/Firsttry/scripts/proof/run_phase1_marker_proof.sh",
+  "novncRunner": "/workspaces/Firsttry/atlassian/forge-app/scripts/proof/run_playwright_with_novnc.sh",
+  "createdUtc": "${EVID_TS}",
+  "includedFiles": [
+    "test_output.txt",
+    "console.log",
+    "network.log",
+    "frames.txt",
+    "iframe-selection.txt",
+    "determinism-hashes.txt",
+    "determinism-hashes.clean.txt",
+    "apt.log"
+  ]
+}
+MANIFEST_EOF
+
+echo "[EVIDENCE] ✓ Created: manifest.json"
+
+# Verify manifest.json is valid JSON (fail-closed)
+if ! node -e "JSON.parse(require('fs').readFileSync('$MANIFEST_FILE', 'utf-8'))" 2>/dev/null; then
+  echo "[EVIDENCE] ❌ ERROR: manifest.json is not valid JSON"
+  exit 1
+fi
+
+# Create ZIP archive
+ZIP_FILE="${EVID_DIR}.zip"
+cd /tmp
+if ! zip -r -q "$ZIP_FILE" "$(basename "$EVID_DIR")" > /dev/null 2>&1; then
+  echo "[EVIDENCE] ❌ ERROR: Failed to create ZIP archive"
+  exit 1
+fi
+
+# Verify ZIP was created
+if [ ! -f "$ZIP_FILE" ]; then
+  echo "[EVIDENCE] ❌ ERROR: ZIP file not created: $ZIP_FILE"
+  exit 1
+fi
+
+# Calculate ZIP SHA256 for integrity verification
+ZIP_SHA256=$(sha256sum "$ZIP_FILE" | awk '{print $1}')
+
+echo ""
+echo "[EVIDENCE] ✅ EVIDENCE BUNDLE CREATED"
+echo "[EVIDENCE] ZIP_PATH=${ZIP_FILE}"
+echo "[EVIDENCE] ZIP_SIZE=$(du -h "$ZIP_FILE" | cut -f1)"
+echo "[EVIDENCE] ZIP_SHA256=${ZIP_SHA256}"
+echo ""
+echo "[EVIDENCE] Reviewer verification:"
+echo "[EVIDENCE]   cd /tmp && sha256sum -c <<< '${ZIP_SHA256}  $(basename "$ZIP_FILE")'"
+echo ""
+
+cd /workspaces/Firsttry
+
+# ═════════════════════════════════════════════════════════════════════════════════
 # FINAL VERDICT
 # ═════════════════════════════════════════════════════════════════════════════════
 
@@ -380,6 +488,8 @@ echo ""
 echo "Proof artifacts:"
 echo "  • Console log: $CONSOLE_FILE"
 echo "  • Test output: $TEST_OUTPUT"
+echo "  • Evidence bundle: $ZIP_FILE"
+echo "  • Evidence SHA256: $ZIP_SHA256"
 echo ""
 
 exit 0
