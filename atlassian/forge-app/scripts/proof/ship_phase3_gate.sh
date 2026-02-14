@@ -178,9 +178,9 @@ All mandatory non-bypassable gates have passed. Phase 3 hardening is complete an
 - All imports resolved
 
 ### Gate 3: Marketplace Trap Guard ✓
-- Forbidden language (case-insensitive): NOT FOUND
-  - No "compliant", "certified", "SOC2", "ISO" language
-  - Evidence-only language verified
+- Forbidden compliance/certification claims: NOT FOUND
+  - No positive claims like "SOC 2 compliant", "ISO certified", "we are compliant/certified"
+  - Mapping references (SOC 2 / ISO / NIST) are allowed for "maps to / aligned to / demonstrates evidence for" language
   
 - Forbidden APIs (Org-admin): NOT FOUND
   - No admin.atlassian.com patterns
