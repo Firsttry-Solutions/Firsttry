@@ -59,6 +59,22 @@ echo "[FT_PROOF] NOTE: Phase 3 gate asserts only PHASE3_REQUIRED_TESTS; other su
 echo ""
 
 ###############################################################################
+# HELPER: Parse test totals from vitest output (fail-closed)
+###############################################################################
+have_rg=0
+if command -v rg >/dev/null 2>&1; then have_rg=1; fi
+
+match_last() {
+  local pattern="$1"
+  local file="$2"
+  if [ "$have_rg" -eq 1 ]; then
+    rg -n --pcre2 "$pattern" "$file" 2>/dev/null | tail -1 || true
+  else
+    grep -nE "$pattern" "$file" 2>/dev/null | tail -1 || true
+  fi
+}
+
+###############################################################################
 # CHECK 1: TypeScript Compilation (Strict Mode)
 ###############################################################################
 
@@ -93,13 +109,19 @@ if ! npm --prefix "$WORKSPACE" test -- "${PHASE3_REQUIRED_TESTS[@]}" --run > "$E
   exit 1
 fi
 
-# Count test results
-TEST_PASSED=$(grep -c "✓ tests/" "$EVIDENCE_DIR/test-phase3-contract.log" || echo "0")
-TEST_FAILED=$(grep -c "✗\|FAIL\|× " "$EVIDENCE_DIR/test-phase3-contract.log" || echo "0")
-TEST_TOTAL=$(grep -oP 'Tests\s+\K\d+(?= passed)' "$EVIDENCE_DIR/test-phase3-contract.log" || echo "unknown")
+# Parse test results deterministically (fail-closed if cannot parse)
+files_line="$(match_last 'Test Files\s+.*\spassed' "$EVIDENCE_DIR/test-phase3-contract.log")"
+tests_line="$(match_last 'Tests\s+.*\spassed' "$EVIDENCE_DIR/test-phase3-contract.log")"
+
+if [ -z "$files_line" ] || [ -z "$tests_line" ]; then
+  echo "[FT_PROOF] ERROR: Could not parse vitest totals from $EVIDENCE_DIR/test-phase3-contract.log"
+  tail -20 "$EVIDENCE_DIR/test-phase3-contract.log" | sed 's/^/[FT_PROOF] /'
+  exit 1
+fi
 
 echo "[FT_PROOF] Phase 3 required tests: PASSED ✓"
-echo "[FT_PROOF]   - Total tests passed: $TEST_TOTAL"
+echo "[FT_PROOF]   - Test files summary: $files_line"
+echo "[FT_PROOF]   - Tests summary: $tests_line"
 echo "[FT_PROOF]   - Test suites: ${#PHASE3_REQUIRED_TESTS[@]}"
 
 ###############################################################################
