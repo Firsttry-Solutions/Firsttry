@@ -2,6 +2,7 @@
 # Atlassian Forge App Manifest - FirstTry Governance Dual Layer
 # PHASE 1: Event ingestion endpoint with token auth, validation, idempotency, storage
 # PHASE 1.1: Storage proof debug endpoint (admin-only)
+# PHASE 2: Continuous drift monitoring with scheduled triggers
 # PHASE 3: Scheduled daily/weekly pipelines, run ledgers, readiness gating
 # Schema: Forge CLI v12+ for Jira Cloud
 
@@ -11,122 +12,28 @@ app:
   runtime:
     name: nodejs20.x
 
-# Modules
 modules:
-  # Dashboard Gadget (Bundled UI via Vite)
-  # REQUIREMENT: Must run as Custom UI resource within Jira dashboard context.
-  # Forge bridge (@forge/bridge) is injected by the Jira Custom UI runtime.
-  # If bridge is not available, the gadget will display a fatal error and stop.
-  jira:dashboardGadget:
-    - key: governance-dashboard-gadget-v2
-      title: "FirstTry: Audit Evidence for Jira"
-      description: FirstTry Governance - real-time status overview
-      resource: govGadget2141
-      resolver:
-        function: get-status-snapshot-fn
-      thumbnail: https://www.atlassian.com/favicon.ico
-
-  # Function modules (PHASE 3: Scheduled pipeline handlers, PHASE 5: Scheduler, PHASE 6: Snapshot evidence ledger, SEV-2-003: OAuth refresh)
+  # PHASE 2: Drift Monitor function
   function:
-    - key: ftBackboneScheduled
-      handler: backbone/forge-entry.scheduled
-    - key: ftRunNow
-      handler: backbone/forge-entry.runNow
-    - key: phase5-scheduler-fn
-      handler: scheduled/phase5_scheduler.run
-    - key: phase6-weekly-snap-fn
-      handler: scheduled/snapshot_weekly.handle
-    - key: token-refresh-job-fn
-      handler: scheduled/token_refresh_scheduler.handle
-    - key: daily-dispatcher-fn
-      handler: scheduled/scheduler_daily_dispatcher.runDailyDispatch
-    - key: status-resolver-fn
-      handler: resolvers/governance_status.get
-    # Canonical gadget handler: Forge Resolver for all UI invocations (gadget-resolver.ts)
-    - key: get-status-snapshot-fn
-      handler: gadget-resolver.handler
-    - key: refresh-now-fn
-      handler: resolvers/gadget-handlers.handler
-    - key: get-build-info-fn
-      handler: resolvers/gadget-handlers.handler
-    - key: export-snap-fn
-      handler: resolvers/gadget-handlers.handler
-    - key: get-ops-state-fn
-      handler: resolvers/gadget-handlers.handler
-    # Layer-0 Marketplace: Install trigger handler
-    - key: ft-installed-handler
-      handler: lifecycle/installed.handler
-    # Layer-0 Marketplace: Upgrade trigger handler (CRITICAL: runs on forge install --upgrade)
-    - key: ft-upgraded-handler
-      handler: lifecycle/upgraded.handler
-    # Diagnostic probe handler (webtrigger): proves live Jira backend without UI
-    - key: ft-diag-probe-fn
-      handler: diagnostic/probe.handler
-    # Layer-0 Debug: Snapshot state endpoint (read-only, for testing)
-    - key: debug-snapshot-state-fn
-      handler: gadget-resolver.handler
-    # ENTERPRISE R2: Phase 6 admin page for evidence ledger + drift history
-    - key: phase6-admin-page-fn
-      handler: admin/phase6_admin_page.handler
-    # Backend identity webtrigger (read-only, public): for E2E deployment verification
-    - key: backend-identity-fn
-      handler: webtriggers/backend_identity.handler
+    - key: driftMonitorScheduled
+      handler: continuous-drift/scheduled.run
 
-  # PHASE 3: Scheduled Pipelines (interval-based, valid Forge module)
-  # Supported intervals: day, week, hour, minute, fiveMinute
-  # PHASE 5: Automatic trigger scheduler (fiveMinute interval to catch thresholds quickly)
-  # PHASE 6: Snapshot evidence ledger (daily + weekly automatic captures)
-  # SEV-2-003: OAuth token refresh (hourly to maintain freshness)
-  # PHASE 2: Config visibility scheduler (daily config complexity snapshot)
-  # Layer-0 Backbone: ftBackboneScheduled runs on fiveMinute to maintain ledger
+  # PHASE 2: Scheduled drift monitor (runs daily)
   scheduledTrigger:
-    - key: ft-backbone-scheduler
-      function: ftBackboneScheduled
-      interval: fiveMinute
-
-    - key: phase5-auto-scheduler
-      function: phase5-scheduler-fn
-      interval: hour
-
-    - key: phase6-weekly-snapshot
-      function: phase6-weekly-snap-fn
-      interval: week
-
-    - key: token-refresh-job
-      function: token-refresh-job-fn
-      interval: hour
-
-    - key: daily-dispatcher
-      function: daily-dispatcher-fn
+    - key: drift-monitor-daily
+      function: driftMonitorScheduled
       interval: day
-
-  # Layer-0 Marketplace: Install trigger creates snapshot anchor
-  trigger:
-    - key: ft-installed-trigger
-      events:
-        - avi:forge:installed:app
-      function: ft-installed-handler
-    # Layer-0 Marketplace: Upgrade trigger ensures snapshot is seeded/repaired
-    - key: ft-upgraded-trigger
-      events:
-        - avi:forge:upgraded:app
-      function: ft-upgraded-handler
-
-  # Web Triggers (HTTP endpoints for external access)
-  webtrigger:
-    # Backend identity endpoint: returns deployed git SHA for E2E verification
-    - key: backend-identity-trigger
-      function: backend-identity-fn
-
-  # Permissions (following module definitions)
-
 
 permissions:
   scopes:
     - storage:app
     - read:jira-work
+    - read:jira-user
+  external:
+    fetch:
+      backend:
+        - address: https://hooks.slack.com
 
-# Resource pages
 resources:
   - key: govGadget2141
     path: src/gadget-ui/dist

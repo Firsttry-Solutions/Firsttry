@@ -43,6 +43,9 @@ import { debugSnapshotState_resolver } from './resolvers/debugSnapshotState';
 import { ensureFirstSnapshot } from './resolvers/ensureFirstSnapshot';
 import { probe } from './resolvers/probe'; // FORENSIC_PROBE
 import { getDashboardSnapshotV1_resolver } from './resolvers/getDashboardSnapshotV1';
+import { handler as ft_runAccessIntelligence_v1_handler } from './resolvers/ft_runAccessIntelligence_v1'; // PHASE 1
+import { handler as ft_exportAccessPack_v1_handler } from './resolvers/ft_exportAccessPack_v1'; // PHASE 1
+import { getMonitoringConfig, saveMonitoringConfig } from './resolvers/phase2_config'; // PHASE 2
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -50,6 +53,7 @@ import { nowUtcIso } from './backbone/time';
 import { dashOk, dashErr, DashEnvelopeV1 } from './shared/dashEnvelopeV1';
 import { BACKEND_BUILD_SHA } from './build/backend_build';
 import { BACKEND_GIT_SHA, BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC, BACKEND_APP_VERSION } from './build/buildIdentityBackend.gen';
+import { FT_BUILD_SHA } from './shared/backend_build_meta';
 import {
   FT_DASH_ENVELOPE_MARKER_V1,
   okEnvelope,
@@ -94,15 +98,766 @@ resolver.define('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1);
 // UI log relay resolver (UI → backend log relay for markers)
 resolver.define('ft_uiLogRelay_v1', ft_uiLogRelay_v1);
 
+// PHASE 2: Monitoring configuration resolvers
+resolver.define('getMonitoringConfig', async () => getMonitoringConfig());
+resolver.define('saveMonitoringConfig', async (req: any) => {
+  try {
+    await saveMonitoringConfig(req);
+    return { ok: true };
+  } catch (err) {
+    throw new Error(
+      err instanceof Error ? err.message : 'Failed to save monitoring config'
+    );
+  }
+});
+
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
+
+// ============================================================================
+// CANONICAL ACTION RESULT ENVELOPE TYPE
+// ============================================================================
+
+/**
+ * FtPhase1ProofV1: Deterministic marker object for Phase1 success proofs
+ * 
+ * CONTRACT GUARANTEES (deterministic, reproducible):
+ * - marker: Literal string '[PHASE1_ACCESS_SCAN_OK]'
+ * - action: Literal string 'RUN_ACCESS_REVIEW'
+ * - schemaVersion: Literal '1.0'
+ * - NO timestamps, session IDs, request IDs, or random values
+ * - All fields derived from deterministic inputs
+ */
+type FtPhase1ProofV1 = {
+  marker: '[PHASE1_ACCESS_SCAN_OK]';
+  action: 'RUN_ACCESS_REVIEW';
+  buildShaShort: string;
+  schemaVersion: '1.0';
+  projectsCount: number;
+  totalUsers: number;
+  riskTier: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+  snapshotId: string;
+};
+
+/**
+ * FT_ACTION_RESULT_V1: Canonical envelope for Phase1 action responses
+ * 
+ * INVARIANTS (fail-closed):
+ * - envelopeKind ALWAYS 'FT_ACTION_RESULT_V1'
+ * - ok: boolean
+ * - action: 'RUN_ACCESS_REVIEW' | 'EXPORT_PHASE1_PACK'
+ * - traceId: NEVER empty, format: trace_<timestamp>_<random>
+ * - build: {buildShaShort,buildUtc,version} all NEVER empty
+ * - If ok=false: MUST include reason (non-empty) and error{code,message,traceId}
+ * - phase1Proof: optional, only present when ok=true for RUN_ACCESS_REVIEW action
+ * - data: optional, contains action-specific result data
+ */
+interface FtActionResultV1 {
+  envelopeKind: 'FT_ACTION_RESULT_V1';
+  ok: boolean;
+  action: 'RUN_ACCESS_REVIEW' | 'EXPORT_PHASE1_PACK';
+  status?: 'DISABLED'; // export gating status
+  traceId: string; // never empty
+  build: {
+    buildShaShort: string; // never empty, 12-char or 'unknown'
+    buildUtc: string; // never empty, ISO-8601 or 'unknown'
+    version: string; // never empty, semver or 'unknown'
+  };
+  reason?: string; // required if ok=false, must be non-empty
+  error?: {
+    code: string; // never empty
+    message: string; // never empty
+    traceId: string; // never empty
+  };
+  phase1Proof?: FtPhase1ProofV1; // optional marker for Phase1 success (ok=true only)
+  exportGate?: FtExportGateV1; // export eligibility gating info
+  data?: any;
+}
+
+/**
+ * Export eligibility gating contract
+ * Used to distinguish export failures due to ineligibility vs actual export errors
+ */
+type FtExportGateReasonCode =
+  | 'NOT_EXPORT_ELIGIBLE'      // e.g., seed snapshot (snapshotKind === 'SEED')
+  | 'MISSING_CANONICAL_HASH'   // snapshot.canonicalHash absent
+  | 'SNAPSHOT_NOT_FOUND'       // no snapshot in storage
+  | 'UNSUPPORTED_SNAPSHOT_KIND'; // unknown snapshot type
+
+interface FtExportGateV1 {
+  allowed: boolean;               // true if export is gated/allowed
+  reasonCode: FtExportGateReasonCode;  // specific reason enum (not free-text)
+  snapshotId: string;             // snapshot ID being checked
+  snapshotKind?: string;          // snapshot type (e.g., 'SEED', 'GOVERNANCE')
+  hasCanonicalHash: boolean;      // whether canonicalHash is present
+  exportEligible: boolean;        // whether snapshot is marked export-eligible
+  message: string;                // human-readable message for UI
+}
+
+// ============================================================================
+// TYPE REGRESSION GATES (compile-time guarantees)
+// ============================================================================
+
+/**
+ * Regression gate: Ensures FtPhase1ProofV1 contains required fields
+ * If this fails to compile, someone removed a required field from the type
+ */
+const _typeGatePhase1Proof: FtPhase1ProofV1 = {
+  marker: '[PHASE1_ACCESS_SCAN_OK]',
+  action: 'RUN_ACCESS_REVIEW',
+  buildShaShort: 'abc123def456',
+  schemaVersion: '1.0',
+  projectsCount: 0,
+  totalUsers: 0,
+  riskTier: 'UNKNOWN',
+  snapshotId: 'NONE',
+};
+
+/**
+ * Regression gate: Ensures FtActionResultV1 has phase1Proof field
+ * If this fails to compile, someone removed phase1Proof from the envelope type
+ */
+const _typeGateActionResultV1Success: FtActionResultV1 = {
+  envelopeKind: 'FT_ACTION_RESULT_V1',
+  ok: true,
+  action: 'RUN_ACCESS_REVIEW',
+  traceId: 'trace_test',
+  build: {
+    buildShaShort: 'abc123def456',
+    buildUtc: '2026-02-12T00:00:00Z',
+    version: '1.0.0',
+  },
+  phase1Proof: _typeGatePhase1Proof,
+};
+
+/**
+ * Regression gate: Ensures envelope signature matches return statements
+ * If this fails, a return statement in handlePhase1AccessReview violates the envelope contract
+ */
+const _typeGateActionResultV1Failure: FtActionResultV1 = {
+  envelopeKind: 'FT_ACTION_RESULT_V1',
+  ok: false,
+  action: 'RUN_ACCESS_REVIEW',
+  traceId: 'trace_test',
+  build: {
+    buildShaShort: 'abc123def456',
+    buildUtc: '2026-02-12T00:00:00Z',
+    version: '1.0.0',
+  },
+  reason: 'Test failure',
+  error: {
+    code: 'TEST_ERROR',
+    message: 'Test error message',
+    traceId: 'trace_test',
+  },
+};
+
+// ============================================================================
+// HELPER FUNCTIONS: Error Handling & Metadata
+// ============================================================================
+
+/**
+ * Generates a UUID-style traceId or returns existing one from request
+ */
+function getOrCreateTraceId(request: any): string {
+  // Try to extract traceId from request
+  const existing = request?.traceId || request?.trace_id;
+  if (typeof existing === 'string' && existing.length > 0) {
+    return existing;
+  }
+  // Generate new traceId: trace_<timestamp>_<random>
+  const newId = `trace_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  return newId;
+}
+
+/**
+ * Extracts short build SHA from full SHA (first 12 chars)
+ */
+function getBuildShaShort(fullSha: string | null | undefined): string {
+  if (!fullSha || typeof fullSha !== 'string') return 'unknown';
+  const short = fullSha.slice(0, 12);
+  return short && short.length > 0 ? short : 'unknown';
+}
+
+/**
+ * Builds canonical build metadata object (no empty fields)
+ */
+function buildMeta(): { buildShaShort: string; buildUtc: string; version: string } {
+  return {
+    buildShaShort: getBuildShaShort(FT_BUILD_SHA),
+    buildUtc: BACKEND_BUILD_TIME_UTC && BACKEND_BUILD_TIME_UTC.length > 0 ? BACKEND_BUILD_TIME_UTC : 'unknown',
+    version: BACKEND_APP_VERSION && BACKEND_APP_VERSION.length > 0 ? BACKEND_APP_VERSION : 'unknown',
+  };
+}
+
+/**
+ * Normalizes action errors into a structured error response
+ * Ensures NEVER returns empty strings for critical fields
+ */
+function normalizeActionError(
+  action: string,
+  traceId: string,
+  err: any
+): {
+  reason: string;
+  error: { code: string; message: string; traceId: string };
+} {
+  let code = 'PHASE1_FAILED';
+  let message = 'Phase 1 failed';
+  let reason = 'UNSPECIFIED_FAILURE';
+
+  if (err) {
+    // Extract message
+    if (err.message && typeof err.message === 'string' && err.message.length > 0) {
+      message = err.message;
+    }
+
+    // Map HTTP status to error code and reason
+    const status = err.status || err.statusCode || err.code;
+    if (typeof status === 'number') {
+      if (status >= 500) {
+        code = 'JIRA_5XX';
+        reason = 'Jira service error';
+      } else if (status === 429) {
+        code = 'JIRA_429';
+        reason = 'Rate limited by Jira';
+      } else if (status === 403) {
+        code = 'JIRA_403';
+        reason = 'Permission denied';
+      } else if (status === 401) {
+        code = 'JIRA_401';
+        reason = 'Authentication failed';
+      } else if (status >= 400) {
+        code = `JIRA_${status}`;
+        reason = 'Jira API error';
+      }
+    }
+  }
+
+  // Ensure no empty strings
+  return {
+    reason: reason && reason.length > 0 ? reason : 'UNSPECIFIED_FAILURE',
+    error: {
+      code: code && code.length > 0 ? code : 'PHASE1_FAILED',
+      message: message && message.length > 0 ? message : 'Phase 1 failed',
+      traceId: traceId && traceId.length > 0 ? traceId : 'unknown',
+    },
+  };
+}
 
 // ============================================================================
 // LAYER-0 BACKBONE RESOLVERS (NEW)
 // ============================================================================
 
+/**
+ * Internal handler for Phase 1 Access Intelligence actions
+ * Returns FT_ACTION_RESULT_V1 envelope (never wrapped in dashboard state)
+ * 
+ * Handles both:
+ * A) thrown exceptions → normalizeActionError
+ * B) soft failures (result.ok === false) → maps to compliant envelope
+ */
+async function handlePhase1AccessReview(request: any): Promise<FtActionResultV1> {
+  const traceId = getOrCreateTraceId(request);
+  const build = buildMeta();
+
+  try {
+    console.log('[FT_PROOF_PHASE1_DISPATCH]', 'entering handlePhase1AccessReview');
+    console.log('[FT_PROOF_PHASE1_PRE_HANDLER_CALL]', 'about to call ft_runAccessIntelligence_v1_handler');
+    
+    let handlerResult: any;
+    try {
+      handlerResult = await ft_runAccessIntelligence_v1_handler(request);
+    } catch (handlerErr: any) {
+      console.log('[FT_PROOF_PHASE1_HANDLER_THROWN]', JSON.stringify({
+        name: handlerErr?.name || 'unknown',
+        message: handlerErr?.message || 'unknown',
+      }));
+      throw handlerErr;
+    }
+    
+    // **SOFT FAILURE DETECTION**: Handler may return { ok:false } without throwing
+    if (handlerResult && typeof handlerResult === 'object' && handlerResult.ok === false) {
+      // Handler returned a soft failure - map to compliant error envelope
+      const softFailureMessage = String(handlerResult.reason || handlerResult.error?.message || 'Phase 1 failed');
+      const softFailureCode = String(handlerResult.error?.code || 'PHASE1_SOFT_FAILED');
+      
+      console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
+        action: 'RUN_ACCESS_REVIEW',
+        traceId,
+        code: softFailureCode,
+        reason: softFailureMessage,
+        source: 'soft_failure',
+        ts: new Date().toISOString(),
+      }));
+
+      // Log action envelope proof marker on soft failure
+      console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+        action: 'RUN_ACCESS_REVIEW',
+        ok: false,
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        traceId,
+        buildShaShort: build.buildShaShort,
+        code: softFailureCode,
+        reason: softFailureMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      // Return compliant failure envelope from soft failure
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'RUN_ACCESS_REVIEW',
+        traceId,
+        build,
+        reason: softFailureMessage,
+        error: {
+          code: softFailureCode,
+          message: softFailureMessage,
+          traceId,
+        },
+        data: handlerResult, // Include handler result for debugging
+      };
+    }
+
+    // Handler call succeeded (ok === true or success case)
+    console.log('[FT_PROOF_PHASE1_AFTER_HANDLER_SUCCESS]', 'handler returned successfully');
+    console.log(JSON.stringify({
+      marker: '[FT_DASH_ACTION_END]',
+      action: 'RUN_ACCESS_REVIEW',
+      ok: handlerResult?.ok,
+      ts: new Date().toISOString(),
+    }));
+
+    // Log action envelope proof marker
+    console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+      action: 'RUN_ACCESS_REVIEW',
+      ok: handlerResult?.ok === true,
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      traceId,
+      buildShaShort: build.buildShaShort,
+      ts: new Date().toISOString(),
+    }));
+
+    // Build phase1Proof marker (deterministic, no timestamps) for return in envelope
+    const phase1Proof = handlerResult?.ok === true ? {
+      marker: '[PHASE1_ACCESS_SCAN_OK]' as const,
+      action: 'RUN_ACCESS_REVIEW' as const,
+      buildShaShort: build.buildShaShort,
+      schemaVersion: '1.0' as const,
+      projectsCount: handlerResult?.counts?.projectAdmins !== undefined ? 
+        (Array.isArray(handlerResult.counts.projectAdmins) ? handlerResult.counts.projectAdmins.length : 0) :
+        0,
+      totalUsers: handlerResult?.counts?.totalUsers || 0,
+      riskTier: (handlerResult?.riskTier || 'UNKNOWN') as ('LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN'),
+      snapshotId: handlerResult?.snapshotId || 'NONE',
+    } : undefined;
+
+    // Return canonical success envelope with phase1Proof marker
+    return {
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      ok: handlerResult?.ok === true,
+      action: 'RUN_ACCESS_REVIEW',
+      traceId,
+      build,
+      phase1Proof,
+      data: handlerResult,
+    };
+  } catch (error: any) {
+    // Exception thrown - use normalizer for structured error
+    const normalized = normalizeActionError('RUN_ACCESS_REVIEW', traceId, error);
+    
+    console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
+      action: 'RUN_ACCESS_REVIEW',
+      traceId,
+      code: normalized.error.code,
+      reason: normalized.reason,
+      source: 'thrown_exception',
+      ts: new Date().toISOString(),
+    }));
+
+    console.error(JSON.stringify({
+      marker: '[FT_DASH_ACTION_ERROR]',
+      action: 'RUN_ACCESS_REVIEW',
+      error: error?.message || String(error),
+      ts: new Date().toISOString(),
+    }));
+
+    // Log action envelope proof marker on failure
+    console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+      action: 'RUN_ACCESS_REVIEW',
+      ok: false,
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      traceId,
+      buildShaShort: build.buildShaShort,
+      code: normalized.error.code,
+      reason: normalized.reason,
+      ts: new Date().toISOString(),
+    }));
+
+    // Return canonical failure envelope with structured error
+    return {
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      ok: false,
+      action: 'RUN_ACCESS_REVIEW',
+      traceId,
+      build,
+      reason: normalized.reason,
+      error: normalized.error,
+    };
+  }
+}
+
+/**
+ * Internal handler for Phase 1 Export Pack actions
+ * Returns FT_ACTION_RESULT_V1 envelope (never wrapped in dashboard state)
+ * 
+ * Handles both:
+ * A) thrown exceptions → normalizeActionError
+ * B) soft failures (result.ok === false) → maps to compliant envelope
+ */
+async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
+  const traceId = getOrCreateTraceId(request);
+  const build = buildMeta();
+
+  try {
+    console.log(JSON.stringify({
+      marker: '[FT_DASH_ACTION_START]',
+      action: 'EXPORT_PHASE1_PACK',
+      requestSnapshotId: request?.snapshotId || null,
+      ts: new Date().toISOString(),
+    }));
+
+    // STEP 1: Load snapshot by selected snapshotId (authoritative: resolver uses UI selection)
+    // Fail-closed: require snapshotId
+    const requestSnapshotId = request?.snapshotId;
+    if (!requestSnapshotId || typeof requestSnapshotId !== 'string' || !requestSnapshotId.trim()) {
+      const msg = 'Export requires snapshotId parameter';
+      console.log(JSON.stringify({
+        marker: '[PHASE1_EXPORT_BLOCKED]',
+        reason: 'MISSING_SNAPSHOT_ID',
+        message: msg,
+        ts: new Date().toISOString(),
+      }));
+
+      const exportGate: FtExportGateV1 = {
+        allowed: false,
+        reasonCode: 'SNAPSHOT_NOT_FOUND',
+        snapshotId: 'none',
+        hasCanonicalHash: false,
+        exportEligible: false,
+        message: msg,
+      };
+
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        traceId,
+        build,
+        reason: msg,
+        error: { code: 'EXPORT_GATED', message: msg, traceId },
+        exportGate,
+      };
+    }
+
+    // Load snapshot (try Phase 1 governance snapshot first, then fall back to "last")
+    console.log('[FT_PHASE1_EXPORT_GATE_CHECK] Checking export eligibility for snapshotId=' + requestSnapshotId);
+    let snapshot = null;
+    try {
+      // Try to load from Phase 1 governance snapshot storage
+      snapshot = await storage.get('ft:snapshot:last:v1');
+      if (snapshot?.canonicalHash === requestSnapshotId) {
+        // This is the Phase 1 governance snapshot
+      } else if (snapshot?.snapshotId === requestSnapshotId) {
+        // This is the "last" snapshot
+      } else {
+        // Requested snapshot not found
+        snapshot = null;
+      }
+    } catch (e) {
+      console.warn('[FT_SNAPSHOT_LOAD_ERROR]', e);
+      snapshot = null;
+    }
+    
+    // Build export gate info
+    const snapshotId = snapshot?.snapshotId || snapshot?.canonicalHash || requestSnapshotId;
+    const snapshotKind = snapshot?.snapshotKind || 'UNKNOWN';
+    const hasCanonicalHash = !!snapshot?.canonicalHash;
+    const exportEligible = snapshot?.exportEligible === true && snapshotKind !== 'SEED';
+    
+    let exportGateReason: FtExportGateReasonCode = 'NOT_EXPORT_ELIGIBLE';
+    let exportGateMessage = 'Export disabled';
+
+    // Check 1: Snapshot exists
+    if (!snapshot) {
+      exportGateReason = 'SNAPSHOT_NOT_FOUND';
+      exportGateMessage = 'Export disabled: No snapshot found. Run "Access Review (Phase 1)" first.';
+      
+      const exportGate: FtExportGateV1 = {
+        allowed: false,
+        reasonCode: exportGateReason,
+        snapshotId: 'none',
+        snapshotKind: undefined,
+        hasCanonicalHash: false,
+        exportEligible: false,
+        message: exportGateMessage,
+      };
+
+      console.log(JSON.stringify({
+        marker: '[PHASE1_EXPORT_BLOCKED]',
+        reason: exportGateReason,
+        message: exportGateMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        status: 'DISABLED',
+        traceId,
+        build,
+        reason: exportGateMessage,
+        error: {
+          code: 'EXPORT_GATED',
+          message: exportGateMessage,
+          traceId,
+        },
+        exportGate,
+      };
+    }
+
+    // Check 2: Snapshot is export-eligible (not SEED, not explicitly marked ineligible)
+    if (!exportEligible) {
+      if (snapshotKind === 'SEED') {
+        exportGateReason = 'NOT_EXPORT_ELIGIBLE';
+        exportGateMessage = 'Export disabled: Seed snapshots cannot be exported. Run "Access Review (Phase 1)" to create a governance snapshot.';
+      } else if (!hasCanonicalHash) {
+        exportGateReason = 'MISSING_CANONICAL_HASH';
+        exportGateMessage = 'Export disabled: Snapshot missing canonical hash. Run "Access Review (Phase 1)" again.';
+      } else if (snapshotKind && snapshotKind !== 'GOVERNANCE') {
+        exportGateReason = 'UNSUPPORTED_SNAPSHOT_KIND';
+        exportGateMessage = `Export disabled: Unsupported snapshot type "${snapshotKind}".`;
+      } else {
+        exportGateReason = 'NOT_EXPORT_ELIGIBLE';
+        exportGateMessage = 'Export disabled: Snapshot is not eligible for export.';
+      }
+
+      const exportGate: FtExportGateV1 = {
+        allowed: false,
+        reasonCode: exportGateReason,
+        snapshotId: snapshotId,
+        snapshotKind,
+        hasCanonicalHash,
+        exportEligible,
+        message: exportGateMessage,
+      };
+
+      console.log(JSON.stringify({
+        marker: '[PHASE1_EXPORT_BLOCKED]',
+        reason: exportGateReason,
+        snapshotKind,
+        message: exportGateMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        status: 'DISABLED',
+        traceId,
+        build,
+        reason: exportGateMessage,
+        error: {
+          code: 'EXPORT_GATED',
+          message: exportGateMessage,
+          traceId,
+        },
+        exportGate,
+      };
+    }
+
+    // Check 3: Snapshot must have canonical hash
+    if (!hasCanonicalHash) {
+      exportGateReason = 'MISSING_CANONICAL_HASH';
+      exportGateMessage = 'Export disabled: Snapshot missing canonical hash. Cannot generate deterministic export.';
+
+      const exportGate: FtExportGateV1 = {
+        allowed: false,
+        reasonCode: exportGateReason,
+        snapshotId: snapshotId,
+        snapshotKind,
+        hasCanonicalHash: false,
+        exportEligible: false,
+        message: exportGateMessage,
+      };
+
+      console.log(JSON.stringify({
+        marker: '[PHASE1_EXPORT_BLOCKED]',
+        reason: exportGateReason,
+        message: exportGateMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        status: 'DISABLED',
+        traceId,
+        build,
+        reason: exportGateMessage,
+        error: {
+          code: 'EXPORT_GATED',
+          message: exportGateMessage,
+          traceId,
+        },
+        exportGate,
+      };
+    }
+
+    // Export is gated/allowed - proceed with actual export
+    console.log('[FT_PHASE1_EXPORT_GATE_ALLOWED] Export eligibility check passed');
+
+    let handlerResult: any;
+    try {
+      handlerResult = await ft_exportAccessPack_v1_handler(request);
+    } catch (handlerErr: any) {
+      console.log('[FT_PROOF_PHASE1_HANDLER_THROWN]', JSON.stringify({
+        name: handlerErr?.name || 'unknown',
+        message: handlerErr?.message || 'unknown',
+      }));
+      throw handlerErr;
+    }
+    
+    console.log(JSON.stringify({
+      marker: '[FT_DASH_ACTION_END]',
+      action: 'EXPORT_PHASE1_PACK',
+      ok: handlerResult?.ok,
+      ts: new Date().toISOString(),
+    }));
+
+    // **SOFT FAILURE DETECTION**: Handler may return { ok:false } without throwing
+    if (handlerResult && typeof handlerResult === 'object' && handlerResult.ok === false) {
+      // Handler returned a soft failure - map to compliant error envelope
+      // Note: This is a TRUE export failure (not gating), so status may be 'FAILED'
+      const softFailureMessage = String(handlerResult.reason || handlerResult.error?.message || 'Export failed');
+      const softFailureCode = String(handlerResult.error?.code || 'PHASE1_SOFT_FAILED');
+      
+      console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
+        action: 'EXPORT_PHASE1_PACK',
+        traceId,
+        code: softFailureCode,
+        reason: softFailureMessage,
+        source: 'soft_failure',
+        ts: new Date().toISOString(),
+      }));
+
+      // Log action envelope proof marker on soft failure
+      console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+        action: 'EXPORT_PHASE1_PACK',
+        ok: false,
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        traceId,
+        buildShaShort: build.buildShaShort,
+        code: softFailureCode,
+        reason: softFailureMessage,
+        ts: new Date().toISOString(),
+      }));
+
+      // Return compliant failure envelope from soft failure
+      return {
+        envelopeKind: 'FT_ACTION_RESULT_V1',
+        ok: false,
+        action: 'EXPORT_PHASE1_PACK',
+        traceId,
+        build,
+        reason: softFailureMessage,
+        error: {
+          code: softFailureCode,
+          message: softFailureMessage,
+          traceId,
+        },
+        data: handlerResult, // Include handler result for debugging
+      };
+    }
+
+    // Log action envelope proof marker on success
+    console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+      action: 'EXPORT_PHASE1_PACK',
+      ok: handlerResult?.ok === true,
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      traceId,
+      buildShaShort: build.buildShaShort,
+      ts: new Date().toISOString(),
+    }));
+
+    return {
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      ok: handlerResult?.ok === true,
+      action: 'EXPORT_PHASE1_PACK',
+      traceId,
+      build,
+      data: handlerResult,
+    };
+  } catch (error: any) {
+    const normalized = normalizeActionError('EXPORT_PHASE1_PACK', traceId, error);
+
+    console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
+      action: 'EXPORT_PHASE1_PACK',
+      traceId,
+      code: normalized.error.code,
+      reason: normalized.reason,
+      source: 'thrown_exception',
+      ts: new Date().toISOString(),
+    }));
+
+    console.error(JSON.stringify({
+      marker: '[FT_DASH_ACTION_ERROR]',
+      action: 'EXPORT_PHASE1_PACK',
+      error: error?.message || String(error),
+      ts: new Date().toISOString(),
+    }));
+
+    // Log action envelope proof marker on failure
+    console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
+      action: 'EXPORT_PHASE1_PACK',
+      ok: false,
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      traceId,
+      buildShaShort: build.buildShaShort,
+      code: normalized.error.code,
+      reason: normalized.reason,
+      ts: new Date().toISOString(),
+    }));
+
+    return {
+      envelopeKind: 'FT_ACTION_RESULT_V1',
+      ok: false,
+      action: 'EXPORT_PHASE1_PACK',
+      traceId,
+      build,
+      reason: normalized.reason,
+      error: normalized.error,
+    };
+  }
+}
+
 export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvelopeV1> {
   try {
+    // ALWAYS-ON build fingerprint - logs on every resolver call (critical for proof window)
+    const action = request?.action || request?.payload?.action;
+    console.log('[FT_PROOF_BUILD_FINGERPRINT]', JSON.stringify({
+      marker: 'FT_PROOF_BUILD_FINGERPRINT',
+      ts: new Date().toISOString(),
+      action: action || null,
+      buildSha: FT_BUILD_SHA || null,
+      buildUtc: BACKEND_BUILD_TIME_UTC || null,
+      version: BACKEND_APP_VERSION || null,
+    }));
+
     // Extract correlation_id and ui_req_id from request (sent by UI)
     const correlationId = request?.correlation_id || request?.correlationId || 'unknown';
     const uiReqId = request?.ui_req_id || request?.uiReqId || 'unknown';
@@ -115,6 +870,53 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       uiReqId,
       ts: new Date().toISOString(),
     }));
+
+    // STEP 1: Check for optional action parameter (NEW - BACKBONE LAYER 1)
+    // If action is present, return the action result envelope DIRECTLY (no wrapping)
+    if (action && typeof action === 'string') {
+      console.log(JSON.stringify({
+        marker: '[FT_DASH_ACTION_DISPATCH]',
+        action,
+        correlationId,
+        ts: new Date().toISOString(),
+      }));
+
+      if (action === 'RUN_ACCESS_REVIEW') {
+        console.log('[FT_PROOF_PHASE1_ACTION_START]', 'RUN_ACCESS_REVIEW action triggered');
+        const actionResult = await handlePhase1AccessReview(request);
+        // Return FT_ACTION_RESULT_V1 envelope DIRECTLY (no dashboard wrapping)
+        return actionResult as any;
+      } else if (action === 'EXPORT_PHASE1_PACK') {
+        const actionResult = await handlePhase1ExportPack(request);
+        // Return FT_ACTION_RESULT_V1 envelope DIRECTLY (no dashboard wrapping)
+        return actionResult as any;
+      } else {
+        // Invalid action string - return failure envelope in canonical form
+        const traceId = getOrCreateTraceId(request);
+        const build = buildMeta();
+        const normalized = normalizeActionError(action, traceId, new Error(`Unknown action: ${action}`));
+
+        console.error(JSON.stringify({
+          marker: '[FT_DASH_ACTION_INVALID]',
+          action,
+          reason: 'Unknown action name',
+          ts: new Date().toISOString(),
+        }));
+
+        // Return canonical action failure envelope
+        return {
+          envelopeKind: 'FT_ACTION_RESULT_V1',
+          ok: false,
+          action: action as any,
+          traceId,
+          build,
+          reason: normalized.reason,
+          error: normalized.error,
+        } as any;
+      }
+    }
+
+    // STEP 2: No action present - return normal dashboard state
     
     // ENTERPRISE PROOF PACK: Extract dashboard context (non-PII)
     const dashboardId = request?.payload?.dashboardId || request?.dashboardId || 'MISSING';
@@ -330,6 +1132,107 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                   "Only governance snapshots can be exported as evidence."
                 ];
                 
+                // Build snapshots array with main snapshot + Phase 1 governance snapshots
+                const snapshotsArray = [
+                  {
+                    snapshotId: repairedSnapshot.snapshotId,
+                    snapshotKind,
+                    origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
+                    initiator: snapshotKind === "SEED" ? "system" : "user",
+                    triggerReason: undefined,
+                    createdAtUtc: repairedSnapshot.createdAtUtc,
+                    immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+                    integrity: {
+                      algorithm: "sha256",
+                      value: integrityHash,
+                    },
+                    scope: {
+                      included: [
+                        "Jira projects configuration metadata",
+                        "Workflow schemes and statuses",
+                        "Permission schemes and roles",
+                        "Automation rules metadata",
+                        "App/plugin installation list"
+                      ],
+                      excluded: [
+                        "Issue contents (summaries, descriptions, comments, attachments)",
+                        "User profile data (names, emails, avatars)",
+                        "Personally Identifiable Information (PII)",
+                        "Authentication tokens or credentials",
+                        "Real-time activity or audit logs"
+                      ],
+                    },
+                    controls: [
+                      "Change management (workflow configuration)",
+                      "Access control configuration (permission schemes)",
+                      "Automation governance (rule inventory)",
+                      "Third-party app risk assessment (installed apps list)"
+                    ],
+                    exportEligible: snapshotKind === "GOVERNANCE",
+                    exportDeclaration: EXPORT_DECLARATION_EXACT,
+                  }
+                ];
+                
+                // PHASE 1: Add governance snapshots scanned by ft_runAccessIntelligence_v1
+                try {
+                  const lastGovernanceSnapshot = await storage.get('ft:snapshot:last:v1');
+                  if (lastGovernanceSnapshot && lastGovernanceSnapshot.canonicalHash && lastGovernanceSnapshot.riskModel) {
+                    // This is a Phase 1 access intelligence snapshot
+                    const phase1SnapshotMeta = {
+                      snapshotId: lastGovernanceSnapshot.canonicalHash,
+                      snapshotKind: "GOVERNANCE",
+                      phase1: true,
+                      scanType: "ACCESS_INTELLIGENCE",
+                      origin: "ON_DEMAND",
+                      initiator: "user",
+                      triggerReason: "Phase 1 Access Governance Scan",
+                      createdAtUtc: lastGovernanceSnapshot.buildUtc || new Date().toISOString(),
+                      immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+                      integrity: {
+                        algorithm: "sha256",
+                        value: lastGovernanceSnapshot.canonicalHash,
+                      },
+                      scope: {
+                        included: [
+                          "User enumeration (active, external)",
+                          "Project access visibility",
+                          "Global admin detection",
+                          "Toxic rule evaluation",
+                          "Risk model computation"
+                        ],
+                        excluded: [
+                          "Issue contents",
+                          "User profile data (names, emails)",
+                          "Audit logs",
+                          "Authentication tokens"
+                        ],
+                      },
+                      controls: [
+                        "External user proliferation detection",
+                        "Admin density assessment",
+                        "Public project exposure",
+                        "Toxic permission combinations"
+                      ],
+                      exportEligible: true,
+                      exportDeclaration: EXPORT_DECLARATION_EXACT,
+                      riskTier: computeRiskTier(lastGovernanceSnapshot.riskModel.finalRiskScore),
+                      counts: {
+                        totalUsers: lastGovernanceSnapshot.totals?.totalUsers,
+                        externalUsers: lastGovernanceSnapshot.totals?.externalUsers,
+                        globalAdmins: lastGovernanceSnapshot.exposure?.globalAdmins?.length,
+                        publicProjects: lastGovernanceSnapshot.exposure?.publicProjects?.length,
+                        toxicFindings: lastGovernanceSnapshot.toxicFindings?.length,
+                      },
+                    };
+                    snapshotsArray.push(phase1SnapshotMeta);
+                  }
+                } catch (e: any) {
+                  console.debug('[FT_PHASE1_SNAPSHOT_LOAD]', {
+                    status: 'error',
+                    reason: e?.message || String(e),
+                  });
+                }
+                
                 return {
                   status: "AVAILABLE",
                   readOnlyGuarantee: READ_ONLY_STATEMENT_EXACT,
@@ -338,45 +1241,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                     bullets: SEED_BULLETS_EXACT,
                   },
                   evidenceFreshness,
-                  snapshots: [
-                    {
-                      snapshotId: repairedSnapshot.snapshotId,
-                      snapshotKind,
-                      origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
-                      initiator: snapshotKind === "SEED" ? "system" : "user",
-                      triggerReason: undefined,
-                      createdAtUtc: repairedSnapshot.createdAtUtc,
-                      immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
-                      integrity: {
-                        algorithm: "sha256",
-                        value: integrityHash,
-                      },
-                      scope: {
-                        included: [
-                          "Jira projects configuration metadata",
-                          "Workflow schemes and statuses",
-                          "Permission schemes and roles",
-                          "Automation rules metadata",
-                          "App/plugin installation list"
-                        ],
-                        excluded: [
-                          "Issue contents (summaries, descriptions, comments, attachments)",
-                          "User profile data (names, emails, avatars)",
-                          "Personally Identifiable Information (PII)",
-                          "Authentication tokens or credentials",
-                          "Real-time activity or audit logs"
-                        ],
-                      },
-                      controls: [
-                        "Change management (workflow configuration)",
-                        "Access control configuration (permission schemes)",
-                        "Automation governance (rule inventory)",
-                        "Third-party app risk assessment (installed apps list)"
-                      ],
-                      exportEligible: snapshotKind === "GOVERNANCE",
-                      exportDeclaration: EXPORT_DECLARATION_EXACT,
-                    }
-                  ],
+                  snapshots: snapshotsArray,
                   snapshotId: repairedSnapshot.snapshotId,
                   createdAtUtc: repairedSnapshot.createdAtUtc,
                   schemaVersion: "L0",
@@ -450,6 +1315,14 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       
       const integrityHash = computeIntegrityHash(snapshot);
       
+      // PHASE 1: Check for governance snapshots (newer than seed)
+      let governanceSnapshot = null;
+      try {
+        governanceSnapshot = await storage.get('ft:snapshot:latest:governance');
+      } catch (e) {
+        console.warn('[FT_GOVERNANCE_SNAPSHOT_NOT_FOUND]', 'No Phase 1 governance snapshot yet');
+      }
+      
       // ENTERPRISE CONTRACT: Detect snapshot kind (SEED vs GOVERNANCE)
       // For now, all snapshots from seedSnapshot are SEED
       // Future: Governance snapshots will be created via scheduled/triggered/on-demand collectors
@@ -500,46 +1373,104 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
           bullets: SEED_BULLETS_EXACT,
         },
         evidenceFreshness,
-        // Snapshots array (currently only one)
-        snapshots: [
-          {
-            snapshotId: snapshot.snapshotId,
-            snapshotKind,
-            origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
-            initiator: snapshotKind === "SEED" ? "system" : "user",
-            triggerReason: undefined, // Only for TRIGGERED snapshots
-            createdAtUtc: snapshot.createdAtUtc,
-            immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
-            integrity: {
-              algorithm: "sha256",
-              value: integrityHash,
-            },
-            scope: {
-              included: [
-                "Jira projects configuration metadata",
-                "Workflow schemes and statuses",
-                "Permission schemes and roles",
-                "Automation rules metadata",
-                "App/plugin installation list"
+        // Snapshots array (currently only one, but may include governance if available)
+        snapshots: (() => {
+          const snapshotsArray = [
+            {
+              snapshotId: snapshot.snapshotId,
+              snapshotKind,
+              origin: snapshotKind === "SEED" ? "SCHEDULED" : "ON_DEMAND",
+              initiator: snapshotKind === "SEED" ? "system" : "user",
+              triggerReason: undefined, // Only for TRIGGERED snapshots
+              createdAtUtc: snapshot.createdAtUtc,
+              immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+              integrity: {
+                algorithm: "sha256",
+                value: integrityHash,
+              },
+              scope: {
+                included: [
+                  "Jira projects configuration metadata",
+                  "Workflow schemes and statuses",
+                  "Permission schemes and roles",
+                  "Automation rules metadata",
+                  "App/plugin installation list"
+                ],
+                excluded: [
+                  "Issue contents (summaries, descriptions, comments, attachments)",
+                  "User profile data (names, emails, avatars)",
+                  "Personally Identifiable Information (PII)",
+                  "Authentication tokens or credentials",
+                  "Real-time activity or audit logs"
+                ],
+              },
+              controls: [
+                "Change management (workflow configuration)",
+                "Access control configuration (permission schemes)",
+                "Automation governance (rule inventory)",
+                "Third-party app risk assessment (installed apps list)"
               ],
-              excluded: [
-                "Issue contents (summaries, descriptions, comments, attachments)",
-                "User profile data (names, emails, avatars)",
-                "Personally Identifiable Information (PII)",
-                "Authentication tokens or credentials",
-                "Real-time activity or audit logs"
+              exportEligible: snapshotKind === "GOVERNANCE",
+              exportDeclaration: EXPORT_DECLARATION_EXACT,
+            }
+          ];
+          
+          // PHASE 1: Add governance snapshot if available
+          if (governanceSnapshot && governanceSnapshot.data) {
+            const govIntegrityHash = computeIntegrityHash(governanceSnapshot);
+            snapshotsArray.unshift({
+              snapshotId: governanceSnapshot.snapshotId,
+              snapshotKind: "GOVERNANCE",
+              origin: "ON_DEMAND",
+              initiator: "user",
+              triggerReason: "Phase 1 Access Intelligence Scan",
+              createdAtUtc: governanceSnapshot.createdAtUtc,
+              immutabilityStatement: IMMUTABILITY_STATEMENT_EXACT,
+              integrity: {
+                algorithm: "sha256",
+                value: govIntegrityHash,
+              },
+              scope: {
+                included: [
+                  "Global admin assignments",
+                  "Project admin assignments",
+                  "External user detection",
+                  "Public project visibility",
+                  "Permission scheme analysis"
+                ],
+                excluded: [
+                  "Issue contents",
+                  "User profile data",
+                  "Personally Identifiable Information (PII)",
+                  "Authentication tokens",
+                  "Real-time activity"
+                ],
+              },
+              controls: [
+                "Admin assignment governance",
+                "External access control",
+                "Project visibility governance",
+                "Permission boundary definition"
               ],
-            },
-            controls: [
-              "Change management (workflow configuration)",
-              "Access control configuration (permission schemes)",
-              "Automation governance (rule inventory)",
-              "Third-party app risk assessment (installed apps list)"
-            ],
-            exportEligible: snapshotKind === "GOVERNANCE",
-            exportDeclaration: EXPORT_DECLARATION_EXACT,
+              exportEligible: true,
+              exportDeclaration: EXPORT_DECLARATION_EXACT,
+            });
+            
+            // Update freshness to reflect governance snapshot if it's newer
+            if (!evidenceFreshness.lastCollectedUtc || 
+                new Date(governanceSnapshot.createdAtUtc) > new Date(evidenceFreshness.lastCollectedUtc)) {
+              const govAgeSeconds = Math.floor((Date.now() - new Date(governanceSnapshot.createdAtUtc).getTime()) / 1000);
+              const govFreshnessStatus = govAgeSeconds > (FRESHNESS_STALE_AFTER_DAYS * 86400) ? "STALE" : "CURRENT";
+              Object.assign(evidenceFreshness, {
+                lastCollectedUtc: governanceSnapshot.createdAtUtc,
+                ageSeconds: govAgeSeconds,
+                status: govFreshnessStatus,
+              });
+            }
           }
-        ],
+          
+          return snapshotsArray;
+        })(),
         // Backend build identity fields (canonical names with full/short SHA distinction)
         backend_git_sha: BACKEND_GIT_SHA,
         backend_git_sha_short: BACKEND_GIT_SHA_SHORT,
@@ -589,6 +1520,17 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         }
       }
       
+      // NORMALIZED EXPORT ELIGIBILITY FIELDS (for UI export gating contract)
+      // These are added at the top level for deterministic UI state computation
+      const selectedSnapshot = enterpriseContractData.snapshots?.[0];
+      const exportGateReasonCode: string = (() => {
+        if (!selectedSnapshot) return 'SNAPSHOT_NOT_FOUND';
+        if (selectedSnapshot.snapshotKind === 'SEED') return 'NOT_EXPORT_ELIGIBLE';
+        if (!selectedSnapshot.exportEligible) return 'NOT_EXPORT_ELIGIBLE';
+        if (!snapshot.canonicalHash) return 'MISSING_CANONICAL_HASH';
+        return 'OK';
+      })();
+      
       // Backend logging (MANDATORY for corroboration)
       console.log(JSON.stringify({
         marker: "[FT_ENTERPRISE_CONTRACT_BACKEND_OK]",
@@ -597,12 +1539,19 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         governanceSnapshotCount: governanceSnapshots.length,
         lastCollectedUtc: evidenceFreshness.lastCollectedUtc,  // null for NO_GOVERNANCE
         freshnessStatus: evidenceFreshness.status,
+        exportGateReasonCode,
         ts: new Date().toISOString(),
       }));
       
       return {
         status: "AVAILABLE",
         ...enterpriseContractData,
+        // NORMALIZED EXPORT ELIGIBILITY: Single source of truth for UI
+        snapshotIdNormalized: selectedSnapshot?.snapshotId || null,
+        snapshotKindNormalized: selectedSnapshot?.snapshotKind || 'UNKNOWN',
+        exportEligibleNormalized: selectedSnapshot?.exportEligible === true,
+        canonicalHashNormalized: snapshot?.canonicalHash || null,
+        exportGateReasonCodeNormalized: exportGateReasonCode,
       };
     };
 
@@ -1001,5 +1950,17 @@ export async function ft_uiLogRelay_v1(request: any): Promise<{ ok: boolean }> {
     console.error("[UI_RELAY_ERROR]", { error: (e as any)?.message });
     return { ok: true };  // Still return ok so UI doesn't break
   }
+}
+
+/**
+ * Compute risk tier from Phase 1 risk score (0-1)
+ * HIGH: > 0.7
+ * MEDIUM: 0.4-0.7
+ * LOW: < 0.4
+ */
+function computeRiskTier(score: number): string {
+  if (score > 0.7) return 'HIGH';
+  if (score > 0.4) return 'MEDIUM';
+  return 'LOW';
 }
 

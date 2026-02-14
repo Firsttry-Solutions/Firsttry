@@ -3,9 +3,14 @@
   "version": "2.14.0",
   "description": "FirstTry Governance - Atlassian Dual-Layer Integration",
   "main": "src/index.ts",
+  "engines": {
+    "node": "20.20.0",
+    "npm": "10.8.2"
+  },
   "scripts": {
     "pretest": "node tools/build_meta.mjs",
     "type-check": "tsc --noEmit",
+    "build:ts": "tsc -p tsconfig.json",
     "verify:bridge-installed": "node tools/verify_forge_bridge_installed.js",
     "verify:ui:no-fatal-dist": "bash tools/verify_no_fatal_ui_bridge_in_dist.sh",
     "verify:ui:no-top-level-throw": "bash tools/verify_no_top_level_throw_in_entry.sh",
@@ -79,9 +84,11 @@
     "dashboard:smoke": "node e2e/scripts/ft_dashboard_smoke_proof.mjs",
     "dashboard:auth:refresh": "node e2e/scripts/auth_refresh_storage_state.mjs",
     "dashboard:state:verify": "node e2e/scripts/verify_storage_state.mjs",
-    "prod:verify-deploy-upgrade": "bash tools/ft_verify_deploy_upgrade_prod.sh"
+    "prod:verify-deploy-upgrade": "bash tools/ft_verify_deploy_upgrade_prod.sh",
+    "dashboard:playwright:proof": "bash scripts/proof/run_dashboard_playwright.sh"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.19.30",
     "@types/pdfkit": "^0.17.4",

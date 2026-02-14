@@ -3081,6 +3081,17 @@ async function proceedWithBoot() {
         // Store current state for next update
         currentL0DashboardState = dashState;
         
+        // === BACKBONE FIX: Log deterministic state marker immediately after dash state is fixed ===
+        const stateStatus = dashState.status || 'UNKNOWN';
+        const stateReason = dashState.reason || dashState.error || 'NONE';
+        console.log(JSON.stringify({
+          marker: '[FT_STATE]',
+          status: stateStatus,
+          reason: stateReason,
+          uiReqId: FT_UI_REQ_ID,
+          ts: new Date().toISOString(),
+        }));
+        
         // STEP 4: Render dashboard (AVAILABLE, NO_SNAPSHOT, INVALID_SNAPSHOT, or HARD_ERROR only)
         const dashboard = renderL0Dashboard(dashState);
         document.body.innerHTML = '';
@@ -3135,6 +3146,308 @@ async function proceedWithBoot() {
         const variantSelect = document.getElementById('ft-snapshot-variant-select') as HTMLSelectElement | null;
         if (variantSelect && dashState.status === 'AVAILABLE') {
           attachVariantSelectHandler(variantSelect);
+        }
+
+        // PHASE 1: Attach event listener for "Run Access Review" button
+        const runAccessButton = document.getElementById('ft-run-access-review-btn') as HTMLButtonElement | null;
+        if (runAccessButton) {
+          runAccessButton.addEventListener('click', async () => {
+            runAccessButton.disabled = true;
+            runAccessButton.textContent = 'Running...';
+            
+            try {
+              ensureCorrelationId();
+              console.log('[PHASE1_ACCESS_SCAN_CLICK] User triggered access review scan');
+              
+              // === BACKBONE FIX 1: Guard - block RUN_ACCESS_REVIEW if snapshot NOT_AVAILABLE ===
+              if (dashState.status !== 'AVAILABLE') {
+                const guardReason = dashState.reason || dashState.error || dashState.status;
+                const guardMarker = JSON.stringify({
+                  marker: '[FT_GUARD]',
+                  guard: 'BLOCK_RUN_ACCESS_REVIEW',
+                  status: dashState.status,
+                  reason: guardReason,
+                  uiReqId: FT_UI_REQ_ID,
+                  ts: new Date().toISOString(),
+                });
+                console.log(guardMarker);
+                
+                runAccessButton.textContent = 'Snapshot required';
+                runAccessButton.style.backgroundColor = '#FFA500';
+                runAccessButton.disabled = false;
+                return;
+              }
+              
+              const result = await invokeWithUiReqId('ft_getDashboardState_v1', { action: 'RUN_ACCESS_REVIEW' });
+              
+              // Validate envelope schema (FAIL-CLOSED)
+              if (!result || result.envelopeKind !== 'FT_ACTION_RESULT_V1') {
+                const traceIdForBreach = (result?.traceId || result?.error?.traceId || 'unknown');
+                console.error('[PHASE1_CONTRACT_BREACH_KIND]', {
+                  got: result?.envelopeKind,
+                  expected: 'FT_ACTION_RESULT_V1',
+                  fullResponse: result,
+                });
+                runAccessButton.textContent = `Scan Failed: CONTRACT_BREACH wrong envelopeKind (traceId=${traceIdForBreach})`;
+                runAccessButton.style.backgroundColor = '#f44336';
+                runAccessButton.disabled = false;
+                return;
+              }
+
+              // Response has correct envelope kind - process action result
+              const actionResult = result as any;
+              
+              if (actionResult && actionResult.ok) {
+                // === FAIL-CLOSED: Phase1 success marker MUST be present ===
+                if (!actionResult.phase1Proof) {
+                  // Marker missing - fail-closed
+                  const failMsg = 'PHASE1_MARKER_MISSING: Backend returned ok:true but no phase1Proof marker';
+                  console.error('[PHASE1_CONTRACT_BREACH_MARKER]', {
+                    got: actionResult.phase1Proof,
+                    expected: '[PHASE1_ACCESS_SCAN_OK] marker object',
+                    envelope: actionResult.envelopeKind,
+                    traceId: actionResult.traceId,
+                  });
+                  runAccessButton.textContent = `Scan Failed: ${failMsg} (traceId=${actionResult.traceId})`;
+                  runAccessButton.style.backgroundColor = '#f44336';
+                  runAccessButton.disabled = false;
+                  throw new Error(failMsg);
+                }
+
+                // === FAIL-CLOSED: Marker field must contain correct text ===
+                if (actionResult.phase1Proof.marker !== '[PHASE1_ACCESS_SCAN_OK]') {
+                  const failMsg = `PHASE1_MARKER_WRONG: Expected '[PHASE1_ACCESS_SCAN_OK]' but got '${actionResult.phase1Proof.marker}'`;
+                  console.error('[PHASE1_CONTRACT_BREACH_MARKER_VALUE]', {
+                    got: actionResult.phase1Proof.marker,
+                    expected: '[PHASE1_ACCESS_SCAN_OK]',
+                    traceId: actionResult.traceId,
+                  });
+                  runAccessButton.textContent = `Scan Failed: ${failMsg}`;
+                  runAccessButton.style.backgroundColor = '#f44336';
+                  runAccessButton.disabled = false;
+                  throw new Error(failMsg);
+                }
+
+                // Log the phase1Proof marker verbatim
+                console.log('[PHASE1_ACCESS_SCAN_OK]', JSON.stringify(actionResult.phase1Proof));
+                
+                console.log('[PHASE1_ACCESS_SCAN_SUCCESS]', actionResult);
+                runAccessButton.textContent = 'Scan Complete!';
+                runAccessButton.style.backgroundColor = '#4CAF50';
+                
+                // Re-fetch dashboard to show new governance snapshot
+                setTimeout(() => {
+                  location.reload();
+                }, 1500);
+              } else {
+                // === BACKBONE FIX 2: Enhanced error evidence for PHASE1_ACCESS_SCAN_FAILED ===
+                const failureMarker = JSON.stringify({
+                  marker: '[FT_ACTION_FAIL]',
+                  action: 'RUN_ACCESS_REVIEW',
+                  ok: false,
+                  traceId: actionResult?.traceId || actionResult?.error?.traceId || 'unknown',
+                  resolver: 'ft_getDashboardState_v1',
+                  errorCode: actionResult?.error?.code || actionResult?.code || null,
+                  message: actionResult?.error?.message || actionResult?.reason || null,
+                  cause: actionResult?.error?.cause ? String(actionResult.error.cause) : null,
+                  uiReqId: FT_UI_REQ_ID,
+                  ts: new Date().toISOString(),
+                });
+                console.error('[PHASE1_ACCESS_SCAN_FAILED]', failureMarker);
+                
+                // Legacy error log for backward compatibility
+                console.error('[PHASE1_ACCESS_SCAN_FAILED_LEGACY]', actionResult);
+                
+                // Sanity check: error/build/reason/traceId fields must exist on failure
+                if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
+                  console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'Missing required fields on ok:false response', {
+                    hasError: !!actionResult.error,
+                    hasBuild: !!actionResult.build,
+                    hasReason: !!actionResult.reason,
+                    hasTraceId: !!actionResult.traceId,
+                    response: actionResult,
+                  });
+                  runAccessButton.textContent = `Scan Failed: CONTRACT_BREACH missing fields (traceId=${actionResult.traceId || 'unknown'})`;
+                } else {
+                  const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
+                  const traceId = actionResult.error.traceId || actionResult.traceId || 'unknown';
+                  runAccessButton.textContent = `Scan Failed: ${errorMsg} (traceId=${traceId})`;
+                }
+                runAccessButton.style.backgroundColor = '#f44336';
+              }
+            } catch (error: any) {
+              console.error('[PHASE1_ACCESS_SCAN_ERROR]', error);
+              runAccessButton.textContent = 'Error: ' + error.message;
+              runAccessButton.style.backgroundColor = '#f44336';
+            } finally {
+              runAccessButton.disabled = false;
+            }
+          });
+        }
+
+        // PHASE 1: Attach event listener for "Export Phase 1 Pack" button
+        const exportAccessButton = document.getElementById('ft-export-access-pack-btn') as HTMLButtonElement | null;
+        if (exportAccessButton) {
+          // NORMALIZED EXPORT ELIGIBILITY CONTRACT (from resolver response)
+          // Use explicit fields from response for deterministic UI state
+          const snapshotIdNormalized = (dashState as any).snapshotIdNormalized || (dashState as any).snapshotId || null;
+          const snapshotKindNormalized = (dashState as any).snapshotKindNormalized || 'UNKNOWN';
+          const exportEligibleNormalized = (dashState as any).exportEligibleNormalized === true;
+          const canonicalHashNormalized = (dashState as any).canonicalHashNormalized || null;
+          const hasCanonicalHashNorm = !!canonicalHashNormalized && typeof canonicalHashNormalized === 'string' && canonicalHashNormalized.trim() !== '';
+          
+          // COMPUTE EXPORT ALLOWED STATE (deterministic)
+          // Export allowed if: canonical hash exists (non-empty string) AND exportEligible is true AND snapshotKind is GOVERNANCE
+          const exportAllowed = hasCanonicalHashNorm && exportEligibleNormalized && snapshotKindNormalized === 'GOVERNANCE';
+          
+          // Compute reasonCode (deterministic, enum-based)
+          let reasonCode: string;
+          if (!snapshotIdNormalized) {
+            reasonCode = 'SNAPSHOT_NOT_FOUND';
+          } else if (snapshotKindNormalized === 'SEED') {
+            reasonCode = 'NOT_EXPORT_ELIGIBLE';
+          } else if (!exportEligibleNormalized) {
+            reasonCode = 'NOT_EXPORT_ELIGIBLE';
+          } else if (!hasCanonicalHashNorm) {
+            reasonCode = 'MISSING_CANONICAL_HASH';
+          } else {
+            reasonCode = 'OK';
+          }
+          
+          // EMIT [UI_EXPORT_STATE] MARKER (deterministic JSON - NO TIMESTAMP)
+          const uiExportState = {
+            snapshotId: snapshotIdNormalized,
+            snapshotKind: snapshotKindNormalized,
+            exportEligible: exportEligibleNormalized,
+            hasCanonicalHash: hasCanonicalHashNorm,
+            exportAllowed,
+            reasonCode,
+          };
+          console.log('[UI_EXPORT_STATE]', JSON.stringify(uiExportState));
+          
+          // GATE: Disable button if export not allowed
+          if (!exportAllowed) {
+            exportAccessButton.disabled = true;
+            const reason = !hasCanonicalHashNorm 
+              ? 'missing canonical hash'
+              : snapshotKindNormalized === 'SEED'
+              ? 'seed snapshots cannot be exported'
+              : 'snapshot not eligible for export';
+            
+            exportAccessButton.title = `Export disabled: ${reason}`;
+            exportAccessButton.setAttribute('aria-disabled', 'true');
+            
+            // EMIT [PHASE1_EXPORT_BLOCKED_RENDERED] marker at render time (reliable, not click-dependent)
+            console.log('[PHASE1_EXPORT_BLOCKED_RENDERED]', JSON.stringify({
+              snapshotId: snapshotIdNormalized,
+              reasonCode,
+            }));
+            
+            // Prevent click from invoking resolver if button somehow becomes clickable
+            exportAccessButton.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify({
+                snapshotId: snapshotIdNormalized,
+                reasonCode,
+              }));
+            });
+          } else {
+            // GATE PASSED: Attach normal click handler that invokes resolver
+            exportAccessButton.addEventListener('click', async () => {
+              exportAccessButton.disabled = true;
+              exportAccessButton.textContent = 'Exporting...';
+              
+              try {
+                ensureCorrelationId();
+                
+                // === BIND RESOLVER KEY: Use const so marker and invoke are mechanically identical ===
+                const exportResolverKey = 'ft_getDashboardState_v1';
+                const exportActionType = 'EXPORT_PHASE1_PACK';
+                
+                // EMIT [PHASE1_EXPORT_INVOKE] marker BEFORE resolver call (tied to real invoke key/action)
+                console.log('[PHASE1_EXPORT_INVOKE]', JSON.stringify({
+                  snapshotId: snapshotIdNormalized,
+                  resolver: exportResolverKey,
+                  action: exportActionType,
+                }));
+                
+                // INVOKE RESOLVER with SAME KEY and ACTION (non-lying, mechanically verified)
+                const result = await invokeWithUiReqId(exportResolverKey, {
+                  action: exportActionType,
+                  snapshotId: snapshotIdNormalized,
+                });
+
+                // Validate envelope schema (FAIL-CLOSED)
+                if (!result || result.envelopeKind !== 'FT_ACTION_RESULT_V1') {
+                  const traceIdForBreach = (result?.traceId || result?.error?.traceId || 'unknown');
+                  console.error('[PHASE1_CONTRACT_BREACH_KIND]', {
+                    got: result?.envelopeKind,
+                    expected: 'FT_ACTION_RESULT_V1',
+                    fullResponse: result,
+                  });
+                  exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH wrong envelopeKind (traceId=${traceIdForBreach})`;
+                  exportAccessButton.disabled = false;
+                  return;
+                }
+
+                // Response has correct envelope kind - process action result
+                const actionResult = result as any;
+                const exportData = actionResult?.data || actionResult;
+                
+                // Check if response has exportGate field (indicates resolver-side gating)
+                if (actionResult?.exportGate && !actionResult.exportGate.allowed) {
+                  console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify(actionResult.exportGate));
+                  exportAccessButton.textContent = `Export disabled: ${actionResult.exportGate.reasonCode}`;
+                  exportAccessButton.disabled = false;
+                  return;
+                }
+                
+                if (exportData && exportData.ok && exportData.zipBase64) {
+                  console.log('[PHASE1_EXPORT_SUCCESS]', { hash: exportData.zipHash, fileCount: exportData.fileCount });
+                  
+                  // Trigger download
+                  const binaryString = atob(exportData.zipBase64);
+                  const bytes = new Uint8Array(binaryString.length);
+                  for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                  }
+                  const blob = new Blob([bytes], { type: 'application/zip' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `ft-access-pack-${snapshotIdNormalized}.zip`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                  
+                  exportAccessButton.textContent = 'Export Complete';
+                } else {
+                  console.error('[PHASE1_EXPORT_FAILED]', exportData);
+                  if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
+                    console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'Missing required fields on ok:false response', {
+                      hasError: !!actionResult.error,
+                      hasBuild: !!actionResult.build,
+                      hasReason: !!actionResult.reason,
+                      hasTraceId: !!actionResult.traceId,
+                      response: actionResult,
+                    });
+                    exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH missing fields (traceId=${actionResult.traceId || 'unknown'})`;
+                  } else {
+                    const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
+                    const traceId = actionResult.error.traceId || actionResult.traceId || 'unknown';
+                    exportAccessButton.textContent = `Export Failed: ${errorMsg} (traceId=${traceId})`;
+                  }
+                }
+              } catch (error: any) {
+                console.error('[PHASE1_EXPORT_ERROR]', error);
+                exportAccessButton.textContent = 'Error: ' + error.message;
+              } finally {
+                exportAccessButton.disabled = false;
+              }
+            });
+          }
         }
         
         // RELAY: Send dashboard rendered marker with status and reason code

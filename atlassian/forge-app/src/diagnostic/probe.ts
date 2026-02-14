@@ -21,6 +21,8 @@
  */
 
 import api from "@forge/api";
+// @ts-ignore route() is exported from @forge/api but TS definitions may lag
+const { route } = require("@forge/api") as typeof import("@forge/api");
 
 // Require token match for access
 const getDiagToken = (): string => {
@@ -50,11 +52,11 @@ export const handler = async (req: any) => {
     const [serverInfo, projectCount] = await Promise.all([
       api
         .asUser()
-        .requestJira("/rest/api/3/serverInfo")
+        .requestJira(route`/rest/api/3/serverInfo`)
         .then((r: any) => r?.json?.()),
       api
         .asUser()
-        .requestJira("/rest/api/3/project/search?maxResults=1")
+        .requestJira(route`/rest/api/3/project/search?maxResults=1`)
         .then((r: any) => r?.json?.()),
     ]);
 

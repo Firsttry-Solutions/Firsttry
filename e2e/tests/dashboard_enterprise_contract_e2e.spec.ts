@@ -147,175 +147,143 @@ test.describe('Enterprise Contract Dashboard', () => {
     // ========================================================================
     console.log('[TEST] === DEPLOYMENT-AWARENESS GATE === Checking deployed backend SHA...');
     const deploymentCheckResults: string[] = [];
-    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK (BACKEND AUTHORITATIVE) ===\n\n');
+    deploymentCheckResults.push('=== DEPLOYMENT AWARENESS CHECK ===\n\n');
     deploymentCheckResults.push(`Expected HEAD SHA: ${expectedHeadShortSha}\n\n`);
     
-    // REQUIRED: Backend identity webtrigger URL from environment
-    // NO GUESSING - URL must be provided by Forge CLI: forge webtrigger create -f backend-identity-trigger
+    // OPTIONAL: Backend identity webtrigger URL from environment
+    // NOTE: Webtriggers removed to restore Runs on Atlassian (RoA) eligibility.
+    // If BACKEND_IDENTITY_WEBTRIGGER_URL is available, use it for verification.
+    // Otherwise, skip this verification and continue with test.
     const BACKEND_IDENTITY_WEBTRIGGER_URL = process.env.BACKEND_IDENTITY_WEBTRIGGER_URL;
     
-    if (!BACKEND_IDENTITY_WEBTRIGGER_URL) {
-      const stopMsg = [
-        'STOP: BACKEND_IDENTITY_URL_MISSING',
-        '',
-        'Environment variable BACKEND_IDENTITY_WEBTRIGGER_URL is not set.',
-        '',
-        'This URL must be obtained from Forge CLI:',
-        '  forge webtrigger create -f backend-identity-trigger -e production \\',
-        '    -s firsttry.atlassian.net -p jira',
-        '',
-        'Then pass it to this test via:',
-        '  BACKEND_IDENTITY_WEBTRIGGER_URL="<url>" npx playwright test ...',
-        '',
-        'NO GUESSING. URL must be authoritative.',
-      ].join('\n');
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_BACKEND_IDENTITY_URL_MISSING.txt'), stopMsg);
-      console.error('[TEST] STOP_BACKEND_IDENTITY_URL_MISSING');
-      throw new Error('STOP_BACKEND_IDENTITY_URL_MISSING: env var not set');
-    }
-    
-    console.log(`[TEST] Backend identity URL: ${BACKEND_IDENTITY_WEBTRIGGER_URL}`);
-    deploymentCheckResults.push(`Backend identity URL: ${BACKEND_IDENTITY_WEBTRIGGER_URL}\n\n`);
-    
-    // Call backend webtrigger to get authoritative build identity
-    // This bypasses CDN caching issues with frontend console logs and buildinfo.json
-    let backendShortSha = '';
-    let backendFullSha = '';
-    let backendBuildTime = '';
-    
-    try {
-      deploymentCheckResults.push('Calling backend webtrigger for build identity...\n');
+    if (BACKEND_IDENTITY_WEBTRIGGER_URL) {
+      console.log(`[TEST] Backend identity URL provided: ${BACKEND_IDENTITY_WEBTRIGGER_URL}`);
+      deploymentCheckResults.push(`Backend identity URL: ${BACKEND_IDENTITY_WEBTRIGGER_URL}\n\n`);
       
-      // Fetch backend identity using the authoritative URL from environment
-      const backendIdentity = await page.evaluate(async (url: string) => {
-        try {
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-            },
-          });
-          
-          if (!response.ok) {
+      // Call backend webtrigger to get authoritative build identity
+      let backendShortSha = '';
+      let backendFullSha = '';
+      let backendBuildTime = '';
+      
+      try {
+        deploymentCheckResults.push('Calling backend webtrigger for build identity...\n');
+        
+        // Fetch backend identity using the authoritative URL from environment
+        const backendIdentity = await page.evaluate(async (url: string) => {
+          try {
+            const response = await fetch(url, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+              },
+            });
+            
+            if (!response.ok) {
+              return { 
+                success: false, 
+                error: `HTTP ${response.status}: ${response.statusText}` 
+              };
+            }
+            
+            const data = await response.json();
+            return { success: true, data };
+            
+          } catch (e: any) {
             return { 
               success: false, 
-              error: `HTTP ${response.status}: ${response.statusText}` 
+              error: `Fetch failed: ${e.message}` 
             };
           }
-          
-          const data = await response.json();
-          return { success: true, data };
-          
-        } catch (e: any) {
-          return { 
-            success: false, 
-            error: `Fetch failed: ${e.message}` 
-          };
+        }, BACKEND_IDENTITY_WEBTRIGGER_URL);
+        
+        if (!backendIdentity.success) {
+          throw new Error(backendIdentity.error || 'Backend identity fetch failed');
         }
-      }, BACKEND_IDENTITY_WEBTRIGGER_URL);
-      
-      if (!backendIdentity.success) {
-        throw new Error(backendIdentity.error || 'Backend identity fetch failed');
+        
+        const data = backendIdentity.data;
+        backendShortSha = data.gitShaShort || '';
+        backendFullSha = data.gitShaFull || '';
+        backendBuildTime = data.buildTimeUtc || data.buildUtc || '';
+        
+        deploymentCheckResults.push(`✓ Backend webtrigger called successfully\n`);
+        deploymentCheckResults.push(`  Backend SHA (short): ${backendShortSha}\n`);
+        deploymentCheckResults.push(`  Backend SHA (full): ${backendFullSha}\n`);
+        deploymentCheckResults.push(`  Backend build time: ${backendBuildTime}\n`);
+        
+        // Emit unambiguous markers for tooling
+        console.log(`EXPECTED_SHA_SHORT=${expectedHeadShortSha}`);
+        console.log(`BACKEND_SHA_SHORT=${backendShortSha}`);
+        console.log(`BACKEND_BUILD_UTC=${backendBuildTime}`);
+        console.log(`BACKEND_IDENTITY_URL=${BACKEND_IDENTITY_WEBTRIGGER_URL}`);
+        
+        deploymentCheckResults.push(`\nBackend short SHA: ${backendShortSha}\n`);
+        deploymentCheckResults.push(`Backend full SHA: ${backendFullSha}\n`);
+        
+        // GATE: If backend SHA not found
+        if (!backendShortSha) {
+          const stopMsg = [
+            'STOP: BACKEND SHA NOT FOUND',
+            '',
+            `Expected HEAD short SHA: ${expectedHeadShortSha}`,
+            'Backend SHA: NOT FOUND',
+            `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
+            '',
+            'Backend identity resolver returned empty SHA.',
+            '',
+            'ACTION: Check backend build identity generation in forge-app.',
+          ].join('\n');
+          fs.writeFileSync(path.join(RUN_DIR, 'STOP_BACKEND_SHA_NOT_FOUND.txt'), stopMsg);
+          console.error('[TEST] STOP_BACKEND_SHA_NOT_FOUND: Backend resolver returned empty SHA');
+          throw new Error('STOP_BACKEND_SHA_NOT_FOUND: backend SHA empty');
+        }
+        
+        // GATE: If backend SHA != expected HEAD SHA (CRITICAL DEPLOYMENT GATE)
+        // When HEAD is a meta commit, accept either the code commit SHA or the meta commit SHA
+        const acceptableBackendShas = isFreezeMetaCommit 
+          ? [expectedHeadShortSha, actualHeadSha]  // Accept both code commit and meta commit SHA
+          : [expectedHeadShortSha];                // Accept only the expected SHA
+        
+        if (!acceptableBackendShas.includes(backendShortSha)) {
+          const stopMsg = [
+            'STOP: NOT DEPLOYED (BACKEND)',
+            '',
+            `Expected SHA(s): ${acceptableBackendShas.join(' or ')}`,
+            `Backend short SHA: ${backendShortSha}`,
+            `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
+            '',
+            'The backend has not been updated with the latest code from this repository.',
+            'This is AUTHORITATIVE - backend identity is not subject to CDN caching.',
+            '',
+            'ACTION REQUIRED:',
+            '  1. Deploy to production:',
+            '     cd /workspaces/Firsttry/atlassian/forge-app',
+            '     forge deploy --environment production',
+            '',
+            '  2. Wait for deployment to complete (~5 minutes)',
+            '',
+            '  3. Re-run this test',
+          ].join('\n');
+          fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED_BACKEND.txt'), stopMsg);
+          console.error(`[TEST] STOP_NOT_DEPLOYED_BACKEND: Expected ${acceptableBackendShas.join(' or ')}, got ${backendShortSha}`);
+          throw new Error(`STOP_NOT_DEPLOYED_BACKEND: backend SHA (${backendShortSha}) not in acceptable list`);
+        }
+        
+        const matchType = backendShortSha === expectedHeadShortSha ? 'code commit' : 'meta commit';
+        console.log(`[TEST] ✓ DEPLOYMENT-AWARENESS GATE PASSED: Backend SHA ${backendShortSha} matches ${matchType}`);
+        deploymentCheckResults.push(`\n✓ VERDICT: PASS - Backend SHA matches ${matchType} (AUTHORITATIVE)\n`);
+        
+      } catch (error: any) {
+        deploymentCheckResults.push(`✗ Failed to get backend identity: ${error.message}\n`);
+        fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
+        console.error('[TEST] Backend identity verification failed:', error.message);
+        throw error;
       }
-      
-      const data = backendIdentity.data;
-      backendShortSha = data.gitShaShort || '';
-      backendFullSha = data.gitShaFull || '';
-      backendBuildTime = data.buildTimeUtc || data.buildUtc || '';
-      
-      deploymentCheckResults.push(`✓ Backend webtrigger called successfully\n`);
-      deploymentCheckResults.push(`  Backend SHA (short): ${backendShortSha}\n`);
-      deploymentCheckResults.push(`  Backend SHA (full): ${backendFullSha}\n`);
-      deploymentCheckResults.push(`  Backend build time: ${backendBuildTime}\n`);
-      
-      // Emit unambiguous markers for tooling
-      console.log(`EXPECTED_SHA_SHORT=${expectedHeadShortSha}`);
-      console.log(`BACKEND_SHA_SHORT=${backendShortSha}`);
-      console.log(`BACKEND_BUILD_UTC=${backendBuildTime}`);
-      console.log(`BACKEND_IDENTITY_URL=${BACKEND_IDENTITY_WEBTRIGGER_URL}`);
-      
-    } catch (error: any) {
-      deploymentCheckResults.push(`✗ Failed to get backend identity: ${error.message}\n`);
-      fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
-      
-      const stopMsg = [
-        'STOP: BACKEND IDENTITY WEBTRIGGER FAILED',
-        '',
-        `Expected HEAD short SHA: ${expectedHeadShortSha}`,
-        'Backend SHA: WEBTRIGGER_FAILED',
-        `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
-        `Error: ${error.message}`,
-        '',
-        'Could not call backend identity webtrigger.',
-        'This means either:',
-        '  1. The webtrigger is not deployed',
-        '  2. The webtrigger URL is incorrect',
-        '  3. Network error reaching the webtrigger',
-        '  4. Forge platform issue',
-        '',
-        'ACTION: Verify webtrigger is registered in manifest and deployed.',
-      ].join('\n');
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_BACKEND_IDENTITY_WEBTRIGGER_FAILED.txt'), stopMsg);
-      console.error('[TEST] STOP_BACKEND_IDENTITY_WEBTRIGGER_FAILED:', error.message);
-      throw new Error(`STOP_BACKEND_IDENTITY_WEBTRIGGER_FAILED: ${error.message}`);
+    } else {
+      // Webtrigger not available (removed for RoA eligibility)
+      console.log('[TEST] [INFO] BACKEND_IDENTITY_WEBTRIGGER_URL not set - skipping backend verification (webtrigger removed for RoA eligibility)');
+      deploymentCheckResults.push('Backend identity verification: SKIPPED (webtrigger removed for Runs on Atlassian eligibility)\n\n');
     }
     
-    deploymentCheckResults.push(`\nBackend short SHA: ${backendShortSha}\n`);
-    deploymentCheckResults.push(`Backend full SHA: ${backendFullSha}\n`);
-    fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
-    
-    // GATE: If backend SHA not found
-    if (!backendShortSha) {
-      const stopMsg = [
-        'STOP: BACKEND SHA NOT FOUND',
-        '',
-        `Expected HEAD short SHA: ${expectedHeadShortSha}`,
-        'Backend SHA: NOT FOUND',
-        `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
-        '',
-        'Backend identity resolver returned empty SHA.',
-        '',
-        'ACTION: Check backend build identity generation in forge-app.',
-      ].join('\n');
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_BACKEND_SHA_NOT_FOUND.txt'), stopMsg);
-      console.error('[TEST] STOP_BACKEND_SHA_NOT_FOUND: Backend resolver returned empty SHA');
-      throw new Error('STOP_BACKEND_SHA_NOT_FOUND: backend SHA empty');
-    }
-    
-    // GATE: If backend SHA != expected HEAD SHA (CRITICAL DEPLOYMENT GATE)
-    // When HEAD is a meta commit, accept either the code commit SHA or the meta commit SHA
-    const acceptableBackendShas = isFreezeMetaCommit 
-      ? [expectedHeadShortSha, actualHeadSha]  // Accept both code commit and meta commit SHA
-      : [expectedHeadShortSha];                // Accept only the expected SHA
-    
-    if (!acceptableBackendShas.includes(backendShortSha)) {
-      const stopMsg = [
-        'STOP: NOT DEPLOYED (BACKEND)',
-        '',
-        `Expected SHA(s): ${acceptableBackendShas.join(' or ')}`,
-        `Backend short SHA: ${backendShortSha}`,
-        `Dashboard URL: ${JIRA_DASHBOARD_URL}`,
-        '',
-        'The backend has not been updated with the latest code from this repository.',
-        'This is AUTHORITATIVE - backend identity is not subject to CDN caching.',
-        '',
-        'ACTION REQUIRED:',
-        '  1. Deploy to production:',
-        '     cd /workspaces/Firsttry/atlassian/forge-app',
-        '     forge deploy --environment production',
-        '',
-        '  2. Wait for deployment to complete (~5 minutes)',
-        '',
-        '  3. Re-run this test',
-      ].join('\n');
-      fs.writeFileSync(path.join(RUN_DIR, 'STOP_NOT_DEPLOYED_BACKEND.txt'), stopMsg);
-      console.error(`[TEST] STOP_NOT_DEPLOYED_BACKEND: Expected ${acceptableBackendShas.join(' or ')}, got ${backendShortSha}`);
-      throw new Error(`STOP_NOT_DEPLOYED_BACKEND: backend SHA (${backendShortSha}) not in acceptable list`);
-    }
-    
-    const matchType = backendShortSha === expectedHeadShortSha ? 'code commit' : 'meta commit';
-    console.log(`[TEST] ✓ DEPLOYMENT-AWARENESS GATE PASSED: Backend SHA ${backendShortSha} matches ${matchType}`);
-    deploymentCheckResults.push(`\n✓ VERDICT: PASS - Backend SHA matches ${matchType} (AUTHORITATIVE)\n`);
     fs.writeFileSync(path.join(RUN_DIR, '02_deployed_identity_evidence.txt'), deploymentCheckResults.join(''));
     
     // ========================================================================
