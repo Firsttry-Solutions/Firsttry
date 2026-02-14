@@ -13,8 +13,12 @@ app:
     name: nodejs20.x
 
 modules:
-  # PHASE 2: Drift Monitor function
+  # PHASE 3: Diagnostic probe function
   function:
+    - key: ft-diag-probe-fn
+      handler: src/diagnostic/probe.probe
+
+    # PHASE 2: Drift Monitor function
     - key: driftMonitorScheduled
       handler: continuous-drift/scheduled.run
 
