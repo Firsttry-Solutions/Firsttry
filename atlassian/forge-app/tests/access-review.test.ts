@@ -15,12 +15,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { ReviewWorkflowEngine, PrivilegeSnapshot } from "../access-review/workflow";
-import { ReviewExportPack } from "../export/reviewPack";
-import { ComplianceEvidenceGenerator } from "../compliance/controlMapping";
-import { ReviewAnalyticsBuffer, ReviewAnalyticsEntry } from "../analytics/reviewAnalytics";
-import { ReviewGuards } from "../access-review/guards";
-import { ReviewItem, ReviewWorkflow } from "../access-review/types";
+import { ReviewWorkflowEngine, PrivilegeSnapshot } from "../src/access-review/workflow";
+import { ReviewExportPack } from "../src/export/reviewPack";
+import { ComplianceEvidenceGenerator } from "../src/compliance/controlMapping";
+import { ReviewAnalyticsBuffer, ReviewAnalyticsEntry } from "../src/analytics/reviewAnalytics";
+import { ReviewGuards } from "../src/access-review/guards";
+import { ReviewItem, ReviewWorkflow } from "../src/access-review/types";
 
 /**
  * Helper: Create test snapshot
@@ -260,21 +260,36 @@ describe("Phase 3: Access Review System of Record", () => {
     it("should produce identical pack hash across multiple runs", async () => {
       const hashes: string[] = [];
 
+      // Use fixed timestamps for determinism testing
+      const fixedTimestamp = "2026-02-14T08:00:00.000Z";
+      const fixedDecisionTimestamp = "2026-02-14T08:00:01.000Z";
+      const fixedClosedAtTimestamp = "2026-02-14T08:00:02.000Z";
+      const deterministicSnapshot: PrivilegeSnapshot = {
+        items: testSnapshot.items,
+        timestamp: fixedTimestamp,
+        buildVersion: testSnapshot.buildVersion,
+        siteId: testSnapshot.siteId,
+      };
+
       for (let i = 0; i < 10; i++) {
         const engine = new ReviewWorkflowEngine();
         const workflow = await engine.initializeReview(
-          testSnapshot,
+          deterministicSnapshot,
           ["reviewer1"],
           "3.0.0",
-          "test-site"
+          "test-site",
+          undefined,
+          undefined,
+          fixedTimestamp // Pass fixed createdAt for deterministic testing
         );
 
-        engine.recordDecision("entity-0", "reviewer1", "approved");
-        engine.closeReview();
+        engine.recordDecision("entity-0", "reviewer1", "approved", undefined, fixedDecisionTimestamp);
+        engine.closeReview(fixedClosedAtTimestamp);
 
         const files = ReviewExportPack.generatePackFiles(
           engine.getWorkflow(),
-          "abc1234"
+          "abc1234",
+          { createdAt: fixedTimestamp, generatedAt: fixedTimestamp }
         );
 
         const hash = ReviewExportPack.computePackHash(files);

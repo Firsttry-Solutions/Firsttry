@@ -133,7 +133,7 @@ export interface ReviewWorkflow {
  */
 export interface ReviewDecisionBatch {
   reviewId: string;
-  decisions: ReviewDecision[];
+  decisions: Array<ReviewDecision & { entityId: string }>;
   appliedAt: string;
   appliedByAccountId: string;
 }

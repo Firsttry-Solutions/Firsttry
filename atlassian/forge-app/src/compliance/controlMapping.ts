@@ -78,7 +78,7 @@ export class ComplianceEvidenceGenerator {
    * 
    * Fail-closed: Must be closed
    */
-  static generateEvidence(workflow: ReviewWorkflow): ComplianceEvidence {
+  static generateEvidence(workflow: ReviewWorkflow, testGeneratedAt?: string): ComplianceEvidence {
     if (workflow.status !== "closed") {
       throw new Error(
         "FAIL_CLOSED: Cannot generate compliance evidence for open review"
@@ -121,7 +121,7 @@ export class ComplianceEvidenceGenerator {
     const completionTime = `${completionHours} hours`;
 
     const evidence: ComplianceEvidence = {
-      generatedAt: new Date().toISOString(),
+      generatedAt: testGeneratedAt || new Date().toISOString(),
       schemaVersion: this.SCHEMA_VERSION,
       reviewId: workflow.reviewId,
       snapshotHash: workflow.snapshotHash,
