@@ -62,7 +62,7 @@ echo "[FT_PROOF] Compilation: PASSED ✓ (${COMPILE_LINES} lines)"
 echo ""
 echo "[FT_PROOF] CHECK 2: Unit tests (access-review)..."
 
-if ! npm test -- src/access-review --run --prefix "$WORKSPACE" > "$EVIDENCE_DIR/test-access-review.log" 2>&1; then
+if ! npm --prefix "$WORKSPACE" test -- src/access-review --run > "$EVIDENCE_DIR/test-access-review.log" 2>&1; then
   echo "[FT_PROOF] ERROR: Access review tests FAILED"
   cat "$EVIDENCE_DIR/test-access-review.log"
   exit 1
@@ -78,7 +78,7 @@ echo "[FT_PROOF] Access-review tests: PASSED ✓ (${TEST_PASSED} test groups)"
 echo ""
 echo "[FT_PROOF] CHECK 3: Performance tests (2K items, <180s)..."
 
-if ! npm test -- tests/performance-phase3.test.ts --run --prefix "$WORKSPACE" > "$EVIDENCE_DIR/test-performance.log" 2>&1; then
+if ! npm --prefix "$WORKSPACE" test -- tests/performance-phase3.test.ts --run > "$EVIDENCE_DIR/test-performance.log" 2>&1; then
   echo "[FT_PROOF] ERROR: Performance tests FAILED"
   cat "$EVIDENCE_DIR/test-performance.log"
   exit 1
