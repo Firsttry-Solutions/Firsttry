@@ -408,7 +408,7 @@ fi
 echo "[FT_SHIP] ✓ Real-world smoke test: PASS"
 
 # ############################################################################
-# STEP 11: REAL PLAYWRIGHT (NO CI OVERRIDE ALLOWED)
+# STEP 11: REAL PLAYWRIGHT (NO CI OVERRIDE ALLOWED) - FAIL-CLOSED FOR SSO
 # ############################################################################
 
 echo "[FT_SHIP] ══════════════════════════════════════════════════════"
@@ -421,6 +421,130 @@ if [ -n "${FT_CI_NO_PLAYWRIGHT:-}" ]; then
   exit 1
 fi
 
+# ============================================================================
+# HELPER: Require Playwright auth state (fail-closed for SSO tenants)
+# ============================================================================
+require_playwright_state() {
+  local evid_dir="$1"
+  local state_file="tests/playwright/.auth/state.json"
+  local auth_mode=""
+  local state_source=""
+  
+  # Priority 1: CI secret (FT_PLAYWRIGHT_STATE_B64)
+  if [ -n "${FT_PLAYWRIGHT_STATE_B64:-}" ]; then
+    echo "[FT_PROOF] Playwright auth state: CI secret (FT_PLAYWRIGHT_STATE_B64)" | tee -a "$evid_dir/31_playwright.log"
+    
+    # Create temp file for decoded state
+    local temp_state="/tmp/ft_playwright_state_$$.json"
+    
+    # Decode base64 to temp file
+    if ! echo "$FT_PLAYWRIGHT_STATE_B64" | base64 -d > "$temp_state" 2>/dev/null; then
+      echo "[FT_PROOF] ERROR: Failed to decode FT_PLAYWRIGHT_STATE_B64" | tee -a "$evid_dir/31_playwright.log"
+      exit 1
+    fi
+    
+    # Validate decoded file
+    local state_size=$(stat -c%s "$temp_state" 2>/dev/null || stat -f%z "$temp_state" 2>/dev/null)
+    if [ "$state_size" -lt 200 ]; then
+      echo "[FT_PROOF] ERROR: Decoded state file too small ($state_size bytes, need >= 200)" | tee -a "$evid_dir/31_playwright.log"
+      rm -f "$temp_state"
+      exit 1
+    fi
+    
+    # Validate JSON structure
+    if ! node -e "const fs = require('fs'); JSON.parse(fs.readFileSync('$temp_state', 'utf-8'))" 2>/dev/null; then
+      echo "[FT_PROOF] ERROR: Decoded state is not valid JSON" | tee -a "$evid_dir/31_playwright.log"
+      rm -f "$temp_state"
+      exit 1
+    fi
+    
+    # Install to expected location
+    mkdir -p "$(dirname "$state_file")"
+    mv "$temp_state" "$state_file"
+    chmod 600 "$state_file"
+    
+    # Create provenance file for CI-injected state
+    local provenance_file="${state_file}.provenance.json"
+    cat > "$provenance_file" << PROV_EOF
+{
+  "marker": "FT_PLAYWRIGHT_STATE_PROVENANCE_V1",
+  "source": "CI_SECRET_FT_PLAYWRIGHT_STATE_B64",
+  "installedAt": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "stateSizeBytes": $state_size,
+  "installedBy": "ship_prod_release.sh",
+  "validation": "JSON_PARSED_OK"
+}
+PROV_EOF
+    chmod 600 "$provenance_file"
+    
+    auth_mode="STATE_B64"
+    state_source="CI_SECRET"
+    echo "[FT_PROOF] ✓ Playwright state installed from CI secret ($state_size bytes)" | tee -a "$evid_dir/31_playwright.log"
+    
+  # Priority 2: Local file (tests/playwright/.auth/state.json)
+  elif [ -f "$state_file" ]; then
+    local state_size=$(stat -c%s "$state_file" 2>/dev/null || stat -f%z "$state_file" 2>/dev/null)
+    echo "[FT_PROOF] Playwright auth state: local file ($state_size bytes)" | tee -a "$evid_dir/31_playwright.log"
+    
+    # Validate it's non-empty and valid JSON
+    if [ "$state_size" -lt 200 ]; then
+      echo "[FT_PROOF] ERROR: Local state file too small ($state_size bytes, need >= 200)" | tee -a "$evid_dir/31_playwright.log"
+      exit 1
+    fi
+    
+    if ! node -e "const fs = require('fs'); JSON.parse(fs.readFileSync('$state_file', 'utf-8'))" 2>/dev/null; then
+      echo "[FT_PROOF] ERROR: Local state file is not valid JSON" | tee -a "$evid_dir/31_playwright.log"
+      exit 1
+    fi
+    
+    auth_mode="STATE_FILE"
+    state_source="LOCAL_FILE"
+    echo "[FT_PROOF] ✓ Playwright state validated: local file" | tee -a "$evid_dir/31_playwright.log"
+    
+  # Neither available: FAIL with instructions
+  else
+    echo "[FT_PROOF] ERROR: No Playwright auth state found" | tee -a "$evid_dir/31_playwright.log"
+    echo "" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF] ═══════════════════════════════════════════════════════════════" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF] FAIL-CLOSED: Playwright requires auth state for SSO tenants" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF] ═══════════════════════════════════════════════════════════════" | tee -a "$evid_dir/31_playwright.log"
+    echo "" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF] To fix this, choose ONE option:" | tee -a "$evid_dir/31_playwright.log"
+    echo "" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF] OPTION A: Generate state locally (once, requires browser + SSO):" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   cd /workspaces/Firsttry/atlassian/forge-app" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   export JIRA_BASE_URL=\"$FT_JIRA_TENANT\"" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   export FT_AUTH_GENERATE_STATE=1" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   export FT_PLAYWRIGHT_MODE=headed" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   bash scripts/proof/generate_playwright_state.sh" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   # This creates: tests/playwright/.auth/state.json" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   # Then retry: bash scripts/proof/ship_prod_release.sh" | tee -a "$evid_dir/31_playwright.log"
+    echo "" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF] OPTION B: Inject state from CI secret:" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   # After generating state.json locally (Option A):" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   base64 -w0 tests/playwright/.auth/state.json > /tmp/state.b64" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   # Store contents in GitHub Secret: FT_PLAYWRIGHT_STATE_B64" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF]   # CI workflow exports FT_PLAYWRIGHT_STATE_B64 before running ship script" | tee -a "$evid_dir/31_playwright.log"
+    echo "" | tee -a "$evid_dir/31_playwright.log"
+    echo "[FT_PROOF] ═══════════════════════════════════════════════════════════════" | tee -a "$evid_dir/31_playwright.log"
+    exit 1
+  fi
+  
+  # Write evidence log (no secrets)
+  {
+    echo "PLAYWRIGHT_AUTH_MODE=$auth_mode"
+    echo "PLAYWRIGHT_STATE_SOURCE=$state_source"
+    echo "PLAYWRIGHT_STATE_PATH=tests/playwright/.auth/state.json"
+    echo "PLAYWRIGHT_STATE_SIZE_BYTES=$state_size"
+  } > "$evid_dir/31_playwright_auth_mode.log"
+  
+  # Export for Playwright runner
+  export FT_AUTH_MODE="state-only"
+  export FT_PLAYWRIGHT_STATE_PATH="$state_file"
+  
+  echo "[FT_PROOF] PLAYWRIGHT_AUTH_MODE=$auth_mode" | tee -a "$evid_dir/31_playwright.log"
+}
+
 # Export required env vars for Playwright runner
 export FT_JIRA_TENANT FT_JIRA_USERNAME FT_JIRA_API_TOKEN FT_EVID_DIR
 
@@ -428,31 +552,12 @@ export FT_JIRA_TENANT FT_JIRA_USERNAME FT_JIRA_API_TOKEN FT_EVID_DIR
 export JIRA_BASE_URL="$FT_JIRA_TENANT"
 export JIRA_EMAIL="$FT_JIRA_USERNAME"
 
-# For SSO-only tenants, check if auth state is available
-STATE_FILE="tests/playwright/.auth/state.json"
-if [ -f "$STATE_FILE" ]; then
-  echo "[FT_SHIP] ✓ Cached auth state found for Playwright" | tee -a "$EVID/31_playwright.log"
-  export FT_AUTH_MODE="state-only"
-else
-  echo "[FT_SHIP] No cached auth state found; will attempt interactive login" | tee -a "$EVID/31_playwright.log"
-  # Interactive mode will work for non-SSO tenants
-  # For SSO tenants, this will fail with clear instructions
-fi
+# Require auth state (fail-closed)
+require_playwright_state "$EVID"
 
 # Run Playwright
-if ! bash scripts/proof/run_dashboard_playwright.sh 2>&1 | tee "$EVID/31_playwright.log"; then
+if ! bash scripts/proof/run_dashboard_playwright.sh 2>&1 | tee -a "$EVID/31_playwright.log"; then
   echo "[FT_SHIP] ERROR: Playwright tests failed" | tee -a "$EVID/31_playwright.log"
-  
-  # Check if failure was due to SSO-only tenant (helpful error message)
-  if grep -q "SSO" "$EVID/31_playwright.log"; then
-    echo "" | tee -a "$EVID/31_playwright.log"
-    echo "[FT_SHIP] NOTE: Tenant is SSO-only. To fix this for future runs:" | tee -a "$EVID/31_playwright.log"
-    echo "[FT_SHIP]   1. Generate auth state (requires browser interaction with SSO):" | tee -a "$EVID/31_playwright.log"
-    echo "[FT_SHIP]      FT_AUTH_GENERATE_STATE=1 FT_PLAYWRIGHT_MODE=headed bash scripts/proof/generate_playwright_state.sh" | tee -a "$EVID/31_playwright.log"
-    echo "[FT_SHIP]   2. Cache the generated state.json for automated deployments" | tee -a "$EVID/31_playwright.log"
-    echo "[FT_SHIP]   3. Rerun prod ship with the cached state in place" | tee -a "$EVID/31_playwright.log"
-  fi
-  
   exit 1
 fi
 
