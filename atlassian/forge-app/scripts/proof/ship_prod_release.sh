@@ -428,9 +428,31 @@ export FT_JIRA_TENANT FT_JIRA_USERNAME FT_JIRA_API_TOKEN FT_EVID_DIR
 export JIRA_BASE_URL="$FT_JIRA_TENANT"
 export JIRA_EMAIL="$FT_JIRA_USERNAME"
 
+# For SSO-only tenants, check if auth state is available
+STATE_FILE="tests/playwright/.auth/state.json"
+if [ -f "$STATE_FILE" ]; then
+  echo "[FT_SHIP] ✓ Cached auth state found for Playwright" | tee -a "$EVID/31_playwright.log"
+  export FT_AUTH_MODE="state-only"
+else
+  echo "[FT_SHIP] No cached auth state found; will attempt interactive login" | tee -a "$EVID/31_playwright.log"
+  # Interactive mode will work for non-SSO tenants
+  # For SSO tenants, this will fail with clear instructions
+fi
+
 # Run Playwright
 if ! bash scripts/proof/run_dashboard_playwright.sh 2>&1 | tee "$EVID/31_playwright.log"; then
   echo "[FT_SHIP] ERROR: Playwright tests failed" | tee -a "$EVID/31_playwright.log"
+  
+  # Check if failure was due to SSO-only tenant (helpful error message)
+  if grep -q "SSO" "$EVID/31_playwright.log"; then
+    echo "" | tee -a "$EVID/31_playwright.log"
+    echo "[FT_SHIP] NOTE: Tenant is SSO-only. To fix this for future runs:" | tee -a "$EVID/31_playwright.log"
+    echo "[FT_SHIP]   1. Generate auth state (requires browser interaction with SSO):" | tee -a "$EVID/31_playwright.log"
+    echo "[FT_SHIP]      FT_AUTH_GENERATE_STATE=1 FT_PLAYWRIGHT_MODE=headed bash scripts/proof/generate_playwright_state.sh" | tee -a "$EVID/31_playwright.log"
+    echo "[FT_SHIP]   2. Cache the generated state.json for automated deployments" | tee -a "$EVID/31_playwright.log"
+    echo "[FT_SHIP]   3. Rerun prod ship with the cached state in place" | tee -a "$EVID/31_playwright.log"
+  fi
+  
   exit 1
 fi
 
