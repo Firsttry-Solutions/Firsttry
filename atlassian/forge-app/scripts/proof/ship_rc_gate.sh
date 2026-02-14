@@ -224,10 +224,13 @@ echo "[FT_PROOF] ═════════════════════
 
 # CI override: allow skipping Playwright only if FT_CI_NO_PLAYWRIGHT=1 is explicitly set
 CI_OVERRIDE="${FT_CI_NO_PLAYWRIGHT:-}"
+PLAYWRIGHT_MODE="executed"
+
 if [ "$CI_OVERRIDE" = "1" ]; then
-  echo "[FT_PROOF] CI override detected: FT_CI_NO_PLAYWRIGHT=1"
-  echo "[FT_PROOF] Playwright gate skipped (CI environment)" | tee "$EVID/70_playwright.log"
-  echo "[FT_PROOF] ✓ Playwright: SKIPPED (CI override)"
+  PLAYWRIGHT_MODE="skipped_ci"
+  echo "[FT_PROOF] CI override detected: FT_CI_NO_PLAYWRIGHT=1" | tee "$EVID/70_playwright.log"
+  echo "[FT_PROOF] Playwright gate skipped (CI environment)" | tee -a "$EVID/70_playwright.log"
+  echo "[FT_PROOF] ⏭️ Playwright: SKIPPED (CI override)"
 else
   # Enforce required env vars (FAIL-CLOSED)
   if ! require_env FT_JIRA_TENANT; then
@@ -281,6 +284,15 @@ echo "[FT_PROOF] ✓ Repo Clean: PASS"
 # GENERATE EVIDENCE INDEX
 # ############################################################################
 
+# Build Playwright status table dynamically based on actual mode
+if [ "$PLAYWRIGHT_MODE" = "skipped_ci" ]; then
+  PW_STATUS="⏭️ SKIPPED (CI override)"
+  PW_EVIDENCE="70_playwright.log"
+else
+  PW_STATUS="✅ PASS (executed)"
+  PW_EVIDENCE="70_playwright.log"
+fi
+
 cat > "$EVID/INDEX.md" << 'INDEXEOF'
 # RC Gate Evidence Index (Fail-Closed)
 
@@ -298,7 +310,7 @@ cat > "$EVID/INDEX.md" << 'INDEXEOF'
 | 5 | Forge Deploy | ✅ PASS | 40/41_*.log |
 | 6 | Upgrade Path | ✅ PASS | 50_forge_upgrade.log |
 | 7 | Runtime Smoke | ✅ PASS | 60_phase3_contract_tests.log |
-| 8 | Playwright | ✅ PASS (executed, not skipped) | 70_playwright.log |
+| 8 | Playwright | $PW_STATUS | $PW_EVIDENCE |
 | 9 | Cleanliness | ✅ PASS | 90_git_status_end.log |
 
 ## Binary Truth Proofs
@@ -308,7 +320,21 @@ cat > "$EVID/INDEX.md" << 'INDEXEOF'
 - No "error TS" markers in output ✅
 - Proof: 20_tsc_noemit.log
 
-### Playwright (No Skips, Executed)
+INDEXEOF
+
+# Add Playwright section conditionally
+if [ "$PLAYWRIGHT_MODE" = "skipped_ci" ]; then
+  cat >> "$EVID/INDEX.md" << 'INDEXEOF'
+### Playwright (CI Override)
+- Mode: Skipped via explicit FT_CI_NO_PLAYWRIGHT=1 flag
+- Environment validation: Bypassed (CI context)
+- Runner execution: Not performed
+- Note: This is NOT a production validation of Playwright tests
+
+INDEXEOF
+else
+  cat >> "$EVID/INDEX.md" << 'INDEXEOF'
+### Playwright (Executed - Production Mode)
 - FT_JIRA_TENANT: provided ✅
 - FT_JIRA_USERNAME: provided ✅
 - FT_JIRA_API_TOKEN: provided ✅
@@ -316,6 +342,10 @@ cat > "$EVID/INDEX.md" << 'INDEXEOF'
 - Execution: exit 0 ✅
 - Proof: 70_playwright.log
 
+INDEXEOF
+fi
+
+cat >> "$EVID/INDEX.md" << 'INDEXEOF'
 ## Failure Mode
 
 If any gate fails, the script exits immediately (exit 1) with error logged to:
@@ -326,6 +356,17 @@ No [FT_RC_GATE_PASS] marker is written unless ALL steps succeed.
 INDEXEOF
 
 cat "$EVID/INDEX.md"
+
+# ############################################################################
+# INTERNAL CONSISTENCY CHECK: Verify INDEX.md reflects actual mode
+# ############################################################################
+
+if [ "$PLAYWRIGHT_MODE" = "skipped_ci" ]; then
+  if ! grep -q "SKIPPED (CI override)" "$EVID/INDEX.md"; then
+    echo "[FT_PROOF] ERROR: INDEX.md does not reflect SKIPPED (CI override) mode" | tee -a "$EVID/00_rc_gate_errors.log"
+    exit 1
+  fi
+fi
 
 # ############################################################################
 # FINAL: RC GATE PASS MARKER (Only written if all steps succeeded)
