@@ -18,8 +18,8 @@
  * - Fail-closed: cannot export if review not closed
  */
 
-import crypto from "crypto";
-import { ReviewWorkflow, ReviewItem, ReviewDecision, ReviewException } from "./types";
+import * as crypto from "crypto";
+import { ReviewWorkflow, ReviewItem, ReviewDecision, ReviewException } from "../access-review/types";
 import { ComplianceEvidenceGenerator } from "../compliance/controlMapping";
 
 /**
@@ -27,15 +27,15 @@ import { ComplianceEvidenceGenerator } from "../compliance/controlMapping";
  */
 export interface ReviewExportMetadata {
   reviewId: string;
-  status: "open" | "closed";
+  status: "open" | "closed" | "no_reviewers_configured";
   createdAt: string;
   closedAt?: string;
   buildShaShort: string;
-  buildUtc: string;
+  buildUtc?: string;
   schemaVersion: string;
   siteId?: string;
   packHash: string;
-  exportedAt: string;
+  exportedAt?: string;
   privilegeContext?: string;
   ruleSetVersion?: string;
 }
@@ -109,11 +109,9 @@ export class ReviewExportPack {
       createdAt: workflow.createdAt,
       closedAt: workflow.closedAt,
       buildShaShort: buildSha,
-      buildUtc: new Date().toISOString(),
       schemaVersion: this.SCHEMA_VERSION,
       siteId: workflow.siteId,
       packHash: "", // Computed after all files
-      exportedAt: new Date().toISOString(),
     };
   }
 
@@ -133,7 +131,7 @@ export class ReviewExportPack {
       progress: workflow.progress,
       complianceScore: workflow.complianceScore,
       totalItems: Object.keys(workflow.items).length,
-      decidedItems: Object.values(workflow.decisions).filter((d) => d.length > 0)
+      decidedItems: (Object.values(workflow.decisions) as ReviewDecision[][]).filter((d) => d.length > 0)
         .length,
       exceptionsCount: workflow.exceptions.length,
       buildVersion: workflow.buildVersion,
@@ -301,7 +299,8 @@ verify();
    */
   static generatePackFiles(
     workflow: ReviewWorkflow,
-    buildSha: string
+    buildSha: string,
+    testTimestamps?: { createdAt?: string; generatedAt?: string }
   ): Record<string, string> {
     // Validate exportable
     this.validateExportable(workflow);
@@ -316,8 +315,8 @@ verify();
     const schemaVersionFile = this.SCHEMA_VERSION;
     const verifyScript = this.generateVerifyScript();
     
-    // Generate compliance evidence
-    const evidence = ComplianceEvidenceGenerator.generateEvidence(workflow);
+    // Generate compliance evidence with optional test timestamp
+    const evidence = ComplianceEvidenceGenerator.generateEvidence(workflow, testTimestamps?.generatedAt);
     const controlMappingFile = ComplianceEvidenceGenerator.exportEvidenceJSON(evidence);
 
     const files: Record<string, string> = {

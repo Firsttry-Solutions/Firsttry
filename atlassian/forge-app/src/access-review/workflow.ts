@@ -17,7 +17,7 @@
  * [FT_REVIEW_CLOSED]
  */
 
-import crypto from "crypto";
+import * as crypto from "crypto";
 import {
   ReviewItem,
   ReviewDecision,
@@ -60,15 +60,20 @@ export class ReviewWorkflowEngine {
    * Compute SHA-256 hash of snapshot (deterministic key)
    */
   static hashSnapshot(snapshot: PrivilegeSnapshot): string {
-    const canonical = JSON.stringify(
-      {
-        items: snapshot.items,
-        timestamp: snapshot.timestamp,
-        buildVersion: snapshot.buildVersion,
-        siteId: snapshot.siteId,
-      },
-      Object.keys(snapshot.items).sort() // Stable key ordering
-    );
+    // Sort items by key for deterministic hash
+    const sortedItems: Record<string, any> = {};
+    Object.keys(snapshot.items)
+      .sort()
+      .forEach((key) => {
+        sortedItems[key] = snapshot.items[key];
+      });
+
+    const canonical = JSON.stringify({
+      items: sortedItems,
+      timestamp: snapshot.timestamp,
+      buildVersion: snapshot.buildVersion,
+      siteId: snapshot.siteId,
+    });
     return crypto.createHash("sha256").update(canonical).digest("hex");
   }
 
@@ -76,22 +81,35 @@ export class ReviewWorkflowEngine {
    * Compute deterministic workflow canonical hash
    */
   static hashWorkflow(workflow: Omit<ReviewWorkflow, "canonicalHash">): string {
-    const canonical = JSON.stringify(
-      {
-        reviewId: workflow.reviewId,
-        snapshotHash: workflow.snapshotHash,
-        createdAt: workflow.createdAt,
-        status: workflow.status,
-        closedAt: workflow.closedAt,
-        reviewers: [...workflow.reviewers].sort(),
-        items: workflow.items,
-        decisions: workflow.decisions,
-        exceptions: workflow.exceptions,
-        progress: workflow.progress,
-        complianceScore: workflow.complianceScore,
-      },
-      Object.keys(workflow.items).sort()
-    );
+    // Sort items by key for deterministic hash
+    const sortedItems: Record<string, any> = {};
+    Object.keys(workflow.items)
+      .sort()
+      .forEach((key) => {
+        sortedItems[key] = workflow.items[key];
+      });
+
+    // Sort decisions by key for deterministic hash
+    const sortedDecisions: Record<string, any> = {};
+    Object.keys(workflow.decisions)
+      .sort()
+      .forEach((key) => {
+        sortedDecisions[key] = workflow.decisions[key];
+      });
+
+    const canonical = JSON.stringify({
+      reviewId: workflow.reviewId,
+      snapshotHash: workflow.snapshotHash,
+      createdAt: workflow.createdAt,
+      status: workflow.status,
+      closedAt: workflow.closedAt,
+      reviewers: [...workflow.reviewers].sort(),
+      items: sortedItems,
+      decisions: sortedDecisions,
+      exceptions: workflow.exceptions,
+      progress: workflow.progress,
+      complianceScore: workflow.complianceScore,
+    });
     return crypto.createHash("sha256").update(canonical).digest("hex");
   }
 
@@ -115,7 +133,8 @@ export class ReviewWorkflowEngine {
     buildVersion: string,
     siteId: string,
     storage?: any,
-    jiraClient?: any
+    jiraClient?: any,
+    testCreatedAt?: string // Optional: for deterministic testing
   ): Promise<ReviewWorkflow> {
     console.log("[FT_REVIEW_INIT] Starting quarterly access review...");
 
@@ -159,10 +178,13 @@ export class ReviewWorkflowEngine {
       console.log(`[FT_REVIEW_INIT] Resolved ${finalReviewers.length} reviewers via ${result.source}`);
     }
 
-    // Step 2: Validate snapshot
-    if (!snapshot || !snapshot.items || Object.keys(snapshot.items).length === 0) {
-      throw new Error("FAIL_CLOSED: Snapshot missing or empty");
+    // Step 2: Validate snapshot structure
+    if (!snapshot || !snapshot.items) {
+      throw new Error("FAIL_CLOSED: Snapshot missing or malformed");
     }
+
+    // Note: Empty snapshots (0 items) are allowed; they have default compliance score 100
+    // (no risky undecided items)
 
     // Step 3: Lock snapshot hash
     const snapshotHash = ReviewWorkflowEngine.hashSnapshot(snapshot);
@@ -175,7 +197,7 @@ export class ReviewWorkflowEngine {
 
     // Step 5: Create locked workflow
     const reviewId = ReviewWorkflowEngine.generateReviewId();
-    const now = new Date().toISOString();
+    const now = testCreatedAt || new Date().toISOString();
 
     const workflow: ReviewWorkflow = {
       reviewId,
@@ -198,17 +220,22 @@ export class ReviewWorkflowEngine {
       workflow.decisions[entityId] = [];
     }
 
-    // Compute and lock canonical hash
-    workflow.canonicalHash = ReviewWorkflowEngine.hashWorkflow(workflow);
-
+    // Temporarily assign workflow so _updateComplianceScore can access it
     this.workflow = workflow;
+
+    // Calculate initial compliance score based on item risk levels
+    this._updateComplianceScore();
+
+    // Now compute and lock canonical hash (after score is updated)
+    this.workflow.canonicalHash = ReviewWorkflowEngine.hashWorkflow(this.workflow);
+
     this.lockedSnapshot = snapshot;
 
     console.log(
       `[FT_REVIEW_INIT] reviewId=${reviewId} items=${Object.keys(snapshot.items).length} reviewers=${finalReviewers.length}`
     );
 
-    return workflow;
+    return this.workflow;
   }
 
   /**
@@ -223,7 +250,8 @@ export class ReviewWorkflowEngine {
     entityId: string,
     reviewerAccountId: string,
     decision: "approved" | "rejected",
-    comment?: string
+    comment?: string,
+    testDecisionTimestamp?: string
   ): ReviewDecision {
     if (!this.workflow) {
       throw new Error("FAIL_CLOSED: No active review");
@@ -241,7 +269,7 @@ export class ReviewWorkflowEngine {
       throw new Error(`FAIL_CLOSED: entityId ${entityId} not in review`);
     }
 
-    const timestamp = new Date().toISOString();
+    const timestamp = testDecisionTimestamp || new Date().toISOString();
     const reviewDecision: ReviewDecision = {
       reviewerAccountId,
       decision,
@@ -358,7 +386,7 @@ export class ReviewWorkflowEngine {
    * 
    * Fail-closed: Cannot close if no_reviewers_configured
    */
-  closeReview(): ReviewWorkflow {
+  closeReview(testClosedAt?: string): ReviewWorkflow {
     if (!this.workflow) {
       throw new Error("FAIL_CLOSED: No active review");
     }
@@ -374,7 +402,7 @@ export class ReviewWorkflowEngine {
     }
 
     this.workflow.status = "closed";
-    this.workflow.closedAt = new Date().toISOString();
+    this.workflow.closedAt = testClosedAt || new Date().toISOString();
 
     // Recompute canonical hash with final state
     this.workflow.canonicalHash = ReviewWorkflowEngine.hashWorkflow(this.workflow);

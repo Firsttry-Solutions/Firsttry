@@ -13,6 +13,7 @@
  */
 
 import { ReviewWorkflow } from "../access-review/types";
+import { ReviewWorkflowEngine } from "../access-review/workflow";
 import { ReviewExportPack } from "../export/reviewPack";
 
 /**
@@ -154,8 +155,8 @@ export class ReviewGuards {
     const storedHash = workflow.canonicalHash;
 
     // Compute what the hash should be
-    const recomputedHash = ReviewWorkflow.hashWorkflow(
-      (workflow as unknown) as Parameters<typeof ReviewWorkflow.hashWorkflow>[0]
+    const recomputedHash = ReviewWorkflowEngine.hashWorkflow(
+      (workflow as unknown) as Parameters<typeof ReviewWorkflowEngine.hashWorkflow>[0]
     );
 
     if (storedHash !== recomputedHash) {
