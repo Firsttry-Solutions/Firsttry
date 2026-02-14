@@ -357,7 +357,7 @@ else
   echo "[FT_SHIP] --site flag not detected, using legacy syntax" | tee -a "$EVID/23_forge_install_upgrade.log"
 fi
 
-if ! eval "$UPGRADE_CMD" 2>&1 | tee -a "$EVID/23_forge_install_upgrade.log"; then
+if ! { echo -e "${FT_JIRA_TENANT##*/}\nYes" | eval "$UPGRADE_CMD"; } 2>&1 | tee -a "$EVID/23_forge_install_upgrade.log"; then
   echo "[FT_SHIP] ERROR: Forge install --upgrade failed" | tee -a "$EVID/23_forge_install_upgrade.log"
   exit 1
 fi
