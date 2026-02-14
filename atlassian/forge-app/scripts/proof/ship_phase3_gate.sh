@@ -42,6 +42,17 @@ cleanup() {
 
 trap cleanup EXIT
 
+###############################################################################
+# MANDATORY: Repo must be clean (no staged or unstaged changes)
+###############################################################################
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "[FT_PROOF] ERROR: working tree must be clean to run ship gate" >&2
+  echo "[FT_PROOF] Staged or uncommitted changes detected:" >&2
+  git status --porcelain >&2
+  exit 1
+fi
+
 WORKSPACE="${1:-.}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 SHIP_DIR="/tmp/ft_phase3_ship_gate_${TIMESTAMP}"
@@ -237,6 +248,14 @@ echo "[FT_PROOF] Gate 5 PASSED ✓"
 ###############################################################################
 # FINAL SUMMARY
 ###############################################################################
+
+# Final sanity check: repo must still be clean
+if [ -n "$(git status --porcelain)" ]; then
+  echo "[FT_PROOF] ERROR: working tree became dirty during execution" >&2
+  echo "[FT_PROOF] Changes detected:" >&2
+  git status --porcelain >&2
+  exit 1
+fi
 
 echo ""
 echo "╔════════════════════════════════════════════════════════════════╗"
