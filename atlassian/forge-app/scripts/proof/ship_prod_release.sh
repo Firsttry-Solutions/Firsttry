@@ -349,7 +349,7 @@ echo "[FT_SHIP] ═════════════════════�
 
 # Detect correct syntax for forge install --upgrade
 # First, check if --site flag is supported
-UPGRADE_CMD="forge install --upgrade -e $FT_PROD_ENV"
+UPGRADE_CMD="forge install --upgrade -e $FT_PROD_ENV --non-interactive --confirm-scopes"
 if forge install --help 2>&1 | grep -q -- "--site"; then
   UPGRADE_CMD="$UPGRADE_CMD --site $FT_JIRA_TENANT"
   echo "[FT_SHIP] Using: $UPGRADE_CMD" | tee "$EVID/23_forge_install_upgrade.log"
@@ -357,7 +357,7 @@ else
   echo "[FT_SHIP] --site flag not detected, using legacy syntax" | tee -a "$EVID/23_forge_install_upgrade.log"
 fi
 
-if ! { echo -e "${FT_JIRA_TENANT##*/}\nYes" | eval "$UPGRADE_CMD"; } 2>&1 | tee -a "$EVID/23_forge_install_upgrade.log"; then
+if ! eval "$UPGRADE_CMD" 2>&1 | tee -a "$EVID/23_forge_install_upgrade.log"; then
   echo "[FT_SHIP] ERROR: Forge install --upgrade failed" | tee -a "$EVID/23_forge_install_upgrade.log"
   exit 1
 fi
