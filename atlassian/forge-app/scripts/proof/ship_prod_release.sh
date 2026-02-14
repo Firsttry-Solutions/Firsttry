@@ -424,6 +424,10 @@ fi
 # Export required env vars for Playwright runner
 export FT_JIRA_TENANT FT_JIRA_USERNAME FT_JIRA_API_TOKEN FT_EVID_DIR
 
+# Map FT_JIRA_TENANT and FT_JIRA_USERNAME to Playwright runner's expected env vars
+export JIRA_BASE_URL="$FT_JIRA_TENANT"
+export JIRA_EMAIL="$FT_JIRA_USERNAME"
+
 # Run Playwright
 if ! bash scripts/proof/run_dashboard_playwright.sh 2>&1 | tee "$EVID/31_playwright.log"; then
   echo "[FT_SHIP] ERROR: Playwright tests failed" | tee -a "$EVID/31_playwright.log"
