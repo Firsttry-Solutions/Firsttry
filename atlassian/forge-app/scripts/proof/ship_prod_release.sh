@@ -349,7 +349,7 @@ echo "[FT_SHIP] ═════════════════════�
 
 # Detect correct syntax for forge install --upgrade
 # First, check if --site flag is supported
-UPGRADE_CMD="forge install --upgrade -e $FT_PROD_ENV --non-interactive --confirm-scopes"
+UPGRADE_CMD="forge install --upgrade -e $FT_PROD_ENV -p Jira --non-interactive --confirm-scopes"
 if forge install --help 2>&1 | grep -q -- "--site"; then
   UPGRADE_CMD="$UPGRADE_CMD --site $FT_JIRA_TENANT"
   echo "[FT_SHIP] Using: $UPGRADE_CMD" | tee "$EVID/23_forge_install_upgrade.log"
