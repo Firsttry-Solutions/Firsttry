@@ -173,15 +173,19 @@ echo "[FT_PROOF] ═════════════════════
 echo "[FT_PROOF] STEP 5: Forge Deployment (Development)"
 echo "[FT_PROOF] ══════════════════════════════════════════════════════"
 
+# Strict auth precheck: fail-closed if credentials missing
+if [ -z "${FORGE_EMAIL:-}" ] || [ -z "${FORGE_API_TOKEN:-}" ]; then
+  echo "[FT_PROOF] ERROR: Forge auth missing (FORGE_EMAIL/FORGE_API_TOKEN). Cannot run deploy in RC gate." | tee -a "$EVID/00_rc_gate_errors.log"
+  echo "[FT_PROOF] ACTION: Set FORGE_EMAIL and FORGE_API_TOKEN (CI secrets) or run in an environment with Forge keychain auth." | tee -a "$EVID/00_rc_gate_errors.log"
+  exit 1
+fi
+
 forge_version=$(forge --version 2>&1)
 echo "[FT_PROOF] Forge version: $forge_version" | tee "$EVID/40_forge_version.log"
 
 if ! forge deploy -e development 2>&1 | tee "$EVID/41_forge_deploy_dev.log"; then
-  echo "[FT_PROOF] WARNING: forge deploy had issues, attempting --no-verify"
-  if ! forge deploy -e development --no-verify 2>&1 | tee -a "$EVID/41_forge_deploy_dev.log"; then
-    echo "[FT_PROOF] ERROR: Forge deploy failed" | tee -a "$EVID/00_rc_gate_errors.log"
-    exit 1
-  fi
+  echo "[FT_PROOF] ERROR: Forge deploy failed" | tee -a "$EVID/00_rc_gate_errors.log"
+  exit 1
 fi
 
 echo "[FT_PROOF] ✓ Forge Deploy: PASS"
@@ -380,5 +384,7 @@ echo "[FT_RC_GATE_PASS] evid=$EVID" | tee "$EVID/99_pass_marker.log"
 echo ""
 echo "[FT_PROOF] Evidence directory: $EVID"
 echo "[FT_PROOF] Ready for release: YES"
+echo ""
+echo "[FT_PROOF] NOTE: If you pipe this script to tail/grep, use: echo EXIT=\${PIPESTATUS[0]} to capture the true gate exit code."
 
 exit 0
