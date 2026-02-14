@@ -33,19 +33,30 @@ import { computeCanonicalHash } from './canonicalization';
 import { createSnapshotLock } from './distributed_lock';
 
 /**
- * Helper: Fetch all keys matching a prefix using @forge/api storage.query()
- * Returns all results for a given prefix by calling getMany() directly.
+ * Helper: Fetch all keys matching a prefix using @forge/api storage.list()
+ * Returns all results for a given prefix.
  * 
- * @param prefix - Key prefix to query
+ * @param prefix - Key prefix to list
  * @returns Promise with array of { key, value } results
  */
 async function storageListByPrefix(
   prefix: string,
 ): Promise<Array<{ key: string; value: unknown }>> {
-  // Use storage.query().where().getMany() to get all matching keys
-  // The 'like' pattern is used for prefix matching
-  const { results } = await storage.query().where('key', 'like', prefix).getMany();
-  return results;
+  try {
+    // Use storage.list() with prefix parameter (Forge Storage API v2)
+    const results: Array<{ key: string; value: unknown }> = [];
+    for await (const item of storage.list({ prefix })) {
+      results.push(item);
+    }
+    return results;
+  } catch (error: any) {
+    console.error('[FT_STORAGE_LIST_FAILED]', {
+      prefix,
+      error: error?.message || String(error),
+    });
+    // Fail-closed: return empty list on error
+    return [];
+  }
 }
 
 /**
@@ -90,48 +101,70 @@ export class SnapshotRunStorage {
     page: number = 0,
     pageSize: number = 20,
   ): Promise<SnapshotPageResult<SnapshotRun>> {
-    // Note: In production, this would use a proper index key.
-    // For MVP, we scan by prefix (requires async iteration).
-    // This is a simplified implementation.
-    
-    const prefix = getSnapshotRunKey(this.tenantId, '');
-    const kvResults = await storageListByPrefix(prefix);
-    
-    let runs: SnapshotRun[] = [];
-    for (const item of kvResults) {
-      const data = await storage.get(item.key);
-      if (data) {
-        runs.push(JSON.parse(data as string));
+    try {
+      // Note: In production, this would use a proper index key.
+      // For MVP, we list by prefix (requires async iteration).
+      
+      const prefix = getSnapshotRunKey(this.tenantId, '');
+      const kvResults = await storageListByPrefix(prefix);
+      
+      let runs: SnapshotRun[] = [];
+      for (const item of kvResults) {
+        try {
+          const data = await storage.get(item.key);
+          if (data) {
+            runs.push(JSON.parse(data as string));
+          }
+        } catch (itemErr: any) {
+          console.error('[FT_STORAGE_ITEM_PARSE_FAILED]', {
+            key: item.key,
+            error: itemErr?.message || String(itemErr),
+          });
+          // Continue processing other items
+        }
       }
-    }
 
-    // Apply filters
-    if (filters?.snapshot_type) {
-      runs = runs.filter(r => r.snapshot_type === filters.snapshot_type);
-    }
-    if (filters?.status) {
-      runs = runs.filter(r => r.status === filters.status);
-    }
-    if (filters?.error_code) {
-      runs = runs.filter(r => r.error_code === filters.error_code);
-    }
+      // Apply filters
+      if (filters?.snapshot_type) {
+        runs = runs.filter(r => r.snapshot_type === filters.snapshot_type);
+      }
+      if (filters?.status) {
+        runs = runs.filter(r => r.status === filters.status);
+      }
+      if (filters?.error_code) {
+        runs = runs.filter(r => r.error_code === filters.error_code);
+      }
 
-    // Sort by scheduled_for descending (most recent first)
-    runs.sort((a, b) => new Date(b.scheduled_for).getTime() - new Date(a.scheduled_for).getTime());
+      // Sort by scheduled_for descending (most recent first)
+      runs.sort((a, b) => new Date(b.scheduled_for).getTime() - new Date(a.scheduled_for).getTime());
 
-    // Paginate
-    const total = runs.length;
-    const start = page * pageSize;
-    const end = start + pageSize;
-    const items = runs.slice(start, end);
+      // Paginate
+      const total = runs.length;
+      const start = page * pageSize;
+      const end = start + pageSize;
+      const items = runs.slice(start, end);
 
-    return {
-      items,
-      total_count: total,
-      page,
-      page_size: pageSize,
-      has_more: end < total,
-    };
+      return {
+        items,
+        total_count: total,
+        page,
+        page_size: pageSize,
+        has_more: end < total,
+      };
+    } catch (error: any) {
+      console.error('[FT_STORAGE_LIST_RUNS_FAILED]', {
+        tenantId: this.tenantId,
+        error: error?.message || String(error),
+      });
+      // Fail-closed: return empty results on error
+      return {
+        items: [],
+        total_count: 0,
+        page,
+        page_size: pageSize,
+        has_more: false,
+      };
+    }
   }
 }
 
@@ -215,38 +248,61 @@ export class SnapshotStorage {
     page: number = 0,
     pageSize: number = 20,
   ): Promise<SnapshotPageResult<Snapshot>> {
-    const prefix = getSnapshotKey(this.tenantId, '');
-    const kvResults = await storageListByPrefix(prefix);
-    
-    let snapshots: Snapshot[] = [];
-    for (const item of kvResults) {
-      const data = await storage.get(item.key);
-      if (data) {
-        snapshots.push(JSON.parse(data as string));
+    try {
+      const prefix = getSnapshotKey(this.tenantId, '');
+      const kvResults = await storageListByPrefix(prefix);
+      
+      let snapshots: Snapshot[] = [];
+      for (const item of kvResults) {
+        try {
+          const data = await storage.get(item.key);
+          if (data) {
+            snapshots.push(JSON.parse(data as string));
+          }
+        } catch (itemErr: any) {
+          console.error('[FT_STORAGE_SNAPSHOT_PARSE_FAILED]', {
+            key: item.key,
+            error: itemErr?.message || String(itemErr),
+          });
+          // Continue processing other snapshots
+        }
       }
+
+      // Apply filters
+      if (filters?.snapshot_type) {
+        snapshots = snapshots.filter(s => s.snapshot_type === filters.snapshot_type);
+      }
+
+      // Sort by captured_at descending (most recent first)
+      snapshots.sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime());
+
+      // Paginate
+      const total = snapshots.length;
+      const start = page * pageSize;
+      const end = start + pageSize;
+      const items = snapshots.slice(start, end);
+
+      return {
+        items,
+        total_count: total,
+        page,
+        page_size: pageSize,
+        has_more: end < total,
+      };
+    } catch (error: any) {
+      console.error('[FT_STORAGE_LIST_SNAPSHOTS_FAILED]', {
+        tenantId: this.tenantId,
+        error: error?.message || String(error),
+      });
+      // Fail-closed: return empty results on error
+      return {
+        items: [],
+        total_count: 0,
+        page,
+        page_size: pageSize,
+        has_more: false,
+      };
     }
-
-    // Apply filters
-    if (filters?.snapshot_type) {
-      snapshots = snapshots.filter(s => s.snapshot_type === filters.snapshot_type);
-    }
-
-    // Sort by captured_at descending (most recent first)
-    snapshots.sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime());
-
-    // Paginate
-    const total = snapshots.length;
-    const start = page * pageSize;
-    const end = start + pageSize;
-    const items = snapshots.slice(start, end);
-
-    return {
-      items,
-      total_count: total,
-      page,
-      page_size: pageSize,
-      has_more: end < total,
-    };
   }
 
   /**
