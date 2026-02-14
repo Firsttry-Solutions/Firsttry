@@ -5,6 +5,18 @@
 
 import { invoke } from "@forge/bridge";
 
+type CurrentUserResponse = {
+  isAdmin: boolean;
+};
+
+type MonitoringConfigResponse = {
+  allowedDomains: string[];
+  webhooks?: {
+    slackWebhookUrl?: string;
+    genericWebhookUrl?: string;
+  };
+};
+
 export class AdminConfigPanel {
   private container: HTMLElement;
   private isAdmin: boolean = false;
@@ -16,7 +28,7 @@ export class AdminConfigPanel {
   async render(): Promise<void> {
     try {
       // Check if user is admin
-      const currentUser = await invoke("getCurrentUser");
+      const currentUser = await invoke<CurrentUserResponse>("getCurrentUser");
       this.isAdmin = currentUser.isAdmin || false;
 
       if (!this.isAdmin) {
@@ -42,7 +54,7 @@ export class AdminConfigPanel {
 
   private async renderEditView(): Promise<void> {
     try {
-      const config = await invoke("getMonitoringConfig");
+      const config = await invoke<MonitoringConfigResponse>("getMonitoringConfig");
 
       const allowedDomainsText = config.allowedDomains.join("\n");
       const slackUrl = config.webhooks?.slackWebhookUrl || "";

@@ -156,6 +156,7 @@ interface FtActionResultV1 {
   envelopeKind: 'FT_ACTION_RESULT_V1';
   ok: boolean;
   action: 'RUN_ACCESS_REVIEW' | 'EXPORT_PHASE1_PACK';
+  status?: 'DISABLED'; // export gating status
   traceId: string; // never empty
   build: {
     buildShaShort: string; // never empty, 12-char or 'unknown'

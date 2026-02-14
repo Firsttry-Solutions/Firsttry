@@ -95,6 +95,8 @@ async function enforceAdminAuthorization(): Promise<void> {
 }
 
 /**
+ * Check if a domain is valid (bare domain, no scheme/path/special chars)
+ */
 function isValidDomain(domain: string): boolean {
   if (!domain || typeof domain !== 'string') return false;
   // Must not contain special chars that indicate it's not a bare domain

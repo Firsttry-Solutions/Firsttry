@@ -5,6 +5,16 @@
 
 import { invoke } from "@forge/bridge";
 
+type HealthStatusResponse = {
+  status: "AVAILABLE" | "UNAVAILABLE";
+  lastScanUtc: string;
+  nextScanUtc: string;
+  driftCountLast30d: number;
+  estimatedUsageBytes: number;
+  estimatedQuotaBytes: number;
+  lastFailureCode: string | null;
+};
+
 export class HealthPanel {
   private container: HTMLElement;
   private refreshInterval: number = 60000; // Refresh every 60s
@@ -15,7 +25,7 @@ export class HealthPanel {
 
   async render(): Promise<void> {
     try {
-      const health = await invoke("getMonitoringHealth");
+      const health = await invoke<HealthStatusResponse>("getMonitoringHealth");
 
       const html = `
         <div class="health-panel">
