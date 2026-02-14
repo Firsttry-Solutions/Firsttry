@@ -206,6 +206,43 @@ fi
 echo "[FT_SHIP] ✓ Pre-merge checks: PASS" | tee -a "$EVID/03_pre_merge_checks.log"
 
 # ############################################################################
+# PREFLIGHT ENV VALIDATIONS (PHASE C: Real run checks)
+# ############################################################################
+
+# If not in DRY_RUN mode, enforce strict preflight checks
+if [ "$DRY_RUN" != "1" ]; then
+  # FT_JIRA_TENANT must start with "https://"
+  if [[ ! "$FT_JIRA_TENANT" =~ ^https:// ]]; then
+    echo "[FT_SHIP] ERROR: FT_JIRA_TENANT must start with 'https://', got: $FT_JIRA_TENANT" | tee -a "$EVID/03_pre_merge_checks.log"
+    exit 1
+  fi
+  echo "[FT_SHIP] ✓ FT_JIRA_TENANT format valid" | tee -a "$EVID/03_pre_merge_checks.log"
+  
+  # FORGE_EMAIL and FORGE_API_TOKEN must be non-empty (never print tokens)
+  if [ -z "${FORGE_EMAIL:-}" ] || [ -z "${FORGE_API_TOKEN:-}" ]; then
+    echo "[FT_SHIP] ERROR: FORGE_EMAIL or FORGE_API_TOKEN missing for real run" | tee -a "$EVID/03_pre_merge_checks.log"
+    exit 1
+  fi
+  echo "[FT_SHIP] ✓ Forge credentials present" | tee -a "$EVID/03_pre_merge_checks.log"
+fi
+
+# ############################################################################
+# SAFETY: DRY_RUN GUARD (exits here if FT_DRY_RUN=1 - BEFORE destructive ops)
+# ############################################################################
+
+if [ "$DRY_RUN" = "1" ]; then
+  echo "[FT_SHIP] ══════════════════════════════════════════════════════" | tee -a "$EVID/03_pre_merge_checks.log"
+  echo "[FT_SHIP] DRY_RUN=1: stopping before merge/push/deploy by design" | tee -a "$EVID/03_pre_merge_checks.log"
+  echo "[FT_SHIP] ══════════════════════════════════════════════════════" | tee -a "$EVID/03_pre_merge_checks.log"
+  echo "" | tee -a "$EVID/03_pre_merge_checks.log"
+  echo "[FT_SHIP] ✓ All pre-deployment checks PASSED" | tee -a "$EVID/03_pre_merge_checks.log"
+  echo "[FT_SHIP] DRY_RUN mode: merge/push/deploy were SKIPPED" | tee -a "$EVID/03_pre_merge_checks.log"
+  echo "[FT_SHIP] Evidence dir: $EVID" | tee -a "$EVID/03_pre_merge_checks.log"
+  echo "[FT_SHIP] To proceed with real deploy, run again without FT_DRY_RUN" | tee -a "$EVID/03_pre_merge_checks.log"
+  exit 0
+fi
+
+# ############################################################################
 # STEP 4: MERGE release -> main LOCALLY (NO PUSH YET)
 # ############################################################################
 
@@ -282,20 +319,6 @@ if [ -n "$TAG" ]; then
   echo "[FT_SHIP] ✓ Tag created and pushed: $TAG" | tee -a "$EVID/06_tag_release.log"
 else
   echo "[FT_SHIP] Tag not requested (FT_TAG unset)" | tee "$EVID/06_tag_release.log"
-fi
-
-# ############################################################################
-# DRY RUN STOP POINT (if FT_DRY_RUN=1, exit here)
-# ############################################################################
-
-if [ "$DRY_RUN" = "1" ]; then
-  echo "[FT_SHIP] ══════════════════════════════════════════════════════"
-  echo "[FT_SHIP] DRY_RUN=1: Stopping before deploy"
-  echo "[FT_SHIP] ══════════════════════════════════════════════════════"
-  echo "[FT_SHIP] ✓ Dry run completed successfully"
-  echo "[FT_SHIP] Evidence dir: $EVID"
-  echo "[FT_SHIP] To proceed with real deploy, remove FT_DRY_RUN or set to 0"
-  exit 0
 fi
 
 # ############################################################################
@@ -471,6 +494,7 @@ cat > "$EVID/INDEX.md" << 'INDEXEOF'
 | Field | Value |
 |-------|-------|
 | Execution Time | $TIMESTAMP |
+| Mode | $MODE_LABEL |
 | Environment | $FT_PROD_ENV |
 | Merge Commit | $MERGE_COMMIT |
 | Deploy Status | ✅ PASS |
