@@ -3,6 +3,10 @@
   "version": "2.14.0",
   "description": "FirstTry Governance - Atlassian Dual-Layer Integration",
   "main": "src/index.ts",
+  "engines": {
+    "node": "20.20.0",
+    "npm": "10.8.2"
+  },
   "scripts": {
     "pretest": "node tools/build_meta.mjs",
     "type-check": "tsc --noEmit",
