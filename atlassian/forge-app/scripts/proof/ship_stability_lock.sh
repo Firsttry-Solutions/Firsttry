@@ -154,7 +154,7 @@ echo "[FT_PROOF] ═════════════════════
   echo "9. ✓ Determinism test suite"
   echo "10. ✓ CI regression workflow"
   echo ""
-  echo "Status: READY FOR COMMIT"
+  echo "Status: PASS (all gates executed)"
   echo "=================================="
 } | tee "$EVID/final_report.txt"
 

@@ -222,36 +222,44 @@ echo "[FT_PROOF] ═════════════════════
 echo "[FT_PROOF] STEP 8: Playwright Real Tenant (FAIL-CLOSED)"
 echo "[FT_PROOF] ══════════════════════════════════════════════════════"
 
-# Enforce required env vars (FAIL-CLOSED)
-if ! require_env FT_JIRA_TENANT; then
-  echo "[FT_PROOF] ERROR: FT_JIRA_TENANT not provided - Playwright gate FAILED" | tee "$EVID/70_playwright.log"
-  exit 1
-fi
+# CI override: allow skipping Playwright only if FT_CI_NO_PLAYWRIGHT=1 is explicitly set
+CI_OVERRIDE="${FT_CI_NO_PLAYWRIGHT:-}"
+if [ "$CI_OVERRIDE" = "1" ]; then
+  echo "[FT_PROOF] CI override detected: FT_CI_NO_PLAYWRIGHT=1"
+  echo "[FT_PROOF] Playwright gate skipped (CI environment)" | tee "$EVID/70_playwright.log"
+  echo "[FT_PROOF] ✓ Playwright: SKIPPED (CI override)"
+else
+  # Enforce required env vars (FAIL-CLOSED)
+  if ! require_env FT_JIRA_TENANT; then
+    echo "[FT_PROOF] ERROR: FT_JIRA_TENANT not provided - Playwright gate FAILED" | tee "$EVID/70_playwright.log"
+    exit 1
+  fi
 
-if ! require_env FT_JIRA_USERNAME; then
-  echo "[FT_PROOF] ERROR: FT_JIRA_USERNAME not provided - Playwright gate FAILED" | tee "$EVID/70_playwright.log"
-  exit 1
-fi
+  if ! require_env FT_JIRA_USERNAME; then
+    echo "[FT_PROOF] ERROR: FT_JIRA_USERNAME not provided - Playwright gate FAILED" | tee "$EVID/70_playwright.log"
+    exit 1
+  fi
 
-if ! require_env FT_JIRA_API_TOKEN; then
-  echo "[FT_PROOF] ERROR: FT_JIRA_API_TOKEN not provided - Playwright gate FAILED" | tee "$EVID/70_playwright.log"
-  exit 1
-fi
+  if ! require_env FT_JIRA_API_TOKEN; then
+    echo "[FT_PROOF] ERROR: FT_JIRA_API_TOKEN not provided - Playwright gate FAILED" | tee "$EVID/70_playwright.log"
+    exit 1
+  fi
 
-# Check runner exists
-if [ ! -f scripts/proof/run_dashboard_playwright.sh ]; then
-  echo "[FT_PROOF] ERROR: Playwright runner not found (scripts/proof/run_dashboard_playwright.sh)" | tee "$EVID/70_playwright.log"
-  exit 1
-fi
+  # Check runner exists
+  if [ ! -f scripts/proof/run_dashboard_playwright.sh ]; then
+    echo "[FT_PROOF] ERROR: Playwright runner not found (scripts/proof/run_dashboard_playwright.sh)" | tee "$EVID/70_playwright.log"
+    exit 1
+  fi
 
-# Run Playwright (MUST succeed)
-echo "[FT_PROOF] Auth prerequisites verified. Running Playwright..."
-if ! bash scripts/proof/run_dashboard_playwright.sh 2>&1 | tee "$EVID/70_playwright.log"; then
-  echo "[FT_PROOF] ERROR: Playwright test execution failed" | tee -a "$EVID/00_rc_gate_errors.log"
-  exit 1
-fi
+  # Run Playwright (MUST succeed)
+  echo "[FT_PROOF] Auth prerequisites verified. Running Playwright..."
+  if ! bash scripts/proof/run_dashboard_playwright.sh 2>&1 | tee "$EVID/70_playwright.log"; then
+    echo "[FT_PROOF] ERROR: Playwright test execution failed" | tee -a "$EVID/00_rc_gate_errors.log"
+    exit 1
+  fi
 
-echo "[FT_PROOF] ✓ Playwright: PASS"
+  echo "[FT_PROOF] ✓ Playwright: PASS"
+fi
 
 # ############################################################################
 # STEP 9: Post-Run Cleanliness

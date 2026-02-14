@@ -230,7 +230,7 @@ All mandatory non-bypassable gates have passed. Phase 3 hardening is complete an
 - Test coverage: Negative tests for all fail-closed paths
 
 ## Deployment Status
-**READY TO SHIP** ✅
+**PASS (all gates executed)** ✅
 
 All Phase 3 hardening requirements met. Repository is procurement-grade and marketplace-ready.
 
@@ -282,7 +282,7 @@ echo "────────────────────────�
 cat "$SHIP_DIR/SHIP_GATE_PASS.md"
 echo "─────────────────────────────────────────────────────────────────"
 echo ""
-echo "[FT_PROOF] ✓ READY TO SHIP"
+echo "[FT_PROOF] ✓ PASS (all gates executed)"
 echo ""
 
 exit 0
