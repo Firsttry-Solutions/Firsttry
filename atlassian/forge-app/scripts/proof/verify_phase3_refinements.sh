@@ -30,6 +30,21 @@ set -euo pipefail
 # Trap cleanup on exit
 trap 'exit_code=$?; echo "[FT_PROOF] Verification cleanup (exit=$exit_code)"; exit $exit_code' EXIT
 
+###############################################################################
+# PHASE 3 TEST SELECTION CONTRACT (EXPLICIT + AUDITABLE)
+###############################################################################
+# This array defines the MANDATORY and ONLY test files for Phase 3 verification.
+# Other test suites (if they exist) are out-of-scope and will not be run.
+# 
+# This contract ensures:
+# - Procurement auditors can verify exactly which tests run
+# - No silent inclusion of other suites
+# - Explicit failure if PHASE3_REQUIRED_TESTS doesn't pass
+# - Clear documentation of Phase 3 scope boundaries
+###############################################################################
+
+PHASE3_REQUIRED_TESTS=("tests/access-review.test.ts" "tests/performance-phase3.test.ts")
+
 WORKSPACE="/workspaces/Firsttry/atlassian/forge-app"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 EVIDENCE_DIR="/tmp/ft_phase3_verify_${TIMESTAMP}"
@@ -38,6 +53,10 @@ mkdir -p "$EVIDENCE_DIR"
 echo "[FT_PROOF] Starting hardened Phase 3 verification..."
 echo "[FT_PROOF] Evidence directory: $EVIDENCE_DIR"
 echo "[FT_PROOF] Timestamp: $TIMESTAMP"
+echo ""
+echo "[FT_PROOF] PHASE3_REQUIRED_TESTS=${PHASE3_REQUIRED_TESTS[*]}"
+echo "[FT_PROOF] NOTE: Phase 3 gate asserts only PHASE3_REQUIRED_TESTS; other suites may be out-of-scope"
+echo ""
 
 ###############################################################################
 # CHECK 1: TypeScript Compilation (Strict Mode)
@@ -56,43 +75,39 @@ COMPILE_LINES=$(wc -l < "$EVIDENCE_DIR/compile.log")
 echo "[FT_PROOF] Compilation: PASSED ✓ (${COMPILE_LINES} lines)"
 
 ###############################################################################
-# CHECK 2: Unit Tests - Access Review Module
+# CHECK 2: Execute PHASE3_REQUIRED_TESTS (Unit + Performance)
 ###############################################################################
 
 echo ""
-echo "[FT_PROOF] CHECK 2: Unit tests (access-review)..."
+echo "[FT_PROOF] CHECK 2: Running PHASE3_REQUIRED_TESTS..."
+echo "[FT_PROOF] Running: npm test -- \${PHASE3_REQUIRED_TESTS[@]} --run"
 
-if ! npm --prefix "$WORKSPACE" test -- tests/access-review.test.ts --run > "$EVIDENCE_DIR/test-access-review.log" 2>&1; then
-  echo "[FT_PROOF] ERROR: Access review tests FAILED"
-  cat "$EVIDENCE_DIR/test-access-review.log"
+# Run EXACT Phase 3 tests (fail-closed: any failure = exit 1)
+if ! npm --prefix "$WORKSPACE" test -- "${PHASE3_REQUIRED_TESTS[@]}" --run > "$EVIDENCE_DIR/test-phase3-contract.log" 2>&1; then
+  echo "[FT_PROOF] ERROR: Phase 3 required tests FAILED"
+  echo "[FT_PROOF] TESTS THAT FAILED:"
+  for test in "${PHASE3_REQUIRED_TESTS[@]}"; do
+    echo "[FT_PROOF]   - $test"
+  done
+  tail -50 "$EVIDENCE_DIR/test-phase3-contract.log" | sed 's/^/[FT_PROOF] /'
   exit 1
 fi
 
-TEST_PASSED=$(grep -c "PASS\|✓" "$EVIDENCE_DIR/test-access-review.log" || echo "1")
-echo "[FT_PROOF] Access-review tests: PASSED ✓ (${TEST_PASSED} test groups)"
+# Count test results
+TEST_PASSED=$(grep -c "✓ tests/" "$EVIDENCE_DIR/test-phase3-contract.log" || echo "0")
+TEST_FAILED=$(grep -c "✗\|FAIL\|× " "$EVIDENCE_DIR/test-phase3-contract.log" || echo "0")
+TEST_TOTAL=$(grep -oP 'Tests\s+\K\d+(?= passed)' "$EVIDENCE_DIR/test-phase3-contract.log" || echo "unknown")
+
+echo "[FT_PROOF] Phase 3 required tests: PASSED ✓"
+echo "[FT_PROOF]   - Total tests passed: $TEST_TOTAL"
+echo "[FT_PROOF]   - Test suites: ${#PHASE3_REQUIRED_TESTS[@]}"
 
 ###############################################################################
-# CHECK 3: Performance Tests (2K items, <180s)
-###############################################################################
-
-echo ""
-echo "[FT_PROOF] CHECK 3: Performance tests (2K items, <180s)..."
-
-if ! npm --prefix "$WORKSPACE" test -- tests/performance-phase3.test.ts --run > "$EVIDENCE_DIR/test-performance.log" 2>&1; then
-  echo "[FT_PROOF] ERROR: Performance tests FAILED"
-  cat "$EVIDENCE_DIR/test-performance.log"
-  exit 1
-fi
-
-PERF_TIME=$(grep -oP 'Duration: \K[0-9.]+' "$EVIDENCE_DIR/test-performance.log" | head -1 || echo "unknown")
-echo "[FT_PROOF] Performance tests: PASSED ✓ (duration: ${PERF_TIME}ms)"
-
-###############################################################################
-# CHECK 4: Marketplace Trap Guard (Repo-Wide)
+# CHECK 3: Marketplace Trap Guard (Repo-Wide)
 ###############################################################################
 
 echo ""
-echo "[FT_PROOF] CHECK 4: Marketplace trap guard..."
+echo "[FT_PROOF] CHECK 3: Marketplace trap guard..."
 
 if ! bash "$WORKSPACE/scripts/proof/guard_phase3_marketplace_traps.sh" "$WORKSPACE" > "$EVIDENCE_DIR/marketplace-guard.log" 2>&1; then
   echo "[FT_PROOF] ERROR: Marketplace guard FAILED"
@@ -103,11 +118,11 @@ fi
 echo "[FT_PROOF] Marketplace guard: PASSED ✓"
 
 ###############################################################################
-# CHECK 5: Git Status (Repository Clean)
+# CHECK 4: Git Status (Repository Clean)
 ###############################################################################
 
 echo ""
-echo "[FT_PROOF] CHECK 5: Git status (repository clean)..."
+echo "[FT_PROOF] CHECK 4: Git status (repository clean)..."
 
 cd "$WORKSPACE"
 
