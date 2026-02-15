@@ -3,11 +3,13 @@ set -euo pipefail
 
 # Playwright Dashboard Diagnostics with noVNC Viewer
 # Runs headed Playwright via Xvfb + noVNC for observation in Codespaces
-# Guarantees auth setup runs first with project dependencies
+# Uses storageState for SSO-safe authentication (no JIRA_EMAIL/JIRA_PASSWORD)
 
-# === MANUAL LOGIN MODE DETECTION ===
-if [[ "${PW_MANUAL_LOGIN:-}" == "1" ]]; then
-  echo "[PW_NOVNC] MANUAL MODE: do NOT run this script under 'timeout' or login will be interrupted."
+# === SELFTEST MODE (env guard only, no display stack) ===
+if [[ "${FT_SELFTEST:-}" == "1" ]]; then
+  # Only validate env; exit without starting display stack
+  # This allows testing without sudo/apt
+  :  # Proceed to env validation below, then exit after validation
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -34,6 +36,38 @@ EXPECTED_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
 if [[ "${JIRA_DASHBOARD_URL}" != "${EXPECTED_DASHBOARD_URL}" ]]; then
   echo "[PW_NOVNC] ERROR: JIRA_DASHBOARD_URL must equal exactly '${EXPECTED_DASHBOARD_URL}', got '${JIRA_DASHBOARD_URL}'"
   exit 1
+fi
+
+# === SSO STORAGESTATE REQUIREMENTS (FAIL-CLOSED) ===
+if [[ -z "${FT_AUTH_GENERATE_STATE:-}" ]]; then
+  echo "[FT_PROOF] ERROR: FT_AUTH_GENERATE_STATE not set"
+  echo "[FT_PROOF] SSO tenants require storageState authentication"
+  echo "[FT_PROOF] Set: export FT_AUTH_GENERATE_STATE=1"
+  exit 1
+fi
+
+if [[ "${FT_AUTH_GENERATE_STATE}" != "1" ]]; then
+  echo "[FT_PROOF] ERROR: FT_AUTH_GENERATE_STATE must equal '1', got '${FT_AUTH_GENERATE_STATE}'"
+  exit 1
+fi
+
+if [[ -z "${FT_PLAYWRIGHT_MODE:-}" ]]; then
+  echo "[FT_PROOF] ERROR: FT_PLAYWRIGHT_MODE not set"
+  echo "[FT_PROOF] Set: export FT_PLAYWRIGHT_MODE=headed"
+  exit 1
+fi
+
+if [[ "${FT_PLAYWRIGHT_MODE}" != "headed" ]]; then
+  echo "[FT_PROOF] ERROR: FT_PLAYWRIGHT_MODE must equal 'headed' (for interactive noVNC), got '${FT_PLAYWRIGHT_MODE}'"
+  exit 1
+fi
+
+echo "[PW_NOVNC] ✓ Env validation passed (SSO storageState mode)"
+
+# === SELFTEST EXIT (if FT_SELFTEST=1, exit here) ===
+if [[ "${FT_SELFTEST:-}" == "1" ]]; then
+  echo "[FT_PROOF] SELFTEST: Env validation only (no display setup)"
+  exit 0
 fi
 
 # === CREATE DETERMINISTIC RUN ROOT ===
@@ -215,21 +249,47 @@ echo "[PW_NOVNC] Playwright version:"
 npx playwright --version | tee "$RUN_ROOT/playwright-version.log"
 
 echo "[PW_NOVNC]"
-echo "[PW_NOVNC] === PHASE 1: AUTH SETUP (headed) ==="
-if npx playwright test --project=setup --headed \
-  --reporter=list \
-  --workers=1 \
-  --retries=0 \
-  2>&1 | tee "$RUN_ROOT/setup.log"; then
-  SETUP_EXIT=0
-  echo "[PW_NOVNC] ✅ Auth setup PASSED"
+echo "[PW_NOVNC] === PHASE 1: AUTH SETUP (SSO storageState) ==="
+
+# --- Generate storageState via interactive browser (in noVNC) ---
+echo "[PW_NOVNC] Generating Playwright auth state (storageState) via noVNC browser..."
+if bash scripts/proof/generate_playwright_state.sh 2>&1 | tee "$RUN_ROOT/generate_state.log"; then
+  echo "[PW_NOVNC] ✅ state.json generation PASSED"
 else
   SETUP_EXIT=$?
-  echo "[PW_NOVNC] ❌ Auth setup FAILED (exit code: $SETUP_EXIT)"
-  echo "[PW_NOVNC] EXITING: chromium project depends on setup; no point running Phase 2"
-  echo "[PW_NOVNC] RUN_ROOT=${RUN_ROOT}"
+  echo "[PW_NOVNC] ❌ state.json generation FAILED (exit code: $SETUP_EXIT)"
+  echo "[FT_PROOF] ERROR: Playwright state generation failed"
   exit $SETUP_EXIT
 fi
+
+# --- Verify state.json was created and is valid (FAIL-CLOSED) ---
+STATE_FILE="tests/playwright/.auth/state.json"
+if [[ ! -f "$STATE_FILE" ]]; then
+  echo "[FT_PROOF] ERROR: state.json not created at $STATE_FILE"
+  exit 1
+fi
+
+# Check file size
+STATE_SIZE=$(stat -c%s "$STATE_FILE" 2>/dev/null || stat -f%z "$STATE_FILE" 2>/dev/null)
+ls -lh "$STATE_FILE" | tee "$RUN_ROOT/auth_state_ls.log"
+echo "[FT_PROOF] STATE_FILE_SIZE=$STATE_SIZE" | tee "$RUN_ROOT/auth_state_size.log"
+
+if [[ "$STATE_SIZE" -lt 200 ]]; then
+  echo "[FT_PROOF] ERROR: state.json too small ($STATE_SIZE bytes, need >= 200)"
+  exit 1
+fi
+
+# Validate JSON structure
+if node -e "const fs = require('fs'); JSON.parse(fs.readFileSync('$STATE_FILE', 'utf-8')); console.log('JSON_VALID_OK')" > "$RUN_ROOT/auth_state_json_parse.log" 2>&1; then
+  echo "[FT_PROOF] ✓ state.json is valid JSON ($(stat -c%s "$STATE_FILE" 2>/dev/null || stat -f%z "$STATE_FILE" 2>/dev/null) bytes)"
+else
+  echo "[FT_PROOF] ERROR: state.json is not valid JSON"
+  cat "$RUN_ROOT/auth_state_json_parse.log" >&2
+  exit 1
+fi
+
+echo "[PW_NOVNC] ✅ Auth state validation PASSED"
+SETUP_EXIT=0
 
 echo "[PW_NOVNC]"
 echo "[PW_NOVNC] === PHASE 2: DASHBOARD DIAGNOSTICS (headed) ==="
@@ -271,8 +331,8 @@ fi
 echo "[PW_NOVNC]"
 echo "[PW_NOVNC] === RUN LOGS ==="
 echo "[PW_NOVNC]"
-echo "[PW_NOVNC] === setup.log (tail -200) ==="
-tail -200 "$RUN_ROOT/setup.log"
+echo "[PW_NOVNC] === generate_state.log (tail -100) ==="
+tail -100 "$RUN_ROOT/generate_state.log"
 echo "[PW_NOVNC]"
 echo "[PW_NOVNC] === diagnostics.log (tail -200) ==="
 tail -200 "$RUN_ROOT/diagnostics.log"
