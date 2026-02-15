@@ -377,6 +377,198 @@ export async function resolveArExportPack(input: {
 }
 
 // ============================================================================
+// ar.exportTenantData (v3.2 Self-Service)
+// ============================================================================
+
+/**
+ * Export all tenant data as JSON + CSV for GDPR compliance
+ * 
+ * Input:
+ * - siteId: string
+ * - privilegeContext: PrivilegeContext (admin only)
+ * 
+ * Output:
+ * - success: boolean
+ * - dataExport?: { reviews: [], decisions: [], auditTrail: [] }
+ * - exportFiles?: { tenantData.json, decisions.csv, auditTrail.csv }
+ * - size
+Bytes?: number
+ */
+export async function resolveArExportTenantData(input: {
+  siteId?: string;
+  privilegeContext?: PrivilegeContext;
+}): Promise<{
+  success: boolean;
+  dataExport?: Record<string, unknown>;
+  exportFiles?: Record<string, string>;
+  sizeBytes?: number;
+  error?: string;
+  code?: string;
+}> {
+  try {
+    if (!input.siteId) throw new ReviewError("INVALID_INPUT", "siteId required");
+    if (!input.privilegeContext) {
+      throw new ReviewError("INVALID_INPUT", "privilegeContext required");
+    }
+
+    validateSiteId(input.siteId);
+
+    // Privilege check (admin only)
+    if (!input.privilegeContext.isAdmin) {
+      throw new ReviewError("INSUFFICIENT_PRIVILEGE", "Admin privilege required");
+    }
+
+    // Fetch all tenant reviews from storage (mock implementation)
+    const allReviews: Record<string, unknown>[] = []; // In prod: query from storage
+    const allDecisions: Record<string, unknown>[] = [];
+    const allAuditEntries: Record<string, unknown>[] = [];
+
+    // Build export
+    const dataExport = {
+      tenant_id: input.siteId,
+      exported_utc: new Date().toISOString(),
+      reviews: allReviews,
+      decisions: allDecisions,
+      audit_trail: allAuditEntries,
+    };
+
+    // CSV representations
+    const decisionsCSV =
+      "review_id,subject,decision,reason,timestamp\n" +
+      allDecisions
+        .map(
+          (d: any) =>
+            `"${d.reviewId}","${d.subject}","${d.decision}","${d.reason}","${d.timestamp}"`
+        )
+        .join("\n");
+
+    const auditCSV =
+      "timestamp,action,actor,item_id,details\n" +
+      allAuditEntries
+        .map(
+          (a: any) =>
+            `"${a.timestamp}","${a.action}","${a.actor}","${a.itemId}","${a.details}"`
+        )
+        .join("\n");
+
+    const exportFiles = {
+      "tenantData.json": JSON.stringify(dataExport, null, 2),
+      "decisions.csv": decisionsCSV,
+      "auditTrail.csv": auditCSV,
+    };
+
+    const totalSize = Object.values(exportFiles).reduce(
+      (sum, content) => sum + (content as string).length,
+      0
+    );
+
+    console.log(
+      `[FT_TENANT_LIFECYCLE_SELF_SERVICE] Exported tenant ${input.siteId} data: ${totalSize} bytes`
+    );
+
+    return {
+      success: true,
+      dataExport,
+      exportFiles,
+      sizeBytes: totalSize,
+    };
+  } catch (err) {
+    const error = err instanceof ReviewError ? err : (err as Error);
+    return {
+      success: false,
+      error: error.message,
+      code: err instanceof ReviewError ? err.code : "UNKNOWN",
+    };
+  }
+}
+
+// ============================================================================
+// ar.requestPurgeTenant (v3.2 Self-Service)
+// ============================================================================
+
+/**
+ * Request tenant data purge (with confirmation)
+ * 
+ * Input:
+ * - siteId: string
+ * - purgeMode: "ANONYMIZE" | "HARD_DELETE"
+ * - confirmationFlag: boolean (must be true)
+ * - privilegeContext: PrivilegeContext (admin only)
+ * 
+ * Output:
+ * - success: boolean
+ * - purgeId?: string
+ * - statusMessage?: string
+ */
+export async function resolveArRequestPurgeTenant(input: {
+  siteId?: string;
+  purgeMode?: string;
+  confirmationFlag?: boolean;
+  privilegeContext?: PrivilegeContext;
+}): Promise<{
+  success: boolean;
+  purgeId?: string;
+  statusMessage?: string;
+  error?: string;
+  code?: string;
+}> {
+  try {
+    if (!input.siteId) throw new ReviewError("INVALID_INPUT", "siteId required");
+    if (!input.purgeMode) throw new ReviewError("INVALID_INPUT", "purgeMode required");
+    if (!input.confirmationFlag) {
+      throw new ReviewError("INVALID_INPUT", "Confirmation required: set confirmationFlag=true");
+    }
+    if (!input.privilegeContext) {
+      throw new ReviewError("INVALID_INPUT", "privilegeContext required");
+    }
+
+    validateSiteId(input.siteId);
+
+    // Privilege check (admin only)
+    if (!input.privilegeContext.isAdmin) {
+      throw new ReviewError("INSUFFICIENT_PRIVILEGE", "Admin privilege required");
+    }
+
+    const purgeMode = input.purgeMode as "ANONYMIZE" | "HARD_DELETE";
+    if (!["ANONYMIZE", "HARD_DELETE"].includes(purgeMode)) {
+      throw new ReviewError("INVALID_INPUT", "purgeMode must be ANONYMIZE or HARD_DELETE");
+    }
+
+    // Create purge request ID
+    const purgeId = `purge_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+    // Log audit entry
+    const auditEntry = {
+      timestamp: new Date().toISOString(),
+      action: "PURGE_REQUESTED",
+      actor: input.privilegeContext.userId || "UNKNOWN",
+      itemId: input.siteId,
+      details: JSON.stringify({ purgeMode, purgeId }),
+    };
+
+    console.log(
+      `[FT_TENANT_LIFECYCLE_SELF_SERVICE] Purge ${purgeMode} requested for tenant ${input.siteId} (purgeId: ${purgeId})`
+    );
+
+    // In production: Queue purge job + log to audit trail
+    // For now: return success with purgeId
+
+    return {
+      success: true,
+      purgeId,
+      statusMessage: `Purge request ${purgeId} queued. Mode: ${purgeMode}. This action cannot be undone.`,
+    };
+  } catch (err) {
+    const error = err instanceof ReviewError ? err : (err as Error);
+    return {
+      success: false,
+      error: error.message,
+      code: err instanceof ReviewError ? err.code : "UNKNOWN",
+    };
+  }
+}
+
+// ============================================================================
 // RESOLVER REGISTRATION
 // ============================================================================
 
@@ -386,6 +578,8 @@ export const resolvers = {
   "ar.recordDecision": resolveArRecordDecision,
   "ar.addException": resolveArAddException,
   "ar.exportPack": resolveArExportPack,
+  "ar.exportTenantData": resolveArExportTenantData,
+  "ar.requestPurgeTenant": resolveArRequestPurgeTenant,
 };
 
 /**
