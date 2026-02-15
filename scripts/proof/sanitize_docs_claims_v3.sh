@@ -111,7 +111,7 @@ check_no_slack_operational() {
   )
 
   for pattern in "${slack_blacklist[@]}"; do
-    while IFS= read -r file line_num line_text; do
+    while IFS=: read -r file line_num line_text; do
       [[ -z "$file" ]] && continue
       should_skip_file "$file" && continue
       
@@ -150,7 +150,7 @@ check_no_webhook_impl() {
   )
 
   for pattern in "${webhook_blacklist[@]}"; do
-    while IFS= read -r file line_num line_text; do
+    while IFS=: read -r file line_num line_text; do
       [[ -z "$file" ]] && continue
       should_skip_file "$file" && continue  # Skip archived, PHASE_1_1, old specs
       
