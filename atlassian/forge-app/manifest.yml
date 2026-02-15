@@ -13,10 +13,22 @@ app:
     name: nodejs20.x
 
 modules:
+  # Dashboard Gadget (Custom UI for Jira dashboards)
+  jira:dashboardGadget:
+    - key: governance-dashboard-gadget-v2
+      title: "FirstTry: Audit Evidence for Jira"
+      description: FirstTry Governance - real-time status overview
+      resource: govGadget2141
+      resolver:
+        function: get-status-snapshot-fn
+      thumbnail: https://www.atlassian.com/favicon.ico
+
   # PHASE 2: Drift Monitor function
   function:
     - key: driftMonitorScheduled
       handler: continuous-drift/scheduled.run
+    - key: get-status-snapshot-fn
+      handler: gadget-resolver.handler
 
   # PHASE 2: Scheduled drift monitor (runs daily)
   scheduledTrigger:
