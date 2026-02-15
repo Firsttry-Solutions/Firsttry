@@ -1,6 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
+# ============================================================================
+# Forge Auth Guard
+# ============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/require_forge_auth.sh"
+
+EVID_GUARD="/tmp/ft_phase2_auth_guard_$(date +%s)"
+require_forge_auth "$EVID_GUARD"
+
 #==============================================================================
 # Phase 2 Continuous Drift Monitoring - Ship Gate
 # 
