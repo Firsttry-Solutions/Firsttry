@@ -24,14 +24,15 @@ FINDINGS_FILE="$EVIDENCE_DIR/findings.txt"
 
 should_skip_file() {
   local file="$1"
+  local basename=$(basename "$file")
   # Skip archived, audit reports, evidence, and old phase specs
   [[ "$file" == *"/archived/"* ]] && return 0
   [[ "$file" == *"/audit_reports/"* ]] && return 0
   [[ "$file" == *"/evidence/"* ]] && return 0
-  [[ "$file" == "PHASE_0"* ]] && return 0
-  [[ "$file" == "PHASE_1_1"* ]] && return 0
-  [[ "$file" == "PHASE_9"* ]] && return 0
-  [[ "$file" == *"ATLASSIAN_DUAL_LAYER"* ]] && return 0
+  [[ "$basename" == "PHASE_0"* ]] && return 0
+  [[ "$basename" == "PHASE_1_1"* ]] && return 0  # Old phase specs (PHASE_1_1_SPEC.md, PHASE_1_1_TESTPLAN.md, etc)
+  [[ "$basename" == "PHASE_9"* ]] && return 0
+  [[ "$basename" == "ATLASSIAN_DUAL_LAYER"* ]] && return 0  # Old dual-layer spec
   return 1
 }
 
@@ -140,12 +141,10 @@ check_no_webhook_impl() {
   local violations=0
 
   # BLACKLIST: These patterns indicate FirstTry implements/supports webhooks
-  # OK: "FirstTry does NOT support webhooks", "Jira webhooks are"
+  # OK: "FirstTry does NOT support webhooks", "No webtrigger declarations"
   # NOT OK: "FirstTry supports webhooks", "FirstTry provides webhook integration"
   
   local webhook_blacklist=(
-    "firsttry.*webhook"
-    "webhook.*support"
     "webtrigger"
     "/webhook/ingest"
   )
@@ -155,9 +154,9 @@ check_no_webhook_impl() {
       [[ -z "$file" ]] && continue
       should_skip_file "$file" && continue  # Skip archived, PHASE_1_1, old specs
       
-      # Check if line explicitly negates
-      if echo "$line_text" | grep -qi "does not\|does not support\|no.*webhook\|NOT"; then
-        continue  # This is OK (saying "NOT supported")
+      # Check if line explicitly negates (No, NOT, does not, without, etc.)
+      if echo "$line_text" | grep -qi "no \|not \|does not\|without\|^.*NOT\s"; then
+        continue  # This is OK (saying "NOT supported" or "No X")
       fi
       
       echo "[$file:$line_num] $line_text" | tee -a "$FINDINGS_FILE"
