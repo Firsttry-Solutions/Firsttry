@@ -80,7 +80,7 @@ mk_evidence_dir() {
 
 require_clean_git() {
   local repo_root="$1"
-  local status=$("$repo_root" cd "$repo_root" 2>/dev/null && git status --porcelain 2>/dev/null || echo "dirty")
+  local status=$(cd "$repo_root" 2>/dev/null && git status --porcelain 2>/dev/null || echo "dirty")
   
   if [[ "$status" != "" ]]; then
     die "Git repo not clean. Commit or stash changes first."
