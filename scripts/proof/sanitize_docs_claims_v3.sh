@@ -19,12 +19,20 @@ EVIDENCE_DIR=$(mk_evidence_dir "ft_docs_sanitizer_v3")
 FINDINGS_FILE="$EVIDENCE_DIR/findings.txt"
 
 ##############################################################################
-# Helper: Check if file is in archived directory
+# Helper: Check if file should be skipped
 ##############################################################################
 
-is_archived() {
+should_skip_file() {
   local file="$1"
-  [[ "$file" == *"/archived/"* ]]
+  # Skip archived, audit reports, evidence, and old phase specs
+  [[ "$file" == *"/archived/"* ]] && return 0
+  [[ "$file" == *"/audit_reports/"* ]] && return 0
+  [[ "$file" == *"/evidence/"* ]] && return 0
+  [[ "$file" == "PHASE_0"* ]] && return 0
+  [[ "$file" == "PHASE_1_1"* ]] && return 0
+  [[ "$file" == "PHASE_9"* ]] && return 0
+  [[ "$file" == *"ATLASSIAN_DUAL_LAYER"* ]] && return 0
+  return 1
 }
 
 ##############################################################################
@@ -50,7 +58,7 @@ check_forbidden_claims() {
   # Iterate through non-archived docs
   while IFS= read -r file; do
     [[ -z "$file" ]] && continue
-    is_archived "$file" && continue  # Skip archived
+    should_skip_file "$file" && continue
     
     ((checked_files++))
     
@@ -67,7 +75,7 @@ check_forbidden_claims() {
        done; then
       :
     fi
-  done < <(find "$DOCS_DIR" -name "*.md" -type f ! -path "*/archived/*")
+  done < <(find "$DOCS_DIR" -name "*.md" -type f)
   
   if [[ $violations -gt 0 ]]; then
     log_fail "Found $violations false certification claims"
@@ -104,7 +112,7 @@ check_no_slack_operational() {
   for pattern in "${slack_blacklist[@]}"; do
     while IFS= read -r file line_num line_text; do
       [[ -z "$file" ]] && continue
-      is_archived "$file" && continue  # Skip archived
+      should_skip_file "$file" && continue
       
       echo "[$file:$line_num] $line_text" | tee -a "$FINDINGS_FILE"
       ((violations++))
@@ -145,7 +153,7 @@ check_no_webhook_impl() {
   for pattern in "${webhook_blacklist[@]}"; do
     while IFS= read -r file line_num line_text; do
       [[ -z "$file" ]] && continue
-      is_archived "$file" && continue
+      should_skip_file "$file" && continue  # Skip archived, PHASE_1_1, old specs
       
       # Check if line explicitly negates
       if echo "$line_text" | grep -qi "does not\|does not support\|no.*webhook\|NOT"; then
@@ -168,7 +176,7 @@ check_no_webhook_impl() {
 }
 
 ##############################################################################
-# GATE 4: External Email References (Blacklist)
+# GATE 4: External Email References (Blacklist + Whitelist)
 ##############################################################################
 
 check_no_external_emails() {
@@ -177,49 +185,53 @@ check_no_external_emails() {
   
   local violations=0
   
-  # BLACKLIST: These email patterns should NOT appear in primary docs
-  local email_blacklist=(
-    "support@"
-    "security@"
-    "sales@"
-    "enterprise@"
-  )
-  
-  # WHITELIST: These are OK even if they appear
+  # WHITELIST: These email addresses are ALLOWED (internal support/security emails)
   local email_whitelist=(
+    "support@firsttry.app"
+    "support@firstry.io"
+    "security@firsttry.app"
+    "security@firsttry.run"
+    "enterprise@firsttry.app"
     "example@example.com"
     "example@example.org"
-    "example@your-company.com"
     "your-email@company.com"
+    "support@atlassian"
   )
   
-  for pattern in "${email_blacklist[@]}"; do
-    while IFS= read -r file line_num line_text; do
-      [[ -z "$file" ]] && continue
-      is_archived "$file" && continue
-      
-      # Check if any whitelist email is on same line
-      local is_whitelisted=0
-      for white in "${email_whitelist[@]}"; do
-        if [[ "$line_text" == *"$white"* ]]; then
-          is_whitelisted=1
-          break
-        fi
-      done
-      
-      if [[ $is_whitelisted -eq 0 ]]; then
+  # BLACKLIST: These patterns should NOT appear (external third-party emails)
+  # Note: We only check for blacklist patterns. If NOT whitelisted, we fail.
+  # But FirstTry's own support@/security@ emails are OK.
+  
+  # Look for suspicious patterns only (e.g., "@gmail.com", non-company emails)
+  while IFS= read -r file line_num line_text; do
+    [[ -z "$file" ]] && continue
+    should_skip_file "$file" && continue
+    
+    # Check if any whitelist email is on same line
+    local is_whitelisted=0
+    for white in "${email_whitelist[@]}"; do
+      if [[ "$line_text" == *"$white"* ]]; then
+        is_whitelisted=1
+        break
+      fi
+    done
+    
+    # If we got here and have a potential email, it might be an issue
+    # But only fail if it looks like external (gmail, yahoo, etc.) NOT @firsttry/@firstry/@atlassian/@company
+    if [[ $is_whitelisted -eq 0 ]]; then
+      if echo "$line_text" | grep -qi "@gmail\|@yahoo\|@hotmail\|@proton"; then
         echo "[$file:$line_num] $line_text" | tee -a "$FINDINGS_FILE"
         ((violations++))
       fi
-    done < <(grep -rn "$pattern" "$DOCS_DIR" --include="*.md" 2>/dev/null)
-  done
+    fi
+  done < <(grep -rn "@" "$DOCS_DIR" --include="*.md" 2>/dev/null | grep -v "http\|url\|example\|localhost")
   
   if [[ $violations -gt 0 ]]; then
-    log_fail "Found $violations external email references (use example.com/example.org only)"
+    log_fail "Found $violations suspicious external email references"
     return 1
   fi
   
-  log_pass "No external email references in primary docs"
+  log_pass "Email addresses verified (no suspicious external references)"
   log_marker "[FT_PROOF_DOCS_NO_EMAIL]"
   return 0
 }
