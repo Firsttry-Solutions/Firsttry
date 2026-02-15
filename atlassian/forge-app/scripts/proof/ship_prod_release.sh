@@ -33,6 +33,10 @@
 
 set -euo pipefail
 
+# === Forge Auth Guard ===
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/require_forge_auth.sh"
+
 # ############################################################################
 # SETUP: Evidence directory + helpers
 # ############################################################################
@@ -40,6 +44,9 @@ set -euo pipefail
 TS="$(date -u +%Y%m%d_%H%M%S)"
 EVID="/tmp/ft_prod_release_${TS}"
 mkdir -p "$EVID"
+
+# Call Forge auth guard before any operations
+require_forge_auth "$EVID"
 
 echo "[FT_SHIP] Prod Release Gate Started"
 echo "[FT_SHIP] Timestamp: $TS"
