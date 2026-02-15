@@ -135,7 +135,241 @@ jobs:
 2. **`tests/playwright/.auth/state.json`** (local file) ← Fallback for local runs
 3. **None available** → **FAIL with instructions** ← Fail-closed
 
+---
+
+# Option A: Codespaces + noVNC + SSO (No Passwords) — RECOMMENDED
+
+**Use this for interactive state generation in GitHub Codespaces without entering Jira credentials.**
+
+## Quick Start
+
+```bash
+cd /workspaces/Firsttry/atlassian/forge-app
+
+# Step 1: Set env (JIRA_EMAIL/JIRA_PASSWORD NOT required)
+export JIRA_BASE_URL="https://firsttry.atlassian.net"
+export FT_PW_AUTH_MODE="manual"    # Default; skips credential checks
+
+# Step 2: Start noVNC + generate state (wrapper handles everything)
+bash scripts/proof/optionA_generate_state_with_novnc.sh
+
+# Step 3: Open noVNC URL (shown in terminal) and complete SSO login
+# → noVNC opens in new browser tab → Authenticate → Done
+
+# Step 4: Copy secret to GitHub (instructions printed at end)
+```
+
+## Why Option A?
+
+| Feature | Auto | Password Required | noVNC Needed |
+|---|---|---|---|
+| **Option A (Recommended)** | ✅ Start/stop automatic | ❌ No | ✅ Yes (port 6080) |
+| Old credential mode | ❌ Manual | ✅ Yes (insecure) | ✅ Optional |
+
+**Option A benefits:**
+- ✅ No passwords required (safer)
+- ✅ Manual SSO login (more reliable than credential auth)
+- ✅ Wrapper handles display stack entirely
+- ✅ One command to generate OR use existing state
+- ✅ Base64 encoding built-in (safe for GitHub Secrets)
+- ✅ Evidence directory preserved for troubleshooting
+
+## Step-by-Step
+
+### Step 1: Forward noVNC Port (Codespaces)
+
+In Codespaces terminal:
+1. Click **PORTS** tab (at bottom)
+2. Click the "+" icon to forward a port
+3. Forward **6080** (Private)
+4. You'll see: `http://localhost:6080` → click to open in browser
+
+### Step 2: Run Option A Wrapper
+
+```bash
+cd /workspaces/Firsttry/atlassian/forge-app
+export JIRA_BASE_URL="https://firsttry.atlassian.net"
+
+bash scripts/proof/optionA_generate_state_with_novnc.sh
+```
+
+**What it does:**
+1. Starts noVNC display stack (Xvfb + x11vnc + websockify)
+2. Waits for `DISPLAY=:99` to be ready (max 30s)
+3. Runs `generate_playwright_state.sh` in headed mode
+4. Validates `state.json` is created and non-empty
+5. Base64 encodes state → `/tmp/state.b64` (file only, NOT echoed)
+6. Prints next-step instructions
+7. Cleans up display stack on exit
+
+### Step 3: Complete SSO in noVNC Browser
+
+The wrapper outputs the noVNC URL (from Step 1):
+```
+http://localhost:6080/vnc.html
+```
+
+1. Open that URL in your browser
+2. A remote desktop appears
+3. Browser is already loading Jira login page
+4. **Complete SSO authentication** (MFA, etc.)
+5. Wait for script to say "Done" in terminal
+6. Close noVNC browser tab
+
+### Step 4: Verify State Files
+
+```bash
+# The wrapper outputs evidence directory:
+ls -lah /tmp/ft_optionA_state_*/
+
+# Inside:
+# 01_novnc_start.log       ← Display stack startup
+# 02_generate_state.log    ← State generation output
+# 03_state_file_stat.log   ← state.json file size (no content)
+# 04_state_b64_stat.log    ← base64 file size + SHA256 (no content)
+```
+
+### Step 5: Use State Locally (Codespaces Terminal)
+
+```bash
+# Option A prints this instruction:
+export FT_PLAYWRIGHT_STATE_B64="$(cat /tmp/state.b64)"
+
+# Now run tests:
+bash scripts/proof/ship_prod_release.sh
+# Will auto-detect FT_PLAYWRIGHT_STATE_B64 and use it
+```
+
+### Step 6: Store in GitHub Secret (Production CI)
+
+```bash
+# Option A wrapper tells you:
+# 1. Copy contents of /tmp/state.b64 (do NOT echo it; view file in editor)
+# 2. Go to: https://github.com/Firsttry-Solutions/Firsttry/settings/secrets/actions
+# 3. New Secret:
+#    Name: FT_PLAYWRIGHT_STATE_B64
+#    Value: (paste from /tmp/state.b64)
+```
+
+Then in CI workflows, the secret is auto-detected:
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ship production release
+        env:
+          FT_PLAYWRIGHT_STATE_B64: ${{ secrets.FT_PLAYWRIGHT_STATE_B64 }}
+          # ... other secrets ...
+        run: bash scripts/proof/ship_prod_release.sh
+```
+
+## Security Reminders (Option A)
+
+1. **Never echo base64 state:**
+   ```bash
+   # ❌ BAD (exposes secret)
+   echo "$FT_PLAYWRIGHT_STATE_B64"
+   
+   # ✅ GOOD (view file in editor, then copy)
+   cat /tmp/state.b64  # (in editor/browser, not terminal)
+   ```
+
+2. **Never commit state.json:**
+   ```bash
+   # Verify it's gitignored:
+   git ls-files tests/playwright/.auth/state.json
+   # (should output nothing)
+   
+   # If it leaked, delete it:
+   git rm --cached tests/playwright/.auth/state.json
+   git commit -m "fix: remove state.json from history"
+   ```
+
+3. **Rotate state if leaked:**
+   - Delete from GitHub Secret
+   - Regenerate using this script
+   - Update secret with new value
+
+4. **State expiration:**
+   - Sessions expire every 7-30 days
+   - If tests fail with "Authentication required", regenerate state
+   - Re-run: `bash scripts/proof/optionA_generate_state_with_novnc.sh`
+
+## Troubleshooting Option A
+
+### Error: "DISPLAY=:99 did not become ready"
+
+**Cause:** Xvfb startup failed or took > 30s.
+
+**Fix:**
+```bash
+# Check if apt packages are installed
+command -v Xvfb && echo "✓ Xvfb installed" || echo "✗ Xvfb missing"
+
+# If missing, install manually
+sudo apt-get update && sudo apt-get install -y xvfb fluxbox x11vnc novnc websockify
+
+# Retry
+bash scripts/proof/optionA_generate_state_with_novnc.sh
+```
+
+### Error: "state.json not found"
+
+**Cause:** `generate_playwright_state.sh` did not complete or failed.
+
+**Fix:** Check the log:
+```bash
+# The wrapper printed evidence dir; look inside:
+tail -100 /tmp/ft_optionA_state_*/02_generate_state.log
+
+# Common reasons:
+# - Timeout waiting for browser to load
+# - SSO failed (wrong credentials, MFA rejected)
+# - noVNC connection lost during login
+
+# Resolution: Retry
+bash scripts/proof/optionA_generate_state_with_novnc.sh
+```
+
+### Error: "state.json too small (< 200 bytes)"
+
+**Cause:** Incomplete authentication or corrupted state.
+
+**Fix:** Regenerate:
+```bash
+rm tests/playwright/.auth/state.json tests/playwright/.auth/state.provenance.json
+bash scripts/proof/optionA_generate_state_with_novnc.sh
+```
+
+### Issue: noVNC browser is very slow
+
+**Cause:** Network latency or host machine not fast enough.
+
+**Fix:**
+- Make sure noVNC port is forwarded as **PRIVATE** (better performance)
+- Use a wired network if possible
+- Reduce XVFB resolution (edit script, set `XVFB_WHD="1280x720x24"`)
+
+---
+
 ## State Expiration
+
+Browser sessions expire after ~7-30 days (depends on tenant SSO settings).
+
+**Symptoms of expired state:**
+- Playwright tests fail with "Authentication required" or "Session expired"
+- Logs show: `[AUTH] Login page detected after storageState injection`
+
+**Resolution:**
+1. Regenerate state locally (Option A, Step 2-4)
+2. Re-encode and update GitHub Secret (Option A, Step 6)
+3. Retry deployment
+
+---
+
+
 
 Browser sessions expire after ~7-30 days (depends on tenant SSO settings).
 
