@@ -175,11 +175,11 @@ A: Yes. Support response within 24 business hours via [support@firstry.io](mailt
 
 ---
 
-## 11. Compliance & Certifications (In Progress)
+## 11. Data Protection & Privacy
 
-- SOC 2 Type II audit (FY 2026)
-- ISO 27001 certification (targeted Q2 2026)
-- GDPR compliant (right-to-deletion implemented)
+- Follows FirstTry Data Processing Terms
+- Implements data retention policies
+- Audit logging for compliance verification
 
 ---
 

@@ -142,13 +142,13 @@ app:
 
 ### Residency Verification in UI
 
-FirstTry displays a badge in the **Trust & Security** tab:
+FirstTry displays storage information in the **Trust & Security** tab:
 
 ```
 🌍 Data Hosted: EU (Ireland)
 🔒 Encryption: AES-256 (AWS managed)
 📋 DPA: Atlassian Forge Standard
-✓ GDPR Compliant (Articles 5, 17, 28)
+✓ Data Processing: Subject to FirstTry Data Processing Terms
 ```
 
 ---
@@ -227,14 +227,13 @@ A: FirstTry follows Atlassian Forge availability (currently 150+ countries). Che
 
 ---
 
-## Compliance Badges
+## Data Protection & Security
 
-🔐 **Forge-Hosted Storage Only**  
-🌐 **Multi-Region Data Residency (EU, US, APAC)**  
-📊 **No External Analytics Processors**  
-✅ **GDPR Compliant (Articles 5, 17, 28)**  
-✅ **SOC 2 Type II Certified**  
-✅ **ISO 27001 Aligned**
+Storage infrastructure only (no external processors)
+- 🔐 **Forge-Hosted Storage Only**  
+- 🌐 **Multi-Region Data Residency (EU, US, APAC)**  
+- 📊 **No External Analytics Processors**  
+- ✅ **Data Processing Subject to FirstTry Terms**
 
 ---
 

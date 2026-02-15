@@ -168,7 +168,7 @@ Example:
 
 - **Sessions**: [X] training sessions, [Y] attendees
 - **Materials**: [Link to docs / wiki]
-- **Support Channel**: [Slack / Email / GitHub]
+- **Support Method**: [In-app support form / Jira ticket / Customer-managed communication]
 
 ### Integration Points
 
@@ -498,9 +498,9 @@ Before starting, you need:
    - Open-source contributor with interesting use case
 
 2. **Secure consent**:
-   - Email or Slack: "We'd like to document this deployment as a case study. Would you be willing to participate?"
+   - Contact customer: "We'd like to document this deployment as a case study. Would you be willing to participate?"
    - Explain: "We'll collect metrics, take screenshots, and publish results. Everything will be anonymized unless you want attribution."
-   - Get approval (email reply or signed form)
+   - Get approval (response via agreed communication method or signed form)
 
 3. **Define baseline metrics**:
    - Current time spent on manual process: `time before = ___ hours per release`
@@ -509,7 +509,7 @@ Before starting, you need:
    - Current compliance rate: `compliance before = ___%`
 
 4. **Document existing process**:
-   - Screenshot current workflow (Confluence, Jira, Slack, email)
+   - Screenshot current workflow (Jira, Confluence, existing communication tools)
    - Write 1-paragraph description of "before" state
 
 #### Phase 2: Collect Evidence (During deployment, 2–4 weeks)
