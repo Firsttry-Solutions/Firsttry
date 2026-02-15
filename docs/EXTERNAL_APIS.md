@@ -98,7 +98,7 @@
 - **PII Handling**: [Allowed/Restricted]
 - **Data Retention**: [None / X days]
 - **Audit Logging**: [Yes/No]
-- **GDPR Compliant**: [Yes/No]
+- **Data Protection**: [Subject to FirstTry Data Processing Terms]
 ```
 
 ---

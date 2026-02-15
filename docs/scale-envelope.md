@@ -52,8 +52,8 @@ FirstTry Access Review system implements deterministic scale envelopes to enforc
 - **Archival policy**: Legacy reviews (>2 years) moved to cold storage
 
 ### Network Boundaries
-- **No external outbound calls**: All computation local
-- **Slack hooks**: Legacy integration (read-only webhook links, no data push)
+- **No external outbound calls**: All computation is local to Forge runtime
+- **No third-party integrations**: FirstTry does not push/pull data from external services
 - **Jira API calls**: Only read methods (`GET /rest/api/3/users/search`, etc.)
 
 ---

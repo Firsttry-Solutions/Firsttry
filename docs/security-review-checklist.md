@@ -82,17 +82,17 @@ This checklist provides external auditors + penetration testers with clear entry
    Expected: Zero network calls (except Jira API reads)
 
 2. Check for external APIs:
-   - No Slack webhooks for data export
+   - No external webhook integrations for data export
    - No analytics endpoints (Segment, Mixpanel, etc.)
    - No external logging (Splunk, DataDog, etc.)
-   - Command: `grep -r "hooks.slack\|api.segment\|api.mixpanel\|splunk\|datadog" .` → Should return NOTHING
+   - Command: `grep -r "hooks\|api.segment\|api.mixpanel\|splunk\|datadog" .` → Should return NOTHING
 
 3. Manifest external fetch check:
    ```bash
    grep -A5 "external:" atlassian/forge-app/manifest.yml
    ```
-   Allowed: Legacy Slack hooks (read-only webhook links, no data push)  
-   Not allowed: Any new external integrations
+   Allowed: No external integrations in manifest
+   Not allowed: Any outbound network calls or external integrations
 
 **Pass Criteria**: Zero outbound data exfiltration; read-only fetch rules only
 

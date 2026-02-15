@@ -42,7 +42,7 @@ This policy establishes incident classification, response procedures, communicat
 **Actions**:
 1. Page on-call engineer (P1/P2) or triage queue (P3/P4)
 2. Create incident ticket (template below)
-3. Standup war room (Slack #incident-war-room)
+3. Standup customer internal communication channel
 4. Acknowledge customer with ticket number + ETA
 
 **Roles**:
@@ -160,7 +160,7 @@ node tests/proof/run_phase3_enterprise_proof.mjs
    - What we did to fix
    - How to prevent in future
 
-3. Slack postmortem invite (P1/P2 only)
+3. Publish postmortem summary to support page (P1/P2 only)
 
 ---
 
@@ -187,7 +187,7 @@ node tests/proof/run_phase3_enterprise_proof.mjs
 
 ## Timeline
 - 14:23 UTC: Exports start failing with 429 Too Many Requests
-- 14:38 UTC: Alert fired; war room opened
+- 14:38 UTC: Alert fired; incident response initiated
 - 14:42 UTC: Root cause identified (off-by-one error in refill calculation)
 - 14:45 UTC: Fix deployed; service restored
 - Duration: 22 minutes
@@ -222,7 +222,7 @@ tokens = Math.min(capacity, tokens + (elapsed / period));
 **Distribution**: 
 - Publish to /postmortems/ (public)
 - Email all affected customers
-- Share in Slack #engineering
+- Distribute to engineering team (internal communication tool)
 
 ---
 
@@ -255,7 +255,7 @@ P4 Low
 
 **P1/P2 (Major)**: 
 - Initial notification via in-app alert
-- Direct Slack channel notification (Enterprise tier)
+- Follow-up via customer's support ticket
 - Update every 30 min
 - Post-incident summary within 24 hours
 

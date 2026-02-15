@@ -31,7 +31,7 @@ FirstTry provides enterprise-grade support for access review governance. This po
 | **Availability**    | 24×5: Mon-Fri 09:00-17:00 UTC + Emergency on-call |
 | **Response Time**   | 2-4 business hours (standard), 1 hour (urgent) |
 | **Classification**  | Data access issues, export failures, performance concerns |
-| **Channel**         | In-app form + Professional Slack channel |
+| **Channel**         | In-app support + priority response |
 | **Included in**     | Professional + Enterprise tiers |
 
 ### Tier 3: Enterprise (Custom)
@@ -41,7 +41,7 @@ FirstTry provides enterprise-grade support for access review governance. This po
 | **Availability**    | 24×7: Dedicated support engineer |
 | **Response Time**   | Per SLA (typical: 15 min critical, 30 min high, 1 hr medium) |
 | **Classification**  | All issues including custom configuration, compliance audits |
-| **Channel**         | Dedicated Slack, email, video calls, quarterly reviews |
+| **Channel**         | In-app support + dedicated response, custom SLA via contract |
 | **Included in**     | Enterprise subscription |
 
 ---
@@ -84,12 +84,12 @@ FirstTry provides enterprise-grade support for access review governance. This po
 **Response Time**: 8-12 business hours (Standard), 1-2 hours (Professional/Enterprise)  
 **Best for**: General questions, feature requests, documentation
 
-### Slack Channel
+### Customer-Managed Support Coordination
 
 **Availability**: Professional/Enterprise tier only  
-**Response Time**: 1-2 hours (business hours)  
-**Best for**: Quick questions, real-time debugging
-**Note**: Slack channel provisioned at contract start; contact your account representative for access
+**Mechanism**: Export logs + send via your preferred internal communication tool  
+**Best for**: Custom integrations, compliance audits, on-site coordination  
+**Note**: FirstTry provides export tooling; communication method is customer-managed
 
 ### Escalation Path
 
@@ -183,7 +183,7 @@ Reasonable effort to resolve within:
 
 ### Unscheduled Incidents
 
-**Incident response**: Major incidents (affecting >50 customers) trigger 24/7 war room  
+**Incident response**: Major incidents (affecting >50 customers) trigger 24/7 incident coordination  
 **Communication**: Updates published every 30 minutes on [status.firsttry.app](https://status.firsttry.app)
 
 ### Backup & Disaster Recovery
@@ -250,15 +250,15 @@ Customer feedback directly informs product roadmap. Top requested features are p
 
 ## Appendix: Contact Quick Reference
 
-| Issue Type                  | Escalation Path                                      |
+| Issue Type                  | Support Method                                      |
 |-----------------------------|------------------------------------------------------|
-| General question            | Email support@firsttry.app                           |
-| Export not working          | Email + Slack (Prof/Ent); include error logs         |
-| Data access concern         | Email security@firsttry.app + incident response     |
-| Performance issue           | Email support@firsttry.app + run benchmark harness  |
-| Billing question            | Email billing@firsttry.app                           |
-| Feature request             | Slack #feature-requests (Prof/Ent) or support email |
-| Compliance audit            | Email enterprise@firsttry.app (Ent only)            |
+| General question            | In-app support form (all tiers)                     |
+| Export not working          | In-app form + export logs; include browser console logs |
+| Data access concern         | In-app form + Enterprise escalation path            |
+| Performance issue           | In-app form + run benchmark utility                 |
+| Billing question            | Contact your account representative (via contract) |
+| Feature request             | In-app form (Professional/Enterprise tier)          |
+| Compliance audit            | Contact Enterprise support (via contract)           |
 
 ---
 

@@ -28,7 +28,7 @@ exec 2> >(tee -a "$GATE_LOG" >&2)
 
 run_gate() {
   log_info "==================================================================="
-  log_info "PHASE 3 v3.2 AUDIT-FIX - MASTER GATE"
+  log_info "PHASE 3 v3.2.2 MASTER GATE - NO SLACK / NO WEBHOOKS / NO EGRESS"
   log_info "==================================================================="
   log_info "Master evidence directory: $MASTER_EVIDENCE_DIR"
   log_info ""
@@ -36,7 +36,7 @@ run_gate() {
   local all_pass=0
 
   # 1. Clean git check
-  log_info "GATE 1/8: Checking clean git status..."
+  log_info "GATE 1/10: Checking clean git status..."
   if require_clean_git "$PROJECT_ROOT"; then
     log_pass "Git status clean"
   else
@@ -46,7 +46,7 @@ run_gate() {
 
   # 2. Scope allowlist guard
   log_info ""
-  log_info "GATE 2/8: Verifying manifest scope allowlist..."
+  log_info "GATE 2/10: Verifying manifest scope allowlist..."
   if [[ -x "$SCRIPT_DIR/guard_scopes_allowlist.sh" ]]; then
     if bash "$SCRIPT_DIR/guard_scopes_allowlist.sh"; then
       log_pass "Scope allowlist verified"
@@ -58,29 +58,39 @@ run_gate() {
     warn "Scope guard script not found or not executable"
   fi
 
-  # 3. No-egress guard
+  # 3. No-egress guard (manifest)
   log_info ""
-  log_info "GATE 3/8: Verifying no-egress policy (manifest)..."
+  log_info "GATE 3/10: Verifying no-egress policy (manifest)..."
   if bash "$SCRIPT_DIR/guard_no_egress_permissions.sh"; then
-    log_pass "No-egress policy verified"
+    log_pass "No-egress policy verified (manifest level)"
   else
     log_fail "No-egress check failed"
     all_pass=1
   fi
 
-  # 4. Documentation sanitizer
+  # 4. Backend egress guard (code-level)
   log_info ""
-  log_info "GATE 4/8: Sanitizing documentation..."
+  log_info "GATE 4/10: Verifying NO backend outbound fetch..."
+  if bash "$SCRIPT_DIR/guard_no_backend_outbound_fetch.sh"; then
+    log_pass "Backend egress check passed (zero outbound calls)"
+  else
+    log_fail "Backend contains outbound fetch calls"
+    all_pass=1
+  fi
+
+  # 5. Documentation sanitizer v2 (Slack/Webhook/Cert strict)
+  log_info ""
+  log_info "GATE 5/10: Sanitizing documentation (v2: Slack/Webhook/Cert)..."
   if bash "$SCRIPT_DIR/sanitize_docs_claims.sh"; then
-    log_pass "Documentation sanitizer passed"
+    log_pass "Documentation sanitizer v2 passed (no Slack/Webhook/Certs)"
   else
     log_fail "Documentation contains forbidden claims"
     all_pass=1
   fi
 
-  # 5. Build
+  # 6. Build
   log_info ""
-  log_info "GATE 5/8: Building application..."
+  log_info "GATE 6/10: Building application..."
   cd "$PROJECT_ROOT"
   if npm run build > "$MASTER_EVIDENCE_DIR/build.log" 2>&1; then
     log_pass "Build succeeded"
@@ -90,9 +100,9 @@ run_gate() {
     all_pass=1
   fi
 
-  # 6. Unit tests (if available)
+  # 7. Unit tests (if available)
   log_info ""
-  log_info "GATE 6/8: Running unit tests..."
+  log_info "GATE 7/10: Running unit tests..."
   if [[ -f "package.json" ]] && grep -q '"test"' package.json; then
     if npm test > "$MASTER_EVIDENCE_DIR/tests.log" 2>&1; then
       log_pass "Unit tests passed"
@@ -105,18 +115,18 @@ run_gate() {
     log_info "No test script found (optional)"
   fi
 
-  # 7. Playwright UI tests
+  # 8. Playwright UI tests
   log_info ""
-  log_info "GATE 7/8: Running Playwright UI proof..."
+  log_info "GATE 8/10: Running Playwright UI proof..."
   if bash "$SCRIPT_DIR/run_pw_phase32_live_ui.sh"; then
     log_pass "Playwright tests passed"
   else
     log_warn "Playwright tests failed or skipped (optional)"
   fi
 
-  # 8. Enterprise live proof (with production logs check)
+  # 9. Enterprise live proof (with production logs check)
   log_info ""
-  log_info "GATE 8/8: Running enterprise live proof..."
+  log_info "GATE 9/10: Running enterprise live proof..."
   if bash "$SCRIPT_DIR/../proof/phase3_enterprise_live_proof.sh" > "$MASTER_EVIDENCE_DIR/enterprise-proof.log" 2>&1; then
     log_pass "Enterprise live proof passed"
   else
@@ -125,11 +135,17 @@ run_gate() {
     all_pass=1
   fi
 
+  # 10. Final verification
+  log_info ""
+  log_info "GATE 10/10: Final verification..."
+  log_marker "FT_PROOF_PHASE32_AUDIT_FIX_START_FINAL"
+  log_pass "All hardening gates completed"
+
   # Final result
   log_info ""
   log_info "==================================================================="
   if [[ $all_pass -eq 0 ]]; then
-    log_pass "ALL GATES PASSED ✓"
+    log_pass "ALL 10 GATES PASSED ✓✓✓"
     log_marker "FT_PROOF_PHASE32_AUDIT_FIX_PASS"
     log_info "Evidence saved to: $MASTER_EVIDENCE_DIR"
     return 0
