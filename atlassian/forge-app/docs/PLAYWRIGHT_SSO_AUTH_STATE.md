@@ -72,10 +72,10 @@ cd /workspaces/Firsttry/atlassian/forge-app
 # Base64-encode (no line breaks)
 base64 -w0 tests/playwright/.auth/state.json > /tmp/state.b64
 
-# Copy contents of /tmp/state.b64
-cat /tmp/state.b64
+# Copy contents of /tmp/state.b64 SAFELY (open in editor, do NOT cat)
+code /tmp/state.b64  # Opens in VS Code editor
 
-# Securely delete temp file
+# Securely delete temp file after copying from editor
 shred -u /tmp/state.b64
 ```
 
@@ -229,25 +229,48 @@ ls -lah /tmp/ft_optionA_state_*/
 # 04_state_b64_stat.log    ← base64 file size + SHA256 (no content)
 ```
 
-### Step 5: Use State Locally (Codespaces Terminal)
+### Step 5: Use State Locally (Codespaces Testing)
+
+For local Playwright testing in Codespaces, use the state.json file directly:
 
 ```bash
-# Option A prints this instruction:
-export FT_PLAYWRIGHT_STATE_B64="$(cat /tmp/state.b64)"
+# state.json is already saved locally:
+tests/playwright/.auth/state.json
 
-# Now run tests:
-bash scripts/proof/ship_prod_release.sh
-# Will auto-detect FT_PLAYWRIGHT_STATE_B64 and use it
+# For local test runs, Playwright will automatically use this file
+# DO NOT load base64 into environment variables for local runs
+
+# Example: Run a local test
+cd /workspaces/Firsttry/atlassian/forge-app
+npm run playwright:local  # or similar (checks for tests/playwright/.auth/state.json)
 ```
+
+**Security Note:** Never run `cat /tmp/state.b64` in the terminal. The base64 file is for GitHub Secret transfer only.
 
 ### Step 6: Store in GitHub Secret (Production CI)
 
+To make the state available in GitHub Actions (CI/CD):
+
 ```bash
-# Option A wrapper tells you:
-# 1. Copy contents of /tmp/state.b64 (do NOT echo it; view file in editor)
+# 1. Open /tmp/state.b64 in an editor (SAFE way to view/copy):
+#    - In Codespaces: code /tmp/state.b64
+#    - Or use file explorer to open the file
+#    Then copy contents from the editor
+
 # 2. Go to: https://github.com/Firsttry-Solutions/Firsttry/settings/secrets/actions
-# 3. New Secret:
+
+# 3. Click: New repository secret
 #    Name: FT_PLAYWRIGHT_STATE_B64
+#    Value: (paste from editor, NOT from terminal)
+
+# 4. Save secret
+
+# Now CI workflows will auto-detect and use FT_PLAYWRIGHT_STATE_B64:
+#   export FT_PLAYWRIGHT_STATE_B64="${{ secrets.FT_PLAYWRIGHT_STATE_B64 }}"
+#   bash scripts/proof/ship_prod_release.sh
+```
+
+**CRITICAL:** Do NOT use `cat /tmp/state.b64` in terminal. Always copy from file editor or file explorer.
 #    Value: (paste from /tmp/state.b64)
 ```
 

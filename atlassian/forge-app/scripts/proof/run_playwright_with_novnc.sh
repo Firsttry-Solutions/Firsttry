@@ -317,7 +317,9 @@ SETUP_EXIT=0
 if [[ "${FT_PW_AUTH_MODE}" == "manual" ]]; then
   echo "[PW_NOVNC]"
   echo "[PW_NOVNC] === MANUAL MODE: Skipping dashboard diagnostics tests ==="
-  echo "[PW_NOVNC] ✅ State generation complete; noVNC stack remains active"
+  echo "[PW_NOVNC] ✅ State generation complete"
+  echo "[PW_NOVNC] ℹ️  noVNC remains active ONLY while this process runs"
+  echo "[PW_NOVNC] ℹ️  If invoked via optionA_generate_state_with_novnc.sh, cleanup will occur on wrapper exit"
   echo "[PW_NOVNC] RUN_ROOT=${RUN_ROOT}"
   exit 0
 fi
