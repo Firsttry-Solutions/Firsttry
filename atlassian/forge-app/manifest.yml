@@ -43,10 +43,6 @@ permissions:
     - read:jira-project
     - read:jira-configuration
     - storage:app
-  external:
-    fetch:
-      backend:
-        - address: https://hooks.slack.com
 
 resources:
   - key: govGadget2141

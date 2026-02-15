@@ -21,7 +21,7 @@ FirstTry provides enterprise-grade support for access review governance. This po
 | **Availability**    | Business hours: Mon-Fri 09:00-17:00 UTC |
 | **Response Time**   | 8-12 business hours |
 | **Classification**  | General questions, documentation requests, feature inquiries |
-| **Channel**         | Email: support@firsttry.app |
+| **Channel**         | In-app support form |
 | **Included in**     | All subscriptions |
 
 ### Tier 2: Professional (+$500/month)
@@ -31,7 +31,7 @@ FirstTry provides enterprise-grade support for access review governance. This po
 | **Availability**    | 24×5: Mon-Fri 09:00-17:00 UTC + Emergency on-call |
 | **Response Time**   | 2-4 business hours (standard), 1 hour (urgent) |
 | **Classification**  | Data access issues, export failures, performance concerns |
-| **Channel**         | Email + Slack channel + phone |
+| **Channel**         | In-app form + Professional Slack channel |
 | **Included in**     | Professional + Enterprise tiers |
 
 ### Tier 3: Enterprise (Custom)
@@ -78,34 +78,29 @@ FirstTry provides enterprise-grade support for access review governance. This po
 
 ## Support Contact Methods
 
-### Email
+### Primary Channel: In-App Support Form
 
-**Address**: support@firsttry.app  
+**Access**: Available in your Jira instance (FirstTry > Settings > Support)  
 **Response Time**: 8-12 business hours (Standard), 1-2 hours (Professional/Enterprise)  
 **Best for**: General questions, feature requests, documentation
 
 ### Slack Channel
 
-**Channel**: #firsttry-support (Professional/Enterprise only)  
+**Availability**: Professional/Enterprise tier only  
 **Response Time**: 1-2 hours (business hours)  
 **Best for**: Quick questions, real-time debugging
-
-### Phone (Enterprise only)
-
-**Line**: +1-800-FIRSTTRY (800-347-7879)  
-**Hours**: Dedicated engineer on-call  
-**Best for**: Emergency escalations, critical issues
+**Note**: Slack channel provisioned at contract start; contact your account representative for access
 
 ### Escalation Path
 
 ```
-Tier 1 (Support Agent)
+Tier 1 (Support Queue via in-app form)
          ↓ (if unresolved after 4 hours)
 Tier 2 (Support Lead)
          ↓ (if unresolved after 24 hours)
 Tier 3 (Engineering Manager)
          ↓ (if unresolved after 72 hours)
-Tier 4 (Director of Engineering / CTO)
+Tier 4 (Director of Engineering / CTO - Enterprise only)
 ```
 
 ---
@@ -151,29 +146,31 @@ Tier 4 (Director of Engineering / CTO)
 
 ## SLA Commitment
 
-### Response SLA
+**Important**: Response and Resolution SLAs apply only to Professional and Enterprise support tiers. Standard tier support operates on best-effort basis without SLA guarantees.
+
+### Response SLA (Professional & Enterprise only)
 
 FirstTry guarantees acknowledgement within specified windows:
 
-| Severity | Standard | Professional | Enterprise |
-|----------|----------|--------------|-----------|
-| CRITICAL | 12h      | 1h           | 15 min    |
-| HIGH     | 24h      | 2h           | 30 min    |
-| MEDIUM   | 48h      | 4h           | 1h        |
-| LOW      | 1 week   | 1 week       | 2h        |
+| Severity | Professional | Enterprise |
+|----------|--------------|-----------|
+| CRITICAL | 1h           | 15 min    |
+| HIGH     | 2h           | 30 min    |
+| MEDIUM   | 4h           | 1h        |
+| LOW      | 1 week       | 2h        |
 
-### Resolution SLA
+### Resolution SLA (Professional & Enterprise only)
 
 Reasonable effort to resolve within:
 
-| Severity | Standard | Professional | Enterprise |
-|----------|----------|--------------|-----------|
-| CRITICAL | 48h      | 4h           | 2h        |
-| HIGH     | 5 days   | 8h           | 4h        |
-| MEDIUM   | 10 days  | 24h          | 8h        |
-| LOW      | Best effort | Best effort | Best effort |
+| Severity | Professional | Enterprise |
+|----------|--------------|-----------|
+| CRITICAL | 4h           | 2h        |
+| HIGH     | 8h           | 4h        |
+| MEDIUM   | 24h          | 8h        |
+| LOW      | Best effort  | Best effort |
 
-**Note**: SLA clock pauses if customer does not respond within 24 hours.
+**Note**: SLA clock pauses if customer does not respond within 24 hours. SLAs apply during support availability hours for your tier.
 
 ---
 

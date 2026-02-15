@@ -82,7 +82,15 @@ FirstTry Access Review system implements deterministic scale envelopes to enforc
 
 ---
 
-## Performance Benchmarks (Synthetic)
+## Performance Benchmarks (Synthetic Local Testing)
+
+**Important Caveat**: The benchmarks below are conducted in a local test environment with deterministic synthetic data. Actual performance in production Forge runtime may differ due to:
+- Network latency to Jira Cloud APIs
+- Forge runtime noisy-neighbor effects (shared infrastructure)
+- Actual data complexity (nested groups, large comment threads)
+- Concurrent user load on target Jira instance
+
+**Use these benchmarks for capacity planning only. Contact your account representative for production performance guarantees.**
 
 | Entity Count | Duration (s) | Export Size (MB) | Memory Peak (MB) | Status      |
 |--------------|-------------|-----------------|-----------------|------------|

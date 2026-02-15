@@ -354,40 +354,13 @@ Tenant A (siteId=abc123) cannot query `review:xyz789:*` (Tenant B). Forge API en
 
 ---
 
-## Compliance Mappings
+### Retention Model
 
-### GDPR (Regulation 2016/679)
+FirstTry is designed to support evidence-based compliance mapping for frameworks such as GDPR, SOC 2, and ISO 27001. Organizations using FirstTry can demonstrate controls alignment through review of this whitepaper and architectural documentation.
 
-| Article | Requirement                      | FirstTry Control                  |
-|---------|----------------------------------|-----------------------------------|
-| 5       | Data minimization                | Anonymization engine; no external persistence |
-| 17      | Right to erasure                 | `requestPurgeTenant` resolver; purge audit logged |
-| 20      | Data portability                 | `exportTenantData` resolver; CSV + JSON |
-| 28      | Data processor agreement (DPA)   | Subprocessor disclosure; DPA available |
-| 32      | Security of processing           | Encryption at rest, RBAC, rate limiting |
+**Important**: FirstTry itself is not certified to SOC 2 Type II or ISO 27001. Certification decisions are made by each organization using FirstTry as part of their broader governance program.
 
-### SOC 2 Type II (Service Organization Control)
-
-| Category | Control                          | FirstTry Evidence                |
-|----------|----------------------------------|----------------------------------|
-| CC6.1    | Implement logical access         | RBAC delegation + reviewer freeze |
-| CC6.2    | Restrict physical access         | Forge-hosted; no on-prem data    |
-| CC7.1    | User access provisioning         | Jira admin context + privilege checks |
-| CC7.2    | Role-based access control        | Reviewer groups + role expiration |
-
-### ISO 27001:2013
-
-| Clause | Requirement                                  | FirstTry Control                    |
-|--------|----------------------------------------------|-------------------------------------|
-| 5.2    | Information security policy                  | Published in this whitepaper        |
-| 9.1    | Access control policy                        | RBAC delegation documented          |
-| 10.1   | Audit logging                                | Immutable ledger; 7yr retention     |
-| 12.2   | Cryptography                                 | SHA-256 (hash), AES-256 (storage)   |
-| 13.1   | Network security                             | HTTPS only; no outbound calls       |
-
----
-
-## Residual Risk Disclosure
+### Default Policy
 
 ### Unavoidable Risks
 
@@ -408,10 +381,7 @@ Tenant A (siteId=abc123) cannot query `review:xyz789:*` (Tenant B). Forge API en
 
 ## Support & Incident Response
 
-- **Security issues**: Email security@firsttry.app (response within 24 hours)
-- **Incident postmortem**: Published within 72 hours of resolution
-- **SLA**: CRITICAL severity = 15 min response / 2 hr resolution
-- **Contact**: Escalation path documented in support-policy.md
+For security questions or concerns, please use the in-app support form in your Jira instance or contact your account representative. Security-related issues reported through official channels receive priority response.
 
 ---
 
