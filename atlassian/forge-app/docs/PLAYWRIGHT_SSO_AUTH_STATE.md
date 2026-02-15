@@ -210,13 +210,129 @@ rm tests/playwright/.auth/state.json
 6. **Base64 encoding**: Prevents accidental exposure in CI logs
 7. **No echo**: Scripts never print decoded state contents
 
+## Codespaces SSO: Use noVNC
+
+GitHub Codespaces runs in a remote container without a physical display. The interactive generator script (`generate_playwright_state.sh`) will block waiting for browser input in a headless environment.
+
+### The Canonical noVNC Workflow
+
+For Codespaces-based Playwright SSO state generation, use the existing noVNC proxy:
+
+**Step 1: Start noVNC Server in Codespaces**
+
+```bash
+cd /workspaces/Firsttry/atlassian/forge-app
+bash scripts/proof/run_playwright_with_novnc.sh
+```
+
+This script:
+- Starts Xvfb (virtual display)
+- Launches noVNC server on `localhost:6080`
+- Outputs connection instructions
+
+**Step 2: Access Browser via noVNC**
+
+The script prints a URL like:
+```
+🌐 noVNC URL: http://localhost:6080?path=websockify
+🔓 Password: (default noVNC password, see script)
+```
+
+In Codespaces:
+- Open the **PORTS** tab
+- Forward port 6080 (PRIVATE forwarding recommended)
+- Click the forwarded URL
+- Authenticate with the password from script output
+
+**Step 3: Generate Playwright State via noVNC**
+
+In another Codespaces terminal (while noVNC is running):
+
+```bash
+cd /workspaces/Firsttry/atlassian/forge-app
+
+# Set required environment
+export JIRA_BASE_URL="https://firsttry.atlassian.net"
+export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/your-work"
+export FT_AUTH_GENERATE_STATE=1
+export FT_PLAYWRIGHT_MODE=headed
+
+# Run generator
+bash scripts/proof/generate_playwright_state.sh
+```
+
+The script will:
+1. Launch a headed (visible) browser in the noVNC virtual display
+2. Navigate to JIRA login page
+3. Wait for you to complete SSO authentication via the noVNC remote desktop
+4. Save session to `tests/playwright/.auth/state.json`
+
+**Step 4: Extract Base64 for GitHub Secret**
+
+After successful state.json generation:
+
+```bash
+base64 -w0 tests/playwright/.auth/state.json > /tmp/state.b64
+echo "State size: $(wc -c </tmp/state.b64) bytes"
+```
+
+**CRITICAL:** Never print the base64 contents directly:
+```bash
+# ❌ DO NOT DO THIS:
+cat /tmp/state.b64  # Will expose state in logs
+
+# ✅ DO THIS:
+# Copy the file securely to GitHub Secret settings
+# Use: Settings > Secrets and Variables > Actions > New Repository Secret
+# Name: FT_PLAYWRIGHT_STATE_B64
+# Value: (paste contents from /tmp/state.b64)
+```
+
+**Step 5: Configure GitHub Secret**
+
+1. Go to https://github.com/Firsttry-Solutions/Firsttry/settings/secrets/actions
+2. Click **New repository secret**
+3. Name: `FT_PLAYWRIGHT_STATE_B64`
+4. Value: Paste contents of `/tmp/state.b64` (without printing it first)
+5. Click **Add secret**
+
+**Step 6: Verify in CI**
+
+Ship scripts will automatically detect the base64 secret:
+
+```bash
+# In CI workflow or local test:
+export FT_PLAYWRIGHT_STATE_B64="<secret from GitHub>"
+bash scripts/proof/ship_prod_release.sh
+# Script will:
+# 1. Detect FT_PLAYWRIGHT_STATE_B64 is set
+# 2. Decode and validate
+# 3. Use for storageState in Playwright
+# 4. Write evidence: PLAYWRIGHT_AUTH_MODE=STATE_B64
+```
+
+### Why noVNC?
+
+| Approach | Pro | Con |
+|---|---|---|
+| **Interactive terminal** | Simple, no extra setup | Blocks forever if not connected; hard to use headless |
+| **noVNC (Codespaces)** | ✅ Visible browser, manual login, no timeout issues | Requires port forward + browser tab |
+| **Base64 in CI** | ✅ No manual interaction, automated | Requires state pre-generated locally |
+
+**Recommended for Codespaces:** noVNC + base64 secret combo
+- Generate locally once (noVNC)
+- Store as GitHub Secret (base64)
+- CI uses secret (zero interaction)
+
 ## Related Files
 
 - **Generator**: `scripts/proof/generate_playwright_state.sh`
+- **noVNC wrapper**: `scripts/proof/run_playwright_with_novnc.sh`
 - **Prod gate**: `scripts/proof/ship_prod_release.sh` (Step 11)
 - **Playwright runner**: `scripts/proof/run_dashboard_playwright.sh`
 - **Guard**: `scripts/proof/guard_no_state_json_commit.sh`
 - **Gitignore**: `.gitignore` (lines for `.auth/`)
+- **Forge auth**: `docs/FORGE_AUTH_IN_CODE_SPACES.md`
 
 ## FAQ
 
@@ -230,12 +346,17 @@ A: When it expires (7-30 days), or when SSO config changes.
 A: Yes, if they target the same tenant and SSO identity.
 
 **Q: What if my laptop has the state but CI doesn't?**
-A: Follow Pattern B to copy from laptop to GitHub Secret.
+A: Follow the noVNC + base64 steps to copy from Codespaces to GitHub Secret.
 
 **Q: Is state tenant-specific?**
 A: Yes. Each Atlassian tenant needs its own state.json.
 
+**Q: Will noVNC work on my local machine?**
+A: Yes, same steps apply. Port forward to `localhost:6080` and use the noVNC URL.
+
 ---
 
-**Last Updated:** 2026-02-14  
-**Applies To:** All SSO-only tenants (e.g., `firsttry.atlassian.net`)
+**Last Updated:** 2026-02-15  
+**Applies To:** All SSO-only tenants (e.g., `firsttry.atlassian.net`)  
+**Codespaces:** Recommended workflow is noVNC + base64 GitHub Secret
+
