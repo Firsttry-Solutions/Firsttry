@@ -212,13 +212,88 @@ rm tests/playwright/.auth/state.json
 
 ## Codespaces SSO: Use noVNC
 
-GitHub Codespaces runs in a remote container without a physical display. The interactive generator script (`generate_playwright_state.sh`) will block waiting for browser input in a headless environment.
+GitHub Codespaces runs in a remote container without a physical display. The interactive generator script (`generate_playwright_state.sh`) requires a visible browser for SSO login.
 
-### The Canonical noVNC Workflow
+### The Canonical noVNC Workflow (SSO via storageState)
 
-For Codespaces-based Playwright SSO state generation, use the existing noVNC proxy:
+The noVNC runner (`scripts/proof/run_playwright_with_novnc.sh`) is now SSO-compatible. It automatically:
+1. Starts Xvfb (virtual display)
+2. Launches noVNC server on `localhost:6080`
+3. Calls `generate_playwright_state.sh` interactively (you complete SSO in the noVNC browser)
+4. Validates `state.json` is created and valid
+5. Runs Playwright dashboard diagnostics with `storageState`
 
-**Step 1: Start noVNC Server in Codespaces**
+#### Required Environment Variables
+
+```bash
+export JIRA_BASE_URL="https://firsttry.atlassian.net"
+export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
+export FT_AUTH_GENERATE_STATE="1"           # Tell generator to run
+export FT_PLAYWRIGHT_MODE="headed"          # Enable interactive browser
+bash scripts/proof/run_playwright_with_novnc.sh
+```
+
+**Legacy variables NOT used:** `JIRA_EMAIL`, `JIRA_PASSWORD` (these were for older non-SSO auth)
+
+#### Complete Workflow
+
+For Codespaces-based Playwright SSO state generation, use the noVNC runner:
+
+
+**Step 1: Set environment variables and run noVNC runner**
+
+```bash
+cd /workspaces/Firsttry/atlassian/forge-app
+
+export JIRA_BASE_URL="https://firsttry.atlassian.net"
+export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
+export FT_AUTH_GENERATE_STATE="1"
+export FT_PLAYWRIGHT_MODE="headed"
+
+bash scripts/proof/run_playwright_with_novnc.sh
+```
+
+The noVNC runner will automatically:
+- Start Xvfb (virtual display available at DISPLAY=:99)
+- Launch noVNC on `localhost:6080`
+- Call `generate_playwright_state.sh` for state generation
+- Run Playwright dashboard tests with storageState
+
+**Step 2: Access browser via noVNC**
+
+In Codespaces:
+- Open **PORTS** tab
+- Forward port 6080 (PRIVATE)
+- Click the noVNC URL
+- Remote desktop appears with a browser
+
+Complete SSO login in the browser. The script auto-detects when you're authenticated and saves `state.json`.
+
+**Step 3: Verify success**
+
+The runner outputs:
+```
+[PW_NOVNC] ✅ Auth state validation PASSED
+[PW_NOVNC] === PHASE 2: DASHBOARD DIAGNOSTICS (headed) ===
+```
+
+Both auth state generation AND dashboard tests succeeded.
+
+**Step 4 (Optional): Store for CI use**
+
+```bash
+base64 -w0 tests/playwright/.auth/state.json > /tmp/state.b64
+# Store in GitHub Secret: FT_PLAYWRIGHT_STATE_B64
+# Then CI workflows auto-detect and use it
+```
+
+---
+
+## ⚠️ Older Implementation (Deprecated)
+
+The following describes the older way to use noVNC. The above steps are now preferred.
+
+**Old Step 1: Start noVNC Server in Codespaces**
 
 ```bash
 cd /workspaces/Firsttry/atlassian/forge-app
@@ -230,7 +305,7 @@ This script:
 - Launches noVNC server on `localhost:6080`
 - Outputs connection instructions
 
-**Step 2: Access Browser via noVNC**
+**Old Step 2: Access Browser via noVNC**
 
 The script prints a URL like:
 ```
