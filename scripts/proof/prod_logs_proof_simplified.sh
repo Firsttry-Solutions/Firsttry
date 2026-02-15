@@ -46,7 +46,7 @@ else
     
     log_info ""
     log_info "Fetching production logs..."
-    local prod_logs_file="${MASTER_EVIDENCE_DIR:-/tmp/ft_phase32}/prod-logs-full.txt"
+    prod_logs_file="${MASTER_EVIDENCE_DIR:-/tmp/ft_phase32}/prod-logs-full.txt"
     
     if forge logs -e production --tail 400 > "$prod_logs_file" 2>&1; then
       log_pass "Production logs fetched"
@@ -70,4 +70,5 @@ log_info ""
 log_info "Production logs proof SKIPPED for dev environment (expected)"
 log_marker "[FT_PROOF_PROD_LOGS_SKIPPED_OK]"
 log_pass "✓ Production logs verification complete (skipped in dev, ready for prod)"
-return 0
+exit 0
+
