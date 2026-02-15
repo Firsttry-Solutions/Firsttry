@@ -651,56 +651,131 @@ verify_trust_stack() {
 # STEP 13: Production Logs Verification (Optional)
 ##############################################################################
 
-verify_prod_logs_markers() {
+verify_prod_logs_markers_mandatory() {
+  ##############################################################################
+  # PHASE 3 v3.2.3 - Production Logs Proof (MANDATORY, NO SKIPS)
+  # Must verify Forge authentication and production logs availability
+  # Fails hard if any requirement unmet (no silent fallbacks)
+  ##############################################################################
+  
+  log_marker "[FT_PROOF_PROD_LOGS_START]"
   log_info ""
-  log_info "=== STEP 13: Production Logs Verification (Optional) ==="
+  log_info "==================================================================="
+  log_info "PRODUCTION LOGS VERIFICATION (MANDATORY - NO SKIPS)"
+  log_info "==================================================================="
 
-  # Check if forge CLI is available
+  # =========================================================================
+  # Step 1: Verify Forge CLI installed
+  # =========================================================================
+  log_info ""
+  log_info "Verifying Forge CLI installation..."
   if ! command -v forge &> /dev/null; then
-    log_warn "Forge CLI not found; skipping production log verification (requires Forge auth)"
-    return 0
+    log_fail "FORGE_CLI_NOT_FOUND - Required for production log verification"
+    return 1
   fi
+  log_pass "Forge CLI available"
 
-  log_check "Checking Forge authentication..."
+  # =========================================================================
+  # Step 2: Verify Forge authentication (MANDATORY)
+  # =========================================================================
+  log_info ""
+  log_info "Verifying Forge authentication (MANDATORY)..."
   if ! forge whoami > /dev/null 2>&1; then
-    log_warn "Not authenticated with Forge CLI; skipping production verification"
-    return 0
+    log_fail "FORGE_NOT_AUTHENTICATED - Cannot access production logs"
+    log_info "  Hint: Run 'forge login' and ensure Jira cloud credentials are valid"
+    return 1
   fi
+  log_pass "Forge authenticated"
 
-  log_info "Attempting to fetch production logs..."
+  # =========================================================================
+  # Step 3: Fetch production logs (MANDATORY)
+  # =========================================================================
+  log_info ""
+  log_info "Fetching production logs (MANDATORY)..."
+  local prod_logs_file="${MASTER_EVIDENCE_DIR:-/tmp/ft_phase32}/prod-logs-full.txt"
+  
+  if ! forge logs -e production --tail 400 > "$prod_logs_file" 2>&1; then
+    log_fail "PROD_LOGS_FETCH_FAILED - Cannot retrieve production logs"
+    tail -50 "$prod_logs_file"
+    return 1
+  fi
+  
+  if [[ ! -s "$prod_logs_file" ]]; then
+    log_fail "PROD_LOGS_EMPTY - No production logs available"
+    return 1
+  fi
+  
+  log_pass "Production logs fetched ($(wc -l < "$prod_logs_file") lines)"
 
-  # Try to fetch recent logs from production
-  if forge logs -e production --tail 200 > /tmp/ft_prod_logs.txt 2>&1; then
-    log_pass "Successfully fetched production logs"
+  # =========================================================================
+  # Step 4: Verify hardening markers (MANDATORY)
+  # =========================================================================
+  log_info ""
+  log_info "Verifying hardening markers in production logs..."
 
-    # Check for expected markers
-    local markers=(
-      "FT_PHASE32_TRUST_STACK_PASS"
-      "FT_EXPORT_SIGNING_REMOVED_SAFE_MODE"
-      "FT_TENANT_LIFECYCLE_SELF_SERVICE"
-      "FT_EXECUTION_METRICS_EMBEDDED"
-    )
+  local all_markers_found=true
+  local markers_checked=0
 
-    local found_markers=0
-    for marker in "${markers[@]}"; do
-      if grep -q "$marker" /tmp/ft_prod_logs.txt; then
-        log_pass "Production marker found: $marker"
-        ((found_markers++))
-      else
-        log_warn "Production marker not found (may be expected on fresh deployments): $marker"
-      fi
-    done
+  # Critical markers that MUST be present
+  local critical_markers=(
+    "FT_PHASE32_TRUST_STACK_PASS"
+  )
 
-    if [[ $found_markers -gt 0 ]]; then
-      log_pass "Production trust stack markers verified"
+  # Optional supporting markers (at least one should exist)
+  local optional_markers=(
+    "FT_TENANT_LIFECYCLE_SELF_SERVICE"
+    "FT_EXECUTION_METRICS_EMBEDDED"
+    "FT_EXPORT_SIGNING"
+  )
+
+  # Check critical markers - ALL must be present
+  for marker in "${critical_markers[@]}"; do
+    ((markers_checked++))
+    if grep -q "$marker" "$prod_logs_file" 2>/dev/null; then
+      log_pass "Critical marker found: $marker"
     else
-      log_warn "No production markers detected (expected on new deployments)"
+      log_warn "Critical marker NOT found: $marker"
+      all_markers_found=false
     fi
-  else
-    log_warn "Could not fetch production logs (may require enterprise account)"
+  done
+
+  # Check optional markers - at least one should be present
+  local optional_found=0
+  for marker in "${optional_markers[@]}"; do
+    ((markers_checked++))
+    if grep -q "$marker" "$prod_logs_file" 2>/dev/null; then
+      log_pass "Optional marker found: $marker"
+      ((optional_found++))
+    fi
+  done
+
+  if [[ $optional_found -eq 0 ]]; then
+    log_warn "No optional markers found (expected on fresh deployments)"
   fi
 
-  log_pass "[FT_PROOF_PROD_LOGS_CHECKED] Production verification complete"
+  # =========================================================================
+  # Step 5: Final verification
+  # =========================================================================
+  log_info ""
+  log_info "Finalizing production logs verification..."
+
+  if $all_markers_found; then
+    log_marker "[FT_PROOF_PROD_LOGS_OK]"
+    log_pass "✓ Production Logs Proof PASSED"
+    log_info "  - Forge authenticated: OK"
+    log_info "  - Logs fetched: OK ($prod_logs_file)"
+    log_info "  - Hardening markers: OK"
+    return 0
+  else
+    log_fail "PROD_LOGS_MARKERS_INCOMPLETE - Not all critical markers present"
+    log_info "Review production logs at: $prod_logs_file"
+    return 1
+  fi
+}
+
+# Keep old name for compatibility (calls new mandatory version)
+verify_prod_logs_markers() {
+  verify_prod_logs_markers_mandatory
 }
 
 ##############################################################################
