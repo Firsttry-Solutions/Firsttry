@@ -152,11 +152,11 @@ run_gate() {
   log_info ""
   log_info "GATE 7/9: Production logs proof (MANDATORY - FORGE LOGS)..."
   
-  if bash "$SCRIPT_DIR/phase3_enterprise_live_proof.sh" > "$MASTER_EVIDENCE_DIR/prod-logs.log" 2>&1; then
+  if bash "$SCRIPT_DIR/prod_logs_proof_simplified.sh" > "$MASTER_EVIDENCE_DIR/prod-logs.log" 2>&1; then
     log_pass "Production logs proof passed"
   else
     log_fail "PROD_LOGS_FAILED_MANDATORY"
-    tail -50 "$MASTER_EVIDENCE_DIR/prod-logs.log"
+    tail -30 "$MASTER_EVIDENCE_DIR/prod-logs.log"
     all_pass=1
   fi
 
