@@ -15,6 +15,10 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../" && pwd)"
 
+# === AUTH MODE SWITCH ===
+FT_PW_AUTH_MODE="${FT_PW_AUTH_MODE:-manual}"
+echo "[PW_NOVNC] AUTH_MODE=${FT_PW_AUTH_MODE}"
+
 # === STRICT ENV VALIDATION ===
 if [[ -z "${JIRA_BASE_URL:-}" ]]; then
   echo "[PW_NOVNC] ERROR: JIRA_BASE_URL not set"
@@ -27,15 +31,33 @@ if [[ "${JIRA_BASE_URL}" != "${EXPECTED_BASE_URL}" ]]; then
   exit 1
 fi
 
-if [[ -z "${JIRA_DASHBOARD_URL:-}" ]]; then
-  echo "[PW_NOVNC] ERROR: JIRA_DASHBOARD_URL not set"
-  exit 1
-fi
+# In credential mode, require dashboard URL and credentials
+if [[ "${FT_PW_AUTH_MODE}" == "cred" ]]; then
+  if [[ -z "${JIRA_DASHBOARD_URL:-}" ]]; then
+    echo "[PW_NOVNC] ERROR: JIRA_DASHBOARD_URL not set (required in cred mode)"
+    exit 1
+  fi
 
-EXPECTED_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
-if [[ "${JIRA_DASHBOARD_URL}" != "${EXPECTED_DASHBOARD_URL}" ]]; then
-  echo "[PW_NOVNC] ERROR: JIRA_DASHBOARD_URL must equal exactly '${EXPECTED_DASHBOARD_URL}', got '${JIRA_DASHBOARD_URL}'"
-  exit 1
+  EXPECTED_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10102"
+  if [[ "${JIRA_DASHBOARD_URL}" != "${EXPECTED_DASHBOARD_URL}" ]]; then
+    echo "[PW_NOVNC] ERROR: JIRA_DASHBOARD_URL must equal exactly '${EXPECTED_DASHBOARD_URL}', got '${JIRA_DASHBOARD_URL}'"
+    exit 1
+  fi
+
+  if [[ -z "${JIRA_EMAIL:-}" ]]; then
+    echo "[PW_NOVNC] ERROR: JIRA_EMAIL not set (required in cred mode)"
+    exit 1
+  fi
+
+  if [[ -z "${JIRA_PASSWORD:-}" ]]; then
+    echo "[PW_NOVNC] ERROR: JIRA_PASSWORD not set (required in cred mode)"
+    exit 1
+  fi
+
+  echo "[PW_NOVNC] ✓ Credentials provided (cred mode)"
+else
+  # Manual mode (SSO): no credentials required
+  echo "[PW_NOVNC] ✓ Manual SSO mode (no credentials needed)"
 fi
 
 # === SSO STORAGESTATE REQUIREMENTS (FAIL-CLOSED) ===
@@ -290,6 +312,15 @@ fi
 
 echo "[PW_NOVNC] ✅ Auth state validation PASSED"
 SETUP_EXIT=0
+
+# In manual mode, skip running dashboard diagnostics tests
+if [[ "${FT_PW_AUTH_MODE}" == "manual" ]]; then
+  echo "[PW_NOVNC]"
+  echo "[PW_NOVNC] === MANUAL MODE: Skipping dashboard diagnostics tests ==="
+  echo "[PW_NOVNC] ✅ State generation complete; noVNC stack remains active"
+  echo "[PW_NOVNC] RUN_ROOT=${RUN_ROOT}"
+  exit 0
+fi
 
 echo "[PW_NOVNC]"
 echo "[PW_NOVNC] === PHASE 2: DASHBOARD DIAGNOSTICS (headed) ==="
