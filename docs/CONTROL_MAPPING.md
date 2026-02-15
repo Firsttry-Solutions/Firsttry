@@ -278,16 +278,6 @@ Each control mapping includes:
 ⚠️ **Asset Classification** — Public repo; no internal tiers  
 ⚠️ **DR/Business Continuity** — Relies on Atlassian Cloud  
 
-### Not Implemented Controls
-
-❌ **SOC 2 Certification** — No formal attestation  
-❌ **ISO 27001 Certification** — No certification pursuit  
-❌ **HIPAA Compliance** — Not designed for PHI  
-❌ **PCI DSS Compliance** — No payment data handling  
-❌ **FedRAMP Authorization** — No government certification  
-❌ **Custom Encryption** — Reliance on Atlassian Forge  
-❌ **Physical Security** — AWS/Atlassian responsibility  
-❌ **Custom Authentication** — Forge delegation only  
 
 ---
 

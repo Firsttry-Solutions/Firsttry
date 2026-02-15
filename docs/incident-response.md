@@ -254,17 +254,19 @@ P4 Low
 ### Customer Escalation
 
 **P1/P2 (Major)**: 
-- Initial contact: support@firsttry.app + phone call (if Enterprise)
+- Initial notification via in-app alert
+- Direct Slack channel notification (Enterprise tier)
 - Update every 30 min
-- Post-incident email within 24 hours
+- Post-incident summary within 24 hours
 
 **P3 (Medium)**:
-- Initial contact: support@firsttry.app
-- Update every hour
-- Post-incident email within 72 hours
+- In-app notification
+- Update every hour (if ongoing)
+- Post-incident summary within 72 hours
 
 **P4 (Low)**:
-- Email response within 24 hours
+- In-app notification
+- Response within business hours
 - No specific update cadence
 
 ---

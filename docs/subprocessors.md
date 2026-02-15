@@ -29,27 +29,19 @@ FirstTry is hosted exclusively on **Atlassian Forge**, a managed application pla
 
 ---
 
-## Subprocessors (Inline to Forge)
+## Subprocessors (Through Atlassian Forge)
 
-### Amazon Web Services (AWS)
+FirstTry is hosted exclusively on Atlassian Forge. For detailed information about all subprocessors used by Atlassian Forge and Jira Cloud, including cloud infrastructure providers and data centers, please refer to:
 
-| Service              | Region     | Purpose |
-|----------------------|-----------|---------|
-| EC2                  | us-east-1, eu-west-1, ap-south-1 | Compute infrastructure for Forge |
-| S3                   | Multi-region | Cold storage backup for Forge |
-| KMS                  | Regional  | Key management for AES-256 encryption |
-| CloudTrail           | Regional  | Audit logging (Atlassian managed) |
+**[Atlassian Subprocessors List](https://trust-center.atlassian.com/subprocessors)**
 
-**Status**: Attestation available via [AWS DPA](https://aws.amazon.com/legal/aws-dpa/)
+This external document is authoritative and maintained by Atlassian. FirstTry does not independently operate or manage subprocessors; all infrastructure is managed and audited by Atlassian.
 
-### Fastly (CDN)
+### Known Limitations
 
-| Service              | Purpose |
-|----------------------|---------|
-| Edge nodes           | Caching for static UI assets (verify.js, style manifests) |
-| TLS termination      | HTTPS certificate management |
-
-**Status**: Attestation available via [Fastly DPA](https://www.fastly.com/data-processing)
+- FirstTry does not control subprocessor selection or changes by Atlassian
+- Subprocessor updates are managed under the Atlassian Data Processing Addendum
+- For questions about specific subprocessors or data locations, contact Atlassian Support
 
 ---
 
@@ -122,7 +114,7 @@ FirstTry enforces **data residency** based on tenant selection at provisioning:
 
 2. **Data Security Addendum (DSA)**
    - Optional; available for US tenants
-   - Covers export control, FedRAMP alignment
+   - Covers data protection obligations per Atlassian DPA
 
 3. **Supplementary Measures (available upon request)**
    - Encryption algorithms (AES-256 confirmed)
@@ -183,17 +175,12 @@ FirstTry displays a badge in the **Trust & Security** tab:
 
 ### Regular Audits
 
-- **Atlassian**: SOC 2 Type II audit (annual)
-- **AWS**: SOC 2 Type II, FedRAMP, PCI-DSS certifications (public)
+- **Atlassian**: SOC 2 Type II audit (annual) — FirstTry audit coverage included
 - **FirstTry**: Annual penetration test + vulnerability assessment
 
-### Attestations Available
+### Infrastructure Certifications
 
-| Framework | Attestation | Link |
-|-----------|------------|------|
-| SOC 2     | Atlassian (Type II) | [attestation.atlassian.com](https://attestation.atlassian.com) |
-| ISO 27001 | AWS        | [aws.amazon.com/compliance](https://aws.amazon.com/compliance) |
-| GDPR      | Atlassian  | [trust-center.atlassian.com](https://trust-center.atlassian.com) |
+For infrastructure certifications and compliance details, refer to Atlassian's [trust center](https://trust-center.atlassian.com) and your cloud provider's compliance documentation.
 
 ---
 
