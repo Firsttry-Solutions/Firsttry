@@ -263,7 +263,8 @@ const STATE_PATH = 'tests/playwright/.auth/state.json';
 })();
 NODEJS_EOF
 
-# Run the auth generation
+# Run the auth generation (set NODE_PATH for module resolution)
+export NODE_PATH="$(pwd)/node_modules"
 JIRA_BASE_URL="$JIRA_BASE_URL_NORM" node "$TEMP_AUTH_SCRIPT"
 AUTH_GEN_EXIT=$?
 
