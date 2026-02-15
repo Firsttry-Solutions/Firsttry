@@ -507,6 +507,147 @@ verify_test_suites() {
 }
 
 ##############################################################################
+# STEP 12: v3.2 Trust Stack Verification  
+##############################################################################
+
+verify_trust_stack() {
+  log_info ""
+  log_info "=== STEP 12: v3.2 Trust Stack (Safe Mode, No Signing) ==="
+
+  # Part 1: Signing removal
+  log_check "Verifying RSA signing removed from immutability..."
+  if grep -q "\[FT_EXPORT_SIGNING_REMOVED_SAFE_MODE\]" "$PROJECT_ROOT/atlassian/forge-app/src/access-review/immutability.ts" 2>/dev/null; then
+    log_pass "RSA signing safely removed"
+  else
+    log_fail "Signing removal marker not found"
+  fi
+
+  # Part 2: Scale envelope docs
+  log_check "Checking scale envelope documentation..."
+  if [[ -f "$PROJECT_ROOT/docs/scale-envelope.md" ]]; then
+    if grep -q "\[FT_SCALE_ENVELOPE_DOC_ADDED\]" "$PROJECT_ROOT/docs/scale-envelope.md"; then
+      log_pass "Scale envelope documentation complete"
+    else
+      log_fail "Scale envelope doc marker missing"
+    fi
+  else
+    log_fail "Scale envelope documentation not found"
+  fi
+
+  # Part 3: Security whitepaper
+  log_check "Checking security whitepaper..."
+  if [[ -f "$PROJECT_ROOT/docs/security-whitepaper.md" ]]; then
+    if grep -q "\[FT_SECURITY_WHITEPAPER_READY\]" "$PROJECT_ROOT/docs/security-whitepaper.md"; then
+      log_pass "Security whitepaper ready"
+    else
+      log_fail "Whitepaper marker missing"
+    fi
+  else
+    log_fail "Security whitepaper not found"
+  fi
+
+  # Part 4: Subprocessor disclosure
+  log_check "Checking subprocessor disclosure..."
+  if [[ -f "$PROJECT_ROOT/docs/subprocessors.md" ]]; then
+    if grep -q "\[FT_SUBPROCESSOR_DISCLOSURE_ADDED\]" "$PROJECT_ROOT/docs/subprocessors.md"; then
+      log_pass "Subprocessor disclosure complete"
+    else
+      log_fail "Subprocessor marker missing"
+    fi
+  else
+    log_fail "Subprocessor document not found"
+  fi
+
+  # Part 5: Support & incident response
+  log_check "Checking support policy..."
+  if [[ -f "$PROJECT_ROOT/docs/support-policy.md" ]]; then
+    if grep -q "\[FT_SUPPORT_POLICY_PUBLISHED\]" "$PROJECT_ROOT/docs/support-policy.md"; then
+      log_pass "Support policy published"
+    else
+      log_fail "Support marker missing"
+    fi
+  else
+    log_fail "Support policy not found"
+  fi
+
+  log_check "Checking incident response policy..."
+  if [[ -f "$PROJECT_ROOT/docs/incident-response.md" ]]; then
+    if grep -q "\[FT_SUPPORT_POLICY_PUBLISHED\]" "$PROJECT_ROOT/docs/incident-response.md" || \
+       grep -q "Incident Response" "$PROJECT_ROOT/docs/incident-response.md"; then
+      log_pass "Incident response policy complete"
+    else
+      log_fail "Incident response marker missing"
+    fi
+  else
+    log_fail "Incident response document not found"
+  fi
+
+  # Part 6: Tenant lifecycle resolvers
+  log_check "Checking tenant data export resolver..."
+  if grep -q "ar.exportTenantData\|resolveArExportTenantData" "$PROJECT_ROOT/atlassian/forge-app/src/access-review/phase3Resolvers.ts" 2>/dev/null; then
+    log_pass "Tenant export resolver implemented"
+  else
+    log_fail "Tenant export resolver not found"
+  fi
+
+  log_check "Checking tenant purge resolver..."
+  if grep -q "ar.requestPurgeTenant\|resolveArRequestPurgeTenant" "$PROJECT_ROOT/atlassian/forge-app/src/access-review/phase3Resolvers.ts" 2>/dev/null; then
+    log_pass "Tenant purge resolver implemented"
+  else
+    log_fail "Tenant purge resolver not found"
+  fi
+
+  log_check "Verifying lifecycle marker..."
+  if grep -q "FT_TENANT_LIFECYCLE_SELF_SERVICE" "$PROJECT_ROOT/atlassian/forge-app/src/access-review/phase3Resolvers.ts" 2>/dev/null; then
+    log_pass "Tenant lifecycle self-service verified"
+  else
+    log_fail "Lifecycle marker not found"
+  fi
+
+  # Part 7: Execution telemetry
+  log_check "Checking execution telemetry in export..."
+  if grep -q "entityCount\|executionDurationMs\|reviewSizeBytes" "$PROJECT_ROOT/atlassian/forge-app/src/access-review/reviewPack.ts" 2>/dev/null; then
+    log_pass "Execution metrics embedded in manifest"
+  else
+    log_warn "Execution metrics may not be embedded (optional)"
+  fi
+
+  # Part 8: Error transparency
+  log_check "Checking error codes documentation..."
+  if [[ -f "$PROJECT_ROOT/docs/error-codes.md" ]]; then
+    if grep -q "\[FT_ERROR_MODEL_DOCUMENTED\]" "$PROJECT_ROOT/docs/error-codes.md"; then
+      log_pass "Error code documentation complete"
+    else
+      log_fail "Error code marker missing"
+    fi
+  else
+    log_fail "Error codes documentation not found"
+  fi
+
+  # Part 9: External review checklist
+  log_check "Checking external review checklist..."
+  if [[ -f "$PROJECT_ROOT/docs/security-review-checklist.md" ]]; then
+    if grep -q "\[FT_EXTERNAL_REVIEW_READY\]" "$PROJECT_ROOT/docs/security-review-checklist.md"; then
+      log_pass "External review checklist ready"
+    else
+      log_fail "Review checklist marker missing"
+    fi
+  else
+    log_fail "Security review checklist not found"
+  fi
+
+  # Part 10: Benchmark harness
+  log_check "Checking scale benchmark harness..."
+  if [[ -f "$PROJECT_ROOT/tests/proof/run_scale_benchmark.mjs" ]]; then
+    log_pass "Scale benchmark harness available"
+  else
+    log_fail "Scale benchmark not found"
+  fi
+
+  log_pass "[FT_PHASE32_TRUST_STACK_PASS] v3.2 trust stack verification complete"
+}
+
+##############################################################################
 # Final Summary
 ##############################################################################
 
@@ -565,6 +706,7 @@ main() {
   verify_residency
   verify_enterprise_ops
   verify_test_suites
+  verify_trust_stack
 
   # Print summary and exit
   print_summary

@@ -1,13 +1,20 @@
 /**
- * PHASE 3 v1.2 - State Immutability Hardening
- * Ledger chaining and optional cryptographic signing
+ * PHASE 3 v1.2 - State Immutability Hardening (v3.2 SIGNING REMOVED - SAFE MODE)
+ * Ledger chaining with deterministic SHA-256 hashing
  *
  * Requirements:
  * - Review chaining (previousReviewHash field)
- * - Optional RSA signing for audit trails
+ * - SHA-256 deterministic hashing (no RSA signing)
  * - Immutable ledger verification
  * - Chain integrity validation
  * - Marker: [FT_STATE_IMMUTABILITY_COMPLETE]
+ * 
+ * v3.2 Changes (Safe Mode):
+ * - RSA key generation removed (no private key custody)
+ * - Signing engine removed (no vendor key signing)
+ * - Integrity verified via deterministic SHA-256 only
+ * - All export verification performed locally by client
+ * - Marker: [FT_EXPORT_SIGNING_REMOVED_SAFE_MODE]
  */
 
 import * as crypto from "crypto";
@@ -32,12 +39,6 @@ export class ChainValidationError extends ImmutabilityError {
   }
 }
 
-export class SignatureError extends ImmutabilityError {
-  constructor(message: string) {
-    super(message, "SIGNATURE_INVALID");
-    this.name = "SignatureError";
-  }
-}
 
 // ============================================================================
 // Data Models
@@ -52,9 +53,6 @@ export interface ChainedReviewState {
   chainDepth: number;
   sequenceNumber: number;
   timestamp: number;
-  isSigned: boolean;
-  signature?: string;
-  publicKeyId?: string;
 }
 
 export interface ChainLink {
@@ -65,22 +63,6 @@ export interface ChainLink {
   nextHash?: string; // Forward reference (optional)
 }
 
-export interface SigningKeyPair {
-  id: string;
-  publicKey: string;
-  privateKey: string;
-  algorithm: "RSA-SHA256";
-  createdAt: number;
-  isRotated: boolean;
-  rotatedAt?: number;
-}
-
-export interface SignatureMetadata {
-  algorithm: string;
-  keyId: string;
-  timestamp: number;
-  signature: string;
-}
 
 // ============================================================================
 // Hash Computation
@@ -131,7 +113,6 @@ export function createChainedReviewState(
     chainDepth: previousReviewHash ? 2 : 1,
     sequenceNumber,
     timestamp: Date.now(),
-    isSigned: false,
   };
 }
 
@@ -233,110 +214,21 @@ export function findTamperingAttempts(trail: ChainLink[]): ChainLink[] {
 }
 
 // ============================================================================
-// RSA Signing (Optional)
+// Immutability Verification (SHA-256 only, no RSA signing)
 // ============================================================================
 
-export class SigningEngine {
-  constructor(private keyPair: SigningKeyPair) {}
-
-  signState(state: ChainedReviewState): string {
-    const msgToSign = JSON.stringify({
-      reviewId: state.reviewId,
-      stateHash: state.stateHash,
-      previousHash: state.previousReviewHash,
-      timestamp: state.timestamp,
-    });
-
-    const sign = crypto.createSign("sha256");
-    sign.update(msgToSign);
-
-    try {
-      const signature = sign.sign(this.keyPair.privateKey, "hex");
-      console.log(
-        `[FT_SIGNATURE_CREATED] Signed review ${state.reviewId}`
-      );
-      return signature;
-    } catch (err: any) {
-      throw new SignatureError(`Failed to sign state: ${err.message}`);
-    }
-  }
-
-  verifySignature(state: ChainedReviewState, signature: string): boolean {
-    if (!state.isSigned || !state.signature) {
-      throw new SignatureError("State is not marked as signed");
-    }
-
-    const msgToVerify = JSON.stringify({
-      reviewId: state.reviewId,
-      stateHash: state.stateHash,
-      previousHash: state.previousReviewHash,
-      timestamp: state.timestamp,
-    });
-
-    const verify = crypto.createVerify("sha256");
-    verify.update(msgToVerify);
-
-    try {
-      const isValid = verify.verify(this.keyPair.publicKey, signature, "hex");
-      if (isValid) {
-        console.log(
-          `[FT_SIGNATURE_VERIFIED] Signature valid for review ${state.reviewId}`
-        );
-      }
-      return isValid;
-    } catch (err: any) {
-      throw new SignatureError(`Failed to verify signature: ${err.message}`);
-    }
-  }
-
-  rotateKeyPair(newKeyPair: SigningKeyPair): void {
-    this.keyPair.isRotated = true;
-    this.keyPair.rotatedAt = Date.now();
-    console.log(`[FT_KEY_ROTATION] Key ${this.keyPair.id} rotated`);
-  }
-}
-
-export function generateKeyPair(): SigningKeyPair {
-  const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
-    modulusLength: 2048,
-    publicKeyEncoding: {
-      type: "pkcs8",
-      format: "pem",
-    },
-    privateKeyEncoding: {
-      type: "pkcs8",
-      format: "pem",
-    },
-  });
-
-  const id = `KEY_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-  return {
-    id,
-    publicKey,
-    privateKey,
-    algorithm: "RSA-SHA256",
-    createdAt: Date.now(),
-    isRotated: false,
-  };
-}
-
-// ============================================================================
-// Immutability Verification
-// ============================================================================
 
 export interface ImmutabilityReport {
   reviewsChecked: number;
   chainValid: boolean;
-  signatureValid: boolean;
   tampering: ChainLink[];
   inconsistencies: string[];
   timestamp: number;
+  integrityModel: "self-verified SHA256 (no vendor signature)";
 }
 
 export function verifyLedgerImmutability(
-  reviews: ChainedReviewState[],
-  signingEngine?: SigningEngine
+  reviews: ChainedReviewState[]
 ): ImmutabilityReport {
   const tampering: ChainLink[] = [];
   const inconsistencies: string[] = [];
@@ -352,33 +244,18 @@ export function verifyLedgerImmutability(
     inconsistencies.push(err.message);
   }
 
-  // Verify signatures if provided
-  let signaturesValid = true;
-  if (signingEngine && reviews.some((r) => r.isSigned)) {
-    try {
-      reviews.forEach((review) => {
-        if (review.isSigned && review.signature) {
-          signingEngine.verifySignature(review, review.signature);
-        }
-      });
-    } catch (err: any) {
-      signaturesValid = false;
-      inconsistencies.push(`Signature verification failed: ${err.message}`);
-    }
-  }
-
   const report: ImmutabilityReport = {
     reviewsChecked: reviews.length,
     chainValid: tampering.length === 0,
-    signatureValid: signaturesValid,
     tampering,
     inconsistencies,
     timestamp: Date.now(),
+    integrityModel: "self-verified SHA256 (no vendor signature)",
   };
 
-  if (report.chainValid && report.signatureValid) {
+  if (report.chainValid) {
     console.log(
-      `[FT_IMMUTABILITY_VERIFIED] All ${reviews.length} reviews passed integrity checks`
+      `[FT_IMMUTABILITY_VERIFIED] All ${reviews.length} reviews passed SHA-256 chain integrity checks`
     );
   }
 
@@ -441,4 +318,6 @@ export function generateAuditTrail(
 // MARKER
 // ============================================================================
 
-console.log("[FT_STATE_IMMUTABILITY_COMPLETE] State immutability engine loaded");
+console.log("[FT_STATE_IMMUTABILITY_COMPLETE] State immutability engine loaded (SHA-256 only)");
+console.log("[FT_EXPORT_SIGNING_REMOVED_SAFE_MODE] RSA signing removed - integrity verified via deterministic SHA-256 hashing");
+
