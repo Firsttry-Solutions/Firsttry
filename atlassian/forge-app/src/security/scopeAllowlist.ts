@@ -6,7 +6,5 @@
 export const SCOPE_ALLOWLIST: string[] = [
   "read:jira-user",
   "read:jira-work",
-  "read:jira-project",
-  "read:jira-configuration",
   "storage:app"
 ];
