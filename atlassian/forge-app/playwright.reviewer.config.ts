@@ -24,7 +24,7 @@ function getUIBundleUrl(): string {
     return process.env.FT_UI_BUNDLE_URL;
   }
   
-  const distPath = path.join(__dirname, 'dist/ui/index.html');
+  const distPath = path.join(__dirname, 'src/gadget-ui/dist/index.html');
   if (fs.existsSync(distPath)) {
     console.log('[REVIEWER_MINIMAL_CONFIG] Using local built bundle:', distPath);
     return `file://${distPath}`;
