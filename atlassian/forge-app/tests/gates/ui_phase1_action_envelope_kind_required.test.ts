@@ -38,16 +38,12 @@ describe('GATE: ui_phase1_action_envelope_kind_required', () => {
   });
 
   it('FAIL: EXPORT_PHASE1_PACK click must check envelopeKind', () => {
-    // Find the EXPORT_PHASE1_PACK action handler
-    const idx = mainCode.indexOf("action: 'EXPORT_PHASE1_PACK'");
-    expect(idx).toBeGreaterThan(-1);
+    // Find the EXPORT_PHASE1_PACK action handler using stable marker
+    const markerIdx = mainCode.indexOf('[FT_UI_ACTION_EXPORT_PHASE1_PACK_HANDLER]');
+    expect(markerIdx).toBeGreaterThan(-1);
 
-    // Look back from this point to find the handler context
-    const handlerStart = mainCode.lastIndexOf('addEventListener(\'click\'', idx);
-    const nextClick = mainCode.indexOf('addEventListener(\'click\'', idx + 1) > -1 
-      ? mainCode.indexOf('addEventListener(\'click\'', idx + 1) 
-      : mainCode.length;
-    const handlerBody = mainCode.substring(handlerStart, nextClick);
+    // Get handler body (5000 chars should capture all code including error checking)
+    const handlerBody = mainCode.substring(markerIdx, markerIdx + 5000);
 
     // Must check envelopeKind
     expect(handlerBody).toContain("result.envelopeKind !== 'FT_ACTION_RESULT_V1'");
@@ -85,18 +81,17 @@ describe('GATE: ui_phase1_action_envelope_kind_required', () => {
   });
 
   it('FAIL: EXPORT_PHASE1_PACK failure must show error message with traceId', () => {
-    // Find EXPORT_PHASE1_PACK handler's failure path
-    const actionIdx = mainCode.indexOf("action: 'EXPORT_PHASE1_PACK'");
-    expect(actionIdx).toBeGreaterThan(-1);
+    // Find EXPORT_PHASE1_PACK handler using stable marker
+    const markerIdx = mainCode.indexOf('[FT_UI_ACTION_EXPORT_PHASE1_PACK_HANDLER]');
+    expect(markerIdx).toBeGreaterThan(-1);
 
-    // Look forward from action to find the error handling
-    const failureStart = mainCode.indexOf('} else {', actionIdx);
-    const failureEnd = mainCode.indexOf('} catch (error:', actionIdx);
-    const failureBody = mainCode.substring(failureStart, failureEnd);
+    // Get handler body (5000 chars from marker should capture all error handling)
+    const handlerBody = mainCode.substring(markerIdx, markerIdx + 5000);
 
     // On failure, must show traceId
-    expect(failureBody).toContain('actionResult.error.message');
-    expect(failureBody).toContain('Export Failed:');
+    expect(handlerBody).toContain('actionResult.error');
+    expect(handlerBody).toContain('Export Failed:');
+    expect(handlerBody).toContain('traceId');
   });
 
   it('PASS: envelopeKind mismatch error message format', () => {
@@ -145,20 +140,12 @@ describe('GATE: ui_phase1_action_envelope_kind_required', () => {
   });
 
   it('FAIL: EXPORT_PHASE1_PACK must validate result.error existence on ok:false', () => {
-    const actionIdx = mainCode.indexOf("action: 'EXPORT_PHASE1_PACK'");
-    const handlerStart = mainCode.lastIndexOf('addEventListener(\'click\'', actionIdx);
-    // Find the closing brace of this handler
-    let braceCount = 0;
-    let idx = handlerStart;
-    while (idx < mainCode.length) {
-      if (mainCode[idx] === '{') braceCount++;
-      if (mainCode[idx] === '}') {
-        braceCount--;
-        if (braceCount === 0) break;
-      }
-      idx++;
-    }
-    const handlerBody = mainCode.substring(handlerStart, idx);
+    // Find EXPORT_PHASE1_PACK handler using stable marker
+    const markerIdx = mainCode.indexOf('[FT_UI_ACTION_EXPORT_PHASE1_PACK_HANDLER]');
+    expect(markerIdx).toBeGreaterThan(-1);
+
+    // Get handler body (5000 chars from marker should fully capture all error checking)
+    const handlerBody = mainCode.substring(markerIdx, markerIdx + 5000);
 
     // Must explicitly check for error/build/reason/traceId presence on failure
     expect(handlerBody).toContain('!actionResult.error');

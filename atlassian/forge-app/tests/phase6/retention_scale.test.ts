@@ -29,6 +29,14 @@ vi.mock('@forge/api', () => ({
     set: vi.fn(),
     get: vi.fn(),
     delete: vi.fn(),
+    list: vi.fn(async function* ({ prefix }) {
+      // Return async iterable of storage items matching prefix
+      for (const item of storageGetManyMockResults) {
+        if (item.key.startsWith(prefix)) {
+          yield item;
+        }
+      }
+    }),
     query: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
         getMany: vi.fn(async () => ({
