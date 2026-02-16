@@ -40,8 +40,6 @@ permissions:
   scopes:
     - read:jira-user
     - read:jira-work
-    - read:jira-project
-    - read:jira-configuration
     - storage:app
 
 resources:
