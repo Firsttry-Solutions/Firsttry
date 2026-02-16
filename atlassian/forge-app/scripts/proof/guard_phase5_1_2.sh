@@ -51,6 +51,63 @@ else
   echo "✅ No Jira POST/PUT/DELETE patterns detected" | tee -a "$RUN_DIR/13_check_mutations.txt"
 fi
 
+# H) Obsolete smoke harness ban (PHASE 5.1.3)
+echo "H) Checking obsolete smoke harness..." | tee "$RUN_DIR/13b_check_harness.txt"
+if test -f tests/export/auditor/packer.smoke.spec.ts && test -f scripts/proof/smoke_generate_packet.mjs; then
+  echo "❌ FAIL: BOTH vitest and mjs smoke harnesses exist (must use only vitest)" | tee -a "$RUN_DIR/13b_check_harness.txt"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+elif test -f scripts/proof/smoke_generate_packet.mjs; then
+  echo "❌ FAIL: Obsolete mjs smoke harness present (use vitest instead)" | tee -a "$RUN_DIR/13b_check_harness.txt"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+else
+  echo "✅ No obsolete smoke harness detected" | tee -a "$RUN_DIR/13b_check_harness.txt"
+fi
+
+# I) Runtime clock ban in auditor path (PHASE 5.1.3)
+echo "I) Scanning for runtime clock in auditor path..." | tee "$RUN_DIR/13c_check_clock.txt"
+if rg -n "new Date\(|toISOString\(" src/export/auditor src/diff src/remediation > "$RUN_DIR/13c_clock_found.txt" 2>&1; then
+  echo "❌ FAIL: Runtime clock detected in auditor path (use buildUtc metadata instead)" | tee -a "$RUN_DIR/13c_check_clock.txt"
+  cat "$RUN_DIR/13c_clock_found.txt" | tee -a "$RUN_DIR/13c_check_clock.txt"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+else
+  echo "✅ No runtime clock in auditor packet path" | tee -a "$RUN_DIR/13c_check_clock.txt"
+fi
+
+# J) Verify HTML download buttons (PHASE 5.1.3)
+echo "J) Checking HTML download buttons..." | tee "$RUN_DIR/13d_check_downloads.txt"
+if rg -q "Download verify\.sh|onclick=\"downloadVerifyS" src/export/auditor/htmlReport.ts; then
+  echo "✅ verify.sh download button present" | tee -a "$RUN_DIR/13d_check_downloads.txt"
+else
+  echo "❌ FAIL: verify.sh download button missing" | tee -a "$RUN_DIR/13d_check_downloads.txt"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+# K) Verify honest trust wording (PHASE 5.1.3)
+echo "K) Checking trust wording..." | tee "$RUN_DIR/13e_check_trust.txt"
+TRUST_FAIL=0
+if rg -qi "tamper-proof|^\\s*immutable|^\\s*unbreakable" src/export/auditor/htmlReport.ts > "$RUN_DIR/13e_trust_fails.txt" 2>&1; then
+  echo "❌ FAIL: Forbidden marketing words found (tamper-proof/immutable/unbreakable)" | tee -a "$RUN_DIR/13e_check_trust.txt"
+  cat "$RUN_DIR/13e_trust_fails.txt" | tee -a "$RUN_DIR/13e_check_trust.txt"
+  TRUST_FAIL=1
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+if ! rg -q "Internal Consistency" src/export/auditor/htmlReport.ts; then
+  echo "❌ FAIL: Missing Internal Consistency wording" | tee -a "$RUN_DIR/13e_check_trust.txt"
+  TRUST_FAIL=1
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+if ! rg -q "Paste expected hash" src/export/auditor/htmlReport.ts; then
+  echo "❌ FAIL: Missing external hash verification UI text" | tee -a "$RUN_DIR/13e_check_trust.txt"
+  TRUST_FAIL=1
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+if [ $TRUST_FAIL -eq 0 ]; then
+  echo "✅ Trust wording is honest and complete" | tee -a "$RUN_DIR/13e_check_trust.txt"
+fi
+
 # E) Check for proof markers
 echo "E) Checking proof markers..." | tee "$RUN_DIR/14_check_markers.txt"
 MARKERS=(
@@ -84,8 +141,8 @@ else
   echo "✅ All required proof markers present" | tee -a "$RUN_DIR/14_check_markers.txt"
 fi
 
-# F) Run tests
-echo "F) Running tests..." | tee "$RUN_DIR/15_tests.txt"
+# L) Run tests
+echo "L) Running tests..." | tee "$RUN_DIR/15_tests.txt"
 if npm test -- tests/diff tests/security tests/remediation >> "$RUN_DIR/15_tests.txt" 2>&1; then
   echo "✅ Tests passed" | tee -a "$RUN_DIR/15_tests.txt"
 else
@@ -93,8 +150,8 @@ else
   FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
-# G) Run build
-echo "G) Running build..." | tee "$RUN_DIR/16_build.txt"
+# M) Run build
+echo "M) Running build..." | tee "$RUN_DIR/16_build.txt"
 if npm run build >> "$RUN_DIR/16_build.txt" 2>&1; then
   echo "✅ Build passed" | tee -a "$RUN_DIR/16_build.txt"
 else

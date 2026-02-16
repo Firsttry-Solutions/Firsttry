@@ -364,7 +364,7 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
                 <!-- Level 2: External Hash Verification -->
                 <div class="level" id="level2">
                     <div class="level-title">Level 2: External Hash Verification</div>
-                    <p>Paste the expected evidence hash (from audit log, ticket, or email) to verify tamper-proofs.</p>
+                    <p>Paste the expected evidence hash (from audit log, ticket, or email) to verify evidence integrity.</p>
                     <label>Expected Evidence SHA-256 Hash:</label>
                     <input type="text" id="externalHash" placeholder="Paste expected hash (64 hex chars)">
                     <button onclick="verifyLevel2()">Verify External Hash</button>
@@ -402,7 +402,7 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
 
         <!-- Footer -->
         <div class="footer">
-            <p>Generated: ${new Date().toISOString()}</p>
+            <p>Generated: ${buildUtc}</p>
             <p>Deployment: FirstTry Auditor Evidence v1.0</p>
             <p>No external networking. Verification runs entirely on your machine.</p>
         </div>
@@ -483,7 +483,7 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
                 if (computedHash === externalHashInput) {
                     document.getElementById("success2").style.display = "block";
                     document.getElementById("success2").innerHTML = 
-                        "✅ VERIFIED: External hash matches evidence hash - tamper-proof!";
+                        "✅ VERIFIED: External hash matches evidence hash - hash match confirmed";
                     document.getElementById("error2").style.display = "none";
                     setStatusBadge("verified", "VERIFIED (EXTERNAL HASH MATCH)");
                 } else {
