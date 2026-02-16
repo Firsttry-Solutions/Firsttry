@@ -1,4 +1,4 @@
-name: Reviewer Gate CI
+name: Reviewer Gate CI (v3.2.8 - UI Runtime Rendering)
 
 on:
   workflow_dispatch:
@@ -16,24 +16,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'atlassian/forge-app/package-lock.json'
       
-      - name: Install dependencies
+      - name: Show versions
+        run: |
+          echo "Node: $(node -v)"
+          echo "npm: $(npm -v)"
+      
+      - name: Install Playwright dependencies
         run: |
           cd atlassian/forge-app
           npm ci
+      
+      - name: Build gadget UI distribution
+        run: |
+          cd atlassian/forge-app
+          npm run build
+      
+      - name: Verify dist was built
+        run: |
+          if [[ ! -f atlassian/forge-app/src/gadget-ui/dist/index.html ]]; then
+            echo "ERROR: dist/index.html not found after npm run build"
+            exit 1
+          fi
+          echo "✓ dist/index.html exists"
       
       - name: Install Playwright browsers with system dependencies
         run: |
           cd atlassian/forge-app
           npx playwright install chromium --with-deps
       
-      - name: Run reviewer gate (CI strict)
+      - name: Run reviewer gate (CI strict - no fallback, real browser rendering)
         id: gate
         run: |
           bash scripts/proof/ship_reviewer_gate_ci.sh
@@ -52,12 +70,39 @@ jobs:
             echo "WARNING: No evidence directory found" > artifacts/reviewer_gate_ci/WARNING.txt
           fi
       
-      - name: Copy Playwright report (if generated)
+      - name: Copy Playwright artifacts (if generated)
         if: always()
         run: |
           if [[ -d atlassian/forge-app/playwright-report ]]; then
             mkdir -p artifacts/playwright_report
             cp -r atlassian/forge-app/playwright-report/* artifacts/playwright_report/ || true
+            echo "Copied playwright-report"
+          fi
+          if [[ -d atlassian/forge-app/test-results ]]; then
+            mkdir -p artifacts/test_results  
+            cp -r atlassian/forge-app/test-results/* artifacts/test_results/ || true
+            echo "Copied test-results"
+          fi
+      
+      - name: Upload evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reviewer_gate_ci_evidence
+          path: artifacts/
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: Gate result
+        if: always()
+        run: |
+          if [[ "${{ steps.gate.outcome }}" == "success" ]]; then
+            echo "✓ Reviewer gate PASSED"
+            exit 0
+          else
+            echo "✗ Reviewer gate FAILED"
+            exit 1
+          fi
           fi
       
       - name: Copy test results (if generated)
