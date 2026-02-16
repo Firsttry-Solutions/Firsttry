@@ -2,7 +2,7 @@
  * Phase 2: Ring buffer for drift history (max 180 entries).
  */
 
-import api from "@forge/api";
+import { storage } from "@forge/api";
 import { DriftBufferEntry } from "../continuous-drift/types";
 
 const BUFFER_KEY = "phase2.driftBuffer";
@@ -22,8 +22,6 @@ export async function storeDriftBufferEntry(
   isNearLimit: boolean;
   isCritical: boolean;
 }> {
-  const storage = api.asApp().requestStorage();
-
   // Load existing buffer
   let buffer: DriftBufferEntry[] = [];
   try {
@@ -87,8 +85,6 @@ export async function storeDriftBufferEntry(
  * Get drift count from last 30 days
  */
 export async function getDriftCountLast30Days(): Promise<number> {
-  const storage = api.asApp().requestStorage();
-
   try {
     const bufferStr = await storage.get(BUFFER_KEY);
     if (!bufferStr) {
@@ -118,8 +114,6 @@ export async function getDriftCountLast30Days(): Promise<number> {
  * Load full buffer
  */
 export async function loadDriftBuffer(): Promise<DriftBufferEntry[]> {
-  const storage = api.asApp().requestStorage();
-
   try {
     const bufferStr = await storage.get(BUFFER_KEY);
     if (!bufferStr) {

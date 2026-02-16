@@ -3,7 +3,7 @@
  * Provides health data to UI dashboard
  */
 
-import api from "@forge/api";
+import { storage } from "@forge/api";
 import { MonitoringHealth } from "./types";
 import { getDriftCountLast30Days, loadDriftBuffer } from "../storage/ringBuffer";
 
@@ -13,7 +13,7 @@ const HEALTH_KEY = "phase2.health";
  * Get current monitoring health status
  */
 export async function getMonitoringHealth(): Promise<MonitoringHealth> {
-  const storage = api.asApp().requestStorage();
+  console.log("[FT_PROOF_DRIFT_HEALTH_STORAGE_API_OK]", { marker: "FT_PROOF_DRIFT_HEALTH_STORAGE_API_OK" });
 
   try {
     const healthStr = await storage.get(HEALTH_KEY);
@@ -21,6 +21,7 @@ export async function getMonitoringHealth(): Promise<MonitoringHealth> {
       return JSON.parse(healthStr);
     }
   } catch (err) {
+    console.error("[FT_PROOF_DRIFT_HEALTH_STORAGE_API_FAIL]", { marker: "FT_PROOF_DRIFT_HEALTH_STORAGE_API_FAIL" }, err);
     console.error(`[FT_DRIFT_HEALTH_LOAD_FAILED]`, err);
   }
 
@@ -55,7 +56,6 @@ export async function getHealthSummary(): Promise<MonitoringHealth & { bufferEnt
  * Update health status (internal use)
  */
 export async function updateHealth(updates: Partial<MonitoringHealth>): Promise<void> {
-  const storage = api.asApp().requestStorage();
   const currentHealth = await getMonitoringHealth();
 
   const newHealth: MonitoringHealth = {
@@ -67,6 +67,7 @@ export async function updateHealth(updates: Partial<MonitoringHealth>): Promise<
     await storage.set(HEALTH_KEY, JSON.stringify(newHealth));
     console.log(`[FT_DRIFT_HEALTH_UPDATED] status=${newHealth.status}`);
   } catch (err) {
+    console.error("[FT_PROOF_DRIFT_HEALTH_STORAGE_API_FAIL]", { marker: "FT_PROOF_DRIFT_HEALTH_STORAGE_API_FAIL" }, err);
     console.error(`[FT_DRIFT_HEALTH_UPDATE_FAILED]`, err);
   }
 }
