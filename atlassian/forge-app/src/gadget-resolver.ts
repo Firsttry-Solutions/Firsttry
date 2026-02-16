@@ -61,6 +61,7 @@ import {
   hardErrorEnvelope,
   FtDashEnvelopeV1,
   enforceDashEnvelopeV1Invariant,
+  FtDashboardContext,
 } from './contracts/ft_dash_envelope_v1';
 
 // Create single canonical resolver instance
@@ -919,48 +920,61 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
     // STEP 2: No action present - return normal dashboard state
     
     // ENTERPRISE PROOF PACK: Extract dashboard context (non-PII)
-    const dashboardId = request?.payload?.dashboardId || request?.dashboardId || 'MISSING';
-    const dashboardPath = request?.payload?.dashboardPath || request?.dashboardPath || 'MISSING';
-    const cloudId = request?.context?.cloudId || 'MISSING';
+    // BACKBONE FIX: Use null instead of "MISSING" placeholder strings
+    const dashboardId = request?.payload?.dashboardId || request?.dashboardId || null;
+    const dashboardPath = request?.payload?.dashboardPath || request?.dashboardPath || null;
+    const cloudId = request?.context?.cloudId || null;
     
     // Validate dashboardId format (fail-closed)
-    // Rule: If MISSING, keep as MISSING. Otherwise must match \d{1,10} or becomes INVALID.
-    const dashboardIdValid = dashboardId === 'MISSING' || /^\d{1,10}$/.test(dashboardId);
-    if (!dashboardIdValid) {
+    // Rule: If null, keep as null. If string, must match \d{1,10} or becomes null with reason code.
+    const dashboardIdValid = dashboardId === null || /^\d{1,10}$/.test(dashboardId);
+    let contextReasonCode: string | undefined;
+    let dashboardIdFinal = dashboardId;
+    
+    if (dashboardId !== null && !dashboardIdValid) {
       console.log(JSON.stringify({
         marker: '[FT_DASHBOARD_CONTEXT_INVALID]',
         dashboardId,
-        reason: 'Invalid dashboardId format (expected digits only, max 10 chars, or MISSING)',
+        reason: 'Invalid dashboardId format (expected digits only, max 10 chars, or null)',
         ts: new Date().toISOString(),
       }));
+      dashboardIdFinal = null;
+      contextReasonCode = 'DASHBOARD_CONTEXT_INVALID';
     }
     
-    // Compute tenantHashPrefix: sha256(cloudId).slice(0,12)
+    // Compute tenantHashPrefix: sha256(cloudId).slice(0,12) or null if cloudId unavailable
     const tenantHashPrefix = await (async () => {
-      if (cloudId === 'MISSING') return 'MISSING';
+      if (cloudId === null) return null;
       try {
         const crypto = require('crypto');
         const hash = crypto.createHash('sha256').update(cloudId).digest('hex');
         return hash.slice(0, 12);
       } catch (e) {
         console.error('[FT_TENANT_HASH_FAILED]', e);
-        return 'HASH_FAILED';
+        return null;
       }
     })();
     
-    // Build dashboard context for envelope (preserve MISSING, never use INVALID)
-    // Phase 2 fix: dashboardId comes from view.getContext() (frontend), preserve as-is
-    const dashboardContext = {
-      dashboardId,  // Keep as-is: either actual ID or "MISSING"
+    if (tenantHashPrefix === null && !contextReasonCode) {
+      contextReasonCode = 'DASHBOARD_CONTEXT_UNAVAILABLE';
+    }
+    
+    // Build dashboard context for envelope (use null instead of MISSING)
+    // BACKBONE FIX: Never use placeholder strings like "MISSING", use null + reason code
+    const dashboardContext: FtDashboardContext = {
+      dashboardId: dashboardIdFinal,
       tenantHashPrefix,
       dashboardPath,
+      contextReasonCode,
     };
     
+    // Log proof marker for contract truth
     console.log(JSON.stringify({
-      marker: '[FT_DASHBOARD_CONTEXT]',
+      marker: '[FT_DASHBOARD_CONTEXT_CONTRACT_OK]',
       dashboardId: dashboardContext.dashboardId,
       tenantHashPrefix: dashboardContext.tenantHashPrefix,
       dashboardPath: dashboardContext.dashboardPath,
+      contextReasonCode: dashboardContext.contextReasonCode,
       ts: new Date().toISOString(),
     }));
     
