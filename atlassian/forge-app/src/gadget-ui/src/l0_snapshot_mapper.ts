@@ -302,6 +302,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
 
   const container = document.createElement("div");
   container.className = "l0-dashboard-container";
+  container.setAttribute("data-testid", "ft-dashboard-root");
 
   // Aria-live region for state announcements (polite mode - doesn't interrupt user)
   const liveRegion = document.createElement("div");
@@ -373,6 +374,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     
     const runAccessBtn = document.createElement("button");
     runAccessBtn.id = "ft-run-access-review-btn";
+    runAccessBtn.setAttribute("data-testid", "ft-tab-access-reviews");
     runAccessBtn.textContent = "Run Access Review (Phase 1)";
     runAccessBtn.style.padding = "10px 15px";
     runAccessBtn.style.backgroundColor = "#0052CC";
@@ -387,6 +389,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     
     const exportAccessBtn = document.createElement("button");
     exportAccessBtn.id = "ft-export-access-pack-btn";
+    exportAccessBtn.setAttribute("data-testid", "ft-export-review-pack");
     exportAccessBtn.textContent = "Export Phase 1 Pack";
     exportAccessBtn.style.padding = "10px 15px";
     exportAccessBtn.style.backgroundColor = "#36B37E";
