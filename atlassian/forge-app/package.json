@@ -97,6 +97,7 @@
     "@types/react": "^18.2.21",
     "@vitest/ui": "^4.0.16",
     "glob": "^13.0.0",
+    "http-server": "14.1.1",
     "typescript": "^5.0.0",
     "uuid": "^13.0.0",
     "vitest": "^4.0.16",
