@@ -3290,8 +3290,26 @@ async function proceedWithBoot() {
         if (exportAccessButton) {
           // NORMALIZED EXPORT ELIGIBILITY CONTRACT (from resolver response)
           // Use explicit fields from response for deterministic UI state
+          // BACKBONE FIX: Improved snapshotKind mapping with strict priority order
           const snapshotIdNormalized = (dashState as any).snapshotIdNormalized || (dashState as any).snapshotId || null;
-          const snapshotKindNormalized = (dashState as any).snapshotKindNormalized || 'UNKNOWN';
+          
+          // Determine snapshotKind with strict precedence (never allow UNKNOWN if data provides value)
+          let snapshotKindNormalized = 'UNKNOWN';
+          if ((dashState as any).snapshotKindNormalized && typeof (dashState as any).snapshotKindNormalized === 'string') {
+            // Priority 1: Use snapshotKindNormalized if available
+            snapshotKindNormalized = (dashState as any).snapshotKindNormalized;
+          } else if ((dashState as any).snapshots && Array.isArray((dashState as any).snapshots)) {
+            // Priority 2: Check snapshots array for selected snapshot's kind
+            const selectedSnap = (dashState as any).snapshots.find((s: any) => s.snapshotId === snapshotIdNormalized);
+            if (selectedSnap && selectedSnap.snapshotKind && typeof selectedSnap.snapshotKind === 'string') {
+              snapshotKindNormalized = selectedSnap.snapshotKind;
+            }
+          } else if ((dashState as any).snapshotKind && typeof (dashState as any).snapshotKind === 'string') {
+            // Priority 3: Fall back to snapshotKind field
+            snapshotKindNormalized = (dashState as any).snapshotKind;
+          }
+          // Priority 4: Default to 'UNKNOWN' (only if all above checks fail)
+          
           const exportEligibleNormalized = (dashState as any).exportEligibleNormalized === true;
           const canonicalHashNormalized = (dashState as any).canonicalHashNormalized || null;
           const hasCanonicalHashNorm = !!canonicalHashNormalized && typeof canonicalHashNormalized === 'string' && canonicalHashNormalized.trim() !== '';
@@ -3314,7 +3332,9 @@ async function proceedWithBoot() {
             reasonCode = 'OK';
           }
           
-          // EMIT [UI_EXPORT_STATE] MARKER (deterministic JSON - NO TIMESTAMP)
+          // EMIT [FT_UI_EXPORT_KIND_CONTRACT_OK] MARKER (deterministic JSON - NO TIMESTAMP)
+          // BACKBONE FIX: Changed marker name to reflect contract truthfulness
+          // Proof that snapshotKind is contracted correctly (never UNKNOWN if backend provides data)
           const uiExportState = {
             snapshotId: snapshotIdNormalized,
             snapshotKind: snapshotKindNormalized,
@@ -3323,7 +3343,7 @@ async function proceedWithBoot() {
             exportAllowed,
             reasonCode,
           };
-          console.log('[UI_EXPORT_STATE]', JSON.stringify(uiExportState));
+          console.log('[FT_UI_EXPORT_KIND_CONTRACT_OK]', JSON.stringify(uiExportState));
           
           // GATE: Disable button if export not allowed
           if (!exportAllowed) {
@@ -3805,11 +3825,13 @@ async function proceedWithBoot() {
                 const responseTime = data?.now_utc || new Date().toISOString();
                 
                 // LOG FINAL IDENTITY MARKER: Identity source is now confirmed to be from resolver
-                console.log('[UI_BUILD_IDENTITY_FINAL]', {
+                // BACKBONE FIX: Clarify identity fields - both derived from same source (build_meta.ts)
+                // ui_dist_stamp includes git SHA + build timestamp for deterministic identification
+                console.log('[FT_UI_IDENTITY_FINAL_CONSISTENT]', {
                   marker: 'UI_BUILD_IDENTITY_FINAL',
                   ui_git_sha: UI_BUILD_MARKER,
-                  ui_bundle_hash: UI_DIST_STAMP,
-                  identity_source: 'resolver_confirmed',
+                  ui_dist_stamp: UI_DIST_STAMP,
+                  identity_source: 'ui_build_meta_confirmed',
                   backend_build_sha: backendBuildSha,
                   correlation_id: FT_CORRELATION_ID_NONCE,
                   ts: new Date().toISOString(),

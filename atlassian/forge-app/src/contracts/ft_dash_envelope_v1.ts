@@ -25,10 +25,12 @@ export type FtDashErrorV1 = {
 };
 
 // Dashboard context for enterprise proof pack (non-PII)
+// BACKBONE FIX: Allow null values + add contextReasonCode for transparency
 export type FtDashboardContext = {
-  dashboardId: string;           // Jira dashboard ID (e.g., "10102")
-  tenantHashPrefix: string;      // First 12 chars of sha256(cloudId)
-  dashboardPath: string;         // Dashboard path (e.g., "/jira/dashboards/10102")
+  dashboardId: string | null;           // Jira dashboard ID (e.g., "10102") or null if unavailable
+  tenantHashPrefix: string | null;      // First 12 chars of sha256(cloudId) or null if unavailable
+  dashboardPath: string | null;         // Dashboard path (e.g., "/jira/dashboards/10102") or null if unavailable
+  contextReasonCode?: string;           // Optional: reason code if any field is null (e.g., "DASHBOARD_CONTEXT_UNAVAILABLE")
 };
 
 export interface FtDashEnvelopeV1<T = unknown> {
