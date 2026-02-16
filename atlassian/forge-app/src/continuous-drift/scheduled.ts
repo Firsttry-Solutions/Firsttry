@@ -4,6 +4,7 @@
  */
 
 import api from "@forge/api";
+import { storage } from "@forge/api";
 import { runDriftScan } from "./detector";
 import { sendAlerts } from "./alerting";
 import { updateHealth, getMonitoringHealth } from "./health";
@@ -16,8 +17,8 @@ const TIME_BUDGET_MS = 240 * 1000; // 240 seconds
  */
 export const run = async (): Promise<void> => {
   console.log(`[FT_DRIFT_SCHEDULED_START]`);
+  console.log("[FT_PROOF_DRIFT_STORAGE_API_OK]", { marker:"FT_PROOF_DRIFT_STORAGE_API_OK" });
   const startTime = Date.now();
-  const storage = api.asApp().requestStorage();
 
   try {
     // Run drift scan with time budget check
@@ -60,7 +61,13 @@ export const run = async (): Promise<void> => {
 
     // Load config and send alerts
     try {
-      const configStr = await storage.get("phase2.config.webhooks");
+      let configStr;
+      try {
+        configStr = await storage.get("phase2.config.webhooks");
+      } catch (storageErr: any) {
+        console.error("[FT_PROOF_DRIFT_STORAGE_API_FAIL]", { marker:"FT_PROOF_DRIFT_STORAGE_API_FAIL", err: String(storageErr) });
+        throw storageErr;
+      }
       let config: MonitoringConfig = { allowedDomains: [], webhooks: {} };
 
       if (configStr) {
