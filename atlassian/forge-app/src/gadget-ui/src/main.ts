@@ -3285,30 +3285,56 @@ async function proceedWithBoot() {
           });
         }
 
+        // BACKBONE FIX v4.2.2.5: Pure function for deterministic snapshotKind resolution
+        // Single source of truth for export kind precedence logic
+        // CRITICAL: Never return UNKNOWN if any backend signal exists
+        function resolveSnapshotKindForExport(data: any): "SEED" | "GOVERNANCE" | "UNKNOWN" {
+          if (!data || typeof data !== 'object') return 'UNKNOWN';
+          
+          // Priority 1: If snapshotKindNormalized exists and is SEED or GOVERNANCE, use it
+          if (data.snapshotKindNormalized && typeof data.snapshotKindNormalized === 'string') {
+            const normalized = data.snapshotKindNormalized.toUpperCase();
+            if (normalized === 'SEED') return 'SEED';
+            if (normalized === 'GOVERNANCE') return 'GOVERNANCE';
+          }
+          
+          // Priority 2: If snapshotId exists and snapshots array has matching snapshot, use that snapshotKind
+          const snapshotId = data.snapshotId || data.snapshotIdNormalized;
+          if (snapshotId && data.snapshots && Array.isArray(data.snapshots)) {
+            const matched = data.snapshots.find((s: any) => s.snapshotId === snapshotId);
+            if (matched && matched.snapshotKind && typeof matched.snapshotKind === 'string') {
+              const kind = matched.snapshotKind.toUpperCase();
+              if (kind === 'SEED') return 'SEED';
+              if (kind === 'GOVERNANCE') return 'GOVERNANCE';
+            }
+          }
+          
+          // Priority 3: If snapshotId ends with "-seed" suffix, treat as SEED
+          if (snapshotId && typeof snapshotId === 'string' && snapshotId.toLowerCase().endsWith('-seed')) {
+            return 'SEED';
+          }
+          
+          // Priority 4: Fall back to direct snapshotKind field if available
+          if (data.snapshotKind && typeof data.snapshotKind === 'string') {
+            const kind = data.snapshotKind.toUpperCase();
+            if (kind === 'SEED') return 'SEED';
+            if (kind === 'GOVERNANCE') return 'GOVERNANCE';
+          }
+          
+          // Priority 5: Default to UNKNOWN only if no signal exists
+          return 'UNKNOWN';
+        }
+        
         // PHASE 1: Attach event listener for "Export Phase 1 Pack" button
         const exportAccessButton = document.getElementById('ft-export-access-pack-btn') as HTMLButtonElement | null;
         if (exportAccessButton) {
           // NORMALIZED EXPORT ELIGIBILITY CONTRACT (from resolver response)
           // Use explicit fields from response for deterministic UI state
-          // BACKBONE FIX: Improved snapshotKind mapping with strict priority order
           const snapshotIdNormalized = (dashState as any).snapshotIdNormalized || (dashState as any).snapshotId || null;
           
-          // Determine snapshotKind with strict precedence (never allow UNKNOWN if data provides value)
-          let snapshotKindNormalized = 'UNKNOWN';
-          if ((dashState as any).snapshotKindNormalized && typeof (dashState as any).snapshotKindNormalized === 'string') {
-            // Priority 1: Use snapshotKindNormalized if available
-            snapshotKindNormalized = (dashState as any).snapshotKindNormalized;
-          } else if ((dashState as any).snapshots && Array.isArray((dashState as any).snapshots)) {
-            // Priority 2: Check snapshots array for selected snapshot's kind
-            const selectedSnap = (dashState as any).snapshots.find((s: any) => s.snapshotId === snapshotIdNormalized);
-            if (selectedSnap && selectedSnap.snapshotKind && typeof selectedSnap.snapshotKind === 'string') {
-              snapshotKindNormalized = selectedSnap.snapshotKind;
-            }
-          } else if ((dashState as any).snapshotKind && typeof (dashState as any).snapshotKind === 'string') {
-            // Priority 3: Fall back to snapshotKind field
-            snapshotKindNormalized = (dashState as any).snapshotKind;
-          }
-          // Priority 4: Default to 'UNKNOWN' (only if all above checks fail)
+          // Determine snapshotKind using deterministic resolver (pure function)
+          // This function has strict precedence: never returns UNKNOWN if backend provides data
+          const snapshotKindNormalized = resolveSnapshotKindForExport(dashState as any);
           
           const exportEligibleNormalized = (dashState as any).exportEligibleNormalized === true;
           const canonicalHashNormalized = (dashState as any).canonicalHashNormalized || null;
