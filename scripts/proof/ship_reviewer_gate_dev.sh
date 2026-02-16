@@ -152,7 +152,7 @@ META_EOF
   # ========================================================================
   log_info ""
   log_info "GATE 5/10: Docs sanitizer (strict, accurate)..."
-  if bash "$SCRIPT_DIR/guard_docs_sanitizer_v3.sh"; then
+  if bash "$SCRIPT_DIR/sanitize_docs_claims_v3.sh"; then
     log_pass "Docs sanitizer passed"
   else
     log_fail "DOCS_SANITIZER_FAILED"
