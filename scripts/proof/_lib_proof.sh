@@ -46,6 +46,11 @@ log_fail() {
   echo -e "${RED}[FAIL]${NC} $msg" >&2
 }
 
+log_warn() {
+  local msg="$1"
+  echo -e "${YELLOW}[WARN]${NC} $msg"
+}
+
 log_marker() {
   local marker="$1"
   echo "[${marker}]"
@@ -132,6 +137,6 @@ assert_marker_in_output() {
 # Export for sourcing
 ##############################################################################
 
-export die warn log_info log_pass log_fail log_marker
+export die warn log_info log_pass log_fail log_warn log_marker
 export need_cmd mk_evidence_dir require_clean_git tee_to
 export assert_marker_in_output
