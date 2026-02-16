@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "3.0.0",
+  "siteId": "ari:cloud:jira::site/12345678-1234-1234-1234-123456789abc",
+  "privilegeContext": "ADMIN",
+  "ruleSetVersion": "phase-3-review-set-v1",
+  "buildShaShort": "f5041c20",
+  "phaseIdentifier": "phase-3-review-pack"
+}

@@ -1,0 +1,26 @@
+/**
+ * Expected Phase 4.2.2.1 Proof Markers
+ * These markers are produced by automated tests, guards, and verification scripts.
+ * They indicate which safety properties have been verified.
+ */
+
+export const EXPECTED_PROOF_MARKERS: string[] = [
+  "[FT_EXPORT_GOLDEN_TEST_PASS]",
+  "[FT_HASH_INVARIANT_PASS]",
+  "[FT_TENANT_INVARIANT_ENFORCED]",
+  "[FT_TENANT_NEGATIVE_TEST_PASS]",
+  "[FT_SCOPE_REGRESSION_TEST_PASS]",
+  "[FT_FAILURE_PATH_COMPLETE]",
+  "[FT_STORAGE_KEY_REGISTRY_PASS]",
+  "[FT_STORAGE_INVENTORY_VERIFIED]",
+  "[FT_OUTBOUND_REGRESSION_PASS]",
+  "[FT_NODE_VERSION_GUARD_PASS]",
+  "[FT_PDF_DETERMINISM_DOC_GUARD_PASS]",
+  "[FT_DETERMINISTIC_BUILD_VERIFIED]",
+  "[FT_SCOPE_SET_UNCHANGED]",
+  "[FT_REVIEW_PACK_GOLDEN_TEST_PASS]",
+  "[FT_EXPORT_SCHEMA_LOCK_PASS]",
+  "[FT_SCOPE_RATIONALE_PASS]",
+  "[FT_SCALE_ENVELOPE_LOCAL_PROOF_PASS]",
+  "[FT_REVIEWER_BUNDLE_BUILT]"
+];

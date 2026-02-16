@@ -6,6 +6,19 @@
 
 ---
 
+## Important Limitations (Tested Locally, Not Exhaustively Validated at Production Scale)
+
+**Testing Methodology**: All limits are tested locally with **synthetic fixtures only**. Actual Forge runtime behavior, rate limits, and timeout enforcement may differ from local testing results.
+
+**Deployment Caveat**: Forge runtime limits, timeouts, and rate limits are external controls not managed by this vendor. Local scale envelope proof demonstrates *intended* behavior constraints but cannot guarantee runtime behavior in Atlassian-managed infrastructure.
+
+**Verification**: See:
+  - [tests/security/failureCompleteness.spec.ts](../atlassian/forge-app/tests/security/failureCompleteness.spec.ts) - Local failure mode testing
+  - [scripts/proof/verify_deterministic_build.sh](../scripts/proof/verify_deterministic_build.sh) - Automated verification
+  - [scripts/proof/guard_no_new_outbound.sh](../scripts/proof/guard_no_new_outbound.sh) - Network isolation confirmation
+
+---
+
 ## Executive Summary
 
 FirstTry Access Review system implements deterministic scale envelopes to enforce resource boundaries and prevent abuse. All limits are tested, verified, and documented below.
