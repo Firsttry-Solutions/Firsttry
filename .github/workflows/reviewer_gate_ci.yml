@@ -1,0 +1,88 @@
+name: Reviewer Gate CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  reviewer-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'atlassian/forge-app/package-lock.json'
+      
+      - name: Install dependencies
+        run: |
+          cd atlassian/forge-app
+          npm ci
+      
+      - name: Install Playwright browsers with system dependencies
+        run: |
+          cd atlassian/forge-app
+          npx playwright install chromium --with-deps
+      
+      - name: Run reviewer gate (CI strict)
+        id: gate
+        run: |
+          bash scripts/proof/ship_reviewer_gate_ci.sh
+      
+      - name: Copy evidence artifacts
+        if: always()
+        run: |
+          # Find latest evidence directory and copy to workspace
+          LATEST_EVIDENCE=$(ls -td /tmp/ft_reviewer_gate_ci_* 2>/dev/null | head -1)
+          if [[ -n "$LATEST_EVIDENCE" ]]; then
+            mkdir -p artifacts/reviewer_gate_ci
+            cp -r "$LATEST_EVIDENCE"/* artifacts/reviewer_gate_ci/ || true
+            echo "Copied evidence from: $LATEST_EVIDENCE"
+          else
+            mkdir -p artifacts/reviewer_gate_ci
+            echo "WARNING: No evidence directory found" > artifacts/reviewer_gate_ci/WARNING.txt
+          fi
+      
+      - name: Copy Playwright report (if generated)
+        if: always()
+        run: |
+          if [[ -d atlassian/forge-app/playwright-report ]]; then
+            mkdir -p artifacts/playwright_report
+            cp -r atlassian/forge-app/playwright-report/* artifacts/playwright_report/ || true
+          fi
+      
+      - name: Copy test results (if generated)
+        if: always()
+        run: |
+          if [[ -d atlassian/forge-app/test-results ]]; then
+            mkdir -p artifacts/test_results
+            cp -r atlassian/forge-app/test-results/* artifacts/test_results/ || true
+          fi
+      
+      - name: Upload evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reviewer_gate_ci_evidence
+          path: artifacts/
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: Gate result summary
+        if: always()
+        run: |
+          if [[ -f artifacts/reviewer_gate_ci/90_result.txt ]]; then
+            echo "==================================================================="
+            echo "REVIEWER GATE RESULT SUMMARY"
+            echo "==================================================================="
+            cat artifacts/reviewer_gate_ci/90_result.txt
+          fi
