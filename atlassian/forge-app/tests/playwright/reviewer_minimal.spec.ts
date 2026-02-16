@@ -19,9 +19,12 @@
  * - Retries: 0 (fail-closed)
  * - Timeout: 30s per test
  * - No external dependencies (no Jira auth, no prod environment needed)
+ * - Can use local built bundle via file:// URL
  */
 
 import { test, expect } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // ============================================================================
 // TEST CONFIGURATION
@@ -33,9 +36,27 @@ interface ReviewerMinimalTestContext {
 }
 
 // ============================================================================
-// SETUP: Define UI bundle URL (local dev or provided via env)
+// SETUP: Determine UI bundle URL
+// Supports: http://localhost:3000, file:// URL to built bundle, or env var
 // ============================================================================
-const UI_BUNDLE_URL = process.env.FT_UI_BUNDLE_URL || 'http://localhost:3000';
+function getUIBundleUrl(): string {
+  // Priority 1: env var (explicit override)
+  if (process.env.FT_UI_BUNDLE_URL) {
+    return process.env.FT_UI_BUNDLE_URL;
+  }
+  
+  // Priority 2: Try to find built UI bundle
+  const distPath = path.join(__dirname, '../../dist/ui/index.html');
+  if (fs.existsSync(distPath)) {
+    console.log('[REVIEWER_MINIMAL] Using local built bundle:', distPath);
+    return `file://${distPath}`;
+  }
+  
+  // Priority 3: Assume dev server on localhost:3000
+  return 'http://localhost:3000';
+}
+
+const UI_BUNDLE_URL = getUIBundleUrl();
 
 // Mock data markers that the UI should inject
 const DATA_TESTID_MARKERS = {
