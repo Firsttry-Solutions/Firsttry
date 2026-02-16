@@ -3407,6 +3407,16 @@ async function proceedWithBoot() {
                 if (exportData && exportData.ok && exportData.zipBase64) {
                   console.log('[PHASE1_EXPORT_SUCCESS]', { hash: exportData.zipHash, fileCount: exportData.fileCount });
                   
+                  // Create success marker (for test detection)
+                  let successMarker = document.querySelector('[data-testid="ft-export-success"]');
+                  if (!successMarker) {
+                    successMarker = document.createElement('div');
+                    successMarker.setAttribute('data-testid', 'ft-export-success');
+                    successMarker.style.display = 'none'; // Hidden from UI but present for test detection
+                    successMarker.textContent = exportData.traceId || 'success';
+                    document.body.appendChild(successMarker);
+                  }
+                  
                   // Trigger download
                   const binaryString = atob(exportData.zipBase64);
                   const bytes = new Uint8Array(binaryString.length);
