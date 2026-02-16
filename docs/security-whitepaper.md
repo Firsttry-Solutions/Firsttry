@@ -405,3 +405,20 @@ For security questions or concerns, please use the in-app support form in your J
 ---
 
 **This document is public and may be shared with security auditors, customers, and regulators.**
+
+---
+
+## Phase 4.2.1 Determinism & Governance Addendum
+
+Deterministic guarantees assume consistent runtime and build environment as defined in reproducible build documentation.
+
+Timestamps are excluded from deterministic hash inputs where required; exported timestamps remain visible for audit trails.
+
+This scoring model is heuristic and intended for governance prioritization, not actuarial or financial risk quantification.
+
+Control mappings to frameworks (e.g., SOC 2, NIST, ISO) are internal interpretive references and are not validated or certified by any external body.
+
+---
+
+**Phase**: 4.2.1  
+**Updated**: 2026-02-16

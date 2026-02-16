@@ -105,6 +105,10 @@ jobs:
           fi
           fi
       
+      - name: Verify deterministic build lockdown
+        run: |
+          bash scripts/proof/verify_deterministic_build.sh
+
       - name: Copy test results (if generated)
         if: always()
         run: |
