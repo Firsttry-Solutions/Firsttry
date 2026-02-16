@@ -1,0 +1,20 @@
+{
+  "waiverVersion": "1.0",
+  "dateUtc": "2026-02-16T15:25:15.479Z",
+  "reason": "forge-scope-validation-failure",
+  "descriptionHuman": "Forge platform rejected two scopes as invalid (read:jira-project, read:jira-configuration). Code inspection confirms these scopes are placeholders/unused. Removed invalid scopes; retained all valid scopes required by existing code.",
+  "oldScopesSorted": [
+    "read:jira-configuration",
+    "read:jira-project",
+    "read:jira-user",
+    "read:jira-work",
+    "storage:app"
+  ],
+  "newScopesSorted": [
+    "read:jira-user",
+    "read:jira-work",
+    "storage:app"
+  ],
+  "notes": "No new capabilities added. App remains read-only. No Jira write/mutation APIs introduced. Scope removal eliminates validation errors only.",
+  "complianceStatement": "This scope change is a necessity fix, not a feature addition. No SOC2/ISO/pentest/certification claims made."
+}
