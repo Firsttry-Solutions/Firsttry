@@ -46,7 +46,7 @@ function getUIBundleUrl(): string {
   }
   
   // Priority 2: Try to find built UI bundle
-  const distPath = path.join(__dirname, '../../dist/ui/index.html');
+  const distPath = path.join(__dirname, '../../src/gadget-ui/dist/index.html');
   if (fs.existsSync(distPath)) {
     console.log('[REVIEWER_MINIMAL] Using local built bundle:', distPath);
     return `file://${distPath}`;
