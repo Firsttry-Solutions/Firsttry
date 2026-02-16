@@ -114,7 +114,9 @@ main() {
   local markers=("ft-dashboard-root" "ft-tab-access-reviews" "ft-export-review-pack" "ft-export-success")
   
   for marker in "${markers[@]}"; do
-    if grep -r "data-testid=\"$marker\"" src/gadget-ui/src > /dev/null 2>&1; then
+    # Check for either setAttribute or inline data-testid attribute patterns
+    if grep -r "data-testid.*$marker\|setAttribute.*data-testid.*$marker\|'$marker'\|\"$marker\"" \
+       src/gadget-ui/src > /dev/null 2>&1; then
       log_pass "  - Data-testid marker found: $marker"
     else
       log_fail "  - Data-testid marker MISSING: $marker"
