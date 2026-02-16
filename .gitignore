@@ -190,3 +190,10 @@ proof_artifacts/
 audit/enterprise_contract_proof_real/
 audit/enterprise_contract_proof/
 ENTERPRISE_CONTRACT_*.txt
+
+# --- PROOF OUTPUTS (MUST NEVER COMMIT) ---
+npm_test_PROOF.txt
+verify_backbone_l0_PROOF.txt
+
+# --- TEMP EVIDENCE DIRS (MUST NEVER COMMIT) ---
+/tmp/ft_*
