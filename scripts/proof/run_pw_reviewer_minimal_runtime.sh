@@ -95,7 +95,7 @@ main() {
   log_info "Step 5: Executing Playwright tests (reviewer_minimal.spec.ts)..."
   log_info "  - Config: playwright.reviewer.config.ts"
   log_info "  - Tests: 3 (dashboard root, access reviews tab, export button)"
-  log_info "  - Browser: chromium"
+  log_info "  - Browser: chromium-reviewer"
   log_info "  - Reporter: line (compact output)"
   
   log_marker "[FT_PROOF_PW_RUNTIME_EXECUTING]"
@@ -103,7 +103,7 @@ main() {
   if ! npx playwright test \
     --config playwright.reviewer.config.ts \
     tests/playwright/reviewer_minimal.spec.ts \
-    --project=chromium \
+    --project=chromium-reviewer \
     --reporter=line >> "$LOG_FILE" 2>&1; then
     
     log_fail "PW_TESTS_FAILED"
