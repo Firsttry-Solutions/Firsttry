@@ -337,7 +337,7 @@ export function buildRBACContext(
 // Access Control Checks
 // ============================================================================
 
-export function assertCanRecord Decision(
+export function assertCanRecordDecision(
   context: RBACContext,
   snapshot: ReviewerGroupSnapshot
 ): void {
