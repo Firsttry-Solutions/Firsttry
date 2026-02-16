@@ -7,7 +7,7 @@
  *            releaseLock() idempotent (safe to call multiple times).
  */
 
-import api from "@forge/api";
+import { storage } from "@forge/api";
 import crypto from "crypto";
 import { FTError, ftFailClosed } from "../errors";
 
@@ -86,7 +86,6 @@ export async function acquireLock(
   buildShaShort: string,
   ttlSeconds = LOCK_TTL_SECONDS
 ): Promise<boolean> {
-  const storage = api.asApp().requestStorage();
   const holderId = getHolderId(buildShaShort, invocationStartUtc);
 
   let existingLockJson: string | undefined;
@@ -142,7 +141,6 @@ export async function acquireLock(
  * If lock deletion fails: throws FTError.
  */
 export async function releaseLock(): Promise<void> {
-  const storage = api.asApp().requestStorage();
   try {
     // Check if lock exists first
     const lockJson = await storage.get(LOCK_KEY);

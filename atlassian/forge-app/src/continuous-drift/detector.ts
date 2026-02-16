@@ -5,7 +5,7 @@
  */
 
 import crypto from "crypto";
-import api from "@forge/api";
+import { storage } from "@forge/api";
 import { DriftEvent, DriftScanResult, DriftType, MonitoringConfig } from "./types";
 import { acquireLock, releaseLock } from "../storage/lock";
 import { storeDriftBufferEntry, getDriftCountLast30Days } from "../storage/ringBuffer";
@@ -62,8 +62,8 @@ function getSnapshotHash(snapshot: Snapshot): string {
  */
 export async function runDriftScan(): Promise<DriftScanResult> {
   console.log(`[FT_DRIFT_SCAN_START]`);
+  console.log("[FT_PROOF_DRIFT_DETECTOR_STORAGE_API_OK]", { marker: "FT_PROOF_DRIFT_DETECTOR_STORAGE_API_OK" });
   const startTime = Date.now();
-  const storage = api.asApp().requestStorage();
   const invocationStartUtc = new Date().toISOString();
 
   let lockAcquired = false;
