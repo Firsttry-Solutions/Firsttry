@@ -3361,6 +3361,7 @@ async function proceedWithBoot() {
               try {
                 ensureCorrelationId();
                 
+                // [FT_UI_ACTION_EXPORT_PHASE1_PACK_HANDLER]
                 // === BIND RESOLVER KEY: Use const so marker and invoke are mechanically identical ===
                 const exportResolverKey = 'ft_getDashboardState_v1';
                 const exportActionType = 'EXPORT_PHASE1_PACK';

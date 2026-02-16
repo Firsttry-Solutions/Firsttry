@@ -19,6 +19,8 @@ import api from '@forge/api';
 const { route } = require('@forge/api') as typeof import('@forge/api');
 import type { Snapshot, AccessReport, ConfigInventory } from './models';
 import { computeCanonicalHash, canonicalJsonString } from './canonicalize';
+import { BACKEND_BUILD_SHA } from '../build/backend_build';
+import { BACKEND_BUILD_TIME_UTC } from '../build/buildIdentityBackend.gen';
 import {
   storeSnapshot,
   storeAccessReport,
@@ -44,10 +46,9 @@ function getBuildMetadata(): {
   buildShaShort: string;
   buildUtc: string;
 } {
-  // TODO: These would be injected from CI/CD at build time
-  // For now, use placeholder values
-  const buildShaShort = process.env.BUILD_SHA_SHORT || 'dev00000';
-  const buildUtc = process.env.BUILD_UTC || new Date().toISOString();
+  // Use the injected build SHA from backend_build.ts (populated by build system)
+  const buildShaShort = BACKEND_BUILD_SHA.substring(0, 12) || 'dev00000';
+  const buildUtc = BACKEND_BUILD_TIME_UTC || new Date().toISOString();
 
   return { buildShaShort, buildUtc };
 }

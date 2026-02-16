@@ -9,7 +9,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.ts'],
-    exclude: ['node_modules', 'dist', '**/__mocks__/**'],
+    exclude: ['node_modules', 'dist', '**/__mocks__/**', '**/playwright/**'],
     testTimeout: 10000,
     hookTimeout: 10000,
     setupFiles: ['./vitest.setup.ts'],
