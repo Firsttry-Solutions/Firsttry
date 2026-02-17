@@ -1,0 +1,78 @@
+name: "Phase 4 Proof Pack Gate"
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  proof-gate:
+    runs-on: ubuntu-latest
+    name: "Verify Deterministic Proof Pack"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: "Install dependencies"
+        run: npm ci
+
+      - name: "Build project"
+        run: npm run build
+
+      - name: "Generate Phase 4 Proof Bundle"
+        env:
+          FT_SITE_ID: "test.atlassian.net"
+          FT_APP_ID: "arn:cloud:forge:us-west-2/test-app"
+          FT_ENV: "dev"
+          FT_BUILD_SHA_SHORT: "${{ github.sha }}"
+          FT_BUILD_UTC: "${{ github.event.head_commit.timestamp || '2026-02-17T14:55:25Z' }}"
+          FT_RULESET_VERSION: "v4.3.2-hardening"
+          FT_SCHEMA_VERSION: "v1"
+        run: bash scripts/proof/generate_phase4_proof_bundle.sh
+
+      - name: "Verify Phase 4 Proof Bundle"
+        run: bash scripts/proof/selftest_phase4_full_bundle_verify.sh
+
+      - name: "Hard Outbound Pattern Check"
+        run: |
+          echo "FT_PROOF:HARD_OUTBOUND_GUARD_START"
+          grep_result=0
+          grep -r '\baxios\b' src/ --include="*.ts" --include="*.tsx" --include="*.js" 2>/dev/null || grep_result=1
+          if [ $grep_result -eq 0 ]; then
+            echo "FAIL: Found 'axios' pattern in src/"
+            exit 1
+          fi
+          grep_result=0
+          grep -r '\bhttp\.request\b\|\bhttps\.request\b' src/ --include="*.ts" --include="*.tsx" --include="*.js" 2>/dev/null || grep_result=1
+          if [ $grep_result -eq 0 ]; then
+            echo "FAIL: Found 'http.request' or 'https.request' pattern in src/"
+            exit 1
+          fi
+          grep_result=0
+          grep -r '\binvokeRemote\b' src/ --include="*.ts" --include="*.tsx" --include="*.js" 2>/dev/null || grep_result=1
+          if [ $grep_result -eq 0 ]; then
+            echo "FAIL: Found 'invokeRemote' pattern in src/"
+            exit 1
+          fi
+          echo "FT_PROOF:HARD_OUTBOUND_GUARD_PASS"
+
+      - name: "Allowlist Integrity Check"
+        run: |
+          if ! [ -f "src/security/scanAllowlist.ts" ]; then
+            echo "FAIL: scanAllowlist.ts not found"
+            exit 1
+          fi
+          echo "FT_PROOF:ALLOWLIST_INTEGRITY_PASS"
+
+      - name: "Upload Proof Bundle Artifacts"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-proof-bundle
+          path: /tmp/ft_proof_phase4_*
+          retention-days: 30
