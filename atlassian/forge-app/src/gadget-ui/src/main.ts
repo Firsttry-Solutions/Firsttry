@@ -422,9 +422,11 @@ try {
 async function relayMarkerToBackend(marker: string, extra?: any): Promise<void> {
   try {
     // FLAT PAYLOAD: Invoke expects flat structure, not nested
+    // Proof: Always verify ui_git_sha + ui_req_id are populated
+    console.log("[UI_RELAY_PAYLOAD_PROOF]", JSON.stringify({ ui_git_sha: UI_IDENTITY.ui_git_sha, ui_req_id: FT_UI_REQ_ID }));
     await invoke('ft_uiLogRelay_v1', {
       marker,
-      ui_git_sha: UI_IDENTITY.git_sha,
+      ui_git_sha: UI_IDENTITY.ui_git_sha,
       ui_req_id: FT_UI_REQ_ID,
       extra: extra || {},
     });
