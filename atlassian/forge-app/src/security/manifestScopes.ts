@@ -1,6 +1,6 @@
 /* FT_PROOF:MANIFEST_SCOPES_V1 */
 
-import fs from "fs";
+import * as fs from "fs";
 
 export function extractForgeScopesFromManifestYml(manifestPath: string): string[] {
   const raw = fs.readFileSync(manifestPath, "utf8");

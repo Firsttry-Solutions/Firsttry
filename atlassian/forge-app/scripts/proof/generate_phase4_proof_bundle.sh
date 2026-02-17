@@ -21,13 +21,18 @@ export FT_APP_ROOT="$APP_ROOT"
 npm run build
 
 # FAIL-CLOSED dist entrypoint check (no ambiguity)
-if [ ! -f "dist/security/proof/phase4Bundle.cli.js" ]; then
-  echo "FAIL-CLOSED: expected dist/security/proof/phase4Bundle.cli.js not found."
+# Check both possible output locations (tsc may vary)
+if [ -f "dist/security/proof/phase4Bundle.cli.js" ]; then
+  ENTRY_POINT="dist/security/proof/phase4Bundle.cli.js"
+elif [ -f "dist/proof/phase4Bundle.cli.js" ]; then
+  ENTRY_POINT="dist/proof/phase4Bundle.cli.js"
+else
+  echo "FAIL-CLOSED: expected dist/security/proof/phase4Bundle.cli.js or dist/proof/phase4Bundle.cli.js not found."
   echo "Your build output layout differs. Fix build config or adjust script to correct dist path (do not guess)."
   exit 1
 fi
 
 # Run generator (selftest included)
-node dist/security/proof/phase4Bundle.cli.js
+node "$ENTRY_POINT"
 
 echo "FT_PROOF:PHASE4_BUNDLE_SUCCESS"

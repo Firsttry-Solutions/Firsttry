@@ -1,7 +1,7 @@
 /* FT_PROOF:PHASE4_FULL_BUNDLE_V1 */
 
-import path from "path";
-import fs from "fs";
+import * as path from "path";
+import * as fs from "fs";
 import { canonicalJsonStringify } from "../canonicalJson";
 import { sha256HexBytes, sha256HexCanonicalJson } from "../hash";
 import { ensureDir, sha256HexFileBytes, writeUtf8, readFileBytes } from "../fsHash";
