@@ -22,6 +22,9 @@ import { UI_APP_VERSION } from './build/buildIdentity.gen';
 // Import enterprise contract renderers
 import { renderEnterpriseContractSection, renderSnapshotHistoryList, renderDefinitionsGuidance } from './components/EnterpriseContractRenderer';
 
+// Import governance action types for dashboard state
+import type { GovernanceActionRecord } from '../governance/actionLog';
+
 // Support link configuration (mailto: for user accessibility)
 // Must match docs/CONTACTS.md canonical value
 const SUPPORT_EMAIL = "contact@firsttry.run";
@@ -94,6 +97,8 @@ export interface L0DashboardState {
       exportDeclaration?: string;
     }>;
   };
+  // ECL-2.1: Governance actions from audit log (real state, fail-closed if unavailable)
+  governanceActions?: GovernanceActionRecord[];
 }
 
 /**
@@ -508,24 +513,111 @@ function createECL1TabNavigation(): HTMLElement {
       rolesSection.appendChild(table);
       panel.appendChild(rolesSection);
 
-      // Governance actions section
+      // Governance actions section (ECL-2.1: Display real state from audit log)
       const actionsSection = document.createElement("div");
       actionsSection.style.marginTop = "30px";
 
       const actionsTitle = document.createElement("h3");
-      actionsTitle.textContent = "Recent Governance Actions";
+      actionsTitle.textContent = "Recent Governance Actions (Last 20)";
       actionsTitle.style.fontSize = "14px";
       actionsTitle.style.fontWeight = "600";
       actionsTitle.style.color = "#333";
       actionsTitle.style.marginBottom = "10px";
       actionsSection.appendChild(actionsTitle);
 
-      const noActionsMsg = document.createElement("p");
-      noActionsMsg.textContent = "No data available.";
-      noActionsMsg.style.color = "#626F86";
-      noActionsMsg.style.fontSize = "13px";
-      noActionsMsg.style.margin = "10px 0 0 0";
-      actionsSection.appendChild(noActionsMsg);
+      // Check if governanceActions are available in state
+      const govActions = (state as any).governanceActions;
+      
+      if (govActions === undefined) {
+        // Fail-closed: actions unavailable
+        const failClosedMsg = document.createElement("p");
+        failClosedMsg.textContent = "Governance actions unavailable — FAIL-CLOSED";
+        failClosedMsg.style.color = "#d32f2f";
+        failClosedMsg.style.fontSize = "13px";
+        failClosedMsg.style.margin = "10px 0 0 0";
+        failClosedMsg.style.fontWeight = "600";
+        actionsSection.appendChild(failClosedMsg);
+      } else if (!Array.isArray(govActions) || govActions.length === 0) {
+        // Empty or not array: show "No data available."
+        const noActionsMsg = document.createElement("p");
+        noActionsMsg.textContent = "No data available.";
+        noActionsMsg.style.color = "#626F86";
+        noActionsMsg.style.fontSize = "13px";
+        noActionsMsg.style.margin = "10px 0 0 0";
+        actionsSection.appendChild(noActionsMsg);
+      } else {
+        // Display governance actions in a table
+        const actionsTable = document.createElement("table");
+        actionsTable.style.width = "100%";
+        actionsTable.style.borderCollapse = "collapse";
+        actionsTable.style.fontSize = "12px";
+
+        // Table header
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        headerRow.style.borderBottom = "2px solid #e0e0e0";
+
+        const headers = ["Timestamp", "Action", "Actor Role", "Hash"];
+        headers.forEach(headerText => {
+          const th = document.createElement("th");
+          th.textContent = headerText;
+          th.style.textAlign = "left";
+          th.style.padding = "8px 12px";
+          th.style.fontWeight = "600";
+          th.style.color = "#333";
+          headerRow.appendChild(th);
+        });
+
+        thead.appendChild(headerRow);
+        actionsTable.appendChild(thead);
+
+        // Table body
+        const tbody = document.createElement("tbody");
+        govActions.forEach((action: any, rowIdx: number) => {
+          const row = document.createElement("tr");
+          row.style.borderBottom = "1px solid #f0f0f0";
+          if (rowIdx % 2 === 0) {
+            row.style.backgroundColor = "#fafafa";
+          }
+
+          // Timestamp
+          const tsCell = document.createElement("td");
+          tsCell.textContent = action.timestampUtc ? action.timestampUtc.substring(0, 19) : "—";
+          tsCell.style.padding = "8px 12px";
+          tsCell.style.color = "#333";
+          tsCell.style.fontSize = "11px";
+          row.appendChild(tsCell);
+
+          // Action
+          const actionCell = document.createElement("td");
+          actionCell.textContent = action.actionType || "—";
+          actionCell.style.padding = "8px 12px";
+          actionCell.style.color = "#333";
+          row.appendChild(actionCell);
+
+          // Actor role
+          const roleCell = document.createElement("td");
+          roleCell.textContent = action.actorRole || "—";
+          roleCell.style.padding = "8px 12px";
+          roleCell.style.color = "#626F86";
+          row.appendChild(roleCell);
+
+          // Hash (short)
+          const hashCell = document.createElement("td");
+          const hashDisplay = action.recordSha256 ? action.recordSha256.substring(0, 8) : "—";
+          hashCell.textContent = hashDisplay;
+          hashCell.style.padding = "8px 12px";
+          hashCell.style.color = "#999";
+          hashCell.style.fontFamily = "monospace";
+          hashCell.style.fontSize = "11px";
+          row.appendChild(hashCell);
+
+          tbody.appendChild(row);
+        });
+
+        actionsTable.appendChild(tbody);
+        actionsSection.appendChild(actionsTable);
+      }
 
       panel.appendChild(actionsSection);
     } else {

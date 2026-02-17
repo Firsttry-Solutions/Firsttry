@@ -47,6 +47,7 @@ import { handler as ft_runAccessIntelligence_v1_handler } from './resolvers/ft_r
 import { handler as ft_exportAccessPack_v1_handler } from './resolvers/ft_exportAccessPack_v1'; // PHASE 1
 import { getMonitoringConfig, saveMonitoringConfig } from './resolvers/phase2_config'; // PHASE 2
 import { buildEnterpriseSellabilityPanels } from './enterprise/sellabilityPanels'; // PHASE 5.1.8
+import { listGovernanceActions } from './governance/actionLog'; // ECL-2.1: Audit log reader
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -1297,6 +1298,15 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                   },
                   data: repairedSnapshot.data,
                   dashboardContext,
+                  // ECL-2.1: Fetch last 20 governance actions from audit log (fail-closed)
+                  governanceActions: await (async () => {
+                    try {
+                      return await listGovernanceActions(20);
+                    } catch (err) {
+                      // Fail-closed: if we can't get audit log, fail the entire dashboard
+                      throw new Error(`FT_ECL_AUDIT_LOG_READ_FAILED: Cannot fetch governance actions: ${err}`);
+                    }
+                  })(),
                 };
               }
             }
