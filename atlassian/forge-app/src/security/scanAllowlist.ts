@@ -57,13 +57,3 @@ export const ALLOWLIST: AllowlistedMatch[] = [
     justification: "Internal admin page PDF export from same-page handler. Not outbound."
   }
 ];
-  // Example placeholder:
-  // {
-  //   family: "outbound",
-  //   ruleId: "SCAN_NO_FETCH",
-  //   fileRel: "src/path/to/file.ts",
-  //   line: 123,
-  //   lineMustInclude: "fetch(",
-  //   justification: "Required for Atlassian-provided same-runtime internal call path (no external domains)."
-  // }
-];
