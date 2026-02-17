@@ -185,6 +185,7 @@ echo "Total checks run: $CHECK_NUM" | tee -a "$RUN_DIR/guard_checks.txt"
 
 if [[ $FAIL -eq 0 ]]; then
   echo "✅ ALL CHECKS PASSED" | tee -a "$RUN_DIR/guard_checks.txt"
+  echo "FT_PROOF_GUARD_PHASE5_1_8_PASS_v1" | tee -a "$RUN_DIR/guard_checks.txt"
   exit 0
 else
   echo "❌ CHECKS FAILED" | tee -a "$RUN_DIR/guard_checks.txt"
