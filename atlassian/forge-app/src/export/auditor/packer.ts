@@ -104,9 +104,9 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
     verifyPs1Script,
   });
 
-  // 4b. Two-pass HTML generation: Compute htmlSha256 and rebuild
+  // 4b. Two-pass HTML generation: First hash for temp manifest
   console.log("[FT_PROOF_TWO_PASS_HTML_v1]", { marker: "FT_PROOF_TWO_PASS_HTML_v1" });
-  const htmlSha256 = sha256Hex(htmlContent);
+  const tempHtmlSha256 = sha256Hex(htmlContent);
 
   // Compute verify script hashes (optional, but good for extra verification)
   const verifyShSha256 = sha256Hex(verifyShScript);
@@ -116,7 +116,7 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
   manifest = buildAuditorManifest({
     snapshot: auditableSnapshot,
     evidenceSha256,
-    htmlSha256,
+    htmlSha256: tempHtmlSha256, // Use temp hash to create manifest
     verifyShSha256,
     verifyPs1Sha256,
   });
@@ -128,6 +128,33 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
     verifyShScript,
     verifyPs1Script,
   });
+
+  // 4e. Compute final htmlSha256 from Pass 2 HTML (the actual final HTML)
+  const htmlSha256 = sha256Hex(htmlContent);
+
+  // 4f. If htmlSha256 changed, rebuild manifest and HTML once more for determinism
+  const newManifest = buildAuditorManifest({
+    snapshot: auditableSnapshot,
+    evidenceSha256,
+    htmlSha256,
+    verifyShSha256,
+    verifyPs1Sha256,
+  });
+
+  // Check if manifest changed (would indicate non-convergence)
+  const manifestChanged = JSON.stringify(newManifest) !== JSON.stringify(manifest);
+  if (manifestChanged) {
+    // Rebuild HTML once more with final manifest
+    manifest = newManifest;
+    htmlContent = generateSmartHtmlReport({
+      evidenceJsonString: evidenceJson,
+      manifestJson: manifest,
+      verifyShScript,
+      verifyPs1Script,
+    });
+  } else {
+    manifest = newManifest;
+  }
 
   console.log("[FT_PROOF_PACKER_PACKET_COMPLETE]", {
     marker: "FT_PROOF_PACKER_PACKET_COMPLETE",
