@@ -112,7 +112,7 @@ describe('Retention Enforcement at Scale', () => {
 
       // This should complete without hanging
       const startTime = Date.now();
-      const result = await enforcer.enforceRetention('daily');
+      const result = await enforcer.enforceRetention('daily', new Date().toISOString());
       const duration = Date.now() - startTime;
 
       expect(result.deleted_count).toBeGreaterThanOrEqual(0);
@@ -154,7 +154,7 @@ describe('Retention Enforcement at Scale', () => {
 
       mockStorage.delete.mockResolvedValue(undefined);
 
-      const result = await enforcer.enforceRetention('weekly');
+      const result = await enforcer.enforceRetention('weekly', new Date().toISOString());
       expect(result.deleted_count).toBeGreaterThanOrEqual(0);
     });
 
@@ -207,7 +207,7 @@ describe('Retention Enforcement at Scale', () => {
       mockStorage.set.mockResolvedValue(undefined);
       mockStorage.get.mockResolvedValueOnce(JSON.stringify(policy));
 
-      const result = await enforcer.enforceRetention('daily');
+      const result = await enforcer.enforceRetention('daily', new Date().toISOString());
 
       // Should delete excess snapshots (120 - 90 = 30)
       const expectedDeletions = snapshotsCount - maxRecords;
@@ -255,7 +255,7 @@ describe('Retention Enforcement at Scale', () => {
 
       mockStorage.delete.mockResolvedValue(undefined);
 
-      const result = await enforcer.enforceRetention('daily');
+      const result = await enforcer.enforceRetention('daily', new Date().toISOString());
 
       // Should delete approximately half (90+ day old snapshots)
       expect(result.deleted_count).toBeGreaterThan(30);
@@ -303,7 +303,7 @@ describe('Retention Enforcement at Scale', () => {
       mockStorage.delete.mockResolvedValue(undefined);
 
       // Should complete without memory error
-      const result = await enforcer.enforceRetention('daily');
+      const result = await enforcer.enforceRetention('daily', new Date().toISOString());
       expect(result.deleted_count).toBeGreaterThanOrEqual(0);
     });
   });
@@ -374,7 +374,7 @@ describe('Retention Enforcement at Scale', () => {
 
       // Recent snapshots should not be deleted by age
       // but might be by FIFO if count exceeds limit
-      const result = await enforcer.enforceRetention('daily');
+      const result = await enforcer.enforceRetention('daily', new Date().toISOString());
 
       // With 100 snapshots but max 90, FIFO should delete 10
       // But age-based deletion should not apply
@@ -423,7 +423,7 @@ describe('Retention Enforcement at Scale', () => {
 
       // After retention enforcement, remaining snapshots should have
       // identical hashes (no corruption)
-      const result = await enforcer.enforceRetention('daily');
+      const result = await enforcer.enforceRetention('daily', new Date().toISOString());
 
       // Verify hashes unchanged (they should be identical to originals)
       const remainingCount = snapshots.length - result.deleted_count;
@@ -492,8 +492,8 @@ describe('Retention Enforcement at Scale', () => {
       mockStorage.delete.mockResolvedValue(undefined);
 
       // Run retention for both types
-      const dailyResult = await enforcer.enforceRetention('daily');
-      const weeklyResult = await enforcer.enforceRetention('weekly');
+      const dailyResult = await enforcer.enforceRetention('daily', new Date().toISOString());
+      const weeklyResult = await enforcer.enforceRetention('weekly', new Date().toISOString());
 
       // Both should complete
       expect(dailyResult.deleted_count).toBeGreaterThanOrEqual(0);

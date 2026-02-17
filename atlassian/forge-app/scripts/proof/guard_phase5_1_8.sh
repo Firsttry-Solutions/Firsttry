@@ -125,6 +125,9 @@ MARKERS=(
   "FT_PROOF_CERT_PRECHECK_v1"
   "FT_PROOF_ENTERPRISE_SELLABILITY_PANELS_WIRED_v1"
   "FT_PROOF_LEDGER_SNAPSHOT_MIN_METRICS_v1"
+  "FT_PROOF_LEDGER_APPEND_WIRED_FROM_SNAPSHOT_STORAGE_v1"
+  "FT_PROOF_LEDGER_APPEND_FAIL_CLOSED_v1"
+  "FT_PROOF_TEST_LEDGER_APPEND_FAIL_CLOSED_v1"
 )
 
 MISSING_MARKERS=0
@@ -142,6 +145,19 @@ if [[ $MISSING_MARKERS -eq 0 ]]; then
 else
   echo "Missing $MISSING_MARKERS markers" | tee -a "$RUN_DIR/guard_checks.txt"
   log_check "markers missing (hard fail)" "FAIL"
+fi
+
+# CHECK 6a: Ledger append must be fail-closed (no swallow)
+echo "=== CHECK 6a: Ledger append fail-closed (no swallow) ===" | tee -a "$RUN_DIR/guard_checks.txt"
+if grep -n "FT_PROOF_LEDGER_APPEND_FAIL_CLOSED_v1" src/phase6/snapshot_storage.ts > /dev/null 2>&1; then
+  # Verify no try/catch swallows the ledger append
+  if grep -A 10 "FT_PROOF_LEDGER_APPEND_FAIL_CLOSED_v1" src/phase6/snapshot_storage.ts | grep -E "catch\s*\(" > /dev/null 2>&1; then
+    log_check "ledger append has catch block (hard fail)" "FAIL"
+  else
+    log_check "ledger append fail-closed (no swallow)" "PASS"
+  fi
+else
+  log_check "ledger append marker not found (hard fail)" "FAIL"
 fi
 
 # CHECK 7: Tests passing

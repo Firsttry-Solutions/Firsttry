@@ -18,6 +18,20 @@ import { describe, it, expect } from "vitest";
 import { createUniversalPacket } from "../../../src/export/auditor/packer";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
+
+// FT_PROOF_TEST_RUN_DIR_FALLBACK_v1
+function ensureRunDir(): string {
+  const existing = process.env.RUN_DIR;
+  if (existing && existing.trim().length > 0) return existing;
+
+  const p = path.join(os.tmpdir(), "ft_test_run_dir");
+  fs.mkdirSync(p, { recursive: true });
+  process.env.RUN_DIR = p;
+  return p;
+}
+
+ensureRunDir();
 
 describe("PHASE 5.1.4: Packet E2E Emission (FT_PROOF_PACKET_E2E_EMIT_v1)", () => {
   // Minimal deterministic snapshot for emission test
