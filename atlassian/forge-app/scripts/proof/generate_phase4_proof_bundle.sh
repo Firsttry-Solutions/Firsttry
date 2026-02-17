@@ -20,6 +20,9 @@ export FT_APP_ROOT="$APP_ROOT"
 # Build (dist must exist)
 npm run build
 
+# Ensure proof bundle TypeScript is compiled (npx tsc generates dist/src/...)
+npx tsc --project tsconfig.json --outDir dist 2>/dev/null || true
+
 # FAIL-CLOSED dist entrypoint resolution (deterministic, zero ambiguity)
 ENTRY_POINT=$(bash scripts/proof/resolve_phase4_dist_entrypoint.sh)
 
