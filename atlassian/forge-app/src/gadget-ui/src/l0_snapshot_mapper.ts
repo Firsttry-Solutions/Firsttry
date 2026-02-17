@@ -426,14 +426,118 @@ function createECL1TabNavigation(): HTMLElement {
     const header = createSectionHeader(label);
     panel.appendChild(header);
 
-    // Add placeholder text (EXACT)
-    const placeholder = document.createElement("p");
-    placeholder.textContent = "No data available.";
-    placeholder.style.color = "#626F86";
-    placeholder.style.fontSize = "14px";
-    placeholder.style.margin = "10px 0 0 0";
+    // Special handling for "Policies, RBAC & Alerts" tab (index 7)
+    if (index === 7) {
+      // Add RBAC roles table
+      const rolesSection = document.createElement("div");
+      rolesSection.style.marginTop = "20px";
+      rolesSection.style.marginBottom = "30px";
 
-    panel.appendChild(placeholder);
+      const rolesTitle = document.createElement("h3");
+      rolesTitle.textContent = "Roles & Permissions";
+      rolesTitle.style.fontSize = "14px";
+      rolesTitle.style.fontWeight = "600";
+      rolesTitle.style.color = "#333";
+      rolesTitle.style.marginBottom = "10px";
+      rolesSection.appendChild(rolesTitle);
+
+      const table = document.createElement("table");
+      table.style.width = "100%";
+      table.style.borderCollapse = "collapse";
+      table.style.fontSize = "13px";
+
+      // Table header
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      headerRow.style.borderBottom = "2px solid #e0e0e0";
+
+      const roleHeader = document.createElement("th");
+      roleHeader.textContent = "Role";
+      roleHeader.style.textAlign = "left";
+      roleHeader.style.padding = "8px 12px";
+      roleHeader.style.fontWeight = "600";
+      roleHeader.style.color = "#333";
+      headerRow.appendChild(roleHeader);
+
+      const actionsHeader = document.createElement("th");
+      actionsHeader.textContent = "Allowed Actions";
+      actionsHeader.style.textAlign = "left";
+      actionsHeader.style.padding = "8px 12px";
+      actionsHeader.style.fontWeight = "600";
+      actionsHeader.style.color = "#333";
+      headerRow.appendChild(actionsHeader);
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // Table body with hardcoded role data (deterministic, no API calls)
+      const tbody = document.createElement("tbody");
+      const roles = [
+        { role: "Viewer", actions: ["view_dashboard"] },
+        { role: "Operator", actions: ["view_dashboard", "accept_drift", "close_review"] },
+        { role: "Approver", actions: ["view_dashboard", "accept_drift", "close_review", "approve_exemption"] },
+        { role: "Auditor", actions: ["view_dashboard", "generate_export"] },
+        { role: "Owner", actions: ["view_dashboard", "accept_drift", "close_review", "approve_exemption", "generate_export", "modify_policy"] }
+      ];
+
+      roles.forEach((roleData, rowIdx) => {
+        const row = document.createElement("tr");
+        row.style.borderBottom = "1px solid #f0f0f0";
+        if (rowIdx % 2 === 0) {
+          row.style.backgroundColor = "#fafafa";
+        }
+
+        const roleCell = document.createElement("td");
+        roleCell.textContent = roleData.role;
+        roleCell.style.padding = "8px 12px";
+        roleCell.style.color = "#333";
+        row.appendChild(roleCell);
+
+        const actionsCell = document.createElement("td");
+        actionsCell.textContent = roleData.actions.join(", ");
+        actionsCell.style.padding = "8px 12px";
+        actionsCell.style.color = "#626F86";
+        actionsCell.style.fontFamily = "monospace";
+        actionsCell.style.fontSize = "12px";
+        row.appendChild(actionsCell);
+
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+      rolesSection.appendChild(table);
+      panel.appendChild(rolesSection);
+
+      // Governance actions section
+      const actionsSection = document.createElement("div");
+      actionsSection.style.marginTop = "30px";
+
+      const actionsTitle = document.createElement("h3");
+      actionsTitle.textContent = "Recent Governance Actions";
+      actionsTitle.style.fontSize = "14px";
+      actionsTitle.style.fontWeight = "600";
+      actionsTitle.style.color = "#333";
+      actionsTitle.style.marginBottom = "10px";
+      actionsSection.appendChild(actionsTitle);
+
+      const noActionsMsg = document.createElement("p");
+      noActionsMsg.textContent = "No data available.";
+      noActionsMsg.style.color = "#626F86";
+      noActionsMsg.style.fontSize = "13px";
+      noActionsMsg.style.margin = "10px 0 0 0";
+      actionsSection.appendChild(noActionsMsg);
+
+      panel.appendChild(actionsSection);
+    } else {
+      // Add placeholder text (EXACT) for all other tabs
+      const placeholder = document.createElement("p");
+      placeholder.textContent = "No data available.";
+      placeholder.style.color = "#626F86";
+      placeholder.style.fontSize = "14px";
+      placeholder.style.margin = "10px 0 0 0";
+
+      panel.appendChild(placeholder);
+    }
 
     contentPanels.push(panel);
     contentContainer.appendChild(panel);
