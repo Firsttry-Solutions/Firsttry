@@ -6,6 +6,7 @@
 set -e
 
 CANDIDATES=(
+  "dist/src/security/proof/phase4Bundle.cli.js"
   "dist/security/proof/phase4Bundle.cli.js"
   "dist/proof/phase4Bundle.cli.js"
 )
