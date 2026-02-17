@@ -80,7 +80,11 @@ export async function recordWindowVerify(
   const key = getVerifyAuditKey(tenantKey);
 
   try {
-    const existing = (await getVerifyAudit(tenantKey)) || {};
+    const existing = (await getVerifyAudit(tenantKey)) || {
+      lastFullVerifyAtUtc: null,
+      lastWindowVerifyAtUtc: null,
+      lastWindowStatus: null,
+    };
 
     const updated: VerifyAuditState = {
       lastFullVerifyAtUtc: existing.lastFullVerifyAtUtc || null,
@@ -104,7 +108,11 @@ export async function recordFullVerify(tenantKey: string, observedAtUtc: string)
   const key = getVerifyAuditKey(tenantKey);
 
   try {
-    const existing = (await getVerifyAudit(tenantKey)) || {};
+    const existing = (await getVerifyAudit(tenantKey)) || {
+      lastFullVerifyAtUtc: null,
+      lastWindowVerifyAtUtc: null,
+      lastWindowStatus: null,
+    };
 
     const updated: VerifyAuditState = {
       lastFullVerifyAtUtc: observedAtUtc,
