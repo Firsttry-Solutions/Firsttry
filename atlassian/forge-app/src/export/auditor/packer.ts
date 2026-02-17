@@ -131,6 +131,7 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
 
   // 4e. Compute final htmlSha256 from Pass 2 HTML (the actual final HTML)
   const htmlSha256 = sha256Hex(htmlContent);
+  console.log("[DEBUG_HTML_SHA] Pass 2 htmlSha256:", htmlSha256.substring(0, 16) + "...");
 
   // 4f. If htmlSha256 changed, rebuild manifest and HTML once more for determinism
   const newManifest = buildAuditorManifest({
@@ -143,7 +144,9 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
 
   // Check if manifest changed (would indicate non-convergence)
   const manifestChanged = JSON.stringify(newManifest) !== JSON.stringify(manifest);
+  console.log("[DEBUG_MANIFEST_CHECK] manifestChanged:", manifestChanged);
   if (manifestChanged) {
+    console.log("[DEBUG_REBUILD] Rebuilding HTML with final manifest");
     // Rebuild HTML once more with final manifest
     manifest = newManifest;
     htmlContent = generateSmartHtmlReport({
@@ -152,6 +155,8 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
       verifyShScript,
       verifyPs1Script,
     });
+    const finalHtmlSha = sha256Hex(htmlContent);
+    console.log("[DEBUG_FINAL_HTML_SHA] After manifest sync:", finalHtmlSha.substring(0, 16) + "...");
   } else {
     manifest = newManifest;
   }
