@@ -1,71 +1,43 @@
-/**
- * Manifest Scopes Extractor (dependency-free)
- * Deterministic YAML scope extraction from manifest text
- */
+/* FT_PROOF:MANIFEST_SCOPES_V1 */
 
-export function extractScopesFromManifestText(manifestText: string): string[] {
-  const lines = manifestText.split('\n');
-  const scopes: string[] = [];
-  
-  let inScopesBlock = false;
-  let firstListItemIndent = -1;
+import fs from "fs";
+
+export function extractForgeScopesFromManifestYml(manifestPath: string): string[] {
+  const raw = fs.readFileSync(manifestPath, "utf8");
+  const lines = raw.split(/\r?\n/);
+
+  let scopesLineIdx = -1;
+  let scopesIndent = -1;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    
-    // Look for the scopes: line
-    if (/^\s*scopes:\s*$/.test(line)) {
-      inScopesBlock = true;
-      firstListItemIndent = -1;
-      continue;
-    }
-
-    if (!inScopesBlock) {
-      continue;
-    }
-
-    // If blank line, skip
-    if (/^\s*$/.test(line)) {
-      continue;
-    }
-
-    // Check if this is a list item
-    const listMatch = line.match(/^(\s*)-\s+(.+?)\s*$/);
-    if (listMatch) {
-      const indent = listMatch[1].length;
-      const scope = listMatch[2];
-
-      if (firstListItemIndent === -1) {
-        firstListItemIndent = indent;
-      }
-
-      if (indent === firstListItemIndent) {
-        scopes.push(scope);
-        continue;
-      } else if (indent > firstListItemIndent) {
-        // Nested item, skip
-        continue;
-      } else {
-        // Less indented, end of block
-        break;
-      }
-    }
-
-    // Check for a key at same or higher level (end of block)
-    if (/^[a-zA-Z]/.test(line)) {
-      // Key found at root level, end block
+    const m = lines[i].match(/^(\s*)scopes\s*:\s*$/);
+    if (m) {
+      scopesLineIdx = i;
+      scopesIndent = m[1].length;
       break;
     }
   }
 
-  if (scopes.length === 0 && inScopesBlock) {
-    throw new Error("SCOPES_EMPTY");
+  if (scopesLineIdx < 0) {
+    throw new Error(`Could not find "scopes:" block in manifest: ${manifestPath}`);
   }
 
-  if (!inScopesBlock) {
-    throw new Error("SCOPES_BLOCK_NOT_FOUND");
+  const scopes: string[] = [];
+  for (let i = scopesLineIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    const indent = (line.match(/^(\s*)/)?.[1]?.length ?? 0);
+    const trimmed = line.trim();
+
+    if (trimmed === "" || trimmed.startsWith("#")) continue;
+    if (indent <= scopesIndent) break;
+
+    const item = line.match(/^\s*-\s*([A-Za-z0-9:._-]+)\s*$/);
+    if (item) scopes.push(item[1]);
   }
 
-  // Return sorted unique scopes
-  return [...new Set(scopes)].sort();
+  if (scopes.length === 0) {
+    throw new Error(`Found "scopes:" but no scope items parsed in manifest: ${manifestPath}`);
+  }
+
+  return scopes;
 }
