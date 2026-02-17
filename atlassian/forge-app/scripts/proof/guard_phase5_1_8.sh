@@ -68,8 +68,9 @@ fi
 
 # CHECK 3: Manifest manifest.yml scopes unchanged
 echo "=== CHECK 3: Manifest scopes unchanged ===" | tee -a "$RUN_DIR/guard_checks.txt"
+echo "FT_GUARD_STEP: manifest_scopes_check"
 if [[ -f manifest.yml ]]; then
-  CURRENT_SCOPES=$(grep -A 20 "^scopes:" manifest.yml 2>/dev/null | grep "  - " | sort)
+  CURRENT_SCOPES=$(timeout 10 bash -c 'grep -A 20 "^scopes:" manifest.yml 2>/dev/null | grep "  - " | sort' || echo "")
   if [[ -f "$RUN_DIR/manifest_scopes.before" ]]; then
     BEFORE_SCOPES=$(cat "$RUN_DIR/manifest_scopes.before")
     if [[ "$CURRENT_SCOPES" == "$BEFORE_SCOPES" ]]; then
@@ -162,7 +163,8 @@ fi
 
 # CHECK 7: Tests passing
 echo "=== CHECK 7: Tests passing ===" | tee -a "$RUN_DIR/guard_checks.txt"
-if npm test > "$RUN_DIR/guard_test_output.txt" 2>&1; then
+echo "FT_GUARD_STEP: npm_test"
+if timeout 240 npm test > "$RUN_DIR/guard_test_output.txt" 2>&1; then
   log_check "tests pass" "PASS"
 else
   log_check "tests fail (hard fail)" "FAIL"
@@ -171,7 +173,8 @@ fi
 
 # CHECK 8: Build successful
 echo "=== CHECK 8: Build successful ===" | tee -a "$RUN_DIR/guard_checks.txt"
-if npm run build > "$RUN_DIR/guard_build_output.txt" 2>&1; then
+echo "FT_GUARD_STEP: npm_build"
+if timeout 240 npm run build > "$RUN_DIR/guard_build_output.txt" 2>&1; then
   log_check "build passes" "PASS"
 else
   log_check "build fails (hard fail)" "FAIL"
