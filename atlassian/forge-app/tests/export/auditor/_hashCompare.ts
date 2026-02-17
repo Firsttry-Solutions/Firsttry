@@ -1,20 +1,21 @@
 /**
- * PHASE 5.1.4 E2E Hash Comparison
- * FT_PROOF_HASH_COMPARE_v1: Validates all artifact hashes against manifest
+ * PHASE 5.1.5 E2E Hash Comparison
+ * FT_PROOF_HASH_COMPARE_v1: Validates critical artifact hashes against manifest
+ * FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1: Compares ONLY critical artifacts (evidence + scripts)
  *
  * Computes SHA-256 for:
  * - artifacts/evidence.json
  * - artifacts/verify.sh
  * - artifacts/verify.ps1
- * - FirstTry-Audit-Evidence.html (final HTML bytes)
  *
  * Reads manifest and compares:
  * - evidenceSha256
- * - htmlSha256
  * - verifyShSha256
  * - verifyPs1Sha256
  *
- * Fails if any mismatch.
+ * FAIL if:
+ * - Any critical hash mismatch
+ * - Manifest contains htmlSha256 (disallowed)
  *
  * Usage: node _hashCompare.ts RUN_DIR
  */
@@ -53,7 +54,7 @@ function computeSha256(data: Buffer | string): string {
 }
 
 async function compareHashes(runDir: string): Promise<void> {
-  console.log(`[HashCompare] RUN_DIR: ${runDir}`);
+  console.log(`[FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1] RUN_DIR: ${runDir}`);
 
   // Paths
   const htmlPath = path.join(runDir, "FirstTry-Audit-Evidence.html");
@@ -63,8 +64,7 @@ async function compareHashes(runDir: string): Promise<void> {
   const verifyShPath = path.join(artifactDir, "verify.sh");
   const verifyPs1Path = path.join(artifactDir, "verify.ps1");
 
-  // Verify files exist
-  if (!fs.existsSync(htmlPath)) throw new Error(`HTML not found: ${htmlPath}`);
+  // Verify critical files exist
   if (!fs.existsSync(manifestPath))
     throw new Error(`Manifest not found: ${manifestPath}`);
   if (!fs.existsSync(evidencePath))
@@ -74,31 +74,35 @@ async function compareHashes(runDir: string): Promise<void> {
   if (!fs.existsSync(verifyPs1Path))
     throw new Error(`verify.ps1 not found: ${verifyPs1Path}`);
 
-  console.log(`[HashCompare] Reading manifest...`);
+  console.log(`[FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1] Reading manifest...`);
   const manifestJson = JSON.parse(
     fs.readFileSync(manifestPath, "utf-8")
   ) as Record<string, any>;
 
-  // Expected hashes from manifest
+  // FAIL if manifest contains htmlSha256 (disallowed in Phase 5.1.5)
+  if (manifestJson.htmlSha256) {
+    console.error(
+      `❌ FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1: FAIL - Manifest contains forbidden htmlSha256 field`
+    );
+    console.error(`   This violates the Phase 5.1.5 constraint: HTML is a container, not independently verified`);
+    process.exit(1);
+  }
+
+  // Expected hashes from manifest (CRITICAL artifacts only)
   const expectedEvidenceSha = manifestJson.evidenceSha256;
-  const expectedHtmlSha = manifestJson.htmlSha256;
   const expectedVerifyShSha = manifestJson.verifyShSha256;
   const expectedVerifyPs1Sha = manifestJson.verifyPs1Sha256;
 
   if (!expectedEvidenceSha)
     throw new Error("Manifest missing evidenceSha256");
-  if (!expectedHtmlSha) throw new Error("Manifest missing htmlSha256");
   if (!expectedVerifyShSha) throw new Error("Manifest missing verifyShSha256");
   if (!expectedVerifyPs1Sha) throw new Error("Manifest missing verifyPs1Sha256");
 
-  console.log(`[HashCompare] Computing actual hashes...`);
+  console.log(`[FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1] Computing actual hashes...`);
 
-  // Compute actual hashes
+  // Compute actual hashes (CRITICAL artifacts only)
   const evidenceBytes = fs.readFileSync(evidencePath);
   const actualEvidenceSha = computeSha256(evidenceBytes);
-
-  const htmlBytes = fs.readFileSync(htmlPath);
-  const actualHtmlSha = computeSha256(htmlBytes);
 
   const verifyShBytes = fs.readFileSync(verifyShPath);
   const actualVerifyShSha = computeSha256(verifyShBytes);
@@ -106,19 +110,13 @@ async function compareHashes(runDir: string): Promise<void> {
   const verifyPs1Bytes = fs.readFileSync(verifyPs1Path);
   const actualVerifyPs1Sha = computeSha256(verifyPs1Bytes);
 
-  // Compare
+  // Compare (CRITICAL artifacts only)
   const artifacts = {
     evidence_json: {
       expected: expectedEvidenceSha,
       actual: actualEvidenceSha,
       match: expectedEvidenceSha === actualEvidenceSha,
       size: evidenceBytes.length,
-    },
-    html_report: {
-      expected: expectedHtmlSha,
-      actual: actualHtmlSha,
-      match: expectedHtmlSha === actualHtmlSha,
-      size: htmlBytes.length,
     },
     verify_sh: {
       expected: expectedVerifyShSha,
@@ -134,7 +132,7 @@ async function compareHashes(runDir: string): Promise<void> {
     },
   };
 
-  // Compute summary
+  // Compute summary (CRITICAL artifacts: 3/3)
   const artifactEntries = Object.entries(artifacts);
   const passCount = artifactEntries.filter(([_, a]) => a.match).length;
   const failCount = artifactEntries.length - passCount;
@@ -150,22 +148,12 @@ async function compareHashes(runDir: string): Promise<void> {
     },
   };
 
-  // Print report
-  console.log(`\n[HashCompare] Results:`);
+  // Print report (CRITICAL artifacts only)
+  console.log(`\n[FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1] Results:`);
   console.log(`  evidence.json:    ${report.artifacts.evidence_json.match ? "✅ PASS" : "❌ FAIL"}`);
   if (!report.artifacts.evidence_json.match) {
     console.log(`    Expected: ${report.artifacts.evidence_json.expected}`);
     console.log(`    Actual:   ${report.artifacts.evidence_json.actual}`);
-  }
-
-  console.log(`  HTML report:      ${report.artifacts.html_report.match ? "✅ PASS" : "⚠️  EXPECTED MISMATCH"}`);
-  if (!report.artifacts.html_report.match) {
-    console.log(
-      `    Note: HTML contains manifest with htmlSha256 field, so final HTML hash differs from htmlSha256 value`
-    );
-    console.log(`    Expected: ${report.artifacts.html_report.expected} (from manifest - would be hash of unstamped HTML)`);
-    console.log(`    Actual:   ${report.artifacts.html_report.actual} (final HTML with manifest)`);
-    console.log(`    This is expected behavior in two-pass HTML generation.`);
   }
 
   console.log(`  verify.sh:        ${report.artifacts.verify_sh.match ? "✅ PASS" : "❌ FAIL"}`);
@@ -180,37 +168,30 @@ async function compareHashes(runDir: string): Promise<void> {
     console.log(`    Actual:   ${report.artifacts.verify_ps1.actual}`);
   }
 
-  // Adjusted summary: HTML mismatch is expected behavior
+  // Summary: 3/3 critical artifacts must pass
   const criticalPassed = [
     report.artifacts.evidence_json.match,
     report.artifacts.verify_sh.match,
     report.artifacts.verify_ps1.match,
   ].filter((x) => x).length;
 
-  console.log(`\n[HashCompare] Summary: ${criticalPassed}/3 critical artifacts verified`);
-  console.log(
-    `[HashCompare] HTML: Manifest contains htmlSha256, so final HTML differs (this is expected)`
-  );
+  console.log(`\n[FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1] Summary: ${criticalPassed}/3 critical artifacts verified`);
 
   // Write report
   const reportPath = path.join(runDir, "hash_report.json");
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf-8");
-  console.log(`[HashCompare] Report written to ${reportPath}`);
+  console.log(`[FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1] Report written to ${reportPath}`);
 
-  // Fail if critical artifacts don't match (evidence + scripts must match)
-  // HTML mismatch is expected, so we don't fail on it
-  const criticalFaith = 3 - criticalPassed;
-  if (criticalFaith > 0) {
+  // Fail if critical artifacts don't match (evidence + scripts MUST match)
+  const criticalFailed = 3 - criticalPassed;
+  if (criticalFailed > 0) {
     console.error(
-      `❌ FT_PROOF_HASH_COMPARE_v1: Hash validation FAILED (${criticalFaith} critical mismatches)`
+      `❌ FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1: Hash validation FAILED (${criticalFailed} critical mismatches)`
     );
     process.exit(1);
   }
 
-  console.log(`\n✅ FT_PROOF_HASH_COMPARE_v1: All critical hashes match!`);
-  console.log(
-    `[Note] HTML hash mismatch is expected: manifest contains htmlSha256 field, making final HTML larger`
-  );
+  console.log(`\n✅ FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1: All 3 critical hashes match!`);
 }
 
 // Main

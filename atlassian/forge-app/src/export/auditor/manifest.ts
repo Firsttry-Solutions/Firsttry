@@ -1,10 +1,11 @@
 /**
- * Auditor Manifest: Metadata + Evidence Hash
+ * Auditor Manifest: Metadata + Critical Artifact Hashes (Evidence + Scripts)
  * Enables external verification without outbound networking
+ * HTML is a container only; not integrity-verified.
  *
  * FT_PROOF_AUDITOR_MANIFEST_v1: This module implements the auditor manifest contract
  * FT_PROOF_NO_CIRCULAR_HASH_v1: Evidence hash does NOT include manifest (no circular dependency)
- * FT_PROOF_MANIFEST_ALL_ARTIFACT_HASHES_v1: Manifest includes hashes for all artifacts (evidence, html, scripts)
+ * FT_PROOF_MANIFEST_CRITICAL_ARTIFACTS_ONLY_v1: Manifest hashes only critical artifacts (evidence + scripts), not HTML
  */
 
 export interface AuditorManifest {
@@ -25,14 +26,14 @@ export interface AuditorManifest {
   ruleSetVersion: string;
   privilegeContext: string;
   
-  // Evidence integrity hash (SHA-256 of canonical evidence JSON)
-  // FT_PROOF_NO_CIRCULAR_HASH_v1: This hash is computed BEFORE manifest is created
+  // Critical artifact hashes (SHA-256)
+  // FT_PROOF_NO_CIRCULAR_HASH_v1: evidenceSha256 computed BEFORE manifest is created
   evidenceSha256: string;
+  verifyShSha256: string;  // REQUIRED: hash of verify.sh script
+  verifyPs1Sha256: string; // REQUIRED: hash of verify.ps1 script
   
-  // Optional: Self hashes (for embedded HTML/scripts - removes tamper complaints)
-  htmlSha256?: string;
-  verifyShSha256?: string;
-  verifyPs1Sha256?: string;
+  // NOTE: htmlSha256 removed. HTML is a container/viewer, not integrity-verified.
+  // Integrity proven by extracting and verifying critical artifacts (evidence + scripts).
 }
 
 /**
@@ -43,14 +44,13 @@ export interface AuditorManifest {
 export function buildAuditorManifest(params: {
   snapshot: any; // Must have schemaVersion, siteId, buildShaShort, privilegeContext, ruleSetVersion, meta.buildUtc
   evidenceSha256: string;
-  htmlSha256?: string;
-  verifyShSha256?: string;
-  verifyPs1Sha256?: string;
+  verifyShSha256: string;  // REQUIRED
+  verifyPs1Sha256: string; // REQUIRED
 }): AuditorManifest {
   console.log("[FT_PROOF_AUDITOR_MANIFEST_v1]", { marker: "FT_PROOF_AUDITOR_MANIFEST_v1" });
-  console.log("[FT_PROOF_MANIFEST_ALL_ARTIFACT_HASHES_v1]", { marker: "FT_PROOF_MANIFEST_ALL_ARTIFACT_HASHES_v1" });
+  console.log("[FT_PROOF_MANIFEST_CRITICAL_ARTIFACTS_ONLY_v1]", { marker: "FT_PROOF_MANIFEST_CRITICAL_ARTIFACTS_ONLY_v1" });
 
-  const { snapshot, evidenceSha256, htmlSha256, verifyShSha256, verifyPs1Sha256 } = params;
+  const { snapshot, evidenceSha256, verifyShSha256, verifyPs1Sha256 } = params;
 
   // Validate required metadata
   const required = [
@@ -79,6 +79,14 @@ export function buildAuditorManifest(params: {
     note: "evidenceSha256 computed before manifest; manifest not included in evidence hash",
   });
 
+  // Validate script hashes are present (fail-closed)
+  if (!verifyShSha256) {
+    throw new Error("verifyShSha256 is required (FT_PROOF_MANIFEST_CRITICAL_ARTIFACTS_ONLY_v1)");
+  }
+  if (!verifyPs1Sha256) {
+    throw new Error("verifyPs1Sha256 is required (FT_PROOF_MANIFEST_CRITICAL_ARTIFACTS_ONLY_v1)");
+  }
+
   return {
     schemaVersion: "auditor-manifest@1",
     algorithm: "SHA-256",
@@ -88,7 +96,6 @@ export function buildAuditorManifest(params: {
     ruleSetVersion: snapshot.ruleSetVersion,
     privilegeContext: snapshot.privilegeContext,
     evidenceSha256,
-    htmlSha256,
     verifyShSha256,
     verifyPs1Sha256,
   };

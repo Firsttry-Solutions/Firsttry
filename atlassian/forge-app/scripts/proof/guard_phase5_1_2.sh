@@ -108,79 +108,168 @@ if [ $TRUST_FAIL -eq 0 ]; then
   echo "✅ Trust wording is honest and complete" | tee -a "$RUN_DIR/13e_check_trust.txt"
 fi
 
-# N) Phase 5.1.4: Verify all 4 hashes present in manifest contract
-echo "N) Checking all 4 artifact hashes in manifest..." | tee "$RUN_DIR/14a_check_all_hashes.txt"
+# N) Phase 5.1.5: Verify htmlSha256 is REMOVED from manifest, scripts are REQUIRED
+echo "N) Checking critical-only hash fields in manifest..." | tee "$RUN_DIR/14a_check_critical_hashes.txt"
 HASH_FAIL=0
-for hash_field in "evidenceSha256" "htmlSha256" "verifyShSha256" "verifyPs1Sha256"; do
-  if rg -q "$hash_field" src/export/auditor/manifest.ts; then
-    echo "  ✅ $hash_field field present" | tee -a "$RUN_DIR/14a_check_all_hashes.txt"
-  else
-    echo "  ❌ MISSING: $hash_field field" | tee -a "$RUN_DIR/14a_check_all_hashes.txt"
-    HASH_FAIL=1
-  fi
-done
+
+# evidenceSha256 MUST be present
+if rg -q "evidenceSha256" src/export/auditor/manifest.ts; then
+  echo "  ✅ evidenceSha256 field present (REQUIRED)" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
+else
+  echo "  ❌ MISSING: evidenceSha256 field" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
+  HASH_FAIL=1
+fi
+
+# verifyShSha256 MUST be present (no longer optional)
+if rg -q "verifyShSha256" src/export/auditor/manifest.ts; then
+  echo "  ✅ verifyShSha256 field present (REQUIRED)" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
+else
+  echo "  ❌ MISSING: verifyShSha256 field" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
+  HASH_FAIL=1
+fi
+
+# verifyPs1Sha256 MUST be present (no longer optional)
+if rg -q "verifyPs1Sha256" src/export/auditor/manifest.ts; then
+  echo "  ✅ verifyPs1Sha256 field present (REQUIRED)" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
+else
+  echo "  ❌ MISSING: verifyPs1Sha256 field" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
+  HASH_FAIL=1
+fi
+
+# htmlSha256 MUST NOT be present in interface or function params (only comments OK)
+if rg -q "htmlSha256:" src/export/auditor/manifest.ts || rg -q "htmlSha256\?" src/export/auditor/manifest.ts; then
+  echo "  ❌ FAIL: htmlSha256 field still in interface/params (MUST be removed in Phase 5.1.5)" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
+  rg -n "htmlSha256:\|htmlSha256\?" src/export/auditor/manifest.ts | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
+  HASH_FAIL=1
+else
+  echo "  ✅ htmlSha256 field correctly removed (Phase 5.1.5)" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
+fi
+
 if [ $HASH_FAIL -eq 0 ]; then
-  echo "✅ All 4 artifact hash fields present in manifest" | tee -a "$RUN_DIR/14a_check_all_hashes.txt"
+  echo "✅ Manifest contains only critical artifact hashes (evidence + scripts, no HTML)" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
 else
-  echo "❌ FAIL: Some hash fields missing from manifest" | tee -a "$RUN_DIR/14a_check_all_hashes.txt"
+  echo "❌ FAIL: Critical hash fields incorrect" | tee -a "$RUN_DIR/14a_check_critical_hashes.txt"
   FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
-# O) Phase 5.1.4: Verify verify.sh validates ALL 4 artifacts
-echo "O) Checking verify.sh multi-file validation..." | tee "$RUN_DIR/14b_check_verify_sh.txt"
+# O) Phase 5.1.5: Verify verify.sh validates ONLY critical artifacts (no HTML)
+echo "O) Checking verify.sh validates only critical artifacts..." | tee "$RUN_DIR/14b_check_verify_sh.txt"
 VERIFY_SH_FAIL=0
-for artifact in "evidence.json" "FirstTry-Audit-Evidence.html" "verify.sh" "verify.ps1"; do
-  if rg -q "verifyFile.*$artifact" src/export/auditor/scripts.ts; then
-    echo "  ✅ Validates $artifact" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
-  else
-    echo "  ❌ Missing validation for $artifact" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
-    VERIFY_SH_FAIL=1
-  fi
-done
+
+# MUST validate evidence.json
+if rg -q "verifyFile.*evidence.json" src/export/auditor/scripts.ts; then
+  echo "  ✅ Validates evidence.json" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+else
+  echo "  ❌ Missing validation for evidence.json" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+  VERIFY_SH_FAIL=1
+fi
+
+# MUST validate verify.sh
+if rg -q "verifyFile.*verify.sh" src/export/auditor/scripts.ts; then
+  echo "  ✅ Validates verify.sh" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+else
+  echo "  ❌ Missing validation for verify.sh" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+  VERIFY_SH_FAIL=1
+fi
+
+# MUST validate verify.ps1
+if rg -q "verifyFile.*verify.ps1" src/export/auditor/scripts.ts; then
+  echo "  ✅ Validates verify.ps1" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+else
+  echo "  ❌ Missing validation for verify.ps1" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+  VERIFY_SH_FAIL=1
+fi
+
+# MUST NOT validate HTML (Phase 5.1.5)
+if rg -q "verifyFile.*FirstTry-Audit-Evidence.html" src/export/auditor/scripts.ts; then
+  echo "  ❌ FAIL: verify.sh still validates HTML (MUST remove in Phase 5.1.5)" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+  VERIFY_SH_FAIL=1
+else
+  echo "  ✅ verify.sh correctly excludes HTML verification (Phase 5.1.5)" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+fi
+
 if [ $VERIFY_SH_FAIL -eq 0 ]; then
-  echo "✅ verify.sh validates all 4 artifacts" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+  echo "✅ verify.sh validates exactly 3 critical artifacts (evidence + scripts)" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
 else
-  echo "❌ FAIL: verify.sh missing some artifact validations" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+  echo "❌ FAIL: verify.sh artifact validations incorrect" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
   FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
-# P) Phase 5.1.4: Verify verify.ps1 validates ALL 4 artifacts
-echo "P) Checking verify.ps1 multi-file validation..." | tee "$RUN_DIR/14c_check_verify_ps1.txt"
+# P) Phase 5.1.5: Verify verify.ps1 validates ONLY critical artifacts (no HTML)
+echo "P) Checking verify.ps1 validates only critical artifacts..." | tee "$RUN_DIR/14c_check_verify_ps1.txt"
 VERIFY_PS1_FAIL=0
-for artifact in "evidence.json" "FirstTry-Audit-Evidence.html" "verify.sh" "verify.ps1"; do
-  if rg -q "Verify-ArtifactHash.*$artifact" src/export/auditor/scripts.ts; then
-    echo "  ✅ Validates $artifact" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
-  else
-    echo "  ❌ Missing validation for $artifact" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
-    VERIFY_PS1_FAIL=1
-  fi
-done
-if [ $VERIFY_PS1_FAIL -eq 0 ]; then
-  echo "✅ verify.ps1 validates all 4 artifacts" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+
+# MUST validate evidence.json
+if rg -q "Verify-ArtifactHash.*evidence.json" src/export/auditor/scripts.ts; then
+  echo "  ✅ Validates evidence.json" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
 else
-  echo "❌ FAIL: verify.ps1 missing some artifact validations" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+  echo "  ❌ Missing validation for evidence.json" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+  VERIFY_PS1_FAIL=1
+fi
+
+# MUST validate verify.sh
+if rg -q "Verify-ArtifactHash.*verify.sh" src/export/auditor/scripts.ts; then
+  echo "  ✅ Validates verify.sh" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+else
+  echo "  ❌ Missing validation for verify.sh" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+  VERIFY_PS1_FAIL=1
+fi
+
+# MUST validate verify.ps1
+if rg -q "Verify-ArtifactHash.*verify.ps1" src/export/auditor/scripts.ts; then
+  echo "  ✅ Validates verify.ps1" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+else
+  echo "  ❌ Missing validation for verify.ps1" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+  VERIFY_PS1_FAIL=1
+fi
+
+# MUST NOT validate HTML (Phase 5.1.5)
+if rg -q "Verify-ArtifactHash.*FirstTry-Audit-Evidence.html" src/export/auditor/scripts.ts; then
+  echo "  ❌ FAIL: verify.ps1 still validates HTML (MUST remove in Phase 5.1.5)" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+  VERIFY_PS1_FAIL=1
+else
+  echo "  ✅ verify.ps1 correctly excludes HTML verification (Phase 5.1.5)" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+fi
+
+if [ $VERIFY_PS1_FAIL -eq 0 ]; then
+  echo "✅ verify.ps1 validates exactly 3 critical artifacts (evidence + scripts)" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+else
+  echo "❌ FAIL: verify.ps1 artifact validations incorrect" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
   FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
-# Q) Phase 5.1.4: Verify htmlReport has BOTH trust model markers
-echo "Q) Checking htmlReport.ts trust model & auditor layout..." | tee "$RUN_DIR/14d_check_html_markers.txt"
+# Q) Phase 5.1.5: Verify htmlReport has CONTAINER trust model marker (not DISCLOSURE)
+echo "Q) Checking htmlReport.ts trust model marker (Phase 5.1.5)..." | tee "$RUN_DIR/14d_check_html_markers.txt"
 TRUST_MARKERS_FAIL=0
-if rg -q "FT_PROOF_TRUST_MODEL_DISCLOSURE_v1" src/export/auditor/htmlReport.ts; then
-  echo "  ✅ FT_PROOF_TRUST_MODEL_DISCLOSURE_v1 present" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+
+# MUST have the new CONTAINER marker (Phase 5.1.5)
+if rg -q "FT_PROOF_TRUST_MODEL_CONTAINER_DISCLOSURE_v1" src/export/auditor/htmlReport.ts; then
+  echo "  ✅ FT_PROOF_TRUST_MODEL_CONTAINER_DISCLOSURE_v1 present (Phase 5.1.5)" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
 else
-  echo "  ❌ MISSING: FT_PROOF_TRUST_MODEL_DISCLOSURE_v1" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+  echo "  ❌ MISSING: FT_PROOF_TRUST_MODEL_CONTAINER_DISCLOSURE_v1 (Phase 5.1.5)" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
   TRUST_MARKERS_FAIL=1
 fi
+
+# MUST still have auditor layout marker
 if rg -q "FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1" src/export/auditor/htmlReport.ts; then
   echo "  ✅ FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1 present" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
 else
   echo "  ❌ MISSING: FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
   TRUST_MARKERS_FAIL=1
 fi
+
+# MUST NOT have the old DISCLOSURE marker (replaced in Phase 5.1.5)
+if ! rg -q "FT_PROOF_TRUST_MODEL_DISCLOSURE_v1[^_]" src/export/auditor/htmlReport.ts; then
+  echo "  ✅ Old FT_PROOF_TRUST_MODEL_DISCLOSURE_v1 properly replaced/removed" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+elif rg -q "FT_PROOF_TRUST_MODEL_DISCLOSURE_v1[^_]" src/export/auditor/htmlReport.ts | grep -v "CONTAINER_DISCLOSURE"; then
+  echo "  ❌ Old FT_PROOF_TRUST_MODEL_DISCLOSURE_v1 still present (should be CONTAINER_DISCLOSURE)" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+  TRUST_MARKERS_FAIL=1
+fi
+
 if [ $TRUST_MARKERS_FAIL -eq 0 ]; then
-  echo "✅ htmlReport has both trust model disclosure + auditor layout" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+  echo "✅ htmlReport has correct Phase 5.1.5 trust model marker (CONTAINER)" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
 else
-  echo "❌ FAIL: htmlReport missing required Phase 5.1.4 markers" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+  echo "❌ FAIL: htmlReport trust model markers incorrect" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
   FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
@@ -206,6 +295,59 @@ else
   FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
+# S) Phase 5.1.5: Ban htmlSha256 from auditor codebase (allow validation checks in tests)
+echo "S) Checking htmlSha256 is removed (Phase 5.1.5)..." | tee "$RUN_DIR/15_check_no_html_sha.txt"
+HTML_SHA_FOUND=0
+
+# Check src/export/auditor - htmlSha256 MUST NOT appear (except in comments explaining removal)
+if rg -q "htmlSha256[^]" src/export/auditor | grep -v "NOTE: html" | grep -v "# Remove" | grep -v "Phase 5.1.5"; then
+  echo "❌ FAIL: htmlSha256 still present in auditor code (Phase 5.1.5 removal)" | tee -a "$RUN_DIR/15_check_no_html_sha.txt"
+  rg -n "htmlSha256" src/export/auditor | grep -v "NOTE: html" | grep -v "# Remove" | grep -v "Phase 5.1.5" | tee -a "$RUN_DIR/15_check_no_html_sha.txt"
+  HTML_SHA_FOUND=1
+else
+  echo "  ✅ htmlSha256 not in src/export/auditor implementation code" | tee -a "$RUN_DIR/15_check_no_html_sha.txt"
+fi
+
+# Check tests - htmlSha256 is allowed ONLY in fail-closed validation checks (if statements that REJECT it)
+# Count actual usage vs validation
+HTML_SHA_ACTUAL_USAGE=$(rg -c "htmlSha256" tests/export/auditor 2>/dev/null || echo 0)
+HTML_SHA_VALIDATION=$(rg -c "if.*htmlSha256.*FAIL" tests/export/auditor 2>/dev/null || echo 0)
+
+if [ "$HTML_SHA_ACTUAL_USAGE" -gt 0 ] && [ "$HTML_SHA_VALIDATION" -eq 0 ]; then
+  echo "❌ FAIL: htmlSha256 found in tests outside of validation checks (Phase 5.1.5)" | tee -a "$RUN_DIR/15_check_no_html_sha.txt"
+  HTML_SHA_FOUND=1
+else
+  if [ "$HTML_SHA_VALIDATION" -gt 0 ]; then
+    echo "  ✅ htmlSha256 in tests only for fail-closed validation (correct)" | tee -a "$RUN_DIR/15_check_no_html_sha.txt"
+  else
+    echo "  ✅ htmlSha256 not in tests" | tee -a "$RUN_DIR/15_check_no_html_sha.txt"
+  fi
+fi
+
+if [ $HTML_SHA_FOUND -eq 0 ]; then
+  echo "✅ htmlSha256 correctly removed/restricted (Phase 5.1.5)" | tee -a "$RUN_DIR/15_check_no_html_sha.txt"
+else
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+# T) Phase 5.1.5: Ban "expected mismatch" logic from _hashCompare
+echo "T) Checking mismatch tolerance logic removed (Phase 5.1.5)..." | tee "$RUN_DIR/15_check_no_mismatch.txt"
+MISMATCH_FOUND=0
+
+if rg -qi "expected.*mismatch|this is expected" tests/export/auditor/_hashCompare.ts; then
+  echo "❌ FAIL: 'expected mismatch' tolerance logic still in _hashCompare.ts (Phase 5.1.5 removal)" | tee -a "$RUN_DIR/15_check_no_mismatch.txt"
+  rg -n "expected|mismatch" tests/export/auditor/_hashCompare.ts | tee -a "$RUN_DIR/15_check_no_mismatch.txt"
+  MISMATCH_FOUND=1
+else
+  echo "  ✅ Mismatch tolerance logic removed" | tee -a "$RUN_DIR/15_check_no_mismatch.txt"
+fi
+
+if [ $MISMATCH_FOUND -eq 0 ]; then
+  echo "✅ E2E harness correctly rejects any mismatches (Phase 5.1.5)" | tee -a "$RUN_DIR/15_check_no_mismatch.txt"
+else
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
 # E) Check for proof markers
 echo "E) Checking proof markers..." | tee "$RUN_DIR/14_check_markers.txt"
 MARKERS=(
@@ -220,20 +362,31 @@ MARKERS=(
   "FT_PROOF_DIFF_ENGINE_v1"
   "FT_PROOF_SHADOW_ADMIN_v1"
   "FT_PROOF_REVERT_GENERATOR_v1"
-  "FT_PROOF_MANIFEST_ALL_ARTIFACT_HASHES_v1"
-  "FT_PROOF_PACKER_ALL_HASHES_v1"
-  "FT_PROOF_VERIFY_ALL_ARTIFACTS_v1"
-  "FT_PROOF_TRUST_MODEL_DISCLOSURE_v1"
+  "FT_PROOF_MANIFEST_CRITICAL_ARTIFACTS_ONLY_v1"
+  "FT_PROOF_PACKER_NO_HTML_HASH_v1"
+  "FT_PROOF_VERIFY_CRITICAL_ARTIFACTS_ONLY_v1"
+  "FT_PROOF_HASH_COMPARE_CRITICAL_ONLY_v1"
+  "FT_PROOF_TRUST_MODEL_CONTAINER_DISCLOSURE_v1"
   "FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1"
 )
 
 MISSING_MARKERS=0
 for marker in "${MARKERS[@]}"; do
-  if rg -q "$marker" src/export/auditor src/diff src/security src/remediation; then
-    echo "  ✅ $marker" | tee -a "$RUN_DIR/14_check_markers.txt"
+  # E2E markers (hash compare) are in tests, others are in src
+  if [[ "$marker" == *"HASH_COMPARE"* ]]; then
+    if rg -q "$marker" tests/export/auditor; then
+      echo "  ✅ $marker" | tee -a "$RUN_DIR/14_check_markers.txt"
+    else
+      echo "  ❌ MISSING: $marker" | tee -a "$RUN_DIR/14_check_markers.txt"
+      MISSING_MARKERS=$((MISSING_MARKERS + 1))
+    fi
   else
-    echo "  ❌ MISSING: $marker" | tee -a "$RUN_DIR/14_check_markers.txt"
-    MISSING_MARKERS=$((MISSING_MARKERS + 1))
+    if rg -q "$marker" src/export/auditor src/diff src/security src/remediation; then
+      echo "  ✅ $marker" | tee -a "$RUN_DIR/14_check_markers.txt"
+    else
+      echo "  ❌ MISSING: $marker" | tee -a "$RUN_DIR/14_check_markers.txt"
+      MISSING_MARKERS=$((MISSING_MARKERS + 1))
+    fi
   fi
 done
 
