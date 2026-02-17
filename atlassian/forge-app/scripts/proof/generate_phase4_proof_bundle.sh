@@ -17,9 +17,28 @@ cd "$APP_ROOT"
 
 export FT_APP_ROOT="$APP_ROOT"
 
-# Build: gadget + TypeScript compilation for proof bundle
+# Build: gadget (required)
 npm run build
-npm run build:ts
+
+# Clean up unwanted duplicate proof bundle paths (ensure deterministic resolver)
+# We want ONLY dist/src/security/proof/ - remove all other locations
+rm -rf dist/proof dist/security
+
+# Compile proof bundle TypeScript files to dist/src/security/
+# (selective compilation avoids errors in unrelated codebase)
+npx tsc \
+  src/security/sourceScan.ts \
+  src/security/scanAllowlist.ts \
+  src/security/proof/phase4Bundle.ts \
+  src/security/proof/phase4Bundle.cli.ts \
+  src/security/canonicalJson.ts \
+  src/security/hash.ts \
+  src/security/fsHash.ts \
+  src/security/manifestScopes.ts \
+  --module commonjs --target ES2020 --lib ES2020,DOM \
+  --declaration --sourceMap --outDir dist \
+  --strict false --esModuleInterop --skipLibCheck \
+  --forceConsistentCasingInFileNames
 
 # FAIL-CLOSED dist entrypoint resolution (deterministic, zero ambiguity)
 ENTRY="$(bash scripts/proof/resolve_phase4_dist_entrypoint.sh)"
