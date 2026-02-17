@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# STEP 0: Isolated compile directory (no reuse, no repo dist mutation)
+UTC="$(date -u +%Y%m%dT%H%M%SZ)"
+PROOF_BUILD_DIR="/tmp/ft_phase4_build_${UTC}"
+mkdir -p "$PROOF_BUILD_DIR"
+echo "FT_PROOF:PHASE4_BUILD_DIR=$PROOF_BUILD_DIR"
+
 echo "FT_PROOF:PHASE4_BUNDLE_START"
 
 APP_ROOT="/workspaces/Firsttry/atlassian/forge-app"
@@ -20,12 +26,8 @@ export FT_APP_ROOT="$APP_ROOT"
 # Build: gadget (required)
 npm run build
 
-# Clean up unwanted duplicate proof bundle paths (ensure deterministic resolver)
-# We want ONLY dist/src/security/proof/ - remove all other locations
-rm -rf dist/proof dist/security
-
-# Compile proof bundle TypeScript files to dist/src/security/
-# (selective compilation avoids errors in unrelated codebase)
+# STEP 2: Deterministic compile of ONLY Phase 4 proof-pack sources into isolated output
+# No dependency on repo-wide compilation. No mutation of repo dist.
 npx tsc \
   src/security/sourceScan.ts \
   src/security/scanAllowlist.ts \
@@ -35,16 +37,23 @@ npx tsc \
   src/security/hash.ts \
   src/security/fsHash.ts \
   src/security/manifestScopes.ts \
-  --module commonjs --target ES2020 --lib ES2020,DOM \
-  --declaration --sourceMap --outDir dist \
-  --strict false --esModuleInterop --skipLibCheck \
+  --module commonjs \
+  --target ES2020 \
+  --lib ES2020,DOM \
+  --declaration false \
+  --sourceMap false \
+  --outDir "$PROOF_BUILD_DIR/dist" \
+  --strict false \
+  --esModuleInterop \
+  --skipLibCheck \
   --forceConsistentCasingInFileNames
 
-# Remove any multiple paths again (tsc should not create them, but be defensive)
-rm -rf dist/proof dist/security
+# STEP 3: Run CLI from deterministic location (no repo dist mutation)
+export FT_APP_ROOT="/workspaces/Firsttry/atlassian/forge-app"
+# Note: tsc outputs individual files to --outDir root, not preserving source structure
+ENTRY="$PROOF_BUILD_DIR/dist/proof/phase4Bundle.cli.js"
+test -f "$ENTRY" || { echo "FAIL-CLOSED: missing compiled entrypoint at $ENTRY"; exit 1; }
 
-# FAIL-CLOSED dist entrypoint resolution (deterministic, zero ambiguity)
-ENTRY="$(bash scripts/proof/resolve_phase4_dist_entrypoint.sh)"
 echo "FT_PROOF:PHASE4_DIST_ENTRYPOINT=$ENTRY"
 
 # Run generator (selftest included) - explicitly pass env to ensure they're available
@@ -57,5 +66,20 @@ FT_BUILD_UTC="$FT_BUILD_UTC" \
 FT_RULESET_VERSION="$FT_RULESET_VERSION" \
 FT_SCHEMA_VERSION="$FT_SCHEMA_VERSION" \
 node "$ENTRY"
+
+# STEP 6: Generator self-check - allowlist must exist in 05/06
+LATEST="$(ls -1dt /tmp/ft_proof_phase4_* 2>/dev/null | head -1)"
+test -f "$LATEST/05_no_outbound_attestation.json" || { echo "FAIL-CLOSED: missing 05"; exit 1; }
+test -f "$LATEST/06_no_mutation_attestation.json" || { echo "FAIL-CLOSED: missing 06"; exit 1; }
+
+node - <<NODE
+const fs=require("fs");
+const p=(f)=>JSON.parse(fs.readFileSync(f,"utf8"));
+const a=p("$LATEST/05_no_outbound_attestation.json").allowlist;
+const b=p("$LATEST/06_no_mutation_attestation.json").allowlist;
+if(!a||!a.version||!a.sha256) throw new Error("missing allowlist in 05");
+if(!b||!b.version||!b.sha256) throw new Error("missing allowlist in 06");
+process.stdout.write("FT_PROOF:PHASE4_ALLOWLIST_PRESENT_OK\n");
+NODE
 
 echo "FT_PROOF:PHASE4_BUNDLE_SUCCESS"
