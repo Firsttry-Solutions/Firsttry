@@ -1,20 +1,22 @@
 /**
  * Generate verification scripts
  * Cross-platform verifiers: Linux/Mac (verify.sh) and Windows PowerShell (verify.ps1)
- * Validates ALL artifacts: evidence.json, HTML report, and verifier scripts themselves
+ * Validates CRITICAL artifacts: evidence.json and verifier scripts (no HTML hash)
+ * HTML is a container only; not independently verified.
  *
  * FT_PROOF_VERIFY_SH_v1: Linux/Mac shell script for SHA-256 verification
  * FT_PROOF_VERIFY_PS1_v1: Windows PowerShell script for SHA-256 verification
- * FT_PROOF_VERIFY_ALL_ARTIFACTS_v1: Verifiers validate all files (evidence, html, scripts)
+ * FT_PROOF_VERIFY_CRITICAL_ARTIFACTS_ONLY_v1: Verifiers validate critical artifacts only (evidence + scripts)
  */
 
 export function generateVerifySh(): string {
   console.log("[FT_PROOF_VERIFY_SH_v1]", { marker: "FT_PROOF_VERIFY_SH_v1" });
-  console.log("[FT_PROOF_VERIFY_ALL_ARTIFACTS_v1]", { marker: "FT_PROOF_VERIFY_ALL_ARTIFACTS_v1" });
+  console.log("[FT_PROOF_VERIFY_CRITICAL_ARTIFACTS_ONLY_v1]", { marker: "FT_PROOF_VERIFY_CRITICAL_ARTIFACTS_ONLY_v1" });
 
   return `#!/bin/bash
 # FirstTry Auditor Evidence Verification Script (UNIX/Linux/Mac)
-# Verifies SHA-256 integrity of ALL artifacts: evidence.json, HTML report, and verifier scripts
+# Verifies SHA-256 integrity of CRITICAL artifacts: evidence.json and verifier scripts
+# HTML is a container only; not independently verified
 
 set -euo pipefail
 
@@ -47,7 +49,6 @@ else
 fi
 
 MANIFEST_EVIDENCE=$(extractHash "evidenceSha256")
-MANIFEST_HTML=$(extractHash "htmlSha256")
 MANIFEST_VERIFY_SH=$(extractHash "verifyShSha256")
 MANIFEST_VERIFY_PS1=$(extractHash "verifyPs1Sha256")
 
@@ -92,18 +93,17 @@ verifyFile() {
   fi
 }
 
-echo "Verifying artifacts..."
+echo "Verifying CRITICAL artifacts..."
 echo ""
 
-# Verify each artifact
+# Verify critical artifacts (evidence + scripts; no HTML)
 verifyFile "evidence.json" "$MANIFEST_EVIDENCE" "Evidence JSON"
-verifyFile "FirstTry-Audit-Evidence.html" "$MANIFEST_HTML" "HTML Report"
 verifyFile "verify.sh" "$MANIFEST_VERIFY_SH" "Verify.sh Script"
 verifyFile "verify.ps1" "$MANIFEST_VERIFY_PS1" "Verify.ps1 Script"
 
 echo ""
 if [ $FAIL_COUNT -eq 0 ]; then
-  echo -e "\${GREEN}✅ SUCCESS: All verified artifacts are intact (tamper-evident confirmed)\${NC}"
+  echo -e "\${GREEN}✅ SUCCESS: All critical artifacts verified intact (tamper-evident confirmed)\${NC}"
   exit 0
 else
   echo -e "\${RED}❌ FAILURE: $FAIL_COUNT artifact(s) failed verification\${NC}"
@@ -114,9 +114,11 @@ fi
 
 export function generateVerifyPs1(): string {
   console.log("[FT_PROOF_VERIFY_PS1_v1]", { marker: "FT_PROOF_VERIFY_PS1_v1" });
+  console.log("[FT_PROOF_VERIFY_CRITICAL_ARTIFACTS_ONLY_v1]", { marker: "FT_PROOF_VERIFY_CRITICAL_ARTIFACTS_ONLY_v1" });
 
   return `# FirstTry Auditor Evidence Verification Script (Windows PowerShell)
-# Verifies SHA-256 integrity of ALL artifacts: evidence.json, HTML report, and verifier scripts
+# Verifies SHA-256 integrity of CRITICAL artifacts: evidence.json and verifier scripts
+# HTML is a container only; not independently verified
 
 $FailCount = 0
 
@@ -175,18 +177,17 @@ function Verify-ArtifactHash {
     }
 }
 
-Write-Host "Verifying artifacts..." -ForegroundColor Cyan
+Write-Host "Verifying CRITICAL artifacts..." -ForegroundColor Cyan
 Write-Host ""
 
-# Verify each artifact
+# Verify critical artifacts (evidence + scripts; no HTML)
 Verify-ArtifactHash "evidence.json" $manifestJson.evidenceSha256 "Evidence JSON"
-Verify-ArtifactHash "FirstTry-Audit-Evidence.html" $manifestJson.htmlSha256 "HTML Report"
 Verify-ArtifactHash "verify.sh" $manifestJson.verifyShSha256 "Verify.sh Script"
 Verify-ArtifactHash "verify.ps1" $manifestJson.verifyPs1Sha256 "Verify.ps1 Script"
 
 Write-Host ""
 if ($FailCount -eq 0) {
-    Write-Host "✅ SUCCESS: All verified artifacts are intact (tamper-evident confirmed)" -ForegroundColor Green
+    Write-Host "✅ SUCCESS: All critical artifacts verified intact (tamper-evident confirmed)" -ForegroundColor Green
     exit 0
 } else {
     Write-Host "❌ FAILURE: $FailCount artifact(s) failed verification" -ForegroundColor Red

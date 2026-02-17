@@ -5,7 +5,7 @@
  * FT_PROOF_AUDITOR_HTML_v1: This module generates tamper-verifiable audit evidence HTML
  * FT_PROOF_HTML_SELF_VERIFY_v1: HTML includes WebCrypto SHA-256 for client-side verification
  * FT_PROOF_EXTERNAL_HASH_MODE_v1: User can paste external hash for VERIFIED status
- * FT_PROOF_TRUST_MODEL_DISCLOSURE_v1: HTML discloses the trust model (Level 1/2, limitations)
+ * FT_PROOF_TRUST_MODEL_CONTAINER_DISCLOSURE_v1: HTML discloses that it is a container only; verified artifacts are evidence + scripts
  * FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1: HTML includes printable auditor-friendly sections
  */
 
@@ -35,7 +35,7 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
   console.log("[FT_PROOF_AUDITOR_HTML_v1]", { marker: "FT_PROOF_AUDITOR_HTML_v1" });
   console.log("[FT_PROOF_HTML_SELF_VERIFY_v1]", { marker: "FT_PROOF_HTML_SELF_VERIFY_v1" });
   console.log("[FT_PROOF_EXTERNAL_HASH_MODE_v1]", { marker: "FT_PROOF_EXTERNAL_HASH_MODE_v1" });
-  console.log("[FT_PROOF_TRUST_MODEL_DISCLOSURE_v1]", { marker: "FT_PROOF_TRUST_MODEL_DISCLOSURE_v1" });
+  console.log("[FT_PROOF_TRUST_MODEL_CONTAINER_DISCLOSURE_v1]", { marker: "FT_PROOF_TRUST_MODEL_CONTAINER_DISCLOSURE_v1" });
   console.log("[FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1]", { marker: "FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1" });
 
   const { evidenceJsonString, manifestJson, verifyShScript, verifyPs1Script } = params;
@@ -318,10 +318,18 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
             <div id="statusBadge" class="status-badge status-unverified">UNVERIFIED</div>
         </div>
 
-        <!-- Trust Model Disclosure (FT_PROOF_TRUST_MODEL_DISCLOSURE_v1) -->
+        <!-- Trust Model Disclosure (FT_PROOF_TRUST_MODEL_CONTAINER_DISCLOSURE_v1) -->
         <div class="section" style="background: #fafafa; border-left: 4px solid #0066cc; padding: 15px;">
             <h2>Trust Model & Verification</h2>
-            <p><strong>This file is self-contained and designed for offline verification.</strong></p>
+            <p><strong>This file is a self-contained HTML container for offline verification.</strong></p>
+            <p><strong>Verified Artifacts:</strong> Only the critical artifacts are integrity-verified:</p>
+            <ul style="line-height: 1.6; margin-left: 20px; margin-bottom: 15px;">
+                <li><strong>evidence.json</strong> - Canonical snapshot of audit data (SHA-256 hashed)</li>
+                <li><strong>manifest.json</strong> - Embedded in HTML, contains hashes of critical artifacts</li>
+                <li><strong>verify.sh</strong> - Unix/Linux verification script (SHA-256 hashed)</li>
+                <li><strong>verify.ps1</strong> - Windows PowerShell verification script (SHA-256 hashed)</li>
+            </ul>
+            <p><strong>Note:</strong> The HTML file itself is <em>not</em> independently verified. HTML is a container/viewer that embeds the critical artifacts. If you modify the HTML display, it does not affect the integrity of the embedded evidence and scripts.</p>
             <ul style="line-height: 1.6; margin-left: 20px;">
                 <li><strong>Level 1 (Internal Consistency):</strong> WebCrypto SHA-256 verifies evidence.json matches the embedded manifest hash. This confirms internal consistency but does <em>not</em> prove the file has not been tampered with (both evidence and manifest could be edited together).</li>
                 <li><strong>Level 2 (Tamper-Evident):</strong> Requires an independent, out-of-band recorded hash (from ticket, email, audit log, or external system). You paste the independently recorded hash and this tool verifies that it matches the computed evidence hash. <em>Only this method proves tampering cannot have occurred.</em></li>
