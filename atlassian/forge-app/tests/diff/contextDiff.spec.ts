@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { generateDiff } from "../../../src/diff/diffEngine";
+import { generateDiff } from "../../src/diff/diffEngine";
 
 describe("generateDiff with Context", () => {
   const baseSnapshot = {

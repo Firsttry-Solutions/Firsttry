@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { getImpactScopeFromSnapshot, getGroupImpactsFromSnapshot } from "../../../src/analysis/impactScope";
+import { getImpactScopeFromSnapshot, getGroupImpactsFromSnapshot } from "../../src/analysis/impactScope";
 
 describe("getImpactScopeFromSnapshot", () => {
   it("returns zero for empty snapshot", () => {

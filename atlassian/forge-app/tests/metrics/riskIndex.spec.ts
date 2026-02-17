@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { calculateRiskIndex } from "../../../src/metrics/riskIndex";
+import { calculateRiskIndex } from "../../src/metrics/riskIndex";
 
 describe("calculateRiskIndex", () => {
   it("returns score 100 when snapshot has no risk factors", () => {
