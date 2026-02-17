@@ -210,6 +210,17 @@ export function generatePhase4FullProofBundle() {
   const noOutbound = { ...noOutboundBase, attestationHashSha256: noOutboundAttestationHashSha256 };
   writeJsonCanonical(path.join(OUT_DIR, "05_no_outbound_attestation.json"), noOutbound);
 
+  // FAIL-CLOSED: Verify allowlist is present in 05
+  const check05 = () => {
+    const full = path.join(OUT_DIR, "05_no_outbound_attestation.json");
+    const raw = fs.readFileSync(full, "utf8");
+    const obj = JSON.parse(raw);
+    if (!obj.allowlist || !obj.allowlist.version || !obj.allowlist.sha256) {
+      throw new Error("FAIL-CLOSED: missing allowlist block in 05_no_outbound_attestation.json");
+    }
+  };
+  check05();
+
   const noMutationBase = {
     schema: "ft.noMutationAttestation.v1",
     buildShaShort: BUILD_SHA_SHORT,
@@ -225,6 +236,17 @@ export function generatePhase4FullProofBundle() {
   const noMutationAttestationHashSha256 = hashJsonCanonical(omitKey(noMutationBase, "attestationHashSha256"));
   const noMutation = { ...noMutationBase, attestationHashSha256: noMutationAttestationHashSha256 };
   writeJsonCanonical(path.join(OUT_DIR, "06_no_mutation_attestation.json"), noMutation);
+
+  // FAIL-CLOSED: Verify allowlist is present in 06
+  const check06 = () => {
+    const full = path.join(OUT_DIR, "06_no_mutation_attestation.json");
+    const raw = fs.readFileSync(full, "utf8");
+    const obj = JSON.parse(raw);
+    if (!obj.allowlist || !obj.allowlist.version || !obj.allowlist.sha256) {
+      throw new Error("FAIL-CLOSED: missing allowlist block in 06_no_mutation_attestation.json");
+    }
+  };
+  check06();
 
   // Hash file bytes and record artifacts
   const addArtifact = (p: string) => {

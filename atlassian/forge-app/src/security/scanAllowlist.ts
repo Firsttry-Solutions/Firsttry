@@ -24,36 +24,6 @@ export const SCAN_ALLOWLIST_VERSION = "v1";
  * - No broad regex allowlisting. No "same-origin" claims. Just explicit known-safe matches.
  */
 export const ALLOWLIST: AllowlistedMatch[] = [
-  {
-    family: "outbound",
-    ruleId: "SCAN_NO_WS",
-    fileRel: "src/phase9_5c/auto_notification.ts",
-    line: 251,
-    lineMustInclude: "WebSocket",
-    justification: "Design comment mentioning WebSocket as future capability (not implemented code)."
-  },
-  {
-    family: "outbound",
-    ruleId: "SCAN_NO_FETCH",
-    fileRel: "src/admin/phase5_admin_page.ts",
-    line: 1138,
-    lineMustInclude: "action=generateNow",
-    justification: "Internal admin page form submission to same-page handler. Not outbound."
-  },
-  {
-    family: "outbound",
-    ruleId: "SCAN_NO_FETCH",
-    fileRel: "src/admin/phase5_admin_page.ts",
-    line: 1167,
-    lineMustInclude: "export=json",
-    justification: "Internal admin page JSON export from same-page handler. Not outbound."
-  },
-  {
-    family: "outbound",
-    ruleId: "SCAN_NO_FETCH",
-    fileRel: "src/admin/phase5_admin_page.ts",
-    line: 1185,
-    lineMustInclude: "export=pdf",
-    justification: "Internal admin page PDF export from same-page handler. Not outbound."
-  }
+  // After comment-stripping (STEP 1), WebSocket design comment no longer matches.
+  // Keep only executable code matches.
 ];
