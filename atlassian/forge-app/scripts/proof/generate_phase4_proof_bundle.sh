@@ -17,8 +17,9 @@ cd "$APP_ROOT"
 
 export FT_APP_ROOT="$APP_ROOT"
 
-# Build (dist must exist)
+# Build: gadget + TypeScript compilation for proof bundle
 npm run build
+npm run build:ts
 
 # FAIL-CLOSED dist entrypoint resolution (deterministic, zero ambiguity)
 ENTRY="$(bash scripts/proof/resolve_phase4_dist_entrypoint.sh)"
