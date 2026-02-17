@@ -108,6 +108,104 @@ if [ $TRUST_FAIL -eq 0 ]; then
   echo "✅ Trust wording is honest and complete" | tee -a "$RUN_DIR/13e_check_trust.txt"
 fi
 
+# N) Phase 5.1.4: Verify all 4 hashes present in manifest contract
+echo "N) Checking all 4 artifact hashes in manifest..." | tee "$RUN_DIR/14a_check_all_hashes.txt"
+HASH_FAIL=0
+for hash_field in "evidenceSha256" "htmlSha256" "verifyShSha256" "verifyPs1Sha256"; do
+  if rg -q "$hash_field" src/export/auditor/manifest.ts; then
+    echo "  ✅ $hash_field field present" | tee -a "$RUN_DIR/14a_check_all_hashes.txt"
+  else
+    echo "  ❌ MISSING: $hash_field field" | tee -a "$RUN_DIR/14a_check_all_hashes.txt"
+    HASH_FAIL=1
+  fi
+done
+if [ $HASH_FAIL -eq 0 ]; then
+  echo "✅ All 4 artifact hash fields present in manifest" | tee -a "$RUN_DIR/14a_check_all_hashes.txt"
+else
+  echo "❌ FAIL: Some hash fields missing from manifest" | tee -a "$RUN_DIR/14a_check_all_hashes.txt"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+# O) Phase 5.1.4: Verify verify.sh validates ALL 4 artifacts
+echo "O) Checking verify.sh multi-file validation..." | tee "$RUN_DIR/14b_check_verify_sh.txt"
+VERIFY_SH_FAIL=0
+for artifact in "evidence.json" "FirstTry-Audit-Evidence.html" "verify.sh" "verify.ps1"; do
+  if rg -q "verifyFile.*$artifact" src/export/auditor/scripts.ts; then
+    echo "  ✅ Validates $artifact" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+  else
+    echo "  ❌ Missing validation for $artifact" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+    VERIFY_SH_FAIL=1
+  fi
+done
+if [ $VERIFY_SH_FAIL -eq 0 ]; then
+  echo "✅ verify.sh validates all 4 artifacts" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+else
+  echo "❌ FAIL: verify.sh missing some artifact validations" | tee -a "$RUN_DIR/14b_check_verify_sh.txt"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+# P) Phase 5.1.4: Verify verify.ps1 validates ALL 4 artifacts
+echo "P) Checking verify.ps1 multi-file validation..." | tee "$RUN_DIR/14c_check_verify_ps1.txt"
+VERIFY_PS1_FAIL=0
+for artifact in "evidence.json" "FirstTry-Audit-Evidence.html" "verify.sh" "verify.ps1"; do
+  if rg -q "Verify-ArtifactHash.*$artifact" src/export/auditor/scripts.ts; then
+    echo "  ✅ Validates $artifact" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+  else
+    echo "  ❌ Missing validation for $artifact" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+    VERIFY_PS1_FAIL=1
+  fi
+done
+if [ $VERIFY_PS1_FAIL -eq 0 ]; then
+  echo "✅ verify.ps1 validates all 4 artifacts" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+else
+  echo "❌ FAIL: verify.ps1 missing some artifact validations" | tee -a "$RUN_DIR/14c_check_verify_ps1.txt"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+# Q) Phase 5.1.4: Verify htmlReport has BOTH trust model markers
+echo "Q) Checking htmlReport.ts trust model & auditor layout..." | tee "$RUN_DIR/14d_check_html_markers.txt"
+TRUST_MARKERS_FAIL=0
+if rg -q "FT_PROOF_TRUST_MODEL_DISCLOSURE_v1" src/export/auditor/htmlReport.ts; then
+  echo "  ✅ FT_PROOF_TRUST_MODEL_DISCLOSURE_v1 present" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+else
+  echo "  ❌ MISSING: FT_PROOF_TRUST_MODEL_DISCLOSURE_v1" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+  TRUST_MARKERS_FAIL=1
+fi
+if rg -q "FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1" src/export/auditor/htmlReport.ts; then
+  echo "  ✅ FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1 present" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+else
+  echo "  ❌ MISSING: FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+  TRUST_MARKERS_FAIL=1
+fi
+if [ $TRUST_MARKERS_FAIL -eq 0 ]; then
+  echo "✅ htmlReport has both trust model disclosure + auditor layout" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+else
+  echo "❌ FAIL: htmlReport missing required Phase 5.1.4 markers" | tee -a "$RUN_DIR/14d_check_html_markers.txt"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+# R) Phase 5.1.4: Verify trust model wording in HTML (Level 1 & 2)
+echo "R) Checking trust model wording (Level 1 & 2)..." | tee "$RUN_DIR/14e_check_trust_levels.txt"
+TRUST_LEVELS_FAIL=0
+if rg -q "Internal Consistency" src/export/auditor/htmlReport.ts; then
+  echo "  ✅ Level 1 (Internal Consistency) wording present" | tee -a "$RUN_DIR/14e_check_trust_levels.txt"
+else
+  echo "  ❌ MISSING: Level 1 (Internal Consistency) wording" | tee -a "$RUN_DIR/14e_check_trust_levels.txt"
+  TRUST_LEVELS_FAIL=1
+fi
+if rg -q "Tamper-Evident" src/export/auditor/htmlReport.ts; then
+  echo "  ✅ Level 2 (Tamper-Evident) wording present" | tee -a "$RUN_DIR/14e_check_trust_levels.txt"
+else
+  echo "  ❌ MISSING: Level 2 (Tamper-Evident) wording" | tee -a "$RUN_DIR/14e_check_trust_levels.txt"
+  TRUST_LEVELS_FAIL=1
+fi
+if [ $TRUST_LEVELS_FAIL -eq 0 ]; then
+  echo "✅ Trust model Level 1 & 2 wording complete" | tee -a "$RUN_DIR/14e_check_trust_levels.txt"
+else
+  echo "❌ FAIL: Trust model wording incomplete" | tee -a "$RUN_DIR/14e_check_trust_levels.txt"
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
 # E) Check for proof markers
 echo "E) Checking proof markers..." | tee "$RUN_DIR/14_check_markers.txt"
 MARKERS=(
@@ -122,6 +220,11 @@ MARKERS=(
   "FT_PROOF_DIFF_ENGINE_v1"
   "FT_PROOF_SHADOW_ADMIN_v1"
   "FT_PROOF_REVERT_GENERATOR_v1"
+  "FT_PROOF_MANIFEST_ALL_ARTIFACT_HASHES_v1"
+  "FT_PROOF_PACKER_ALL_HASHES_v1"
+  "FT_PROOF_VERIFY_ALL_ARTIFACTS_v1"
+  "FT_PROOF_TRUST_MODEL_DISCLOSURE_v1"
+  "FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1"
 )
 
 MISSING_MARKERS=0
