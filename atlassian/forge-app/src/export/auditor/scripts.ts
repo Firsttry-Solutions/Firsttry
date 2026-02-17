@@ -1,67 +1,112 @@
 /**
  * Generate verification scripts
  * Cross-platform verifiers: Linux/Mac (verify.sh) and Windows PowerShell (verify.ps1)
+ * Validates ALL artifacts: evidence.json, HTML report, and verifier scripts themselves
  *
  * FT_PROOF_VERIFY_SH_v1: Linux/Mac shell script for SHA-256 verification
  * FT_PROOF_VERIFY_PS1_v1: Windows PowerShell script for SHA-256 verification
+ * FT_PROOF_VERIFY_ALL_ARTIFACTS_v1: Verifiers validate all files (evidence, html, scripts)
  */
 
 export function generateVerifySh(): string {
   console.log("[FT_PROOF_VERIFY_SH_v1]", { marker: "FT_PROOF_VERIFY_SH_v1" });
+  console.log("[FT_PROOF_VERIFY_ALL_ARTIFACTS_v1]", { marker: "FT_PROOF_VERIFY_ALL_ARTIFACTS_v1" });
 
   return `#!/bin/bash
 # FirstTry Auditor Evidence Verification Script (UNIX/Linux/Mac)
-# Verifies SHA-256 integrity of evidence.json against manifest
+# Verifies SHA-256 integrity of ALL artifacts: evidence.json, HTML report, and verifier scripts
 
 set -euo pipefail
 
+# Colors for output
+RED='\\033[0;31m'
+GREEN='\\033[0;32m'
+YELLOW='\\033[1;33m'
+NC='\\033[0m' # No Color
+
 # Check required files
-if [ ! -f evidence.json ]; then
-  echo "❌ FAIL: evidence.json not found"
-  exit 1
-fi
-
-if [ ! -f manifest.json ]; then
-  echo "❌ FAIL: manifest.json not found"
-  exit 1
-fi
-
 echo "=== FirstTry Auditor Evidence Verification ==="
 echo ""
 
-# Read expected hash from manifest (using node or fallback grep + awk)
+FAIL_COUNT=0
+
+if [ ! -f manifest.json ]; then
+  echo -e "\${RED}❌ FAIL: manifest.json not found\${NC}"
+  exit 1
+fi
+
+# Parse manifest (prefer node for JSON, fallback to grep)
 if command -v node &>/dev/null; then
-  EXPECTED_HASH=$(node -e "console.log(JSON.parse(require('fs').readFileSync('manifest.json','utf8')).evidenceSha256)")
+  extractHash() {
+    node -e "console.log(JSON.parse(require('fs').readFileSync('manifest.json','utf8')).$1 || '')"
+  }
 else
-  # Fallback: grep + sed + awk (best-effort)
-  EXPECTED_HASH=$(grep '"evidenceSha256"' manifest.json | sed 's/.*: *"\\([^"]*\\)".*/\\1/')
+  extractHash() {
+    grep "\"$1\"" manifest.json | sed 's/.*: *"\\([^"]*\\)".*/\\1/' || echo ""
+  }
 fi
 
-if [ -z "$EXPECTED_HASH" ]; then
-  echo "❌ FAIL: Could not extract evidenceSha256 from manifest.json"
-  exit 1
-fi
+MANIFEST_EVIDENCE=$(extractHash "evidenceSha256")
+MANIFEST_HTML=$(extractHash "htmlSha256")
+MANIFEST_VERIFY_SH=$(extractHash "verifyShSha256")
+MANIFEST_VERIFY_PS1=$(extractHash "verifyPs1Sha256")
 
-# Compute actual hash (prefer sha256sum, fallback to shasum)
-if command -v sha256sum &>/dev/null; then
-  COMPUTED_HASH=$(sha256sum evidence.json | awk '{print $1}')
-elif command -v shasum &>/dev/null; then
-  COMPUTED_HASH=$(shasum -a 256 evidence.json | awk '{print $1}')
-else
-  echo "❌ FAIL: Neither sha256sum nor shasum found"
-  exit 1
-fi
+# Helper: compute and compare hash
+verifyFile() {
+  local file=$1
+  local expectedHash=$2
+  local fileType=$3
 
-# Compare
-echo "Expected:  $EXPECTED_HASH"
-echo "Computed:  $COMPUTED_HASH"
+  if [ -z "$expectedHash" ]; then
+    echo -e "\${YELLOW}⚠️  SKIP: $fileType hash not in manifest\${NC}"
+    return 0
+  fi
+
+  if [ ! -f "$file" ]; then
+    echo -e "\${RED}❌ FAIL: $file not found\${NC}"
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    return 1
+  fi
+
+  # Compute actual hash
+  local computedHash=""
+  if command -v sha256sum &>/dev/null; then
+    computedHash=$(sha256sum "$file" | awk '{print $1}')
+  elif command -v shasum &>/dev/null; then
+    computedHash=$(shasum -a 256 "$file" | awk '{print $1}')
+  else
+    echo -e "\${RED}❌ FAIL: Neither sha256sum nor shasum found\${NC}"
+    exit 1
+  fi
+
+  if [ "$expectedHash" = "$computedHash" ]; then
+    echo -e "\${GREEN}✅ PASS\${NC}: $fileType integrity verified"
+    return 0
+  else
+    echo -e "\${RED}❌ FAIL\${NC}: $fileType hash mismatch"
+    echo "  File:      $file"
+    echo "  Expected:  $expectedHash"
+    echo "  Computed:  $computedHash"
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    return 1
+  fi
+}
+
+echo "Verifying artifacts..."
 echo ""
 
-if [ "$EXPECTED_HASH" = "$COMPUTED_HASH" ]; then
-  echo "✅ PASS: Internal consistency verified (evidence.json intact)"
+# Verify each artifact
+verifyFile "evidence.json" "$MANIFEST_EVIDENCE" "Evidence JSON"
+verifyFile "FirstTry-Audit-Evidence.html" "$MANIFEST_HTML" "HTML Report"
+verifyFile "verify.sh" "$MANIFEST_VERIFY_SH" "Verify.sh Script"
+verifyFile "verify.ps1" "$MANIFEST_VERIFY_PS1" "Verify.ps1 Script"
+
+echo ""
+if [ $FAIL_COUNT -eq 0 ]; then
+  echo -e "\${GREEN}✅ SUCCESS: All verified artifacts are intact (tamper-evident confirmed)\${NC}"
   exit 0
 else
-  echo "❌ FAIL: Hash mismatch - possible tampering"
+  echo -e "\${RED}❌ FAILURE: $FAIL_COUNT artifact(s) failed verification\${NC}"
   exit 1
 fi
 `;
@@ -71,60 +116,80 @@ export function generateVerifyPs1(): string {
   console.log("[FT_PROOF_VERIFY_PS1_v1]", { marker: "FT_PROOF_VERIFY_PS1_v1" });
 
   return `# FirstTry Auditor Evidence Verification Script (Windows PowerShell)
-# Verifies SHA-256 integrity of evidence.json against manifest
+# Verifies SHA-256 integrity of ALL artifacts: evidence.json, HTML report, and verifier scripts
 
-param(
-    [string]$ManifestFile = "manifest.json",
-    [string]$EvidenceFile = "evidence.json"
-)
+$FailCount = 0
 
-# Check required files
-if (!(Test-Path $EvidenceFile)) {
-    Write-Host "❌ FAIL: $EvidenceFile not found" -ForegroundColor Red
-    exit 1
-}
-
-if (!(Test-Path $ManifestFile)) {
-    Write-Host "❌ FAIL: $ManifestFile not found" -ForegroundColor Red
+# Check manifest exists
+if (!(Test-Path "manifest.json")) {
+    Write-Host "❌ FAIL: manifest.json not found" -ForegroundColor Red
     exit 1
 }
 
 Write-Host "=== FirstTry Auditor Evidence Verification ===" -ForegroundColor Cyan
 Write-Host ""
 
-# Read manifest and extract expected hash
+# Read manifest
 try {
-    $manifestJson = Get-Content $ManifestFile -Raw | ConvertFrom-Json
-    $expectedHash = $manifestJson.evidenceSha256
+    $manifestJson = Get-Content "manifest.json" -Raw | ConvertFrom-Json
 } catch {
-    Write-Host "❌ FAIL: Could not parse $ManifestFile" -ForegroundColor Red
+    Write-Host "❌ FAIL: Could not parse manifest.json" -ForegroundColor Red
     exit 1
 }
 
-if (-not $expectedHash) {
-    Write-Host "❌ FAIL: evidenceSha256 not found in manifest" -ForegroundColor Red
-    exit 1
+# Helper function to verify a file
+function Verify-ArtifactHash {
+    param(
+        [string]$FilePath,
+        [string]$ExpectedHash,
+        [string]$ArtifactName
+    )
+
+    if (-not $ExpectedHash) {
+        Write-Host "⚠️  SKIP: $ArtifactName hash not in manifest" -ForegroundColor Yellow
+        return
+    }
+
+    if (!(Test-Path $FilePath)) {
+        Write-Host "❌ FAIL: $FilePath not found" -ForegroundColor Red
+        $script:FailCount++
+        return
+    }
+
+    try {
+        $fileHash = Get-FileHash -Path $FilePath -Algorithm SHA256
+        $computedHash = $fileHash.Hash.ToLower()
+
+        if ($ExpectedHash -eq $computedHash) {
+            Write-Host "✅ PASS: $ArtifactName integrity verified" -ForegroundColor Green
+        } else {
+            Write-Host "❌ FAIL: $ArtifactName hash mismatch" -ForegroundColor Red
+            Write-Host "  File:      $FilePath" -ForegroundColor Red
+            Write-Host "  Expected:  $ExpectedHash" -ForegroundColor Red
+            Write-Host "  Computed:  $computedHash" -ForegroundColor Red
+            $script:FailCount++
+        }
+    } catch {
+        Write-Host "❌ FAIL: Could not compute hash for $FilePath" -ForegroundColor Red
+        $script:FailCount++
+    }
 }
 
-# Compute hash using Get-FileHash (PowerShell 4.0+)
-try {
-    $fileHash = Get-FileHash -Path $EvidenceFile -Algorithm SHA256
-    $computedHash = $fileHash.Hash.ToLower()
-} catch {
-    Write-Host "❌ FAIL: Could not compute hash (Get-FileHash failed)" -ForegroundColor Red
-    exit 1
-}
-
-# Compare
-Write-Host "Expected:  $expectedHash"
-Write-Host "Computed:  $computedHash"
+Write-Host "Verifying artifacts..." -ForegroundColor Cyan
 Write-Host ""
 
-if ($expectedHash -eq $computedHash) {
-    Write-Host "✅ PASS: Internal consistency verified (evidence.json intact)" -ForegroundColor Green
+# Verify each artifact
+Verify-ArtifactHash "evidence.json" $manifestJson.evidenceSha256 "Evidence JSON"
+Verify-ArtifactHash "FirstTry-Audit-Evidence.html" $manifestJson.htmlSha256 "HTML Report"
+Verify-ArtifactHash "verify.sh" $manifestJson.verifyShSha256 "Verify.sh Script"
+Verify-ArtifactHash "verify.ps1" $manifestJson.verifyPs1Sha256 "Verify.ps1 Script"
+
+Write-Host ""
+if ($FailCount -eq 0) {
+    Write-Host "✅ SUCCESS: All verified artifacts are intact (tamper-evident confirmed)" -ForegroundColor Green
     exit 0
 } else {
-    Write-Host "❌ FAIL: Hash mismatch - possible tampering" -ForegroundColor Red
+    Write-Host "❌ FAILURE: $FailCount artifact(s) failed verification" -ForegroundColor Red
     exit 1
 }
 `;

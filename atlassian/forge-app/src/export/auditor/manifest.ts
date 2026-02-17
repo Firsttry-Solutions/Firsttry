@@ -4,6 +4,7 @@
  *
  * FT_PROOF_AUDITOR_MANIFEST_v1: This module implements the auditor manifest contract
  * FT_PROOF_NO_CIRCULAR_HASH_v1: Evidence hash does NOT include manifest (no circular dependency)
+ * FT_PROOF_MANIFEST_ALL_ARTIFACT_HASHES_v1: Manifest includes hashes for all artifacts (evidence, html, scripts)
  */
 
 export interface AuditorManifest {
@@ -47,6 +48,7 @@ export function buildAuditorManifest(params: {
   verifyPs1Sha256?: string;
 }): AuditorManifest {
   console.log("[FT_PROOF_AUDITOR_MANIFEST_v1]", { marker: "FT_PROOF_AUDITOR_MANIFEST_v1" });
+  console.log("[FT_PROOF_MANIFEST_ALL_ARTIFACT_HASHES_v1]", { marker: "FT_PROOF_MANIFEST_ALL_ARTIFACT_HASHES_v1" });
 
   const { snapshot, evidenceSha256, htmlSha256, verifyShSha256, verifyPs1Sha256 } = params;
 

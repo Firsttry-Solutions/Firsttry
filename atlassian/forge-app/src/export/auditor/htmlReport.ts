@@ -5,6 +5,8 @@
  * FT_PROOF_AUDITOR_HTML_v1: This module generates tamper-verifiable audit evidence HTML
  * FT_PROOF_HTML_SELF_VERIFY_v1: HTML includes WebCrypto SHA-256 for client-side verification
  * FT_PROOF_EXTERNAL_HASH_MODE_v1: User can paste external hash for VERIFIED status
+ * FT_PROOF_TRUST_MODEL_DISCLOSURE_v1: HTML discloses the trust model (Level 1/2, limitations)
+ * FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1: HTML includes printable auditor-friendly sections
  */
 
 export interface HtmlReportParams {
@@ -33,6 +35,8 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
   console.log("[FT_PROOF_AUDITOR_HTML_v1]", { marker: "FT_PROOF_AUDITOR_HTML_v1" });
   console.log("[FT_PROOF_HTML_SELF_VERIFY_v1]", { marker: "FT_PROOF_HTML_SELF_VERIFY_v1" });
   console.log("[FT_PROOF_EXTERNAL_HASH_MODE_v1]", { marker: "FT_PROOF_EXTERNAL_HASH_MODE_v1" });
+  console.log("[FT_PROOF_TRUST_MODEL_DISCLOSURE_v1]", { marker: "FT_PROOF_TRUST_MODEL_DISCLOSURE_v1" });
+  console.log("[FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1]", { marker: "FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1" });
 
   const { evidenceJsonString, manifestJson, verifyShScript, verifyPs1Script } = params;
 
@@ -314,6 +318,17 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
             <div id="statusBadge" class="status-badge status-unverified">UNVERIFIED</div>
         </div>
 
+        <!-- Trust Model Disclosure (FT_PROOF_TRUST_MODEL_DISCLOSURE_v1) -->
+        <div class="section" style="background: #fafafa; border-left: 4px solid #0066cc; padding: 15px;">
+            <h2>Trust Model & Verification</h2>
+            <p><strong>This file is self-contained and designed for offline verification.</strong></p>
+            <ul style="line-height: 1.6; margin-left: 20px;">
+                <li><strong>Level 1 (Internal Consistency):</strong> WebCrypto SHA-256 verifies evidence.json matches the embedded manifest hash. This confirms internal consistency but does <em>not</em> prove the file has not been tampered with (both evidence and manifest could be edited together).</li>
+                <li><strong>Level 2 (Tamper-Evident):</strong> Requires an independent, out-of-band recorded hash (from ticket, email, audit log, or external system). You paste the independently recorded hash and this tool verifies that it matches the computed evidence hash. <em>Only this method proves tampering cannot have occurred.</em></li>
+            </ul>
+            <p><strong>Limitation:</strong> If an attacker has access to this HTML file, they could edit both the evidence and manifest, compute new hashes, and recreate the file with matching hashes. <em>An independent recorded hash is the only way to detect such modifications.</em></p>
+        </div>
+
         <!-- Metadata Section -->
         <div class="section">
             <h2>Audit Metadata</h2>
@@ -342,6 +357,61 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
                     <div class="metadata-label">Privilege Context</div>
                     <div class="metadata-value">${privilegeContext}</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Auditor Report Sections (Bank Statement Style) -->
+        <!-- FT_PROOF_AUDITOR_LAYOUT_BANK_STATEMENT_v1 -->
+        <div class="section" id="auditorSections">
+            <!-- Executive Summary will be inserted here by JavaScript -->
+            <h2>Executive Summary</h2>
+            <div id="executiveSummary" style="padding: 10px; background: #f9f9f9;">
+                <p>Loading evidence data...</p>
+            </div>
+
+            <!-- Global Admins Table -->
+            <h2>Global Admins</h2>
+            <div id="globalAdminsSection" style="padding: 10px; background: #f9f9f9;">
+                <table border="1" cellpadding="8" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>Account ID</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody id="globalAdminsTable">
+                        <tr><td colspan="2">No data</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Shadow Admin Findings Table -->
+            <h2>Shadow Admin Findings</h2>
+            <div id="shadowAdminsSection" style="padding: 10px; background: #f9f9f9;">
+                <table border="1" cellpadding="8" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>Account ID</th>
+                            <th>Patterns</th>
+                            <th>Evidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shadowAdminsTable">
+                        <tr><td colspan="3">No suspicious activity detected</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Forensic Diff -->
+            <h2>Forensic Diff</h2>
+            <div id="diffSection" style="padding: 10px; background: #f9f9f9;">
+                <p id="diffContent">No changes detected</p>
+            </div>
+
+            <!-- Remediation Instructions -->
+            <h2>Remediation Instructions</h2>
+            <div id="remediationSection" style="padding: 10px; background: #f9f9f9;">
+                <p id="remediationContent">No remediation required</p>
             </div>
         </div>
 
@@ -532,7 +602,61 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
         // Show downloads section on load (if verified)
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("downloadsSection").style.display = "block";
+            renderAuditorSections();
         });
+
+        // Render auditor sections from evidence data
+        function renderAuditorSections() {
+            try {
+                const evidenceJson = JSON.parse(b64Decode(EVIDENCE_BASE64));
+                
+                // Executive Summary
+                const globalAdminCount = (evidenceJson.globalAdmins || []).length;
+                const projectCount = (evidenceJson.projects || []).length;
+                document.getElementById("executiveSummary").innerHTML = \`
+                    <strong>Summary:</strong><br>
+                    • Global Admins: \${globalAdminCount}<br>
+                    • Projects: \${projectCount}<br>
+                    • Schema: \${evidenceJson.schemaVersion || "unknown"}
+                \`;
+                
+                // Global Admins Table
+                const admins = (evidenceJson.globalAdmins || []).sort((a, b) => (a.accountId || "").localeCompare(b.accountId || ""));
+                const adminHtml = admins.length > 0 
+                    ? admins.map(a => \`<tr><td>\${escapeHtml(a.accountId || "")}</td><td>\${escapeHtml(a.email || "")}</td></tr>\`).join("")
+                    : "<tr><td colspan='2'>No global admins</td></tr>";
+                document.getElementById("globalAdminsTable").innerHTML = adminHtml;
+                
+                // Shadow Admins (if present in evidence)
+                const shadowAdmins = (evidenceJson.shadowAdmins || []).sort((a, b) => (a.accountId || "").localeCompare(b.accountId || ""));
+                const shadowHtml = shadowAdmins.length > 0
+                    ? shadowAdmins.map(s => \`<tr><td>\${escapeHtml(s.accountId || "")}</td><td>\${(s.reasonCodes || []).join(", ")}</td><td>\${escapeHtml((s.evidence || []).length.toString())}</td></tr>\`).join("")
+                    : "<tr><td colspan='3'>No suspicious patterns detected</td></tr>";
+                document.getElementById("shadowAdminsTable").innerHTML = shadowHtml;
+                
+                // Diff (if present)
+                const diff = evidenceJson.diff || {};
+                const diffText = (diff.addedGlobalAdmins || []).length > 0 || (diff.removedGlobalAdmins || []).length > 0
+                    ? \`Added: \${(diff.addedGlobalAdmins || []).length}, Removed: \${(diff.removedGlobalAdmins || []).length}\`
+                    : "No changes detected";
+                document.getElementById("diffContent").textContent = diffText;
+                
+                // Remediation (if present)
+                const remediation = evidenceJson.remediation || [];
+                const remediationText = remediation.length > 0
+                    ? remediation.map(r => r.title).join("; ")
+                    : "No remediation required";
+                document.getElementById("remediationContent").textContent = remediationText;
+                
+            } catch (e) {
+                document.getElementById("auditorSections").innerHTML = \`<p style="color:red;">Error rendering audit data: \${e.message}</p>\`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"};
+            return text.replace(/[&<>"']/g, c => map[c]);
+        }
     </script>
 </body>
 </html>`;

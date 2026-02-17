@@ -4,6 +4,7 @@
  *
  * FT_PROOF_PACKER_v1: This module creates self-contained audit evidence packets
  * FT_PROOF_TWO_PASS_HTML_v1: Implements two-pass HTML generation to include htmlSha256 in manifest
+ * FT_PROOF_PACKER_ALL_HASHES_v1: Packer computes and embeds SHA-256 hashes for all artifacts
  */
 
 import { canonicalJsonString, sha256Hex } from "../../milestone1/canonicalize";
@@ -36,6 +37,7 @@ export interface PackerParams {
 
 export async function createUniversalPacket(params: PackerParams): Promise<string> {
   console.log("[FT_PROOF_PACKER_v1]", { marker: "FT_PROOF_PACKER_v1" });
+  console.log("[FT_PROOF_PACKER_ALL_HASHES_v1]", { marker: "FT_PROOF_PACKER_ALL_HASHES_v1" });
 
   const { snapshot, previousSnapshot, metadataOverrides } = params;
 
