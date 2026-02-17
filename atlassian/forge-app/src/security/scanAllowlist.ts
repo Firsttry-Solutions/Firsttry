@@ -28,8 +28,33 @@ export const ALLOWLIST: AllowlistedMatch[] = [
     family: "outbound",
     ruleId: "SCAN_NO_WS",
     fileRel: "src/phase9_5c/auto_notification.ts",
-    line: 251, lineMustInclude: "// In production: Store in notifications table, trigger real-time UI update via WebSocket",
+    line: 251,
+    lineMustInclude: "// In production: Store in notifications table, trigger real-time UI update via WebSocket",
     justification: "Design comment mentioning WebSocket as future capability (not implemented code). No actual WebSocket connection in source."
+  },
+  {
+    family: "outbound",
+    ruleId: "SCAN_NO_FETCH",
+    fileRel: "src/admin/phase5_admin_page.ts",
+    line: 1138,
+    lineMustInclude: "const response = await fetch(window.location.href + '?action=generateNow',",
+    justification: "Internal admin page form submission to same-page handler (window.location.href). Not an external network call. No outbound networking."
+  },
+  {
+    family: "outbound",
+    ruleId: "SCAN_NO_FETCH",
+    fileRel: "src/admin/phase5_admin_page.ts",
+    line: 1167,
+    lineMustInclude: "const response = await fetch(window.location.href + '?export=json');",
+    justification: "Internal admin page JSON export from same-page handler (window.location.href). Not an external network call. No outbound networking."
+  },
+  {
+    family: "outbound",
+    ruleId: "SCAN_NO_FETCH",
+    fileRel: "src/admin/phase5_admin_page.ts",
+    line: 1185,
+    lineMustInclude: "const response = await fetch(window.location.href + '?export=pdf');",
+    justification: "Internal admin page PDF export from same-page handler (window.location.href). Not an external network call. No outbound networking."
   }
 ];
   // Example placeholder:
