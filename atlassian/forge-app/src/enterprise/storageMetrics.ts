@@ -69,13 +69,13 @@ export async function getStorageMetrics(tenantKey: string): Promise<StorageMetri
         // Estimate bytes as JSON string length
         const blockJson = JSON.stringify(current);
         totalSampledBytes += blockJson.length;
+        sampled++;
 
         if (current.previousBlockKey) {
           try {
             const parentData = await storage.get(current.previousBlockKey);
             if (parentData) {
               current = typeof parentData === "string" ? JSON.parse(parentData) : parentData;
-              sampled++;
             } else {
               break;
             }

@@ -10,7 +10,7 @@
 
 import { storage } from "@forge/api";
 import { sanitizeKey } from "../utils/sanitizeKey";
-import { getVerifyAudit } from "./verifyAudit";
+import { getVerifyAudit } from "../enterprise/verifyAudit";
 
 export interface DiagnosticBundle {
   schemaVersion: "ft-diagnostic@1";
