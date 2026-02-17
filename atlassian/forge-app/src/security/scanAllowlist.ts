@@ -24,6 +24,28 @@ export const SCAN_ALLOWLIST_VERSION = "v1";
  * - No broad regex allowlisting. No "same-origin" claims. Just explicit known-safe matches.
  */
 export const ALLOWLIST: AllowlistedMatch[] = [
-  // After comment-stripping (STEP 1), WebSocket design comment no longer matches.
-  // Keep only executable code matches.
+  {
+    family: "outbound",
+    ruleId: "SCAN_NO_FETCH",
+    fileRel: "src/admin/phase5_admin_page.ts",
+    line: 1138,
+    lineMustInclude: "window.location.href",
+    justification: "Same-origin fetch to admin page form handler (?action=generateNow). Not external. POST to self."
+  },
+  {
+    family: "outbound",
+    ruleId: "SCAN_NO_FETCH",
+    fileRel: "src/admin/phase5_admin_page.ts",
+    line: 1167,
+    lineMustInclude: "export=json",
+    justification: "Same-origin fetch to admin page JSON export handler (?export=json). Not external. GET from self."
+  },
+  {
+    family: "outbound",
+    ruleId: "SCAN_NO_FETCH",
+    fileRel: "src/admin/phase5_admin_page.ts",
+    line: 1185,
+    lineMustInclude: "export=pdf",
+    justification: "Same-origin fetch to admin page PDF export handler (?export=pdf). Not external. GET from self."
+  }
 ];
