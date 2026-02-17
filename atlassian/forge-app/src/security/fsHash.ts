@@ -1,7 +1,7 @@
 /* FT_PROOF:FS_HASH_V1 */
 
-import fs from "fs";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 import { sha256HexBytes } from "./hash";
 
 export function readFileBytes(p: string): Buffer {

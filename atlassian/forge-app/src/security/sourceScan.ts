@@ -1,7 +1,7 @@
 /* FT_PROOF:SOURCE_SCAN_V1 */
 
-import fs from "fs";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 
 export type ScanMatch = { file: string; line: number; text: string };
 
