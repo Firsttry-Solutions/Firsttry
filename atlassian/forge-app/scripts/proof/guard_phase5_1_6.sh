@@ -21,8 +21,9 @@ RUN_DIR="${1:-.}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Ensure RUN_DIR exists
+# Ensure RUN_DIR exists and export for npm subprocesses
 mkdir -p "$RUN_DIR"
+export RUN_DIR
 
 # Initialize counters
 GUARD_PASSES=0
@@ -185,7 +186,6 @@ log_step "CHECK 7: Running npm test"
 cd "$WORK_DIR"
 TEST_LOG="$RUN_DIR/test_run.log"
 
-export RUN_DIR
 if npm test >"$TEST_LOG" 2>&1; then
     log_pass "All tests passed"
 else
