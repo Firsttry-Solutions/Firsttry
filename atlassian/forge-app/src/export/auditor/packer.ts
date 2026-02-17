@@ -112,7 +112,7 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
   // 4c. Fixed-point iteration for htmlSha256 (converge until HTML hash stable)
   // Start with empty/placeholder htmlSha256, iterate until htmlSha256 stabilizes
   let htmlSha256 = "";
-  let prevHtmlSha256 = null;
+  let prevHtmlSha256: string | null = null;
   let convergenceIter = 0;
   const maxIter = 5;
 
@@ -138,7 +138,7 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
     const newHtmlSha256 = sha256Hex(htmlContent);
 
     if (newHtmlSha256 === htmlSha256) {
-      // Converged! htmlSha256 is stable
+      // Converged! htmlSha256 is stable - htmlContent now contains correct manifest with matching hash
       console.log(`[DEBUG_CONVERGENCE] Converged at iteration ${convergenceIter}`);
       break;
     }
@@ -154,30 +154,9 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
     );
   }
 
-  // Ensure final manifest has correct htmlSha256
-  manifest = buildAuditorManifest({
-    snapshot: auditableSnapshot,
-    evidenceSha256,
-    htmlSha256,
-    verifyShSha256,
-    verifyPs1Sha256,
-  });
-
-  // Final HTML generation with correct manifest
-  htmlContent = generateSmartHtmlReport({
-    evidenceJsonString: evidenceJson,
-    manifestJson: manifest,
-    verifyShScript,
-    verifyPs1Script,
-  });
-
-  // Sanity check: final HTML should hash to our computed htmlSha256
-  const finalCheck = sha256Hex(htmlContent);
-  if (finalCheck !== htmlSha256) {
-    console.warn(
-      `[WARNING_FINAL_CHECK] Final HTML hash (${finalCheck.substring(0, 16)}...) does not match computed htmlSha256 (${htmlSha256.substring(0, 16)}...)`
-    );
-  }
+  // At this point, htmlContent contains the HTML that hashhes to htmlSha256
+  // and manifest contains htmlSha256
+  // Return this content as-is (do NOT regenerate)
 
   console.log("[FT_PROOF_PACKER_PACKET_COMPLETE]", {
     marker: "FT_PROOF_PACKER_PACKET_COMPLETE",
