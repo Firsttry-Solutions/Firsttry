@@ -24,6 +24,14 @@ export const SCAN_ALLOWLIST_VERSION = "v1";
  * - No broad regex allowlisting. No "same-origin" claims. Just explicit known-safe matches.
  */
 export const ALLOWLIST: AllowlistedMatch[] = [
+  {
+    family: "outbound",
+    ruleId: "SCAN_NO_WS",
+    fileRel: "src/phase9_5c/auto_notification.ts",
+    line: 251, lineMustInclude: "// In production: Store in notifications table, trigger real-time UI update via WebSocket",
+    justification: "Design comment mentioning WebSocket as future capability (not implemented code). No actual WebSocket connection in source."
+  }
+];
   // Example placeholder:
   // {
   //   family: "outbound",
