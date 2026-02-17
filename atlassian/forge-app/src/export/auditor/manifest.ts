@@ -31,9 +31,6 @@ export interface AuditorManifest {
   evidenceSha256: string;
   verifyShSha256: string;  // REQUIRED: hash of verify.sh script
   verifyPs1Sha256: string; // REQUIRED: hash of verify.ps1 script
-  
-  // NOTE: htmlSha256 removed. HTML is a container/viewer, not integrity-verified.
-  // Integrity proven by extracting and verifying critical artifacts (evidence + scripts).
 }
 
 /**
