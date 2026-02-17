@@ -295,7 +295,7 @@ describe('RetentionEnforcer', () => {
     mockStorage.query().where().getKeys.mockResolvedValue([]);
     storageGetManyMockResults = [];
 
-    const result = await enforcer.enforceRetention('daily');
+    const result = await enforcer.enforceRetention('daily', new Date().toISOString());
 
     expect(result).toHaveProperty('deleted_count');
     expect(result).toHaveProperty('reason');

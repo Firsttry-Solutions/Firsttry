@@ -8,14 +8,21 @@
 /**
  * Parse ISO 8601 string to milliseconds since epoch
  * Without using Date constructor - manual parsing
+ * Returns 0 for undefined/invalid strings (epoch)
  */
-export function isoToMs(isoStr: string): number {
+export function isoToMs(isoStr: string | undefined): number {
+  // Handle undefined/null - default to epoch
+  if (!isoStr || typeof isoStr !== 'string') {
+    return 0;
+  }
+  
   // ISO 8601: YYYY-MM-DDTHH:mm:ss.sssZ
   // Parse manually: JavaScript can handle ISO parsing without Date constructor via manual parsing
   // For simplicity and safety, we parse the string format
   const match = isoStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?Z?$/);
   if (!match) {
-    throw new Error(`Invalid ISO 8601 string: ${isoStr}`);
+    // Fall back to epoch for invalid strings
+    return 0;
   }
   
   const year = parseInt(match[1], 10);

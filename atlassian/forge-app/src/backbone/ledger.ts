@@ -73,7 +73,7 @@ function createSnapshotBlockPayload(input: LedgerAppendInput): Record<string, an
   return {
     schemaVersion: "ft-ledger-snapshot@1",
     snapshotHash,
-    totalChanges: normalize Int(snapshot?.diff?.totalChanges),
+    totalChanges: normalizeInt(snapshot?.diff?.totalChanges),
     riskScore: normalizeInt(snapshot?.metrics?.riskScore),
     shadowAdmins: normalizeInt(snapshot?.metrics?.shadowAdmins),
     unresolvedDrifts: normalizeInt(snapshot?.metrics?.unresolvedDrifts),
