@@ -56,15 +56,25 @@ export class SnapshotCapturer {
   /**
    * Capture a snapshot
    * Returns SnapshotRun + Snapshot if successful
+   * 
+   * @param scheduledForISO ISO 8601 timestamp for when this was scheduled (required)
+   * @param capturedAtISO ISO 8601 timestamp for when snapshot was captured (required)
+   * @param startedAtISO ISO 8601 timestamp for when capture started (required)
+   * @param finishedAtISO ISO 8601 timestamp for when capture finished (required)
    */
-  async capture(): Promise<{
+  async capture(
+    scheduledForISO: string,
+    capturedAtISO: string,
+    startedAtISO: string,
+    finishedAtISO: string,
+  ): Promise<{
     run: SnapshotRun;
     snapshot?: Snapshot;
   }> {
     const runId = this.generateUUID();
     const snapshotId = this.generateUUID();
     const startTime = Date.now();
-    const scheduledFor = new Date().toISOString();
+    const scheduledFor = scheduledForISO;
 
     try {
       const payload = await this.buildPayload();
@@ -84,7 +94,7 @@ export class SnapshotCapturer {
         tenant_id: this.tenantId,
         cloud_id: this.cloudId,
         snapshot_id: snapshotId,
-        captured_at: new Date().toISOString(),
+        captured_at: capturedAtISO,
         snapshot_type: this.snapshotType,
         schema_version: '1.0.0',
         canonical_hash: canonicalHash,
@@ -111,8 +121,8 @@ export class SnapshotCapturer {
         run_id: runId,
         scheduled_for: scheduledFor,
         snapshot_type: this.snapshotType,
-        started_at: new Date(startTime).toISOString(),
-        finished_at: new Date(endTime).toISOString(),
+        started_at: startedAtISO,
+        finished_at: finishedAtISO,
         status: this.missingData.length > 0 ? 'partial' : 'success',
         error_code: ErrorCode.NONE,
         api_calls_made: this.apiCallsMade,
@@ -136,8 +146,8 @@ export class SnapshotCapturer {
         run_id: runId,
         scheduled_for: scheduledFor,
         snapshot_type: this.snapshotType,
-        started_at: new Date(startTime).toISOString(),
-        finished_at: new Date(endTime).toISOString(),
+        started_at: startedAtISO,
+        finished_at: finishedAtISO,
         status: 'failed',
         error_code: this.categorizeError(error),
         error_detail: error.message,

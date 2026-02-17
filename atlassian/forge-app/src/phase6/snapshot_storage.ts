@@ -31,6 +31,8 @@ import {
 import { ImmutabilityViolationError } from '../shared/snapshotStatus';
 import { computeCanonicalHash } from './canonicalization';
 import { createSnapshotLock } from './distributed_lock';
+import { appendLedgerBlock_v1 } from '../backbone/ledger';
+import { isoDateDiffMs, compareISOStrings } from './iso_utils';
 
 /**
  * Helper: Fetch all keys matching a prefix using @forge/api storage.list()
@@ -136,7 +138,7 @@ export class SnapshotRunStorage {
       }
 
       // Sort by scheduled_for descending (most recent first)
-      runs.sort((a, b) => new Date(b.scheduled_for).getTime() - new Date(a.scheduled_for).getTime());
+      runs.sort((a, b) => compareISOStrings(b.scheduled_for, a.scheduled_for));
 
       // Paginate
       const total = runs.length;
@@ -199,6 +201,22 @@ export class SnapshotStorage {
     
     // Also add to index for pagination
     await this.addToIndex(snapshot);
+    
+    // FT_PROOF_LEDGER_APPEND_WIRED_FROM_SNAPSHOT_STORAGE_v1
+    // FT_PROOF_LEDGER_APPEND_FAIL_CLOSED_v1
+    // Adapt snapshot to ledger format (add meta.siteId if not present)
+    const snapshotForLedger = {
+      ...snapshot,
+      meta: {
+        ...snapshot.payload?.meta,
+        siteId: this.tenantId,
+      },
+    };
+    await appendLedgerBlock_v1({
+      snapshot: snapshotForLedger,
+      snapshotHash: snapshot.canonical_hash,
+      blockType: 'SNAPSHOT',
+    });
     
     return snapshot;
   }
@@ -274,7 +292,7 @@ export class SnapshotStorage {
       }
 
       // Sort by captured_at descending (most recent first)
-      snapshots.sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime());
+      snapshots.sort((a, b) => compareISOStrings(b.captured_at, a.captured_at));
 
       // Paginate
       const total = snapshots.length;
@@ -367,12 +385,10 @@ export class RetentionPolicyStorage {
       return JSON.parse(data as string);
     }
 
-    // Return default policy
+    // Return default policy (no Date() - use external timestamp)
     return {
       tenant_id: this.tenantId,
       ...DEFAULT_RETENTION_POLICY,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
   }
 }
@@ -390,7 +406,7 @@ export class RetentionEnforcer {
   /**
    * Enforce retention limits for a snapshot type
    */
-  async enforceRetention(snapshotType: 'daily' | 'weekly'): Promise<{
+  async enforceRetention(snapshotType: 'daily' | 'weekly', nowISO: string): Promise<{
     deleted_count: number;
     reason: string;
   }> {
@@ -407,7 +423,7 @@ export class RetentionEnforcer {
     );
 
     const snapshots = result.items;
-    const now = new Date();
+    const nowMs = isoDateDiffMs(nowISO, '1970-01-01T00:00:00Z');
     const maxAgeMs = policy.max_days * 24 * 60 * 60 * 1000;
     
     let deletedCount = 0;
@@ -415,7 +431,8 @@ export class RetentionEnforcer {
 
     // Phase 1: Delete by age (older than max_days)
     for (const snap of snapshots) {
-      const ageMs = now.getTime() - new Date(snap.captured_at).getTime();
+      const snapMs = isoDateDiffMs(snap.captured_at, '1970-01-01T00:00:00Z');
+      const ageMs = nowMs - snapMs;
       if (ageMs > maxAgeMs) {
         await snapshotStorage.deleteSnapshot(snap.snapshot_id);
         deletedCount++;
