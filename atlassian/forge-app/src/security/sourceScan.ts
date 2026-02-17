@@ -17,6 +17,22 @@ function toRel(appRoot: string, absPath: string): string {
   return rel;
 }
 
+function stripStringsAndComments(line: string): string {
+  // Remove // comments
+  const noLineComment = line.replace(/\/\/.*$/, "");
+
+  // Remove /* */ on same line (best-effort single-line)
+  const noBlockComment = noLineComment.replace(/\/\*.*?\*\//g, "");
+
+  // Remove single and double quoted strings (best-effort; no multiline)
+  const noStrings = noBlockComment
+    .replace(/'([^'\\]|\\.)*'/g, "''")
+    .replace(/"([^"\\]|\\.)*"/g, '""')
+    .replace(/`([^`\\]|\\.)*`/g, "``");
+
+  return noStrings;
+}
+
 function isAllowlisted(m: ScanMatch, family: "outbound" | "mutation"): { ok: boolean; entry?: AllowlistedMatch } {
   for (const a of ALLOWLIST) {
     if (a.family !== family) continue;
@@ -47,14 +63,16 @@ function scanFile(filePath: string, ruleId: string, appRoot: string, re: RegExp)
   const lines = raw.split(/\r?\n/);
   const hits: ScanMatch[] = [];
   for (let i = 0; i < lines.length; i++) {
+    // Strip comments and strings before matching (credible scanning)
+    const scanLine = stripStringsAndComments(lines[i]);
     re.lastIndex = 0;
-    if (re.test(lines[i])) {
+    if (re.test(scanLine)) {
       hits.push({
         ruleId,
         fileAbs: filePath,
         fileRel: toRel(appRoot, filePath),
         line: i + 1,
-        text: lines[i].slice(0, 240)
+        text: lines[i].slice(0, 240)  // Keep original line for display
       });
     }
   }

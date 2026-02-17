@@ -144,6 +144,24 @@ if (recomputed !== manifest.bundleSha256) {
 process.stdout.write("OK");
 NODE
 echo ""
+
+# 4) STEP 5: Verify allowlist is present in 05 and 06 (fail-closed)
+node <<NODE
+const fs = require("fs");
+const path = require("path");
+const dir = "$LATEST";
+function mustHaveAllowlist(file){
+  const obj = JSON.parse(fs.readFileSync(path.join(dir,file),"utf8"));
+  if (!obj.allowlist || !obj.allowlist.version || !obj.allowlist.sha256) {
+    throw new Error("FAIL-CLOSED: Missing allowlist block in " + file);
+  }
+}
+mustHaveAllowlist("05_no_outbound_attestation.json");
+mustHaveAllowlist("06_no_mutation_attestation.json");
+process.stdout.write("OK");
+NODE
+echo ""
 echo "FT_PROOF:PHASE4_VERIFY_BUNDLE_SHA_RECOMPUTE_OK"
+echo "FT_PROOF:PHASE4_VERIFY_ALLOWLIST_PRESENT=OK"
 
 echo "FT_PROOF:PHASE4_VERIFY_SUCCESS"

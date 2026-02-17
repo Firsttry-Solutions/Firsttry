@@ -20,11 +20,9 @@ export FT_APP_ROOT="$APP_ROOT"
 # Build (dist must exist)
 npm run build
 
-# Ensure proof bundle TypeScript is compiled (npx tsc generates dist/src/...)
-npx tsc --project tsconfig.json --outDir dist 2>/dev/null || true
-
 # FAIL-CLOSED dist entrypoint resolution (deterministic, zero ambiguity)
-ENTRY_POINT=$(bash scripts/proof/resolve_phase4_dist_entrypoint.sh)
+ENTRY="$(bash scripts/proof/resolve_phase4_dist_entrypoint.sh)"
+echo "FT_PROOF:PHASE4_DIST_ENTRYPOINT=$ENTRY"
 
 # Run generator (selftest included) - explicitly pass env to ensure they're available
 FT_APP_ROOT="$APP_ROOT" \
@@ -35,6 +33,6 @@ FT_BUILD_SHA_SHORT="$FT_BUILD_SHA_SHORT" \
 FT_BUILD_UTC="$FT_BUILD_UTC" \
 FT_RULESET_VERSION="$FT_RULESET_VERSION" \
 FT_SCHEMA_VERSION="$FT_SCHEMA_VERSION" \
-node "$ENTRY_POINT"
+node "$ENTRY"
 
 echo "FT_PROOF:PHASE4_BUNDLE_SUCCESS"
