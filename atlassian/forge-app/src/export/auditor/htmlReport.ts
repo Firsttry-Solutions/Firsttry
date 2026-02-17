@@ -472,9 +472,18 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
         <!-- Evidence Hash Display -->
         <div class="section">
             <h2>Evidence Integrity Hash</h2>
-            <div class="hash-display" title="SHA-256 of canonical evidence.json">
+            <div class="hash-display" title="SHA-256 of canonical evidence.json" id="evidenceHashDisplay">
                 <strong>evidenceSha256:</strong><br>
                 ${evidenceSha256}
+            </div>
+            <!-- FT_PROOF_MAILTO_ZERO_SCOPE_v1: Copy and mailto buttons for evidence hash -->
+            <div class="button-group">
+                <button class="secondary" onclick="copyEvidenceHash()" ${evidenceSha256 === "unknown" ? "disabled" : ""}>
+                    📋 Copy Evidence Hash
+                </button>
+                <button class="secondary" onclick="mailtoEvidenceHash()" ${evidenceSha256 === "unknown" ? "disabled" : ""}>
+                    ✉️ Email Evidence Hash
+                </button>
             </div>
         </div>
 
@@ -664,6 +673,49 @@ export function generateSmartHtmlReport(params: HtmlReportParams): string {
         function escapeHtml(text) {
             const map = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"};
             return text.replace(/[&<>"']/g, c => map[c]);
+        }
+
+        /**
+         * FT_PROOF_MAILTO_ZERO_SCOPE_v1: Copy evidence hash to clipboard
+         * No storage, no networking - pure clientside interaction
+         */
+        function copyEvidenceHash() {
+            const hashDisplay = document.getElementById("evidenceHashDisplay");
+            const text = hashDisplay.innerText.replace("evidenceSha256:\n", "").trim();
+            
+            if (!text || text === "unknown") {
+                alert("Evidence hash is not available");
+                return;
+            }
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Evidence hash copied to clipboard");
+            }).catch(err => {
+                console.error("Failed to copy:", err);
+                alert("Failed to copy hash. Please try manually.");
+            });
+        }
+
+        /**
+         * FT_PROOF_MAILTO_ZERO_SCOPE_v1: Open mailto with evidence hash
+         * No auto-send, no storage - user controls email composition
+         */
+        function mailtoEvidenceHash() {
+            const hashDisplay = document.getElementById("evidenceHashDisplay");
+            const text = hashDisplay.innerText.replace("evidenceSha256:\\n", "").trim();
+            
+            if (!text || text === "unknown") {
+                alert("Evidence hash is not available");
+                return;
+            }
+            
+            const subject = encodeURIComponent("FirstTry Auditor Evidence Hash");
+            const body = encodeURIComponent("Evidence SHA-256: " + text + "\\n\\nPlease verify this hash against the audit report.");
+            const mailtoLink = "mailto:?subject=" + subject + "&body=" + body;
+            
+            // Open default email client
+            window.location.href = mailtoLink;
         }
     </script>
 </body>
