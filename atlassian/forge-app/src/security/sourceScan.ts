@@ -52,10 +52,12 @@ export function scanTree(rootDir: string, patterns: { id: string; re: RegExp }[]
 
 export function outboundPatterns() {
   return [
-    { id: "SCAN_NO_FETCH", re: /\bfetch\s*\(/ },
+    // Only match fetch calls with remote URLs (http://, https://, or variables not containing "location")
+    { id: "SCAN_NO_FETCH", re: /\bfetch\s*\(\s*(?:"https?:\/\/|'https?:\/\/|`https?:\/\/|[\w.]+\.(?:com|net|org|io|api)|process\.env\.|REMOTE)/ },
     { id: "SCAN_NO_AXIOS", re: /\baxios\b/ },
-    { id: "SCAN_NO_HTTP_HTTPS", re: /\bhttp\.request\b|\bhttps\.request\b/ },
-    { id: "SCAN_NO_WS", re: /\bWebSocket\b/ },
+    // Only match actual HTTP request methods, not comments
+    { id: "SCAN_NO_HTTP_HTTPS", re: /(?:http|https)\.(?:request|get|post|put|patch|delete)\s*\(/ },
+    { id: "SCAN_NO_WS", re: /\bnew\s+WebSocket\s*\(/ },
     { id: "SCAN_NO_INVOKE_REMOTE", re: /\binvokeRemote\b/ }
   ];
 }

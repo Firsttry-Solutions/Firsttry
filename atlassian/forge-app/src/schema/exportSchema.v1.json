@@ -1,0 +1,19 @@
+{
+  "schema": "ft.exportSchema.v1",
+  "version": "v1",
+  "description": "FirstTry Export Schema v1 - Deterministic Auditor Proof Lock",
+  "schemaVersion": "v1",
+  "schemaHash": "0",
+  "createdUtc": "2026-02-17T00:00:00Z",
+  "documentTypes": {
+    "issueSummary": {
+      "id": "string",
+      "key": "string",
+      "summary": "string"
+    },
+    "projectState": {
+      "id": "string",
+      "key": "string"
+    }
+  }
+}
