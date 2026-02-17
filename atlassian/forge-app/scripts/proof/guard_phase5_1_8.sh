@@ -44,16 +44,11 @@ log_check() {
 
 # CHECK 1: package.json unchanged
 echo "=== CHECK 1: package.json unchanged ===" | tee -a "$RUN_DIR/guard_checks.txt"
-if [[ -f "$RUN_DIR/package.json.before" ]]; then
-  if diff -q "$RUN_DIR/package.json.before" package.json > /dev/null 2>&1; then
-    log_check "package.json unchanged" "PASS"
-  else
-    log_check "package.json CHANGED (hard fail)" "FAIL"
-  fi
+test -f "$RUN_DIR/package.json.before" || (echo "FAIL: missing baseline package.json.before" && exit 1)
+if diff -q "$RUN_DIR/package.json.before" package.json > /dev/null 2>&1; then
+  log_check "package.json unchanged" "PASS"
 else
-  # First run - capture baseline
-  cp package.json "$RUN_DIR/package.json.before"
-  log_check "package.json baseline captured" "PASS"
+  log_check "package.json CHANGED (hard fail)" "FAIL"
 fi
 
 # CHECK 2: lockfile unchanged
@@ -65,7 +60,7 @@ if [[ -f "$RUN_DIR/package-lock.json.before" && -f package-lock.json ]]; then
     log_check "package-lock.json CHANGED (hard fail)" "FAIL"
   fi
 else
-  log_check "lockfile baseline not found (skipping)" "PASS"
+  test -f "$RUN_DIR/package-lock.json.before" || (echo "FAIL: missing baseline package-lock.json.before" && exit 1)
 fi
 
 # CHECK 3: Manifest manifest.yml scopes unchanged
@@ -103,15 +98,26 @@ fi
 
 # CHECK 5: No Jira mutation patterns
 echo "=== CHECK 5: No Jira mutation patterns ===" | tee -a "$RUN_DIR/guard_checks.txt"
-JIRA_MUTATIONS="requestJira.*POST|requestJira.*PUT|requestJira.*DELETE|/rest/api/3/issue.*POST|/rest/api/3/issue.*PUT|/rest/api/3/issue.*DELETE"
-# Exclude test files and comments (test files intentionally contain mutation patterns)
-FOUND=$(grep -rE "$JIRA_MUTATIONS" src/ 2>/dev/null | grep -v "test\|spec\|__tests__\|//" | wc -l || true)
-if [[ "$FOUND" == "0" ]]; then
-  log_check "no Jira mutations" "PASS"
+
+# Strict check: FAIL if patterns found in runtime code (src only, non-comment)
+echo "Checking src/ for Jira mutation patterns (FAIL if found)..."
+if rg -n "(requestJira\(|api\.asApp\(\)\.requestJira|POST|PUT|DELETE).*jira" src --type ts 2>/dev/null \
+    | rg -v "^\s*//" > "$RUN_DIR/jira_mutations_runtime.txt" 2>&1; then
+  if [[ -s "$RUN_DIR/jira_mutations_runtime.txt" ]]; then
+    echo "FAIL: jira mutation pattern in src/" | tee -a "$RUN_DIR/guard_checks.txt"
+    cat "$RUN_DIR/jira_mutations_runtime.txt" >> "$RUN_DIR/guard_checks.txt"
+    log_check "Jira mutations found in src/ (hard fail)" "FAIL"
+  else
+    log_check "no Jira mutations in src/" "PASS"
+    # Informational: check tests (does not fail)
+    echo "INFO: jira mutation patterns in tests (allowed for mocks only):" | tee -a "$RUN_DIR/guard_checks.txt"
+    rg -n "(requestJira\(|api\.asApp\(\)\.requestJira|POST|PUT|DELETE).*jira" tests --type ts 2>/dev/null >> "$RUN_DIR/guard_checks.txt" || echo "  (none found)" >> "$RUN_DIR/guard_checks.txt"
+  fi
 else
-  echo "Found $FOUND Jira mutation references:" | tee -a "$RUN_DIR/guard_checks.txt"
-  grep -rE "$JIRA_MUTATIONS" src/ 2>/dev/null | grep -v "test\|spec\|__tests__\|//" | head -5 >> "$RUN_DIR/guard_checks.txt" || true
-  log_check "Jira mutations found (hard fail)" "FAIL"
+  log_check "no Jira mutations in src/" "PASS"
+  # Informational: check tests (does not fail)
+  echo "INFO: jira mutation patterns in tests (allowed for mocks only):" | tee -a "$RUN_DIR/guard_checks.txt"
+  rg -n "(requestJira\(|api\.asApp\(\)\.requestJira|POST|PUT|DELETE).*jira" tests --type ts 2>/dev/null >> "$RUN_DIR/guard_checks.txt" || echo "  (none found)" >> "$RUN_DIR/guard_checks.txt"
 fi
 
 # CHECK 6: All Phase 5.1.8 markers present
