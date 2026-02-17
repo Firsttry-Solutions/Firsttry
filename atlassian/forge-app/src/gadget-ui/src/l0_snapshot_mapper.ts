@@ -296,67 +296,209 @@ export function mapL0SnapshotResponse(response: any): L0DashboardState {
  * - HARD_ERROR: Show error message
  * - NO intermediate states, NO loading spinners, NO retries
  */
-export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
-  // CSS styles are now loaded from static ft_styles.css file (CSP-compliant)
-  // No runtime <style> injection needed
+/**
+ * Create a SectionHeader element for tab content
+ * @param title - The section title to display
+ */
+function createSectionHeader(title: string): HTMLElement {
+  const header = document.createElement("div");
+  header.className = "ft-section-header";
+  header.style.display = "flex";
+  header.style.alignItems = "center";
+  header.style.marginTop = "20px";
+  header.style.marginBottom = "15px";
+  header.style.paddingBottom = "10px";
+  header.style.borderBottom = "2px solid #e0e0e0";
 
+  const titleEl = document.createElement("h2");
+  titleEl.textContent = title;
+  titleEl.style.margin = "0";
+  titleEl.style.fontSize = "16px";
+  titleEl.style.fontWeight = "600";
+  titleEl.style.color = "#333";
+
+  header.appendChild(titleEl);
+  return header;
+}
+
+/**
+ * Create the ECL-1 deterministic navigation tab structure
+ * FT_ECL_PHASE: ECL-1 NAV_SKELETON
+ * 
+ * Renders 9 fixed tabs with placeholder content (no logic, no mock data)
+ */
+function createECL1TabNavigation(): HTMLElement {
   const container = document.createElement("div");
-  container.className = "l0-dashboard-container";
-  container.setAttribute("data-testid", "ft-dashboard-root");
+  container.className = "ft-ecl1-tab-container";
+  container.style.display = "flex";
+  container.style.flexDirection = "column";
+  container.style.width = "100%";
 
-  // Aria-live region for state announcements (polite mode - doesn't interrupt user)
-  const liveRegion = document.createElement("div");
-  liveRegion.setAttribute("role", "status");
-  liveRegion.setAttribute("aria-live", "polite");
-  liveRegion.setAttribute("aria-atomic", "true");
-  liveRegion.className = "l0-dashboard-live-region";
-  liveRegion.textContent = `Dashboard state: ${state.status}. ${state.note}`;
-  container.appendChild(liveRegion);
+  // Tab labels (EXACT and in EXACT order)
+  const TAB_LABELS = [
+    "Executive Overview",
+    "Snapshots",
+    "Drift & Exposure",
+    "Access Reviews",
+    "Trust & Determinism",
+    "Audit & Control Mapping",
+    "Evidence Vault",
+    "Policies, RBAC & Alerts",
+    "Operations"
+  ];
 
-  // Main content div (grows to fill space)
-  const content = document.createElement("div");
-  content.className = "l0-dashboard-content";
+  // Tab list (navigation)
+  const tabList = document.createElement("div");
+  tabList.className = "ft-ecl1-tab-list";
+  tabList.style.display = "flex";
+  tabList.style.borderBottom = "1px solid #e0e0e0";
+  tabList.style.flexWrap = "wrap";
+  tabList.style.gap = "0px";
 
-  if (state.status === "AVAILABLE") {
-    // Available state - show snapshot
-    const title = document.createElement("h1");
-    
-    // Check if snapshot is a seed snapshot and label accordingly
-    const isSeedSnapshot = state.snapshotId && state.snapshotId.includes("-seed");
-    const titleText = isSeedSnapshot
-      ? "✓ Seed Snapshot (Baseline Only)"
-      : "✓ Governance Snapshot Available";
-    
-    title.textContent = titleText;
-    title.className = "l0-dashboard-title-available";
-    // ENTERPRISE LAYOUT: Minimize top gap for above-fold content
-    title.classList.add("ft-snapshot-title");
-    content.appendChild(title);
+  // Tab content container
+  const contentContainer = document.createElement("div");
+  contentContainer.className = "ft-ecl1-tab-content-container";
+  contentContainer.style.width = "100%";
 
-    // A5: Snapshot Variant Selector Control
-    const variantControls = document.createElement("div");
-    variantControls.className = "l0-variant-controls ft-snapshot-selector";
-    variantControls.setAttribute("data-testid", "ft-snapshot-selector");
-    // ENTERPRISE LAYOUT: Minimize spacing below variant selector
-    variantControls.classList.add("ft-variant-controls");
+  // State: active tab index
+  let activeTabIndex = 0;
+
+  // Helper: Update active tab display
+  function setActiveTab(index: number) {
+    activeTabIndex = index;
     
-    const variantLabel = document.createElement("label");
-    variantLabel.className = "l0-variant-label";
-    variantLabel.textContent = "View Snapshot: ";
+    // Update tab buttons
+    Array.from(tabButtons).forEach((btn, idx) => {
+      const button = btn as HTMLElement;
+      if (idx === index) {
+        button.style.borderBottom = "3px solid #0052CC";
+        button.style.color = "#0052CC";
+        button.style.fontWeight = "600";
+      } else {
+        button.style.borderBottom = "none";
+        button.style.color = "#626F86";
+        button.style.fontWeight = "400";
+      }
+    });
+
+    // Update content panels
+    Array.from(contentPanels).forEach((panel, idx) => {
+      const p = panel as HTMLElement;
+      p.style.display = idx === index ? "block" : "none";
+    });
+  }
+
+  // Create tab buttons and content panels
+  const tabButtons: HTMLElement[] = [];
+  const contentPanels: HTMLElement[] = [];
+
+  TAB_LABELS.forEach((label, index) => {
+    // Tab button
+    const button = document.createElement("button");
+    button.textContent = label;
+    button.className = "ft-ecl1-tab-button";
+    button.style.flex = "1";
+    button.style.padding = "14px 16px";
+    button.style.border = "none";
+    button.style.background = "transparent";
+    button.style.cursor = "pointer";
+    button.style.fontSize = "14px";
+    button.style.whiteSpace = "nowrap";
+    button.style.color = "#626F86";
+    button.style.borderBottom = index === 0 ? "3px solid #0052CC" : "none";
+    button.style.fontWeight = index === 0 ? "600" : "400";
+
+    button.addEventListener("click", () => {
+      setActiveTab(index);
+    });
+
+    tabButtons.push(button);
+    tabList.appendChild(button);
+
+    // Content panel
+    const panel = document.createElement("div");
+    panel.className = `ft-ecl1-tab-panel ft-ecl1-tab-panel-${index}`;
+    panel.style.display = index === 0 ? "block" : "none";
+    panel.style.padding = "20px";
+    panel.style.width = "100%";
+
+    // Add section header
+    const header = createSectionHeader(label);
+    panel.appendChild(header);
+
+    // Add placeholder text (EXACT)
+    const placeholder = document.createElement("p");
+    placeholder.textContent = "No data available.";
+    placeholder.style.color = "#626F86";
+    placeholder.style.fontSize = "14px";
+    placeholder.style.margin = "10px 0 0 0";
+
+    panel.appendChild(placeholder);
+
+    contentPanels.push(panel);
+    contentContainer.appendChild(panel);
+  });
+
+  container.appendChild(tabList);
+  container.appendChild(contentContainer);
+
+  return container;
+}
+
+/**
+/**
+ * Render L0 dashboard UI (main export)
+ * - AVAILABLE: Show snapshot details + ECL-1 tabs
+ * - NO_SNAPSHOT: Show dashboard with no data message
+ * - INVALID_SNAPSHOT: Show dashboard with validation failure message
+ * - HARD_ERROR: Show error details
+ */
+export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
+    const container = document.createElement("div");
+    container.className = "l0-dashboard-container";
     
-    const variantSelect = document.createElement("select");
-    variantSelect.id = "ft-snapshot-variant-select";
-    variantSelect.className = "l0-variant-select";
+    const content = document.createElement("div");
+    content.className = "l0-dashboard-content";
+    content.setAttribute("role", "main");
+    content.setAttribute("aria-live", "polite");
     
-    const optionLatest = document.createElement("option");
-    optionLatest.value = "latest";
-    optionLatest.textContent = "Latest";
-    optionLatest.selected = (state.selectedVariant !== "seed");
-    variantSelect.appendChild(optionLatest);
-    
-    const optionSeed = document.createElement("option");
-    optionSeed.value = "seed";
-    optionSeed.textContent = "Seed";
+    // Branch on state.status
+    if (state.status === "AVAILABLE") {
+        const isSeedSnapshot = state.snapshotId?.startsWith("SEED_") || false;
+        
+        const title = document.createElement("h1");
+        const titleText = isSeedSnapshot
+          ? "✓ Seed Snapshot (Baseline Only)"
+          : "✓ Governance Snapshot Available";
+        
+        title.textContent = titleText;
+        title.className = "l0-dashboard-title-available";
+        title.classList.add("ft-snapshot-title");
+        content.appendChild(title);
+
+        // A5: Snapshot Variant Selector Control
+        const variantControls = document.createElement("div");
+        variantControls.className = "l0-variant-controls ft-snapshot-selector";
+        variantControls.setAttribute("data-testid", "ft-snapshot-selector");
+        variantControls.classList.add("ft-variant-controls");
+        
+        const variantLabel = document.createElement("label");
+        variantLabel.className = "l0-variant-label";
+        variantLabel.textContent = "View Snapshot: ";
+        
+        const variantSelect = document.createElement("select");
+        variantSelect.id = "ft-snapshot-variant-select";
+        variantSelect.className = "l0-variant-select";
+        
+        const optionLatest = document.createElement("option");
+        optionLatest.value = "latest";
+        optionLatest.textContent = "Latest";
+        optionLatest.selected = (state.selectedVariant !== "seed");
+        variantSelect.appendChild(optionLatest);
+        
+        const optionSeed = document.createElement("option");
+        optionSeed.value = "seed";
+        optionSeed.textContent = "Seed";
     optionSeed.selected = (state.selectedVariant === "seed");
     variantSelect.appendChild(optionSeed);
     
