@@ -18,10 +18,11 @@ export interface SnapshotFrequencyResult {
 }
 
 /**
- * Parse ISO UTC time string to extract hour/minute/day
+ * Parse ISO UTC time string to extract numeric timestamp
  * NO Date() usage - string-based parsing only
+ * Returns numeric value for comparison
  */
-function parseIsoHours(isoStr: string): number | null {
+function parseIsoToMinutes(isoStr: string): number | null {
   if (!isoStr || typeof isoStr !== "string") return null;
 
   try {
@@ -35,11 +36,13 @@ function parseIsoHours(isoStr: string): number | null {
     const day = parseInt(match[3], 10);
     const hours = parseInt(match[4], 10);
     const minutes = parseInt(match[5], 10);
-    const seconds = parseInt(match[6], 10);
 
-    // Construct numeric representation: YYYYMMDDHHMM
-    // for subtraction to compute intervals
-    return year * 1000000 + month * 10000 + day * 100 + hours + minutes / 100;
+    // Compute days since epoch (approx): days = (year-2000)*365 + month*30 + day
+    // This is just for ordering, not precise
+    const daysApprox = (year - 2000) * 365 + (month - 1) * 30 + (day - 1);
+    
+    // Total minutes = days_in_minutes + hours_in_minutes + minutes
+    return daysApprox * 24 * 60 + hours * 60 + minutes;
   } catch (err) {
     console.error(`[snapshotFrequency] Parse error: ${err}`);
     return null;
@@ -51,14 +54,14 @@ function parseIsoHours(isoStr: string): number | null {
  * Uses numeric parsing, no Date
  */
 function computeIntervalHours(iso1: string, iso2: string): number | null {
-  const num1 = parseIsoHours(iso1);
-  const num2 = parseIsoHours(iso2);
+  const mins1 = parseIsoToMinutes(iso1);
+  const mins2 = parseIsoToMinutes(iso2);
 
-  if (num1 === null || num2 === null) return null;
+  if (mins1 === null || mins2 === null) return null;
 
-  // Rough calculation: diff in hours assuming same-day at minimum
-  const diffMinutes = Math.abs(num1 - num2) * 100; // Convert back to minutes approx
-  return Math.max(1, Math.round(diffMinutes / 60)); // Min 1 hour
+  // Diff in minutes, then convert to hours
+  const diffMinutes = Math.abs(mins1 - mins2);
+  return Math.max(1, Math.round(diffMinutes / 60));
 }
 
 /**
