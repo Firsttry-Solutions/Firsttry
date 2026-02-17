@@ -104,37 +104,58 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
     verifyPs1Script,
   });
 
-  // 4b. Two-pass HTML generation: First hash for temp manifest
+  // 4b. Two-pass HTML generation: Compute htmlSha256 and rebuild
   console.log("[FT_PROOF_TWO_PASS_HTML_v1]", { marker: "FT_PROOF_TWO_PASS_HTML_v1" });
-  const tempHtmlSha256 = sha256Hex(htmlContent);
-
-  // Compute verify script hashes (optional, but good for extra verification)
   const verifyShSha256 = sha256Hex(verifyShScript);
   const verifyPs1Sha256 = sha256Hex(verifyPs1Script);
 
-  // 4c. Rebuild manifest with hash information
+  // 4c. Fixed-point iteration for htmlSha256 (converge until HTML hash stable)
+  // Start with empty/placeholder htmlSha256, iterate until htmlSha256 stabilizes
+  let htmlSha256 = "";
+  let prevHtmlSha256 = null;
+  let convergenceIter = 0;
+  const maxIter = 5;
+
+  while (convergenceIter < maxIter) {
+    // Rebuild manifest with current htmlSha256
+    manifest = buildAuditorManifest({
+      snapshot: auditableSnapshot,
+      evidenceSha256,
+      htmlSha256,
+      verifyShSha256,
+      verifyPs1Sha256,
+    });
+
+    // Regenerate HTML with updated manifest
+    htmlContent = generateSmartHtmlReport({
+      evidenceJsonString: evidenceJson,
+      manifestJson: manifest,
+      verifyShScript,
+      verifyPs1Script,
+    });
+
+    // Compute new htmlSha256
+    const newHtmlSha256 = sha256Hex(htmlContent);
+
+    if (newHtmlSha256 === htmlSha256) {
+      // Converged! htmlSha256 is stable
+      console.log(`[DEBUG_CONVERGENCE] Converged at iteration ${convergenceIter}`);
+      break;
+    }
+
+    prevHtmlSha256 = htmlSha256;
+    htmlSha256 = newHtmlSha256;
+    convergenceIter++;
+  }
+
+  if (convergenceIter >= maxIter) {
+    console.warn(
+      `[WARNING_CONVERGENCE] htmlSha256 did not converge after ${maxIter} iterations`
+    );
+  }
+
+  // Ensure final manifest has correct htmlSha256
   manifest = buildAuditorManifest({
-    snapshot: auditableSnapshot,
-    evidenceSha256,
-    htmlSha256: tempHtmlSha256, // Use temp hash to create manifest
-    verifyShSha256,
-    verifyPs1Sha256,
-  });
-
-  // 4d. Rebuild HTML with updated manifest
-  htmlContent = generateSmartHtmlReport({
-    evidenceJsonString: evidenceJson,
-    manifestJson: manifest,
-    verifyShScript,
-    verifyPs1Script,
-  });
-
-  // 4e. Compute final htmlSha256 from Pass 2 HTML (the actual final HTML)
-  const htmlSha256 = sha256Hex(htmlContent);
-  console.log("[DEBUG_HTML_SHA] Pass 2 htmlSha256:", htmlSha256.substring(0, 16) + "...");
-
-  // 4f. If htmlSha256 changed, rebuild manifest and HTML once more for determinism
-  const newManifest = buildAuditorManifest({
     snapshot: auditableSnapshot,
     evidenceSha256,
     htmlSha256,
@@ -142,23 +163,20 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
     verifyPs1Sha256,
   });
 
-  // Check if manifest changed (would indicate non-convergence)
-  const manifestChanged = JSON.stringify(newManifest) !== JSON.stringify(manifest);
-  console.log("[DEBUG_MANIFEST_CHECK] manifestChanged:", manifestChanged);
-  if (manifestChanged) {
-    console.log("[DEBUG_REBUILD] Rebuilding HTML with final manifest");
-    // Rebuild HTML once more with final manifest
-    manifest = newManifest;
-    htmlContent = generateSmartHtmlReport({
-      evidenceJsonString: evidenceJson,
-      manifestJson: manifest,
-      verifyShScript,
-      verifyPs1Script,
-    });
-    const finalHtmlSha = sha256Hex(htmlContent);
-    console.log("[DEBUG_FINAL_HTML_SHA] After manifest sync:", finalHtmlSha.substring(0, 16) + "...");
-  } else {
-    manifest = newManifest;
+  // Final HTML generation with correct manifest
+  htmlContent = generateSmartHtmlReport({
+    evidenceJsonString: evidenceJson,
+    manifestJson: manifest,
+    verifyShScript,
+    verifyPs1Script,
+  });
+
+  // Sanity check: final HTML should hash to our computed htmlSha256
+  const finalCheck = sha256Hex(htmlContent);
+  if (finalCheck !== htmlSha256) {
+    console.warn(
+      `[WARNING_FINAL_CHECK] Final HTML hash (${finalCheck.substring(0, 16)}...) does not match computed htmlSha256 (${htmlSha256.substring(0, 16)}...)`
+    );
   }
 
   console.log("[FT_PROOF_PACKER_PACKET_COMPLETE]", {
