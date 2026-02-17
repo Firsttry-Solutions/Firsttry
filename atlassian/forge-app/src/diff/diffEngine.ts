@@ -162,12 +162,12 @@ export function generateDiff(previousSnapshot: any, currentSnapshot: any): DiffR
     const projectName = (project.name || "").toUpperCase();
     const projectDesc = (project.description || "").toUpperCase();
     const projectKey = (project.key || "").toUpperCase();
+    const projectText = projectName + " " + projectDesc + " " + projectKey;
 
     for (const pattern of confidentialPatterns) {
-      if (projectName.includes(pattern) || projectDesc.includes(pattern) || projectKey.includes(pattern)) {
+      if (projectText.includes(pattern)) {
         matchedPatternSet.add(pattern);
         confidentialMatchCount++;
-        break; // Count each project once per pattern match
       }
     }
   }
