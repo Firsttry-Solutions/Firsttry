@@ -40,6 +40,9 @@ npx tsc \
   --strict false --esModuleInterop --skipLibCheck \
   --forceConsistentCasingInFileNames
 
+# Remove any multiple paths again (tsc should not create them, but be defensive)
+rm -rf dist/proof dist/security
+
 # FAIL-CLOSED dist entrypoint resolution (deterministic, zero ambiguity)
 ENTRY="$(bash scripts/proof/resolve_phase4_dist_entrypoint.sh)"
 echo "FT_PROOF:PHASE4_DIST_ENTRYPOINT=$ENTRY"
