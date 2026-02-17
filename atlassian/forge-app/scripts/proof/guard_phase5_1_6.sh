@@ -185,7 +185,8 @@ log_step "CHECK 7: Running npm test"
 cd "$WORK_DIR"
 TEST_LOG="$RUN_DIR/test_run.log"
 
-if RUN_DIR="$RUN_DIR" npm test >"$TEST_LOG" 2>&1; then
+export RUN_DIR
+if npm test >"$TEST_LOG" 2>&1; then
     log_pass "All tests passed"
 else
     log_fail "Tests failed"
@@ -203,7 +204,7 @@ log_step "CHECK 8: Running npm run build"
 
 BUILD_LOG="$RUN_DIR/build_run.log"
 
-if RUN_DIR="$RUN_DIR" npm run build >"$BUILD_LOG" 2>&1; then
+if npm run build >"$BUILD_LOG" 2>&1; then
     log_pass "Build succeeded"
 else
     log_fail "Build failed"
