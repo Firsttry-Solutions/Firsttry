@@ -46,6 +46,7 @@ import { getDashboardSnapshotV1_resolver } from './resolvers/getDashboardSnapsho
 import { handler as ft_runAccessIntelligence_v1_handler } from './resolvers/ft_runAccessIntelligence_v1'; // PHASE 1
 import { handler as ft_exportAccessPack_v1_handler } from './resolvers/ft_exportAccessPack_v1'; // PHASE 1
 import { getMonitoringConfig, saveMonitoringConfig } from './resolvers/phase2_config'; // PHASE 2
+import { buildEnterpriseSellabilityPanels } from './enterprise/sellabilityPanels'; // PHASE 5.1.8
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -109,6 +110,35 @@ resolver.define('saveMonitoringConfig', async (req: any) => {
     throw new Error(
       err instanceof Error ? err.message : 'Failed to save monitoring config'
     );
+  }
+});
+
+// PHASE 5.1.8: Enterprise Sellability Panels (FT_PROOF_ENTERPRISE_SELLABILITY_PANELS_WIRED_v1)
+resolver.define('ft_getEnterpriseSellabilityPanels_v1', async (request: any) => {
+  try {
+    const tenantKey = request?.tenantKey || request?.context?.tenantKey || 'unknown';
+    const snapshot = request?.snapshot || {};
+    
+    const panelState = await buildEnterpriseSellabilityPanels(tenantKey, snapshot);
+    
+    console.log(JSON.stringify({
+      marker: '[FT_PROOF_ENTERPRISE_SELLABILITY_PANELS_WIRED_v1]',
+      resolver: 'ft_getEnterpriseSellabilityPanels_v1',
+      panelsReady: true,
+      errorCount: panelState.errors.length,
+      ts: new Date().toISOString(),
+    }));
+    
+    return {
+      ok: true,
+      enterprisePanels: panelState,
+    };
+  } catch (err) {
+    console.error('[ft_getEnterpriseSellabilityPanels_v1] Error:', err);
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    };
   }
 });
 
