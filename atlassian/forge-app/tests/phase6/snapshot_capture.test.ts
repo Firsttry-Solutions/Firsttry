@@ -58,9 +58,18 @@ describe('SnapshotCapturer', () => {
     capturer = new SnapshotCapturer(tenantId, cloudId, 'daily');
   });
 
+  // Helper to generate timestamps for capture() method (required parameters)
+  const getTestTimestamps = () => {
+    const now = new Date('2026-02-17T12:00:00Z').toISOString();
+    const started = new Date('2026-02-17T12:00:01Z').toISOString();
+    const finished = new Date('2026-02-17T12:00:05Z').toISOString();
+    return { now, started, finished };
+  };
+
   describe('Daily Snapshot Capture', () => {
     it('should successfully capture daily snapshot', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run).toBeDefined();
       expect(result.run.snapshot_type).toBe('daily');
@@ -68,7 +77,8 @@ describe('SnapshotCapturer', () => {
     });
 
     it('should include snapshot_id in run when successful', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run.status).toMatch(/success|partial/);
       if (result.run.status !== 'failed') {
@@ -78,13 +88,15 @@ describe('SnapshotCapturer', () => {
     });
 
     it('should record API calls made', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run.api_calls_made).toBeGreaterThanOrEqual(0);
     });
 
     it('should include schema version', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run.schema_version).toBe('1.0.0');
     });
@@ -108,7 +120,7 @@ describe('SnapshotCapturer', () => {
         json: async () => ({ values: [] }),
       });
 
-      await capturer.capture();
+      await capturer.capture(getTestTimestamps().now, getTestTimestamps().now, getTestTimestamps().started, getTestTimestamps().finished);
 
       const calls = mockAPI.asUser().requestJira.mock.calls;
       const endpoints = calls.map((call: any) => call[0]);
@@ -124,7 +136,7 @@ describe('SnapshotCapturer', () => {
     });
 
     it('should only use GET endpoints', async () => {
-      await capturer.capture();
+      await capturer.capture(getTestTimestamps().now, getTestTimestamps().now, getTestTimestamps().started, getTestTimestamps().finished);
 
       const calls = mockAPI.asUser().requestJira.mock.calls;
       
@@ -144,7 +156,8 @@ describe('SnapshotCapturer', () => {
         ok: false,
       });
 
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run.status).toBe('partial');
     });
@@ -155,7 +168,8 @@ describe('SnapshotCapturer', () => {
         ok: false,
       });
 
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run.status).toBe('partial');
     });
@@ -163,7 +177,8 @@ describe('SnapshotCapturer', () => {
     it('should handle API error', async () => {
       mockAPI.asUser().requestJira.mockRejectedValue(new Error('API Error'));
 
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run.status).toBe('partial');
     });
@@ -172,7 +187,8 @@ describe('SnapshotCapturer', () => {
       const errorMsg = 'Test error detail';
       mockAPI.asUser().requestJira.mockRejectedValue(new Error(errorMsg));
 
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run).toBeDefined();
     });
@@ -186,7 +202,8 @@ describe('SnapshotCapturer', () => {
         json: async () => ({ values: [] }),
       });
 
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       if (result.snapshot) {
         expect(Array.isArray(result.snapshot.missing_data)).toBe(true);
@@ -201,7 +218,8 @@ describe('SnapshotCapturer', () => {
         json: async () => ({ values: [] }),
       }).mockRejectedValueOnce(new Error('API Error'));
 
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       if (result.snapshot && result.snapshot.missing_data.length > 0) {
         const missing = result.snapshot.missing_data[0];
@@ -217,7 +235,8 @@ describe('SnapshotCapturer', () => {
     it('should include retry_count in missing data', async () => {
       mockAPI.asUser().requestJira.mockRejectedValue(new Error('API Error'));
 
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       if (result.snapshot && result.snapshot.missing_data.length > 0) {
         const missing = result.snapshot.missing_data[0];
@@ -229,7 +248,8 @@ describe('SnapshotCapturer', () => {
 
   describe('Snapshot Payload and Determinism', () => {
     it('should include canonical_hash in snapshot', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       if (result.snapshot) {
         expect(result.snapshot.canonical_hash).toBeDefined();
@@ -238,7 +258,8 @@ describe('SnapshotCapturer', () => {
     });
 
     it('should include same hash in run and snapshot', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       if (result.snapshot) {
         expect(result.run.produced_canonical_hash).toBe(result.snapshot.canonical_hash);
@@ -246,7 +267,8 @@ describe('SnapshotCapturer', () => {
     });
 
     it('should use SHA256 hash algorithm', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run.hash_algorithm).toBe('sha256');
       if (result.snapshot) {
@@ -255,7 +277,8 @@ describe('SnapshotCapturer', () => {
     });
 
     it('should include clock_source', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(['system', 'jira', 'unknown']).toContain(result.run.clock_source);
       if (result.snapshot) {
@@ -264,7 +287,8 @@ describe('SnapshotCapturer', () => {
     });
 
     it('should include scope in snapshot', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       if (result.snapshot) {
         expect(result.snapshot.scope).toBeDefined();
@@ -274,7 +298,8 @@ describe('SnapshotCapturer', () => {
     });
 
     it('should include input_provenance', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       if (result.snapshot) {
         expect(result.snapshot.input_provenance).toBeDefined();
@@ -286,13 +311,15 @@ describe('SnapshotCapturer', () => {
 
   describe('Timing and Metrics', () => {
     it('should record duration_ms', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run.duration_ms).toBeGreaterThanOrEqual(0);
     });
 
     it('should have started_at before finished_at', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       const start = new Date(result.run.started_at);
       const end = new Date(result.run.finished_at);
@@ -301,14 +328,16 @@ describe('SnapshotCapturer', () => {
     });
 
     it('should include scheduled_for', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(result.run.scheduled_for).toBeDefined();
       expect(new Date(result.run.scheduled_for)).toBeInstanceOf(Date);
     });
 
     it('should record api_calls_made and rate_limit_hits', async () => {
-      const result = await capturer.capture();
+      const { now, started, finished } = getTestTimestamps();
+      const result = await capturer.capture(now, now, started, finished);
 
       expect(typeof result.run.api_calls_made).toBe('number');
       expect(typeof result.run.rate_limit_hits_count).toBe('number');
