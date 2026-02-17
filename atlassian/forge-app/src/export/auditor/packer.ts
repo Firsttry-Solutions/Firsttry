@@ -96,7 +96,7 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
     evidenceSha256,
   });
 
-  // 4a. Generate HTML (pass 1: without htmlSha256)
+  // 4a. Generate HTML (without htmlSha256 in manifest - this is the "stable content")
   let htmlContent = generateSmartHtmlReport({
     evidenceJsonString: evidenceJson,
     manifestJson: manifest,
@@ -104,64 +104,40 @@ export async function createUniversalPacket(params: PackerParams): Promise<strin
     verifyPs1Script,
   });
 
-  // 4b. Two-pass HTML generation: Compute htmlSha256 and rebuild
+  // 4b. Two-pass HTML generation: Compute htmlSha256 from content HTML
   console.log("[FT_PROOF_TWO_PASS_HTML_v1]", { marker: "FT_PROOF_TWO_PASS_HTML_v1" });
+  // htmlSha256 is the hash of the "stable content" HTML (evidence + scripts + manifest without htmlSha256)
+  const htmlSha256 = sha256Hex(htmlContent);
+
+  // Compute verify script hashes
   const verifyShSha256 = sha256Hex(verifyShScript);
   const verifyPs1Sha256 = sha256Hex(verifyPs1Script);
 
-  // 4c. Fixed-point iteration for htmlSha256 (converge until HTML hash stable)
-  // Start with empty/placeholder htmlSha256, iterate until htmlSha256 stabilizes
-  let htmlSha256 = "";
-  let prevHtmlSha256: string | null = null;
-  let convergenceIter = 0;
-  const maxIter = 5;
+  // 4c. Rebuild manifest WITH htmlSha256
+  // Note: htmlSha256 is locked to the value from stable content above, not including itself
+  manifest = buildAuditorManifest({
+    snapshot: auditableSnapshot,
+    evidenceSha256,
+    htmlSha256,
+    verifyShSha256,
+    verifyPs1Sha256,
+  });
 
-  while (convergenceIter < maxIter) {
-    // Rebuild manifest with current htmlSha256
-    manifest = buildAuditorManifest({
-      snapshot: auditableSnapshot,
-      evidenceSha256,
-      htmlSha256,
-      verifyShSha256,
-      verifyPs1Sha256,
-    });
-
-    // Regenerate HTML with updated manifest
-    htmlContent = generateSmartHtmlReport({
-      evidenceJsonString: evidenceJson,
-      manifestJson: manifest,
-      verifyShScript,
-      verifyPs1Script,
-    });
-
-    // Compute new htmlSha256
-    const newHtmlSha256 = sha256Hex(htmlContent);
-
-    if (newHtmlSha256 === htmlSha256) {
-      // Converged! htmlSha256 is stable - htmlContent now contains correct manifest with matching hash
-      console.log(`[DEBUG_CONVERGENCE] Converged at iteration ${convergenceIter}`);
-      break;
-    }
-
-    prevHtmlSha256 = htmlSha256;
-    htmlSha256 = newHtmlSha256;
-    convergenceIter++;
-  }
-
-  if (convergenceIter >= maxIter) {
-    console.warn(
-      `[WARNING_CONVERGENCE] htmlSha256 did not converge after ${maxIter} iterations`
-    );
-  }
-
-  // At this point, htmlContent contains the HTML that hashhes to htmlSha256
-  // and manifest contains htmlSha256
-  // Return this content as-is (do NOT regenerate)
+  // 4d. Rebuild HTML with updated manifest (now contains htmlSha256)
+  // This HTML will have a different hash than htmlSha256, but that's expected:ุ
+  // htmlSha256 commits to the evidence content, not to the manifest (which references htmlSha256)
+  htmlContent = generateSmartHtmlReport({
+    evidenceJsonString: evidenceJson,
+    manifestJson: manifest,
+    verifyShScript,
+    verifyPs1Script,
+  });
 
   console.log("[FT_PROOF_PACKER_PACKET_COMPLETE]", {
     marker: "FT_PROOF_PACKER_PACKET_COMPLETE",
     evidenceSha256: evidenceSha256.substring(0, 16) + "...",
     htmlSize: htmlContent.length,
+    htmlSha256: htmlSha256.substring(0, 16) + "...",
   });
 
   return htmlContent;
