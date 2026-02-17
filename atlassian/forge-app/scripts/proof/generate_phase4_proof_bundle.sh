@@ -23,7 +23,15 @@ npm run build
 # FAIL-CLOSED dist entrypoint resolution (deterministic, zero ambiguity)
 ENTRY_POINT=$(bash scripts/proof/resolve_phase4_dist_entrypoint.sh)
 
-# Run generator (selftest included)
+# Run generator (selftest included) - explicitly pass env to ensure they're available
+FT_APP_ROOT="$APP_ROOT" \
+FT_SITE_ID="$FT_SITE_ID" \
+FT_APP_ID="$FT_APP_ID" \
+FT_ENV="$FT_ENV" \
+FT_BUILD_SHA_SHORT="$FT_BUILD_SHA_SHORT" \
+FT_BUILD_UTC="$FT_BUILD_UTC" \
+FT_RULESET_VERSION="$FT_RULESET_VERSION" \
+FT_SCHEMA_VERSION="$FT_SCHEMA_VERSION" \
 node "$ENTRY_POINT"
 
 echo "FT_PROOF:PHASE4_BUNDLE_SUCCESS"
