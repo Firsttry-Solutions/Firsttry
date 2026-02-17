@@ -1,19 +1,89 @@
 {
-  "schema": "ft.exportSchema.v1",
-  "version": "v1",
-  "description": "FirstTry Export Schema v1 - Deterministic Auditor Proof Lock",
-  "schemaVersion": "v1",
-  "schemaHash": "0",
-  "createdUtc": "2026-02-17T00:00:00Z",
-  "documentTypes": {
-    "issueSummary": {
-      "id": "string",
-      "key": "string",
-      "summary": "string"
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atlassian Forge App Export Schema v1",
+  "description": "Validated export schema for Atlassian Forge runtime. Enforces strict audit constraints on app capabilities.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "appId",
+    "siteId",
+    "environment",
+    "buildSha",
+    "exportUtc",
+    "ruleSetVersion",
+    "constraints"
+  ],
+  "properties": {
+    "appId": {
+      "type": "string",
+      "pattern": "^arn:cloud:forge:[a-z0-9-]+/[a-z0-9-]+$",
+      "description": "Forge App ARN identifier (arn:cloud:forge:...)"
     },
-    "projectState": {
-      "id": "string",
-      "key": "string"
+    "siteId": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+\\.atlassian\\.net$",
+      "description": "Atlassian site domain (*.atlassian.net)"
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["dev", "staging", "prod"],
+      "description": "Deployment environment"
+    },
+    "buildSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{8,}$",
+      "description": "Build commit SHA (hex, min 8 chars)"
+    },
+    "exportUtc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Export timestamp (ISO 8601 UTC)"
+    },
+    "ruleSetVersion": {
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(-(hardening|audit|release))?$",
+      "description": "Ruleset version (v X.Y.Z with optional suffix)"
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["noOutbound", "noMutation"],
+      "properties": {
+        "noOutbound": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enforced", "allowlistVersion"],
+          "properties": {
+            "enforced": {
+              "type": "boolean",
+              "const": true,
+              "description": "No outbound networking (fetch, axios, http.request, https.request, WebSocket, invokeRemote)"
+            },
+            "allowlistVersion": {
+              "type": "string",
+              "pattern": "^v[0-9]+$",
+              "description": "Audited allowlist version (v1, v2, ...)"
+            }
+          }
+        },
+        "noMutation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enforced", "allowlistVersion"],
+          "properties": {
+            "enforced": {
+              "type": "boolean",
+              "const": true,
+              "description": "No mutation of Jira state (no POST/PUT/DELETE/PATCH on Jira APIs or routes)"
+            },
+            "allowlistVersion": {
+              "type": "string",
+              "pattern": "^v[0-9]+$",
+              "description": "Audited allowlist version (v1, v2, ...)"
+            }
+          }
+        }
+      }
     }
   }
 }

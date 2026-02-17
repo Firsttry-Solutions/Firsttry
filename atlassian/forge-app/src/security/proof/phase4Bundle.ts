@@ -7,6 +7,7 @@ import { sha256HexBytes, sha256HexCanonicalJson } from "../hash";
 import { ensureDir, sha256HexFileBytes, writeUtf8, readFileBytes } from "../fsHash";
 import { extractForgeScopesFromManifestYml } from "../manifestScopes";
 import { scanTree, outboundPatterns, mutationPatterns } from "../sourceScan";
+import { ALLOWLIST, SCAN_ALLOWLIST_VERSION } from "../scanAllowlist";
 
 type ArtifactRef = { path: string; sha256: string };
 
@@ -49,6 +50,11 @@ function mustNoFailChecks(checks: { id: string; status: "PASS" | "FAIL"; matches
     const msg = `${label} failed: ` + failed.map(f => f.id).join(", ");
     throw new Error(msg);
   }
+}
+
+function allowlistHashSha256(): string {
+  const input = { schema: "ft.scanAllowlistInput.v1", version: SCAN_ALLOWLIST_VERSION, entries: ALLOWLIST };
+  return sha256HexCanonicalJson(input);
 }
 
 function rel(p: string) {
@@ -103,8 +109,8 @@ export function generatePhase4FullProofBundle() {
   const scopesHashSha256 = sha256HexCanonicalJson(scopeHashInput);
 
   // 05/06 attestations (fail-closed on ANY match)
-  const outboundChecks = scanTree(SRC_ROOT, outboundPatterns());
-  const mutationChecks = scanTree(SRC_ROOT, mutationPatterns());
+  const outboundChecks = scanTree(APP_ROOT, SRC_ROOT, "outbound", outboundPatterns());
+  const mutationChecks = scanTree(APP_ROOT, SRC_ROOT, "mutation", mutationPatterns());
   mustNoFailChecks(outboundChecks, "No-outbound scan");
   mustNoFailChecks(mutationChecks, "No-mutation scan");
 
@@ -192,6 +198,11 @@ export function generatePhase4FullProofBundle() {
     schema: "ft.noOutboundAttestation.v1",
     buildShaShort: BUILD_SHA_SHORT,
     capturedUtc: bundleCreatedUtc,
+    allowlist: {
+      version: SCAN_ALLOWLIST_VERSION,
+      sha256: allowlistHashSha256(),
+      count: ALLOWLIST.length
+    },
     checks: outboundChecks,
     attestationHashSha256: "PLACEHOLDER"
   };
@@ -203,6 +214,11 @@ export function generatePhase4FullProofBundle() {
     schema: "ft.noMutationAttestation.v1",
     buildShaShort: BUILD_SHA_SHORT,
     capturedUtc: bundleCreatedUtc,
+    allowlist: {
+      version: SCAN_ALLOWLIST_VERSION,
+      sha256: allowlistHashSha256(),
+      count: ALLOWLIST.length
+    },
     checks: mutationChecks,
     attestationHashSha256: "PLACEHOLDER"
   };
