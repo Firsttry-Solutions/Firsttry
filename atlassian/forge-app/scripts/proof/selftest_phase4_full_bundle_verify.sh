@@ -41,17 +41,18 @@ if [ "$BUNDLE_SHA_FILE" != "$MANIFEST_SHA" ]; then
 fi
 
 # 2) Verify each manifest artifact sha256 matches file bytes
-node - <<'NODE'
+node <<NODE
 const fs = require("fs");
 const crypto = require("crypto");
 const path = require("path");
+
+const dir = "$LATEST";
 
 function sha256File(p){
   const b = fs.readFileSync(p);
   return crypto.createHash("sha256").update(b).digest("hex");
 }
 
-const dir = process.argv[1];
 const manifest = JSON.parse(fs.readFileSync(path.join(dir,"00_manifest.json"),"utf8"));
 if (!manifest.artifacts || !Array.isArray(manifest.artifacts)) throw new Error("manifest.artifacts missing");
 
@@ -59,18 +60,19 @@ for (const a of manifest.artifacts){
   const fp = path.join(dir, a.path);
   if (!fs.existsSync(fp)) throw new Error("artifact missing: " + a.path);
   const h = sha256File(fp);
-  if (h !== a.sha256) throw new Error(`artifact hash mismatch: ${a.path}\nexpected ${a.sha256}\nactual   ${h}`);
+  if (h !== a.sha256) throw new Error(\`artifact hash mismatch: \${a.path}\nexpected \${a.sha256}\nactual   \${h}\`);
 }
 process.stdout.write("OK");
 NODE
-"$LATEST"
 echo ""
 
 # 3) Recompute core bundleSha256 from algorithm (01–07 only) using canonical JSON
-node - <<'NODE'
+node <<NODE
 const fs = require("fs");
 const crypto = require("crypto");
 const path = require("path");
+
+const dir = "$LATEST";
 
 function canonicalJsonStringify(value){
   if (value === null) return "null";
@@ -93,7 +95,6 @@ function sha256HexUtf8(s){
   return crypto.createHash("sha256").update(Buffer.from(s,"utf8")).digest("hex");
 }
 
-const dir = process.argv[1];
 const manifest = JSON.parse(fs.readFileSync(path.join(dir,"00_manifest.json"),"utf8"));
 
 const coreArtifactsList = (manifest.bundleSha256Algorithm && manifest.bundleSha256Algorithm.coreArtifacts) || [
@@ -142,7 +143,6 @@ if (recomputed !== manifest.bundleSha256) {
 
 process.stdout.write("OK");
 NODE
-"$LATEST"
 echo ""
 echo "FT_PROOF:PHASE4_VERIFY_BUNDLE_SHA_RECOMPUTE_OK"
 
