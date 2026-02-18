@@ -28,6 +28,9 @@ import type { GovernanceActionRecord } from '../governance/actionLog';
 // Import deterministic control mapping tables (ECL-7)
 import { DRIFT_TO_SOC2, REVIEWFAIL_TO_ISO27001 } from "../../compliance/controlMapping";
 
+// Import executive governance metrics aggregator (ECL-8)
+import { computeExecutiveMetrics } from "../../executive/governanceScore";
+
 // Support link configuration (mailto: for user accessibility)
 // Must match docs/CONTACTS.md canonical value
 const SUPPORT_EMAIL = "contact@firsttry.run";
@@ -434,8 +437,210 @@ function createECL1TabNavigation(): HTMLElement {
     const header = createSectionHeader(label);
     panel.appendChild(header);
 
+    // FT_ECL_PHASE: ECL-8 EXEC_OVERVIEW_UI
+    // Executive Overview tab (index 0) — deterministic governance score + risk events
+    if (index === 0) {
+      const execSection = document.createElement("div");
+      execSection.style.marginTop = "20px";
+
+      let metrics: ReturnType<typeof computeExecutiveMetrics> | null = null;
+      let metricsError: string | null = null;
+      try {
+        metrics = computeExecutiveMetrics(state);
+      } catch (err: any) {
+        metricsError = err?.message ?? String(err);
+      }
+
+      if (metricsError !== null || metrics === null) {
+        // FAIL-CLOSED: show exact message, no partial results
+        const failMsg = document.createElement("p");
+        failMsg.textContent = "Metrics unavailable \u2014 FAIL-CLOSED";
+        failMsg.style.color = "#c62828";
+        failMsg.style.fontFamily = "monospace";
+        failMsg.style.fontSize = "13px";
+        failMsg.style.margin = "10px 0 0 0";
+        execSection.appendChild(failMsg);
+        if (metricsError) {
+          const errDetail = document.createElement("p");
+          errDetail.textContent = metricsError;
+          errDetail.style.color = "#999";
+          errDetail.style.fontFamily = "monospace";
+          errDetail.style.fontSize = "11px";
+          errDetail.style.marginTop = "6px";
+          execSection.appendChild(errDetail);
+        }
+      } else {
+        // ── Governance Score ──────────────────────────────────────────────
+        const scoreRow = document.createElement("div");
+        scoreRow.style.marginBottom = "16px";
+
+        const scoreLabelEl = document.createElement("span");
+        scoreLabelEl.textContent = "Governance Score: ";
+        scoreLabelEl.style.fontWeight = "600";
+        scoreLabelEl.style.fontSize = "14px";
+        scoreLabelEl.style.color = "#333";
+        scoreRow.appendChild(scoreLabelEl);
+
+        const scoreValEl = document.createElement("span");
+        scoreValEl.textContent = `${metrics.governanceScore}/100`;
+        scoreValEl.style.fontSize = "20px";
+        scoreValEl.style.fontWeight = "700";
+        scoreValEl.style.fontFamily = "monospace";
+        scoreValEl.style.color = metrics.governanceScore >= 75
+          ? "#2e7d32"
+          : metrics.governanceScore >= 50
+            ? "#f57c00"
+            : "#c62828";
+        scoreRow.appendChild(scoreValEl);
+        execSection.appendChild(scoreRow);
+
+        // ── Score Components ─────────────────────────────────────────────
+        const compTitle = document.createElement("p");
+        compTitle.textContent = "Score Components";
+        compTitle.style.fontWeight = "600";
+        compTitle.style.fontSize = "13px";
+        compTitle.style.color = "#333";
+        compTitle.style.margin = "12px 0 6px 0";
+        execSection.appendChild(compTitle);
+
+        const compTable = document.createElement("table");
+        compTable.style.width = "100%";
+        compTable.style.borderCollapse = "collapse";
+        compTable.style.fontSize = "12px";
+        compTable.style.marginBottom = "16px";
+        const compRows: [string, boolean][] = [
+          ["Snapshot fresh (≤7d)",   metrics.scoreComponents.snapshotFresh],
+          ["No unacknowledged drift", metrics.scoreComponents.driftClear],
+          ["Review cycle completed",  metrics.scoreComponents.reviewsClosed],
+          ["Proof present",           metrics.scoreComponents.proofPresent],
+        ];
+        compRows.forEach(([label, passed], idx) => {
+          const tr = document.createElement("tr");
+          tr.style.borderBottom = "1px solid #f0f0f0";
+          if (idx % 2 === 0) tr.style.backgroundColor = "#fafafa";
+          const tdL = document.createElement("td");
+          tdL.textContent = label;
+          tdL.style.padding = "6px 12px";
+          tdL.style.color = "#333";
+          tr.appendChild(tdL);
+          const tdR = document.createElement("td");
+          tdR.textContent = passed ? "\u2713 PASS" : "\u2717 FAIL";
+          tdR.style.padding = "6px 12px";
+          tdR.style.fontFamily = "monospace";
+          tdR.style.color = passed ? "#2e7d32" : "#c62828";
+          tr.appendChild(tdR);
+          compTable.appendChild(tr);
+        });
+        execSection.appendChild(compTable);
+
+        // ── Audit Readiness ──────────────────────────────────────────────
+        const arRow = document.createElement("div");
+        arRow.style.marginBottom = "16px";
+        const arLabelEl = document.createElement("span");
+        arLabelEl.textContent = "Audit Ready: ";
+        arLabelEl.style.fontWeight = "600";
+        arLabelEl.style.fontSize = "13px";
+        arLabelEl.style.color = "#333";
+        arRow.appendChild(arLabelEl);
+        const arValEl = document.createElement("span");
+        arValEl.textContent = metrics.auditReady ? "Yes" : "No";
+        arValEl.style.fontFamily = "monospace";
+        arValEl.style.fontWeight = "700";
+        arValEl.style.fontSize = "13px";
+        arValEl.style.color = metrics.auditReady ? "#2e7d32" : "#c62828";
+        arRow.appendChild(arValEl);
+        execSection.appendChild(arRow);
+
+        // ── Last Export Hash ─────────────────────────────────────────────
+        const hashRow = document.createElement("div");
+        hashRow.style.marginBottom = "16px";
+        const hashLabelEl = document.createElement("span");
+        hashLabelEl.textContent = "Last Export Hash: ";
+        hashLabelEl.style.fontWeight = "600";
+        hashLabelEl.style.fontSize = "13px";
+        hashLabelEl.style.color = "#333";
+        hashRow.appendChild(hashLabelEl);
+        const hashValEl = document.createElement("span");
+        hashValEl.textContent = metrics.lastExportHash ?? "\u2014";
+        hashValEl.style.fontFamily = "monospace";
+        hashValEl.style.fontSize = "12px";
+        hashValEl.style.color = "#555";
+        hashValEl.style.wordBreak = "break-all";
+        hashRow.appendChild(hashValEl);
+        execSection.appendChild(hashRow);
+
+        // ── Top Risk Events ──────────────────────────────────────────────
+        const riskTitle = document.createElement("p");
+        riskTitle.textContent = "Top Risk Events";
+        riskTitle.style.fontWeight = "600";
+        riskTitle.style.fontSize = "13px";
+        riskTitle.style.color = "#333";
+        riskTitle.style.margin = "8px 0 6px 0";
+        execSection.appendChild(riskTitle);
+
+        if (metrics.topRiskEvents.length === 0) {
+          const noRisk = document.createElement("p");
+          noRisk.textContent = "No risk events identified.";
+          noRisk.style.fontSize = "12px";
+          noRisk.style.color = "#626F86";
+          noRisk.style.margin = "4px 0 0 0";
+          execSection.appendChild(noRisk);
+        } else {
+          const riskTable = document.createElement("table");
+          riskTable.style.width = "100%";
+          riskTable.style.borderCollapse = "collapse";
+          riskTable.style.fontSize = "12px";
+          const rHead = document.createElement("thead");
+          const rHr = document.createElement("tr");
+          rHr.style.borderBottom = "2px solid #e0e0e0";
+          ["Category", "Description"].forEach(col => {
+            const th = document.createElement("th");
+            th.textContent = col;
+            th.style.textAlign = "left";
+            th.style.padding = "6px 12px";
+            th.style.fontWeight = "600";
+            th.style.color = "#333";
+            th.style.fontFamily = "sans-serif";
+            rHr.appendChild(th);
+          });
+          rHead.appendChild(rHr);
+          riskTable.appendChild(rHead);
+          const rBody = document.createElement("tbody");
+          metrics.topRiskEvents.forEach((evt, idx) => {
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid #f0f0f0";
+            if (idx % 2 === 0) tr.style.backgroundColor = "#fff8f8";
+            const tdCat = document.createElement("td");
+            tdCat.textContent = evt.category;
+            tdCat.style.padding = "6px 12px";
+            tdCat.style.fontFamily = "monospace";
+            tdCat.style.color = "#c62828";
+            tr.appendChild(tdCat);
+            const tdDesc = document.createElement("td");
+            tdDesc.textContent = evt.description;
+            tdDesc.style.padding = "6px 12px";
+            tdDesc.style.color = "#333";
+            tr.appendChild(tdDesc);
+            rBody.appendChild(tr);
+          });
+          riskTable.appendChild(rBody);
+          execSection.appendChild(riskTable);
+        }
+
+        // ── Computed at ──────────────────────────────────────────────────
+        const tsNote = document.createElement("p");
+        tsNote.textContent = `Computed: ${metrics.computedAtUtc}`;
+        tsNote.style.fontSize = "10px";
+        tsNote.style.color = "#999";
+        tsNote.style.fontFamily = "monospace";
+        tsNote.style.marginTop = "12px";
+        execSection.appendChild(tsNote);
+      }
+      // FT_ECL_PHASE: ECL-8 EXEC_OVERVIEW_UI_END
+      panel.appendChild(execSection);
+
     // Special handling for "Policies, RBAC & Alerts" tab (index 7)
-    if (index === 7) {
+    } else if (index === 7) {
       // Add RBAC roles table
       const rolesSection = document.createElement("div");
       rolesSection.style.marginTop = "20px";
