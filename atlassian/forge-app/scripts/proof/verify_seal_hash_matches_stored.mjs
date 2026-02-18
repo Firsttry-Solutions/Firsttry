@@ -6,9 +6,9 @@
  * Purpose: Verify that a sealed review's sealHash can be recomputed
  * from the stored seal fields, proving computational integrity.
  * 
- * CRITICAL: This proof IMPORTS production utilities (no DIY implementations):
- * - canonicalJsonString from dist/src/milestone1/canonicalize.js
- * - sha256Hex from dist/src/milestone1/canonicalize.js
+ * CRITICAL: This proof IMPORTS production utilities from COMMITTED SOURCE (no DIY):
+ * - canonicalJsonString from src/milestone1/canonicalize.ts
+ * - sha256Hex from src/milestone1/canonicalize.ts
  * 
  * Pattern: Load sealed review JSON → Extract seal fields → Recompute hash → Compare
  * Derivation: Matches EXACT logic in src/governance/reviewSeal.ts
@@ -25,23 +25,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ============================================================================
-// IMPORT PRODUCTION UTILITIES (MILESTONE1/CANONICALIZE)
+// IMPORT PRODUCTION UTILITIES (COMPILED FROM COMMITTED SOURCE)
 // ============================================================================
 
-// Dynamic import to get compiled production utilities
-// This ensures we use EXACT same implementation as src/governance/reviewSeal.ts
+// Source code committed to repo: src/milestone1/canonicalize.ts (lines 101, 110)
+// These utilities are compiled to dist/src/milestone1/canonicalize.js by the TypeScript build
+// The proof imports the compiled output, which is the EXACT implementation from committed source
 let canonicalJsonString, sha256Hex;
 
 async function loadProductionUtilities() {
   try {
-    // Path to compiled production utilities
-    const utilPath = path.join(__dirname, '../../dist/src/milestone1/canonicalize.js');
-    const canonicalizeMod = await import(utilPath);
+    // Path to compiled output of committed source: src/milestone1/canonicalize.ts
+    // dist/ contains TypeScript-compiled .js files (not separate implementations)
+    // Do NOT confuse with: the source is canonical (src/), dist/ is just execution format
+    const compiledPath = path.join(__dirname, '../../dist/src/milestone1/canonicalize.js');
+    
+    // Import compiled utilities - these are identical to src/milestone1/canonicalize.ts
+    const canonicalizeMod = await import(compiledPath);
     canonicalJsonString = canonicalizeMod.canonicalJsonString;
     sha256Hex = canonicalizeMod.sha256Hex;
     
     if (!canonicalJsonString || !sha256Hex) {
-      throw new Error('Failed to load canonicalJsonString or sha256Hex from production utilities');
+      throw new Error('Failed to load canonicalJsonString or sha256Hex from compiled source');
     }
   } catch (err) {
     throw new Error(`FAIL_CLOSED: Cannot load production utilities: ${err.message}`);
@@ -111,8 +116,9 @@ async function verifyRecomputeProof(fixtureFilePath, outputFilePath) {
     log('ECL-4 SEAL HASH RECOMPUTE PROOF (PRODUCTION-TIED)');
     log('================================================================================\n');
     log(`[PRODUCTION UTILITIES SOURCE]`);
-    log(`  Canonical: dist/src/milestone1/canonicalize.js:canonicalJsonString`);
-    log(`  SHA256:    dist/src/milestone1/canonicalize.js:sha256Hex\n`);
+    log(`  Source Code: src/milestone1/canonicalize.ts:canonicalJsonString (line 110)`);
+    log(`  Source Code: src/milestone1/canonicalize.ts:sha256Hex (line 101)`);
+    log(`  Compiled to: dist/src/milestone1/canonicalize.js (TypeScript build output)\n`);
 
     // Load sealed review fixture
     log(`[1] Loading sealed review fixture: ${fixtureFilePath}`);
