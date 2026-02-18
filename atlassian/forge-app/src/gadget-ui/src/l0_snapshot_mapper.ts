@@ -1452,6 +1452,21 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     // Fill remaining space with useful audit guidance
     const guidanceSection = renderDefinitionsGuidance();
     content.appendChild(guidanceSection);
+
+    // FT_ECL_WIRE: TAB_NAVIGATION_RENDER_PATH
+    // Wire ECL-1..8 tab navigation into the live render path so it is
+    // included in the bundle (not tree-shaken) and displayed to the user.
+    try {
+      const tabNav = createECL1TabNavigation();
+      content.appendChild(tabNav);
+    } catch (_tabErr) {
+      const tabErrEl = document.createElement("p");
+      tabErrEl.textContent = "Tab navigation unavailable \u2014 FAIL-CLOSED";
+      tabErrEl.style.color = "#c62828";
+      tabErrEl.style.fontFamily = "monospace";
+      tabErrEl.style.fontSize = "12px";
+      content.appendChild(tabErrEl);
+    }
   } else if (state.status === "NO_SNAPSHOT" || state.status === "INVALID_SNAPSHOT") {
     // Non-fatal states - show dashboard with no data message
     const title = document.createElement("h1");
