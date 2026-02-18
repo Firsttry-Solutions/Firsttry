@@ -148,6 +148,59 @@ resolver.define('ft_getEnterpriseSellabilityPanels_v1', async (request: any) => 
 export const handler = resolver.getDefinitions();
 
 // ============================================================================
+// ECL-3.1 DRIFT ENUMERATION & POPULATION HELPERS
+// ============================================================================
+
+/**
+ * Extract drift IDs from dashboard response data
+ * Deterministically identifies drift events already present in the response
+ * 
+ * FT_ECL_PHASE: ECL-3.1 DRIFT_ENUM
+ */
+function extractDriftIdsFromDashboardState(data: any): string[] {
+  // Fail-closed: if no driftContainer, return empty (feature not available)
+  if (!data || typeof data !== 'object') {
+    return [];
+  }
+
+  // Look for drift events container
+  // Supported locations: data.driftEvents, data.continuousDrift, data.phase7.driftEvents
+  const driftContainer = 
+    data.driftEvents || 
+    data.continuousDrift?.events || 
+    data.phase7?.driftEvents ||
+    null;
+
+  // If no drift container found, return empty array (feature unavailable)
+  if (!driftContainer) {
+    return [];
+  }
+
+  // Ensure driftContainer is an array
+  if (!Array.isArray(driftContainer)) {
+    return [];
+  }
+
+  // Extract drift IDs with validation
+  const driftIds: string[] = [];
+  for (const driftEvent of driftContainer) {
+    // Accept either drift_event_id or driftEventId (canonical snake_case or camelCase)
+    const driftId = (driftEvent?.drift_event_id || driftEvent?.driftEventId || '').trim();
+    
+    // Fail-closed: if any drift event has missing/empty id, throw error
+    if (!driftId) {
+      throw new Error('FT_ECL_DRIFT_ID_MISSING: Drift event missing required driftEventId field');
+    }
+
+    driftIds.push(driftId);
+  }
+
+  // Deduplicate and sort lexicographically for determinism
+  const uniqueDriftIds = Array.from(new Set(driftIds));
+  return uniqueDriftIds.sort((a, b) => a.localeCompare(b));
+}
+
+// ============================================================================
 // CANONICAL ACTION RESULT ENVELOPE TYPE
 // ============================================================================
 
@@ -1308,14 +1361,29 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                       throw new Error(`FT_ECL_AUDIT_LOG_READ_FAILED: Cannot fetch governance actions: ${err}`);
                     }
                   })(),
-                  // ECL-3: Drift acknowledgements indexed by driftId (fail-closed)
+                  // ECL-3.1: Drift acknowledgements indexed by driftId (deterministic, fail-closed)
+                  // FT_ECL_PHASE: ECL-3.1 DRIFT_ENUM_AND_POPULATION
                   driftAcknowledgements: await (async () => {
                     try {
-                      // Placeholder for drift ack objects indexed by driftId
-                      // When drift events are available in data with stable driftIds,
-                      // this would be populated: { [driftId]: ackRecord || null }
-                      // For now, initialize as empty object (no drift IDs available in current schema)
+                      // Extract drift IDs from dashboard state deterministically
+                      const driftIds = extractDriftIdsFromDashboardState(repairedSnapshot.data);
+                      
+                      // Build acknowledgements map: { [driftId]: ackRecord || null }
                       const acks: Record<string, any> = {};
+                      
+                      // Deterministic: driftIds already sorted; map insertion order stable
+                      for (const driftId of driftIds) {
+                        try {
+                          const rec = await getDriftAck(driftId);
+                          acks[driftId] = rec; // may be null if no ack exists
+                        } catch (err) {
+                          // Fail-closed: rethrow on individual drift ack read failure
+                          throw new Error(
+                            `FT_ECL_DRIFT_ACK_READ_FAILED: Cannot fetch drift acknowledgement for ${driftId}: ${err}`
+                          );
+                        }
+                      }
+                      
                       return acks;
                     } catch (err) {
                       // Fail-closed: if we can't fetch drift acks, fail the entire dashboard
