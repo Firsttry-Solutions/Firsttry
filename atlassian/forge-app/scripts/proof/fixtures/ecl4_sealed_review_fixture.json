@@ -1,55 +1,48 @@
+
+================================================================================
+ECL-4 SEAL HASH RECOMPUTE PROOF (PRODUCTION-TIED)
+================================================================================
+
+[PRODUCTION UTILITIES SOURCE]
+  Source Code: src/milestone1/canonicalize.ts:canonicalJsonString (line 110)
+  Source Code: src/milestone1/canonicalize.ts:sha256Hex (line 101)
+  Compiled to: dist/src/milestone1/canonicalize.js (TypeScript build output)
+
+[1] Loading sealed review fixture: /workspaces/Firsttry/atlassian/forge-app/scripts/proof/fixtures/ecl4_sealed_review_fixture.json
+   ✓ Review ID: rev-ecl4-test-v3-001
+   ✓ Sealed: true
+   ✓ Sealed By Role: COMPLIANCE_APPROVER
+   ✓ Sealed At: 2026-02-18T09:30:00.000Z
+
+[2] Stored sealHash:
+   23bbda8c788bfb1f90550a9f8537bf9a7c7601601ef447741006f61d8fbe668f
+
+[3] Recomputing seal hash from stored fields...
+   Using EXACT derivation from src/governance/reviewSeal.ts::createCanonicalSealObject
+
+[3a] Canonical Seal Object:
 {
   "reviewId": "rev-ecl4-test-v3-001",
-  "siteId": "cloud.atlassian.com/sites/test",
-  "quarter": "2026-Q1",
-  "schemaVersion": "1.0",
-  "ruleSetVersion": "1.0",
-  "createdUtc": "2026-02-18T08:00:00.000Z",
-  "lastUpdatedUtc": "2026-02-18T09:30:00.000Z",
-  "status": "CLOSED",
-  "privilegeContext": {
-    "accountId": "test-account-001",
-    "email": "reviewer@example.com",
-    "authLevel": "PRIVILEGED"
-  },
-  "snapshotRef": {
-    "snapshotId": "snap-001",
-    "createdAtUtc": "2026-02-18T07:00:00.000Z",
-    "baselineSha": "baseline-sha-abc123def456"
-  },
-  "stateHash": "state-hash-xyz789uvw012",
-  "reviewers": [
-    {
-      "accountId": "reviewer-001",
-      "email": "alice@example.com",
-      "role": "TECHNICAL_APPROVER"
-    }
-  ],
-  "decisions": [
-    {
-      "reviewerId": "reviewer-001",
-      "decision": "APPROVED",
-      "recordedUtc": "2026-02-18T08:15:00.000Z",
-      "justification": "Code review passed security checks",
-      "decisionHash": "decision-hash-001-aaa111bbb222"
-    }
-  ],
-  "exceptions": [],
-  "progress": {
-    "totalItems": 10,
-    "reviewedItems": 1,
-    "itemCount": 0,
-    "baselineSha": "abc123def456"
-  },
-  "complianceScore": {
-    "overall": 100,
-    "coverage": 100,
-    "timeliness": 100
-  },
-  "sealed": true,
+  "findingsHash": "baseline-sha-abc123def456",
+  "approvalsHash": "54fc13b2601a55a9ca5ed23d0e9332a8054f5b71c185f256c1fcfe3414e06c54",
   "sealedTimestampUtc": "2026-02-18T09:30:00.000Z",
   "sealedByRole": "COMPLIANCE_APPROVER",
   "buildShaShort": "abc123d",
   "buildUtc": "2026-02-18T06:00:00.000Z",
-  "sealHash": "23bbda8c788bfb1f90550a9f8537bf9a7c7601601ef447741006f61d8fbe668f"
+  "schemaVersion": "1.0"
 }
+
+[3b] Canonical JSON String:
+   {"approvalsHash":"54fc13b2601a55a9ca5ed23d0e9332a8054f5b71c185f256c1fcfe3414e06c54","buildShaShort":"abc123d","buildUtc":"2026-02-18T06:00:00.000Z","findingsHash":"baseline-sha-abc123def456","reviewId":"rev-ecl4-test-v3-001","schemaVersion":"1.0","sealedByRole":"COMPLIANCE_APPROVER","sealedTimestampUtc":"2026-02-18T09:30:00.000Z"}
+
+[4] Recomputed sealHash:
+   23bbda8c788bfb1f90550a9f8537bf9a7c7601601ef447741006f61d8fbe668f
+
+[5] Comparison:
+   ✓ MATCH: Recomputed hash equals stored hash
+   ✓ Seal hash integrity verified using production utilities
+   ✓ Review state is immutable (cannot be tampered with)
+
+================================================================================
+PROOF RESULT: MATCH=true
+================================================================================
