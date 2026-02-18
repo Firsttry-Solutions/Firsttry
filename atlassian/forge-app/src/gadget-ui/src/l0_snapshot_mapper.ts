@@ -649,9 +649,9 @@ function createECL1TabNavigation(): HTMLElement {
         failClosedMsg.style.fontWeight = "600";
         driftSection.appendChild(failClosedMsg);
       } else if (!driftAcks || Object.keys(driftAcks).length === 0) {
-        // Empty or no drift IDs: show "No data available."
+        // Empty: no drift events detected (ECL-3.1 change: now means no events, not no acks)
         const noDriftMsg = document.createElement("p");
-        noDriftMsg.textContent = "No drift events with acknowledgements.";
+        noDriftMsg.textContent = "No drift events detected.";
         noDriftMsg.style.color = "#626F86";
         noDriftMsg.style.fontSize = "13px";
         noDriftMsg.style.margin = "10px 0 0 0";
