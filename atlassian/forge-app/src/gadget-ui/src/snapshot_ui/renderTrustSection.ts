@@ -17,6 +17,9 @@
 
 import { invoke } from '@forge/bridge';
 
+// ECL-5: Trust resolver key constant (preserved in dist to enable runtime proof loading)
+const TRUST_RESOLVER_KEY_V1 = 'ft_getTrustPanelProof_v1';
+
 export function renderTrustSection(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'trust-section';
@@ -79,7 +82,7 @@ export function renderTrustSection(): HTMLElement {
     proofContainer.innerHTML = '';
     const failDiv = document.createElement('div');
     failDiv.className = 'trust-proof-fail-closed';
-    failDiv.textContent = 'Proof pack not generated — FAIL-CLOSED';
+    failDiv.textContent = `Proof pack not generated — FAIL-CLOSED [${TRUST_RESOLVER_KEY_V1}]`;
     proofContainer.appendChild(failDiv);
   }
 
@@ -131,7 +134,7 @@ export function renderTrustSection(): HTMLElement {
   }
 
   // Load proof data asynchronously
-  invoke('ft_getTrustPanelProof_v1')
+  invoke(TRUST_RESOLVER_KEY_V1)
     .then((trustData: any) => {
       if (!trustData) {
         renderFailClosed();
