@@ -3302,10 +3302,10 @@ async function proceedWithBoot() {
             }
 
             if (reviewData.sealed === true) {
-              // Review is sealed - show status
+              // Review is sealed - show status with full sealHash
               const role = reviewData.sealedByRole || "Unknown";
               const timestamp = reviewData.sealedTimestampUtc ? new Date(reviewData.sealedTimestampUtc).toLocaleString() : "Unknown time";
-              const hash = reviewData.sealHash ? reviewData.sealHash.substring(0, 16) + "..." : "No hash";
+              const fullHash = reviewData.sealHash || "No hash available";
               
               sealStatusDiv.innerHTML = `
                 <div style="color: #0052CC; font-weight: 600;">
@@ -3313,7 +3313,12 @@ async function proceedWithBoot() {
                 </div>
                 <div style="color: #666; margin-top: 5px; font-size: 12px;">
                   Sealed: ${timestamp}<br/>
-                  Seal ID: <code style="background: #eee; padding: 2px 4px; font-size: 11px;">${hash}</code>
+                  <div style="margin-top: 8px;">
+                    <strong>Seal ID (hash):</strong>
+                    <div style="background: #f5f5f5; padding: 6px 8px; margin-top: 4px; font-family: monospace; font-size: 11px; word-break: break-all; border-radius: 3px; max-height: 60px; overflow-y: auto;">
+                      ${fullHash}
+                    </div>
+                  </div>
                 </div>
                 <div style="color: #f44336; margin-top: 5px; font-weight: 600;">
                   ⛔ IMMUTABLE - No mutations allowed

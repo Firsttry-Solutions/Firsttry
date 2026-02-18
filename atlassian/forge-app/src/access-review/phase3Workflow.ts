@@ -560,6 +560,16 @@ export async function expireExceptions(
       throw new ReviewError("INVALID_INPUT", `Review ${reviewId} not found`, { reviewId });
     }
 
+    // FT_ECL_PHASE: ECL-4 REVIEW_IMMUTABLE_GUARD
+    // Enforce review immutability: cannot expire exceptions if sealed
+    if ((state as any).sealed === true) {
+      throw new ReviewError(
+        "REVIEW_SEALED",
+        `Cannot expire exceptions: review is sealed (reviewId=${reviewId})`,
+        { reviewId, sealed: true }
+      );
+    }
+
     // Filter expired exceptions
     const before = state.exceptions.length;
     state.exceptions = state.exceptions.filter(
