@@ -68,7 +68,7 @@ export function renderTrustSection(): HTMLElement {
   proofContainer.className = 'trust-proof-container';
   
   const loadingDiv = document.createElement('div');
-  loadingDiv.textContent = 'Loading proof…';
+  loadingDiv.textContent = 'Loading proof… (ft_getTrustPanelProof_v1)';
   proofContainer.appendChild(loadingDiv);
   
   section.appendChild(proofContainer);
