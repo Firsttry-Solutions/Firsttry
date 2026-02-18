@@ -12,9 +12,9 @@
  * Marker: FT_ECL_PHASE: ECL-5 TRUST_READER_UI
  */
 
-import { getTrustPanelData } from '../../../trust/proofBundleReader';
+import { invoke } from '@forge/bridge';
 
-export function renderTrustSection(): HTMLElement {
+export async function renderTrustSection(): Promise<HTMLElement> {
   const section = document.createElement('section');
   section.className = 'trust-section';
 
@@ -57,12 +57,12 @@ export function renderTrustSection(): HTMLElement {
   determinismTitle.textContent = '✓ Trust & Determinism Proof';
   section.appendChild(determinismTitle);
 
-  // Load proof bundle data (fail-closed)
+  // Load proof bundle data from backend resolver (fail-closed)
   let trustData;
   try {
-    trustData = getTrustPanelData();
+    trustData = await invoke('ft_getTrustPanelProof_v1');
   } catch (err) {
-    console.error('[TRUST_UI] Failed to load proof data:', err);
+    console.error('[TRUST_UI] Failed to load proof data from backend:', err);
     trustData = null;
   }
 
@@ -91,15 +91,14 @@ export function renderTrustSection(): HTMLElement {
 
     const rows = [
       ['Read-only guarantee', trustData.readOnlyGuarantee],
-      ['No mutation attestation SHA', truncateHash(trustData.noMutationAttestationSha)],
-      ['No outbound attestation SHA', truncateHash(trustData.noOutboundAttestationSha)],
-      ['Scope hash', truncateHash(trustData.scopeHash)],
-      ['Allowlist hash', truncateHash(trustData.allowlistHash)],
+      ['No mutation attestation SHA', trustData.noMutationAttestationSha],
+      ['No outbound attestation SHA', trustData.noOutboundAttestationSha],
+      ['Scope hash', trustData.scopeHash],
+      ['Allowlist hash', trustData.allowlistHash],
       ['Allowlist version', trustData.allowlistVersion],
       ['Schema version', trustData.schemaVersion],
       ['RuleSet version', trustData.ruleSetVersion],
-      ['Last proof bundle SHA', truncateHash(trustData.lastProofBundleSha)],
-      ['Bundle created (UTC)', trustData.bundleCreatedUtc]
+      ['Last proof bundle SHA', trustData.lastProofBundleSha]
     ];
 
     for (const [label, value] of rows) {
@@ -129,14 +128,6 @@ export function renderTrustSection(): HTMLElement {
   section.appendChild(proofContainer);
 
   return section;
-}
-
-/**
- * Truncate SHA-256 hash to first 16 chars + "..." for display
- */
-function truncateHash(hash: string): string {
-  if (!hash || hash.length <= 16) return hash;
-  return hash.substring(0, 16) + '...';
 }
 
 // FT_ECL_PHASE: ECL-5 TRUST_READER_UI
