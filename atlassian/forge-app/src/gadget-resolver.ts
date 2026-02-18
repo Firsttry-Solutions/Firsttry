@@ -49,6 +49,7 @@ import { getMonitoringConfig, saveMonitoringConfig } from './resolvers/phase2_co
 import { buildEnterpriseSellabilityPanels } from './enterprise/sellabilityPanels'; // PHASE 5.1.8
 import { listGovernanceActions } from './governance/actionLog'; // ECL-2.1: Audit log reader
 import { getDriftAck } from './governance/driftAck'; // ECL-3: Drift acknowledgement reader
+import { getTrustPanelData } from './trust/proofBundleReader'; // ECL-5: Trust panel proof reader
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -98,6 +99,11 @@ resolver.define('ft_getSnapshotAnchor_v1', ft_getSnapshotAnchor_v1);
 
 // Runtime proof resolver (admin-only)
 resolver.define('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1);
+
+// ECL-5: Trust panel proof resolver
+resolver.define('ft_getTrustPanelProof_v1', async () => {
+  return getTrustPanelData();
+});
 
 // UI log relay resolver (UI → backend log relay for markers)
 resolver.define('ft_uiLogRelay_v1', ft_uiLogRelay_v1);

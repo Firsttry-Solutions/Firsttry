@@ -27,7 +27,6 @@ export interface TrustPanelData {
   schemaVersion: string;
   ruleSetVersion: string;
   lastProofBundleSha: string;
-  bundleCreatedUtc: string;
 }
 
 interface Attestation05 {
@@ -56,7 +55,7 @@ interface Manifest {
   bundleSha256: string;
   schemaVersion: string;
   ruleSetVersion: string;
-  bundleCreatedUtc: string;
+  bundleCreatedUtc?: string; // Optional (no longer required)
 }
 
 interface ScopeFreeze {
@@ -96,31 +95,25 @@ export function findLatestProofBundleDir(): string | null {
       return null;
     }
     
-    // Extract timestamps from directory names for sorting
+    // Extract timestamps from directory names for sorting (no mtime dependency)
     const dirsWithTimestamp = proofDirs
       .map(d => {
         const fullPath = path.join(tmpDir, d.name);
         const timestamp = d.name.replace('ft_proof_phase4_', '').replace('Z', '');
-        const mtime = fs.statSync(fullPath).mtimeMs;
-        return { dir, path: fullPath, timestamp, mtime };
+        return { name: d.name, path: fullPath, timestamp };
       })
       .sort((a, b) => {
         // Sort by timestamp descending (newest first)
         if (a.timestamp !== b.timestamp) {
           return b.timestamp.localeCompare(a.timestamp);
         }
-        // Tie-breaker: mtime descending
-        if (a.mtime !== b.mtime) {
-          return b.mtime - a.mtime;
-        }
-        // Final tie-breaker: lexicographic desc of path
+        // Tie-breaker: path name descending (lexicographic)
         return b.path.localeCompare(a.path);
       });
     
     return dirsWithTimestamp[0]?.path || null;
   } catch (err) {
-    // Fail-closed: log but don't throw (caller will handle)
-    console.error('[PROOF_BUNDLE_READER] Failed to find latest proof bundle:', err);
+    // Fail-closed: return null on any error
     return null;
   }
 }
@@ -191,15 +184,24 @@ export function readAttestationFiles(bundleDir: string): { att05: Attestation05;
     throw new Error(`FAIL_CLOSED: Cannot parse attestation 06: ${err instanceof Error ? err.message : String(err)}`);
   }
 
+  // FAIL-CLOSED: Allowlist must match between attestations
+  if (att05.allowlist.version !== att06.allowlist.version) {
+    throw new Error(`FAIL_CLOSED: Allowlist version mismatch (05: ${att05.allowlist.version}, 06: ${att06.allowlist.version})`);
+  }
+  if (att05.allowlist.sha256 !== att06.allowlist.sha256) {
+    throw new Error(`FAIL_CLOSED: Allowlist SHA-256 mismatch (05: ${att05.allowlist.sha256}, 06: ${att06.allowlist.sha256})`);
+  }
+
   // Parse manifest
   let manifest: Manifest;
   try {
     const rawManifest = fs.readFileSync(path.join(bundleDir, requiredFiles.manifest), 'utf-8');
     manifest = JSON.parse(rawManifest);
     
-    if (!manifest.bundleSha256 || !manifest.schemaVersion || !manifest.ruleSetVersion || !manifest.bundleCreatedUtc) {
-      throw new Error('Missing required fields in manifest');
+    if (!manifest.bundleSha256 || !manifest.schemaVersion || !manifest.ruleSetVersion) {
+      throw new Error('Missing required fields in manifest (bundleSha256, schemaVersion, ruleSetVersion)');
     }
+    // Note: bundleCreatedUtc is now optional
   } catch (err) {
     throw new Error(`FAIL_CLOSED: Cannot parse manifest: ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -235,8 +237,8 @@ export function extractTrustPanelFields(
   manifest: Manifest,
   scopeFreeze: ScopeFreeze
 ): TrustPanelData {
-  // Read-only guarantee: verified only if both attestations pass (checks array all PASS)
-  const readOnlyGuarantee = (att06.checks?.every((c: any) => c.status === 'PASS') ?? false)
+  // Read-only guarantee: STRICT validation (check explicit property, not checks array)
+  const readOnlyGuarantee = ((att06 as any).readOnlyGuarantee === true || (att06 as any).assertions?.readOnlyGuarantee === true)
     ? 'Verified'
     : 'NotApplicable';
 
@@ -249,8 +251,7 @@ export function extractTrustPanelFields(
     allowlistVersion: att05.allowlist.version,
     schemaVersion: manifest.schemaVersion,
     ruleSetVersion: manifest.ruleSetVersion,
-    lastProofBundleSha: manifest.bundleSha256,
-    bundleCreatedUtc: manifest.bundleCreatedUtc
+    lastProofBundleSha: manifest.bundleSha256
   };
 }
 
@@ -261,26 +262,21 @@ export function extractTrustPanelFields(
 /**
  * Get trust panel data from latest proof bundle
  * 
- * Fail-closed: Returns null if bundle not found; throws if bundle found but malformed
- * (caller decides whether null means "no data" or "error")
+ * Fail-closed contract:
+ * - Returns null if bundle not found (not generated)
+ * - Throws error if bundle found but malformed (caller must handle)
  */
 export function getTrustPanelData(): TrustPanelData | null {
-  try {
-    const bundleDir = findLatestProofBundleDir();
-    if (!bundleDir) {
-      console.warn('[PROOF_BUNDLE_READER] No proof bundle found in /tmp/ft_proof_phase4_*');
-      return null;
-    }
-
-    const { att05, att06, manifest, scopeFreeze } = readAttestationFiles(bundleDir);
-    const trustData = extractTrustPanelFields(att05, att06, manifest, scopeFreeze);
-
-    console.log('[PROOF_BUNDLE_READER] Successfully loaded trust panel data from:', bundleDir);
-    return trustData;
-  } catch (err) {
-    console.error('[PROOF_BUNDLE_READER] Cannot load trust panel data:', err);
-    return null;
+  const bundleDir = findLatestProofBundleDir();
+  if (!bundleDir) {
+    return null;  // No proof bundle generated yet
   }
+
+  // If we get here and have a bundle, throw on ANY error (don't catch/swallow)
+  const { att05, att06, manifest, scopeFreeze } = readAttestationFiles(bundleDir);
+  const trustData = extractTrustPanelFields(att05, att06, manifest, scopeFreeze);
+
+  return trustData;
 }
 
 // FT_ECL_PHASE: ECL-5 TRUST_READER
