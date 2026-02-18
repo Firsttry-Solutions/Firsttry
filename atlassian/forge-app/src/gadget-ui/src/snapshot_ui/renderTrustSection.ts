@@ -9,12 +9,15 @@
  * 
  * Fail-closed: Shows "Proof pack not generated — FAIL-CLOSED" if bundle unavailable
  * 
+ * SYNCHRONOUS RENDERING: Function returns immediately with placeholder.
+ * Proof data loads asynchronously and updates DOM via promise chain.
+ * 
  * Marker: FT_ECL_PHASE: ECL-5 TRUST_READER_UI
  */
 
 import { invoke } from '@forge/bridge';
 
-export async function renderTrustSection(): Promise<HTMLElement> {
+export function renderTrustSection(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'trust-section';
 
@@ -57,31 +60,33 @@ export async function renderTrustSection(): Promise<HTMLElement> {
   determinismTitle.textContent = '✓ Trust & Determinism Proof';
   section.appendChild(determinismTitle);
 
-  // Load proof bundle data from backend resolver (fail-closed)
-  let trustData;
-  try {
-    trustData = await invoke('ft_getTrustPanelProof_v1');
-  } catch (err) {
-    console.error('[TRUST_UI] Failed to load proof data from backend:', err);
-    trustData = null;
-  }
-
-  // Render proof bundle display
+  // Proof container with loading placeholder (rendered synchronously)
   const proofContainer = document.createElement('div');
   proofContainer.className = 'trust-proof-container';
+  
+  const loadingDiv = document.createElement('div');
+  loadingDiv.textContent = 'Loading proof…';
+  proofContainer.appendChild(loadingDiv);
+  
+  section.appendChild(proofContainer);
 
-  if (!trustData) {
-    // Fail-closed: No proof bundle found
-    const failClosedMsg = document.createElement('div');
-    failClosedMsg.className = 'trust-proof-fail-closed';
-    failClosedMsg.innerHTML = `
-      <p style="color: #888; font-style: italic;">
-        Proof pack not generated — FAIL-CLOSED
-      </p>
-    `;
-    proofContainer.appendChild(failClosedMsg);
-  } else {
-    // Display proof fields in a table
+  // ============================================================================
+  // ASYNCHRONOUS PROOF LOADING (promise chain)
+  // ============================================================================
+
+  // Helper: render fail-closed message
+  function renderFailClosed() {
+    proofContainer.innerHTML = '';
+    const failDiv = document.createElement('div');
+    failDiv.className = 'trust-proof-fail-closed';
+    failDiv.textContent = 'Proof pack not generated — FAIL-CLOSED';
+    proofContainer.appendChild(failDiv);
+  }
+
+  // Helper: render proof table with 9 rows
+  function renderTable(trustData: any) {
+    proofContainer.innerHTML = '';
+    
     const table = document.createElement('table');
     table.className = 'trust-proof-table';
     table.style.width = '100%';
@@ -125,8 +130,21 @@ export async function renderTrustSection(): Promise<HTMLElement> {
     proofContainer.appendChild(table);
   }
 
-  section.appendChild(proofContainer);
+  // Load proof data asynchronously
+  invoke('ft_getTrustPanelProof_v1')
+    .then((trustData: any) => {
+      if (!trustData) {
+        renderFailClosed();
+        return;
+      }
+      renderTable(trustData);
+    })
+    .catch((err: any) => {
+      console.error('[TRUST_UI] Proof invoke failed:', err);
+      renderFailClosed();
+    });
 
+  // Return section immediately (synchronous)
   return section;
 }
 
