@@ -729,6 +729,134 @@ function createECL1TabNavigation(): HTMLElement {
       }
 
       panel.appendChild(driftSection);
+    } else if (index === 6) {
+      // FT_ECL_PHASE: ECL-6 EVIDENCE_VAULT
+      // "Evidence Vault" tab — read-only viewer shell.
+      // SANDBOX HONESTY: Forge UI cannot download files from the local /tmp sandbox.
+      // This table is a deterministic, read-only view. Downloads are permanently disabled.
+
+      const vaultSection = document.createElement("div");
+      vaultSection.style.marginTop = "20px";
+
+      // Sandbox notice banner (always shown for reviewer honesty)
+      const notice = document.createElement("div");
+      notice.style.backgroundColor = "#fffbe6";
+      notice.style.border = "1px solid #ffe58f";
+      notice.style.borderRadius = "4px";
+      notice.style.padding = "10px 14px";
+      notice.style.marginBottom = "16px";
+      notice.style.fontSize = "12px";
+      notice.style.color = "#7d5700";
+      notice.textContent =
+        "Download unavailable in Forge sandbox. This table is a read-only viewer. " +
+        "Bundle files reside in the server-side /tmp directory and cannot be transferred to your browser.";
+      vaultSection.appendChild(notice);
+
+      // Evidence bundle list (static empty list — fail-closed honest default)
+      const bundles: Array<{
+        bundleId: string;
+        timestampUtc: string | null;
+        sizeBytes: number;
+        bundleSha: string | null;
+        path: string;
+      }> = [];
+
+      if (bundles.length === 0) {
+        const noDataMsg = document.createElement("p");
+        noDataMsg.textContent = "No data available.";
+        noDataMsg.style.color = "#626F86";
+        noDataMsg.style.fontSize = "13px";
+        noDataMsg.style.margin = "10px 0 0 0";
+        vaultSection.appendChild(noDataMsg);
+      } else {
+        // Build table (defensive path — renders populated data if ever injected)
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+        table.style.fontSize = "12px";
+        table.style.fontFamily = "monospace";
+
+        // Table header
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        headerRow.style.borderBottom = "2px solid #e0e0e0";
+        const colHeaders = ["Bundle ID", "Timestamp", "Size", "Hash", "Download"];
+        colHeaders.forEach(colText => {
+          const th = document.createElement("th");
+          th.textContent = colText;
+          th.style.textAlign = "left";
+          th.style.padding = "8px 12px";
+          th.style.fontWeight = "600";
+          th.style.color = "#333";
+          th.style.fontFamily = "sans-serif";
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Table body
+        const tbody = document.createElement("tbody");
+        bundles.forEach((bundle, rowIdx) => {
+          const row = document.createElement("tr");
+          row.style.borderBottom = "1px solid #f0f0f0";
+          if (rowIdx % 2 === 0) {
+            row.style.backgroundColor = "#fafafa";
+          }
+
+          // Bundle ID
+          const idCell = document.createElement("td");
+          idCell.textContent = bundle.bundleId;
+          idCell.style.padding = "8px 12px";
+          idCell.style.color = "#333";
+          idCell.style.wordBreak = "break-all";
+          row.appendChild(idCell);
+
+          // Timestamp
+          const tsCell = document.createElement("td");
+          tsCell.textContent = bundle.timestampUtc ?? "—";
+          tsCell.style.padding = "8px 12px";
+          tsCell.style.color = "#626F86";
+          row.appendChild(tsCell);
+
+          // Size (bytes as integer, no units)
+          const sizeCell = document.createElement("td");
+          sizeCell.textContent = String(bundle.sizeBytes);
+          sizeCell.style.padding = "8px 12px";
+          sizeCell.style.color = "#626F86";
+          row.appendChild(sizeCell);
+
+          // Hash (truncated for display)
+          const hashCell = document.createElement("td");
+          hashCell.textContent = bundle.bundleSha ? bundle.bundleSha.substring(0, 16) : "—";
+          hashCell.style.padding = "8px 12px";
+          hashCell.style.color = "#999";
+          hashCell.style.wordBreak = "break-all";
+          row.appendChild(hashCell);
+
+          // Download button — permanently disabled
+          const dlCell = document.createElement("td");
+          dlCell.style.padding = "8px 12px";
+          const dlBtn = document.createElement("button");
+          dlBtn.textContent = "Download";
+          dlBtn.disabled = true;
+          dlBtn.title = "Download unavailable in Forge sandbox";
+          dlBtn.style.padding = "4px 10px";
+          dlBtn.style.fontSize = "11px";
+          dlBtn.style.cursor = "not-allowed";
+          dlBtn.style.opacity = "0.45";
+          dlBtn.style.border = "1px solid #ccc";
+          dlBtn.style.borderRadius = "3px";
+          dlBtn.style.background = "#f5f5f5";
+          dlCell.appendChild(dlBtn);
+          row.appendChild(dlCell);
+
+          tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        vaultSection.appendChild(table);
+      }
+
+      panel.appendChild(vaultSection);
     } else {
       // Add placeholder text (EXACT) for all other tabs
       const placeholder = document.createElement("p");
