@@ -12,6 +12,43 @@ The audit process is designed to be:
 
 ---
 
+## Current Production Audit Status (Automated)
+
+**Last Verified:** 2026-02-18 07:23:42 UTC  
+**Git Commit:** 51dde89b (chore: add deterministic npm audit...)  
+**Command:** `npm audit --omit=dev`  
+**Result:** **0 vulnerabilities**
+
+### Remediation Applied
+
+Production vulnerabilities from prior audit were fixed using npm "overrides" mechanism (no new dependencies, no version changes to declared dependencies):
+
+```json
+"overrides": {
+  "@isaacs/brace-expansion": "5.0.1",
+  "ajv": "8.18.0",
+  "markdown-it": "14.1.1"
+}
+```
+
+These overrides:
+- ✓ Pin vulnerable transitive dependencies to patched versions
+- ✓ Preserve `npm ci --include=dev` determinism (via package-lock.json)
+- ✓ Do not require changes to manifest.yml
+- ✓ Do not add new root dependencies
+- ✓ Pass all build verification gates (15/15)
+- ✓ Audit policy gate: PASS (prod audit clean)
+
+**Verification:**
+```
+$ npm ls @isaacs/brace-expansion ajv markdown-it --all
+@isaacs/brace-expansion@5.0.1 overridden
+ajv@8.18.0 overridden
+markdown-it@14.1.1 overridden
+```
+
+---
+
 ## Audit Methodology
 
 ### 1. Deterministic Installation (npm ci)
