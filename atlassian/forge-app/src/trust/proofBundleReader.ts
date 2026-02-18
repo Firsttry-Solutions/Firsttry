@@ -237,10 +237,12 @@ export function extractTrustPanelFields(
   manifest: Manifest,
   scopeFreeze: ScopeFreeze
 ): TrustPanelData {
-  // Read-only guarantee: STRICT validation (check explicit property, not checks array)
-  const readOnlyGuarantee = ((att06 as any).readOnlyGuarantee === true || (att06 as any).assertions?.readOnlyGuarantee === true)
-    ? 'Verified'
-    : 'NotApplicable';
+  // Read-only guarantee: Check mutation attestation status (all checks must be PASS)
+  const checks = Array.isArray((att06 as any).checks) ? (att06 as any).checks : null;
+  const readOnlyGuarantee =
+    checks && checks.length > 0 && checks.every((c: any) => c && c.status === 'PASS')
+      ? 'Verified'
+      : 'NotApplicable';
 
   return {
     readOnlyGuarantee,
