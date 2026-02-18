@@ -130,17 +130,25 @@ export async function logGovernanceAction(
  * List recent governance actions from storage
  * 
  * Retrieves and returns up to `limit` most recent action records, sorted by timestampUtc descending.
- * Deterministic ordering: timestamp desc, tie-break by full key lexicographic.
+ * Deterministic ordering: timestamp desc, tie-break by recordSha256 lexicographic.
  * 
  * FT_ECL_PHASE: ECL-2 ACTION_LOG_FAIL_CLOSED
+ * FT_ECL_PHASE: ECL-2 INTEGRITY_VERIFY
  * 
  * Fail-closed semantics:
  * - If storage read fails for ANY reason -> throws with code "FT_ECL_AUDIT_LOG_READ_FAILED"
+ * - If ANY record fails hash verification -> throws with code "FT_ECL_AUDIT_LOG_TAMPER_DETECTED"
  * - Only returns [] if successful read finds zero action records
+ * 
+ * Tamper detection:
+ * - Recomputes canonical hash for each record
+ * - Compares with stored recordSha256
+ * - Throws immediately on mismatch (fail-closed, no skipping)
  * 
  * @param limit Maximum number of records to return (default 20)
  * @returns Array of records sorted by timestampUtc descending
  * @throws Error with code "FT_ECL_AUDIT_LOG_READ_FAILED" on storage read failure
+ * @throws Error with code "FT_ECL_AUDIT_LOG_TAMPER_DETECTED" on hash mismatch
  */
 export async function listGovernanceActions(limit: number = 20): Promise<GovernanceActionRecord[]> {
   const PREFIX = getGovernanceActionStorageKeyPattern();
@@ -187,8 +195,7 @@ export async function listGovernanceActions(limit: number = 20): Promise<Governa
         // Extract timestamp from key: ecl.audit.actions.{timestampUtc}.{recordSha256}
         const keyParts = entry.key.split(".");
         if (keyParts.length < 5) {
-          console.warn(`[ECL-2] Skipping malformed storage key: ${entry.key}`);
-          continue;
+          throw new Error(`FT_ECL_AUDIT_LOG_TAMPER_DETECTED: Malformed storage key: ${entry.key}`);
         }
         
         // Parse the value as JSON
@@ -198,32 +205,59 @@ export async function listGovernanceActions(limit: number = 20): Promise<Governa
         } else if (typeof entry.value === "object") {
           record = entry.value as GovernanceActionRecord;
         } else {
-          console.warn(`[ECL-2] Skipping entry with non-object value: ${entry.key}`);
-          continue;
+          throw new Error(`FT_ECL_AUDIT_LOG_TAMPER_DETECTED: Entry with non-object value: ${entry.key}`);
         }
         
         // Validate record structure
-        if (record && record.timestampUtc && record.recordSha256) {
-          records.push(record);
+        if (!record || !record.timestampUtc || !record.recordSha256) {
+          throw new Error(`FT_ECL_AUDIT_LOG_TAMPER_DETECTED: Missing required fields in record: ${entry.key}`);
         }
+        
+        // ECL-2.2: HASH RE-VERIFICATION + TAMPER DETECTION
+        // Recompute hash from canonical representation and compare
+        const recordForVerification = {
+          timestampUtc: record.timestampUtc,
+          buildShaShort: record.buildShaShort,
+          buildUtc: record.buildUtc,
+          schemaVersion: record.schemaVersion,
+          actionType: record.actionType,
+          actorRole: record.actorRole,
+          metadata: record.metadata
+        };
+        
+        try {
+          const canonical = canonicalJsonString(recordForVerification);
+          const recomputedHash = sha256Hex(canonical);
+          
+          // FAIL-CLOSED: Hash mismatch is tamper detection
+          if (recomputedHash !== record.recordSha256) {
+            throw new Error(`FT_ECL_AUDIT_LOG_TAMPER_DETECTED: Hash mismatch for record ${entry.key}. Expected ${recomputedHash}, got ${record.recordSha256}`);
+          }
+        } catch (hashErr) {
+          // If hash verification itself fails, also fail-closed
+          const errMsg = String(hashErr);
+          if (errMsg.includes("FT_ECL_AUDIT_LOG_TAMPER_DETECTED")) {
+            throw hashErr;
+          }
+          throw new Error(`FT_ECL_AUDIT_LOG_TAMPER_DETECTED: Cannot verify record hash: ${hashErr}`);
+        }
+        
+        records.push(record);
       } catch (parseErr) {
-        // Skip malformed entries, but don't fail entirely
-        console.warn(`[ECL-2] Failed to parse storage entry: ${entry.key}: ${parseErr}`);
+        // FAIL-CLOSED: Propagate tamper detection errors immediately
+        const errMsg = String(parseErr);
+        if (errMsg.includes("FT_ECL_AUDIT_LOG_TAMPER_DETECTED")) {
+          throw parseErr;
+        }
+        // Other parse errors are also fail-closed
+        throw new Error(`FT_ECL_AUDIT_LOG_TAMPER_DETECTED: Failed to parse storage entry: ${entry.key}: ${parseErr}`);
       }
     }
 
-    // Sort deterministically: by timestampUtc descending, then by full key
+    // Sort deterministically: by timestampUtc descending, then by recordSha256 lexicographic
     records.sort((a, b) => {
-      // Parse timestamps as ISO strings for comparison
-      const aTime = new Date(a.timestampUtc).getTime();
-      const bTime = new Date(b.timestampUtc).getTime();
-      
-      if (aTime !== bTime) {
-        // Descending: newer first
-        return bTime - aTime;
-      }
-      
-      // Tie-break by recordSha256 lexicographic
+      const t = new Date(b.timestampUtc).getTime() - new Date(a.timestampUtc).getTime();
+      if (t !== 0) return t;
       return a.recordSha256.localeCompare(b.recordSha256);
     });
 
