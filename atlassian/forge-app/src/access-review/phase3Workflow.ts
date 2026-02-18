@@ -319,6 +319,16 @@ export async function recordDecision(
       );
     }
 
+    // FT_ECL_PHASE: ECL-4 REVIEW_IMMUTABLE_GUARD
+    // Enforce review immutability: cannot record decision if sealed
+    if ((state as any).sealed === true) {
+      throw new ReviewError(
+        "REVIEW_SEALED",
+        `Cannot record decision: review is sealed (reviewId=${reviewId})`,
+        { reviewId, sealed: true }
+      );
+    }
+
     // Verify reviewer exists
     const reviewer = state.reviewers.find((r: ReviewReviewer) => r.accountId === reviewerId);
     if (!reviewer) {
@@ -442,6 +452,16 @@ export async function addException(
 
     if (!state) {
       throw new ReviewError("INVALID_INPUT", `Review ${reviewId} not found`, { reviewId });
+    }
+
+    // FT_ECL_PHASE: ECL-4 REVIEW_IMMUTABLE_GUARD
+    // Enforce review immutability: cannot add exception if sealed
+    if ((state as any).sealed === true) {
+      throw new ReviewError(
+        "REVIEW_SEALED",
+        `Cannot add exception: review is sealed (reviewId=${reviewId})`,
+        { reviewId, sealed: true }
+      );
     }
 
     // Create exception

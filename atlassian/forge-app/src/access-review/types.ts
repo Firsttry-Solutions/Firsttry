@@ -137,6 +137,12 @@ export interface ReviewWorkflowState {
   // Integrity
   stateHash: string;                   // sha256(canonical(stateWithoutHash))
 
+  // FT_ECL_PHASE: ECL-4 REVIEW_SEAL_FIELDS
+  sealed?: boolean;                    // Whether this review has been sealed
+  sealedTimestampUtc?: string;         // UTC timestamp when sealed
+  sealedByRole?: string;               // Role of the sealing actor
+  sealHash?: string;                   // sha256(canonical(sealObject))
+
   // Failure tracking
   failure?: {
     code: string;

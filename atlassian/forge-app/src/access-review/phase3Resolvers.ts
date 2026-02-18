@@ -569,6 +569,71 @@ export async function resolveArRequestPurgeTenant(input: {
 }
 
 // ============================================================================
+// ar.sealReview (ECL-4)
+// ============================================================================
+
+/**
+ * Seal a review (mark as immutable)
+ * 
+ * Input:
+ * - siteId: string
+ * - reviewId: string
+ * - actorRole: string (EclRole)
+ * - privilegeContext: PrivilegeContext
+ * 
+ * Output:
+ * - success: boolean
+ * - sealedTimestampUtc?: string
+ * - sealHash?: string
+ */
+export async function resolveArSealReview(input: {
+  siteId?: string;
+  reviewId?: string;
+  actorRole?: string;
+  privilegeContext?: PrivilegeContext;
+}): Promise<{
+  success: boolean;
+  sealedTimestampUtc?: string;
+  sealHash?: string;
+  error?: string;
+  code?: string;
+}> {
+  try {
+    if (!input.siteId) throw new ReviewError("INVALID_INPUT", "siteId required");
+    if (!input.reviewId) throw new ReviewError("INVALID_INPUT", "reviewId required");
+    if (!input.actorRole) throw new ReviewError("INVALID_INPUT", "actorRole required");
+    if (!input.privilegeContext) {
+      throw new ReviewError("INVALID_INPUT", "privilegeContext required");
+    }
+
+    validateSiteId(input.siteId);
+
+    // Import seal function dynamically to avoid circular dependencies
+    const { sealReview } = await import("../governance/reviewSeal");
+
+    // Seal review (this validates permissions, checks already-sealed, etc)
+    const updatedReview = await sealReview(
+      input.reviewId,
+      input.siteId,
+      input.actorRole as any,
+    );
+
+    return {
+      success: true,
+      sealedTimestampUtc: updatedReview.sealedTimestampUtc,
+      sealHash: updatedReview.sealHash,
+    };
+  } catch (err) {
+    const error = err instanceof ReviewError ? err : (err as Error);
+    return {
+      success: false,
+      error: error.message,
+      code: err instanceof ReviewError ? err.code : "UNKNOWN",
+    };
+  }
+}
+
+// ============================================================================
 // RESOLVER REGISTRATION
 // ============================================================================
 
@@ -577,6 +642,7 @@ export const resolvers = {
   "ar.getReview": resolveArGetReview,
   "ar.recordDecision": resolveArRecordDecision,
   "ar.addException": resolveArAddException,
+  "ar.sealReview": resolveArSealReview,
   "ar.exportPack": resolveArExportPack,
   "ar.exportTenantData": resolveArExportTenantData,
   "ar.requestPurgeTenant": resolveArRequestPurgeTenant,
