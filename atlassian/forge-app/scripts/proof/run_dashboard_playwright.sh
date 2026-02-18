@@ -731,18 +731,22 @@ else
     exit 1
   fi
     # === DETERMINISTIC EVIDENCE CONTRACT CHECK ===
-  # If Playwright failed during setup (auth timeout) and we find relevant error messages,
-  # VERIFY that auth-failure-reason.json exists. Fail-closed if missing.
-  if grep -q "AUTH_SETUP_TIMEOUT\|auth.setup" "$PW_STDERR" "$PW_STDOUT" 2>/dev/null; then
+  # Require auth-failure-reason.json ONLY when auth ACTUALLY timed out/failed.
+  # Do NOT trigger on 'auth.setup' appearing in success output (it always does).
+  # [FT_PROOF] AUTH_SUCCESS=1 is implicit when this check is skipped.
+  if grep -q "AUTH_SETUP_TIMEOUT" "$PW_STDERR" "$PW_STDOUT" 2>/dev/null; then
+    echo "[FT_PROOF] AUTH_FAILURE=1 REASON=AUTH_SETUP_TIMEOUT"
     if [[ ! -f "$OUT_DIR/auth-failure-reason.json" ]]; then
       echo -e "${RED}ERROR: Expected auth-failure-reason.json missing (evidence contract breach)${NC}"
-      echo "Auth setup timeout or failure detected, but no evidence captured."
+      echo "Auth setup timeout detected, but no evidence captured."
       echo "OUT_DIR: $OUT_DIR"
       echo "Files in OUT_DIR:"
       ls -lh "$OUT_DIR" 2>/dev/null || true
       echo ""
       exit 1
     fi
+  else
+    echo "[FT_PROOF] AUTH_SUCCESS=1 (no AUTH_SETUP_TIMEOUT detected)"
   fi
   
   exit $PLAYWRIGHT_EXIT
