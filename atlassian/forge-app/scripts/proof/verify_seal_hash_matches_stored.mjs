@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * ECL-4 SEAL HASH RECOMPUTE PROOF
+ * ECL-4 SEAL HASH RECOMPUTE PROOF (PRODUCTION-TIED)
  * 
  * Purpose: Verify that a sealed review's sealHash can be recomputed
  * from the stored seal fields, proving computational integrity.
  * 
+ * CRITICAL: This proof IMPORTS production utilities (no DIY implementations):
+ * - canonicalJsonString from dist/src/milestone1/canonicalize.js
+ * - sha256Hex from dist/src/milestone1/canonicalize.js
+ * 
  * Pattern: Load sealed review JSON → Extract seal fields → Recompute hash → Compare
+ * Derivation: Matches EXACT logic in src/governance/reviewSeal.ts
  * 
  * This is NOT a determinism proof (run twice, get same hash).
  * This IS a recompute proof (load stored data, recompute, verify matches stored).
@@ -14,79 +19,62 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ============================================================================
-// CANONICAL JSON (matches backend exactly)
+// IMPORT PRODUCTION UTILITIES (MILESTONE1/CANONICALIZE)
 // ============================================================================
 
-function canonicalizeJson(obj) {
-  if (obj === null || obj === undefined) return 'null';
-  if (typeof obj === 'string') return JSON.stringify(obj);
-  if (typeof obj === 'number' || typeof obj === 'boolean') return String(obj);
+// Dynamic import to get compiled production utilities
+// This ensures we use EXACT same implementation as src/governance/reviewSeal.ts
+let canonicalJsonString, sha256Hex;
 
-  if (typeof obj === 'object') {
-    if (Array.isArray(obj)) {
-      const items = obj.map((item) => canonicalizeJson(item));
-      return `[${items.join(',')}]`;
-    } else {
-      const keys = Object.keys(obj).sort();
-      const pairs = keys.map((key) => {
-        const val = obj[key];
-        if (val === undefined) return null;
-        return `"${key}":${canonicalizeJson(val)}`;
-      });
-      const filtered = pairs.filter((p) => p !== null);
-      return `{${filtered.join(',')}}`;
+async function loadProductionUtilities() {
+  try {
+    // Path to compiled production utilities
+    const utilPath = path.join(__dirname, '../../dist/src/milestone1/canonicalize.js');
+    const canonicalizeMod = await import(utilPath);
+    canonicalJsonString = canonicalizeMod.canonicalJsonString;
+    sha256Hex = canonicalizeMod.sha256Hex;
+    
+    if (!canonicalJsonString || !sha256Hex) {
+      throw new Error('Failed to load canonicalJsonString or sha256Hex from production utilities');
     }
+  } catch (err) {
+    throw new Error(`FAIL_CLOSED: Cannot load production utilities: ${err.message}`);
   }
-
-  throw new Error(`Cannot canonicalize value: ${typeof obj}`);
 }
 
 // ============================================================================
-// SEAL HASH COMPUTATION (matches backend reviewSeal.ts exactly)
+// SEAL HASH COMPUTATION (PRODUCTION UTILITIES ONLY)
 // ============================================================================
 
 function computeSealHash(sealObject) {
-  const canonical = canonicalizeJson(sealObject);
-  const hash = crypto.createHash('sha256').update(canonical).digest('hex');
+  // Use production canonical JSON + SHA256
+  const canonical = canonicalJsonString(sealObject);
+  const hash = sha256Hex(canonical);
   return hash;
 }
 
 /**
  * Create canonical seal object from stored review state
- * (Extracted from createCanonicalSealObject in backend)
+ * EXACT mirroring of createCanonicalSealObject in src/governance/reviewSeal.ts
  */
 function createCanonicalSealObjectFromReview(review) {
-  // Derive findings hash from decisions
-  const decisionsStr = canonicalizeJson(
-    review.decisions.map((d) => ({
-      reviewer: d.reviewerId,
-      decision: d.decision,
-    }))
-  );
-  const findingsHash = crypto
-    .createHash('sha256')
-    .update(decisionsStr)
-    .digest('hex')
-    .substring(0, 16);
-
-  // Derive approvals hash from accepted decisions
-  const approvalsStr = canonicalizeJson(
-    review.decisions
-      .filter((d) => d.decision === 'APPROVED')
-      .map((d) => d.reviewerId)
-  );
-  const approvalsHash = crypto
-    .createHash('sha256')
-    .update(approvalsStr)
-    .digest('hex')
-    .substring(0, 16);
+  // EXACT production derivation:
+  // findingsHash = review.snapshotRef?.baselineSha || review.stateHash
+  const findingsHash = review.snapshotRef?.baselineSha || review.stateHash;
+  
+  // EXACT production derivation:
+  // approvalsHash = sha256Hex(canonicalJsonString({ decisionHashes }))
+  // where decisionHashes = sorted array of decision hashes
+  const decisionHashes = review.decisions
+    .map((d) => d.decisionHash)
+    .sort(); // Deterministic sort
+  const approvalsHash = sha256Hex(canonicalJsonString({ decisionHashes }));
 
   // Build canonical seal object (field order matters)
   const sealObject = {
@@ -107,84 +95,122 @@ function createCanonicalSealObjectFromReview(review) {
 // MAIN PROOF EXECUTION
 // ============================================================================
 
-async function verifyRecomputeProof(fixtureFilePath) {
-  console.log('\n================================================================================');
-  console.log('ECL-4 SEAL HASH RECOMPUTE PROOF');
-  console.log('================================================================================\n');
-
-  // Load sealed review fixture
-  console.log(`[1] Loading sealed review fixture: ${fixtureFilePath}`);
-  if (!fs.existsSync(fixtureFilePath)) {
-    throw new Error(`Fixture file not found: ${fixtureFilePath}`);
+async function verifyRecomputeProof(fixtureFilePath, outputFilePath) {
+  const output = [];
+  
+  function log(msg) {
+    console.log(msg);
+    output.push(msg);
   }
 
-  const fixtureContent = fs.readFileSync(fixtureFilePath, 'utf-8');
-  const review = JSON.parse(fixtureContent);
+  try {
+    // Initialize production utilities
+    await loadProductionUtilities();
+    
+    log('\n================================================================================');
+    log('ECL-4 SEAL HASH RECOMPUTE PROOF (PRODUCTION-TIED)');
+    log('================================================================================\n');
+    log(`[PRODUCTION UTILITIES SOURCE]`);
+    log(`  Canonical: dist/src/milestone1/canonicalize.js:canonicalJsonString`);
+    log(`  SHA256:    dist/src/milestone1/canonicalize.js:sha256Hex\n`);
 
-  if (!review.sealed) {
-    throw new Error('Fixture review must have sealed === true');
+    // Load sealed review fixture
+    log(`[1] Loading sealed review fixture: ${fixtureFilePath}`);
+    if (!fs.existsSync(fixtureFilePath)) {
+      throw new Error(`Fixture file not found: ${fixtureFilePath}`);
+    }
+
+    const fixtureContent = fs.readFileSync(fixtureFilePath, 'utf-8');
+    const review = JSON.parse(fixtureContent);
+
+    if (!review.sealed) {
+      throw new Error('Fixture review must have sealed === true');
+    }
+
+    log(`   ✓ Review ID: ${review.reviewId}`);
+    log(`   ✓ Sealed: ${review.sealed}`);
+    log(`   ✓ Sealed By Role: ${review.sealedByRole}`);
+    log(`   ✓ Sealed At: ${review.sealedTimestampUtc}`);
+
+    // Extract stored seal hash
+    const storedSealHash = review.sealHash;
+    if (!storedSealHash) {
+      throw new Error('Review fixture missing sealHash field');
+    }
+
+    log(`\n[2] Stored sealHash:`);
+    log(`   ${storedSealHash}`);
+
+    // Recompute seal hash from stored fields using EXACT production derivation
+    log(`\n[3] Recomputing seal hash from stored fields...`);
+    log(`   Using EXACT derivation from src/governance/reviewSeal.ts::createCanonicalSealObject`);
+    
+    const canonicalSealObject = createCanonicalSealObjectFromReview(review);
+
+    log(`\n[3a] Canonical Seal Object:`);
+    log(JSON.stringify(canonicalSealObject, null, 2));
+
+    const canonical = canonicalJsonString(canonicalSealObject);
+    log(`\n[3b] Canonical JSON String:`);
+    log(`   ${canonical}`);
+
+    const recomputedSealHash = sha256Hex(canonical);
+
+    log(`\n[4] Recomputed sealHash:`);
+    log(`   ${recomputedSealHash}`);
+
+    // Compare
+    log(`\n[5] Comparison:`);
+    const match = storedSealHash === recomputedSealHash;
+
+    if (match) {
+      log(`   ✓ MATCH: Recomputed hash equals stored hash`);
+      log(`   ✓ Seal hash integrity verified using production utilities`);
+      log(`   ✓ Review state is immutable (cannot be tampered with)`);
+    } else {
+      log(`   ✗ MISMATCH: Recomputed hash differs from stored hash`);
+      log(`   ✗ Stored:      ${storedSealHash}`);
+      log(`   ✗ Recomputed:  ${recomputedSealHash}`);
+      log(`   ✗ Seal hash integrity FAILED`);
+    }
+
+    log(`\n================================================================================`);
+    log(`PROOF RESULT: MATCH=${match}`);
+    log('================================================================================\n');
+
+    // Write output file
+    if (outputFilePath) {
+      fs.writeFileSync(outputFilePath, output.join('\n'), 'utf-8');
+      console.log(`\n[OUTPUT FILE] Written to: ${outputFilePath}`);
+    }
+
+    return match ? Promise.resolve() : Promise.reject(new Error('Seal hash mismatch'));
+  } catch (error) {
+    console.error(`[ERROR] ${error.message}`);
+    console.error(error.stack);
+    return Promise.reject(error);
   }
-
-  console.log(`   ✓ Review ID: ${review.reviewId}`);
-  console.log(`   ✓ Sealed: ${review.sealed}`);
-  console.log(`   ✓ Sealed By Role: ${review.sealedByRole}`);
-  console.log(`   ✓ Sealed At: ${review.sealedTimestampUtc}`);
-
-  // Extract stored seal hash
-  const storedSealHash = review.sealHash;
-  if (!storedSealHash) {
-    throw new Error('Review fixture missing sealHash field');
-  }
-
-  console.log(`\n[2] Stored sealHash:`);
-  console.log(`   ${storedSealHash}`);
-
-  // Recompute seal hash from stored fields
-  console.log(`\n[3] Recomputing seal hash from stored fields...`);
-  const canonicalSealObject = createCanonicalSealObjectFromReview(review);
-
-  console.log(`   Canonical seal object:`, canonicalSealObject);
-
-  const recomputedSealHash = computeSealHash(canonicalSealObject);
-
-  console.log(`\n[4] Recomputed sealHash:`);
-  console.log(`   ${recomputedSealHash}`);
-
-  // Compare
-  console.log(`\n[5] Comparison:`);
-  const match = storedSealHash === recomputedSealHash;
-
-  if (match) {
-    console.log(`   ✓ MATCH: Recomputed hash equals stored hash`);
-    console.log(`   ✓ Seal hash integrity verified`);
-    console.log(`   ✓ Review state is immutable (cannot be tampered with)`);
-  } else {
-    console.log(`   ✗ MISMATCH: Recomputed hash differs from stored hash`);
-    console.log(`   ✗ Stored:      ${storedSealHash}`);
-    console.log(`   ✗ Recomputed:  ${recomputedSealHash}`);
-    console.log(`   ✗ Seal hash integrity FAILED`);
-  }
-
-  console.log(`\n================================================================================`);
-  console.log(`PROOF RESULT: MATCH=${match}`);
-  console.log('================================================================================\n');
-
-  return match ? Promise.resolve() : Promise.reject(new Error('Seal hash mismatch'));
 }
 
 // ============================================================================
 // CLI EXECUTION
 // ============================================================================
 
-const fixtureDir = path.join(__dirname, 'fixtures');
-const fixturePath = path.join(fixtureDir, 'ecl4_sealed_review_fixture.json');
+async function main() {
+  const fixtureDir = path.join(__dirname, 'fixtures');
+  const fixturePath = path.join(fixtureDir, 'ecl4_sealed_review_fixture.json');
+  
+  // Output file from command line argument or default
+  const outputFilePath = process.argv[2] || null;
 
-verifyRecomputeProof(fixturePath)
-  .then(() => {
+  try {
+    await verifyRecomputeProof(fixturePath, outputFilePath);
     process.exit(0);
-  })
-  .catch((error) => {
-    console.error(`[ERROR] ${error.message}`);
+  } catch (error) {
+    console.error(`[FATAL] ${error.message}`);
     process.exit(1);
-  });
+  }
+}
+
+main();
 
