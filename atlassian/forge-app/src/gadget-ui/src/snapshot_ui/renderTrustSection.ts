@@ -134,7 +134,7 @@ export function renderTrustSection(): HTMLElement {
   }
 
   // Load proof data asynchronously
-  invoke(TRUST_RESOLVER_KEY_V1)
+  invoke('ft_getTrustPanelProof_v1')
     .then((trustData: any) => {
       if (!trustData) {
         renderFailClosed();
@@ -143,7 +143,7 @@ export function renderTrustSection(): HTMLElement {
       renderTable(trustData);
     })
     .catch((err: any) => {
-      console.error('[TRUST_UI] Proof invoke failed:', err);
+      console.error('[TRUST_UI] Proof invoke failed (ft_getTrustPanelProof_v1):', err);
       renderFailClosed();
     });
 
