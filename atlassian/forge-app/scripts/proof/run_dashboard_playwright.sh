@@ -121,22 +121,38 @@ print_header
 
 # === TRAP INFRASTRUCTURE: Non-bypassable cleanup and post-guard (ALWAYS runs) ===
 
+# should_preserve_state: returns 0 (true) if state.json must NOT be deleted
+should_preserve_state() {
+  if [[ "${FT_PRESERVE_STATE_JSON:-}" == "1" ]]; then return 0; fi
+  if [[ "${FT_AUTH_MODE:-}" == "state-only" ]]; then return 0; fi
+  return 1
+}
+
 # cleanup_and_postguard: Executes state cleanup and post-guard verification
 # MUST run on any exit: success, failure, timeout, CTRL-C
 cleanup_and_postguard() {
   local trap_exit_code=$?
   RUNNER_EXIT=$trap_exit_code
   
-  # === DEFENSE-IN-DEPTH: Delete state file ===
-  rm -f tests/playwright/.auth/state.json 2>/dev/null || true
-  CLEANUP_EXIT=$?
+  # === DEFENSE-IN-DEPTH: Delete state file (skip if state-only/preserve mode) ===
+  if should_preserve_state; then
+    echo "[FT_PROOF] STATE_JSON_PRESERVED=1"
+    CLEANUP_EXIT=0
+  else
+    rm -f tests/playwright/.auth/state.json 2>/dev/null || true
+    CLEANUP_EXIT=$?
+  fi
   
   # === POST-GUARD: Always runs, even if cleanup failed ===
   echo ""
   print_section "Step X: Post-Guard Auth-State Safety Check (ON EXIT)"
   
   export FT_GUARD_PHASE="post"
-  export FT_GUARD_EXPECT_STATE_CLEANUP=1
+  if should_preserve_state; then
+    export FT_GUARD_EXPECT_STATE_CLEANUP=0
+  else
+    export FT_GUARD_EXPECT_STATE_CLEANUP=1
+  fi
   bash scripts/proof/guard_no_auth_state_leak.sh >/dev/null 2>&1
   POST_GUARD_EXIT=$?
   
@@ -464,15 +480,21 @@ echo ""
 cleanup_and_post_guard() {
   local exit_code=$?
   
-  # Always delete state before post-guard (defense-in-depth)
-  rm -f tests/playwright/.auth/state.json 2>/dev/null || true
+  # Delete state before post-guard (skip if state-only/preserve mode)
+  if should_preserve_state; then
+    echo "[FT_PROOF] STATE_JSON_PRESERVED=1"
+  else
+    rm -f tests/playwright/.auth/state.json 2>/dev/null || true
+  fi
   
   # Run post-guard with cleanup expectation
   echo ""
   print_section "Step X: Post-Guard Auth-State Safety Check (ON EXIT)"
   
+  local expect_cleanup=1
+  should_preserve_state && expect_cleanup=0
   FT_GUARD_PHASE="post" \
-  FT_GUARD_EXPECT_STATE_CLEANUP=1 \
+  FT_GUARD_EXPECT_STATE_CLEANUP=$expect_cleanup \
   bash scripts/proof/guard_no_auth_state_leak.sh || {
     echo "[ERROR] Post-guard failed: auth-state safety violation"
     exit 1
