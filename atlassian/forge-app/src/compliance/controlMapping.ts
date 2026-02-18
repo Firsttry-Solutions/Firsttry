@@ -1,3 +1,4 @@
+// FT_ECL_PHASE: ECL-7 CONTROL_MAPPING_STATIC
 /**
  * FirstTry Phase 3 — Compliance Control Mapping
  * 
@@ -249,3 +250,115 @@ ${evidence.disclaimers.map((d) => `- ${d}`).join("\n")}
 `;
   }
 }
+
+// ============================================================================
+// ECL-7 STATIC CONTROL MAPPING TABLES
+//
+// DISCLAIMER: Control IDs below are generic documentary labels only.
+// This file does NOT assert certification, coverage, or audit readiness
+// under any framework.
+//
+// Key provenance:
+//   DriftStatus values: src/output/output_contract.ts:26
+//   Drift classifications: src/admin/drift_history_tab.ts:49
+//   ReviewStatus values: src/access-review/types.ts:18
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// DRIFT → SOC 2 (generic control label mapping)
+// ---------------------------------------------------------------------------
+const DRIFT_SOC2_ENTRIES = [
+  [
+    'DRIFT_DETECTED',
+    {
+      control: 'CC7.2',
+      explanation: 'Mapped by static rule: system detects configuration state deviations from established baseline.',
+    },
+  ],
+  [
+    'STRUCTURAL',
+    {
+      control: 'CC6.1',
+      explanation: 'Mapped by static rule: structural object changes relate to logical access control configuration.',
+    },
+  ],
+  [
+    'CONFIG_CHANGE',
+    {
+      control: 'CC7.1',
+      explanation: 'Mapped by static rule: configuration-change classification relates to system configuration monitoring.',
+    },
+  ],
+  [
+    'DATA_VISIBILITY_CHANGE',
+    {
+      control: 'CC6.6',
+      explanation: 'Mapped by static rule: data-visibility changes relate to logical access restrictions.',
+    },
+  ],
+  [
+    'NO_DRIFT',
+    {
+      control: 'CC7.2',
+      explanation: 'Mapped by static rule: absence of detected drift is a documented monitoring outcome.',
+    },
+  ],
+] as const;
+
+export const DRIFT_TO_SOC2: Record<string, { control: string; explanation: string }> =
+  Object.freeze(Object.fromEntries(DRIFT_SOC2_ENTRIES));
+
+// ---------------------------------------------------------------------------
+// ReviewStatus → ISO 27001 (generic control label mapping)
+// ---------------------------------------------------------------------------
+const REVIEWFAIL_ISO27001_ENTRIES = [
+  [
+    'ESCALATED',
+    {
+      control: 'A.6.1.1',
+      explanation: 'Mapped by static rule: escalated reviews indicate an unresolved access decision requiring senior assignment.',
+    },
+  ],
+  [
+    'EXPIRED',
+    {
+      control: 'A.9.2.6',
+      explanation: 'Mapped by static rule: expired reviews relate to timely revocation and access lifecycle management.',
+    },
+  ],
+  [
+    'FAILED',
+    {
+      control: 'A.9.2.5',
+      explanation: 'Mapped by static rule: failed reviews indicate an access decision did not reach a resolved state.',
+    },
+  ],
+  [
+    'OPEN',
+    {
+      control: 'A.6.1.2',
+      explanation: 'Mapped by static rule: open reviews represent pending segregation-of-duties validation tasks.',
+    },
+  ],
+  [
+    'IN_REVIEW',
+    {
+      control: 'A.6.1.2',
+      explanation: 'Mapped by static rule: in-progress reviews represent active segregation-of-duties evaluation.',
+    },
+  ],
+  [
+    'COMPLETED',
+    {
+      control: 'A.9.2.5',
+      explanation: 'Mapped by static rule: completed reviews are a documented access lifecycle management outcome.',
+    },
+  ],
+] as const;
+
+export const REVIEWFAIL_TO_ISO27001: Record<string, { control: string; explanation: string }> =
+  Object.freeze(Object.fromEntries(REVIEWFAIL_ISO27001_ENTRIES));
+
+// Prevent accidental re-open of the class scope — marker that static section is complete.
+// FT_ECL_PHASE: ECL-7 CONTROL_MAPPING_STATIC_END
+export const _ECL7_MAPPING_VERSION = 'v1' as const;
