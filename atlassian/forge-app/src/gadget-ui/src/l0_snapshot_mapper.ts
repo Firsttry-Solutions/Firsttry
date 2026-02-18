@@ -851,6 +851,60 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     
     content.appendChild(phase1Actions);
 
+    // === ECL-4: REVIEW SEAL STATUS & LOCK DISPLAY ===
+    // FT_ECL_PHASE: ECL-4 REVIEW_SEAL_UI_STATUS_DISPLAY
+    // Show seal status if review is sealed, allow sealing if not yet sealed
+    const sealSection = document.createElement("div");
+    sealSection.id = "ft-review-seal-section";
+    sealSection.className = "ft-review-seal-section";
+    sealSection.style.marginTop = "20px";
+    sealSection.style.padding = "15px";
+    sealSection.style.borderLeft = "4px solid #0052CC";
+    sealSection.style.backgroundColor = "#f0f4f8";
+    sealSection.style.borderRadius = "4px";
+
+    const sealTitle = document.createElement("h3");
+    sealTitle.textContent = "🔐 Review Seal Status";
+    sealTitle.style.margin = "0 0 10px 0";
+    sealTitle.style.fontSize = "16px";
+    sealTitle.style.fontWeight = "600";
+    sealSection.appendChild(sealTitle);
+
+    const sealStatus = document.createElement("div");
+    sealStatus.id = "ft-seal-status";
+    sealStatus.className = "ft-seal-status";
+    sealStatus.style.fontSize = "14px";
+    sealStatus.style.cursor = "pointer";
+    sealStatus.style.marginBottom = "12px";
+    sealStatus.textContent = "(Loading review state...)";
+    sealSection.appendChild(sealStatus);
+
+    // FT_ECL_PHASE: ECL-4 REVIEW_SEAL_UI_BUTTON_ADD
+    const sealButton = document.createElement("button");
+    sealButton.id = "ft-seal-review-btn";
+    sealButton.setAttribute("data-testid", "ft-seal-review-button");
+    sealButton.textContent = "Seal Review (Immutable)";
+    sealButton.style.padding = "10px 15px";
+    sealButton.style.backgroundColor = "#0052CC";
+    sealButton.style.color = "white";
+    sealButton.style.border = "none";
+    sealButton.style.borderRadius = "4px";
+    sealButton.style.cursor = "pointer";
+    sealButton.style.fontSize = "14px";
+    sealButton.style.fontWeight = "500";
+    sealButton.style.marginRight = "10px";
+    sealSection.appendChild(sealButton);
+
+    const sealHelpText = document.createElement("small");
+    sealHelpText.style.display = "block";
+    sealHelpText.style.marginTop = "10px";
+    sealHelpText.style.color = "#666";
+    sealHelpText.style.fontSize = "12px";
+    sealHelpText.textContent = "Once sealed, review state becomes immutable (locked). This action cannot be undone.";
+    sealSection.appendChild(sealHelpText);
+
+    content.appendChild(sealSection);
+
     // === ENTERPRISE LAYOUT: Enterprise Contract (includes Evidence Summary) ===
     // Order: Enterprise UI Shell with cards → History → Diagnostics
     // This ensures core audit evidence is visible in a premium card-based layout
