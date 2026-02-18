@@ -177,9 +177,9 @@ echo ""
 read -p "Press ENTER to start browser, or Ctrl+C to cancel..."
 echo ""
 
-# Create a temporary Node script to run Playwright auth generation
-TEMP_AUTH_SCRIPT=$(mktemp /tmp/auth_gen_XXXXXX.mjs)
-trap "rm -f '$TEMP_AUTH_SCRIPT'" EXIT
+# Create a temporary Node script INSIDE the repo so Node can resolve node_modules
+TEMP_AUTH_SCRIPT="$(mktemp "${AUTH_DIR}/auth_gen_XXXXXX.mjs")"
+trap 'rm -f "$TEMP_AUTH_SCRIPT" >/dev/null 2>&1 || true' EXIT
 
 cat > "$TEMP_AUTH_SCRIPT" << 'NODEJS_EOF'
 import { chromium } from '@playwright/test';
