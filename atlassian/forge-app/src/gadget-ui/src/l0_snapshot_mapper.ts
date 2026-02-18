@@ -25,6 +25,9 @@ import { renderEnterpriseContractSection, renderSnapshotHistoryList, renderDefin
 // Import governance action types for dashboard state
 import type { GovernanceActionRecord } from '../governance/actionLog';
 
+// Import deterministic control mapping tables (ECL-7)
+import { DRIFT_TO_SOC2, REVIEWFAIL_TO_ISO27001 } from "../../compliance/controlMapping";
+
 // Support link configuration (mailto: for user accessibility)
 // Must match docs/CONTACTS.md canonical value
 const SUPPORT_EMAIL = "contact@firsttry.run";
@@ -729,6 +732,102 @@ function createECL1TabNavigation(): HTMLElement {
       }
 
       panel.appendChild(driftSection);
+    } else if (index === 5) {
+      // FT_ECL_PHASE: ECL-7 CONTROL_MAPPING_STATIC
+      // "Audit & Control Mapping" tab — static read-only control mapping table.
+      const mappingSection = document.createElement("div");
+      mappingSection.style.marginTop = "20px";
+
+      // Assemble findings from existing state fields (no new data fetches)
+      // Source 1: driftAcknowledgements → drift status keys
+      // Source 2: governanceActions → review status keys
+      type FindingRow = { finding: string; framework: string; control: string; explanation: string; status: string };
+      const rows: FindingRow[] = [];
+
+      // Drift findings from driftAcknowledgements
+      const driftAcks = (state as any).driftAcknowledgements;
+      if (driftAcks && typeof driftAcks === 'object') {
+        for (const driftId of Object.keys(driftAcks)) {
+          const ack = driftAcks[driftId];
+          const reasonCode = ack?.reasonCode || 'DRIFT_DETECTED';
+          const mapped = DRIFT_TO_SOC2[reasonCode];
+          rows.push({
+            finding: `Drift: ${driftId.substring(0, 12)}`,
+            framework: 'SOC 2',
+            control: mapped ? mapped.control : 'Unmapped',
+            explanation: mapped ? mapped.explanation : 'Unmapped',
+            status: mapped ? 'Mapped' : 'Unmapped',
+          });
+        }
+      }
+
+      // Review findings from governanceActions
+      const govActions = (state as any).governanceActions;
+      if (Array.isArray(govActions)) {
+        for (const action of govActions.slice(0, 20)) {
+          const actionType = action?.actionType || '';
+          const mapped = REVIEWFAIL_TO_ISO27001[actionType];
+          if (mapped || actionType) {
+            rows.push({
+              finding: `Review: ${actionType || '\u2014'}`,
+              framework: 'ISO 27001',
+              control: mapped ? mapped.control : 'Unmapped',
+              explanation: mapped ? mapped.explanation : 'Unmapped',
+              status: mapped ? 'Mapped' : 'Unmapped',
+            });
+          }
+        }
+      }
+
+      if (rows.length === 0) {
+        const noDataMsg = document.createElement("p");
+        noDataMsg.textContent = "No data available.";
+        noDataMsg.style.color = "#626F86";
+        noDataMsg.style.fontSize = "13px";
+        noDataMsg.style.margin = "10px 0 0 0";
+        mappingSection.appendChild(noDataMsg);
+      } else {
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+        table.style.fontSize = "12px";
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        headerRow.style.borderBottom = "2px solid #e0e0e0";
+        ["Finding", "Framework", "Control", "Explanation", "Status"].forEach(colText => {
+          const th = document.createElement("th");
+          th.textContent = colText;
+          th.style.textAlign = "left";
+          th.style.padding = "8px 12px";
+          th.style.fontWeight = "600";
+          th.style.color = "#333";
+          th.style.fontFamily = "sans-serif";
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        const tbody = document.createElement("tbody");
+        rows.forEach((row, rowIdx) => {
+          const tr = document.createElement("tr");
+          tr.style.borderBottom = "1px solid #f0f0f0";
+          if (rowIdx % 2 === 0) tr.style.backgroundColor = "#fafafa";
+          [row.finding, row.framework, row.control, row.explanation, row.status].forEach((cellText, colIdx) => {
+            const td = document.createElement("td");
+            td.textContent = cellText;
+            td.style.padding = "8px 12px";
+            td.style.color = colIdx === 4 ? (row.status === 'Mapped' ? '#2e7d32' : '#c62828') : "#333";
+            td.style.wordBreak = "break-word";
+            td.style.fontFamily = colIdx >= 2 ? "monospace" : "inherit";
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        mappingSection.appendChild(table);
+      }
+
+      panel.appendChild(mappingSection);
+      // FT_ECL_PHASE: ECL-7 CONTROL_MAPPING_STATIC_END
     } else if (index === 6) {
       // FT_ECL_PHASE: ECL-6 EVIDENCE_VAULT
       // "Evidence Vault" tab — read-only viewer shell.
