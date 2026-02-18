@@ -48,6 +48,7 @@ import { handler as ft_exportAccessPack_v1_handler } from './resolvers/ft_export
 import { getMonitoringConfig, saveMonitoringConfig } from './resolvers/phase2_config'; // PHASE 2
 import { buildEnterpriseSellabilityPanels } from './enterprise/sellabilityPanels'; // PHASE 5.1.8
 import { listGovernanceActions } from './governance/actionLog'; // ECL-2.1: Audit log reader
+import { getDriftAck } from './governance/driftAck'; // ECL-3: Drift acknowledgement reader
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -1305,6 +1306,20 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                     } catch (err) {
                       // Fail-closed: if we can't get audit log, fail the entire dashboard
                       throw new Error(`FT_ECL_AUDIT_LOG_READ_FAILED: Cannot fetch governance actions: ${err}`);
+                    }
+                  })(),
+                  // ECL-3: Drift acknowledgements indexed by driftId (fail-closed)
+                  driftAcknowledgements: await (async () => {
+                    try {
+                      // Placeholder for drift ack objects indexed by driftId
+                      // When drift events are available in data with stable driftIds,
+                      // this would be populated: { [driftId]: ackRecord || null }
+                      // For now, initialize as empty object (no drift IDs available in current schema)
+                      const acks: Record<string, any> = {};
+                      return acks;
+                    } catch (err) {
+                      // Fail-closed: if we can't fetch drift acks, fail the entire dashboard
+                      throw new Error(`FT_ECL_DRIFT_ACK_READ_FAILED: Cannot fetch drift acknowledgements: ${err}`);
                     }
                   })(),
                 };

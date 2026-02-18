@@ -620,6 +620,115 @@ function createECL1TabNavigation(): HTMLElement {
       }
 
       panel.appendChild(actionsSection);
+    } else if (index === 2) {
+      // Special handling for "Drift & Exposure" tab (index 2)
+      // FT_ECL_PHASE: ECL-3 DRIFT_ACK_UI
+
+      // Drift acknowledgements section
+      const driftSection = document.createElement("div");
+      driftSection.style.marginTop = "20px";
+
+      const driftTitle = document.createElement("h3");
+      driftTitle.textContent = "Infrastructure Drift & Acknowledgements";
+      driftTitle.style.fontSize = "14px";
+      driftTitle.style.fontWeight = "600";
+      driftTitle.style.color = "#333";
+      driftTitle.style.marginBottom = "10px";
+      driftSection.appendChild(driftTitle);
+
+      // Check if driftAcknowledgements are available in state
+      const driftAcks = (state as any).driftAcknowledgements;
+      
+      if (driftAcks === undefined) {
+        // Fail-closed: drift acks unavailable
+        const failClosedMsg = document.createElement("p");
+        failClosedMsg.textContent = "Drift acknowledgements unavailable — FAIL-CLOSED";
+        failClosedMsg.style.color = "#d32f2f";
+        failClosedMsg.style.fontSize = "13px";
+        failClosedMsg.style.margin = "10px 0 0 0";
+        failClosedMsg.style.fontWeight = "600";
+        driftSection.appendChild(failClosedMsg);
+      } else if (!driftAcks || Object.keys(driftAcks).length === 0) {
+        // Empty or no drift IDs: show "No data available."
+        const noDriftMsg = document.createElement("p");
+        noDriftMsg.textContent = "No drift events with acknowledgements.";
+        noDriftMsg.style.color = "#626F86";
+        noDriftMsg.style.fontSize = "13px";
+        noDriftMsg.style.margin = "10px 0 0 0";
+        driftSection.appendChild(noDriftMsg);
+      } else {
+        // Display drift acknowledgements (driftId -> ack record)
+        const ackIds = Object.keys(driftAcks);
+        
+        ackIds.forEach((driftId) => {
+          const ack = driftAcks[driftId];
+          
+          const driftItemDiv = document.createElement("div");
+          driftItemDiv.style.border = "1px solid #e0e0e0";
+          driftItemDiv.style.borderRadius = "4px";
+          driftItemDiv.style.padding = "12px";
+          driftItemDiv.style.marginbottom = "12px";
+          driftItemDiv.style.backgroundColor = "#fafafa";
+
+          const driftIdLine = document.createElement("div");
+          driftIdLine.style.fontWeight = "600";
+          driftIdLine.style.color = "#333";
+          driftIdLine.style.marginBottom = "8px";
+          driftIdLine.textContent = `Drift ID: ${driftId}`;
+          driftItemDiv.appendChild(driftIdLine);
+
+          if (!ack) {
+            // No acknowledgement yet
+            const unackMsg = document.createElement("div");
+            unackMsg.style.color = "#d32f2f";
+            unackMsg.style.fontSize = "12px";
+            unackMsg.textContent = "Status: Not acknowledged";
+            driftItemDiv.appendChild(unackMsg);
+          } else {
+            // Acknowledgement exists
+            const ticketLine = document.createElement("div");
+            ticketLine.style.fontSize = "12px";
+            ticketLine.style.color = "#626F86";
+            ticketLine.style.marginBottom = "4px";
+            ticketLine.textContent = `Ticket: ${ack.ticketId || "(none)"}`;
+            driftItemDiv.appendChild(ticketLine);
+
+            const reasonLine = document.createElement("div");
+            reasonLine.style.fontSize = "12px";
+            reasonLine.style.color = "#626F86";
+            reasonLine.style.marginBottom = "4px";
+            reasonLine.textContent = `Reason: ${ack.reasonCode}`;
+            driftItemDiv.appendChild(reasonLine);
+
+            const roleLine = document.createElement("div");
+            roleLine.style.fontSize = "12px";
+            roleLine.style.color = "#626F86";
+            roleLine.style.marginBottom = "4px";
+            roleLine.textContent = `Approved by: ${ack.approverRole}`;
+            driftItemDiv.appendChild(roleLine);
+
+            const tsLine = document.createElement("div");
+            tsLine.style.fontSize = "12px";
+            tsLine.style.color = "#999";
+            tsLine.style.marginBottom = "4px";
+            const ackTs = ack.ackTimestampUtc ? ack.ackTimestampUtc.substring(0, 19) : "—";
+            tsLine.textContent = `Acked: ${ackTs}`;
+            driftItemDiv.appendChild(tsLine);
+
+            const hashLine = document.createElement("div");
+            hashLine.style.fontSize = "10px";
+            hashLine.style.color = "#999";
+            hashLine.style.fontFamily = "monospace";
+            const hashDisplay = ack.ackHash ? ack.ackHash.substring(0, 12) : "—";
+            hashLine.textContent = `Hash: ${hashDisplay}`;
+            driftItemDiv.appendChild(hashLine);
+          }
+
+          driftSection.appendChild(driftItemDiv);
+        });
+      }
+
+      panel.appendChild(driftSection);
     } else {
       // Add placeholder text (EXACT) for all other tabs
       const placeholder = document.createElement("p");
