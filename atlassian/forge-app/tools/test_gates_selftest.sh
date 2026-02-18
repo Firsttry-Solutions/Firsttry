@@ -397,6 +397,21 @@ fi
 cp "$L0_BACKUP3" "$L0_MAPPER"
 
 # ========================================================================
+# AUDIT POLICY GATE (deterministic npm vulnerability proof)
+# ========================================================================
+
+echo ""
+echo "[SELFTEST] Running audit policy gate..."
+if bash "$SCRIPT_DIR/verify_audit_policy.sh"; then
+    AUDIT_POLICY_RESULT="PASS"
+    echo "[SELFTEST] ✅ Audit policy gate: PASS"
+else
+    AUDIT_POLICY_RESULT="FAIL"
+    echo "[SELFTEST] ❌ Audit policy gate: FAIL"
+    MUTATION_FAIL=$((MUTATION_FAIL + 1))
+fi
+
+# ========================================================================
 # SUMMARY
 # ========================================================================
 
