@@ -611,11 +611,11 @@ export async function resolveArSealReview(input: {
     // Import seal function dynamically to avoid circular dependencies
     const { sealReview } = await import("../governance/reviewSeal");
 
-    // Seal review (this validates permissions, checks already-sealed, etc)
+    // Seal review (spec-exact call: reviewId, actorRole, + internal siteId)
     const updatedReview = await sealReview(
       input.reviewId,
-      input.siteId,
       input.actorRole as any,
+      input.siteId
     );
 
     return {

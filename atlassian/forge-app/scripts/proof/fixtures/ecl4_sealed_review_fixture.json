@@ -1,0 +1,65 @@
+{
+  "reviewId": "rev-ecl4-test-001",
+  "siteId": "cloud.atlassian.com/sites/test",
+  "quarter": "2026-Q1",
+  "schemaVersion": "1.0",
+  "ruleSetVersion": "1.0",
+  "createdUtc": "2026-02-18T08:00:00.000Z",
+  "lastUpdatedUtc": "2026-02-18T09:30:00.000Z",
+  "status": "CLOSED",
+  "privilegeContext": {
+    "accountId": "test-account-001",
+    "email": "reviewer@example.com",
+    "authLevel": "PRIVILEGED"
+  },
+  "snapshotRef": {
+    "snapshotId": "snap-001",
+    "createdAtUtc": "2026-02-18T07:00:00.000Z"
+  },
+  "reviewers": [
+    {
+      "accountId": "reviewer-001",
+      "email": "alice@example.com",
+      "role": "TECHNICAL_APPROVER"
+    },
+    {
+      "accountId": "reviewer-002",
+      "email": "bob@example.com",
+      "role": "COMPLIANCE_APPROVER"
+    }
+  ],
+  "decisions": [
+    {
+      "reviewerId": "reviewer-001",
+      "decision": "APPROVED",
+      "recordedUtc": "2026-02-18T08:15:00.000Z",
+      "justification": "Code review passed security checks",
+      "decisionHash": "abcd1234efgh5678ijkl9012mnop3456"
+    },
+    {
+      "reviewerId": "reviewer-002",
+      "decision": "APPROVED",
+      "recordedUtc": "2026-02-18T08:45:00.000Z",
+      "justification": "Compliance verification complete",
+      "decisionHash": "qrst5678uvwx9012yzab3456cdef7890"
+    }
+  ],
+  "exceptions": [],
+  "progress": {
+    "totalItems": 42,
+    "reviewedItems": 2,
+    "itemCount": 0,
+    "baselineSha": "abc123def456"
+  },
+  "complianceScore": {
+    "overall": 95,
+    "coverage": 98,
+    "timeliness": 92
+  },
+  "sealed": true,
+  "sealedTimestampUtc": "2026-02-18T09:30:00.000Z",
+  "sealedByRole": "COMPLIANCE_APPROVER",
+  "buildShaShort": "abc123d",
+  "buildUtc": "2026-02-18T06:00:00.000Z",
+  "sealHash": "f730ab3a1b199a9b8029ad676409ea898cf59c1e21bf1ea3a319a47bf3a7e102"
+}

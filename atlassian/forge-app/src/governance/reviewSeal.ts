@@ -84,6 +84,9 @@ function createCanonicalSealObject(
 /**
  * Seal a review (mark as immutable, freeze state)
  * 
+ * SPEC SIGNATURE (ECL-4):
+ *   sealReview(reviewId: string, actorRole: EclRole) -> Promise<ReviewWorkflowState>
+ * 
  * Validation (FAIL-CLOSED):
  * - Actor must have CLOSE_REVIEW permission
  * - Review must exist
@@ -94,16 +97,25 @@ function createCanonicalSealObject(
  * - seal fields are set: sealed=true, sealedTimestampUtc, sealedByRole, sealHash
  * 
  * @param reviewId The review identifier
- * @param siteId The Jira site ID
  * @param actorRole The role of the actor requesting the seal
+ * @param siteId (INTERNAL) The Jira site ID - derived from context or resolver
  * @returns The updated review workflow state with seal fields set
  * @throws If validation fails or storage error occurs
  */
+// ECL-4 Spec-exact signature (public API)
+export async function sealReview(reviewId: string, actorRole: EclRole): Promise<ReviewWorkflowState>;
+// Internal overload with siteId (for resolver use)
+export async function sealReview(reviewId: string, actorRole: EclRole, siteId: string): Promise<ReviewWorkflowState>;
+// Implementation
 export async function sealReview(
   reviewId: string,
-  siteId: string,
-  actorRole: EclRole
+  actorRole: EclRole,
+  siteId?: string
 ): Promise<ReviewWorkflowState> {
+  // FAIL-CLOSED: siteId is required (must be provided by resolver or internal caller)
+  if (!siteId || typeof siteId !== "string" || siteId.trim() === "") {
+    throw new Error("FAIL_CLOSED: siteId must be provided (internal use only)");
+  }
   // FAIL-CLOSED: Validate permission
   if (!hasPermission(actorRole, EclAction.CLOSE_REVIEW)) {
     throw new Error(
@@ -114,9 +126,6 @@ export async function sealReview(
   // FAIL-CLOSED: Validate inputs
   if (!reviewId || typeof reviewId !== "string" || reviewId.trim() === "") {
     throw new Error("FAIL_CLOSED: reviewId must be a non-empty string");
-  }
-  if (!siteId || typeof siteId !== "string" || siteId.trim() === "") {
-    throw new Error("FAIL_CLOSED: siteId must be a non-empty string");
   }
 
   // Retrieve current review state from storage
