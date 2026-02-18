@@ -370,22 +370,19 @@ echo "  6. Do NOT share state.json across environments"
 echo "  7. Delete state.json from local machine after committing to secrets manager"
 echo ""
 
-# === STEP 9: .gitignore check ===
-print_section "Step 9: .gitignore Configuration"
+# === STEP 9: .gitignore check (VERIFY ONLY — never modify repo state) ===
+print_section "Step 9: .gitignore Verification"
 
-GITIGNORE_FILE=".gitignore"
-STATE_GITIGNORE_PATTERN="$STATE_PATH"
-
-if [[ ! -f "$GITIGNORE_FILE" ]]; then
-  echo "Creating .gitignore..."
-  echo "$STATE_GITIGNORE_PATTERN" >> "$GITIGNORE_FILE"
-  echo -e "${GREEN}✓${NC} Created $GITIGNORE_FILE with $STATE_GITIGNORE_PATTERN"
-elif grep -q "^${STATE_GITIGNORE_PATTERN}$" "$GITIGNORE_FILE"; then
-  echo -e "${GREEN}✓${NC} $STATE_GITIGNORE_PATTERN already in $GITIGNORE_FILE"
+# FT_PROOF: idempotent — only verify via git check-ignore; never auto-append to repo files.
+# If state.json is not ignored, FAIL-CLOSED and ask user to commit the rule manually.
+if git check-ignore -q "$STATE_PATH" 2>/dev/null; then
+  echo -e "${GREEN}✓${NC} $STATE_PATH is protected by .gitignore (git check-ignore confirmed)"
 else
-  echo "Adding $STATE_GITIGNORE_PATTERN to $GITIGNORE_FILE..."
-  echo "$STATE_GITIGNORE_PATTERN" >> "$GITIGNORE_FILE"
-  echo -e "${GREEN}✓${NC} Added"
+  echo -e "${RED}FAIL-CLOSED: $STATE_PATH is NOT ignored by git.${NC}"
+  echo "Action required: add the following to your repo .gitignore and commit it:"
+  echo "  tests/playwright/.auth/"
+  echo "  tests/playwright/.auth/*"
+  exit 1
 fi
 
 echo ""
