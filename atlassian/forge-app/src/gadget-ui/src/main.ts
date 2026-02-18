@@ -3287,6 +3287,116 @@ async function proceedWithBoot() {
           });
         }
 
+        // FT_ECL_PHASE: ECL-4 REVIEW_SEAL_UI_BUTTON_HANDLER
+        // Seal Review button handler
+        const sealReviewButton = document.getElementById('ft-seal-review-btn') as HTMLButtonElement | null;
+        const sealStatusDiv = document.getElementById('ft-seal-status') as HTMLDivElement | null;
+
+        if (sealReviewButton && sealStatusDiv) {
+          // Function to update seal status display
+          function updateSealStatusDisplay(reviewData: any) {
+            if (!reviewData) {
+              sealStatusDiv.textContent = "(No review data available)";
+              sealReviewButton.style.display = "none";
+              return;
+            }
+
+            if (reviewData.sealed === true) {
+              // Review is sealed - show status
+              const role = reviewData.sealedByRole || "Unknown";
+              const timestamp = reviewData.sealedTimestampUtc ? new Date(reviewData.sealedTimestampUtc).toLocaleString() : "Unknown time";
+              const hash = reviewData.sealHash ? reviewData.sealHash.substring(0, 16) + "..." : "No hash";
+              
+              sealStatusDiv.innerHTML = `
+                <div style="color: #0052CC; font-weight: 600;">
+                  🔒 SEALED by ${role}
+                </div>
+                <div style="color: #666; margin-top: 5px; font-size: 12px;">
+                  Sealed: ${timestamp}<br/>
+                  Seal ID: <code style="background: #eee; padding: 2px 4px; font-size: 11px;">${hash}</code>
+                </div>
+                <div style="color: #f44336; margin-top: 5px; font-weight: 600;">
+                  ⛔ IMMUTABLE - No mutations allowed
+                </div>
+              `;
+              sealReviewButton.style.display = "none";
+            } else {
+              // Review is not sealed - show button
+              sealStatusDiv.textContent = "(Not sealed - review is mutable)";
+              sealReviewButton.style.display = "inline-block";
+            }
+          }
+
+          // Initial display (no review data yet)
+          updateSealStatusDisplay(null);
+
+          // Seal button click handler
+          sealReviewButton.addEventListener('click', async () => {
+            sealReviewButton.disabled = true;
+            const originalText = sealReviewButton.textContent;
+            sealReviewButton.textContent = 'Sealing...';
+
+            try {
+              ensureCorrelationId();
+              console.log('[REVIEW_SEAL_CLICK] User triggered review seal');
+
+              // For now, we need to get the current review ID to seal
+              // In a real implementation, this would be passed from context
+              // For this demo, we'll look for it in localStorage or a global state
+              const reviewId = (window as any).__FT_CURRENT_REVIEW_ID || localStorage.getItem('FT_CURRENT_REVIEW_ID');
+              const actorRole = (window as any).__FT_ACTOR_ROLE || localStorage.getItem('FT_ACTOR_ROLE') || 'Approver';
+
+              if (!reviewId) {
+                sealStatusDiv.textContent = "❌ Error: No review ID available for sealing.";
+                sealStatusDiv.style.color = "#f44336";
+                sealReviewButton.textContent = originalText;
+                sealReviewButton.disabled = false;
+                return;
+              }
+
+              const result = await invokeWithUiReqId('ar.sealReview', {
+                reviewId,
+                actorRole,
+              });
+
+              if (result && result.ok) {
+                // Seal successful
+                console.log('[REVIEW_SEAL_SUCCESS]', result);
+                
+                // Update status display
+                const sealedReviewData = {
+                  sealed: true,
+                  sealedTimestampUtc: result.sealedTimestampUtc,
+                  sealedByRole: actorRole,
+                  sealHash: result.sealHash,
+                };
+                updateSealStatusDisplay(sealedReviewData);
+                
+                // Show success message
+                const successMsg =  document.createElement('div');
+                successMsg.style.cssText = 'background: #4CAF50; color: white; padding: 12px; margin-top: 12px; border-radius: 4px; font-size: 14px;';
+                successMsg.textContent = '✓ Review sealed successfully. This review is now immutable.';
+                sealReviewButton.parentElement?.appendChild(successMsg);
+              } else {
+                // Seal failed
+                const errorMsg = result?.error || result?.reason || 'Unknown error';
+                console.error('[REVIEW_SEAL_ERROR]', result);
+                
+                sealStatusDiv.textContent = `❌ FAIL_CLOSED: ${errorMsg}`;
+                sealStatusDiv.style.color = "#f44336";
+                sealReviewButton.textContent = originalText;
+                sealReviewButton.disabled = false;
+              }
+            } catch (error: any) {
+              console.error('[REVIEW_SEAL_EXCEPTION]', error);
+              sealStatusDiv.textContent = `❌ Error: ${error.message}`;
+              sealStatusDiv.style.color = "#f44336";
+              sealReviewButton.textContent = originalText;
+              sealReviewButton.disabled = false;
+            }
+          });
+        }
+
         // BACKBONE FIX v4.2.2.5: Pure function for deterministic snapshotKind resolution
         // Single source of truth for export kind precedence logic
         // CRITICAL: Never return UNKNOWN if any backend signal exists
