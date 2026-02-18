@@ -365,6 +365,8 @@ const BRIDGE_MODE = "BUNDLED";
 const INVOKE_AVAILABLE = true;
 // UI_DIST_STAMP: Git HEAD SHA + build timestamp. Proves which dist was deployed.
 const UI_DIST_STAMP = "cdfa04fba064__20260115T120000Z";
+// ECL-5: Trust resolver key — must survive bundling for deterministic dist audit proof
+const FT_TRUST_RESOLVER_KEY_V1 = 'ft_getTrustPanelProof_v1';
 // BACKBONE LAYER 0: UI_BUILD_MARKER is imported from ui_build_meta.ts and auto-generated at build time
 // It includes current UTC timestamp and SHA for cache-busting verification
 // Format: UI_MARKER_<YYYYMMDDTHHMMSSZ>_<SHA>
@@ -3757,7 +3759,7 @@ async function proceedWithBoot() {
                     buildFooter.classList.remove('text-info');
                     
                     const proofEl = ftEnsureServeProofEl();
-                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | INVOKE_ERROR | TRACE:${traceId}`;
+                    proofEl.textContent = `SERVE_PROOF: ${UI_DIST_STAMP} | UI_REQ_ID:${FT_UI_REQ_ID} | INVOKE_ERROR | TRACE:${traceId} | trust:${FT_TRUST_RESOLVER_KEY_V1}`;
                     buildFooter.appendChild(proofEl);
                     return;
                 }
