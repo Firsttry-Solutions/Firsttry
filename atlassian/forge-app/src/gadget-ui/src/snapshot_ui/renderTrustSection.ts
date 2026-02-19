@@ -1,21 +1,27 @@
 /**
  * Trust & Determinism Panel
  *
- * ECL-5: Expose deterministic proof artifacts in UI
- * 
- * Renders two sections:
+ * ECL-5 + ECL-ENTERPRISE-HARDENING: Expose deterministic proof artifacts in UI
+ *
+ * Renders three sections:
  * 1. Data Handling (existing)
- * 2. Trust & Determinism (NEW) - displays proof bundle data
- * 
- * Fail-closed: Shows "Proof pack not generated — FAIL-CLOSED" if bundle unavailable
- * 
+ * 2. Trust & Determinism (ECL-5) — displays proof bundle data
+ * 3. Enterprise Governance Engine (ECL-ENTERPRISE) — fail-closed governance state
+ * 4. Procurement Assurance Block (static, hardcoded)
+ *
+ * Fail-closed: Any engine failure → "ENTERPRISE GOVERNANCE ENGINE ERROR / System halted"
+ *
  * SYNCHRONOUS RENDERING: Function returns immediately with placeholder.
  * Proof data loads asynchronously and updates DOM via promise chain.
- * 
+ *
  * Marker: FT_ECL_PHASE: ECL-5 TRUST_READER_UI
+ * Marker: FT_ECL_UI_RENDER_GUARD_V1
+ * Marker: FT_ECL_UI_PROCUREMENT_BLOCK_V1
  */
 
 import { invoke } from '@forge/bridge';
+import { renderEnterpriseGovernancePanel } from '../components/EnterpriseGovernancePanel';
+import { renderProcurementAssurance } from '../components/ProcurementAssurance';
 
 // ECL-5: Trust resolver key constant (preserved in dist to enable runtime proof loading)
 const TRUST_RESOLVER_KEY_V1 = 'ft_getTrustPanelProof_v1';
@@ -147,9 +153,61 @@ export function renderTrustSection(): HTMLElement {
       renderFailClosed();
     });
 
+  // ============================================================================
+  // SECTION 3: Enterprise Governance Engine (ECL-ENTERPRISE-HARDENING)
+  // Single try/catch — fail-closed if any engine throws
+  // FT_ECL_UI_RENDER_GUARD_V1
+  // ============================================================================
+  const governanceDivider = document.createElement('hr');
+  governanceDivider.style.border = 'none';
+  governanceDivider.style.borderTop = '1px solid #e0e0e0';
+  governanceDivider.style.margin = '16px 0';
+  section.appendChild(governanceDivider);
+
+  try {
+    const governancePanel = renderEnterpriseGovernancePanel();
+    section.appendChild(governancePanel);
+  } catch (engineErr: any) {
+    // Hard fail-closed: engine instantiation itself failed
+    const failDiv = document.createElement('div');
+    failDiv.style.border = '2px solid #d32f2f';
+    failDiv.style.padding = '16px';
+    failDiv.style.background = '#fff8f8';
+    failDiv.style.fontFamily = 'monospace';
+    failDiv.style.borderRadius = '4px';
+
+    const errTitle = document.createElement('div');
+    errTitle.style.color = '#d32f2f';
+    errTitle.style.fontWeight = 'bold';
+    errTitle.textContent = 'ENTERPRISE GOVERNANCE ENGINE ERROR';
+    failDiv.appendChild(errTitle);
+
+    const errBody = document.createElement('div');
+    errBody.style.color = '#333';
+    errBody.style.fontSize = '12px';
+    errBody.textContent = 'System halted (fail-closed)';
+    failDiv.appendChild(errBody);
+
+    section.appendChild(failDiv);
+  }
+
+  // ============================================================================
+  // SECTION 4: Procurement Assurance Block (static, hardcoded)
+  // FT_ECL_UI_PROCUREMENT_BLOCK_V1
+  // ============================================================================
+  const procurementDivider = document.createElement('hr');
+  procurementDivider.style.border = 'none';
+  procurementDivider.style.borderTop = '1px solid #e0e0e0';
+  procurementDivider.style.margin = '16px 0';
+  section.appendChild(procurementDivider);
+
+  section.appendChild(renderProcurementAssurance());
+
   // Return section immediately (synchronous)
   return section;
 }
 
 // FT_ECL_PHASE: ECL-5 TRUST_READER_UI
+// FT_ECL_UI_RENDER_GUARD_V1
+// FT_ECL_UI_PROCUREMENT_BLOCK_V1
 
