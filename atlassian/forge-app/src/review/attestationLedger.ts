@@ -23,6 +23,7 @@ import { canonicalStringify } from '../utils/canonicalJson';
 
 /** Forge storage key for the attestation ledger */
 export const ATTESTATION_LEDGER_STORAGE_KEY = 'FT_ATTESTATION_LEDGER_V1' as const;
+const LEDGER_GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000' as const;
 
 /**
  * A single attestation record.
@@ -36,6 +37,13 @@ export interface AttestationRecord {
   readonly notes: string;            // Free-text notes (may be empty string, not undefined)
   readonly attestationHash: string;  // SHA-256(canonicalStringify({ attestedBy, attestedUtc, scope, snapshotHash, notes }))
 }
+
+export type LedgerBlockMaterial = {
+  index: number;
+  prevHash: string;
+  payloadHash: string;
+  entryHash: string;
+};
 
 /**
  * Persisted ledger state.
@@ -53,6 +61,10 @@ interface LedgerState {
 function sha256Hex(obj: unknown): string {
   const canonical = canonicalStringify(obj);
   return crypto.createHash('sha256').update(canonical, 'utf8').digest('hex');
+}
+
+function sha256Text(input: string): string {
+  return crypto.createHash('sha256').update(input, 'utf8').digest('hex');
 }
 
 /**
@@ -214,6 +226,34 @@ export async function readLedger(): Promise<{
   sealedUtc: string | null;
 }> {
   return loadLedger();
+}
+
+/**
+ * Deterministic export material for offline verifier recompute.
+ * Rule: entryHash = sha256(prevHash + payloadHash) using UTF-8 concatenation.
+ */
+export function toLedgerBlockMaterial(entries: ReadonlyArray<AttestationRecord>): LedgerBlockMaterial[] {
+  if (!Array.isArray(entries)) {
+    console.log('[FT_PROOF] LEDGER_BLOCK_MATERIAL_V1=1 len=0');
+    return [];
+  }
+
+  let prevHash = LEDGER_GENESIS_HASH;
+  const material: LedgerBlockMaterial[] = entries.map((entry, index) => {
+    const payloadHash = typeof entry.attestationHash === 'string' ? entry.attestationHash : '';
+    const entryHash = sha256Text(`${prevHash}${payloadHash}`);
+    const block = {
+      index,
+      prevHash,
+      payloadHash,
+      entryHash,
+    };
+    prevHash = entryHash;
+    return block;
+  });
+
+  console.log(`[FT_PROOF] LEDGER_BLOCK_MATERIAL_V1=1 len=${material.length}`);
+  return material;
 }
 
 // FT_ECL_ENGINE: ATTESTATION_LEDGER_V1 END

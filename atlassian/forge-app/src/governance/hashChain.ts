@@ -46,6 +46,13 @@ export interface SnapshotHashChain {
   readonly ruleSetVersion: string;
 }
 
+export type SnapshotChainBlockMaterial = {
+  index: number;
+  prevHash: string;
+  payloadHash: string;
+  blockHash: string;
+};
+
 /**
  * Persisted chain state in Forge storage.
  */
@@ -61,6 +68,10 @@ interface ChainState {
 function sha256Hex(obj: unknown): string {
   const canonical = canonicalStringify(obj);
   return crypto.createHash('sha256').update(canonical, 'utf8').digest('hex');
+}
+
+function sha256Text(input: string): string {
+  return crypto.createHash('sha256').update(input, 'utf8').digest('hex');
 }
 
 /**
@@ -184,6 +195,28 @@ export async function getLastChainEntry(): Promise<SnapshotHashChain | null> {
   const state = await loadChainState();
   if (!state || state.chain.length === 0) return null;
   return state.chain[state.chain.length - 1];
+}
+
+/**
+ * Deterministic export material for offline verifier recompute.
+ * Rule: blockHash = sha256(prevHash + payloadHash) using UTF-8 concatenation.
+ */
+export function toSnapshotChainBlockMaterial(blocks: ReadonlyArray<SnapshotHashChain>): SnapshotChainBlockMaterial[] {
+  if (!Array.isArray(blocks)) {
+    console.log('[FT_PROOF] SNAPSHOT_BLOCK_MATERIAL_V1=1 len=0');
+    return [];
+  }
+
+  const material = blocks.map((block, idx) => {
+    const index = typeof block.chainIndex === 'number' ? block.chainIndex : idx;
+    const prevHash = typeof block.previousHash === 'string' ? block.previousHash : GENESIS_HASH;
+    const payloadHash = typeof block.snapshotHash === 'string' ? block.snapshotHash : '';
+    const blockHash = sha256Text(`${prevHash}${payloadHash}`);
+    return { index, prevHash, payloadHash, blockHash };
+  });
+
+  console.log(`[FT_PROOF] SNAPSHOT_BLOCK_MATERIAL_V1=1 len=${material.length}`);
+  return material;
 }
 
 // FT_ECL_ENGINE: HASH_CHAIN_V1 END
