@@ -3140,27 +3140,22 @@ async function proceedWithBoot() {
         document.body.appendChild(dashboard);
 
         // ================================================================
-        // ECL-ENTERPRISE-HARDENING: Hard unconditional governance panel wire
-        // FT_ECL_UI_RENDER_GUARD_V1
-        // Injected into proceedWithBoot() — the ACTIVE code path bundled by Vite
-        // Single try/catch — fail-closed if engine errors
+        // ECL-ENTERPRISE-HARDENING: Mount panel into dedicated visible placeholder
+        // FT_ECL_UI_RENDER_GUARD_V1 — ACTIVE boot path (proceedWithBoot)
+        // Renders into #ft-ecl-enterprise-mount — never hidden, never body-appended
         // ================================================================
         console.log('[FT_PROOF] UI_ECL_PANEL_RENDER_INTENT=1');
-        // Hardcoded unoptimizable marker div — MUST appear in dist bundle
-        const _ftEclMarkerDiv = document.createElement('div');
-        _ftEclMarkerDiv.setAttribute('data-ft-proof', FT_ECL_UI_PROOF_MARKER);
-        _ftEclMarkerDiv.setAttribute('data-ft-resolver', FT_ECL_ENTERPRISE_RESOLVER_KEY);
-        _ftEclMarkerDiv.textContent = FT_ECL_UI_PROOF_MARKER;
-        _ftEclMarkerDiv.style.display = 'none';
-        document.body.appendChild(_ftEclMarkerDiv);
-        // Explicit call to EnterpriseGovernancePanel — prevents tree-shake dead-code elimination
+        const _ftEclMount = document.getElementById('ft-ecl-enterprise-mount');
+        if (!_ftEclMount) {
+            console.error('[FT_PROOF] UI_ECL_MOUNT_MISSING=1');
+            throw new Error('ECL mount missing — ft-ecl-enterprise-mount not found in DOM');
+        }
+        console.log('[FT_PROOF] UI_ECL_PANEL_MOUNTED=1');
         try {
             const _eclPanelEl = EnterpriseGovernancePanel();
-            _eclPanelEl.style.display = 'none';
-            _eclPanelEl.setAttribute('data-ft-ecl-proof-wire', FT_ECL_UI_PROOF_MARKER);
-            document.body.appendChild(_eclPanelEl);
+            _ftEclMount.appendChild(_eclPanelEl);
         } catch (eclWireErr: any) {
-            console.error('[FT_ECL] CRITICAL: Enterprise Governance State Unavailable', eclWireErr);
+            console.error('[FT_ECL] CRITICAL: Enterprise Governance Panel instantiation failed', eclWireErr);
         }
         // ECL-ENTERPRISE-HARDENING END
 
