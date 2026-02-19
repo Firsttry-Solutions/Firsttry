@@ -262,6 +262,7 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
           throw new Error('Engine returned null state');
         }
         renderGovernanceState(container, state);
+        console.log('[FT_PROOF] UI_ECL_PANEL_LOADED=1');
       } catch (renderErr: any) {
         renderEngineFailed(
           container,
@@ -279,5 +280,9 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
 
   return section;
 }
+
+// Named export alias — required by main.ts import constraint and protocol
+// FT_ECL_UI_RENDER_GUARD_V1
+export { renderEnterpriseGovernancePanel as EnterpriseGovernancePanel };
 
 // FT_ECL_UI_RENDER_GUARD_V1 END
