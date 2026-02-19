@@ -50,6 +50,7 @@ import { buildEnterpriseSellabilityPanels } from './enterprise/sellabilityPanels
 import { listGovernanceActions } from './governance/actionLog'; // ECL-2.1: Audit log reader
 import { getDriftAck } from './governance/driftAck'; // ECL-3: Drift acknowledgement reader
 import { getTrustPanelData } from './trust/proofBundleReader'; // ECL-5: Trust panel proof reader
+import { aggregateGovernanceState } from './governance/governanceAggregator'; // ECL-ENTERPRISE: Governance aggregator
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -103,6 +104,12 @@ resolver.define('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1);
 // ECL-5: Trust panel proof resolver
 resolver.define('ft_getTrustPanelProof_v1', async () => {
   return getTrustPanelData();
+});
+
+// ECL-ENTERPRISE-HARDENING: Enterprise governance aggregator — all engines
+// FT_ECL_ENGINE: GOVERNANCE_AGGREGATOR_V1
+resolver.define('ft_getEnterpriseGovernanceState_v1', async () => {
+  return aggregateGovernanceState();
 });
 
 // UI log relay resolver (UI → backend log relay for markers)
