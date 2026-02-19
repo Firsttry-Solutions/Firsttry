@@ -1337,6 +1337,34 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
 
     content.appendChild(sealSection);
 
+    // ================================================================
+    // ECL Enterprise Governance Placeholder — FT_PROOF_DOM_ECL_MOUNT_V1
+    // Stable anchor for the enterprise governance panel, rendered near the top.
+    // Panel is mounted into ft-ecl-enterprise-mount by proceedWithBoot() in main.ts.
+    // ================================================================
+    const eclSection = document.createElement('section');
+    eclSection.id = 'ft-ecl-enterprise-section';
+    eclSection.style.marginTop = '16px';
+
+    const eclHeading = document.createElement('h2');
+    eclHeading.style.margin = '0 0 8px 0';
+    eclHeading.style.fontSize = '16px';
+    eclHeading.textContent = 'Enterprise Governance (ECL 1\u21928)';
+    eclSection.appendChild(eclHeading);
+
+    const eclMount = document.createElement('div');
+    eclMount.id = 'ft-ecl-enterprise-mount';
+    eclSection.appendChild(eclMount);
+
+    const eclProof = document.createElement('div');
+    eclProof.id = 'ft-ecl-enterprise-proof';
+    eclProof.style.display = 'none';
+    eclProof.textContent = 'FT_PROOF_DOM_ECL_MOUNT_V1';
+    eclSection.appendChild(eclProof);
+
+    content.appendChild(eclSection);
+    console.log('[FT_PROOF] UI_ECL_MOUNT_PRESENT=1');
+
     // === ENTERPRISE LAYOUT: Enterprise Contract (includes Evidence Summary) ===
     // Order: Enterprise UI Shell with cards → History → Diagnostics
     // This ensures core audit evidence is visible in a premium card-based layout

@@ -39,13 +39,13 @@ function renderEngineFailed(container: HTMLElement, reason?: string): void {
   errorTitle.style.fontWeight = 'bold';
   errorTitle.style.fontSize = '14px';
   errorTitle.style.marginBottom = '8px';
-  errorTitle.textContent = 'ENTERPRISE GOVERNANCE ENGINE ERROR';
+  errorTitle.textContent = 'ECL PANEL FAILED (FAIL-CLOSED)';
   container.appendChild(errorTitle);
 
   const errorBody = document.createElement('div');
   errorBody.style.color = '#333';
   errorBody.style.fontSize = '12px';
-  errorBody.textContent = 'System halted (fail-closed)';
+  errorBody.textContent = 'System halted (fail-closed). Enterprise governance state could not be loaded.';
   container.appendChild(errorBody);
 
   if (reason) {
@@ -62,7 +62,7 @@ function renderEngineFailed(container: HTMLElement, reason?: string): void {
   marker.style.color = '#999';
   marker.style.fontSize = '10px';
   marker.style.marginTop = '8px';
-  marker.textContent = `[FT_ECL_UI_RENDER_GUARD_V1] [${ECL_ENTERPRISE_RESOLVER_KEY}]`;
+  marker.textContent = `resolver: ${ECL_ENTERPRISE_RESOLVER_KEY} | marker: FT_ECL_UI_RENDER_GUARD_V1`;
   container.appendChild(marker);
 }
 
@@ -229,16 +229,30 @@ function renderGovernanceState(container: HTMLElement, state: any): void {
  */
 export function renderEnterpriseGovernancePanel(): HTMLElement {
   const section = document.createElement('section');
+  section.id = 'ft-ecl-enterprise-panel';
   section.className = 'ecl-enterprise-governance-panel';
   section.setAttribute('data-ft-marker', 'FT_ECL_UI_RENDER_GUARD_V1');
+  // Visible card styling — NEVER invisible
+  section.style.border = '1px solid #ddd';
+  section.style.borderRadius = '8px';
+  section.style.padding = '12px';
+  section.style.background = '#fff';
 
   const title = document.createElement('h3');
   title.style.fontSize = '14px';
   title.style.fontWeight = 'bold';
-  title.style.marginBottom = '12px';
+  title.style.marginBottom = '4px';
   title.style.color = '#1a237e';
-  title.textContent = '⬡ Enterprise Governance Engine';
+  title.textContent = 'ECL Status + Governance Engine Proof';
   section.appendChild(title);
+
+  const updatedLine = document.createElement('div');
+  updatedLine.style.fontSize = '11px';
+  updatedLine.style.color = '#888';
+  updatedLine.style.marginBottom = '10px';
+  updatedLine.style.fontFamily = 'monospace';
+  updatedLine.textContent = `Last updated UTC: ${new Date().toISOString()}`;
+  section.appendChild(updatedLine);
 
   const container = document.createElement('div');
   container.className = 'ecl-governance-container';
