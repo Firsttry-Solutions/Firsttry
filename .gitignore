@@ -143,6 +143,10 @@ __pycache__/
 htmlcov/
 dist/
 build/
+# Allow tracking ONLY this UI footer module (keep all other build/ ignored)
+!atlassian/forge-app/src/gadget-ui/src/build/
+atlassian/forge-app/src/gadget-ui/src/build/*
+!atlassian/forge-app/src/gadget-ui/src/build/buildIdentityFooter.ts
 artifacts/parity_report.json
 !.firsttry/ci-extra-requirements.txt
 # --- Phase 0: Repo hygiene (venv & coverage artifacts) ---
