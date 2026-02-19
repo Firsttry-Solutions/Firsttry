@@ -252,31 +252,71 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
 
   section.appendChild(container);
 
-  // Single try/catch wrapping ALL engine calls
-  // Any failure → fail-closed
-  invoke(ECL_ENTERPRISE_RESOLVER_KEY)
-    .then((state: any) => {
-      try {
-        // Validate state is not null/undefined
-        if (state === null || state === undefined) {
-          throw new Error('Engine returned null state');
-        }
-        renderGovernanceState(container, state);
-        console.log('[FT_PROOF] UI_ECL_PANEL_LOADED=1');
-      } catch (renderErr: any) {
-        renderEngineFailed(
-          container,
-          renderErr instanceof Error ? renderErr.message : String(renderErr)
-        );
-      }
-    })
-    .catch((err: any) => {
-      console.error('[FT_ECL_UI_RENDER_GUARD_V1] Enterprise governance engine error:', err);
-      renderEngineFailed(
-        container,
-        err instanceof Error ? err.message : String(err)
-      );
-    });
+  // ================================================================
+  // ECL-ENTERPRISE proof-correct async invocation
+  // Markers emitted in strict order:
+  //   INVOKE_START → (INVOKE_OK | INVOKE_FAIL) → validation → LOADED → RENDERED
+  // FT_ECL_UI_RENDER_GUARD_V1
+  // ================================================================
+  (async () => {
+    // A) Log invoke start — always, before the network call
+    console.log('[FT_PROOF] UI_ECL_ENTERPRISE_INVOKE_START=1 resolver=ft_getEnterpriseGovernanceState_v1');
+
+    // B) Attempt invoke — isolated try/catch so throw ≠ success
+    let resp: any;
+    try {
+      resp = await invoke(ECL_ENTERPRISE_RESOLVER_KEY);
+      console.log('[FT_PROOF] UI_ECL_ENTERPRISE_INVOKE_OK=1');
+    } catch (invokeErr: any) {
+      console.log('[FT_PROOF] UI_ECL_ENTERPRISE_INVOKE_FAIL=1');
+      console.log('[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=INVOKE_THROW');
+      console.error('[FT_ECL_UI_RENDER_GUARD_V1] invoke threw:', invokeErr);
+      renderEngineFailed(container, `INVOKE_THROW: ${invokeErr instanceof Error ? invokeErr.message : String(invokeErr)}`);
+      return;
+    }
+
+    // C1) Validate: non-null response
+    if (resp === null || resp === undefined) {
+      console.log('[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=EMPTY_RESPONSE');
+      renderEngineFailed(container, 'EMPTY_RESPONSE: invoke returned null/undefined');
+      return;
+    }
+
+    // C2) Validate: if an explicit ok field is present, it must be true
+    if (Object.prototype.hasOwnProperty.call(resp, 'ok') && resp.ok !== true) {
+      const reason = resp.reason ?? resp.error ?? 'UNKNOWN';
+      console.log(`[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=OK_FALSE resp_reason=${reason}`);
+      renderEngineFailed(container, `OK_FALSE: enterprise state not available (reason=${reason})`);
+      return;
+    }
+
+    // C3) Validate: response must be an object (schema guard)
+    if (typeof resp !== 'object' || Array.isArray(resp)) {
+      console.log('[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=SCHEMA_MISMATCH');
+      renderEngineFailed(container, `SCHEMA_MISMATCH: expected object, got ${typeof resp}`);
+      return;
+    }
+
+    // C4) Validate: governance state must be available
+    if (resp.available !== true) {
+      const reason = resp.reason ?? resp.error ?? 'NOT_AVAILABLE';
+      console.log(`[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=SCHEMA_MISMATCH resp_available=${resp.available}`);
+      renderEngineFailed(container, `SCHEMA_MISMATCH: governance state not available (reason=${reason})`);
+      return;
+    }
+
+    // All validations passed — emit LOADED
+    console.log('[FT_PROOF] UI_ECL_PANEL_LOADED=1');
+
+    // D) Render into DOM
+    try {
+      renderGovernanceState(container, resp);
+      // E) Emit RENDERED only after DOM update completes without error
+      console.log('[FT_PROOF] UI_ECL_PANEL_RENDERED=1');
+    } catch (renderErr: any) {
+      renderEngineFailed(container, renderErr instanceof Error ? renderErr.message : String(renderErr));
+    }
+  })();
 
   return section;
 }
