@@ -23,6 +23,43 @@ import { invoke } from '@forge/bridge';
 const ECL_ENTERPRISE_RESOLVER_KEY = 'ft_getEnterpriseGovernanceState_v1' as const;
 
 /**
+ * Strict UI-side contract for the enterprise governance resolver payload.
+ * The backend MUST return an object matching this shape.
+ * UI validation fails-closed on any mismatch.
+ */
+type EclEnterpriseState = {
+  marker: string;                       // must equal FT_ECL_ENTERPRISE_STATE_V1
+  ok: boolean;                          // must be true for LOADED
+  generatedUtc: string;                 // ISO
+  ecl: {
+    ECL1: { pass: boolean; reason: string };
+    ECL2: { pass: boolean; reason: string };
+    ECL3: { pass: boolean; reason: string };
+    ECL4: { pass: boolean; reason: string };
+    ECL5: { pass: boolean; reason: string };
+    ECL6: { pass: boolean; reason: string };
+    ECL7: { pass: boolean; reason: string };
+    ECL8: { pass: boolean; reason: string };
+  };
+  proofs: {
+    snapshotKind: 'SEED' | 'GOVERNANCE' | 'UNKNOWN';
+    exportEligible: boolean;
+    exportReasonCode: string;
+    chainHeadSha256: string | null;
+    chainLength: number | null;
+    chainVerified: boolean | null;
+    baselineVersion: string | null;
+    driftLastScanUtc: string | null;
+    driftRiskBand: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+    attestationCount: number | null;
+    lastAttestedUtc: string | null;
+  };
+};
+
+/** The 8 required ECL keys in display order */
+const ECL_KEYS = ['ECL1', 'ECL2', 'ECL3', 'ECL4', 'ECL5', 'ECL6', 'ECL7', 'ECL8'] as const;
+
+/**
  * Render the hard fail-closed error panel.
  * Called whenever any engine throws or data is incomplete.
  */
@@ -126,94 +163,112 @@ function tableRow(label: string, value: string | null | undefined, highlight?: b
 }
 
 /**
- * Render the full enterprise governance panel from resolved state.
- * No partial rendering: all or fail-closed.
+ * Render the ECL1..8 scoreboard + core enterprise proofs into container.
+ * No partial rendering: all or fail-closed (called only after full validation).
  */
-function renderGovernanceState(container: HTMLElement, state: any): void {
+function renderGovernanceState(container: HTMLElement, state: EclEnterpriseState): void {
   container.innerHTML = '';
 
-  if (!state || state.available !== true) {
-    renderEngineFailed(container, 'Governance state unavailable');
-    return;
+  // ── ECL 1→8 Scoreboard ──────────────────────────────────────────────────────
+  const scoreHeader = document.createElement('div');
+  scoreHeader.style.fontWeight = 'bold';
+  scoreHeader.style.fontSize = '13px';
+  scoreHeader.style.color = '#1a237e';
+  scoreHeader.style.marginBottom = '6px';
+  scoreHeader.textContent = 'ECL 1\u21928 Scoreboard';
+  container.appendChild(scoreHeader);
+
+  const scoreTable = document.createElement('table');
+  scoreTable.style.width = '100%';
+  scoreTable.style.borderCollapse = 'collapse';
+  scoreTable.style.fontSize = '12px';
+  scoreTable.style.fontFamily = 'monospace';
+  scoreTable.style.marginBottom = '14px';
+
+  const hRow = document.createElement('tr');
+  hRow.style.background = '#f5f5f5';
+  for (const h of ['Level', 'Status', 'Reason']) {
+    const th = document.createElement('th');
+    th.style.padding = '5px 10px';
+    th.style.textAlign = 'left';
+    th.style.fontSize = '11px';
+    th.style.color = '#555';
+    th.textContent = h;
+    hRow.appendChild(th);
   }
+  scoreTable.appendChild(hRow);
 
-  const table = document.createElement('table');
-  table.style.width = '100%';
-  table.style.borderCollapse = 'collapse';
+  for (const key of ECL_KEYS) {
+    const entry = state.ecl[key];
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #f0f0f0';
 
-  // Hash chain
-  const chainSection = document.createElement('tr');
-  chainSection.innerHTML = '<td colspan="2" style="padding:8px 12px;background:#f9f9f9;font-weight:bold;font-size:13px;color:#333">Hash Chain</td>';
-  table.appendChild(chainSection);
-  table.appendChild(tableRow('Chain length', String(state.chainLength ?? 0)));
-  table.appendChild(tableRow('Last chain index', state.lastChainIndex != null ? String(state.lastChainIndex) : 'No entries'));
-  table.appendChild(tableRow('Last snapshot hash', state.lastSnapshotHash, true));
-  table.appendChild(tableRow('Last chain hash', state.lastChainHash, true));
+    const tdKey = document.createElement('td');
+    tdKey.style.padding = '5px 10px';
+    tdKey.style.fontWeight = 'bold';
+    tdKey.textContent = key;
+    tr.appendChild(tdKey);
 
-  // Baseline
-  const baselineSection = document.createElement('tr');
-  baselineSection.innerHTML = '<td colspan="2" style="padding:8px 12px;background:#f9f9f9;font-weight:bold;font-size:13px;color:#333">Baseline</td>';
-  table.appendChild(baselineSection);
-  table.appendChild(tableRow('Baseline version', state.baselineVersion != null ? String(state.baselineVersion) : 'Not set'));
-  table.appendChild(tableRow('Baseline snapshot hash', state.baselineSnapshotHash, true));
+    const tdStatus = document.createElement('td');
+    tdStatus.style.padding = '5px 6px';
+    tdStatus.appendChild(statusBadge(entry.pass ? 'PASS' : 'FAIL'));
+    tr.appendChild(tdStatus);
 
-  // Attestation ledger
-  const ledgerSection = document.createElement('tr');
-  ledgerSection.innerHTML = '<td colspan="2" style="padding:8px 12px;background:#f9f9f9;font-weight:bold;font-size:13px;color:#333">Attestation Ledger</td>';
-  table.appendChild(ledgerSection);
-  table.appendChild(tableRow('Ledger sealed', state.ledgerSealed ? 'YES' : 'NO'));
-  table.appendChild(tableRow('Attestation count', String(state.attestationCount ?? 0)));
-  table.appendChild(tableRow('Seal hash', state.sealHash, true));
+    const tdReason = document.createElement('td');
+    tdReason.style.padding = '5px 10px';
+    tdReason.style.color = '#555';
+    tdReason.textContent = entry.reason;
+    tr.appendChild(tdReason);
 
-  // Risk posture
-  if (state.riskPosture) {
-    const postureSection = document.createElement('tr');
-    postureSection.innerHTML = '<td colspan="2" style="padding:8px 12px;background:#f9f9f9;font-weight:bold;font-size:13px;color:#333">Risk Posture</td>';
-    table.appendChild(postureSection);
-    const postureRow = tableRow('Overall posture', '');
-    const postureCell = postureRow.children[1] as HTMLElement;
-    postureCell.appendChild(statusBadge(state.riskPosture.posture));
-    table.appendChild(postureRow);
-    table.appendChild(tableRow('Reason', state.riskPosture.reason));
-    table.appendChild(tableRow('Review sealed', state.riskPosture.reviewSealed ? 'YES' : 'NO'));
+    scoreTable.appendChild(tr);
   }
+  container.appendChild(scoreTable);
 
-  // Control mapping
-  if (state.controlMapping) {
-    const controlSection = document.createElement('tr');
-    controlSection.innerHTML = '<td colspan="2" style="padding:8px 12px;background:#f9f9f9;font-weight:bold;font-size:13px;color:#333">Control Mapping</td>';
-    table.appendChild(controlSection);
-    const overallRow = tableRow('Overall status', '');
-    const overallCell = overallRow.children[1] as HTMLElement;
-    overallCell.appendChild(statusBadge(state.controlMapping.overallStatus));
-    table.appendChild(overallRow);
-    table.appendChild(tableRow('Controls evaluated', String(state.controlMapping.controlCount)));
-    table.appendChild(tableRow('PASS', String(state.controlMapping.passCount)));
-    table.appendChild(tableRow('PARTIAL', String(state.controlMapping.partialCount)));
-    table.appendChild(tableRow('FAIL', String(state.controlMapping.failCount)));
+  // ── Core Enterprise Proofs ───────────────────────────────────────────────────
+  const proofHeader = document.createElement('div');
+  proofHeader.style.fontWeight = 'bold';
+  proofHeader.style.fontSize = '13px';
+  proofHeader.style.color = '#1a237e';
+  proofHeader.style.margin = '4px 0 6px';
+  proofHeader.textContent = 'Core Enterprise Proofs';
+  container.appendChild(proofHeader);
+
+  const proofTable = document.createElement('table');
+  proofTable.style.width = '100%';
+  proofTable.style.borderCollapse = 'collapse';
+  proofTable.style.fontSize = '12px';
+  proofTable.style.fontFamily = 'monospace';
+
+  const p = state.proofs;
+
+  // snapshotKind — warn loudly if SEED or exportEligible=false
+  const kindTr = tableRow('snapshotKind', p.snapshotKind);
+  if (p.snapshotKind === 'SEED' || p.snapshotKind === 'UNKNOWN') {
+    const cell = kindTr.children[1] as HTMLElement;
+    cell.style.color = '#e65100';
+    cell.textContent = `${p.snapshotKind} — NOT READY for governance export`;
   }
+  proofTable.appendChild(kindTr);
 
-  // Export provenance
-  if (state.exportPayload) {
-    const exportSection = document.createElement('tr');
-    exportSection.innerHTML = '<td colspan="2" style="padding:8px 12px;background:#f9f9f9;font-weight:bold;font-size:13px;color:#333">Export Provenance</td>';
-    table.appendChild(exportSection);
-    table.appendChild(tableRow('Export SHA-256', state.exportPayload.exportSha256, true));
-    table.appendChild(tableRow('Chain index', String(state.exportPayload.chainIndex)));
-    table.appendChild(tableRow('Baseline version', String(state.exportPayload.baselineVersion)));
-  }
+  const eligibleTr = tableRow('exportEligible', p.exportEligible ? 'YES' : `NO — ${p.exportReasonCode}`);
+  if (!p.exportEligible) (eligibleTr.children[1] as HTMLElement).style.color = '#c62828';
+  proofTable.appendChild(eligibleTr);
 
-  // Build identity
-  const buildSection = document.createElement('tr');
-  buildSection.innerHTML = '<td colspan="2" style="padding:8px 12px;background:#f9f9f9;font-weight:bold;font-size:13px;color:#333">Build Identity</td>';
-  table.appendChild(buildSection);
-  table.appendChild(tableRow('Build SHA', state.buildShaShort, true));
-  table.appendChild(tableRow('Build UTC', state.buildUtc));
-  table.appendChild(tableRow('Schema version', state.schemaVersion));
-  table.appendChild(tableRow('RuleSet version', state.ruleSetVersion));
-  table.appendChild(tableRow('Resolved UTC', state.resolvedUtc));
+  proofTable.appendChild(tableRow('chainHeadSha256', p.chainHeadSha256, true));
+  proofTable.appendChild(tableRow('chainLength', p.chainLength != null ? String(p.chainLength) : '—'));
+  proofTable.appendChild(tableRow('chainVerified', p.chainVerified != null ? (p.chainVerified ? 'YES' : 'NO') : '—'));
+  proofTable.appendChild(tableRow('baselineVersion', p.baselineVersion ?? '—'));
+  proofTable.appendChild(tableRow('driftLastScanUtc', p.driftLastScanUtc ?? '—'));
 
-  container.appendChild(table);
+  const driftBandTr = tableRow('driftRiskBand', '');
+  (driftBandTr.children[1] as HTMLElement).appendChild(statusBadge(p.driftRiskBand));
+  proofTable.appendChild(driftBandTr);
+
+  proofTable.appendChild(tableRow('attestationCount', p.attestationCount != null ? String(p.attestationCount) : '—'));
+  proofTable.appendChild(tableRow('lastAttestedUtc', p.lastAttestedUtc ?? '—'));
+  proofTable.appendChild(tableRow('generatedUtc', state.generatedUtc));
+
+  container.appendChild(proofTable);
 }
 
 /**
@@ -296,8 +351,8 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
       return;
     }
 
-    // C2) Validate: if an explicit ok field is present, it must be true
-    if (Object.prototype.hasOwnProperty.call(resp, 'ok') && resp.ok !== true) {
+    // C2) Validate: ok must be present and true (required field)
+    if (resp.ok !== true) {
       const reason = resp.reason ?? resp.error ?? 'UNKNOWN';
       console.log(`[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=OK_FALSE resp_reason=${reason}`);
       renderEngineFailed(container, `OK_FALSE: enterprise state not available (reason=${reason})`);
@@ -311,11 +366,31 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
       return;
     }
 
-    // C4) Validate: governance state must be available
-    if (resp.available !== true) {
-      const reason = resp.reason ?? resp.error ?? 'NOT_AVAILABLE';
-      console.log(`[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=SCHEMA_MISMATCH resp_available=${resp.available}`);
-      renderEngineFailed(container, `SCHEMA_MISMATCH: governance state not available (reason=${reason})`);
+    // C4) Validate: marker must be FT_ECL_ENTERPRISE_STATE_V1
+    if (resp.marker !== 'FT_ECL_ENTERPRISE_STATE_V1') {
+      console.log(`[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=SCHEMA_MISMATCH marker=${resp.marker}`);
+      renderEngineFailed(container, `SCHEMA_MISMATCH: expected marker FT_ECL_ENTERPRISE_STATE_V1, got ${resp.marker}`);
+      return;
+    }
+
+    // C5) Validate: ecl object must have all 8 keys
+    const _ecl = resp.ecl;
+    if (!_ecl || typeof _ecl !== 'object') {
+      console.log('[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=SCHEMA_MISMATCH ecl=missing');
+      renderEngineFailed(container, 'SCHEMA_MISMATCH: ecl object missing from response');
+      return;
+    }
+    const _missingEcl = ECL_KEYS.filter(k => !Object.prototype.hasOwnProperty.call(_ecl, k));
+    if (_missingEcl.length > 0) {
+      console.log(`[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=SCHEMA_MISMATCH missing_ecl_keys=${_missingEcl.join(',')}`);
+      renderEngineFailed(container, `SCHEMA_MISMATCH: ecl missing keys: ${_missingEcl.join(', ')}`);
+      return;
+    }
+
+    // C6) Validate: proofs object must be present
+    if (!resp.proofs || typeof resp.proofs !== 'object') {
+      console.log('[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=SCHEMA_MISMATCH proofs=missing');
+      renderEngineFailed(container, 'SCHEMA_MISMATCH: proofs object missing from response');
       return;
     }
 
