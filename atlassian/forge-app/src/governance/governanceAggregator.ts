@@ -37,6 +37,8 @@ import { SNAPSHOT_SCHEMA_VERSION, RULESET_VERSION } from '../governance/snapshot
 export interface EnterpriseGovernanceState {
   readonly marker: 'FT_ECL_ENTERPRISE_STATE_V1';
   readonly ok: boolean;
+  readonly status?: string;    // 'NOT_AVAILABLE' when no governance data exists yet
+  readonly reason?: string;    // 'NO_ENTERPRISE_STATE' for fresh install
   readonly generatedUtc: string;
   readonly available: boolean;
   readonly migrationRequired: boolean;
@@ -102,6 +104,62 @@ export async function aggregateGovernanceState(): Promise<EnterpriseGovernanceSt
 
   // Step 3: Read baseline
   const baseline = await readBaseline();
+
+  // EDIT 3: If no governance data exists yet (fresh install / no evidence generated),
+  // return ok:true + NOT_AVAILABLE instead of propagating ok:false to the UI.
+  // Fail-closed ONLY for malformed/corrupt payloads.
+  if ((!chainState || chainState.chain.length === 0) && baseline === null) {
+    console.log('[FT_PROOF_ENTERPRISE_STATE_NOT_AVAILABLE]');
+    return {
+      marker: 'FT_ECL_ENTERPRISE_STATE_V1',
+      ok: true,
+      status: 'NOT_AVAILABLE',
+      reason: 'NO_ENTERPRISE_STATE',
+      generatedUtc: resolvedUtc,
+      available: false,
+      migrationRequired: false,
+      ecl: {
+        ECL1: { pass: false, reason: 'NOT_READY:no chain entries' },
+        ECL2: { pass: false, reason: 'NOT_READY:no baseline' },
+        ECL3: { pass: false, reason: 'NOT_READY:requires baseline and chain' },
+        ECL4: { pass: false, reason: 'NOT_READY:requires drift evaluation' },
+        ECL5: { pass: false, reason: 'NOT_READY:requires drift evaluation' },
+        ECL6: { pass: false, reason: 'NOT_READY:ledger empty' },
+        ECL7: { pass: false, reason: 'NOT_READY:requires baseline and chain' },
+        ECL8: { pass: false, reason: 'NOT_READY:no chain or baseline' },
+      },
+      proofs: {
+        snapshotKind: 'SEED',
+        exportEligible: false,
+        exportReasonCode: 'NO_ENTERPRISE_STATE',
+        chainHeadSha256: null,
+        chainLength: 0,
+        chainVerified: null,
+        baselineVersion: null,
+        driftLastScanUtc: null,
+        driftRiskBand: 'UNKNOWN',
+        attestationCount: 0,
+        lastAttestedUtc: null,
+      },
+      chainLength: 0,
+      lastChainIndex: null,
+      lastSnapshotHash: null,
+      lastChainHash: null,
+      baselineVersion: null,
+      baselineSnapshotHash: null,
+      ledgerSealed: false,
+      attestationCount: 0,
+      sealHash: null,
+      controlMapping: null,
+      riskPosture: null,
+      exportPayload: null,
+      schemaVersion: SNAPSHOT_SCHEMA_VERSION,
+      ruleSetVersion: RULESET_VERSION,
+      resolvedUtc,
+      buildShaShort: BACKEND_GIT_SHA_SHORT,
+      buildUtc: BACKEND_BUILD_TIME_UTC,
+    };
+  }
 
   // Step 4: Read attestation ledger
   const ledger = await readLedger();

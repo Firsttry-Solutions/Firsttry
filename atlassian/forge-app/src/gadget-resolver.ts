@@ -72,6 +72,62 @@ import {
 // Create single canonical resolver instance
 const resolver = new Resolver();
 
+// ============================================================================
+// MODULE-LEVEL HELPERS (shared by ft_getDashboardState_v1 and related paths)
+// ============================================================================
+
+/** Returns true iff s is a 64-lowercase-hex string (full SHA-256). */
+function isHex64(s: any): boolean {
+  return typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
+}
+
+/**
+ * Deduplicate a snapshots array by snapshotId deterministically.
+ *
+ * Preference order when multiple entries share a snapshotId:
+ *   1. snapshotKind === "GOVERNANCE"
+ *   2. exportEligible === true
+ *   3. controls array present and non-empty
+ *   4. first occurrence
+ *
+ * Final order: newest createdAtUtc first (desc), tie-break snapshotId lexicographic.
+ */
+function dedupeSnapshotsById(arr: any[]): any[] {
+  const beforeCount = arr.length;
+  const seen = new Map<string, any>();
+  for (const snap of arr) {
+    const id: string | undefined = snap.snapshotId;
+    if (!id) continue;
+    if (!seen.has(id)) {
+      seen.set(id, snap);
+    } else {
+      const existing = seen.get(id)!;
+      const score = (s: any) =>
+        (s.snapshotKind === 'GOVERNANCE' ? 4 : 0) +
+        (s.exportEligible === true ? 2 : 0) +
+        (Array.isArray(s.controls) && s.controls.length > 0 ? 1 : 0);
+      if (score(snap) > score(existing)) {
+        seen.set(id, snap);
+      }
+    }
+  }
+  const result = Array.from(seen.values()).sort((a, b) => {
+    const tDiff =
+      new Date(b.createdAtUtc || 0).getTime() -
+      new Date(a.createdAtUtc || 0).getTime();
+    if (tDiff !== 0) return tDiff;
+    return (a.snapshotId || '').localeCompare(b.snapshotId || '');
+  });
+  const afterCount = result.length;
+  console.log(JSON.stringify({
+    marker: '[FT_PROOF_SNAPSHOTS_DEDUPED]',
+    beforeCount,
+    afterCount,
+    removedCount: beforeCount - afterCount,
+  }));
+  return result;
+}
+
 // Register all gadget UI invoke keys with their handlers
 // CRITICAL: Keys must match UI invoke() calls exactly
 resolver.define('getStatusSnapshot', getStatusSnapshot_resolver);
@@ -1359,7 +1415,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
                     bullets: SEED_BULLETS_EXACT,
                   },
                   evidenceFreshness,
-                  snapshots: snapshotsArray,
+                  snapshots: dedupeSnapshotsById(snapshotsArray),
                   snapshotId: repairedSnapshot.snapshotId,
                   createdAtUtc: repairedSnapshot.createdAtUtc,
                   schemaVersion: "L0",
@@ -1625,7 +1681,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
             }
           }
           
-          return snapshotsArray;
+          return dedupeSnapshotsById(snapshotsArray);
         })(),
         // Backend build identity fields (canonical names with full/short SHA distinction)
         backend_git_sha: BACKEND_GIT_SHA,
@@ -1699,6 +1755,26 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         ts: new Date().toISOString(),
       }));
       
+      // EDIT 1: canonicalHashNormalized must be a full 64-hex SHA-256 (never truncated, never null).
+      // Sources in preference order:
+      //   "integrity.value"      — selectedSnapshot.integrity.value (already sha256 from deduped array)
+      //   "snapshot.canonicalHash" — raw storage field if it happens to be 64-hex
+      //   "computed"             — deterministic sha256 of canonical input fields
+      const _canonicalHash: string =
+        isHex64(selectedSnapshot?.integrity?.value) ? (selectedSnapshot!.integrity.value as string) :
+        isHex64(snapshot?.canonicalHash) ? (snapshot.canonicalHash as string) :
+        computeIntegrityHash(snapshot);
+      const _canonicalHashSource: string =
+        isHex64(selectedSnapshot?.integrity?.value) ? 'integrity.value' :
+        isHex64(snapshot?.canonicalHash) ? 'snapshot.canonicalHash' :
+        'computed';
+      console.log(JSON.stringify({
+        marker: '[FT_PROOF_CANONICAL_HASH_NORMALIZED_OK]',
+        snapshotId: selectedSnapshot?.snapshotId || snapshot?.snapshotId || null,
+        canonicalHashLen: _canonicalHash.length,
+        source: _canonicalHashSource,
+      }));
+
       return {
         status: "AVAILABLE",
         ...enterpriseContractData,
@@ -1706,7 +1782,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
         snapshotIdNormalized: selectedSnapshot?.snapshotId || null,
         snapshotKindNormalized: selectedSnapshot?.snapshotKind || 'UNKNOWN',
         exportEligibleNormalized: selectedSnapshot?.exportEligible === true,
-        canonicalHashNormalized: snapshot?.canonicalHash || null,
+        canonicalHashNormalized: _canonicalHash,
         exportGateReasonCodeNormalized: exportGateReasonCode,
       };
     };

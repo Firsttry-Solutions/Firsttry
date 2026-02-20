@@ -3685,6 +3685,11 @@ async function proceedWithBoot() {
             return 'SEED';
           }
           
+          // Priority 3b: snapshotId starts with governance storage prefix → GOVERNANCE
+          if (snapshotId && typeof snapshotId === 'string' && snapshotId.startsWith('ft:snapshot:governance:')) {
+            return 'GOVERNANCE';
+          }
+          
           // Priority 4: Fall back to direct snapshotKind field if available
           if (data.snapshotKind && typeof data.snapshotKind === 'string') {
             const kind = data.snapshotKind.toUpperCase();
@@ -3707,15 +3712,30 @@ async function proceedWithBoot() {
           // This function has strict precedence: never returns UNKNOWN if backend provides data
           const snapshotKindNormalized = resolveSnapshotKindForExport(dashState as any);
           
-          const exportEligibleNormalized = (dashState as any).exportEligibleNormalized === true;
+          // PHASE 2: exportEligible from multiple sources (backend normalized OR selectedSnapshot fallback)
+          const _selectedSnap0 = (dashState as any).snapshots?.[0];
+          const exportEligibleNormalized =
+            (dashState as any).exportEligibleNormalized === true ||
+            _selectedSnap0?.exportEligible === true;
+          
+          // PHASE 2: hasCanonicalHash requires full 64-hex (backend normalized OR selectedSnapshot integrity.value)
+          const _isHex64 = (s: any): boolean => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
           const canonicalHashNormalized = (dashState as any).canonicalHashNormalized || null;
-          const hasCanonicalHashNorm = !!canonicalHashNormalized && typeof canonicalHashNormalized === 'string' && canonicalHashNormalized.trim() !== '';
+          const hasCanonicalHashNorm =
+            _isHex64(canonicalHashNormalized) ||
+            _isHex64(_selectedSnap0?.integrity?.value);
           
           // COMPUTE EXPORT ALLOWED STATE (deterministic)
-          // Export allowed if: canonical hash exists (non-empty string) AND exportEligible is true AND snapshotKind is GOVERNANCE
-          const exportAllowed = hasCanonicalHashNorm && exportEligibleNormalized && snapshotKindNormalized === 'GOVERNANCE';
+          // Export allowed if: canonical hash exists AND exportEligible is true AND snapshotKind is GOVERNANCE
+          // AND backend reasonCode is not NOT_EXPORT_ELIGIBLE (prefer backend gate if present)
+          const _backendReasonCode: string | undefined = (dashState as any).exportGateReasonCodeNormalized;
+          const exportAllowed =
+            hasCanonicalHashNorm &&
+            exportEligibleNormalized &&
+            snapshotKindNormalized === 'GOVERNANCE' &&
+            _backendReasonCode !== 'NOT_EXPORT_ELIGIBLE';
           
-          // Compute reasonCode (deterministic, enum-based)
+          // Compute reasonCode (deterministic, enum-based) — prefer backend value if canonical
           let reasonCode: string;
           if (!snapshotIdNormalized) {
             reasonCode = 'SNAPSHOT_NOT_FOUND';
@@ -3728,10 +3748,12 @@ async function proceedWithBoot() {
           } else {
             reasonCode = 'OK';
           }
+          // Override with backend reasonCode when it is an authoritative canonical value
+          if (_backendReasonCode && ['OK', 'NOT_EXPORT_ELIGIBLE', 'MISSING_CANONICAL_HASH', 'SNAPSHOT_NOT_FOUND'].includes(_backendReasonCode)) {
+            reasonCode = _backendReasonCode;
+          }
           
-          // EMIT [FT_UI_EXPORT_KIND_CONTRACT_OK] MARKER (deterministic JSON - NO TIMESTAMP)
-          // BACKBONE FIX: Changed marker name to reflect contract truthfulness
-          // Proof that snapshotKind is contracted correctly (never UNKNOWN if backend provides data)
+          // EMIT [FT_PROOF_UI_EXPORT_GATE_EVALUATED] — primary proof marker per Phase 2 contract
           const uiExportState = {
             snapshotId: snapshotIdNormalized,
             snapshotKind: snapshotKindNormalized,
@@ -3740,6 +3762,8 @@ async function proceedWithBoot() {
             exportAllowed,
             reasonCode,
           };
+          console.log('[FT_PROOF_UI_EXPORT_GATE_EVALUATED]', JSON.stringify(uiExportState));
+          // Legacy marker kept for backward compatibility
           console.log('[FT_UI_EXPORT_KIND_CONTRACT_OK]', JSON.stringify(uiExportState));
           
           // GATE: Disable button if export not allowed
