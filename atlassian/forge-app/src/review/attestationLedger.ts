@@ -238,7 +238,7 @@ export function toLedgerBlockMaterial(entries: ReadonlyArray<AttestationRecord>)
     return [];
   }
 
-  let prevHash = LEDGER_GENESIS_HASH;
+  let prevHash: string = LEDGER_GENESIS_HASH;
   const material: LedgerBlockMaterial[] = entries.map((entry, index) => {
     const payloadHash = typeof entry.attestationHash === 'string' ? entry.attestationHash : '';
     const entryHash = sha256Text(`${prevHash}${payloadHash}`);
