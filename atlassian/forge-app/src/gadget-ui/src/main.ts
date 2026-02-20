@@ -3700,99 +3700,132 @@ async function proceedWithBoot() {
           // Priority 5: Default to UNKNOWN only if no signal exists
           return 'UNKNOWN';
         }
+
+        // EXPORT BUTTON FIX v1: Pure function that uses backend truth as primary gate.
+        // exportGateReasonCodeNormalized === 'OK' => exportAllowed=true (no local override).
+        // Fallback to local computation only when backend did not provide a canonical code.
+        // reasonMessageCustomer MUST NOT contain "phase", "ECL", "fail-closed".
+        function computeExportGateFromBackendTruth(data: any): {
+          exportAllowed: boolean;
+          reasonCode: string;
+          reasonMessageCustomer: string;
+        } {
+          const _isH64 = (s: any): boolean => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
+          const backendCode: string | undefined = data?.exportGateReasonCodeNormalized;
+
+          // PRIMARY: backend provided an authoritative reason code — use it directly
+          if (backendCode === 'OK') {
+            return { exportAllowed: true, reasonCode: 'OK', reasonMessageCustomer: '' };
+          }
+          if (backendCode === 'NOT_EXPORT_ELIGIBLE') {
+            return {
+              exportAllowed: false,
+              reasonCode: 'NOT_EXPORT_ELIGIBLE',
+              reasonMessageCustomer: 'This snapshot is not available for export.',
+            };
+          }
+          if (backendCode === 'MISSING_CANONICAL_HASH') {
+            return {
+              exportAllowed: false,
+              reasonCode: 'MISSING_CANONICAL_HASH',
+              reasonMessageCustomer: 'Export is not yet available. Please run an access review first.',
+            };
+          }
+          if (backendCode === 'SNAPSHOT_NOT_FOUND') {
+            return {
+              exportAllowed: false,
+              reasonCode: 'SNAPSHOT_NOT_FOUND',
+              reasonMessageCustomer: 'No snapshot data is available yet. Please run an access review first.',
+            };
+          }
+
+          // FALLBACK: backend did not provide an authoritative code — compute locally
+          const snapshotId = data?.snapshotIdNormalized || data?.snapshotId || null;
+          const snapshotKind = resolveSnapshotKindForExport(data);
+          const snap0 = data?.snapshots?.[0];
+          const exportEligible =
+            data?.exportEligibleNormalized === true ||
+            snap0?.exportEligible === true;
+          const canonicalHash = data?.canonicalHashNormalized || null;
+          const hasHash = _isH64(canonicalHash) || _isH64(snap0?.integrity?.value);
+
+          if (!snapshotId) {
+            return {
+              exportAllowed: false,
+              reasonCode: 'SNAPSHOT_NOT_FOUND',
+              reasonMessageCustomer: 'No snapshot data is available yet. Please run an access review first.',
+            };
+          }
+          if (snapshotKind === 'SEED') {
+            return {
+              exportAllowed: false,
+              reasonCode: 'NOT_EXPORT_ELIGIBLE',
+              reasonMessageCustomer: 'This snapshot is not available for export.',
+            };
+          }
+          if (!exportEligible) {
+            return {
+              exportAllowed: false,
+              reasonCode: 'NOT_EXPORT_ELIGIBLE',
+              reasonMessageCustomer: 'This snapshot is not available for export.',
+            };
+          }
+          if (!hasHash) {
+            return {
+              exportAllowed: false,
+              reasonCode: 'MISSING_CANONICAL_HASH',
+              reasonMessageCustomer: 'Export is not yet available. Please run an access review first.',
+            };
+          }
+          return { exportAllowed: true, reasonCode: 'OK', reasonMessageCustomer: '' };
+        }
         
-        // PHASE 1: Attach event listener for "Export Phase 1 Pack" button
+        // PHASE 1: Attach event listener for "Export Evidence Pack" button
         const exportAccessButton = document.getElementById('ft-export-access-pack-btn') as HTMLButtonElement | null;
         if (exportAccessButton) {
-          // NORMALIZED EXPORT ELIGIBILITY CONTRACT (from resolver response)
-          // Use explicit fields from response for deterministic UI state
           const snapshotIdNormalized = (dashState as any).snapshotIdNormalized || (dashState as any).snapshotId || null;
-          
-          // Determine snapshotKind using deterministic resolver (pure function)
-          // This function has strict precedence: never returns UNKNOWN if backend provides data
-          const snapshotKindNormalized = resolveSnapshotKindForExport(dashState as any);
-          
-          // PHASE 2: exportEligible from multiple sources (backend normalized OR selectedSnapshot fallback)
-          const _selectedSnap0 = (dashState as any).snapshots?.[0];
-          const exportEligibleNormalized =
-            (dashState as any).exportEligibleNormalized === true ||
-            _selectedSnap0?.exportEligible === true;
-          
-          // PHASE 2: hasCanonicalHash requires full 64-hex (backend normalized OR selectedSnapshot integrity.value)
-          const _isHex64 = (s: any): boolean => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
-          const canonicalHashNormalized = (dashState as any).canonicalHashNormalized || null;
-          const hasCanonicalHashNorm =
-            _isHex64(canonicalHashNormalized) ||
-            _isHex64(_selectedSnap0?.integrity?.value);
-          
-          // COMPUTE EXPORT ALLOWED STATE (deterministic)
-          // Export allowed if: canonical hash exists AND exportEligible is true AND snapshotKind is GOVERNANCE
-          // AND backend reasonCode is not NOT_EXPORT_ELIGIBLE (prefer backend gate if present)
-          const _backendReasonCode: string | undefined = (dashState as any).exportGateReasonCodeNormalized;
-          const exportAllowed =
-            hasCanonicalHashNorm &&
-            exportEligibleNormalized &&
-            snapshotKindNormalized === 'GOVERNANCE' &&
-            _backendReasonCode !== 'NOT_EXPORT_ELIGIBLE';
-          
-          // Compute reasonCode (deterministic, enum-based) — prefer backend value if canonical
-          let reasonCode: string;
-          if (!snapshotIdNormalized) {
-            reasonCode = 'SNAPSHOT_NOT_FOUND';
-          } else if (snapshotKindNormalized === 'SEED') {
-            reasonCode = 'NOT_EXPORT_ELIGIBLE';
-          } else if (!exportEligibleNormalized) {
-            reasonCode = 'NOT_EXPORT_ELIGIBLE';
-          } else if (!hasCanonicalHashNorm) {
-            reasonCode = 'MISSING_CANONICAL_HASH';
-          } else {
-            reasonCode = 'OK';
-          }
-          // Override with backend reasonCode when it is an authoritative canonical value
-          if (_backendReasonCode && ['OK', 'NOT_EXPORT_ELIGIBLE', 'MISSING_CANONICAL_HASH', 'SNAPSHOT_NOT_FOUND'].includes(_backendReasonCode)) {
-            reasonCode = _backendReasonCode;
-          }
-          
-          // EMIT [FT_PROOF_UI_EXPORT_GATE_EVALUATED] — primary proof marker per Phase 2 contract
-          const uiExportState = {
-            snapshotId: snapshotIdNormalized,
-            snapshotKind: snapshotKindNormalized,
-            exportEligible: exportEligibleNormalized,
-            hasCanonicalHash: hasCanonicalHashNorm,
+
+          // SINGLE GATE SOURCE OF TRUTH: backend truth is primary, local computation is fallback
+          const { exportAllowed, reasonCode, reasonMessageCustomer } = computeExportGateFromBackendTruth(dashState as any);
+
+          // EMIT [FT_PROOF_UI_EXPORT_GATE_EVALUATED] — proof marker per fix contract
+          console.log('[FT_PROOF_UI_EXPORT_GATE_EVALUATED]', JSON.stringify({
             exportAllowed,
             reasonCode,
-          };
-          console.log('[FT_PROOF_UI_EXPORT_GATE_EVALUATED]', JSON.stringify(uiExportState));
+            snapshotId: snapshotIdNormalized,
+          }));
           // Legacy marker kept for backward compatibility
-          console.log('[FT_UI_EXPORT_KIND_CONTRACT_OK]', JSON.stringify(uiExportState));
-          
-          // GATE: Disable button if export not allowed
+          console.log('[FT_UI_EXPORT_KIND_CONTRACT_OK]', JSON.stringify({ exportAllowed, reasonCode, snapshotId: snapshotIdNormalized }));
+
           if (!exportAllowed) {
-            exportAccessButton.disabled = true;
-            const reason = !hasCanonicalHashNorm 
-              ? 'missing canonical hash'
-              : snapshotKindNormalized === 'SEED'
-              ? 'seed snapshots cannot be exported'
-              : 'snapshot not eligible for export';
-            
-            exportAccessButton.title = `Export disabled: ${reason}`;
-            exportAccessButton.setAttribute('aria-disabled', 'true');
-            
-            // EMIT [PHASE1_EXPORT_BLOCKED_RENDERED] marker at render time (reliable, not click-dependent)
-            console.log('[PHASE1_EXPORT_BLOCKED_RENDERED]', JSON.stringify({
-              snapshotId: snapshotIdNormalized,
-              reasonCode,
-            }));
-            
-            // Prevent click from invoking resolver if button somehow becomes clickable
-            exportAccessButton.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify({
-                snapshotId: snapshotIdNormalized,
-                reasonCode,
-              }));
-            });
+            if (reasonCode === 'NOT_EXPORT_ELIGIBLE') {
+              // Hide button entirely — this snapshot type cannot be exported; no dead button
+              exportAccessButton.style.display = 'none';
+              console.log('[PHASE1_EXPORT_BLOCKED_HIDDEN]', JSON.stringify({ snapshotId: snapshotIdNormalized, reasonCode }));
+            } else {
+              // Show disabled button WITH visible inline customer-safe message (no dead button)
+              exportAccessButton.disabled = true;
+              exportAccessButton.style.cursor = 'not-allowed';
+              exportAccessButton.style.opacity = '0.55';
+              exportAccessButton.setAttribute('aria-disabled', 'true');
+              exportAccessButton.title = reasonMessageCustomer;
+
+              // Insert inline reason message below the button so customer always sees why
+              const _gateMsg = document.createElement('p');
+              _gateMsg.setAttribute('data-testid', 'ft-export-gate-message');
+              _gateMsg.style.cssText = 'font-size:12px;color:#505F79;margin:4px 0 0 0;';
+              _gateMsg.textContent = reasonMessageCustomer;
+              exportAccessButton.parentNode?.insertBefore(_gateMsg, exportAccessButton.nextSibling);
+
+              console.log('[PHASE1_EXPORT_BLOCKED_RENDERED]', JSON.stringify({ snapshotId: snapshotIdNormalized, reasonCode }));
+
+              // Belt-and-suspenders: prevent any click from reaching resolver
+              exportAccessButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify({ snapshotId: snapshotIdNormalized, reasonCode }));
+              });
+            }
           } else {
             // GATE PASSED: Attach normal click handler that invokes resolver
             exportAccessButton.addEventListener('click', async () => {
