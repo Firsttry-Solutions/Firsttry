@@ -500,6 +500,21 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
       return;
     }
 
+    // C2.5) NOT_AVAILABLE: no governance data yet — render neutral message (not an error)
+    if (resp.status === 'NOT_AVAILABLE') {
+      container.innerHTML = '';
+      const notAvailableMsg = document.createElement('div');
+      notAvailableMsg.style.color = '#555';
+      notAvailableMsg.style.fontSize = '12px';
+      notAvailableMsg.style.fontFamily = 'monospace';
+      notAvailableMsg.style.padding = '10px 0';
+      notAvailableMsg.textContent =
+        'Governance controls scoreboard will appear after evidence is generated.';
+      container.appendChild(notAvailableMsg);
+      console.log('[FT_PROOF] UI_ECL_PANEL_NOT_AVAILABLE=1');
+      return;
+    }
+
     // C3) Validate: response must be an object (schema guard)
     if (typeof resp !== 'object' || Array.isArray(resp)) {
       console.log('[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=SCHEMA_MISMATCH');
