@@ -1254,7 +1254,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     const runAccessBtn = document.createElement("button");
     runAccessBtn.id = "ft-run-access-review-btn";
     runAccessBtn.setAttribute("data-testid", "ft-tab-access-reviews");
-    runAccessBtn.textContent = "Run Access Review (Phase 1)";
+    runAccessBtn.textContent = "Run Access Review";
     runAccessBtn.style.padding = "10px 15px";
     runAccessBtn.style.backgroundColor = "#0052CC";
     runAccessBtn.style.color = "white";
@@ -1269,7 +1269,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     const exportAccessBtn = document.createElement("button");
     exportAccessBtn.id = "ft-export-access-pack-btn";
     exportAccessBtn.setAttribute("data-testid", "ft-export-review-pack");
-    exportAccessBtn.textContent = "Export Phase 1 Pack";
+    exportAccessBtn.textContent = "Export Evidence Pack";
     exportAccessBtn.style.padding = "10px 15px";
     exportAccessBtn.style.backgroundColor = "#36B37E";
     exportAccessBtn.style.color = "white";
@@ -1349,7 +1349,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     const eclHeading = document.createElement('h2');
     eclHeading.style.margin = '0 0 8px 0';
     eclHeading.style.fontSize = '16px';
-    eclHeading.textContent = 'Enterprise Governance (ECL 1\u21928)';
+    eclHeading.textContent = 'Governance Controls';
     eclSection.appendChild(eclHeading);
 
     const eclMount = document.createElement('div');

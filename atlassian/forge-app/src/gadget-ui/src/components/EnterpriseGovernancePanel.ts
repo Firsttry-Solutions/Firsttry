@@ -76,7 +76,7 @@ function renderEngineFailed(container: HTMLElement, reason?: string): void {
   errorTitle.style.fontWeight = 'bold';
   errorTitle.style.fontSize = '14px';
   errorTitle.style.marginBottom = '8px';
-  errorTitle.textContent = 'ECL PANEL FAILED (FAIL-CLOSED)';
+  errorTitle.textContent = 'Governance Status: Failed to Load';
   container.appendChild(errorTitle);
 
   const errorBody = document.createElement('div');
@@ -99,7 +99,7 @@ function renderEngineFailed(container: HTMLElement, reason?: string): void {
   marker.style.color = '#999';
   marker.style.fontSize = '10px';
   marker.style.marginTop = '8px';
-  marker.textContent = `resolver: ${ECL_ENTERPRISE_RESOLVER_KEY} | marker: FT_ECL_UI_RENDER_GUARD_V1`;
+  marker.textContent = `resolver: ${ECL_ENTERPRISE_RESOLVER_KEY} | proof: FT_UI_RENDER_GUARD_V1`;
   container.appendChild(marker);
 }
 
@@ -175,7 +175,7 @@ function renderGovernanceState(container: HTMLElement, state: EclEnterpriseState
   scoreHeader.style.fontSize = '13px';
   scoreHeader.style.color = '#1a237e';
   scoreHeader.style.marginBottom = '6px';
-  scoreHeader.textContent = 'ECL 1\u21928 Scoreboard';
+  scoreHeader.textContent = 'Governance Controls Scoreboard';
   container.appendChild(scoreHeader);
 
   const scoreTable = document.createElement('table');
@@ -206,7 +206,8 @@ function renderGovernanceState(container: HTMLElement, state: EclEnterpriseState
     const tdKey = document.createElement('td');
     tdKey.style.padding = '5px 10px';
     tdKey.style.fontWeight = 'bold';
-    tdKey.textContent = key;
+    const displayKey = key.replace('ECL', 'G-');  // customer-safe label: G-1..G-8
+    tdKey.textContent = displayKey;
     tr.appendChild(tdKey);
 
     const tdStatus = document.createElement('td');
@@ -438,7 +439,7 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
   title.style.fontWeight = 'bold';
   title.style.marginBottom = '4px';
   title.style.color = '#1a237e';
-  title.textContent = 'ECL Status + Governance Engine Proof';
+  title.textContent = 'Governance Status';
   section.appendChild(title);
 
   const updatedLine = document.createElement('div');
