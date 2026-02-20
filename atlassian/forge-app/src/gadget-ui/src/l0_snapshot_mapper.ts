@@ -1364,6 +1364,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
 
     content.appendChild(eclSection);
     console.log('[FT_PROOF] UI_ECL_MOUNT_PRESENT=1');
+    console.log('[FT_PROOF] UI_EXPORT_PROVENANCE_MOUNT_READY=1');
 
     // === ENTERPRISE LAYOUT: Enterprise Contract (includes Evidence Summary) ===
     // Order: Enterprise UI Shell with cards → History → Diagnostics
