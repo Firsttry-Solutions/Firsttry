@@ -63,7 +63,7 @@ function computeBuildCoherence(uiShort: string, backendShort?: string): {
 }
 
 function safeInvokeErrorMessage(): string {
-  return 'Something went wrong. Please try again or contact support.';
+  return 'Service temporarily unavailable. Please refresh.';
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -127,6 +127,25 @@ describe('No Internal Language Customer UI Contract', () => {
     expect(body).not.toContain('FAIL-CLOSED');
     expect(body).not.toContain('engine failed');
     console.log('[FT_TEST_PASS_NO_INTERNAL_LANGUAGE_CONTRACT] safeInvoke-source-clean PASS');
+  });
+
+  it('6. No FAIL-CLOSED in any customer-visible textContent in main.ts or l0_snapshot_mapper.ts', () => {
+    const mainPath = path.resolve(__dirname, '../src/gadget-ui/src/main.ts');
+    const mapperPath = path.resolve(__dirname, '../src/gadget-ui/src/l0_snapshot_mapper.ts');
+    const mainSrc = fs.readFileSync(mainPath, 'utf8');
+    const mapperSrc = fs.readFileSync(mapperPath, 'utf8');
+
+    // Extract all textContent/innerHTML assignments
+    const textContentRegex = /(?:textContent|innerHTML)\s*=\s*(?:`[^`]*`|'[^']*'|"[^"]*")/g;
+    for (const src of [mainSrc, mapperSrc]) {
+      const matches = src.match(textContentRegex) || [];
+      for (const m of matches) {
+        const lower = m.toLowerCase();
+        expect(lower).not.toContain('fail-closed');
+        expect(lower).not.toContain('fail_closed');
+      }
+    }
+    console.log('[FT_TEST_PASS_NO_INTERNAL_LANGUAGE_CONTRACT] no-fail-closed-in-dom PASS');
   });
 
   it('[FT_TEST_PASS_NO_INTERNAL_LANGUAGE_CONTRACT] — marker', () => {

@@ -29,7 +29,7 @@ function createSafeInvoke(invokeFn: InvokeFn) {
 
     if (payload === null || payload === undefined || Array.isArray(payload) || typeof payload !== 'object' || typeof payload === 'function') {
       console.log(`[FT_PROOF_UI_CLICK_INVALID_PAYLOAD] action=${resolver} uiReqId=${uiReqId} type=${payloadType}`);
-      return { ok: false, status: 'ERROR', reason: 'Something went wrong. Please try again or contact support.' };
+      return { ok: false, status: 'ERROR', reason: 'Service temporarily unavailable. Please refresh.' };
     }
 
     console.log('[FT_PROOF_UI_CLICK]', JSON.stringify({ action: resolver, uiReqId }));
@@ -45,13 +45,18 @@ function createSafeInvoke(invokeFn: InvokeFn) {
       return result;
     } catch (err: any) {
       const errMsg = err instanceof Error ? err.message : String(err);
+      console.log('[FT_PROOF_UI_INVOKE_THROW]', JSON.stringify({
+        action: resolver,
+        uiReqId,
+        error: errMsg.slice(0, 200),
+      }));
       console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({
         action: resolver,
         uiReqId,
         ok: false,
         reason: errMsg.slice(0, 200),
       }));
-      return { ok: false, status: 'ERROR', reason: 'Something went wrong. Please try again or contact support.' };
+      return { ok: false, status: 'ERROR', reason: 'Service temporarily unavailable. Please refresh.' };
     }
   };
 }
@@ -139,7 +144,7 @@ describe('UI Click Wiring Contract', () => {
     // Must NOT throw
     const result = await safeInvoke('resolver_z', { a: 1 }, 'req_7');
     expect(result.ok).toBe(false);
-    expect(result.reason).toBe('Something went wrong. Please try again or contact support.');
+    expect(result.reason).toBe('Service temporarily unavailable. Please refresh.');
     console.log('[FT_TEST_PASS_UI_CLICK_WIRING_CONTRACT] no-throw-on-error PASS');
   });
 
