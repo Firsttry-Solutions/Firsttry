@@ -3330,15 +3330,26 @@ async function proceedWithBoot() {
         console.log('[FT_PROOF] UI_ECL_PANEL_RENDER_INTENT=1');
         const _ftEclMount = document.getElementById('ft-ecl-enterprise-mount');
         if (!_ftEclMount) {
-            console.error('[FT_PROOF] UI_ECL_MOUNT_MISSING=1');
-            throw new Error('ECL mount missing — ft-ecl-enterprise-mount not found in DOM');
-        }
-        console.log('[FT_PROOF] UI_ECL_PANEL_MOUNTED=1');
-        try {
-            const _eclPanelEl = EnterpriseGovernancePanel();
-            _ftEclMount.appendChild(_eclPanelEl);
-        } catch (eclWireErr: any) {
-            console.error('[FT_ECL] CRITICAL: Enterprise Governance Panel instantiation failed', eclWireErr);
+            // Phase4.1.1: screen-aware mount guard — scope screen has no ECL mount
+            const isScopeScreen = !!(document.body && document.body.innerText &&
+                document.body.innerText.includes('Scope Boundaries & Explicit Non-Goals'));
+            if (isScopeScreen) {
+                // Scope screen does not contain the enterprise mount node — skip init entirely
+                console.info('[FT_PROOF] UI_ECL_MOUNT_SKIPPED_SCOPE_SCREEN=1');
+            } else {
+                // NOT on scope screen — mount is required; keep fail-closed
+                console.error('[FT_PROOF] UI_ECL_MOUNT_MISSING=1');
+                console.error('[FT_PROOF] UI_ECL_MOUNT_REQUIRED_BUT_MISSING=1');
+                throw new Error('ECL mount missing — ft-ecl-enterprise-mount not found in DOM');
+            }
+        } else {
+            console.log('[FT_PROOF] UI_ECL_PANEL_MOUNTED=1');
+            try {
+                const _eclPanelEl = EnterpriseGovernancePanel();
+                _ftEclMount.appendChild(_eclPanelEl);
+            } catch (eclWireErr: any) {
+                console.error('[FT_ECL] CRITICAL: Enterprise Governance Panel instantiation failed', eclWireErr);
+            }
         }
         // ECL-ENTERPRISE-HARDENING END
 
