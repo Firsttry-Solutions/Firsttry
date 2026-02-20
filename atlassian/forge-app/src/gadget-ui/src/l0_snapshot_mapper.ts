@@ -452,9 +452,9 @@ function createECL1TabNavigation(): HTMLElement {
       }
 
       if (metricsError !== null || metrics === null) {
-        // FAIL-CLOSED: show exact message, no partial results
+        // Show customer-safe error message, no partial results
         const failMsg = document.createElement("p");
-        failMsg.textContent = "Metrics unavailable \u2014 FAIL-CLOSED";
+        failMsg.textContent = "Metrics temporarily unavailable. Please refresh.";
         failMsg.style.color = "#c62828";
         failMsg.style.fontFamily = "monospace";
         failMsg.style.fontSize = "13px";
@@ -739,7 +739,7 @@ function createECL1TabNavigation(): HTMLElement {
       if (govActions === undefined) {
         // Fail-closed: actions unavailable
         const failClosedMsg = document.createElement("p");
-        failClosedMsg.textContent = "Governance actions unavailable — FAIL-CLOSED";
+        failClosedMsg.textContent = "Governance actions temporarily unavailable. Please refresh.";
         failClosedMsg.style.color = "#d32f2f";
         failClosedMsg.style.fontSize = "13px";
         failClosedMsg.style.margin = "10px 0 0 0";
@@ -850,7 +850,7 @@ function createECL1TabNavigation(): HTMLElement {
       if (driftAcks === undefined) {
         // Fail-closed: drift acks unavailable
         const failClosedMsg = document.createElement("p");
-        failClosedMsg.textContent = "Drift acknowledgements unavailable — FAIL-CLOSED";
+        failClosedMsg.textContent = "Drift acknowledgements temporarily unavailable. Please refresh.";
         failClosedMsg.style.color = "#d32f2f";
         failClosedMsg.style.fontSize = "13px";
         failClosedMsg.style.margin = "10px 0 0 0";
@@ -1490,7 +1490,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
       content.appendChild(tabNav);
     } catch (_tabErr) {
       const tabErrEl = document.createElement("p");
-      tabErrEl.textContent = "Tab navigation unavailable \u2014 FAIL-CLOSED";
+      tabErrEl.textContent = "Tab navigation temporarily unavailable. Please refresh.";
       tabErrEl.style.color = "#c62828";
       tabErrEl.style.fontFamily = "monospace";
       tabErrEl.style.fontSize = "12px";

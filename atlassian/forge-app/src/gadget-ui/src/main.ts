@@ -976,7 +976,7 @@ async function safeInvoke(resolver: string, payload: any, uiReqId: string): Prom
 
   if (payload === null || payload === undefined || Array.isArray(payload) || typeof payload !== 'object' || typeof payload === 'function') {
     console.log(`[FT_PROOF_UI_CLICK_INVALID_PAYLOAD] action=${resolver} uiReqId=${uiReqId} type=${payloadType}`);
-    return { ok: false, status: 'ERROR', reason: 'Something went wrong. Please try again or contact support.' };
+    return { ok: false, status: 'ERROR', reason: 'Service temporarily unavailable. Please refresh.' };
   }
 
   // Pre-invoke proof marker
@@ -993,13 +993,18 @@ async function safeInvoke(resolver: string, payload: any, uiReqId: string): Prom
     return result;
   } catch (err: any) {
     const errMsg = err instanceof Error ? err.message : String(err);
+    console.log('[FT_PROOF_UI_INVOKE_THROW]', JSON.stringify({
+      action: resolver,
+      uiReqId,
+      error: errMsg.slice(0, 200),
+    }));
     console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({
       action: resolver,
       uiReqId,
       ok: false,
       reason: errMsg.slice(0, 200),
     }));
-    return { ok: false, status: 'ERROR', reason: 'Something went wrong. Please try again or contact support.' };
+    return { ok: false, status: 'ERROR', reason: 'Service temporarily unavailable. Please refresh.' };
   }
 }
 
@@ -1095,8 +1100,8 @@ async function loadStatus() {
 
         try {
             // Call the new getStatusSnapshot resolver (live dashboard)
-            // Uses invokeWithUiReqId wrapper to guarantee ui_req_id correlation
-            rawData = await invokeWithUiReqId('getStatusSnapshot', { ui_req_id: FT_UI_REQ_ID });
+            // Uses safeInvoke wrapper — single invoke path, never throws
+            rawData = await safeInvoke('getStatusSnapshot', { ui_req_id: FT_UI_REQ_ID }, FT_UI_REQ_ID);
         } catch (e) {
             invokeError = e instanceof Error ? e.message : String(e);
             invokeErrorThrown = true;
@@ -1278,7 +1283,7 @@ async function loadStatus() {
                 const _eclErrBlock = document.createElement('div');
                 _eclErrBlock.className = 'ft-ecl-engine-halted';
                 _eclErrBlock.setAttribute('data-ft-proof', FT_ECL_UI_PROOF_MARKER);
-                _eclErrBlock.innerHTML = '<strong>CRITICAL: Enterprise Governance State Unavailable</strong><br>System halted (fail-closed)';
+                _eclErrBlock.innerHTML = '<strong>Governance data is temporarily unavailable.</strong><br>Please refresh the page.';
                 document.body.appendChild(_eclErrBlock);
             }
 
@@ -1797,7 +1802,7 @@ async function loadStatus() {
 
         // PHASE 2: After initial load, populate snapshot proof panel
         try {
-            const debugInfo = await invokeWithUiReqId('getSnapshotDebug', {});
+            const debugInfo = await safeInvoke('getSnapshotDebug', {}, FT_UI_REQ_ID);
             if (debugInfo && debugInfo.ok) {
                 updateSnapshotProofPanel(debugInfo);
             } else if (debugInfo && debugInfo.error) {
@@ -2195,7 +2200,7 @@ window.refreshNow = async function() {
             btn.textContent = 'Refreshing...';
         }
 
-        const newSnapshot = await invokeWithUiReqId('refreshNow', {});
+        const newSnapshot = await safeInvoke('refreshNow', {}, FT_UI_REQ_ID);
         
         // Update lastPayload and re-render UI
         lastPayload = newSnapshot;
@@ -2226,7 +2231,7 @@ window.refreshNow = async function() {
 
         // PHASE 2: After refresh, call getSnapshotDebug to update proof panel
         try {
-            const debugInfo = await invokeWithUiReqId('getSnapshotDebug', {});
+            const debugInfo = await safeInvoke('getSnapshotDebug', {}, FT_UI_REQ_ID);
             if (debugInfo && debugInfo.ok) {
                 updateSnapshotProofPanel(debugInfo);
             }
@@ -2402,7 +2407,7 @@ async function handleExportTrustSnapshot() {
         statusEl.classList.remove('text-error', 'text-success');
 
         // Call resolver
-        const response = await invokeWithUiReqId('exportTrustSnapshot', {});
+        const response = await safeInvoke('exportTrustSnapshot', {}, FT_UI_REQ_ID);
 
         if (!response || !response.snapshotId) {
             statusEl.textContent = 'Export unavailable';
@@ -2699,7 +2704,7 @@ window.runProbe = async function() {
         
         let response;
         try {
-          response = await invokeWithUiReqId('probe', payload);
+          response = await safeInvoke('probe', payload, FT_UI_REQ_ID);
           console.log(JSON.stringify({
             marker: '[UI_PROBE_INVOKE_OK]',
             ui_req_id: localUiReqId,
@@ -3333,9 +3338,9 @@ async function proceedWithBoot() {
         if (dashState.status === 'AVAILABLE') {
           try {
             const defaultVariant = 'latest';
-            const variantResponse = await invokeWithUiReqId('getSnapshotVariant', {
+            const variantResponse = await safeInvoke('getSnapshotVariant', {
               variant: defaultVariant,
-            });
+            }, FT_UI_REQ_ID);
             
             if (variantResponse && variantResponse.ok) {
               dashState.selectedVariant = defaultVariant;
@@ -3410,9 +3415,9 @@ async function proceedWithBoot() {
               ensureCorrelationId();
               
               // Call getSnapshotVariant resolver to fetch snapshot data for selected variant
-              const variantResponse = await invokeWithUiReqId('getSnapshotVariant', {
+              const variantResponse = await safeInvoke('getSnapshotVariant', {
                 variant: newVariant,
-              });
+              }, FT_UI_REQ_ID);
               
               if (variantResponse && variantResponse.ok) {
                 // Update dashboard state with new variant data
@@ -3477,10 +3482,31 @@ async function proceedWithBoot() {
         }
 
         // Resolve backend short SHA from whichever source has it
-        const _backendShortForCoherence: string | undefined =
+        let _backendShortForCoherence: string | undefined =
           (data as any)?.backend_git_sha_short ||
           (rawData as any)?.backend_git_sha_short ||
           (resolverResponse as any)?.backend_git_sha_short;
+
+        // SMOKE IDENTITY RETRY: If no backend SHA from dashboard state, call
+        // ft_smokeIdentity_v1 up to 3 times with small backoff to get authoritative SHA.
+        if (!_backendShortForCoherence || _backendShortForCoherence === 'unknown') {
+          for (let _smokeAttempt = 1; _smokeAttempt <= 3; _smokeAttempt++) {
+            try {
+              const _smokeResult = await safeInvoke('ft_smokeIdentity_v1', {}, FT_UI_REQ_ID);
+              if (_smokeResult?.ok && _smokeResult.backendGitShaShort && _smokeResult.backendGitShaShort !== 'unknown') {
+                _backendShortForCoherence = _smokeResult.backendGitShaShort;
+                console.log('[FT_SMOKE_IDENTITY_OK]', JSON.stringify({ attempt: _smokeAttempt, sha: _backendShortForCoherence }));
+                break;
+              }
+            } catch (_smokeErr) {
+              // safeInvoke never throws, but belt-and-suspenders
+            }
+            if (_smokeAttempt < 3) {
+              await new Promise(r => setTimeout(r, _smokeAttempt * 500));
+            }
+          }
+        }
+
         const _buildCoherence = computeBuildCoherence(UI_GIT_SHA_SHORT, _backendShortForCoherence);
 
         if (!_buildCoherence.ok) {
@@ -3755,14 +3781,14 @@ async function proceedWithBoot() {
                 const errorMsg = result?.error || result?.reason || 'Unknown error';
                 console.error('[REVIEW_SEAL_ERROR]', result);
                 
-                sealStatusDiv.textContent = `❌ FAIL_CLOSED: ${errorMsg}`;
+                sealStatusDiv.textContent = 'Unable to seal review. Please try again.';
                 sealStatusDiv.style.color = "#f44336";
                 sealReviewButton.textContent = originalText;
                 sealReviewButton.disabled = false;
               }
             } catch (error: any) {
               console.error('[REVIEW_SEAL_EXCEPTION]', error);
-              sealStatusDiv.textContent = `❌ Error: ${error.message}`;
+              sealStatusDiv.textContent = 'Service temporarily unavailable. Please refresh.';
               sealStatusDiv.style.color = "#f44336";
               sealReviewButton.textContent = originalText;
               sealReviewButton.disabled = false;
@@ -4161,11 +4187,11 @@ async function proceedWithBoot() {
                     // PHASE 3: Validate resolver name
                     validateNonLegacyFlow('ft_getDashboardState_v1');
                     
-                    stateResult = await invokeWithUiReqId('ft_getDashboardState_v1', { 
+                    stateResult = await safeInvoke('ft_getDashboardState_v1', { 
                         uiReqId: FT_UI_REQ_ID,
                         uiBundleHash: UI_DIST_STAMP,
                         uiGitSha: UI_BUILD_MARKER,
-                    });
+                    }, FT_UI_REQ_ID);
                     
                     // PHASE 3: Validate response format (must not be legacy)
                     validateResponseNoLegacyMode(stateResult);
@@ -4431,6 +4457,7 @@ async function proceedWithBoot() {
                 // BACKBONE FIX: Log deterministic status (never undefined)
                 console.log(`[UI_FT_GETDASHBOARDSTATE_FOOTER_UPDATED] status=${status} reason=${reason} resolve_ok=${resolverOK}`);
             } catch (err) {
+                console.log(`[FT_PROOF_UI_RENDER_CRASH] uiReqId=${FT_UI_REQ_ID} error=${String(err).substring(0, 60)}`);
                 console.error(`[UI_OUTER_ERROR] uiReqId=${FT_UI_REQ_ID} error=${String(err).substring(0, 60)}`, err);
                 // Keep UI-only build info if outer error
                 buildFooter.textContent = `UI: ${uiBuild}`;
@@ -4451,24 +4478,13 @@ async function proceedWithBoot() {
         try {
             loadStatus();
         } catch (fatalError) {
-            // ErrorBoundary: if anything throws, render a safe fallback
-            console.error('[FATAL UI ERROR]', fatalError);
+            // ErrorBoundary: root crash handler — emit proof marker and show customer-safe message
+            console.log('[FT_PROOF_UI_RENDER_CRASH]', fatalError);
             const errorPanel = document.getElementById('operational-status');
             if (errorPanel) {
                 errorPanel.innerHTML = `
                     <div class="error-panel error-panel.error">
-                        <div class="error-panel-section">Dashboard Encountered an Error</div>
-                        <div class="error-panel-details">
-                            The dashboard UI encountered an unexpected error. Please try:
-                            <ul>
-                                <li>Refresh the page</li>
-                                <li>Remove and re-add the gadget</li>
-                                <li>Contact support if the issue persists</li>
-                            </ul>
-                            <div class="error-panel-trace text-error">
-                                ${String(fatalError).substring(0, 200)}
-                            </div>
-                        </div>
+                        <div class="error-panel-section">Service temporarily unavailable. Please refresh.</div>
                     </div>
                 `;
             }

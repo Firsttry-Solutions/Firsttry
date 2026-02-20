@@ -73,6 +73,23 @@ import {
 const resolver = new Resolver();
 
 // ============================================================================
+// SAFE RESOLVER WRAPPER — wraps EVERY handler in try/catch to guarantee
+// no resolver can throw to the UI. Emits [FT_PROOF_BACKEND_RESOLVER_ERR]
+// on any escape and returns a customer-safe error envelope.
+// ============================================================================
+function safeResolver(name: string, handler: (req: any) => Promise<any>): (req: any) => Promise<any> {
+  return async (req: any) => {
+    try {
+      return await handler(req);
+    } catch (err: any) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.log(`[FT_PROOF_BACKEND_RESOLVER_ERR] resolver=${name} error=${errMsg.slice(0, 200)}`);
+      return { ok: false, status: 'ERROR', reason: 'Service temporarily unavailable. Please try again.', debugCode: `${name}_ERR` };
+    }
+  };
+}
+
+// ============================================================================
 // MODULE-LEVEL HELPERS (shared by ft_getDashboardState_v1 and related paths)
 // ============================================================================
 
@@ -130,35 +147,36 @@ function dedupeSnapshotsById(arr: any[]): any[] {
 
 // Register all gadget UI invoke keys with their handlers
 // CRITICAL: Keys must match UI invoke() calls exactly
-resolver.define('getStatusSnapshot', getStatusSnapshot_resolver);
-resolver.define('getBuildInfo', getBuildInfo_resolver);
-resolver.define('getBackendBuildIdentity', getBackendBuildIdentity_resolver);
-resolver.define('refreshNow', refreshNow_resolver);
-resolver.define('exportTrustSnapshot', exportTrustSnapshot);
-resolver.define('debugSnapshotState', debugSnapshotState_resolver);
-resolver.define('getSnapshotDebug', getSnapshotDebug_resolver);
-resolver.define('getSnapshotVariant', getSnapshotVariant_resolver);
-resolver.define('ping', ping);
-resolver.define('ensureFirstSnapshot', ensureFirstSnapshot);
-resolver.define('probe', probe);  // FORENSIC_PROBE
+// ALL handlers wrapped with safeResolver to guarantee no INVOKE_THROW to UI
+resolver.define('getStatusSnapshot', safeResolver('getStatusSnapshot', getStatusSnapshot_resolver));
+resolver.define('getBuildInfo', safeResolver('getBuildInfo', getBuildInfo_resolver));
+resolver.define('getBackendBuildIdentity', safeResolver('getBackendBuildIdentity', getBackendBuildIdentity_resolver));
+resolver.define('refreshNow', safeResolver('refreshNow', refreshNow_resolver));
+resolver.define('exportTrustSnapshot', safeResolver('exportTrustSnapshot', exportTrustSnapshot));
+resolver.define('debugSnapshotState', safeResolver('debugSnapshotState', debugSnapshotState_resolver));
+resolver.define('getSnapshotDebug', safeResolver('getSnapshotDebug', getSnapshotDebug_resolver));
+resolver.define('getSnapshotVariant', safeResolver('getSnapshotVariant', getSnapshotVariant_resolver));
+resolver.define('ping', safeResolver('ping', ping));
+resolver.define('ensureFirstSnapshot', safeResolver('ensureFirstSnapshot', ensureFirstSnapshot));
+resolver.define('probe', safeResolver('probe', probe));
 
-// Enterprise dashboard resolver (NEW - Phase 9)
-resolver.define('getDashboardSnapshotV1', getDashboardSnapshotV1_resolver);
+// Enterprise dashboard resolver
+resolver.define('getDashboardSnapshotV1', safeResolver('getDashboardSnapshotV1', getDashboardSnapshotV1_resolver));
 
 // Layer-0 Backbone resolvers
-resolver.define('ft_getDashboardState_v1', ft_getDashboardState_v1);
-resolver.define('ft_setUiBuildSha_v1', ft_setUiBuildSha_v1);
-resolver.define('ft_contractProof_dashEnvelope_v1', ft_contractProof_dashEnvelope_v1);
+resolver.define('ft_getDashboardState_v1', safeResolver('ft_getDashboardState_v1', ft_getDashboardState_v1));
+resolver.define('ft_setUiBuildSha_v1', safeResolver('ft_setUiBuildSha_v1', ft_setUiBuildSha_v1));
+resolver.define('ft_contractProof_dashEnvelope_v1', safeResolver('ft_contractProof_dashEnvelope_v1', ft_contractProof_dashEnvelope_v1));
 
 // Storage read resolvers (production proof)
-resolver.define('ft_getInstallMarker_v1', ft_getInstallMarker_v1);
-resolver.define('ft_getSnapshotAnchor_v1', ft_getSnapshotAnchor_v1);
+resolver.define('ft_getInstallMarker_v1', safeResolver('ft_getInstallMarker_v1', ft_getInstallMarker_v1));
+resolver.define('ft_getSnapshotAnchor_v1', safeResolver('ft_getSnapshotAnchor_v1', ft_getSnapshotAnchor_v1));
 
 // Runtime proof resolver (admin-only)
-resolver.define('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1);
+resolver.define('ft_getRuntimeProof_v1', safeResolver('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1));
 
 // ECL-5: Trust panel proof resolver
-resolver.define('ft_getTrustPanelProof_v1', async () => {
+resolver.define('ft_getTrustPanelProof_v1', safeResolver('ft_getTrustPanelProof_v1', async () => {
   try {
     return await getTrustPanelData();
   } catch (err: any) {
@@ -166,11 +184,11 @@ resolver.define('ft_getTrustPanelProof_v1', async () => {
     console.log(`[FT_PROOF] RESOLVER_FAIL_ft_getTrustPanelProof_v1=1 code=${debugCode}`);
     return { ok: false, status: 'ERROR', reason: 'Unable to load trust panel data. Please try again.', debugCode };
   }
-});
+}));
 
 // ECL-ENTERPRISE-HARDENING: Enterprise governance aggregator — all engines
 // FT_ECL_ENGINE: GOVERNANCE_AGGREGATOR_V1
-resolver.define('ft_getEnterpriseGovernanceState_v1', async () => {
+resolver.define('ft_getEnterpriseGovernanceState_v1', safeResolver('ft_getEnterpriseGovernanceState_v1', async () => {
   console.log('[FT_PROOF] ECL_ENTERPRISE_RESOLVER_CALLED=1');
   try {
     const state = await aggregateGovernanceState();
@@ -198,13 +216,13 @@ resolver.define('ft_getEnterpriseGovernanceState_v1', async () => {
       migrationRequired: false,
     } as any;
   }
-});
+}));
 
 // UI log relay resolver (UI → backend log relay for markers)
-resolver.define('ft_uiLogRelay_v1', ft_uiLogRelay_v1);
+resolver.define('ft_uiLogRelay_v1', safeResolver('ft_uiLogRelay_v1', ft_uiLogRelay_v1));
 
 // PHASE 2: Monitoring configuration resolvers
-resolver.define('getMonitoringConfig', async () => {
+resolver.define('getMonitoringConfig', safeResolver('getMonitoringConfig', async () => {
   try {
     return await getMonitoringConfig();
   } catch (err: any) {
@@ -212,8 +230,8 @@ resolver.define('getMonitoringConfig', async () => {
     console.log(`[FT_PROOF] RESOLVER_FAIL_getMonitoringConfig=1 code=${debugCode}`);
     return { ok: false, status: 'ERROR', reason: 'Unable to load monitoring configuration. Please try again.', debugCode };
   }
-});
-resolver.define('saveMonitoringConfig', async (req: any) => {
+}));
+resolver.define('saveMonitoringConfig', safeResolver('saveMonitoringConfig', async (req: any) => {
   try {
     await saveMonitoringConfig(req);
     return { ok: true };
@@ -222,10 +240,10 @@ resolver.define('saveMonitoringConfig', async (req: any) => {
     console.log(`[FT_PROOF] RESOLVER_FAIL_saveMonitoringConfig=1 code=${debugCode}`);
     return { ok: false, status: 'ERROR', reason: 'Unable to save monitoring configuration. Please try again.', debugCode };
   }
-});
+}));
 
 // PHASE 5.1.8: Enterprise Sellability Panels (FT_PROOF_ENTERPRISE_SELLABILITY_PANELS_WIRED_v1)
-resolver.define('ft_getEnterpriseSellabilityPanels_v1', async (request: any) => {
+resolver.define('ft_getEnterpriseSellabilityPanels_v1', safeResolver('ft_getEnterpriseSellabilityPanels_v1', async (request: any) => {
   try {
     const tenantKey = request?.tenantKey || request?.context?.tenantKey || 'unknown';
     const snapshot = request?.snapshot || {};
@@ -251,7 +269,19 @@ resolver.define('ft_getEnterpriseSellabilityPanels_v1', async (request: any) => 
       error: err instanceof Error ? err.message : 'Unknown error',
     };
   }
-});
+}));
+
+// Smoke identity resolver — returns backend build identity for UI coherence checks
+// Emits [FT_PROOF_BACKEND_BUILD] on every call
+resolver.define('ft_smokeIdentity_v1', safeResolver('ft_smokeIdentity_v1', async () => {
+  console.log(`[FT_PROOF_BACKEND_BUILD] backend_git_sha_short=${BACKEND_GIT_SHA_SHORT || 'unknown'} app_version=${BACKEND_APP_VERSION || 'unknown'} build_time=${BACKEND_BUILD_TIME_UTC || 'unknown'}`);
+  return {
+    ok: true,
+    backendGitShaShort: BACKEND_GIT_SHA_SHORT || 'unknown',
+    backendBuildTimeUtc: BACKEND_BUILD_TIME_UTC || 'unknown',
+    backendAppVersion: BACKEND_APP_VERSION || 'unknown',
+  };
+}));
 
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
