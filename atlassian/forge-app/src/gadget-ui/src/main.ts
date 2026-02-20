@@ -528,7 +528,7 @@ function ftUpdateProofNode(optional?: { schemaVersion?: string; backendBuildSha?
         el = document.createElement("pre");
         el.id = id;
         el.setAttribute("data-ft-proof", "1");
-        el.className = "ft-hidden";  // Use CSS class instead of inline style (CSP-compliant)
+        el.className = "ft-hidden";  // Use CSS class instead of inline style (CSP-safe)
         document.body.appendChild(el);
     }
     
