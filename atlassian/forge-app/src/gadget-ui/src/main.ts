@@ -3404,9 +3404,64 @@ async function proceedWithBoot() {
           attachVariantSelectHandler(variantSelect);
         }
 
+        // BUILD COHERENCE CHECK v1: UI/backend build mismatch detection.
+        // If UI SHA differs from backend SHA, all action buttons are disabled with a
+        // customer-safe banner. Missing/unknown backend SHA is treated as ok (do not block).
+        function computeBuildCoherence(uiShort: string, backendShort?: string): {
+          ok: boolean;
+          messageCustomer?: string;
+        } {
+          const missing = !backendShort || backendShort === 'unknown' || backendShort === 'UNKNOWN' || backendShort.startsWith('<');
+          if (missing) {
+            console.log('[FT_PROOF_BUILD_COHERENCE]', JSON.stringify({ ok: true, ui: uiShort, backend: backendShort || 'missing' }));
+            return { ok: true };
+          }
+          const coherent = uiShort === backendShort;
+          console.log('[FT_PROOF_BUILD_COHERENCE]', JSON.stringify({ ok: coherent, ui: uiShort, backend: backendShort }));
+          if (!coherent) {
+            return { ok: false, messageCustomer: 'Update in progress. Please refresh this page.' };
+          }
+          return { ok: true };
+        }
+
+        // Resolve backend short SHA from whichever source has it
+        const _backendShortForCoherence: string | undefined =
+          (data as any)?.backend_git_sha_short ||
+          (rawData as any)?.backend_git_sha_short ||
+          (resolverResponse as any)?.backend_git_sha_short;
+        const _buildCoherence = computeBuildCoherence(UI_GIT_SHA_SHORT, _backendShortForCoherence);
+
+        if (!_buildCoherence.ok) {
+          // Insert customer-safe banner above action buttons
+          const _coherenceBanner = document.createElement('div');
+          _coherenceBanner.setAttribute('data-testid', 'ft-build-coherence-banner');
+          _coherenceBanner.style.cssText = 'background:#FFF3CD;border:1px solid #FFC107;border-radius:4px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#856404;';
+          _coherenceBanner.textContent = _buildCoherence.messageCustomer!;
+
+          const _phase1ActionsParent = document.getElementById('ft-run-access-review-btn')?.parentElement;
+          if (_phase1ActionsParent?.parentElement) {
+            _phase1ActionsParent.parentElement.insertBefore(_coherenceBanner, _phase1ActionsParent);
+          } else {
+            document.body.insertBefore(_coherenceBanner, document.body.firstChild);
+          }
+
+          // Disable all three action buttons: accessible + visual + belt-and-suspenders
+          for (const _btnId of ['ft-run-access-review-btn', 'ft-export-access-pack-btn', 'ft-seal-review-btn']) {
+            const _btn = document.getElementById(_btnId) as HTMLButtonElement | null;
+            if (_btn) {
+              _btn.disabled = true;
+              _btn.style.cursor = 'not-allowed';
+              _btn.style.opacity = '0.55';
+              _btn.setAttribute('aria-disabled', 'true');
+              _btn.title = _buildCoherence.messageCustomer!;
+              _btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+            }
+          }
+        }
+
         // PHASE 1: Attach event listener for "Run Access Review" button
         const runAccessButton = document.getElementById('ft-run-access-review-btn') as HTMLButtonElement | null;
-        if (runAccessButton) {
+        if (runAccessButton && !runAccessButton.disabled) {
           runAccessButton.addEventListener('click', async () => {
             runAccessButton.disabled = true;
             runAccessButton.textContent = 'Running...';
@@ -3434,7 +3489,9 @@ async function proceedWithBoot() {
                 return;
               }
               
+              console.log('[FT_PROOF_UI_CLICK]', JSON.stringify({ action: 'RUN_ACCESS_REVIEW' }));
               const result = await invokeWithUiReqId('ft_getDashboardState_v1', { action: 'RUN_ACCESS_REVIEW' });
+              console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({ action: 'RUN_ACCESS_REVIEW', ok: !!(result?.ok), reason: result?.error?.message || result?.reason || (result?.ok ? 'success' : 'unknown') }));
               
               // Validate envelope schema (FAIL-CLOSED)
               if (!result || result.envelopeKind !== 'FT_ACTION_RESULT_V1') {
@@ -3613,11 +3670,13 @@ async function proceedWithBoot() {
                 return;
               }
 
+              console.log('[FT_PROOF_UI_CLICK]', JSON.stringify({ action: 'SEAL_REVIEW' }));
               const result = await invokeWithUiReqId('ar.sealReview', {
                 reviewId,
                 actorRole,
               });
 
+              console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({ action: 'SEAL_REVIEW', ok: !!(result?.ok), reason: result?.error || result?.reason || (result?.ok ? 'success' : 'unknown') }));
               if (result && result.ok) {
                 // Seal successful
                 console.log('[REVIEW_SEAL_SUCCESS]', result);
@@ -3840,7 +3899,8 @@ async function proceedWithBoot() {
                 const exportResolverKey = 'ft_getDashboardState_v1';
                 const exportActionType = 'EXPORT_PHASE1_PACK';
                 
-                // EMIT [PHASE1_EXPORT_INVOKE] marker BEFORE resolver call (tied to real invoke key/action)
+                // EMIT [FT_PROOF_UI_CLICK] and [PHASE1_EXPORT_INVOKE] markers BEFORE resolver call
+                console.log('[FT_PROOF_UI_CLICK]', JSON.stringify({ action: 'EXPORT_EVIDENCE' }));
                 console.log('[PHASE1_EXPORT_INVOKE]', JSON.stringify({
                   snapshotId: snapshotIdNormalized,
                   resolver: exportResolverKey,
@@ -3879,6 +3939,7 @@ async function proceedWithBoot() {
                 }
                 
                 if (exportData && exportData.ok && exportData.zipBase64) {
+                  console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({ action: 'EXPORT_EVIDENCE', ok: true, reason: 'success' }));
                   console.log('[PHASE1_EXPORT_SUCCESS]', { hash: exportData.zipHash, fileCount: exportData.fileCount });
                   
                   // Create success marker (for test detection)
