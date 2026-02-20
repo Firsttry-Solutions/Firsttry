@@ -1,0 +1,72 @@
+{
+  "manifest": {
+    "buildShaShort": "38097608",
+    "buildUtc": "2026-02-20T00:00:00Z",
+    "createdAtUtc": "2026-02-20T00:00:00Z",
+    "files": [
+      {
+        "path": "/access-report.json",
+        "sha256": "e947f24ef7b24db9e2e52cd6c08440beb54ae9b3a0e4f97782ad5df82b2de8c9"
+      },
+      {
+        "path": "/audit-coverage.json",
+        "sha256": "b9b9b44cf48f436118f36726e9cf5fcc3e98cac0793e7ea13cd95e806c1c18db"
+      },
+      {
+        "path": "/dependency-graph.json",
+        "sha256": "9a6d60b5acbc638d7dd6fbaa535458459ee2196266263f2b156a52720ee4f46f"
+      },
+      {
+        "path": "/privilege-boundary.json",
+        "sha256": "67534a9ab3952b47ef5cfb3c69318c7e729dfa3372b536dae3f74db839f650a8"
+      },
+      {
+        "path": "/snapshot.json",
+        "sha256": "0d7462f845cb049b705540b3ecfebbccfb67b8ddf8e28b9ce0043dd7bd16bcd5"
+      }
+    ],
+    "schemaVersion": "1.0.0",
+    "siteId": "site-golden-f1000-sandbox",
+    "snapshotId": "snap-golden-ecl-v1"
+  },
+  "payload": {
+    "createdAtUtc": "2026-02-20T00:00:00Z",
+    "exportEligible": true,
+    "exportReason": "ECL governance golden artifact — phase3 regression gate",
+    "ledgerBlocks": [
+      {
+        "entryHash": "ac76fae52f68dff14c1717e16b04089b133b6826df8999c100f1b4810fb8358a",
+        "index": 0,
+        "payloadHash": "67b2e846935cb3df3c9ae6135a1dd935376ada4d319a978b29a67b9efdbed95c",
+        "prevHash": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "entryHash": "1a51b6ee1c7f1c2f847820c27e154f9cd05ae27fa91119171b1d4a395788bb8e",
+        "index": 1,
+        "payloadHash": "2282744161aa5af529f7a44afc649fdd3676147df46d1da7dc42666c6cca68e6",
+        "prevHash": "ac76fae52f68dff14c1717e16b04089b133b6826df8999c100f1b4810fb8358a"
+      }
+    ],
+    "schemaVersion": "1.0.0",
+    "siteId": "site-golden-f1000-sandbox",
+    "snapshotChainBlocks": [
+      {
+        "blockHash": "062df7f1025cc6810feb8cbe0d209b6dfdd0ba9109a30824f148021a5758cda0",
+        "index": 0,
+        "payloadHash": "018bacd891b614e4e1f55b7ed284a22155286aecb4dada0ab9d35a46b016275e",
+        "prevHash": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "blockHash": "73ca7b28ca02787e0dba1fb39085be3f9a460c9a1703ae45a956fb3a8aaca6cd",
+        "index": 1,
+        "payloadHash": "00362b0ed6b6a5cd554cd556a3635f2d3251d7295a78a81f32b3626006f80ff5",
+        "prevHash": "062df7f1025cc6810feb8cbe0d209b6dfdd0ba9109a30824f148021a5758cda0"
+      }
+    ],
+    "snapshotId": "snap-golden-ecl-v1",
+    "proofs": {
+      "exportManifestSha256": "2c5c64755eb42c8e66a1d639ef115915eccd13bd77b0be6a31d27be3a97be59a",
+      "exportPayloadSha256": "86147925a606bb535f857feaa04a454e3e73e75227a1e40c8178ed6d4e31e3ee"
+    }
+  }
+}
