@@ -51,6 +51,10 @@ function computeExportGateFromBackendTruth(data: any): {
   reasonCode: string;
   reasonMessageCustomer: string;
 } {
+  // NO_SNAPSHOT: if no data at all, hide button
+  if (!data) {
+    return { exportAllowed: false, reasonCode: 'NO_SNAPSHOT', reasonMessageCustomer: '' };
+  }
   const _isH64 = (s: any): boolean => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
   const backendCode: string | undefined = data?.exportGateReasonCodeNormalized;
 
@@ -193,6 +197,20 @@ describe('Export Gate Backend Truth Contract', () => {
     const { exportAllowed } = computeExportGateFromBackendTruth(dashState);
     expect(exportAllowed).toBe(true);
     console.log('[FT_TEST_PASS_EXPORT_GATE_BACKEND_TRUTH_CONTRACT] backend-truth-wins PASS');
+  });
+
+  it('8. NO_SNAPSHOT: null data => visible=false, reasonCode=NO_SNAPSHOT', () => {
+    const result = computeExportGateFromBackendTruth(null);
+    expect(result.exportAllowed).toBe(false);
+    expect(result.reasonCode).toBe('NO_SNAPSHOT');
+    console.log('[FT_TEST_PASS_EXPORT_GATE_BACKEND_TRUTH_CONTRACT] no-snapshot-null PASS');
+  });
+
+  it('9. NO_SNAPSHOT: undefined data => visible=false, reasonCode=NO_SNAPSHOT', () => {
+    const result = computeExportGateFromBackendTruth(undefined);
+    expect(result.exportAllowed).toBe(false);
+    expect(result.reasonCode).toBe('NO_SNAPSHOT');
+    console.log('[FT_TEST_PASS_EXPORT_GATE_BACKEND_TRUTH_CONTRACT] no-snapshot-undefined PASS');
   });
 
   it('[FT_TEST_PASS_EXPORT_GATE_BACKEND_TRUTH_CONTRACT] — marker', () => {

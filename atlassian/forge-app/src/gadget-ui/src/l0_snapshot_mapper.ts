@@ -1253,7 +1253,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     
     const runAccessBtn = document.createElement("button");
     runAccessBtn.id = "ft-run-access-review-btn";
-    runAccessBtn.setAttribute("data-testid", "ft-tab-access-reviews");
+    runAccessBtn.setAttribute("data-testid", "ft-btn-run-access-review");
     runAccessBtn.textContent = "Run Access Review";
     runAccessBtn.style.padding = "10px 15px";
     runAccessBtn.style.backgroundColor = "#0052CC";
@@ -1268,7 +1268,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     
     const exportAccessBtn = document.createElement("button");
     exportAccessBtn.id = "ft-export-access-pack-btn";
-    exportAccessBtn.setAttribute("data-testid", "ft-export-review-pack");
+    exportAccessBtn.setAttribute("data-testid", "ft-btn-export-evidence");
     exportAccessBtn.textContent = "Export Evidence Pack";
     exportAccessBtn.style.padding = "10px 15px";
     exportAccessBtn.style.backgroundColor = "#36B37E";
@@ -1308,13 +1308,13 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     sealStatus.style.fontSize = "14px";
     sealStatus.style.cursor = "pointer";
     sealStatus.style.marginBottom = "12px";
-    sealStatus.textContent = "(Loading review state...)";
+    sealStatus.textContent = "Loading review state...";
     sealSection.appendChild(sealStatus);
 
     // FT_ECL_PHASE: ECL-4 REVIEW_SEAL_UI_BUTTON_ADD
     const sealButton = document.createElement("button");
     sealButton.id = "ft-seal-review-btn";
-    sealButton.setAttribute("data-testid", "ft-seal-review-button");
+    sealButton.setAttribute("data-testid", "ft-btn-seal-review");
     sealButton.textContent = "Seal Review (Immutable)";
     sealButton.style.padding = "10px 15px";
     sealButton.style.backgroundColor = "#0052CC";

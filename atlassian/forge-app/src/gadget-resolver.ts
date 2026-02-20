@@ -159,7 +159,13 @@ resolver.define('ft_getRuntimeProof_v1', ft_getRuntimeProof_v1);
 
 // ECL-5: Trust panel proof resolver
 resolver.define('ft_getTrustPanelProof_v1', async () => {
-  return getTrustPanelData();
+  try {
+    return await getTrustPanelData();
+  } catch (err: any) {
+    const debugCode = 'FT_TRUST_PANEL_PROOF_ERR';
+    console.log(`[FT_PROOF] RESOLVER_FAIL_ft_getTrustPanelProof_v1=1 code=${debugCode}`);
+    return { ok: false, status: 'ERROR', reason: 'Unable to load trust panel data. Please try again.', debugCode };
+  }
 });
 
 // ECL-ENTERPRISE-HARDENING: Enterprise governance aggregator — all engines
@@ -198,15 +204,23 @@ resolver.define('ft_getEnterpriseGovernanceState_v1', async () => {
 resolver.define('ft_uiLogRelay_v1', ft_uiLogRelay_v1);
 
 // PHASE 2: Monitoring configuration resolvers
-resolver.define('getMonitoringConfig', async () => getMonitoringConfig());
+resolver.define('getMonitoringConfig', async () => {
+  try {
+    return await getMonitoringConfig();
+  } catch (err: any) {
+    const debugCode = 'FT_MONITORING_CONFIG_READ_ERR';
+    console.log(`[FT_PROOF] RESOLVER_FAIL_getMonitoringConfig=1 code=${debugCode}`);
+    return { ok: false, status: 'ERROR', reason: 'Unable to load monitoring configuration. Please try again.', debugCode };
+  }
+});
 resolver.define('saveMonitoringConfig', async (req: any) => {
   try {
     await saveMonitoringConfig(req);
     return { ok: true };
-  } catch (err) {
-    throw new Error(
-      err instanceof Error ? err.message : 'Failed to save monitoring config'
-    );
+  } catch (err: any) {
+    const debugCode = 'FT_MONITORING_CONFIG_WRITE_ERR';
+    console.log(`[FT_PROOF] RESOLVER_FAIL_saveMonitoringConfig=1 code=${debugCode}`);
+    return { ok: false, status: 'ERROR', reason: 'Unable to save monitoring configuration. Please try again.', debugCode };
   }
 });
 
@@ -1038,6 +1052,9 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       buildUtc: BACKEND_BUILD_TIME_UTC || null,
       version: BACKEND_APP_VERSION || null,
     }));
+
+    // Deterministic backend identity marker — required for post-deploy proof gate
+    console.log(`[FT_PROOF_BACKEND_BUILD] backend_git_sha_short=${BACKEND_GIT_SHA_SHORT || 'unknown'} app_version=${BACKEND_APP_VERSION || 'unknown'}`);
 
     // Extract correlation_id and ui_req_id from request (sent by UI)
     const correlationId = request?.correlation_id || request?.correlationId || 'unknown';
@@ -1929,7 +1946,7 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
   }
 }
 
-async function ft_setUiBuildSha_v1(request: any): Promise<{ ok: boolean; error?: string }> {
+export async function ft_setUiBuildSha_v1(request: any): Promise<{ ok: boolean; error?: string }> {
   const event = request?.payload || {};
   try {
     const { build_sha_ui } = event ?? {};
@@ -2038,12 +2055,14 @@ export async function ft_contractProof_dashEnvelope_v1(request: any): Promise<Da
  * Returns ONLY the raw install marker from storage.
  * No transforms, no writes.
  */
-async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; value: any }> {
+export async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; value: any; ok?: boolean; status?: string; reason?: string; debugCode?: string }> {
   try {
     const value = await storage.get("ft:install:marker:v1");
     return { key: "ft:install:marker:v1", value };
   } catch (e) {
-    throw new Error("FT_META_FAILED");
+    const debugCode = 'FT_INSTALL_MARKER_READ_ERR';
+    console.log(`[FT_PROOF] RESOLVER_FAIL_ft_getInstallMarker_v1=1 code=${debugCode}`);
+    return { key: "ft:install:marker:v1", value: null, ok: false, status: 'ERROR', reason: 'Unable to read install marker. Please try again.', debugCode };
   }
 }
 
@@ -2052,12 +2071,14 @@ async function ft_getInstallMarker_v1(request: any): Promise<{ key: string; valu
  * Returns ONLY the raw snapshot anchor from storage.
  * No transforms, no writes.
  */
-async function ft_getSnapshotAnchor_v1(request: any): Promise<{ key: string; value: any }> {
+export async function ft_getSnapshotAnchor_v1(request: any): Promise<{ key: string; value: any; ok?: boolean; status?: string; reason?: string; debugCode?: string }> {
   try {
     const value = await storage.get("ft:snapshot:last:v1");
     return { key: "ft:snapshot:last:v1", value };
   } catch (e) {
-    throw new Error("FT_META_FAILED");
+    const debugCode = 'FT_SNAPSHOT_ANCHOR_READ_ERR';
+    console.log(`[FT_PROOF] RESOLVER_FAIL_ft_getSnapshotAnchor_v1=1 code=${debugCode}`);
+    return { key: "ft:snapshot:last:v1", value: null, ok: false, status: 'ERROR', reason: 'Unable to read snapshot anchor. Please try again.', debugCode };
   }
 }
 
@@ -2066,7 +2087,7 @@ async function ft_getSnapshotAnchor_v1(request: any): Promise<{ key: string; val
  * Returns deterministic proof of deployed release version and build SHA.
  * Access restricted to admins only (fail-closed).
  */
-async function ft_getRuntimeProof_v1(request: any): Promise<any> {
+export async function ft_getRuntimeProof_v1(request: any): Promise<any> {
   console.log("[FT_RUNTIME_PROOF_UI] INVOKED", { release: FT_RELEASE_VERSION, buildSha: BACKEND_BUILD_SHA });
   
   try {
