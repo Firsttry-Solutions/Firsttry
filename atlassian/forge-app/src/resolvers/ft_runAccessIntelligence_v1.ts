@@ -131,10 +131,48 @@ export const handler = async (request: any): Promise<any> => {
       riskModel,
     });
 
-    // STEP 9: Persist snapshot to storage
+    // STEP 9: Persist snapshot to storage (FIX: separate payload vs dashboard-meta)
     const snapshotId = `ft:snapshot:governance:${Date.now()}`;
+    const createdAtUtc = new Date().toISOString();
+
+    // 9A) Payload store (full Phase 1 data for export handler)
     await storage.set(snapshotId, snapshot);
-    await storage.set('ft:snapshot:last:v1', snapshot); // Also update "latest"
+
+    // 9B) Dashboard meta store (contract pointer — L0-compatible so isValid passes)
+    // NOTE: schemaVersion MUST be "L0" for dashboard validator (gadget-resolver isValid check).
+    // NOTE: data property MUST be present (truthy object) for ft:snapshot:latest:governance check.
+    const dashboardMeta = {
+      snapshotId,
+      snapshotKind: "GOVERNANCE",
+      origin: "ON_DEMAND",
+      initiator: "user",
+      createdAtUtc,
+      exportEligible: true,
+      canonicalHash: snapshot?.canonicalHash || null,
+      immutabilityStatement: "Timestamp recorded at snapshot creation (UTC) and cannot be modified.",
+      exportDeclaration: "This export contains governance evidence collected from a live Jira tenant.",
+      schemaVersion: "L0",
+      containsText: "Jira governance evidence snapshot (export for full details).",
+      // data property required by dashboard isValid check and ft:snapshot:latest:governance guard
+      data: {
+        phase1AccessScan: true,
+        riskModel: snapshot?.riskModel || null,
+        totals: snapshot?.totals || null,
+        canonicalHash: snapshot?.canonicalHash || null,
+      },
+    };
+
+    await storage.set("ft:snapshot:last:v1", dashboardMeta);
+    await storage.set("ft:snapshot:latest:governance", dashboardMeta);
+
+    console.log("[FT_PROOF_PHASE1_STORAGE_KEYS_WRITTEN] keys=ft:snapshot:last:v1,ft:snapshot:latest:governance payloadKey=" + snapshotId);
+    console.log(JSON.stringify({
+      marker: "[FT_PROOF_PHASE1_META_POINTER]",
+      snapshotId,
+      snapshotKind: "GOVERNANCE",
+      exportEligible: true,
+      hasCanonicalHash: !!dashboardMeta.canonicalHash
+    }));
 
     console.log(`[FT_ACCESS_SCAN_COMPLETE] Snapshot saved: ${snapshotId}, hash: ${snapshot.canonicalHash}`);
 
