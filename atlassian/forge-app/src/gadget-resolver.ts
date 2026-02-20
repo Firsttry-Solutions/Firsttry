@@ -166,12 +166,32 @@ resolver.define('ft_getTrustPanelProof_v1', async () => {
 // FT_ECL_ENGINE: GOVERNANCE_AGGREGATOR_V1
 resolver.define('ft_getEnterpriseGovernanceState_v1', async () => {
   console.log('[FT_PROOF] ECL_ENTERPRISE_RESOLVER_CALLED=1');
-  const state = await aggregateGovernanceState();
-  console.log('[FT_PROOF] ECL_ENTERPRISE_STATE_KEYS=' + JSON.stringify(Object.keys(state).sort()));
-  if (state && (state as any).ecl) {
-    console.log('[FT_PROOF] ECL_SECTIONS_PRESENT=' + JSON.stringify(Object.keys((state as any).ecl).sort()));
+  try {
+    const state = await aggregateGovernanceState();
+    console.log('[FT_PROOF] ECL_ENTERPRISE_STATE_KEYS=' + JSON.stringify(Object.keys(state).sort()));
+    if (state && (state as any).ecl) {
+      console.log('[FT_PROOF] ECL_SECTIONS_PRESENT=' + JSON.stringify(Object.keys((state as any).ecl).sort()));
+    }
+    return state;
+  } catch (err: any) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error(JSON.stringify({
+      marker: '[FT_ECL_ENTERPRISE_RESOLVER_ERROR]',
+      error: errMsg,
+      ts: new Date().toISOString(),
+    }));
+    console.log('[FT_PROOF] ECL_ENTERPRISE_RESOLVER_FAIL=1 reason=' + errMsg.slice(0, 120));
+    // Return a well-formed NOT_AVAILABLE response instead of throwing to the UI (prevents INVOKE_THROW)
+    return {
+      marker: 'FT_ECL_ENTERPRISE_STATE_V1',
+      ok: false,
+      status: 'ERROR',
+      reason: errMsg,
+      generatedUtc: new Date().toISOString(),
+      available: false,
+      migrationRequired: false,
+    } as any;
   }
-  return state;
 });
 
 // UI log relay resolver (UI → backend log relay for markers)
