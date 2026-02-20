@@ -481,6 +481,9 @@ async function relayMarkerToBackend(marker: string, extra?: any): Promise<void> 
 // Track last payload for export functions
 let lastPayload: any = null;
 
+// Cache for the last full combined export JSON text (set by handleExportTrustSnapshot)
+let lastCombinedExportJson: string | null = null;
+
 // BACKBONE FIX B: Store raw envelope globally for proof panel access
 let lastRawEnvelope: any = null;
 
@@ -1985,6 +1988,37 @@ function buildExportPayload(): ExportPayload | null {
 }
 
 /**
+ * Build full combined export object for offline offline verification.
+ *
+ * Returns the parsed {manifest, payload} object from the last exportTrustSnapshot
+ * call, or null when no export has been generated yet.
+ *
+ * Fail-closed: any parsing error returns null and logs a reason code.
+ * Marker: FT_PROOF UI_EXPORT_COMBINED_READY/NOT_READY
+ */
+function buildCombinedExportForVerifier(): { manifest: unknown; payload: unknown } | null {
+  if (!lastCombinedExportJson) {
+    console.log('[FT_PROOF] UI_EXPORT_COMBINED_NOT_READY=1 reason=NO_EXPORT_GENERATED');
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(lastCombinedExportJson);
+    if (!parsed || typeof parsed !== 'object' || !parsed.manifest || !parsed.payload) {
+      console.log('[FT_PROOF] UI_EXPORT_COMBINED_NOT_READY=1 reason=SCHEMA_MISMATCH');
+      return null;
+    }
+    console.log('[FT_PROOF] UI_EXPORT_COMBINED_READY=1');
+    return { manifest: parsed.manifest, payload: parsed.payload };
+  } catch (e) {
+    console.log('[FT_PROOF] UI_EXPORT_COMBINED_NOT_READY=1 reason=PARSE_ERROR');
+    return null;
+  }
+}
+
+// @ts-ignore - Expose globally for Export Provenance panel and offline verification
+window.__ft_buildCombinedExportForVerifier = buildCombinedExportForVerifier;
+
+/**
  * Flatten object to dot-notation for CSV export
  */
 function flattenObject(obj: any, prefix = ''): Record<string, any> {
@@ -2329,6 +2363,10 @@ async function handleExportTrustSnapshot() {
             statusEl.classList.remove('text-info', 'text-success');
             return;
         }
+
+        // Cache combined export JSON for offline verifier panel
+        lastCombinedExportJson = response.jsonCanonicalText;
+        console.log('[FT_PROOF] UI_EXPORT_COMBINED_CACHED=1 snapshotId=' + response.snapshotId);
 
         // Download JSON
         const jsonBlob = new Blob([response.jsonCanonicalText], { type: 'application/json; charset=utf-8' });

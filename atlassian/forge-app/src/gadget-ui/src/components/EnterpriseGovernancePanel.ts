@@ -269,6 +269,146 @@ function renderGovernanceState(container: HTMLElement, state: EclEnterpriseState
   proofTable.appendChild(tableRow('generatedUtc', state.generatedUtc));
 
   container.appendChild(proofTable);
+
+  // ── Export Provenance (Offline Verifiable) ───────────────────────────────────
+  // FT_PROOF: UI_EXPORT_PROVENANCE_RENDERED / UI_EXPORT_PROVENANCE_FAIL_CLOSED
+  const provSection = document.createElement('div');
+  provSection.style.marginTop = '18px';
+  provSection.style.border = '1px solid #c8e6c9';
+  provSection.style.borderRadius = '6px';
+  provSection.style.padding = '12px';
+  provSection.style.background = '#f9fffe';
+
+  const provHeader = document.createElement('div');
+  provHeader.style.fontWeight = 'bold';
+  provHeader.style.fontSize = '13px';
+  provHeader.style.color = '#1a237e';
+  provHeader.style.marginBottom = '8px';
+  provHeader.textContent = 'Export Provenance (Offline Verifiable)';
+  provSection.appendChild(provHeader);
+
+  try {
+    const builderFn = (window as any).__ft_buildCombinedExportForVerifier;
+    if (typeof builderFn !== 'function') {
+      throw new Error('BUILDER_NOT_AVAILABLE: Generate a Trust Snapshot export first.');
+    }
+
+    const combined = builderFn() as { manifest: unknown; payload: unknown } | null;
+    if (!combined) {
+      throw new Error('NOT_READY: No export available. Click "Export Trust Snapshot" to generate one.');
+    }
+
+    const { manifest, payload } = combined;
+    const payloadAny = payload as any;
+
+    // Proof hashes
+    const manifestSha = payloadAny?.proofs?.exportManifestSha256 ?? '—';
+    const payloadSha = payloadAny?.proofs?.exportPayloadSha256 ?? '—';
+    const chainHead = payloadAny?.snapshotChainBlocks?.at?.(-1)?.blockHash ?? '—';
+    const ledgerHead = payloadAny?.ledgerBlocks?.at?.(-1)?.entryHash ?? '—';
+
+    // Combined JSON textarea
+    const jsonText = JSON.stringify({ manifest, payload }, null, 2);
+
+    const taLabel = document.createElement('div');
+    taLabel.style.fontSize = '11px';
+    taLabel.style.color = '#555';
+    taLabel.style.marginBottom = '4px';
+    taLabel.textContent = 'Combined export JSON (copy for offline verification):';
+    provSection.appendChild(taLabel);
+
+    const ta = document.createElement('textarea');
+    ta.readOnly = true;
+    ta.rows = 6;
+    ta.style.width = '100%';
+    ta.style.fontFamily = 'monospace';
+    ta.style.fontSize = '10px';
+    ta.style.resize = 'vertical';
+    ta.style.boxSizing = 'border-box';
+    ta.style.border = '1px solid #ccc';
+    ta.style.borderRadius = '3px';
+    ta.style.padding = '6px';
+    ta.style.background = '#fafafa';
+    ta.value = jsonText;
+    provSection.appendChild(ta);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.style.marginTop = '6px';
+    copyBtn.style.padding = '4px 12px';
+    copyBtn.style.fontSize = '11px';
+    copyBtn.style.cursor = 'pointer';
+    copyBtn.style.border = '1px solid #1565c0';
+    copyBtn.style.borderRadius = '3px';
+    copyBtn.style.background = '#e3f2fd';
+    copyBtn.style.color = '#1565c0';
+    copyBtn.textContent = 'Copy JSON';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(jsonText).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy JSON'; }, 2000);
+      }).catch(() => {
+        ta.select();
+        document.execCommand('copy');
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy JSON'; }, 2000);
+      });
+    });
+    provSection.appendChild(copyBtn);
+
+    // Proof hash display
+    const hashTable = document.createElement('table');
+    hashTable.style.width = '100%';
+    hashTable.style.borderCollapse = 'collapse';
+    hashTable.style.fontSize = '11px';
+    hashTable.style.fontFamily = 'monospace';
+    hashTable.style.marginTop = '10px';
+    hashTable.appendChild(tableRow('exportManifestSha256', manifestSha, true));
+    hashTable.appendChild(tableRow('exportPayloadSha256', payloadSha, true));
+    hashTable.appendChild(tableRow('snapshotChainHead', chainHead, true));
+    hashTable.appendChild(tableRow('ledgerChainHead', ledgerHead, true));
+    provSection.appendChild(hashTable);
+
+    // Offline runbook
+    const runbookHeader = document.createElement('div');
+    runbookHeader.style.fontWeight = 'bold';
+    runbookHeader.style.fontSize = '11px';
+    runbookHeader.style.color = '#333';
+    runbookHeader.style.marginTop = '10px';
+    runbookHeader.style.marginBottom = '4px';
+    runbookHeader.textContent = 'Offline verification runbook:';
+    provSection.appendChild(runbookHeader);
+
+    const runbook = document.createElement('pre');
+    runbook.style.fontSize = '10px';
+    runbook.style.fontFamily = 'monospace';
+    runbook.style.background = '#f5f5f5';
+    runbook.style.border = '1px solid #e0e0e0';
+    runbook.style.borderRadius = '3px';
+    runbook.style.padding = '8px';
+    runbook.style.whiteSpace = 'pre-wrap';
+    runbook.style.wordBreak = 'break-all';
+    runbook.textContent = [
+      '1. Save the JSON above to export.json',
+      '2. node tools/verify_ecl_state.mjs export.json',
+      '3. Expect: VERIFIER_RESULT=FULL_PASS (exit 0)',
+    ].join('\n');
+    provSection.appendChild(runbook);
+
+    console.log('[FT_PROOF] UI_EXPORT_PROVENANCE_RENDERED=1');
+  } catch (provErr: any) {
+    provSection.style.border = '1px solid #ef9a9a';
+    provSection.style.background = '#fff8f8';
+    const errMsg = provErr instanceof Error ? provErr.message : String(provErr);
+    const notReadyDiv = document.createElement('div');
+    notReadyDiv.style.color = '#c62828';
+    notReadyDiv.style.fontSize = '11px';
+    notReadyDiv.style.fontFamily = 'monospace';
+    notReadyDiv.textContent = `Export provenance not available: ${errMsg}`;
+    provSection.appendChild(notReadyDiv);
+    console.log(`[FT_PROOF] UI_EXPORT_PROVENANCE_FAIL_CLOSED=1 reason=${errMsg.split(':')[0]}`);
+  }
+
+  container.appendChild(provSection);
 }
 
 /**
