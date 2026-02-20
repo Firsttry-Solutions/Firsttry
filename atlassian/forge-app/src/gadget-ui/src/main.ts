@@ -957,6 +957,53 @@ async function invokeWithUiReqId<T>(
 }
 
 // ============================================================================
+// SAFE INVOKE: Payload-validated, proof-emitting invoke wrapper
+// ============================================================================
+
+/**
+ * safeInvoke(resolver, payload, uiReqId)
+ * 
+ * - Validates payload is a plain object (not null/undefined/array/function)
+ * - Emits [FT_PROOF_UI_CLICK] before invoke and [FT_PROOF_UI_CLICK_RESULT] after
+ * - On error: returns {ok:false} with customer-safe message, never throws
+ */
+async function safeInvoke(resolver: string, payload: any, uiReqId: string): Promise<any> {
+  // Payload validation: must be a plain object
+  const payloadType = payload === null ? 'null'
+    : payload === undefined ? 'undefined'
+    : Array.isArray(payload) ? 'array'
+    : typeof payload;
+
+  if (payload === null || payload === undefined || Array.isArray(payload) || typeof payload !== 'object' || typeof payload === 'function') {
+    console.log(`[FT_PROOF_UI_CLICK_INVALID_PAYLOAD] action=${resolver} uiReqId=${uiReqId} type=${payloadType}`);
+    return { ok: false, status: 'ERROR', reason: 'Something went wrong. Please try again or contact support.' };
+  }
+
+  // Pre-invoke proof marker
+  console.log('[FT_PROOF_UI_CLICK]', JSON.stringify({ action: resolver, uiReqId }));
+
+  try {
+    const result = await invokeWithUiReqId(resolver, payload);
+    console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({
+      action: resolver,
+      uiReqId,
+      ok: !!(result as any)?.ok,
+      reason: (result as any)?.error?.message || (result as any)?.reason || ((result as any)?.ok ? 'success' : 'unknown'),
+    }));
+    return result;
+  } catch (err: any) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({
+      action: resolver,
+      uiReqId,
+      ok: false,
+      reason: errMsg.slice(0, 200),
+    }));
+    return { ok: false, status: 'ERROR', reason: 'Something went wrong. Please try again or contact support.' };
+  }
+}
+
+// ============================================================================
 // CSS CANARY FAIL-FAST CHECK
 // ============================================================================
 
@@ -3406,21 +3453,26 @@ async function proceedWithBoot() {
 
         // BUILD COHERENCE CHECK v1: UI/backend build mismatch detection.
         // If UI SHA differs from backend SHA, all action buttons are disabled with a
-        // customer-safe banner. Missing/unknown backend SHA is treated as ok (do not block).
+        // customer-safe banner.
         function computeBuildCoherence(uiShort: string, backendShort?: string): {
           ok: boolean;
+          reason?: string;
           messageCustomer?: string;
         } {
-          const missing = !backendShort || backendShort === 'unknown' || backendShort === 'UNKNOWN' || backendShort.startsWith('<');
-          if (missing) {
-            console.log('[FT_PROOF_BUILD_COHERENCE]', JSON.stringify({ ok: true, ui: uiShort, backend: backendShort || 'missing' }));
-            return { ok: true };
+          if (!backendShort) {
+            console.log('[FT_PROOF_BUILD_COHERENCE]', JSON.stringify({ ok: false, reason: 'NO_BACKEND_SHA', uiShort, backendShort: backendShort || null }));
+            return { ok: false, reason: 'NO_BACKEND_SHA', messageCustomer: 'Update in progress. Please refresh this page.' };
+          }
+          if (backendShort === 'unknown' || backendShort === 'UNKNOWN') {
+            console.log('[FT_PROOF_BUILD_COHERENCE]', JSON.stringify({ ok: false, reason: 'BACKEND_UNKNOWN', uiShort, backendShort }));
+            return { ok: false, reason: 'BACKEND_UNKNOWN', messageCustomer: 'Update in progress. Please refresh this page.' };
           }
           const coherent = uiShort === backendShort;
-          console.log('[FT_PROOF_BUILD_COHERENCE]', JSON.stringify({ ok: coherent, ui: uiShort, backend: backendShort }));
           if (!coherent) {
-            return { ok: false, messageCustomer: 'Update in progress. Please refresh this page.' };
+            console.log('[FT_PROOF_BUILD_COHERENCE]', JSON.stringify({ ok: false, reason: 'MISMATCH', uiShort, backendShort }));
+            return { ok: false, reason: 'MISMATCH', messageCustomer: 'Update in progress. Please refresh this page.' };
           }
+          console.log('[FT_PROOF_BUILD_COHERENCE]', JSON.stringify({ ok: true, reason: 'OK', uiShort, backendShort }));
           return { ok: true };
         }
 
@@ -3490,7 +3542,7 @@ async function proceedWithBoot() {
               }
               
               console.log('[FT_PROOF_UI_CLICK]', JSON.stringify({ action: 'RUN_ACCESS_REVIEW' }));
-              const result = await invokeWithUiReqId('ft_getDashboardState_v1', { action: 'RUN_ACCESS_REVIEW' });
+              const result = await safeInvoke('ft_getDashboardState_v1', { action: 'RUN_ACCESS_REVIEW' }, FT_UI_REQ_ID) as any;
               console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({ action: 'RUN_ACCESS_REVIEW', ok: !!(result?.ok), reason: result?.error?.message || result?.reason || (result?.ok ? 'success' : 'unknown') }));
               
               // Validate envelope schema (FAIL-CLOSED)
@@ -3607,8 +3659,11 @@ async function proceedWithBoot() {
           // Function to update seal status display
           function updateSealStatusDisplay(reviewData: any) {
             if (!reviewData) {
-              sealStatusDiv.textContent = "(No review data available)";
-              sealReviewButton.style.display = "none";
+              sealStatusDiv.textContent = "Loading review state...";
+              sealReviewButton.disabled = true;
+              sealReviewButton.style.display = "inline-block";
+              sealReviewButton.style.cursor = 'not-allowed';
+              sealReviewButton.style.opacity = '0.55';
               return;
             }
 
@@ -3671,10 +3726,10 @@ async function proceedWithBoot() {
               }
 
               console.log('[FT_PROOF_UI_CLICK]', JSON.stringify({ action: 'SEAL_REVIEW' }));
-              const result = await invokeWithUiReqId('ar.sealReview', {
+              const result = await safeInvoke('ar.sealReview', {
                 reviewId,
                 actorRole,
-              });
+              }, FT_UI_REQ_ID) as any;
 
               console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({ action: 'SEAL_REVIEW', ok: !!(result?.ok), reason: result?.error || result?.reason || (result?.ok ? 'success' : 'unknown') }));
               if (result && result.ok) {
@@ -3769,6 +3824,10 @@ async function proceedWithBoot() {
           reasonCode: string;
           reasonMessageCustomer: string;
         } {
+          // NO_SNAPSHOT: if no data at all, hide button
+          if (!data) {
+            return { exportAllowed: false, reasonCode: 'NO_SNAPSHOT', reasonMessageCustomer: '' };
+          }
           const _isH64 = (s: any): boolean => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
           const backendCode: string | undefined = data?.exportGateReasonCodeNormalized;
 
@@ -3857,8 +3916,8 @@ async function proceedWithBoot() {
           console.log('[FT_UI_EXPORT_KIND_CONTRACT_OK]', JSON.stringify({ exportAllowed, reasonCode, snapshotId: snapshotIdNormalized }));
 
           if (!exportAllowed) {
-            if (reasonCode === 'NOT_EXPORT_ELIGIBLE') {
-              // Hide button entirely — this snapshot type cannot be exported; no dead button
+            if (reasonCode === 'NOT_EXPORT_ELIGIBLE' || reasonCode === 'NO_SNAPSHOT') {
+              // Hide button entirely — this snapshot type cannot be exported or no data exists
               exportAccessButton.style.display = 'none';
               console.log('[PHASE1_EXPORT_BLOCKED_HIDDEN]', JSON.stringify({ snapshotId: snapshotIdNormalized, reasonCode }));
             } else {
@@ -3908,10 +3967,10 @@ async function proceedWithBoot() {
                 }));
                 
                 // INVOKE RESOLVER with SAME KEY and ACTION (non-lying, mechanically verified)
-                const result = await invokeWithUiReqId(exportResolverKey, {
+                const result = await safeInvoke(exportResolverKey, {
                   action: exportActionType,
                   snapshotId: snapshotIdNormalized,
-                });
+                }, FT_UI_REQ_ID) as any;
 
                 // Validate envelope schema (FAIL-CLOSED)
                 if (!result || result.envelopeKind !== 'FT_ACTION_RESULT_V1') {
