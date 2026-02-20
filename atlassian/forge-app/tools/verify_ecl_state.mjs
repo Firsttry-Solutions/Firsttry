@@ -1,7 +1,110 @@
-#!/usr/bin/env node
+/**
+ * verify_ecl_state.mjs — Offline ECL Export Verifier (Phase 2)
+ *
+ * Usage: node tools/verify_ecl_state.mjs <export.json>
+ *
+ * Output (always exactly 5 lines):
+ *   VERIFIER_RESULT=FULL_PASS|MISMATCH|INCOMPLETE
+ *   VERIFIED_MANIFEST=1|0
+ *   VERIFIED_PAYLOAD=1|0
+ *   SNAPSHOT_CHAIN=PASS|FAIL|SKIP
+ *   LEDGER_CHAIN=PASS|FAIL|SKIP
+ *
+ * Exit codes: 0=FULL_PASS, 1=MISMATCH, 2=INCOMPLETE
+ *
+ * canonicalStringify inlined from src/utils/canonicalJson.ts (FT_ECL_CORE: CANONICAL_JSON_V1)
+ * MUST stay bit-for-bit identical to producer logic. DO NOT use JSON.stringify directly.
+ *
+ * // FT_ECL_CORE: CANONICAL_JSON_V1
+ * // FT_PROOF: VERIFY_ECL_STATE_V1
+ */
 
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+
+// ---------------------------------------------------------------------------
+// canonicalStringify — inlined from src/utils/canonicalJson.ts
+// Rules: keys sorted ASCII ascending, array order preserved,
+//        undefined/Date/Function/non-finite/circular → THROW
+// ---------------------------------------------------------------------------
+function canonicalStringify(obj, _seen) {
+  const seen = _seen ?? new Set();
+
+  if (obj === null) return 'null';
+
+  if (obj === undefined) {
+    throw new Error(
+      '[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: undefined value is not JSON-safe'
+    );
+  }
+  if (obj instanceof Date) {
+    throw new Error(
+      '[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: Date objects must be converted to ISO strings before serialization'
+    );
+  }
+  if (typeof obj === 'function') {
+    throw new Error(
+      '[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: functions are not JSON-safe'
+    );
+  }
+  if (typeof obj === 'boolean') return obj ? 'true' : 'false';
+  if (typeof obj === 'number') {
+    if (!Number.isFinite(obj)) {
+      throw new Error(
+        '[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: non-finite number (NaN/Infinity) is not JSON-safe'
+      );
+    }
+    if (Object.is(obj, -0)) return '0';
+    return String(obj);
+  }
+  if (typeof obj === 'string') return JSON.stringify(obj);
+  if (typeof obj === 'bigint') {
+    throw new Error(
+      '[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: BigInt is not JSON-safe'
+    );
+  }
+  if (typeof obj === 'symbol') {
+    throw new Error(
+      '[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: Symbol is not JSON-safe'
+    );
+  }
+  if (typeof obj === 'object') {
+    if (seen.has(obj)) {
+      throw new Error(
+        '[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: circular reference detected'
+      );
+    }
+    seen.add(obj);
+    if (Array.isArray(obj)) {
+      const items = obj.map((item) => {
+        if (item === undefined) {
+          throw new Error(
+            '[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: undefined in array is not JSON-safe'
+          );
+        }
+        return canonicalStringify(item, seen);
+      });
+      seen.delete(obj);
+      return '[' + items.join(',') + ']';
+    }
+    // Plain object: sort keys ASCII ascending
+    const keys = Object.keys(obj).sort();
+    const pairs = keys.map((key) => {
+      const val = obj[key];
+      if (val === undefined) {
+        throw new Error(
+          `[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: undefined value for key "${key}" is not JSON-safe`
+        );
+      }
+      return JSON.stringify(key) + ':' + canonicalStringify(val, seen);
+    });
+    seen.delete(obj);
+    return '{' + pairs.join(',') + '}';
+  }
+  throw new Error(
+    `[FT_ECL_CORE:CANONICAL_JSON_V1] FAIL-CLOSED: unsupported type "${typeof obj}"`
+  );
+}
 
 function sha256Hex(str) {
   return crypto.createHash('sha256').update(str, 'utf8').digest('hex');
@@ -17,18 +120,6 @@ function printSummary(result, verifiedManifest, verifiedPayload, snapshotChain, 
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-async function loadCanonicalStringify() {
-  try {
-    const mod = await import('../src/utils/canonicalJson.ts');
-    if (typeof mod.canonicalStringify !== 'function') {
-      return { ok: false, reason: 'NOT_READY:CANONICAL_STRINGIFY_MISSING' };
-    }
-    return { ok: true, canonicalStringify: mod.canonicalStringify };
-  } catch {
-    return { ok: false, reason: 'NOT_READY:CANONICAL_STRINGIFY_IMPORT_FAIL' };
-  }
 }
 
 function verifySnapshotChain(blocks) {
@@ -83,13 +174,6 @@ async function main() {
   let ledgerChain = 'SKIP';
   let exitCode = 2;
 
-  const canonical = await loadCanonicalStringify();
-  if (!canonical.ok) {
-    console.error(`REASON=${canonical.reason}`);
-    printSummary(result, verifiedManifest, verifiedPayload, snapshotChain, ledgerChain);
-    process.exit(2);
-  }
-
   const inputPath = process.argv[2];
   if (!inputPath) {
     console.error('REASON=NOT_READY:INPUT_PATH');
@@ -124,7 +208,7 @@ async function main() {
     process.exit(2);
   }
 
-  const computedManifest = sha256Hex(canonical.canonicalStringify(manifest));
+  const computedManifest = sha256Hex(canonicalStringify(manifest));
   verifiedManifest = computedManifest === expectedManifest ? 1 : 0;
   if (verifiedManifest === 0) {
     result = 'MISMATCH';
@@ -152,7 +236,7 @@ async function main() {
   delete payloadForHash.proofs.exportManifestSha256;
   delete payloadForHash.proofs.exportPayloadSha256;
 
-  const computedPayload = sha256Hex(canonical.canonicalStringify(payloadForHash));
+  const computedPayload = sha256Hex(canonicalStringify(payloadForHash));
   verifiedPayload = computedPayload === expectedPayload ? 1 : 0;
   if (verifiedPayload === 0) {
     result = 'MISMATCH';
