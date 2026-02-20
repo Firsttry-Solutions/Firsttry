@@ -41,7 +41,11 @@ function resolveSnapshotKindForExport(data: any): 'SEED' | 'GOVERNANCE' | 'UNKNO
   return 'UNKNOWN';
 }
 
-/** Replica of the export gate evaluation block from main.ts */
+/**
+ * Replica of computeExportGateFromBackendTruth + resolveSnapshotKindForExport from main.ts.
+ * PRIMARY: if exportGateReasonCodeNormalized === 'OK' => exportAllowed=true (no local override).
+ * FALLBACK: local signals are used only when backend did not provide an authoritative code.
+ */
 function evaluateExportGate(dashState: any): {
   snapshotKind: string;
   exportEligible: boolean;
@@ -49,51 +53,37 @@ function evaluateExportGate(dashState: any): {
   exportAllowed: boolean;
   reasonCode: string;
 } {
-  const snapshotIdNormalized =
-    (dashState as any).snapshotIdNormalized || (dashState as any).snapshotId || null;
-  const snapshotKindNormalized = resolveSnapshotKindForExport(dashState);
-
-  const _selectedSnap0 = (dashState as any).snapshots?.[0];
-  const exportEligibleNormalized =
-    (dashState as any).exportEligibleNormalized === true ||
-    _selectedSnap0?.exportEligible === true;
-
-  const _isHex64 = (s: any): boolean =>
+  const _isH64 = (s: any): boolean =>
     typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
-  const canonicalHashNormalized = (dashState as any).canonicalHashNormalized || null;
-  const hasCanonicalHashNorm =
-    _isHex64(canonicalHashNormalized) || _isHex64(_selectedSnap0?.integrity?.value);
+  const backendCode: string | undefined = dashState?.exportGateReasonCodeNormalized;
+  const snapshotId = dashState?.snapshotIdNormalized || dashState?.snapshotId || null;
+  const snapshotKind = resolveSnapshotKindForExport(dashState);
+  const snap0 = dashState?.snapshots?.[0];
+  const exportEligible =
+    dashState?.exportEligibleNormalized === true || snap0?.exportEligible === true;
+  const hasCanonicalHash =
+    _isH64(dashState?.canonicalHashNormalized) || _isH64(snap0?.integrity?.value);
 
-  const _backendReasonCode: string | undefined = (dashState as any).exportGateReasonCodeNormalized;
-  const exportAllowed =
-    hasCanonicalHashNorm &&
-    exportEligibleNormalized &&
-    snapshotKindNormalized === 'GOVERNANCE' &&
-    _backendReasonCode !== 'NOT_EXPORT_ELIGIBLE';
-
-  let reasonCode: string;
-  if (!snapshotIdNormalized) {
-    reasonCode = 'SNAPSHOT_NOT_FOUND';
-  } else if (snapshotKindNormalized === 'SEED') {
-    reasonCode = 'NOT_EXPORT_ELIGIBLE';
-  } else if (!exportEligibleNormalized) {
-    reasonCode = 'NOT_EXPORT_ELIGIBLE';
-  } else if (!hasCanonicalHashNorm) {
-    reasonCode = 'MISSING_CANONICAL_HASH';
-  } else {
-    reasonCode = 'OK';
+  // PRIMARY: backend provided an authoritative reason code
+  if (backendCode === 'OK') {
+    return { snapshotKind, exportEligible, hasCanonicalHash, exportAllowed: true, reasonCode: 'OK' };
   }
-  if (_backendReasonCode && ['OK', 'NOT_EXPORT_ELIGIBLE', 'MISSING_CANONICAL_HASH', 'SNAPSHOT_NOT_FOUND'].includes(_backendReasonCode)) {
-    reasonCode = _backendReasonCode;
+  if (backendCode === 'NOT_EXPORT_ELIGIBLE') {
+    return { snapshotKind, exportEligible, hasCanonicalHash, exportAllowed: false, reasonCode: 'NOT_EXPORT_ELIGIBLE' };
+  }
+  if (backendCode === 'MISSING_CANONICAL_HASH') {
+    return { snapshotKind, exportEligible, hasCanonicalHash: false, exportAllowed: false, reasonCode: 'MISSING_CANONICAL_HASH' };
+  }
+  if (backendCode === 'SNAPSHOT_NOT_FOUND') {
+    return { snapshotKind, exportEligible, hasCanonicalHash, exportAllowed: false, reasonCode: 'SNAPSHOT_NOT_FOUND' };
   }
 
-  return {
-    snapshotKind: snapshotKindNormalized,
-    exportEligible: exportEligibleNormalized,
-    hasCanonicalHash: hasCanonicalHashNorm,
-    exportAllowed,
-    reasonCode,
-  };
+  // FALLBACK: backend did not provide an authoritative code — compute locally
+  if (!snapshotId) return { snapshotKind, exportEligible, hasCanonicalHash, exportAllowed: false, reasonCode: 'SNAPSHOT_NOT_FOUND' };
+  if (snapshotKind === 'SEED') return { snapshotKind, exportEligible, hasCanonicalHash, exportAllowed: false, reasonCode: 'NOT_EXPORT_ELIGIBLE' };
+  if (!exportEligible) return { snapshotKind, exportEligible, hasCanonicalHash, exportAllowed: false, reasonCode: 'NOT_EXPORT_ELIGIBLE' };
+  if (!hasCanonicalHash) return { snapshotKind, exportEligible, hasCanonicalHash, exportAllowed: false, reasonCode: 'MISSING_CANONICAL_HASH' };
+  return { snapshotKind, exportEligible, hasCanonicalHash, exportAllowed: true, reasonCode: 'OK' };
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -206,6 +196,41 @@ describe('UI Export Gate Contract', () => {
     expect(result.snapshotKind).toBe('GOVERNANCE');
     expect(result.exportAllowed).toBe(true);
     console.log('[FT_TEST_PASS_UI_EXPORT_GATE_CONTRACT] governance-prefix PASS');
+  });
+
+  it('backend OK overrides local UNKNOWN snapshotKind — no dead button when backend says OK', () => {
+    // This is the critical dead-button scenario: backend says OK but local kind resolution
+    // would have returned UNKNOWN, causing the OLD gate to incorrectly block the button.
+    const dashState = {
+      snapshotIdNormalized: 'snap-gov-005',
+      // snapshotKindNormalized intentionally absent → resolveSnapshotKindForExport → UNKNOWN
+      exportEligibleNormalized: true,
+      exportGateReasonCodeNormalized: 'OK',    // backend authoritative truth
+      canonicalHashNormalized: VALID_HASH_64,
+    };
+
+    const result = evaluateExportGate(dashState);
+    // With new logic: backend OK always wins → exportAllowed=true
+    expect(result.exportAllowed).toBe(true);
+    expect(result.reasonCode).toBe('OK');
+    console.log('[FT_TEST_PASS_UI_EXPORT_GATE_CONTRACT] backend-OK-overrides-UNKNOWN PASS');
+  });
+
+  it('fallback local computation used when backend provides no reasonCode', () => {
+    // When backend does not provide exportGateReasonCodeNormalized,
+    // local signals must still gate correctly (no false-open).
+    const dashState = {
+      snapshotIdNormalized: 'snap-gov-006',
+      snapshotKindNormalized: 'GOVERNANCE',
+      exportEligibleNormalized: true,
+      // exportGateReasonCodeNormalized intentionally absent
+      canonicalHashNormalized: VALID_HASH_64,
+    };
+
+    const result = evaluateExportGate(dashState);
+    expect(result.exportAllowed).toBe(true);
+    expect(result.reasonCode).toBe('OK');
+    console.log('[FT_TEST_PASS_UI_EXPORT_GATE_CONTRACT] fallback-local-OK PASS');
   });
 
   it('[FT_TEST_PASS_UI_EXPORT_GATE_CONTRACT] — marker', () => {
