@@ -2403,6 +2403,150 @@ async function handleExportTrustSnapshot() {
 }
 
 // ============================================================================
+// SCOPE SCREEN EXPORT PROVENANCE (Phase 4.1)
+// Patches the static "Scope Boundaries & Explicit Non-Goals" section:
+//   - Replaces misleading "does NOT export" bullet with truthful text
+//   - Adds Export Trust Snapshot button
+//   - Appends fail-closed Export Provenance card
+// Markers: FT_PROOF UI_SCOPE_SCREEN_RENDERED / UI_EXPORT_PROVENANCE_RENDERED
+// ============================================================================
+function initScopeScreenExportProvenance(): void {
+  try {
+    // Find the static scope boundaries section by title text
+    let scopeSection: HTMLElement | null = null;
+    const allSections = document.querySelectorAll('.section--gray');
+    for (const el of Array.from(allSections)) {
+      const titleEl = el.querySelector('.section-title');
+      if (titleEl && titleEl.textContent && titleEl.textContent.includes('Scope Boundaries')) {
+        scopeSection = el as HTMLElement;
+        break;
+      }
+    }
+    if (!scopeSection) {
+      console.log('[FT_PROOF] UI_SCOPE_SCREEN_RENDERED=1 note=section_not_found');
+      return;
+    }
+    console.log('[FT_PROOF] UI_SCOPE_SCREEN_RENDERED=1');
+
+    // Fix misleading bullet about exports
+    const lis = scopeSection.querySelectorAll('ul li');
+    for (const li of Array.from(lis)) {
+      if (li.textContent && li.textContent.trim() === 'Export trust, audit, or PDF artifacts') {
+        li.textContent = 'Exports available after Trust Snapshot generation.';
+        break;
+      }
+    }
+
+    // Add Export Trust Snapshot button
+    const exportBtnWrapper = document.createElement('div');
+    exportBtnWrapper.style.marginTop = '10px';
+    const exportBtn = document.createElement('button');
+    exportBtn.id = 'scope-screen-export-snapshot-btn';
+    exportBtn.style.cssText = 'padding:6px 14px;font-size:12px;cursor:pointer;border:1px solid #1565c0;border-radius:3px;background:#e3f2fd;color:#1565c0;';
+    exportBtn.textContent = 'Export Trust Snapshot';
+    const exportStatus = document.createElement('span');
+    exportStatus.id = 'export-status';
+    exportStatus.style.cssText = 'font-size:11px;margin-left:8px;font-family:monospace;';
+    exportBtn.addEventListener('click', () => { handleExportTrustSnapshot(); });
+    exportBtnWrapper.appendChild(exportBtn);
+    exportBtnWrapper.appendChild(exportStatus);
+    scopeSection.appendChild(exportBtnWrapper);
+
+    // Export Provenance card (same logic as EnterpriseGovernancePanel.ts)
+    const provCard = document.createElement('div');
+    provCard.style.cssText = 'margin-top:16px;border:1px solid #c8e6c9;border-radius:6px;padding:12px;background:#f9fffe;font-family:monospace;';
+    const provHeader = document.createElement('div');
+    provHeader.style.cssText = 'font-weight:bold;font-size:13px;color:#1a237e;margin-bottom:8px;';
+    provHeader.textContent = 'Export Provenance (Offline Verifiable)';
+    provCard.appendChild(provHeader);
+
+    const renderProvCard = () => {
+      while (provCard.children.length > 1) provCard.removeChild(provCard.lastChild!);
+      provCard.style.border = '1px solid #c8e6c9';
+      provCard.style.background = '#f9fffe';
+      try {
+        const builderFn = (window as any).__ft_buildCombinedExportForVerifier;
+        if (typeof builderFn !== 'function') throw new Error('BUILDER_NOT_AVAILABLE: Click "Export Trust Snapshot" first.');
+        const combined = builderFn() as { manifest: unknown; payload: unknown } | null;
+        if (!combined) throw new Error('NOT_READY: No export available. Click "Export Trust Snapshot" to generate one.');
+        const { manifest, payload } = combined;
+        const payloadAny = payload as any;
+        const manifestSha = payloadAny?.proofs?.exportManifestSha256 ?? '—';
+        const payloadSha = payloadAny?.proofs?.exportPayloadSha256 ?? '—';
+        const chainHead = payloadAny?.snapshotChainBlocks?.at?.(-1)?.blockHash ?? '—';
+        const ledgerHead = payloadAny?.ledgerBlocks?.at?.(-1)?.entryHash ?? '—';
+        const jsonText = JSON.stringify({ manifest, payload }, null, 2);
+
+        const taLabel = document.createElement('div');
+        taLabel.style.cssText = 'font-size:11px;color:#555;margin-bottom:4px;';
+        taLabel.textContent = 'Combined export JSON (copy for offline verification):';
+        provCard.appendChild(taLabel);
+
+        const ta = document.createElement('textarea');
+        ta.readOnly = true; ta.rows = 6;
+        ta.style.cssText = 'width:100%;font-family:monospace;font-size:10px;resize:vertical;box-sizing:border-box;border:1px solid #ccc;border-radius:3px;padding:6px;background:#fafafa;';
+        ta.value = jsonText;
+        provCard.appendChild(ta);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.style.cssText = 'margin-top:6px;padding:4px 12px;font-size:11px;cursor:pointer;border:1px solid #1565c0;border-radius:3px;background:#e3f2fd;color:#1565c0;';
+        copyBtn.textContent = 'Copy JSON';
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(jsonText).then(() => {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => { copyBtn.textContent = 'Copy JSON'; }, 2000);
+          }).catch(() => {
+            ta.select(); document.execCommand('copy');
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => { copyBtn.textContent = 'Copy JSON'; }, 2000);
+          });
+        });
+        provCard.appendChild(copyBtn);
+
+        const mkHashRow = (lbl: string, val: string) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;gap:8px;font-size:11px;margin-top:4px;word-break:break-all;';
+          const l = document.createElement('span'); l.style.cssText = 'font-weight:bold;color:#555;min-width:200px;'; l.textContent = lbl;
+          const v = document.createElement('span'); v.style.color = '#1565c0'; v.textContent = val;
+          row.appendChild(l); row.appendChild(v); return row;
+        };
+        const hashSec = document.createElement('div'); hashSec.style.marginTop = '10px';
+        hashSec.appendChild(mkHashRow('exportManifestSha256', manifestSha));
+        hashSec.appendChild(mkHashRow('exportPayloadSha256', payloadSha));
+        hashSec.appendChild(mkHashRow('snapshotChainHead', chainHead));
+        hashSec.appendChild(mkHashRow('ledgerChainHead', ledgerHead));
+        provCard.appendChild(hashSec);
+
+        const rbHdr = document.createElement('div');
+        rbHdr.style.cssText = 'font-weight:bold;font-size:11px;color:#333;margin-top:10px;margin-bottom:4px;';
+        rbHdr.textContent = 'Offline verification runbook:';
+        provCard.appendChild(rbHdr);
+        const rb = document.createElement('pre');
+        rb.style.cssText = 'font-size:10px;font-family:monospace;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:3px;padding:8px;white-space:pre-wrap;word-break:break-all;';
+        rb.textContent = '1. Save the JSON above to export.json\n2. node tools/verify_ecl_state.mjs export.json\n3. Expect: VERIFIER_RESULT=FULL_PASS (exit 0)';
+        provCard.appendChild(rb);
+        console.log('[FT_PROOF] UI_EXPORT_PROVENANCE_RENDERED=1');
+      } catch (err: any) {
+        provCard.style.border = '1px solid #ef9a9a';
+        provCard.style.background = '#fff8f8';
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const errDiv = document.createElement('div');
+        errDiv.style.cssText = 'color:#c62828;font-size:11px;font-family:monospace;';
+        errDiv.textContent = `Export provenance not available: ${errMsg}`;
+        provCard.appendChild(errDiv);
+        console.log(`[FT_PROOF] UI_EXPORT_PROVENANCE_FAIL_CLOSED=1 reason=${errMsg.split(':')[0]}`);
+      }
+    };
+
+    renderProvCard();
+    exportBtn.addEventListener('click', () => { setTimeout(renderProvCard, 500); });
+    scopeSection.appendChild(provCard);
+  } catch (outerErr: any) {
+    console.log('[FT_PROOF] UI_SCOPE_SCREEN_RENDERED=1 error=' + String(outerErr));
+  }
+}
+
+// ============================================================================
 // BUTTON WIRE-UP (Deterministic event listeners)
 // ============================================================================
 
@@ -3082,6 +3226,7 @@ async function proceedWithBoot() {
     ftUpdateProofNode();
     
     wireExportButtons();
+    initScopeScreenExportProvenance();
 
     // ========================================================================
     // NATIVE RESIZE HANDLER (CSP-safe, no iframe-resizer)
