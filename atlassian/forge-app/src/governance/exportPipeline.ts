@@ -233,9 +233,7 @@ export function buildExportPayload(params: {
     ledgerBlocks: reviewBlocks,
   };
 
-  const exportManifestSha256 = sha256Hex(manifest);
-
-  const payloadWithoutHash: ExportPayloadWithoutHash = {
+  const payloadCore: ExportPayloadWithoutHash = {
     snapshotHash: validatedSnapshotHash,
     previousHash: validatedPreviousHash,
     chainIndex: validatedChainIndex,
@@ -268,12 +266,30 @@ export function buildExportPayload(params: {
     },
   };
 
-  const exportPayloadSha256 = sha256Hex(payloadWithoutHash);
+  if (!payloadCore.proofs) {
+    (payloadCore as { proofs: ExportPayloadWithoutHash['proofs'] }).proofs = {
+      exportManifestSha256: '',
+      exportPayloadSha256: '',
+      snapshotChain: snapshotChainStatus,
+      snapshotChainReason,
+      ledgerChain: ledgerChainStatus,
+      ledgerChainReason,
+      exportEligible: effectiveExportEligible,
+      exportReason: effectiveExportReason,
+    };
+  }
+
+  const payloadForHash = JSON.parse(JSON.stringify(payloadCore)) as ExportPayloadWithoutHash;
+  delete (payloadForHash.proofs as { exportManifestSha256?: string }).exportManifestSha256;
+  delete (payloadForHash.proofs as { exportPayloadSha256?: string }).exportPayloadSha256;
+
+  const exportPayloadSha256 = sha256Hex(payloadForHash);
+  const exportManifestSha256 = sha256Hex(manifest);
 
   const finalPayloadWithoutHash: ExportPayloadWithoutHash = {
-    ...payloadWithoutHash,
+    ...payloadCore,
     proofs: {
-      ...payloadWithoutHash.proofs,
+      ...payloadCore.proofs,
       exportManifestSha256,
       exportPayloadSha256,
     },
@@ -285,6 +301,7 @@ export function buildExportPayload(params: {
   console.log(
     `[FT_PROOF] EXPORT_VERIFIER_READY=1 manifestHash=${exportManifestSha256.slice(0, 8)} payloadHash=${exportPayloadSha256.slice(0, 8)}`
   );
+  console.log('[FT_PROOF] EXPORT_SELF_HASH_STRIP_V1=1');
 
   return {
     ...finalPayloadWithoutHash,
