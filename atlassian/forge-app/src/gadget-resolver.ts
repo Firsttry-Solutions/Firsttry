@@ -1645,6 +1645,9 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
               ],
               exportEligible: snapshotKind === "GOVERNANCE",
               exportDeclaration: EXPORT_DECLARATION_EXACT,
+              // v7.53: totals + canonicalHash carried from governance snapshot (null for seed)
+              totals: null as any,
+              canonicalHash: null as any,
             }
           ];
           
@@ -1687,6 +1690,11 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
               ],
               exportEligible: true,
               exportDeclaration: EXPORT_DECLARATION_EXACT,
+              // v7.53: Carry through Phase-1 totals + canonicalHash so export gate passes
+              // Gate Rule 3 requires snapshot.totals.totalUsers (number)
+              // Gate Rule 4 requires snapshot.canonicalHash (truthy)
+              totals: governanceSnapshot.totals || null,
+              canonicalHash: governanceSnapshot.canonicalHash || governanceSnapshot.data?.canonicalHash || null,
             });
             
             // Update freshness to reflect governance snapshot if it's newer
@@ -1759,10 +1767,13 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       const dashboardGateResult: ExportEligibilityResult = computeExportEligibilityGate(selectedSnapshot);
       const exportGateReasonCode: string = dashboardGateResult.reasonCode;
 
-      // v7.50: Proof marker — dashboard gate evaluation
+      // v7.53: Proof marker — dashboard gate evaluation (extended with totals trace)
       console.log('[FT_PROOF_BACKEND_EXPORT_GATE]', JSON.stringify({
         snapshotId: selectedSnapshot?.snapshotId || null,
         exportEligible: dashboardGateResult.exportEligible,
+        hasTotalsOnSelected: !!(selectedSnapshot?.totals && typeof selectedSnapshot.totals === 'object'),
+        totalUsersOnSelected: selectedSnapshot?.totals?.totalUsers ?? null,
+        hasCanonicalHashOnSelected: !!selectedSnapshot?.canonicalHash,
         reasonCode: dashboardGateResult.reasonCode,
         hasTotals: dashboardGateResult.hasTotals,
         totalUsers: dashboardGateResult.totalUsers,
