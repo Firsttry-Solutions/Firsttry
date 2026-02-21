@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firsttry: Audit Evidence for Jira</title>
+    <link rel="stylesheet" href="./ft_styles.css">
+    <!-- CACHE-BUST: Stable app.js entry point with versioned query param injected at build time -->
+  
+  <link rel="stylesheet" crossorigin href="./assets/index.CdDbryCQ.css">
+    <script type="module" src="./app.fc6659720ca4550f1ca87b8291682adbef6464cb.js"></script>
+</head>
+<body>
+    <!-- Diagnostics markers (hidden by default, shown in debug panel) -->
+    <div id="ui-serve-proof-banner" class="is-hidden" data-ft-debug="1"></div>
+    <div id="ui-js-boot" class="is-hidden">JS_BOOT: RUNNING</div>
+    <div id="ui-css-canary" class="status-pill running is-hidden"></div>
+
+    <div class="container">
+        <h1>Firsttry: Audit Evidence for Jira</h1>
+        <p class="title-description">Read-only display of persisted snapshot metadata. No background jobs. No automation.</p>
+        
+        <!-- Scope Boundaries & Non-Goals -->
+        <div class="section section--gray">
+            <div class="section-title section-title--small">📋 Scope Boundaries & Explicit Non-Goals</div>
+            <p class="text-13 text-secondary mb-12">This application is intentionally limited in scope. It does NOT:</p>
+            <ul class="text-13 text-secondary">
+                <li>Trigger background jobs</li>
+                <li>Ingest external events</li>
+                <li>Execute pipelines</li>
+                <li>Mutate Jira or host product data</li>
+                <li>Maintain audit trails or compliance snapshots</li>
+                <li>Export trust, audit, or PDF artifacts</li>
+                <li>Perform alerting, automation, or notifications</li>
+            </ul>
+            <p class="text-12 text-secondary mt-12">Any expansion of scope, if ever considered, would require explicit versioning, full disclosure, and re-review.</p>
+        </div>
+        
+        <div class="flex gap-12 align-center mb-16">
+            <div class="build-marker flex-1 is-hidden" id="build-marker"></div>
+            <span class="text-12 text-secondary">Loaded from persisted snapshot metadata.</span>
+            <span class="status-pill running" id="ui-style-proof" class="is-hidden"></span>
+        </div>
+
+        <!-- L0 DUMB-READER MAIN PANEL (single source of truth: l0_snapshot_mapper) -->
+        <div id="l0-main-panel"></div>
+        
+        <!-- Diagnostics (Collapsed by default) -->
+        <details class="mb-16">
+            <summary>🔧 Diagnostics</summary>
+            <div id="diagnostics-root">
+            <div class="section section--light mt-12" id="ui-selftest-section">
+                <div class="metrics-grid">
+                    <div class="metric-row">
+                        <div class="metric-label">Bridge Mode</div>
+                        <div class="metric-value" id="ui-selftest-bridge-mode">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Invoke Available</div>
+                        <div class="metric-value" id="ui-selftest-invoke-available">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">HTML Marker</div>
+                        <div class="metric-value" id="ui-selftest-marker">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">CSS Applied</div>
+                        <div class="metric-value" id="ui-selftest-css">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">JS Running</div>
+                        <div class="metric-value" id="ui-selftest-js">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Resolver Invoke</div>
+                        <div class="metric-value" id="ui-selftest-invoke">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Export Mode</div>
+                        <div class="metric-value" id="ui-selftest-export-mode">PENDING</div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-label">Clipboard</div>
+                        <div class="metric-value" id="ui-selftest-clipboard">PENDING</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IDENTITY & DEPLOYMENT PROOF PANEL (in Diagnostics) -->
+            <div class="section section--proof-panel mt-16" id="identity-proof-panel" data-ft-debug="1">
+                <div class="section-title section-title--proof">✓ Identity & Deployment Proof</div>
+                <div class="proof-grid">
+                    <div class="proof-item">
+                        <div class="proof-item-label">Envelope Kind</div>
+                        <div id="proof-envelope-kind" class="proof-item-value">UNSET</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="proof-item-label">Schema Version</div>
+                        <div id="proof-schema-version" class="proof-item-value">UNSET</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="proof-item-label">Correlation ID</div>
+                        <div id="proof-correlation-id" class="proof-item-value font-monospace">UNSET</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="proof-item-label">Identity Source</div>
+                        <div id="proof-identity-source" class="proof-item-value" data-ft-identity-source="true">unknown</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="proof-item-label">App Version</div>
+                        <div id="proof-app-version" class="proof-item-value">UNSET</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="proof-item-label">UI Build SHA</div>
+                        <div id="proof-ui-build-sha" class="proof-item-value font-monospace" data-ft-build-sha="true">UNSET</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="proof-item-label">UI Build Time (UTC)</div>
+                        <div id="proof-ui-build-time" class="proof-item-value" data-ft-build-time="true">UNSET</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="proof-item-label">Backend Build SHA</div>
+                        <div id="proof-backend-build-sha" class="proof-item-value font-monospace">UNSET</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="proof-item-label">Backend Build Time (UTC)</div>
+                        <div id="proof-backend-build-time" class="proof-item-value">UNSET</div>
+                    </div>
+                </div>
+                <div class="proof-text">
+                    <strong>ⓘ Proof Panel:</strong> This panel displays the identity/proof contract returned by the backend.
+                    All fields must be present (or marked "UNSET" with visible warning).
+                    Correlation ID proves round-trip through UI → backend → UI.
+                </div>
+            </div>
+
+            <!-- FORENSIC_PROBE Diagnostics Widget -->
+            <div class="section" data-ft-debug="1">
+                <div class="section-title">🔬 Forensic Probe (Production Correlation Proof)</div>
+            
+            <div class="flex gap-8 mb-16">
+                <button id="probe-run-btn">Run Probe</button>
+                <span id="probe-status" class="flex align-center text-12 text-secondary p-8">Ready</span>
+            </div>
+
+            <div id="probe-response-panel" class="probe-response">
+                <!-- Response will be rendered here -->
+            </div>
+
+            <div id="probe-metrics" class="probe-metrics">
+                <div class="probe-metric">
+                    <div class="probe-metric-label">UI Req ID</div>
+                    <div id="probe-ui-req-id" class="probe-metric-value">—</div>
+                </div>
+                <div class="probe-metric">
+                    <div class="probe-metric-label">Probe Nonce</div>
+                    <div id="probe-nonce" class="probe-metric-value">—</div>
+                </div>
+                <div class="probe-metric">
+                    <div class="probe-metric-label">Backend Build SHA</div>
+                    <div id="probe-backend-build-sha" class="probe-metric-value">—</div>
+                </div>
+                <div class="probe-metric">
+                    <div class="probe-metric-label">Forge Env</div>
+                    <div id="probe-forge-env" class="probe-metric-value">—</div>
+                </div>
+                <div class="probe-metric grid-span-2">
+                    <div class="probe-metric-label">Grep Commands (Copy-Paste for Manual Verification)</div>
+                    <div class="panel panel--info">
+                        <div class="text-primary mb-4"><strong>UI Req ID Grep:</strong></div>
+                        <code id="probe-grep-ui-req-id" class="code-block">—</code>
+                    </div>
+                    <div class="panel panel--info">
+                        <div class="text-primary mb-4"><strong>Nonce Grep (Definitive):</strong></div>
+                        <code id="probe-grep-nonce" class="code-block">—</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel panel--info mt-16">
+                <strong>How to use:</strong><br/>
+                1. Click "Run Probe" button above<br/>
+                2. Copy the nonce grep command<br/>
+                3. Run in terminal: <code class="code-block">bash tools/probe_prod.sh --nonce &lt;nonce&gt;</code><br/>
+                4. Script will output PASS (nonce found in logs) or FAIL (with diagnosis)<br/>
+                <strong>Note:</strong> Nonce grep is definitive proof that backend processed the probe invocation.
+            </div>
+            </div>
+        </details>
+        
+        <!-- Trust & Data Handling (v2) -->
+        <div id="trust-section"></div>
+
+        <!-- L0 Footer -->
+        <div class="footer margin-top-xl">
+            <p>This dashboard displays persisted snapshot metadata only. It performs no background jobs, polling, or automation.</p>
+            <div id="build-footer" class="build-footer"><!-- Build info will be inserted here --></div>
+        </div>
+    </div>
+
+    <div class="copy-success" id="copy-success">✓ Copied to clipboard</div>
+
+    <!-- Main entry point (bundled by Vite) -->
+</body>
+</html>
