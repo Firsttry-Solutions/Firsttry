@@ -1,5 +1,5 @@
 /**
- * Snapshot Variant Action Model — Pure Functions (v7.46)
+ * Snapshot Variant Action Model — Pure Functions (v7.47)
  *
  * Single source of truth for button rendering across all snapshot variants.
  * Zero browser dependencies — fully testable in Node.js environment.
@@ -296,4 +296,50 @@ export function computeExportEligibilityFromBackend(envelope: any): ExportEligib
     reasonCode: 'MISSING_BACKEND_EXPORT_GATE',
     source: 'fallback',
   };
+}
+
+// ── Snapshot ID Resolution (v7.47) ──────────────────────────────────────────
+
+/**
+ * Pure function: resolves the snapshotId to use for export from the raw
+ * resolver envelope and the currently selected variant.
+ *
+ * Rules:
+ * - If selectedVariant === "seed" → return null (seeds are never exportable)
+ * - Else, priority order:
+ *   1) envelope?.data?.snapshotIdNormalized
+ *   2) envelope?.data?.snapshotId
+ *   3) envelope?.data?.snapshots?.[0]?.snapshotId
+ * - If still missing → return null
+ *
+ * Zero browser deps — fully testable in Node.js.
+ */
+export function resolveSelectedSnapshotId(
+  envelope: any,
+  selectedVariant: 'latest' | 'seed' | string,
+): string | null {
+  // Seeds are never exportable
+  if (selectedVariant === 'seed') return null;
+
+  if (!envelope || typeof envelope !== 'object') return null;
+
+  const data = envelope?.data ?? envelope;
+
+  // Priority 1: snapshotIdNormalized
+  if (typeof data?.snapshotIdNormalized === 'string' && data.snapshotIdNormalized.trim()) {
+    return data.snapshotIdNormalized.trim();
+  }
+
+  // Priority 2: snapshotId
+  if (typeof data?.snapshotId === 'string' && data.snapshotId.trim()) {
+    return data.snapshotId.trim();
+  }
+
+  // Priority 3: first snapshot in array
+  const snap0Id = data?.snapshots?.[0]?.snapshotId;
+  if (typeof snap0Id === 'string' && snap0Id.trim()) {
+    return snap0Id.trim();
+  }
+
+  return null;
 }

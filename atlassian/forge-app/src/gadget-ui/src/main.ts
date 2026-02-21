@@ -362,7 +362,7 @@ import { normalizeStatusV1, EMPTY_STATUS_V1, GovernanceStatusV1 } from '../../sh
 import { parsePingResponse, shouldShowBackendNotResponding, type ParsedPingResponse } from './pingResponseParser';
 
 // ============================================================================
-// SNAPSHOT VARIANT ACTION MODEL (v7.46) — EXPORTED PURE FUNCTIONS
+// SNAPSHOT VARIANT ACTION MODEL (v7.47) — EXPORTED PURE FUNCTIONS
 // Single source of truth for button rendering across all snapshot variants.
 // Pure module: zero browser deps, fully testable in Node.js.
 // Re-exported here so that main.ts remains the canonical import path.
@@ -371,13 +371,14 @@ export {
   normalizeSnapshotKind,
   computeActionModel,
   computeExportEligibilityFromBackend,
+  resolveSelectedSnapshotId,
   type SnapshotKind,
   type EffectiveKind,
   type ActionModelInput,
   type ActionModelOutput,
   type ExportEligibilityResult,
 } from './snapshotActionModel';
-import { normalizeSnapshotKind, computeActionModel, computeExportEligibilityFromBackend } from './snapshotActionModel';
+import { normalizeSnapshotKind, computeActionModel, computeExportEligibilityFromBackend, resolveSelectedSnapshotId } from './snapshotActionModel';
 import type { EffectiveKind } from './snapshotActionModel';
 
 // ============================================================================
@@ -4125,32 +4126,39 @@ async function proceedWithBoot() {
         }
         
         // PHASE 1: Attach event listener for "Export Evidence Pack" button
+        // v7.47: SINGLE SOURCE OF TRUTH for button state: ActionModelOutput only.
+        // snapshotId resolved from raw envelope (not mapped dashState).
         const exportAccessButton = document.getElementById('ft-export-access-pack-btn') as HTMLButtonElement | null;
         if (exportAccessButton) {
-          const snapshotIdNormalized = (dashState as any).snapshotIdNormalized || (dashState as any).snapshotId || null;
+          // v7.47: Resolve snapshotId from RAW envelope (mapper strips it from dashState)
+          const _selectedVariant = (dashState.selectedVariant || 'latest') as 'latest' | 'seed';
+          const _exportSnapshotId = resolveSelectedSnapshotId(_rawResolverEnvelope, _selectedVariant);
 
-          // v7.46: SINGLE GATE SOURCE OF TRUTH — uses raw envelope for backend truth
-          // Eligibility (can this snapshot be exported?) is separate from readiness (are artifacts ready?)
+          // v7.47: Eligibility from raw envelope backend truth
           const _exportEligibility = computeExportEligibilityFromBackend(_rawResolverEnvelope);
           const exportAllowed = _exportEligibility.eligibilityOk;
           const reasonCode = _exportEligibility.reasonCode;
 
-          // EMIT [FT_PROOF_UI_EXPORT_GATE_EVALUATED] — v7.46: eligibility vs readiness separation
+          // v7.47: If eligible but snapshotId missing, downgrade to not-enabled
+          const _exportEffectiveEnabled = exportAllowed && _exportSnapshotId != null;
+
+          // EMIT [FT_PROOF_UI_EXPORT_GATE_EVALUATED] — v7.47: includes resolved snapshotId
           console.log('[FT_PROOF_UI_EXPORT_GATE_EVALUATED]', JSON.stringify({
             exportAllowed,
             reasonCode,
             backendReasonCode: _exportEligibility.backendReasonCode || null,
             eligibilitySource: _exportEligibility.source,
-            snapshotId: snapshotIdNormalized,
+            snapshotId: _exportSnapshotId,
+            snapshotIdSource: 'rawEnvelope',
           }));
           // Legacy marker kept for backward compatibility
-          console.log('[FT_UI_EXPORT_KIND_CONTRACT_OK]', JSON.stringify({ exportAllowed, reasonCode, snapshotId: snapshotIdNormalized }));
+          console.log('[FT_UI_EXPORT_KIND_CONTRACT_OK]', JSON.stringify({ exportAllowed, reasonCode, snapshotId: _exportSnapshotId }));
 
           if (!exportAllowed) {
             if (reasonCode === 'NOT_EXPORT_ELIGIBLE' || reasonCode === 'NO_SNAPSHOT' || reasonCode === 'NO_ENVELOPE') {
               // Hide button entirely — this snapshot type cannot be exported or no data exists
               exportAccessButton.style.display = 'none';
-              console.log('[PHASE1_EXPORT_BLOCKED_HIDDEN]', JSON.stringify({ snapshotId: snapshotIdNormalized, reasonCode }));
+              console.log('[PHASE1_EXPORT_BLOCKED_HIDDEN]', JSON.stringify({ snapshotId: _exportSnapshotId, reasonCode }));
             } else {
               // v7.46: Derive customer message from reason code
               const reasonMessageCustomer = reasonCode === 'MISSING_CANONICAL_HASH'
@@ -4164,6 +4172,7 @@ async function proceedWithBoot() {
               exportAccessButton.style.opacity = '0.55';
               exportAccessButton.setAttribute('aria-disabled', 'true');
               exportAccessButton.title = reasonMessageCustomer;
+              exportAccessButton.textContent = `Export disabled: ${reasonCode}`;
 
               // Insert inline reason message below the button so customer always sees why
               const _gateMsg = document.createElement('p');
@@ -4172,17 +4181,33 @@ async function proceedWithBoot() {
               _gateMsg.textContent = reasonMessageCustomer;
               exportAccessButton.parentNode?.insertBefore(_gateMsg, exportAccessButton.nextSibling);
 
-              console.log('[PHASE1_EXPORT_BLOCKED_RENDERED]', JSON.stringify({ snapshotId: snapshotIdNormalized, reasonCode }));
+              console.log('[PHASE1_EXPORT_BLOCKED_RENDERED]', JSON.stringify({ snapshotId: _exportSnapshotId, reasonCode }));
 
               // Belt-and-suspenders: prevent any click from reaching resolver
               exportAccessButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify({ snapshotId: snapshotIdNormalized, reasonCode }));
+                console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify({ snapshotId: _exportSnapshotId, reasonCode }));
               });
             }
+          } else if (!_exportEffectiveEnabled) {
+            // v7.47: Eligible but snapshotId missing — show disabled with reason
+            exportAccessButton.disabled = true;
+            exportAccessButton.style.cursor = 'not-allowed';
+            exportAccessButton.style.opacity = '0.55';
+            exportAccessButton.setAttribute('aria-disabled', 'true');
+            exportAccessButton.textContent = 'Export disabled: SNAPSHOT_NOT_FOUND';
+            exportAccessButton.title = 'No snapshot data is available yet. Please run an access review first.';
+            console.log('[PHASE1_EXPORT_BLOCKED_NO_SNAPSHOT_ID]', JSON.stringify({ snapshotId: null, eligibilityOk: true }));
+
+            exportAccessButton.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            });
           } else {
-            // GATE PASSED: Attach normal click handler that invokes resolver
+            // GATE PASSED + snapshotId resolved: Attach normal click handler
+            // v7.47: Button label derived deterministically
+            exportAccessButton.textContent = 'Export Evidence Pack';
             exportAccessButton.addEventListener('click', async () => {
               exportAccessButton.disabled = true;
               exportAccessButton.textContent = 'Exporting...';
@@ -4190,23 +4215,23 @@ async function proceedWithBoot() {
               try {
                 ensureCorrelationId();
                 
-                // [FT_UI_ACTION_EXPORT_PHASE1_PACK_HANDLER]
-                // === BIND RESOLVER KEY: Use const so marker and invoke are mechanically identical ===
+                // v7.47: resolver key + action type for export dispatch
                 const exportResolverKey = 'ft_getDashboardState_v1';
                 const exportActionType = 'EXPORT_PHASE1_PACK';
                 
-                // EMIT [FT_PROOF_UI_CLICK] and [PHASE1_EXPORT_INVOKE] markers BEFORE resolver call
-                console.log('[FT_PROOF_UI_CLICK]', JSON.stringify({ action: 'EXPORT_EVIDENCE' }));
-                console.log('[PHASE1_EXPORT_INVOKE]', JSON.stringify({
-                  snapshotId: snapshotIdNormalized,
+                // v7.47: EMIT [FT_PROOF_UI_EXPORT_INVOKE_PAYLOAD] BEFORE invoke
+                console.log('[FT_PROOF_UI_EXPORT_INVOKE_PAYLOAD]', JSON.stringify({
                   resolver: exportResolverKey,
                   action: exportActionType,
+                  snapshotId: _exportSnapshotId,
+                  selectedVariant: _selectedVariant,
+                  ts: new Date().toISOString(),
                 }));
                 
-                // INVOKE RESOLVER with SAME KEY and ACTION (non-lying, mechanically verified)
+                // INVOKE resolver — snapshotId is ALWAYS non-null here (guarded above)
                 const result = await safeInvoke(exportResolverKey, {
                   action: exportActionType,
-                  snapshotId: snapshotIdNormalized,
+                  snapshotId: _exportSnapshotId,
                 }, FT_UI_REQ_ID) as any;
 
                 // Validate envelope schema (FAIL-CLOSED)
@@ -4217,6 +4242,11 @@ async function proceedWithBoot() {
                     expected: 'FT_ACTION_RESULT_V1',
                     fullResponse: result,
                   });
+                  console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
+                    resolver: exportResolverKey,
+                    snapshotId: _exportSnapshotId,
+                    reason: 'CONTRACT_BREACH_ENVELOPE_KIND',
+                  }));
                   exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH wrong envelopeKind (traceId=${traceIdForBreach})`;
                   exportAccessButton.disabled = false;
                   return;
@@ -4229,13 +4259,22 @@ async function proceedWithBoot() {
                 // Check if response has exportGate field (indicates resolver-side gating)
                 if (actionResult?.exportGate && !actionResult.exportGate.allowed) {
                   console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify(actionResult.exportGate));
+                  console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
+                    resolver: exportResolverKey,
+                    snapshotId: _exportSnapshotId,
+                    reason: 'EXPORT_GATE_BLOCKED_' + (actionResult.exportGate.reasonCode || 'UNKNOWN'),
+                  }));
                   exportAccessButton.textContent = `Export disabled: ${actionResult.exportGate.reasonCode}`;
                   exportAccessButton.disabled = false;
                   return;
                 }
                 
                 if (exportData && exportData.ok && exportData.zipBase64) {
-                  console.log('[FT_PROOF_UI_CLICK_RESULT]', JSON.stringify({ action: 'EXPORT_EVIDENCE', ok: true, reason: 'success' }));
+                  // v7.47: Success proof marker
+                  console.log('[FT_PROOF_UI_EXPORT_INVOKE_OK]', JSON.stringify({
+                    resolver: exportResolverKey,
+                    snapshotId: _exportSnapshotId,
+                  }));
                   console.log('[PHASE1_EXPORT_SUCCESS]', { hash: exportData.zipHash, fileCount: exportData.fileCount });
                   
                   // Create success marker (for test detection)
@@ -4243,7 +4282,7 @@ async function proceedWithBoot() {
                   if (!successMarker) {
                     successMarker = document.createElement('div');
                     successMarker.setAttribute('data-testid', 'ft-export-success');
-                    successMarker.style.display = 'none'; // Hidden from UI but present for test detection
+                    successMarker.style.display = 'none';
                     successMarker.textContent = exportData.traceId || 'success';
                     document.body.appendChild(successMarker);
                   }
@@ -4258,7 +4297,7 @@ async function proceedWithBoot() {
                   const url = URL.createObjectURL(blob);
                   const link = document.createElement('a');
                   link.href = url;
-                  link.download = `ft-access-pack-${snapshotIdNormalized}.zip`;
+                  link.download = `ft-access-pack-${_exportSnapshotId}.zip`;
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
@@ -4267,6 +4306,12 @@ async function proceedWithBoot() {
                   exportAccessButton.textContent = 'Export Complete';
                 } else {
                   console.error('[PHASE1_EXPORT_FAILED]', exportData);
+                  const failReason = actionResult?.error?.message || actionResult?.reason || 'Unknown error';
+                  console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
+                    resolver: exportResolverKey,
+                    snapshotId: _exportSnapshotId,
+                    reason: failReason,
+                  }));
                   if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
                     console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'Missing required fields on ok:false response', {
                       hasError: !!actionResult.error,
@@ -4284,6 +4329,11 @@ async function proceedWithBoot() {
                 }
               } catch (error: any) {
                 console.error('[PHASE1_EXPORT_ERROR]', error);
+                console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
+                  resolver: 'ft_getDashboardState_v1',
+                  snapshotId: _exportSnapshotId,
+                  reason: error?.message || 'exception',
+                }));
                 exportAccessButton.textContent = 'Error: ' + error.message;
               } finally {
                 exportAccessButton.disabled = false;
