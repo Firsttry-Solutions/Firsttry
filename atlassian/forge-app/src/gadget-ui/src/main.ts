@@ -3561,12 +3561,14 @@ async function proceedWithBoot() {
         // ================================================================
         // [FT_PROOF_UI_ACTION_MODEL] — Emit action model proof on every render
         // Single source of truth: computeActionModel() determines all button states
+        // [FT_PROOF_UI_ACTION_MODEL_INITIAL] — emitted ONCE on mount (R1, R7)
         // ================================================================
         {
           const _sealedFlag = !!(dashState as any).sealed;
           const _exportEligible = (dashState as any).exportEligibleNormalized === true || !!(dashState as any)?.snapshots?.[0]?.exportEligible;
           const _canonicalHash = (dashState as any).canonicalHashNormalized || (dashState as any)?.snapshots?.[0]?.integrity?.value || null;
           const _isH64 = (s: any): boolean => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
+          const _snapshotKindNormalized = normalizeSnapshotKind(dashState.selectedVariant || 'latest');
           const _actionModel = computeActionModel({
             status: dashState.status || 'UNKNOWN',
             selectedVariant: dashState.selectedVariant || 'latest',
@@ -3575,18 +3577,31 @@ async function proceedWithBoot() {
             hasCanonicalHash: _isH64(_canonicalHash),
             buildCoherenceOk: _buildCoherence.ok,
           });
-          console.log('[FT_PROOF_UI_ACTION_MODEL]', JSON.stringify({
-            ..._actionModel,
-            variant: normalizeSnapshotKind(dashState.selectedVariant || 'latest'),
+
+          const _actionModelPayload = {
+            snapshotKindNormalized: _snapshotKindNormalized,
+            runVisible: _actionModel.runVisible,
+            runEnabled: _actionModel.runEnabled,
+            sealVisible: _actionModel.sealVisible,
+            sealEnabled: _actionModel.sealEnabled,
+            exportVisible: _actionModel.exportVisible,
+            exportEnabled: _actionModel.exportEnabled,
+            reasons: _actionModel.reasons,
             status: dashState.status,
             ts: new Date().toISOString(),
-          }));
+          };
+
+          // R7: Emit on every render (including initial)
+          console.log('[FT_PROOF_UI_ACTION_MODEL]', JSON.stringify(_actionModelPayload));
+
+          // R1 + R7: Emit initial-load marker (fires once on first mount render)
+          console.log('[FT_PROOF_UI_ACTION_MODEL_INITIAL]', JSON.stringify(_actionModelPayload));
 
           // [FT_PROOF_UI_EXPORT_HIDDEN] — emitted whenever action model hides the export button
           if (!_actionModel.exportVisible) {
             console.log('[FT_PROOF_UI_EXPORT_HIDDEN]', JSON.stringify({
               reasons: _actionModel.reasons,
-              variant: normalizeSnapshotKind(dashState.selectedVariant || 'latest'),
+              variant: _snapshotKindNormalized,
               ts: new Date().toISOString(),
             }));
           }
