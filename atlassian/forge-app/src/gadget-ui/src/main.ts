@@ -362,7 +362,7 @@ import { normalizeStatusV1, EMPTY_STATUS_V1, GovernanceStatusV1 } from '../../sh
 import { parsePingResponse, shouldShowBackendNotResponding, type ParsedPingResponse } from './pingResponseParser';
 
 // ============================================================================
-// SNAPSHOT VARIANT ACTION MODEL (v7.41.x) — EXPORTED PURE FUNCTIONS
+// SNAPSHOT VARIANT ACTION MODEL (v7.45) — EXPORTED PURE FUNCTIONS
 // Single source of truth for button rendering across all snapshot variants.
 // Pure module: zero browser deps, fully testable in Node.js.
 // Re-exported here so that main.ts remains the canonical import path.
@@ -371,10 +371,12 @@ export {
   normalizeSnapshotKind,
   computeActionModel,
   type SnapshotKind,
+  type EffectiveKind,
   type ActionModelInput,
   type ActionModelOutput,
 } from './snapshotActionModel';
 import { normalizeSnapshotKind, computeActionModel } from './snapshotActionModel';
+import type { EffectiveKind } from './snapshotActionModel';
 
 // ============================================================================
 // BUILD & PROOF MARKERS
@@ -3425,6 +3427,8 @@ async function proceedWithBoot() {
 
         // A5: Attach event listener for snapshot variant selector
         // Define handler as named function to avoid strict-mode arguments.callee
+        // v7.45: seed revert logic — if getSnapshotVariant fails, revert to lastGoodVariant
+        let _lastGoodVariant: string = dashState.selectedVariant || 'latest';
         const attachVariantSelectHandler = (selectElement: HTMLSelectElement) => {
           selectElement.addEventListener('change', async (e) => {
             const newVariant = (e.target as HTMLSelectElement).value as "latest" | "seed";
@@ -3453,6 +3457,9 @@ async function proceedWithBoot() {
                   buildTimeUtc: variantResponse.buildTimeUtc,
                 };
                 
+                // v7.45: Track last good variant for revert
+                _lastGoodVariant = newVariant;
+                
                 // Re-render dashboard with new data
                 const updatedDashboard = renderL0Dashboard(dashState);
                 document.body.innerHTML = '';
@@ -3464,22 +3471,24 @@ async function proceedWithBoot() {
                   attachVariantSelectHandler(newVariantSelect);
                 }
                 
-                // v7.43.x: Relay action model after variant change
+                // v7.45: Relay action model after variant change using effectiveKind
                 {
-                  const _varKind = normalizeSnapshotKind(newVariant);
+                  const _varEffectiveKind: EffectiveKind = resolveSnapshotKindForExport(dashState as any);
                   const _varSealedFlag = !!(dashState as any).sealed;
-                  const _varExportEligible = (dashState as any).exportEligibleNormalized === true || !!(dashState as any)?.snapshots?.[0]?.exportEligible;
+                  const _varExportGate = computeExportGateFromBackendTruth(dashState as any);
                   const _varModel = computeActionModel({
                     status: dashState.status || 'UNKNOWN',
                     selectedVariant: newVariant,
+                    effectiveKind: _varEffectiveKind,
+                    exportGateOk: _varExportGate.exportAllowed,
+                    exportGateReasonCode: _varExportGate.reasonCode,
                     sealed: _varSealedFlag,
-                    exportEligible: _varExportEligible,
-                    hasCanonicalHash: false,
                     buildCoherenceOk: true,
                   });
                   relayMarkerToBackend('[FT_PROOF_UI_ACTION_MODEL]', {
                     selected: newVariant,
-                    kind: _varKind,
+                    effectiveKind: _varEffectiveKind,
+                    exportGateReasonCode: _varExportGate.reasonCode,
                     runVisible: _varModel.runVisible,
                     runEnabled: _varModel.runEnabled,
                     exportVisible: _varModel.exportVisible,
@@ -3490,10 +3499,35 @@ async function proceedWithBoot() {
                 }
                 console.info("[UI_VARIANT_SELECT_OK]", { value: newVariant });
               } else {
+                // v7.45: Seed revert — revert select to lastGoodVariant, emit proof marker
                 console.error('[VARIANT_SELECT_ERROR]', 'Failed to fetch variant snapshot', variantResponse);
+                console.log('[FT_PROOF_UI_SNAPSHOT_REVERTED]', JSON.stringify({
+                  attempted: newVariant,
+                  revertedTo: _lastGoodVariant,
+                  reason: 'getSnapshotVariant returned ok:false',
+                  ts: new Date().toISOString(),
+                }));
+                relayMarkerToBackend('[FT_PROOF_UI_SNAPSHOT_REVERTED]', {
+                  attempted: newVariant,
+                  revertedTo: _lastGoodVariant,
+                });
+                // Revert the select element to the last known-good variant
+                selectElement.value = _lastGoodVariant;
               }
             } catch (err) {
+              // v7.45: Seed revert on exception
               console.error('[VARIANT_SELECT_EXCEPTION]', err);
+              console.log('[FT_PROOF_UI_SNAPSHOT_REVERTED]', JSON.stringify({
+                attempted: newVariant,
+                revertedTo: _lastGoodVariant,
+                reason: 'exception',
+                ts: new Date().toISOString(),
+              }));
+              relayMarkerToBackend('[FT_PROOF_UI_SNAPSHOT_REVERTED]', {
+                attempted: newVariant,
+                revertedTo: _lastGoodVariant,
+              });
+              selectElement.value = _lastGoodVariant;
             }
           });
         };
@@ -3590,25 +3624,41 @@ async function proceedWithBoot() {
         // ================================================================
         // [FT_PROOF_UI_ACTION_MODEL] — Emit action model proof on every render
         // Single source of truth: computeActionModel() determines all button states
+        // v7.45: uses effectiveKind from backend, NOT variant string
         // [FT_PROOF_UI_ACTION_MODEL_INITIAL] — emitted ONCE on mount (R1, R7)
         // ================================================================
         {
           const _sealedFlag = !!(dashState as any).sealed;
-          const _exportEligible = (dashState as any).exportEligibleNormalized === true || !!(dashState as any)?.snapshots?.[0]?.exportEligible;
-          const _canonicalHash = (dashState as any).canonicalHashNormalized || (dashState as any)?.snapshots?.[0]?.integrity?.value || null;
-          const _isH64 = (s: any): boolean => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
-          const _snapshotKindNormalized = normalizeSnapshotKind(dashState.selectedVariant || 'latest');
+          // v7.45: Derive effectiveKind from backend truth (resolveSnapshotKindForExport)
+          // This is the ROOT CAUSE FIX: "latest" is a selector label, NOT a snapshot kind.
+          // Backend says GOVERNANCE or SEED — that's what determines export/seal visibility.
+          const _effectiveKind: EffectiveKind = resolveSnapshotKindForExport(dashState as any);
+          // v7.45: Derive exportGateOk from backend truth (computeExportGateFromBackendTruth)
+          const _exportGate = computeExportGateFromBackendTruth(dashState as any);
+
+          // [FT_PROOF_UI_EFFECTIVE_KIND] — proof marker showing what backend resolved
+          console.log('[FT_PROOF_UI_EFFECTIVE_KIND]', JSON.stringify({
+            effectiveKind: _effectiveKind,
+            exportGateReasonCode: _exportGate.reasonCode,
+            exportGateOk: _exportGate.exportAllowed,
+            selectedVariant: dashState.selectedVariant || 'latest',
+            ts: new Date().toISOString(),
+          }));
+
           const _actionModel = computeActionModel({
             status: dashState.status || 'UNKNOWN',
             selectedVariant: dashState.selectedVariant || 'latest',
+            effectiveKind: _effectiveKind,
+            exportGateOk: _exportGate.exportAllowed,
+            exportGateReasonCode: _exportGate.reasonCode,
             sealed: _sealedFlag,
-            exportEligible: _exportEligible,
-            hasCanonicalHash: _isH64(_canonicalHash),
             buildCoherenceOk: _buildCoherence.ok,
           });
 
           const _actionModelPayload = {
-            snapshotKindNormalized: _snapshotKindNormalized,
+            effectiveKind: _effectiveKind,
+            exportGateReasonCode: _exportGate.reasonCode,
+            selectedVariant: dashState.selectedVariant || 'latest',
             runVisible: _actionModel.runVisible,
             runEnabled: _actionModel.runEnabled,
             sealVisible: _actionModel.sealVisible,
@@ -3629,7 +3679,8 @@ async function proceedWithBoot() {
           // v7.43.x: Relay initial action model to backend logs (fires every page load)
           relayMarkerToBackend('[FT_PROOF_UI_ACTION_MODEL_INITIAL]', {
             selected: dashState.selectedVariant || 'latest',
-            kind: _snapshotKindNormalized,
+            effectiveKind: _effectiveKind,
+            exportGateReasonCode: _exportGate.reasonCode,
             runVisible: _actionModel.runVisible,
             runEnabled: _actionModel.runEnabled,
             exportVisible: _actionModel.exportVisible,
@@ -3658,7 +3709,7 @@ async function proceedWithBoot() {
           if (!_actionModel.exportVisible) {
             console.log('[FT_PROOF_UI_EXPORT_HIDDEN]', JSON.stringify({
               reasons: _actionModel.reasons,
-              variant: _snapshotKindNormalized,
+              effectiveKind: _effectiveKind,
               ts: new Date().toISOString(),
             }));
           }
@@ -3917,7 +3968,7 @@ async function proceedWithBoot() {
               }
             } catch (error: any) {
               console.error('[REVIEW_SEAL_EXCEPTION]', error);
-              sealStatusDiv.textContent = 'Service temporarily unavailable. Please refresh.';
+              sealStatusDiv.textContent = 'Could not seal review. Please try again.';
               sealStatusDiv.style.color = "#f44336";
               sealReviewButton.textContent = originalText;
               sealReviewButton.disabled = false;
