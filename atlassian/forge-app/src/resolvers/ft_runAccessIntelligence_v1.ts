@@ -141,6 +141,9 @@ export const handler = async (request: any): Promise<any> => {
     // 9B) Dashboard meta store (contract pointer — L0-compatible so isValid passes)
     // NOTE: schemaVersion MUST be "L0" for dashboard validator (gadget-resolver isValid check).
     // NOTE: data property MUST be present (truthy object) for ft:snapshot:latest:governance check.
+    // v7.50: totals, riskModel, exposure, toxicFindings MUST be at top level so
+    //   export handler (which reads ft:snapshot:last:v1) can access them directly.
+    //   Previously they were only nested inside data.*, causing EXPORT_PHASE1_STATS_MISSING.
     const dashboardMeta = {
       snapshotId,
       snapshotKind: "GOVERNANCE",
@@ -153,6 +156,11 @@ export const handler = async (request: any): Promise<any> => {
       exportDeclaration: "This export contains governance evidence collected from a live Jira tenant.",
       schemaVersion: "L0",
       containsText: "Jira governance evidence snapshot (export for full details).",
+      // v7.50: Phase1 scan data at top level (required by export handler + dashboard gate)
+      totals: snapshot?.totals || null,
+      riskModel: snapshot?.riskModel || null,
+      exposure: snapshot?.exposure || null,
+      toxicFindings: snapshot?.toxicFindings || null,
       // data property required by dashboard isValid check and ft:snapshot:latest:governance guard
       data: {
         phase1AccessScan: true,
@@ -164,6 +172,14 @@ export const handler = async (request: any): Promise<any> => {
 
     await storage.set("ft:snapshot:last:v1", dashboardMeta);
     await storage.set("ft:snapshot:latest:governance", dashboardMeta);
+
+    // v7.50: Proof marker — snapshot totals persistence
+    console.log("[FT_PROOF_BACKEND_SNAPSHOT_PERSIST_TOTALS]", JSON.stringify({
+      snapshotId,
+      hasTotals: !!snapshot?.totals,
+      totalsKeys: snapshot?.totals ? Object.keys(snapshot.totals) : [],
+      totalUsers: snapshot?.totals?.totalUsers ?? null,
+    }));
 
     console.log("[FT_PROOF_PHASE1_STORAGE_KEYS_WRITTEN] keys=ft:snapshot:last:v1,ft:snapshot:latest:governance payloadKey=" + snapshotId);
     console.log(JSON.stringify({

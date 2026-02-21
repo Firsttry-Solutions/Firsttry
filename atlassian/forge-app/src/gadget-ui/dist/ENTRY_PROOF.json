@@ -1,6 +1,0 @@
-{
-  "build_sha": "b0cdff1a91eafdf96edaf4146349f6f9dca7a5ae",
-  "entry_filename": "app.b0cdff1a91eafdf96edaf4146349f6f9dca7a5ae.js",
-  "cache_bust_method": "filename-based",
-  "verification": "Filename must be unique per build; different SHA guarantees cache miss"
-}

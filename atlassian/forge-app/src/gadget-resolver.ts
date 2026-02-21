@@ -52,6 +52,7 @@ import { getDriftAck } from './governance/driftAck'; // ECL-3: Drift acknowledge
 import { getTrustPanelData } from './trust/proofBundleReader'; // ECL-5: Trust panel proof reader
 import { aggregateGovernanceState } from './governance/governanceAggregator'; // ECL-ENTERPRISE: Governance aggregator
 import { extractExportSnapshotId } from './utils/extractExportSnapshotId'; // v7.48: canonical snapshotId extraction
+import { computeExportEligibilityGate, ExportEligibilityResult } from './utils/exportEligibilityGate'; // v7.50: shared export gate
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -415,7 +416,10 @@ type FtExportGateReasonCode =
   | 'MISSING_SNAPSHOT_ID'      // v7.48: no snapshotId in request args
   | 'SENTINEL_SNAPSHOT_ID'     // v7.48: rejected sentinel value (latest/seed)
   | 'INVALID_SNAPSHOT_ID'      // v7.48: invalid snapshotId prefix
-  | 'UNSUPPORTED_SNAPSHOT_KIND'; // unknown snapshot type
+  | 'UNSUPPORTED_SNAPSHOT_KIND' // unknown snapshot type
+  | 'EXPORT_PHASE1_STATS_MISSING' // v7.50: snapshot.totals missing or totalUsers not a number
+  | 'SEED_NOT_EXPORTABLE'      // v7.50: seed snapshot explicitly blocked
+  | 'OK';                      // v7.50: export eligible
 
 interface FtExportGateV1 {
   allowed: boolean;               // true if export is gated/allowed
@@ -830,116 +834,34 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
       snapshot = null;
     }
     
-    // Build export gate info
+    // Build export gate info using shared gate function (v7.50: single source of truth)
     const snapshotId = snapshot?.snapshotId || snapshot?.canonicalHash || requestSnapshotId;
     const snapshotKind = snapshot?.snapshotKind || 'UNKNOWN';
     const hasCanonicalHash = !!snapshot?.canonicalHash;
-    const exportEligible = snapshot?.exportEligible === true && snapshotKind !== 'SEED';
-    
-    let exportGateReason: FtExportGateReasonCode = 'NOT_EXPORT_ELIGIBLE';
-    let exportGateMessage = 'Export disabled';
 
-    // Check 1: Snapshot exists
-    if (!snapshot) {
-      exportGateReason = 'SNAPSHOT_NOT_FOUND';
-      exportGateMessage = 'Export disabled: No snapshot found. Run "Access Review (Phase 1)" first.';
-      
-      const exportGate: FtExportGateV1 = {
-        allowed: false,
-        reasonCode: exportGateReason,
-        snapshotId: 'none',
-        snapshotKind: undefined,
-        hasCanonicalHash: false,
-        exportEligible: false,
-        message: exportGateMessage,
-      };
+    // v7.50: Use shared gate — single source of truth for export eligibility
+    const gateResult: ExportEligibilityResult = computeExportEligibilityGate(snapshot);
 
-      console.log(JSON.stringify({
-        marker: '[PHASE1_EXPORT_BLOCKED]',
-        reason: exportGateReason,
-        message: exportGateMessage,
-        ts: new Date().toISOString(),
-      }));
+    // v7.50: Proof marker — always emitted
+    console.log('[FT_PROOF_BACKEND_EXPORT_GATE]', JSON.stringify({
+      snapshotId,
+      exportEligible: gateResult.exportEligible,
+      reasonCode: gateResult.reasonCode,
+      hasTotals: gateResult.hasTotals,
+      totalUsers: gateResult.totalUsers,
+    }));
 
-      return {
-        envelopeKind: 'FT_ACTION_RESULT_V1',
-        ok: false,
-        action: 'EXPORT_PHASE1_PACK',
-        status: 'DISABLED',
-        traceId,
-        build,
-        reason: exportGateMessage,
-        error: {
-          code: 'EXPORT_GATED',
-          message: exportGateMessage,
-          traceId,
-        },
-        exportGate,
-      };
-    }
-
-    // Check 2: Snapshot is export-eligible (not SEED, not explicitly marked ineligible)
-    if (!exportEligible) {
-      if (snapshotKind === 'SEED') {
-        exportGateReason = 'NOT_EXPORT_ELIGIBLE';
-        exportGateMessage = 'Export disabled: Seed snapshots cannot be exported. Run "Access Review (Phase 1)" to create a governance snapshot.';
-      } else if (!hasCanonicalHash) {
-        exportGateReason = 'MISSING_CANONICAL_HASH';
-        exportGateMessage = 'Export disabled: Snapshot missing canonical hash. Run "Access Review (Phase 1)" again.';
-      } else if (snapshotKind && snapshotKind !== 'GOVERNANCE') {
-        exportGateReason = 'UNSUPPORTED_SNAPSHOT_KIND';
-        exportGateMessage = `Export disabled: Unsupported snapshot type "${snapshotKind}".`;
-      } else {
-        exportGateReason = 'NOT_EXPORT_ELIGIBLE';
-        exportGateMessage = 'Export disabled: Snapshot is not eligible for export.';
-      }
+    // If shared gate says not eligible, return gated response
+    if (!gateResult.exportEligible) {
+      const exportGateReason: FtExportGateReasonCode = gateResult.reasonCode as FtExportGateReasonCode;
+      const exportGateMessage = gateResult.message;
 
       const exportGate: FtExportGateV1 = {
         allowed: false,
         reasonCode: exportGateReason,
-        snapshotId: snapshotId,
-        snapshotKind,
+        snapshotId: snapshotId || 'none',
+        snapshotKind: snapshot ? snapshotKind : undefined,
         hasCanonicalHash,
-        exportEligible,
-        message: exportGateMessage,
-      };
-
-      console.log(JSON.stringify({
-        marker: '[PHASE1_EXPORT_BLOCKED]',
-        reason: exportGateReason,
-        snapshotKind,
-        message: exportGateMessage,
-        ts: new Date().toISOString(),
-      }));
-
-      return {
-        envelopeKind: 'FT_ACTION_RESULT_V1',
-        ok: false,
-        action: 'EXPORT_PHASE1_PACK',
-        status: 'DISABLED',
-        traceId,
-        build,
-        reason: exportGateMessage,
-        error: {
-          code: 'EXPORT_GATED',
-          message: exportGateMessage,
-          traceId,
-        },
-        exportGate,
-      };
-    }
-
-    // Check 3: Snapshot must have canonical hash
-    if (!hasCanonicalHash) {
-      exportGateReason = 'MISSING_CANONICAL_HASH';
-      exportGateMessage = 'Export disabled: Snapshot missing canonical hash. Cannot generate deterministic export.';
-
-      const exportGate: FtExportGateV1 = {
-        allowed: false,
-        reasonCode: exportGateReason,
-        snapshotId: snapshotId,
-        snapshotKind,
-        hasCanonicalHash: false,
         exportEligible: false,
         message: exportGateMessage,
       };
@@ -947,6 +869,7 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
       console.log(JSON.stringify({
         marker: '[PHASE1_EXPORT_BLOCKED]',
         reason: exportGateReason,
+        snapshotKind,
         message: exportGateMessage,
         ts: new Date().toISOString(),
       }));
@@ -958,6 +881,7 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
         status: 'DISABLED',
         traceId,
         build,
+        reasonCode: exportGateReason,
         reason: exportGateMessage,
         error: {
           code: 'EXPORT_GATED',
@@ -1830,15 +1754,19 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       }
       
       // NORMALIZED EXPORT ELIGIBILITY FIELDS (for UI export gating contract)
-      // These are added at the top level for deterministic UI state computation
+      // v7.50: Use shared gate — single source of truth for export eligibility
       const selectedSnapshot = enterpriseContractData.snapshots?.[0];
-      const exportGateReasonCode: string = (() => {
-        if (!selectedSnapshot) return 'SNAPSHOT_NOT_FOUND';
-        if (selectedSnapshot.snapshotKind === 'SEED') return 'NOT_EXPORT_ELIGIBLE';
-        if (!selectedSnapshot.exportEligible) return 'NOT_EXPORT_ELIGIBLE';
-        if (!snapshot.canonicalHash) return 'MISSING_CANONICAL_HASH';
-        return 'OK';
-      })();
+      const dashboardGateResult: ExportEligibilityResult = computeExportEligibilityGate(selectedSnapshot);
+      const exportGateReasonCode: string = dashboardGateResult.reasonCode;
+
+      // v7.50: Proof marker — dashboard gate evaluation
+      console.log('[FT_PROOF_BACKEND_EXPORT_GATE]', JSON.stringify({
+        snapshotId: selectedSnapshot?.snapshotId || null,
+        exportEligible: dashboardGateResult.exportEligible,
+        reasonCode: dashboardGateResult.reasonCode,
+        hasTotals: dashboardGateResult.hasTotals,
+        totalUsers: dashboardGateResult.totalUsers,
+      }));
       
       // Backend logging (MANDATORY for corroboration)
       console.log(JSON.stringify({
@@ -1875,10 +1803,10 @@ export async function ft_getDashboardState_v1(request: any): Promise<FtDashEnvel
       return {
         status: "AVAILABLE",
         ...enterpriseContractData,
-        // NORMALIZED EXPORT ELIGIBILITY: Single source of truth for UI
+        // NORMALIZED EXPORT ELIGIBILITY: Single source of truth for UI (v7.50: shared gate)
         snapshotIdNormalized: selectedSnapshot?.snapshotId || null,
         snapshotKindNormalized: selectedSnapshot?.snapshotKind || 'UNKNOWN',
-        exportEligibleNormalized: selectedSnapshot?.exportEligible === true,
+        exportEligibleNormalized: dashboardGateResult.exportEligible,
         canonicalHashNormalized: _canonicalHash,
         exportGateReasonCodeNormalized: exportGateReasonCode,
       };
