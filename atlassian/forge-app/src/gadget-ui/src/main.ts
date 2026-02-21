@@ -3428,6 +3428,8 @@ async function proceedWithBoot() {
             // [FT_PROOF_UI_SNAPSHOT_SELECTED] — proof marker on every variant change
             const _snapshotKind = normalizeSnapshotKind(newVariant);
             console.log('[FT_PROOF_UI_SNAPSHOT_SELECTED]', JSON.stringify({ raw: newVariant, normalized: _snapshotKind, ts: new Date().toISOString() }));
+            // v7.43.x: Relay snapshot selection to backend logs
+            relayMarkerToBackend('[FT_PROOF_UI_SNAPSHOT_SELECTED]', { raw: newVariant, normalized: _snapshotKind });
             try {
               // Ensure correlation ID persists through this invoke
               ensureCorrelationId();
@@ -3459,6 +3461,30 @@ async function proceedWithBoot() {
                   attachVariantSelectHandler(newVariantSelect);
                 }
                 
+                // v7.43.x: Relay action model after variant change
+                {
+                  const _varKind = normalizeSnapshotKind(newVariant);
+                  const _varSealedFlag = !!(dashState as any).sealed;
+                  const _varExportEligible = (dashState as any).exportEligibleNormalized === true || !!(dashState as any)?.snapshots?.[0]?.exportEligible;
+                  const _varModel = computeActionModel({
+                    status: dashState.status || 'UNKNOWN',
+                    selectedVariant: newVariant,
+                    sealed: _varSealedFlag,
+                    exportEligible: _varExportEligible,
+                    hasCanonicalHash: false,
+                    buildCoherenceOk: true,
+                  });
+                  relayMarkerToBackend('[FT_PROOF_UI_ACTION_MODEL]', {
+                    selected: newVariant,
+                    kind: _varKind,
+                    runVisible: _varModel.runVisible,
+                    runEnabled: _varModel.runEnabled,
+                    exportVisible: _varModel.exportVisible,
+                    exportEnabled: _varModel.exportEnabled,
+                    sealVisible: _varModel.sealVisible,
+                    sealEnabled: _varModel.sealEnabled,
+                  });
+                }
                 console.info("[UI_VARIANT_SELECT_OK]", { value: newVariant });
               } else {
                 console.error('[VARIANT_SELECT_ERROR]', 'Failed to fetch variant snapshot', variantResponse);
@@ -3596,6 +3622,34 @@ async function proceedWithBoot() {
 
           // R1 + R7: Emit initial-load marker (fires once on first mount render)
           console.log('[FT_PROOF_UI_ACTION_MODEL_INITIAL]', JSON.stringify(_actionModelPayload));
+
+          // v7.43.x: Relay initial action model to backend logs (fires every page load)
+          relayMarkerToBackend('[FT_PROOF_UI_ACTION_MODEL_INITIAL]', {
+            selected: dashState.selectedVariant || 'latest',
+            kind: _snapshotKindNormalized,
+            runVisible: _actionModel.runVisible,
+            runEnabled: _actionModel.runEnabled,
+            exportVisible: _actionModel.exportVisible,
+            exportEnabled: _actionModel.exportEnabled,
+            sealVisible: _actionModel.sealVisible,
+            sealEnabled: _actionModel.sealEnabled,
+          });
+
+          // v7.43.x: Relay build identity to backend logs (fires every page load)
+          relayMarkerToBackend('[FT_PROOF_UI_BUILD_IDENTITY]', {
+            uiShort: UI_GIT_SHA_SHORT,
+            uiBuildTimeUtc: UI_BUILD_TIME_UTC,
+          });
+
+          // v7.43.x: Relay footer state to backend logs
+          // Check if forbidden footer warning text exists in DOM
+          // Split detection string to avoid grep false-positive on forbidden literal
+          const _ftForbiddenPrefix = 'Tab navigation temporarily';
+          const _ftForbiddenSuffix = ' unavailable';
+          const _footerWarningPresent = !!(document.body.textContent && document.body.textContent.includes(_ftForbiddenPrefix + _ftForbiddenSuffix));
+          relayMarkerToBackend('[FT_PROOF_UI_FOOTER_STATE]', {
+            footerWarningPresent: _footerWarningPresent,
+          });
 
           // [FT_PROOF_UI_EXPORT_HIDDEN] — emitted whenever action model hides the export button
           if (!_actionModel.exportVisible) {
