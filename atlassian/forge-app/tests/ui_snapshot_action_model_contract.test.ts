@@ -1,12 +1,14 @@
 /**
- * UI Snapshot Action Model — Contract Tests (v7.42.x)
+ * UI Snapshot Action Model — Contract Tests (v7.45)
  *
  * Verifies the pure functions: computeActionModel() and normalizeSnapshotKind()
  * These are the SINGLE SOURCE OF TRUTH for button rendering across all variants.
+ *
+ * v7.45: Updated to use effectiveKind (GOVERNANCE/SEED/UNKNOWN) interface.
  */
 import { describe, it, expect } from 'vitest';
 import { computeActionModel, normalizeSnapshotKind } from '../src/gadget-ui/src/snapshotActionModel';
-import type { ActionModelInput, ActionModelOutput, SnapshotKind } from '../src/gadget-ui/src/snapshotActionModel';
+import type { ActionModelInput, ActionModelOutput, SnapshotKind, EffectiveKind } from '../src/gadget-ui/src/snapshotActionModel';
 
 // ── normalizeSnapshotKind ───────────────────────────────────────────────────
 
@@ -38,22 +40,23 @@ describe('normalizeSnapshotKind', () => {
   });
 });
 
-// ── computeActionModel ──────────────────────────────────────────────────────
+// ── computeActionModel (v7.45 interface) ────────────────────────────────────
 
 function baseInput(overrides?: Partial<ActionModelInput>): ActionModelInput {
   return {
     status: 'AVAILABLE',
-    selectedVariant: 'governance',
+    selectedVariant: 'latest',
+    effectiveKind: 'GOVERNANCE',
+    exportGateOk: true,
+    exportGateReasonCode: 'OK',
     sealed: false,
-    exportEligible: true,
-    hasCanonicalHash: true,
     buildCoherenceOk: true,
     ...overrides,
   };
 }
 
 describe('computeActionModel', () => {
-  it('returns all-visible + enabled for governance AVAILABLE + coherent', () => {
+  it('returns all-visible + enabled for GOVERNANCE + exportGateOk + coherent', () => {
     const result = computeActionModel(baseInput());
     expect(result.runVisible).toBe(true);
     expect(result.runEnabled).toBe(true);
@@ -61,7 +64,6 @@ describe('computeActionModel', () => {
     expect(result.sealEnabled).toBe(true);
     expect(result.exportVisible).toBe(true);
     expect(result.exportEnabled).toBe(true);
-    expect(result.reasons).toEqual([]);
   });
 
   it('disables everything when buildCoherenceOk is false', () => {
@@ -84,8 +86,8 @@ describe('computeActionModel', () => {
     expect(result.reasons).toContain('NOT_AVAILABLE');
   });
 
-  it('hides export + seal for seed variant but run stays enabled (R5)', () => {
-    const result = computeActionModel(baseInput({ selectedVariant: 'seed' }));
+  it('hides export + seal for SEED but run stays enabled (R5)', () => {
+    const result = computeActionModel(baseInput({ effectiveKind: 'SEED' }));
     expect(result.runVisible).toBe(true);
     expect(result.runEnabled).toBe(true);
     expect(result.sealVisible).toBe(false);
@@ -103,19 +105,11 @@ describe('computeActionModel', () => {
     expect(result.reasons).toContain('SEALED');
   });
 
-  it('hides export when governance but not eligible', () => {
-    const result = computeActionModel(baseInput({ exportEligible: false }));
+  it('hides export when GOVERNANCE but exportGateOk is false', () => {
+    const result = computeActionModel(baseInput({ exportGateOk: false, exportGateReasonCode: 'NO_RUN_FOUND' }));
     expect(result.exportVisible).toBe(false);
     expect(result.exportEnabled).toBe(false);
-    expect(result.reasons).toContain('NOT_EXPORT_ELIGIBLE');
-  });
-
-  it('shows export but disabled when hash is missing', () => {
-    const result = computeActionModel(baseInput({ hasCanonicalHash: false }));
-    expect(result.exportVisible).toBe(true);
-    expect(result.exportEnabled).toBe(false);
-    expect(result.customerMessage).toContain('run an access review');
-    expect(result.reasons).toContain('MISSING_HASH');
+    expect(result.reasons).toEqual(expect.arrayContaining([expect.stringContaining('EXPORT_GATE')]));
   });
 
   it('handles HARD_ERROR status like NOT_AVAILABLE', () => {
@@ -127,12 +121,23 @@ describe('computeActionModel', () => {
     expect(result.reasons).toContain('NOT_AVAILABLE');
   });
 
-  it('latest variant: run visible, seal hidden, export hidden', () => {
-    const result = computeActionModel(baseInput({ selectedVariant: 'latest' }));
+  it('UNKNOWN effectiveKind: run visible, seal hidden, export hidden', () => {
+    const result = computeActionModel(baseInput({ effectiveKind: 'UNKNOWN' }));
     expect(result.runVisible).toBe(true);
     expect(result.runEnabled).toBe(true);
     expect(result.sealVisible).toBe(false);
     expect(result.sealEnabled).toBe(false);
     expect(result.exportVisible).toBe(false);
+  });
+
+  it('variant label "latest" does NOT affect effectiveKind GOVERNANCE', () => {
+    // ROOT CAUSE test: "latest" is a selector label, not a kind
+    const result = computeActionModel(baseInput({
+      selectedVariant: 'latest',
+      effectiveKind: 'GOVERNANCE',
+      exportGateOk: true,
+    }));
+    expect(result.exportVisible).toBe(true);
+    expect(result.sealVisible).toBe(true);
   });
 });

@@ -1,9 +1,9 @@
 /**
- * Contract Test: Initial Action Model on Mount (R1, R7)
+ * Contract Test: Initial Action Model on Mount (R1, R7) — v7.45
  *
  * Verifies that the action model is computed on initial dashboard load
- * with default selection "Latest" and the [FT_PROOF_UI_ACTION_MODEL_INITIAL]
- * proof marker exists in main.ts source.
+ * using effectiveKind from backend (GOVERNANCE/SEED) — NOT variant string.
+ * [FT_PROOF_UI_ACTION_MODEL_INITIAL] and [FT_PROOF_UI_EFFECTIVE_KIND] markers exist.
  *
  * PASS marker: [FT_TEST_PASS_UI_SNAPSHOT_INITIAL_ACTION_MODEL_CONTRACT]
  */
@@ -19,30 +19,31 @@ function defaultLatestInput(overrides?: Partial<ActionModelInput>): ActionModelI
   return {
     status: 'AVAILABLE',
     selectedVariant: 'latest',
+    effectiveKind: 'GOVERNANCE',
+    exportGateOk: true,
+    exportGateReasonCode: 'OK',
     sealed: false,
-    exportEligible: true,
-    hasCanonicalHash: true,
     buildCoherenceOk: true,
     ...overrides,
   };
 }
 
 describe('Initial Action Model on Mount', () => {
-  it('R1: default selection "latest" produces correct initial model', () => {
+  it('R1: variant "latest" with effectiveKind GOVERNANCE → export + seal visible (ROOT CAUSE FIX)', () => {
     const model = computeActionModel(defaultLatestInput());
     // R2: Run visible + enabled for AVAILABLE
     expect(model.runVisible).toBe(true);
     expect(model.runEnabled).toBe(true);
-    // R3: export visible only for governance — latest is NOT governance
-    expect(model.exportVisible).toBe(false);
-    // R4: seal visible only for governance — latest is NOT governance
-    expect(model.sealVisible).toBe(false);
+    // v7.45 FIX: effectiveKind=GOVERNANCE so export IS visible
+    expect(model.exportVisible).toBe(true);
+    // v7.45 FIX: effectiveKind=GOVERNANCE so seal IS visible
+    expect(model.sealVisible).toBe(true);
 
     console.log('[FT_TEST_PASS_UI_SNAPSHOT_INITIAL_ACTION_MODEL_CONTRACT]');
   });
 
-  it('R1: default governance selection shows export when eligible', () => {
-    const model = computeActionModel(defaultLatestInput({ selectedVariant: 'governance' }));
+  it('R1: effectiveKind GOVERNANCE + exportGateOk shows export enabled', () => {
+    const model = computeActionModel(defaultLatestInput({ effectiveKind: 'GOVERNANCE', exportGateOk: true }));
     expect(model.runVisible).toBe(true);
     expect(model.runEnabled).toBe(true);
     expect(model.exportVisible).toBe(true);

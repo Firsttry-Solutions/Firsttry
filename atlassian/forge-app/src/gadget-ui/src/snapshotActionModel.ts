@@ -1,5 +1,5 @@
 /**
- * Snapshot Variant Action Model — Pure Functions (v7.42.x)
+ * Snapshot Variant Action Model — Pure Functions (v7.45)
  *
  * Single source of truth for button rendering across all snapshot variants.
  * Zero browser dependencies — fully testable in Node.js environment.
@@ -7,39 +7,35 @@
  * Exported from main.ts for backward compatibility.
  *
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- * REQUIRED UX RULES (verbatim from fix pack spec — NO AMBIGUITY)
+ * REQUIRED UX RULES (v7.45 — uses effectiveKind from backend, NOT variant string)
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *
  * R1) On initial dashboard load (no dropdown interaction), compute action model
- *     for the default selection (Latest).
+ *     using effectiveKind derived from backend (snapshotKindNormalized/snapshotId).
+ *     effectiveKind is GOVERNANCE or SEED — never "latest" (latest is a selector label).
  *
  * R2) Run Access Review button:
  *     - visible=true when dashboardStatus === "AVAILABLE"
  *     - enabled=true unless buildCoherence.ok === false
  *
  * R3) Export Evidence Pack button:
- *     - visible=true ONLY when snapshotKindNormalized === "governance"
- *       AND exportAllowed === true
+ *     - visible=true ONLY when effectiveKind === "GOVERNANCE" AND exportGateOk === true
  *     - visible=false otherwise (NO ghost disabled button)
  *
  * R4) Seal Review button:
- *     - visible=true ONLY when snapshotKindNormalized === "governance"
- *     - enabled=false while seal state is loading (show "Loading review state...")
+ *     - visible=true ONLY when effectiveKind === "GOVERNANCE"
+ *     - enabled=false while seal state is loading
  *
  * R5) Selecting Seed must NOT disable Run Access Review
  *     (unless dashboardStatus not AVAILABLE).
  *
  * R6) Remove the customer-facing footer text about tab navigation being
  *     temporarily unavailable (the banned nav-warning copy).
- *     It must not exist in source OR dist.
  *
  * R7) Proof markers must exist:
- *     - On mount after action model computed: emit [FT_PROOF_UI_ACTION_MODEL_INITIAL]
- *     - On every dropdown selection: emit [FT_PROOF_UI_SNAPSHOT_SELECTED]
- *     - On every action model recompute: emit [FT_PROOF_UI_ACTION_MODEL] with
- *       {snapshotKindNormalized, exportVisible, exportEnabled, runVisible,
- *        runEnabled, sealVisible, sealEnabled}
- *     - All clicks still emit [FT_PROOF_UI_CLICK] and [FT_PROOF_UI_CLICK_RESULT]
+ *     - [FT_PROOF_UI_ACTION_MODEL_INITIAL] on mount
+ *     - [FT_PROOF_UI_EFFECTIVE_KIND] with effectiveKind + exportGateReasonCode
+ *     - [FT_PROOF_UI_SNAPSHOT_REVERTED] when seed selection fails
  *
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  */
@@ -52,19 +48,28 @@
 export type SnapshotKind = 'latest' | 'seed' | 'governance' | 'unknown';
 
 /**
- * Input for computeActionModel.
+ * Effective kind — what the backend actually resolved, not the dropdown label.
+ * GOVERNANCE = real governance snapshot. SEED = seed snapshot. UNKNOWN = can't determine.
+ */
+export type EffectiveKind = 'GOVERNANCE' | 'SEED' | 'UNKNOWN';
+
+/**
+ * Input for computeActionModel (v7.45).
+ * Now uses effectiveKind (from backend) and exportGateOk (from export gate).
  */
 export interface ActionModelInput {
   /** Dashboard status from backend: 'AVAILABLE' | 'NO_SNAPSHOT' | 'HARD_ERROR' | etc. */
   status: string;
-  /** Selected snapshot variant (raw string from backend/selector) */
+  /** Selected snapshot variant (raw string from selector, kept for logging) */
   selectedVariant: any;
+  /** Effective snapshot kind resolved from backend — GOVERNANCE, SEED, or UNKNOWN */
+  effectiveKind: EffectiveKind;
+  /** Whether the export gate says OK (from exportGateReasonCodeNormalized or fallback) */
+  exportGateOk: boolean;
+  /** Export gate reason code for diagnostics */
+  exportGateReasonCode?: string;
   /** Whether the review is sealed */
   sealed: boolean;
-  /** Whether export is eligible (backend truth) */
-  exportEligible: boolean;
-  /** Whether a canonical hash exists for export */
-  hasCanonicalHash: boolean;
   /** Whether build coherence check passed */
   buildCoherenceOk: boolean;
 }
@@ -116,17 +121,19 @@ export function normalizeSnapshotKind(s: any): SnapshotKind {
  * Pure function: computes the single action model that drives ALL button
  * states. No DOM access, no side-effects, fully testable.
  *
+ * v7.45: uses effectiveKind (GOVERNANCE/SEED/UNKNOWN) from backend,
+ * NOT the variant string ("latest"/"seed"). This is the root cause fix.
+ *
  * Precedence:
  * 1. buildCoherenceOk === false → all disabled, run visible if AVAILABLE
  * 2. status !== 'AVAILABLE' → nothing visible/actionable
  * 3. Run Access Review: visible when AVAILABLE, enabled unless build-incoherent (R2, R5)
- * 4. Export Evidence Pack: visible ONLY for governance + exportEligible (R3)
- * 5. Seal Review: visible ONLY for governance (R4)
+ * 4. Export Evidence Pack: visible ONLY for GOVERNANCE + exportGateOk (R3)
+ * 5. Seal Review: visible ONLY for GOVERNANCE (R4)
  * 6. Sealed → run disabled, seal disabled, export still allowed
- * 7. Missing hash → export visible but disabled
  */
 export function computeActionModel(input: ActionModelInput): ActionModelOutput {
-  const kind = normalizeSnapshotKind(input.selectedVariant);
+  const ek = input.effectiveKind;
   const reasons: string[] = [];
 
   // Rule 2: Dashboard not available → nothing visible
@@ -150,9 +157,9 @@ export function computeActionModel(input: ActionModelInput): ActionModelOutput {
     return {
       runVisible: true,
       runEnabled: false,
-      sealVisible: kind === 'governance',
+      sealVisible: ek === 'GOVERNANCE',
       sealEnabled: false,
-      exportVisible: kind === 'governance' && input.exportEligible,
+      exportVisible: ek === 'GOVERNANCE' && input.exportGateOk,
       exportEnabled: false,
       customerMessage: 'Update in progress. Please refresh this page.',
       reasons,
@@ -165,12 +172,12 @@ export function computeActionModel(input: ActionModelInput): ActionModelOutput {
   let runVisible = true;
   let runEnabled = true;
 
-  // R4: Seal visible ONLY for governance
-  let sealVisible = kind === 'governance';
-  let sealEnabled = kind === 'governance';
+  // R4: Seal visible ONLY for GOVERNANCE
+  let sealVisible = ek === 'GOVERNANCE';
+  let sealEnabled = ek === 'GOVERNANCE';
 
-  // R3: Export visible ONLY for governance AND exportEligible
-  let exportVisible = kind === 'governance' && input.exportEligible;
+  // R3: Export visible ONLY for GOVERNANCE AND exportGateOk
+  let exportVisible = ek === 'GOVERNANCE' && input.exportGateOk;
   let exportEnabled = exportVisible;
   let customerMessage: string | undefined;
 
@@ -182,20 +189,13 @@ export function computeActionModel(input: ActionModelInput): ActionModelOutput {
   }
 
   // Seed → export hidden, seal hidden (already set above), run stays enabled (R5)
-  if (kind === 'seed') {
+  if (ek === 'SEED') {
     reasons.push('SEED_NO_EXPORT');
   }
 
-  // Not export eligible → already handled by exportVisible derivation above
-  if (!input.exportEligible && kind === 'governance') {
-    reasons.push('NOT_EXPORT_ELIGIBLE');
-  }
-
-  // Missing hash → export visible but disabled
-  if (exportVisible && !input.hasCanonicalHash) {
-    exportEnabled = false;
-    reasons.push('MISSING_HASH');
-    customerMessage = 'Export is not yet available. Please run an access review first.';
+  // Not exportGateOk → already handled by exportVisible derivation above
+  if (!input.exportGateOk && ek === 'GOVERNANCE') {
+    reasons.push('EXPORT_GATE_' + (input.exportGateReasonCode || 'NOT_OK'));
   }
 
   return {

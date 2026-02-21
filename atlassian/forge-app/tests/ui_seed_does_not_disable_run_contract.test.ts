@@ -1,8 +1,9 @@
 /**
- * Contract Test: Seed Does NOT Disable Run Access Review (R5)
+ * Contract Test: Seed Does NOT Disable Run Access Review (R5) — v7.45
  *
  * Verifies that selecting seed variant keeps Run Access Review enabled
  * while hiding export and seal (which are governance-only).
+ * v7.45: Uses effectiveKind='SEED' instead of variant string.
  *
  * PASS marker: [FT_TEST_PASS_UI_SEED_DOES_NOT_DISABLE_RUN_CONTRACT]
  */
@@ -14,9 +15,9 @@ function seedInput(overrides?: Partial<ActionModelInput>): ActionModelInput {
   return {
     status: 'AVAILABLE',
     selectedVariant: 'seed',
+    effectiveKind: 'SEED',
+    exportGateOk: false,
     sealed: false,
-    exportEligible: true,
-    hasCanonicalHash: true,
     buildCoherenceOk: true,
     ...overrides,
   };
@@ -30,15 +31,15 @@ describe('Seed Does NOT Disable Run Access Review (R5)', () => {
     console.log('[FT_TEST_PASS_UI_SEED_DOES_NOT_DISABLE_RUN_CONTRACT]');
   });
 
-  it('R3: seed → exportVisible=false regardless of exportAllowed', () => {
-    const model = computeActionModel(seedInput({ exportEligible: true }));
+  it('R3: SEED effectiveKind → exportVisible=false regardless of exportGateOk', () => {
+    const model = computeActionModel(seedInput({ exportGateOk: true }));
     expect(model.exportVisible).toBe(false);
 
-    const model2 = computeActionModel(seedInput({ exportEligible: false }));
+    const model2 = computeActionModel(seedInput({ exportGateOk: false }));
     expect(model2.exportVisible).toBe(false);
   });
 
-  it('R4: seed → sealVisible=false', () => {
+  it('R4: SEED effectiveKind → sealVisible=false', () => {
     const model = computeActionModel(seedInput());
     expect(model.sealVisible).toBe(false);
   });
