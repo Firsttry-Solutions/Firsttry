@@ -1,11 +1,8 @@
 /**
- * UI Snapshot Action Model — Contract Tests
+ * UI Snapshot Action Model — Contract Tests (v7.42.x)
  *
  * Verifies the pure functions: computeActionModel() and normalizeSnapshotKind()
  * These are the SINGLE SOURCE OF TRUTH for button rendering across all variants.
- *
- * ⚠️  These tests import directly from the UI module. If the exports break,
- *     the build is broken and the deploy gate MUST fail.
  */
 import { describe, it, expect } from 'vitest';
 import { computeActionModel, normalizeSnapshotKind } from '../src/gadget-ui/src/snapshotActionModel';
@@ -46,7 +43,7 @@ describe('normalizeSnapshotKind', () => {
 function baseInput(overrides?: Partial<ActionModelInput>): ActionModelInput {
   return {
     status: 'AVAILABLE',
-    selectedVariant: 'latest',
+    selectedVariant: 'governance',
     sealed: false,
     exportEligible: true,
     hasCanonicalHash: true,
@@ -56,9 +53,11 @@ function baseInput(overrides?: Partial<ActionModelInput>): ActionModelInput {
 }
 
 describe('computeActionModel', () => {
-  it('returns all-enabled for happy-path AVAILABLE + latest + coherent', () => {
+  it('returns all-visible + enabled for governance AVAILABLE + coherent', () => {
     const result = computeActionModel(baseInput());
+    expect(result.runVisible).toBe(true);
     expect(result.runEnabled).toBe(true);
+    expect(result.sealVisible).toBe(true);
     expect(result.sealEnabled).toBe(true);
     expect(result.exportVisible).toBe(true);
     expect(result.exportEnabled).toBe(true);
@@ -67,6 +66,7 @@ describe('computeActionModel', () => {
 
   it('disables everything when buildCoherenceOk is false', () => {
     const result = computeActionModel(baseInput({ buildCoherenceOk: false }));
+    expect(result.runVisible).toBe(true);
     expect(result.runEnabled).toBe(false);
     expect(result.sealEnabled).toBe(false);
     expect(result.exportEnabled).toBe(false);
@@ -74,17 +74,21 @@ describe('computeActionModel', () => {
     expect(result.reasons).toContain('BUILD_INCOHERENT');
   });
 
-  it('hides export and disables run/seal when status is NOT_AVAILABLE', () => {
+  it('hides everything when status is NOT_AVAILABLE', () => {
     const result = computeActionModel(baseInput({ status: 'NO_SNAPSHOT' }));
+    expect(result.runVisible).toBe(false);
     expect(result.runEnabled).toBe(false);
+    expect(result.sealVisible).toBe(false);
     expect(result.sealEnabled).toBe(false);
     expect(result.exportVisible).toBe(false);
     expect(result.reasons).toContain('NOT_AVAILABLE');
   });
 
-  it('hides export for seed variant', () => {
+  it('hides export + seal for seed variant but run stays enabled (R5)', () => {
     const result = computeActionModel(baseInput({ selectedVariant: 'seed' }));
+    expect(result.runVisible).toBe(true);
     expect(result.runEnabled).toBe(true);
+    expect(result.sealVisible).toBe(false);
     expect(result.exportVisible).toBe(false);
     expect(result.exportEnabled).toBe(false);
     expect(result.reasons).toContain('SEED_NO_EXPORT');
@@ -99,7 +103,7 @@ describe('computeActionModel', () => {
     expect(result.reasons).toContain('SEALED');
   });
 
-  it('hides export when not eligible', () => {
+  it('hides export when governance but not eligible', () => {
     const result = computeActionModel(baseInput({ exportEligible: false }));
     expect(result.exportVisible).toBe(false);
     expect(result.exportEnabled).toBe(false);
@@ -116,9 +120,19 @@ describe('computeActionModel', () => {
 
   it('handles HARD_ERROR status like NOT_AVAILABLE', () => {
     const result = computeActionModel(baseInput({ status: 'HARD_ERROR' }));
+    expect(result.runVisible).toBe(false);
     expect(result.runEnabled).toBe(false);
-    expect(result.sealEnabled).toBe(false);
+    expect(result.sealVisible).toBe(false);
     expect(result.exportVisible).toBe(false);
     expect(result.reasons).toContain('NOT_AVAILABLE');
+  });
+
+  it('latest variant: run visible, seal hidden, export hidden', () => {
+    const result = computeActionModel(baseInput({ selectedVariant: 'latest' }));
+    expect(result.runVisible).toBe(true);
+    expect(result.runEnabled).toBe(true);
+    expect(result.sealVisible).toBe(false);
+    expect(result.sealEnabled).toBe(false);
+    expect(result.exportVisible).toBe(false);
   });
 });
