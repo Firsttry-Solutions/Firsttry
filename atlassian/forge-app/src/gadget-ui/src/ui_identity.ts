@@ -39,30 +39,79 @@ export function isValidBundleHash(hash: string): boolean {
 }
 
 /**
- * Extract bundle hash from script src attribute
- * 
- * CONTRACT:
- * - Match pattern: app.<6-40-hex>.(js|mjs)
- * - Extract hash, then ALWAYS return first 7 characters
- * - This ensures bundleHash is always 7 hex (different from 40-char git SHA)
- * 
- * Returns null if pattern not found (fatal error path will handle)
+ * Result of bundle hash extraction.
+ * Pure data object; no throws.
  */
-export function extractBundleHashFromScript(): string | null {
+export interface BundleHashExtractionResult {
+  hash: string;          // 7 hex chars OR 'UNAVAILABLE'
+  reason: 'APP_HASH' | 'FORGE_INDEX_JS' | 'NO_MATCH';
+  entryUrl: string | null;
+}
+
+/**
+ * Extract bundle hash from script src attribute (PURE, TESTABLE)
+ *
+ * Detection precedence:
+ * 1. Match pattern: app.<6-40-hex>.(js|mjs) → extract first 7 hex chars
+ * 2. If any script src ends with /index.js → Forge-served bundle, hash UNAVAILABLE
+ * 3. No match → hash UNAVAILABLE
+ *
+ * NEVER throws. Returns structured result.
+ *
+ * @param scriptSrcs - Array of script src strings (for testing). If omitted, reads from DOM.
+ */
+export function extractBundleHash(scriptSrcs?: string[]): BundleHashExtractionResult {
+  let srcs: string[] = [];
   try {
-    const scripts = document.querySelectorAll('script[type="module"][src]');
-    for (const script of scripts) {
-      const src = script.getAttribute('src') || '';
-      const match = src.match(/app\.([0-9a-f]{6,40})\.(js|mjs)/i);
-      if (match && match[1]) {
-        // CRITICAL: Always return FIRST 7 chars for consistency
-        return match[1].substring(0, 7);
-      }
+    if (scriptSrcs) {
+      srcs = scriptSrcs;
+    } else if (typeof document !== 'undefined') {
+      srcs = Array.from(document.querySelectorAll('script[src]')).map(
+        s => s.getAttribute('src') || ''
+      ).filter(Boolean);
     }
   } catch (e) {
-    console.error('[UI_IDENTITY] Failed to extract bundle hash from script:', e);
+    console.error('[UI_IDENTITY] Failed to read script sources:', e);
   }
-  return null;
+
+  // Step 1: Try app.<hex>.(js|mjs)
+  for (const src of srcs) {
+    const match = src.match(/app\.([0-9a-f]{6,40})\.(js|mjs)/i);
+    if (match && match[1]) {
+      return {
+        hash: match[1].substring(0, 7),
+        reason: 'APP_HASH',
+        entryUrl: src,
+      };
+    }
+  }
+
+  // Step 2: Detect Forge-served /index.js (no content-hash in filename)
+  for (const src of srcs) {
+    if (src.endsWith('/index.js') || src === 'index.js') {
+      return {
+        hash: 'UNAVAILABLE',
+        reason: 'FORGE_INDEX_JS',
+        entryUrl: src,
+      };
+    }
+  }
+
+  // Step 3: No match at all
+  return {
+    hash: 'UNAVAILABLE',
+    reason: 'NO_MATCH',
+    entryUrl: null,
+  };
+}
+
+/**
+ * Legacy wrapper — kept for backward compat.
+ * @deprecated Use extractBundleHash() instead.
+ */
+export function extractBundleHashFromScript(): string | null {
+  const result = extractBundleHash();
+  return result.reason === 'APP_HASH' ? result.hash : null;
 }
 
 /**
@@ -79,14 +128,14 @@ export function extractBundleHashFromScript(): string | null {
  * - [FATAL_UI_IDENTITY] if git_sha === bundle_hash (collision detected)
  */
 export function buildUiIdentity(): UiIdentity {
-  // Early marker for debugging
-  const earlyBundleHash = extractBundleHashFromScript();
+  // v7.51: Use structured extractor (never throws)
+  const extraction = extractBundleHash();
   console.log(
     `[UI_BUILD_IDENTITY_EARLY] ui_git_sha=${UI_GIT_SHA} (${UI_GIT_SHA.length} chars) | ` +
-    `ui_bundle_hash=${earlyBundleHash} (${earlyBundleHash ? earlyBundleHash.length : 0} chars)`
+    `ui_bundle_hash=${extraction.hash} (reason=${extraction.reason})`
   );
 
-  // FATAL 1: Validate git SHA format
+  // FATAL 1: Validate git SHA format (still fatal — build system is truly broken)
   if (!isValidGitSha(UI_GIT_SHA)) {
     throw new Error(
       `[FATAL_UI_GIT_SHA_MISSING] UI_GIT_SHA is not 40 hex characters. ` +
@@ -95,25 +144,36 @@ export function buildUiIdentity(): UiIdentity {
     );
   }
 
-  // FATAL 2: Extract and validate bundle hash
-  const bundleHash = extractBundleHashFromScript();
-  if (!bundleHash) {
-    throw new Error(
-      `[FATAL_UI_BUNDLE_HASH_MISSING] Could not extract bundle hash from app.*.js script tag. ` +
-      `Searched for pattern: app.<6-40-hex>.(js|mjs)`
+  // v7.51: NON-FATAL bundle hash — degrade to 'UNAVAILABLE' instead of crashing
+  let bundleHash = extraction.hash;
+  if (extraction.reason !== 'APP_HASH') {
+    // Log proof marker for observability (NOT a crash)
+    console.error(
+      '[FT_PROOF_UI_BUNDLE_HASH_UNAVAILABLE]',
+      JSON.stringify({
+        reason: extraction.reason,
+        pattern: 'app.<hex>.js|mjs',
+        entryUrl: extraction.entryUrl,
+        href: typeof window !== 'undefined' ? window.location.href : 'unknown',
+      })
     );
+    bundleHash = 'UNAVAILABLE';
+  } else if (!isValidBundleHash(bundleHash)) {
+    // Hash was extracted but does not pass 7-hex validation — degrade
+    console.error(
+      '[FT_PROOF_UI_BUNDLE_HASH_UNAVAILABLE]',
+      JSON.stringify({
+        reason: 'INVALID_FORMAT',
+        rawHash: bundleHash,
+        pattern: 'app.<hex>.js|mjs',
+        href: typeof window !== 'undefined' ? window.location.href : 'unknown',
+      })
+    );
+    bundleHash = 'UNAVAILABLE';
   }
 
-  if (!isValidBundleHash(bundleHash)) {
-    throw new Error(
-      `[FATAL_UI_BUNDLE_HASH_MISSING] Bundle hash is not 7 hex characters. ` +
-      `Got ${bundleHash.length} chars: "${bundleHash}". ` +
-      `This means the filename-based cache-buster is not working correctly.`
-    );
-  }
-
-  // FATAL 3: Collision detection (should be impossible, but defensive check)
-  if (UI_GIT_SHA === bundleHash) {
+  // Collision detection (skip if UNAVAILABLE — can't collide with 40-hex SHA)
+  if (bundleHash !== 'UNAVAILABLE' && UI_GIT_SHA === bundleHash) {
     throw new Error(
       `[FATAL_UI_IDENTITY] Git SHA equals bundle hash: "${UI_GIT_SHA}". ` +
       `This is IMPOSSIBLE (40 hex vs 7 hex cannot be equal). ` +
@@ -121,26 +181,12 @@ export function buildUiIdentity(): UiIdentity {
     );
   }
 
-  // Find the entry URL for identity tracking
-  let entryUrl: string | null = null;
-  try {
-    const script = Array.from(document.querySelectorAll('script[type="module"][src]')).find(s => {
-      const src = s.getAttribute('src') || '';
-      return src.match(/app\.[0-9a-f]+\.(js|mjs)/i);
-    });
-    if (script) {
-      entryUrl = script.getAttribute('src');
-    }
-  } catch (e) {
-    console.warn('[UI_IDENTITY] Could not determine entry URL:', e);
-  }
-
-  // SUCCESS: Return validated identity
+  // SUCCESS: Return identity (may have UNAVAILABLE bundle hash — UI still boots)
   const identity: UiIdentity = {
     ui_git_sha: UI_GIT_SHA,
     ui_git_time_iso: UI_BUILD_TIME_UTC,
     ui_bundle_hash: bundleHash,
-    ui_entry_url: entryUrl,
+    ui_entry_url: extraction.entryUrl,
   };
 
   // Log for verification
@@ -178,9 +224,10 @@ export function createIdentityAnchor(identity: UiIdentity): string {
     );
   }
 
-  if (!isValidBundleHash(identity.ui_bundle_hash)) {
+  // v7.51: Accept 'UNAVAILABLE' as valid bundle hash (Forge index.js serving)
+  if (identity.ui_bundle_hash !== 'UNAVAILABLE' && !isValidBundleHash(identity.ui_bundle_hash)) {
     throw new Error(
-      `[FATAL_UI_IDENTITY_ANCHOR] Invalid bundle_hash format (must be 7 hex): ${identity.ui_bundle_hash}`
+      `[FATAL_UI_IDENTITY_ANCHOR] Invalid bundle_hash format (must be 7 hex or UNAVAILABLE): ${identity.ui_bundle_hash}`
     );
   }
 
