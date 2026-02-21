@@ -994,12 +994,15 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
       // Handler returned a soft failure - map to compliant error envelope
       // Note: This is a TRUE export failure (not gating), so status may be 'FAILED'
       const softFailureMessage = String(handlerResult.reason || handlerResult.error?.message || 'Export failed');
-      const softFailureCode = String(handlerResult.error?.code || 'PHASE1_SOFT_FAILED');
+      const softFailureCode = String(handlerResult.error?.code || handlerResult.reasonCode || 'PHASE1_SOFT_FAILED');
+      // v7.49: Propagate handler reasonCode verbatim for UI display
+      const handlerReasonCode = handlerResult.reasonCode || null;
       
       console.log('[FT_PROOF_PHASE1_FAIL]', JSON.stringify({
         action: 'EXPORT_PHASE1_PACK',
         traceId,
         code: softFailureCode,
+        reasonCode: handlerReasonCode,
         reason: softFailureMessage,
         source: 'soft_failure',
         ts: new Date().toISOString(),
@@ -1013,6 +1016,7 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
         traceId,
         buildShaShort: build.buildShaShort,
         code: softFailureCode,
+        reasonCode: handlerReasonCode,
         reason: softFailureMessage,
         ts: new Date().toISOString(),
       }));
@@ -1024,6 +1028,7 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
         action: 'EXPORT_PHASE1_PACK',
         traceId,
         build,
+        reasonCode: handlerReasonCode || softFailureCode,
         reason: softFailureMessage,
         error: {
           code: softFailureCode,

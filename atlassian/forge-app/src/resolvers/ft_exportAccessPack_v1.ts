@@ -21,6 +21,69 @@
 import api from '@forge/api';
 import { storage } from '@forge/api';
 
+// ============================================================================
+// v7.49: Phase1 stats validation — pure, exported for testing
+// ============================================================================
+
+export interface Phase1StatsValidation {
+  valid: boolean;
+  totalUsers: number | null;
+  activeUsers: number | null;
+  externalUsers: number | null;
+  globalAdminsCount: number | null;
+  publicProjectsCount: number | null;
+  toxicFindingsCount: number | null;
+  finalRiskScore: number | null;
+  reasonCode?: string;
+  message?: string;
+}
+
+/**
+ * validatePhase1Stats(snapshot)
+ *
+ * Validates that Phase1 snapshot contains all required data for export.
+ * Returns structured failure if any required field is missing/undefined.
+ * Pure function — no side effects, no throws.
+ */
+export function validatePhase1Stats(snapshot: any): Phase1StatsValidation {
+  const totals = snapshot?.totals && typeof snapshot.totals === 'object' ? snapshot.totals : null;
+  const riskModel = snapshot?.riskModel && typeof snapshot.riskModel === 'object' ? snapshot.riskModel : null;
+  const exposure = snapshot?.exposure && typeof snapshot.exposure === 'object' ? snapshot.exposure : null;
+  const toxicFindings = Array.isArray(snapshot?.toxicFindings) ? snapshot.toxicFindings : null;
+
+  const totalUsers = typeof totals?.totalUsers === 'number' ? totals.totalUsers : null;
+  const activeUsers = typeof totals?.activeUsers === 'number' ? totals.activeUsers : null;
+  const externalUsers = typeof totals?.externalUsers === 'number' ? totals.externalUsers : null;
+  const globalAdminsCount = Array.isArray(exposure?.globalAdmins) ? exposure.globalAdmins.length : null;
+  const publicProjectsCount = Array.isArray(exposure?.publicProjects) ? exposure.publicProjects.length : null;
+  const toxicFindingsCount = toxicFindings !== null ? toxicFindings.length : null;
+  const finalRiskScore = typeof riskModel?.finalRiskScore === 'number' ? riskModel.finalRiskScore : null;
+
+  // Require minimum fields for export
+  if (totalUsers === null) {
+    return {
+      valid: false,
+      totalUsers, activeUsers, externalUsers, globalAdminsCount, publicProjectsCount, toxicFindingsCount, finalRiskScore,
+      reasonCode: 'EXPORT_PHASE1_STATS_MISSING',
+      message: 'Export requires Phase1 stats (totalUsers) but none were found in snapshot',
+    };
+  }
+
+  if (finalRiskScore === null) {
+    return {
+      valid: false,
+      totalUsers, activeUsers, externalUsers, globalAdminsCount, publicProjectsCount, toxicFindingsCount, finalRiskScore,
+      reasonCode: 'EXPORT_PHASE1_STATS_MISSING',
+      message: 'Export requires Phase1 stats (riskModel.finalRiskScore) but none were found in snapshot',
+    };
+  }
+
+  return {
+    valid: true,
+    totalUsers, activeUsers, externalUsers, globalAdminsCount, publicProjectsCount, toxicFindingsCount, finalRiskScore,
+  };
+}
+
 /**
  * Main entry point for export
  * 
@@ -72,9 +135,36 @@ export const handler = async (request: any): Promise<any> => {
 
     console.log(`[FT_ACCESS_EXPORT_READ] Found snapshot with hash ${snapshot.canonicalHash}`);
 
+    // v7.49: Validate Phase1 stats BEFORE building export (fail-closed, never throw TypeError)
+    const statsValidation = validatePhase1Stats(snapshot);
+
+    // v7.49: Proof marker — always emitted, shows exactly what data was found
+    console.log('[FT_PROOF_BACKEND_EXPORT_PHASE1_INPUTS]', JSON.stringify({
+      snapshotId: snapshot.snapshotId || snapshot.canonicalHash || 'unknown',
+      hasPhase1Stats: statsValidation.valid,
+      phase1Keys: snapshot ? Object.keys(snapshot).slice(0, 50) : [],
+      totalUsers: statsValidation.totalUsers,
+      activeUsers: statsValidation.activeUsers,
+      externalUsers: statsValidation.externalUsers,
+      globalAdminsCount: statsValidation.globalAdminsCount,
+      publicProjectsCount: statsValidation.publicProjectsCount,
+      toxicFindingsCount: statsValidation.toxicFindingsCount,
+      finalRiskScore: statsValidation.finalRiskScore,
+    }));
+
+    if (!statsValidation.valid) {
+      console.error(`[FT_ACCESS_EXPORT_ERROR] ${statsValidation.message}`);
+      return {
+        ok: false,
+        status: 'FAILED',
+        reasonCode: statsValidation.reasonCode,
+        reason: statsValidation.message,
+      };
+    }
+
     // STEP 2: Build ZIP structure with 7 files (deterministic order)
     console.log('[FT_ACCESS_EXPORT_ZIP] Building ZIP archive');
-    const files = buildExportFiles(snapshot);
+    const files = buildExportFiles(snapshot, statsValidation);
     const zipData = buildZipArchive(files);
     
     // STEP 3: Compute ZIP hash and filename
@@ -137,7 +227,7 @@ export const handler = async (request: any): Promise<any> => {
  * 6. schema-version.txt - Export schema version
  * 7. verify.js - Offline verification script
  */
-function buildExportFiles(snapshot: any): { [key: string]: string } {
+function buildExportFiles(snapshot: any, stats: Phase1StatsValidation): { [key: string]: string } {
   const files: { [key: string]: string } = {};
 
   // File 1: Manifest
@@ -157,53 +247,54 @@ function buildExportFiles(snapshot: any): { [key: string]: string } {
     siteId: snapshot.siteId,
     privilegeContext: snapshot.privilegeContext,
     ruleSetVersion: snapshot.ruleSetVersion,
-    totals: snapshot.totals,
-    exposure: snapshot.exposure,
-    toxicFindings: snapshot.toxicFindings,
-    riskModel: snapshot.riskModel,
+    totals: snapshot.totals || {},
+    exposure: snapshot.exposure || {},
+    toxicFindings: snapshot.toxicFindings || [],
+    riskModel: snapshot.riskModel || {},
     canonicalHash: snapshot.canonicalHash,
   };
   files['snapshot.json'] = JSON.stringify(canonicalSnapshot, null, 2);
 
-  // File 3: Access Report (human readable)
+  // File 3: Access Report (human readable) — v7.49: guarded reads from validated stats
   files['access-report.json'] = JSON.stringify({
     title: 'Jira Access Intelligence Report',
     generated: new Date().toISOString(),
     summary: {
-      total_users: snapshot.totals.totalUsers,
-      active_users: snapshot.totals.activeUsers,
-      external_users: snapshot.totals.externalUsers,
+      total_users: stats.totalUsers ?? 0,
+      active_users: stats.activeUsers ?? 0,
+      external_users: stats.externalUsers ?? 0,
     },
     findings: {
-      global_admins: snapshot.exposure.globalAdmins.length,
-      public_projects: snapshot.exposure.publicProjects.length,
-      toxic_findings: snapshot.toxicFindings.length,
+      global_admins: stats.globalAdminsCount ?? 0,
+      public_projects: stats.publicProjectsCount ?? 0,
+      toxic_findings: stats.toxicFindingsCount ?? 0,
     },
-    risk_tier: computeRiskTier(snapshot.riskModel.finalRiskScore),
+    risk_tier: computeRiskTier(stats.finalRiskScore ?? 0),
   }, null, 2);
 
-  // File 4: Risk Summary
+  // File 4: Risk Summary — v7.49: guarded reads
+  const riskModel = snapshot.riskModel && typeof snapshot.riskModel === 'object' ? snapshot.riskModel : {};
   files['risk-summary.json'] = JSON.stringify({
     risk_model_version: '1.0',
-    final_risk_score: snapshot.riskModel.finalRiskScore,
+    final_risk_score: stats.finalRiskScore ?? 0,
     components: {
       admin_density: {
-        value: snapshot.riskModel.adminDensity,
+        value: typeof riskModel.adminDensity === 'number' ? riskModel.adminDensity : 0,
         max_weight: 0.4,
       },
       external_exposure: {
-        value: snapshot.riskModel.externalExposureScore,
+        value: typeof riskModel.externalExposureScore === 'number' ? riskModel.externalExposureScore : 0,
         max_weight: 0.3,
       },
       toxic_findings: {
-        count: snapshot.riskModel.toxicHitCount,
+        count: typeof riskModel.toxicHitCount === 'number' ? riskModel.toxicHitCount : 0,
         max_weight: 0.3,
       },
     },
   }, null, 2);
 
   // File 5: Executive PDF (placeholder - would call PDF generator)
-  files['report-executive.pdf'] = generatePlaceholderPdf(snapshot);
+  files['report-executive.pdf'] = generatePlaceholderPdf(snapshot, stats);
 
   // File 6: Schema version
   files['schema-version.txt'] = 'access-intelligence-export-v1.0';
@@ -231,10 +322,14 @@ function buildZipArchive(files: { [key: string]: string }): any {
 }
 
 /**
- * Generate placeholder PDF content
+ * Generate placeholder PDF content — v7.49: guarded reads
  */
-function generatePlaceholderPdf(snapshot: any): string {
-  const riskTier = computeRiskTier(snapshot.riskModel.finalRiskScore);
+function generatePlaceholderPdf(snapshot: any, stats: Phase1StatsValidation): string {
+  const riskTier = computeRiskTier(stats.finalRiskScore ?? 0);
+  const totalUsersStr = stats.totalUsers ?? 0;
+  const globalAdminsStr = stats.globalAdminsCount ?? 0;
+  const publicProjectsStr = stats.publicProjectsCount ?? 0;
+  const toxicFindingsStr = stats.toxicFindingsCount ?? 0;
   return `%PDF-1.4
 1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
@@ -256,13 +351,13 @@ BT
 /F1 12 Tf
 (Risk Tier: ${riskTier}) Tj
 0 -20 Td
-(Total Users: ${snapshot.totals.totalUsers}) Tj
+(Total Users: ${totalUsersStr}) Tj
 0 -20 Td
-(Global Admins: ${snapshot.exposure.globalAdmins.length}) Tj
+(Global Admins: ${globalAdminsStr}) Tj
 0 -20 Td
-(Public Projects: ${snapshot.exposure.publicProjects.length}) Tj
+(Public Projects: ${publicProjectsStr}) Tj
 0 -20 Td
-(Toxic Findings: ${snapshot.toxicFindings.length}) Tj
+(Toxic Findings: ${toxicFindingsStr}) Tj
 ET
 endstream
 endobj
