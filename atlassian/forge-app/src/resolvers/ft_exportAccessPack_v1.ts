@@ -212,14 +212,23 @@ export const handler = async (request: any): Promise<any> => {
       size: zipData.length,
     }));
 
-    // Return download info
+    // Return download info + inline zip data for UI client-side download
+    // v7.54: zipBase64 required by UI contract (exportData.ok && exportData.zipBase64)
+    const zipBase64 = zipData.toString('base64');
+    const fileCount = Object.keys(files).length;
+
     return {
       ok: true,
       status: 'SUCCESS',
+      reasonCode: 'OK',
       downloadUrl: `/download/access-pack/${snapshot.canonicalHash}`,
       canonicalHash: snapshot.canonicalHash,
       snapshotId: fileKey,
       size: zipData.length,
+      zipBase64,
+      zipHash,
+      fileCount,
+      createdAtUtc: new Date().toISOString(),
     };
   } catch (error: any) {
     const errorMsg = error?.message || String(error);

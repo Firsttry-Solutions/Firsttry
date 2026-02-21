@@ -4276,12 +4276,16 @@ async function proceedWithBoot() {
                 }
                 
                 if (exportData && exportData.ok && exportData.zipBase64) {
-                  // v7.47: Success proof marker
-                  console.log('[FT_PROOF_UI_EXPORT_INVOKE_OK]', JSON.stringify({
-                    resolver: exportResolverKey,
-                    snapshotId: _exportSnapshotId,
+                  // v7.54: Success — UI contract passed, zip data present
+                  console.log('[FT_PROOF_UI_EXPORT_SUCCESS_V1]', JSON.stringify({
+                    snapshotId: actionResult?.snapshotId || exportData?.snapshotId || _exportSnapshotId,
+                    exportId: actionResult?.snapshotId || exportData?.snapshotId || null,
+                    canonicalHash: actionResult?.canonicalHash || exportData?.canonicalHash || null,
+                    zipHash: exportData.zipHash || null,
+                    fileCount: exportData.fileCount || null,
+                    traceId: actionResult?.traceId || null,
                   }));
-                  console.log('[PHASE1_EXPORT_SUCCESS]', { hash: exportData.zipHash, fileCount: exportData.fileCount });
+                  console.log('[PHASE1_EXPORT_OK]', { hash: exportData.zipHash, fileCount: exportData.fileCount });
                   
                   // Create success marker (for test detection)
                   let successMarker = document.querySelector('[data-testid="ft-export-success"]');
@@ -4289,7 +4293,7 @@ async function proceedWithBoot() {
                     successMarker = document.createElement('div');
                     successMarker.setAttribute('data-testid', 'ft-export-success');
                     successMarker.style.display = 'none';
-                    successMarker.textContent = exportData.traceId || 'success';
+                    successMarker.textContent = actionResult?.traceId || exportData.traceId || 'success';
                     document.body.appendChild(successMarker);
                   }
                   
@@ -4310,31 +4314,41 @@ async function proceedWithBoot() {
                   URL.revokeObjectURL(url);
                   
                   exportAccessButton.textContent = 'Export Complete';
+                } else if (actionResult?.ok === true || exportData?.ok === true) {
+                  // v7.54: Backend returned ok:true but missing zipBase64 — data delivery failure
+                  const missingFields: string[] = [];
+                  if (!exportData?.zipBase64) missingFields.push('zipBase64');
+                  if (!exportData?.zipHash) missingFields.push('zipHash');
+                  if (!exportData?.fileCount) missingFields.push('fileCount');
+                  console.error('[FT_PROOF_UI_EXPORT_CONTRACT_FAIL_V1]', JSON.stringify({
+                    missingFields,
+                    traceId: actionResult?.traceId || 'unknown',
+                    status: 'SUCCESS_BUT_NO_ZIP_DATA',
+                    hasData: !!actionResult?.data,
+                    dataKeys: actionResult?.data ? Object.keys(actionResult.data) : [],
+                  }));
+                  console.error('[PHASE1_EXPORT_FAIL]', { reason: 'ok:true but zipBase64 missing', missingFields });
+                  exportAccessButton.textContent = `Export Failed: missing zip data (${missingFields.join(', ')}) (traceId=${actionResult?.traceId || 'unknown'})`;
                 } else {
-                  console.error('[PHASE1_EXPORT_FAILED]', exportData);
-                  // v7.48: Propagate backend reasonCode + message verbatim
-                  const backendReasonCode = actionResult?.reasonCode || actionResult?.exportGate?.reasonCode || null;
-                  const failReason = actionResult?.error?.message || actionResult?.reason || 'Unknown error';
+                  // v7.54: Backend returned ok:false — explicit failure with schema-valid envelope
+                  const backendReasonCode = actionResult?.reasonCode || exportData?.reasonCode || actionResult?.exportGate?.reasonCode || 'UNKNOWN';
+                  const failReason = actionResult?.reason || actionResult?.error?.message || exportData?.reason || 'Export failed';
+                  const traceId = actionResult?.traceId || actionResult?.error?.traceId || 'unknown';
+                  console.error('[PHASE1_EXPORT_FAIL]', {
+                    reasonCode: backendReasonCode,
+                    reason: failReason,
+                    traceId,
+                    hasError: !!actionResult?.error,
+                    hasBuild: !!actionResult?.build,
+                  });
                   console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
                     resolver: exportResolverKey,
                     snapshotId: _exportSnapshotId,
                     reasonCode: backendReasonCode,
                     message: failReason,
+                    traceId,
                   }));
-                  if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
-                    console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'Missing required fields on ok:false response', {
-                      hasError: !!actionResult.error,
-                      hasBuild: !!actionResult.build,
-                      hasReason: !!actionResult.reason,
-                      hasTraceId: !!actionResult.traceId,
-                      response: actionResult,
-                    });
-                    exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH missing fields (traceId=${actionResult.traceId || 'unknown'})`;
-                  } else {
-                    const errorMsg = actionResult.error.message || actionResult.reason || 'Unknown error';
-                    const traceId = actionResult.error.traceId || actionResult.traceId || 'unknown';
-                    exportAccessButton.textContent = `Export Failed: ${errorMsg} (traceId=${traceId})`;
-                  }
+                  exportAccessButton.textContent = `Export Failed: ${backendReasonCode} — ${failReason} (traceId=${traceId})`;
                 }
               } catch (error: any) {
                 console.error('[PHASE1_EXPORT_ERROR]', error);
@@ -4342,9 +4356,10 @@ async function proceedWithBoot() {
                   resolver: 'ft_getDashboardState_v1',
                   snapshotId: _exportSnapshotId,
                   reasonCode: 'INVOKE_EXCEPTION',
-                  message: error?.message || 'exception',
+                  message: error?.message || String(error) || 'unexpected exception (no message)',
                 }));
-                exportAccessButton.textContent = 'Error: ' + error.message;
+                const exMsg = error?.message || String(error) || 'unexpected exception';
+                exportAccessButton.textContent = `Export Error: INVOKE_EXCEPTION — ${exMsg}`;
               } finally {
                 exportAccessButton.disabled = false;
               }

@@ -386,22 +386,28 @@ interface FtActionResultV1 {
   envelopeKind: 'FT_ACTION_RESULT_V1';
   ok: boolean;
   action: 'RUN_ACCESS_REVIEW' | 'EXPORT_PHASE1_PACK';
-  status?: 'DISABLED'; // export gating status
+  status?: string; // v7.54: 'SUCCESS' | 'FAIL' | 'DISABLED'
   traceId: string; // never empty
   build: {
     buildShaShort: string; // never empty, 12-char or 'unknown'
     buildUtc: string; // never empty, ISO-8601 or 'unknown'
     version: string; // never empty, semver or 'unknown'
   };
-  reasonCode?: string; // v7.48: structured reason code for UI propagation
-  reason?: string; // required if ok=false, must be non-empty
+  reasonCode?: string | null; // v7.54: 'OK' on success, structured code on fail
+  reason?: string | null; // required if ok=false, must be non-empty; null on success
+  message?: string | null; // v7.54: human-readable message (nullable)
   error?: {
     code: string; // never empty
     message: string; // never empty
     traceId: string; // never empty
-  };
+  } | null;
   phase1Proof?: FtPhase1ProofV1; // optional marker for Phase1 success (ok=true only)
   exportGate?: FtExportGateV1; // export eligibility gating info
+  // v7.54: Export-specific fields promoted to top level for UI contract compliance
+  snapshotId?: string | null;
+  canonicalHash?: string | null;
+  downloadUrl?: string | null;
+  createdAtUtc?: string | null;
   data?: any;
 }
 
@@ -963,22 +969,55 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
       };
     }
 
+    // v7.54: Determine success/fail from handler and build canonical envelope
+    const isOk = handlerResult?.ok === true;
+    const status = isOk ? 'SUCCESS' : 'FAIL';
+    const reasonCode = isOk ? 'OK' : (handlerResult?.reasonCode || 'HANDLER_RETURNED_NOT_OK');
+
+    // v7.54: Log with correct marker name (PHASE1_EXPORT_OK or PHASE1_EXPORT_FAIL)
+    console.log(`[PHASE1_EXPORT_${status === 'SUCCESS' ? 'OK' : 'FAIL'}]`, JSON.stringify({
+      action: 'EXPORT_PHASE1_PACK',
+      traceId,
+      status,
+      reasonCode,
+      canonicalHash: handlerResult?.canonicalHash || null,
+      ts: new Date().toISOString(),
+    }));
+
     // Log action envelope proof marker on success
     console.log('[FT_PROOF_ACTION_ENVELOPE]', JSON.stringify({
       action: 'EXPORT_PHASE1_PACK',
-      ok: handlerResult?.ok === true,
+      ok: isOk,
+      status,
+      reasonCode,
       envelopeKind: 'FT_ACTION_RESULT_V1',
       traceId,
       buildShaShort: build.buildShaShort,
       ts: new Date().toISOString(),
     }));
 
+    // v7.54: Canonical export response envelope — ALL required fields present
+    // UI contract requires: envelopeKind, ok, action, traceId, build, status, reasonCode,
+    //   reason (nullable), snapshotId, canonicalHash, downloadUrl, createdAtUtc, data
     return {
       envelopeKind: 'FT_ACTION_RESULT_V1',
-      ok: handlerResult?.ok === true,
+      ok: isOk,
       action: 'EXPORT_PHASE1_PACK',
+      status,
       traceId,
       build,
+      reasonCode,
+      reason: isOk ? null : (handlerResult?.reason || 'Export handler returned ok:false'),
+      error: isOk ? null : {
+        code: reasonCode,
+        message: handlerResult?.reason || 'Export handler returned ok:false',
+        traceId,
+      },
+      snapshotId: handlerResult?.snapshotId || null,
+      canonicalHash: handlerResult?.canonicalHash || null,
+      downloadUrl: handlerResult?.downloadUrl || null,
+      createdAtUtc: handlerResult?.createdAtUtc || new Date().toISOString(),
+      message: isOk ? 'Export eligible' : (handlerResult?.reason || null),
       data: handlerResult,
     };
   } catch (error: any) {
