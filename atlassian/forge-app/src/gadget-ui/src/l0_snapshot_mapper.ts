@@ -17,7 +17,7 @@
  */
 
 // Import build identity for App Version display in provenance strip
-import { UI_APP_VERSION } from './build/buildIdentity.gen';
+import { UI_APP_VERSION, UI_GIT_SHA_SHORT } from './build/buildIdentity.gen';
 
 // Import enterprise contract renderers
 import { renderEnterpriseContractSection, renderSnapshotHistoryList, renderDefinitionsGuidance } from './components/EnterpriseContractRenderer';
@@ -1553,6 +1553,16 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
   supportLink.className = "l0-dashboard-support-link";
   footer.appendChild(document.createTextNode("Need help? "));
   footer.appendChild(supportLink);
+
+  // v7.43.x: Render UI build identity into DOM (non-scary, muted line)
+  const buildLine = document.createElement("span");
+  buildLine.className = "l0-dashboard-build-id";
+  buildLine.id = "ft-ui-build-id";
+  buildLine.textContent = ` | Build: ${UI_GIT_SHA_SHORT}`;
+  buildLine.style.opacity = "0.5";
+  buildLine.style.fontSize = "0.85em";
+  footer.appendChild(buildLine);
+
   container.appendChild(footer);
 
   return container;
