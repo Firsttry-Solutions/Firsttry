@@ -21,6 +21,7 @@
 import api from '@forge/api';
 import { storage } from '@forge/api';
 import { computeExportEligibilityGate } from '../utils/exportEligibilityGate'; // v7.50: shared gate
+import { makeDeterministicZip, ZipInputFile } from '../zip/deterministicZip'; // v7.55: real PK-header ZIP
 
 // ============================================================================
 // v7.49: Phase1 stats validation — pure, exported for testing
@@ -336,19 +337,22 @@ function buildExportFiles(snapshot: any, stats: Phase1StatsValidation): { [key: 
 }
 
 /**
- * Build minimal ZIP structure (Note: Real implementation would use jszip or similar)
+ * Build standards-compliant deterministic ZIP archive (PK header, STORE method 0, CRC-32).
+ * v7.55: Replaces text-concatenation stub with real ZIP via makeDeterministicZip.
+ * [FT_PROOF_BACKEND_ZIP_REAL] — real PK-header ZIP writer active
  */
-function buildZipArchive(files: { [key: string]: string }): any {
-  // In a real implementation, this would create a proper ZIP file using jszip
-  // For now, return a deterministic concatenation
-  const fileNames = Object.keys(files).sort();
-  let zipContent = '';
-  for (const name of fileNames) {
-    zipContent += `// FILE: ${name}\n`;
-    zipContent += files[name];
-    zipContent += '\n\n';
+function buildZipArchive(files: { [key: string]: string }): Buffer {
+  const encoder = new TextEncoder();
+  const zipInputFiles: ZipInputFile[] = Object.keys(files).map(name => ({
+    path: name,
+    bytes: encoder.encode(files[name]),
+  }));
+  const zipBytes = makeDeterministicZip(zipInputFiles);
+  // Validate PK header before returning
+  if (zipBytes.length < 4 || zipBytes[0] !== 0x50 || zipBytes[1] !== 0x4B || zipBytes[2] !== 0x03 || zipBytes[3] !== 0x04) {
+    throw new Error('[FT_ZIP_HEADER_INVALID] ZIP output does not start with PK header — aborting export');
   }
-  return Buffer.from(zipContent);
+  return Buffer.from(zipBytes);
 }
 
 /**
