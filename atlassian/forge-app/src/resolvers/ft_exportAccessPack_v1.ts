@@ -20,6 +20,7 @@
 
 import api from '@forge/api';
 import { storage } from '@forge/api';
+import { computeExportEligibilityGate } from '../utils/exportEligibilityGate'; // v7.50: shared gate
 
 // ============================================================================
 // v7.49: Phase1 stats validation — pure, exported for testing
@@ -134,6 +135,26 @@ export const handler = async (request: any): Promise<any> => {
     }
 
     console.log(`[FT_ACCESS_EXPORT_READ] Found snapshot with hash ${snapshot.canonicalHash}`);
+
+    // v7.50: Shared gate check (single source of truth, before detailed stats validation)
+    const gateResult = computeExportEligibilityGate(snapshot);
+    console.log('[FT_PROOF_BACKEND_EXPORT_GATE]', JSON.stringify({
+      snapshotId: snapshot.snapshotId || snapshot.canonicalHash || 'unknown',
+      exportEligible: gateResult.exportEligible,
+      reasonCode: gateResult.reasonCode,
+      hasTotals: gateResult.hasTotals,
+      totalUsers: gateResult.totalUsers,
+    }));
+
+    if (!gateResult.exportEligible) {
+      console.error(`[FT_ACCESS_EXPORT_ERROR] Shared gate: ${gateResult.message}`);
+      return {
+        ok: false,
+        status: 'FAILED',
+        reasonCode: gateResult.reasonCode,
+        reason: gateResult.message,
+      };
+    }
 
     // v7.49: Validate Phase1 stats BEFORE building export (fail-closed, never throw TypeError)
     const statsValidation = validatePhase1Stats(snapshot);
