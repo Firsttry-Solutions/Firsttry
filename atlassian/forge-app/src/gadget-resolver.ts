@@ -51,6 +51,7 @@ import { listGovernanceActions } from './governance/actionLog'; // ECL-2.1: Audi
 import { getDriftAck } from './governance/driftAck'; // ECL-3: Drift acknowledgement reader
 import { getTrustPanelData } from './trust/proofBundleReader'; // ECL-5: Trust panel proof reader
 import { aggregateGovernanceState } from './governance/governanceAggregator'; // ECL-ENTERPRISE: Governance aggregator
+import { extractExportSnapshotId } from './utils/extractExportSnapshotId'; // v7.48: canonical snapshotId extraction
 import { FtReasonCode, FtErrorCode } from './backbone/errorCodes';
 import { FtResolverResponseV1, assertNoUnknownStrings, FtLedgerV1 } from './backbone/contract';
 import { loadOrInitLedger, updateLedger } from './backbone/ledger';
@@ -286,6 +287,9 @@ resolver.define('ft_smokeIdentity_v1', safeResolver('ft_smokeIdentity_v1', async
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
 export const handler = resolver.getDefinitions();
 
+// v7.48: Re-export pure extraction helper for testing
+export { extractExportSnapshotId } from './utils/extractExportSnapshotId';
+
 // ============================================================================
 // ECL-3.1 DRIFT ENUMERATION & POPULATION HELPERS
 // ============================================================================
@@ -388,6 +392,7 @@ interface FtActionResultV1 {
     buildUtc: string; // never empty, ISO-8601 or 'unknown'
     version: string; // never empty, semver or 'unknown'
   };
+  reasonCode?: string; // v7.48: structured reason code for UI propagation
   reason?: string; // required if ok=false, must be non-empty
   error?: {
     code: string; // never empty
@@ -407,6 +412,9 @@ type FtExportGateReasonCode =
   | 'NOT_EXPORT_ELIGIBLE'      // e.g., seed snapshot (snapshotKind === 'SEED')
   | 'MISSING_CANONICAL_HASH'   // snapshot.canonicalHash absent
   | 'SNAPSHOT_NOT_FOUND'       // no snapshot in storage
+  | 'MISSING_SNAPSHOT_ID'      // v7.48: no snapshotId in request args
+  | 'SENTINEL_SNAPSHOT_ID'     // v7.48: rejected sentinel value (latest/seed)
+  | 'INVALID_SNAPSHOT_ID'      // v7.48: invalid snapshotId prefix
   | 'UNSUPPORTED_SNAPSHOT_KIND'; // unknown snapshot type
 
 interface FtExportGateV1 {
@@ -746,29 +754,45 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
   const build = buildMeta();
 
   try {
+    // v7.48: Use canonical pure extraction function
+    const extraction = extractExportSnapshotId(request);
+    const requestSnapshotId = extraction.snapshotId;
+
+    // v7.48: Proof marker BEFORE validation — shows exactly where snapshotId was found
+    console.log('[FT_PROOF_BACKEND_EXPORT_REQ]', JSON.stringify({
+      action: request?.action || null,
+      hasSnapshotIdTop: extraction.source === 'top',
+      hasSnapshotIdPayload: extraction.source === 'payload',
+      snapshotId: requestSnapshotId || null,
+      source: extraction.source,
+      argKeys: Object.keys(request || {}),
+      payloadKeys: Object.keys((request && request.payload) || {}),
+    }));
+
     console.log(JSON.stringify({
       marker: '[FT_DASH_ACTION_START]',
       action: 'EXPORT_PHASE1_PACK',
-      requestSnapshotId: request?.snapshotId || null,
+      requestSnapshotId: requestSnapshotId || null,
+      snapshotIdSource: extraction.source,
       ts: new Date().toISOString(),
     }));
 
-    // STEP 1: Load snapshot by selected snapshotId (authoritative: resolver uses UI selection)
-    // Fail-closed: require snapshotId
-    const requestSnapshotId = request?.snapshotId;
-    if (!requestSnapshotId || typeof requestSnapshotId !== 'string' || !requestSnapshotId.trim()) {
-      const msg = 'Export requires snapshotId parameter';
+    // STEP 1: Fail-closed — require valid snapshotId
+    if (!requestSnapshotId || extraction.reasonCode) {
+      const reasonCode = extraction.reasonCode || 'MISSING_SNAPSHOT_ID';
+      const msg = extraction.message || 'Export requires snapshotId parameter';
+
       console.log(JSON.stringify({
         marker: '[PHASE1_EXPORT_BLOCKED]',
-        reason: 'MISSING_SNAPSHOT_ID',
+        reason: reasonCode,
         message: msg,
         ts: new Date().toISOString(),
       }));
 
       const exportGate: FtExportGateV1 = {
         allowed: false,
-        reasonCode: 'SNAPSHOT_NOT_FOUND',
-        snapshotId: 'none',
+        reasonCode: reasonCode as any,
+        snapshotId: requestSnapshotId || 'none',
         hasCanonicalHash: false,
         exportEligible: false,
         message: msg,
@@ -780,6 +804,7 @@ async function handlePhase1ExportPack(request: any): Promise<FtActionResultV1> {
         action: 'EXPORT_PHASE1_PACK',
         traceId,
         build,
+        reasonCode,
         reason: msg,
         error: { code: 'EXPORT_GATED', message: msg, traceId },
         exportGate,
