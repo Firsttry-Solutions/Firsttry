@@ -3482,10 +3482,13 @@ async function proceedWithBoot() {
         }
 
         // Resolve backend short SHA from whichever source has it
+        // FIX v7.40.x: 'data' and 'rawData' do not exist in the L0 path scope.
+        // Use resolverResponse (raw backend envelope) and dashState (mapped state)
+        // which ARE in scope. Previous code caused ReferenceError: data is not defined.
         let _backendShortForCoherence: string | undefined =
-          (data as any)?.backend_git_sha_short ||
-          (rawData as any)?.backend_git_sha_short ||
-          (resolverResponse as any)?.backend_git_sha_short;
+          (resolverResponse as any)?.backend_git_sha_short ||
+          (resolverResponse as any)?.data?.backend_git_sha_short ||
+          dashState?.backendBuildSha;
 
         // SMOKE IDENTITY RETRY: If no backend SHA from dashboard state, call
         // ft_smokeIdentity_v1 up to 3 times with small backoff to get authoritative SHA.
@@ -4099,13 +4102,16 @@ async function proceedWithBoot() {
       } catch (err) {
         // Fatal invoke error - backend not responding
         const errorMsg = err instanceof Error ? err.message : String(err);
+        // FT_PROOF marker: log the real error for backend tracing (console only, never in DOM)
+        console.log(`[FT_PROOF_UI_RENDER_CRASH] uiReqId=${FT_UI_REQ_ID} error=${errorMsg.substring(0, 120)}`);
         console.error('[L0_DASHBOARD_FATAL]', errorMsg);
         
-        // CSS styles are already loaded from static ft_styles.css file
+        // CUSTOMER-SAFE: Never render raw JS error text to customer.
+        // Show a generic, professional message only.
         document.body.innerHTML = '';
         const errorPanel = document.createElement('div');
         errorPanel.className = 'ft-backend-error-panel';
-        errorPanel.textContent = `Backend invoke failed: ${errorMsg.substring(0, 100)}`;
+        errorPanel.textContent = 'Service temporarily unavailable. Please refresh this page.';
         document.body.appendChild(errorPanel);
       }
     })();
