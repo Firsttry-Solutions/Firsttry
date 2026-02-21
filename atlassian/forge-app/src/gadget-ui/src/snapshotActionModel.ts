@@ -1,5 +1,5 @@
 /**
- * Snapshot Variant Action Model — Pure Functions (v7.45)
+ * Snapshot Variant Action Model — Pure Functions (v7.46)
  *
  * Single source of truth for button rendering across all snapshot variants.
  * Zero browser dependencies — fully testable in Node.js environment.
@@ -34,8 +34,9 @@
  *
  * R7) Proof markers must exist:
  *     - [FT_PROOF_UI_ACTION_MODEL_INITIAL] on mount
- *     - [FT_PROOF_UI_EFFECTIVE_KIND] with effectiveKind + exportGateReasonCode
+ *     - [FT_PROOF_UI_EFFECTIVE_KIND] with effectiveKind + backendExportGateReasonCode
  *     - [FT_PROOF_UI_SNAPSHOT_REVERTED] when seed selection fails
+ *     - [FT_PROOF_UI_EXPORT_GATE_EVALUATED] with eligibility vs readiness separation
  *
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  */
@@ -207,5 +208,92 @@ export function computeActionModel(input: ActionModelInput): ActionModelOutput {
     exportEnabled,
     customerMessage,
     reasons,
+  };
+}
+
+// ── Export Eligibility (v7.46 — backend truth gate) ─────────────────────────
+
+/**
+ * Result of export eligibility computation.
+ * Eligibility = "does the backend say this snapshot MAY be exported?"
+ * Readiness = "are all artifacts present?" (separate concern, never hides button).
+ */
+export interface ExportEligibilityResult {
+  /** Whether the snapshot is eligible for export (backend truth) */
+  eligibilityOk: boolean;
+  /** Machine-readable reason code */
+  reasonCode: string;
+  /** Where the decision came from: 'backend' (authoritative) or 'fallback' (local heuristics) */
+  source: 'backend' | 'fallback';
+  /** Raw backend exportGateReasonCodeNormalized if present */
+  backendReasonCode?: string;
+}
+
+/**
+ * Pure function: determines export ELIGIBILITY from the raw backend envelope.
+ * 
+ * CRITICAL: This function receives the RAW resolver envelope (not the mapped
+ * dashState) so it can read `envelope.data.exportGateReasonCodeNormalized`
+ * which the L0 mapper currently strips.
+ *
+ * Rules (v7.46):
+ * 1. If envelope?.data?.exportGateReasonCodeNormalized exists → use it (backend truth)
+ *    - 'OK' → eligibilityOk=true
+ *    - Any other value → eligibilityOk=false
+ * 2. If field missing but exportEligible===true + GOVERNANCE kind → fallback OK
+ * 3. Otherwise → MISSING_BACKEND_EXPORT_GATE (not eligible)
+ *
+ * This function has ZERO browser deps — fully testable in Node.js.
+ */
+export function computeExportEligibilityFromBackend(envelope: any): ExportEligibilityResult {
+  // Guard: no envelope at all
+  if (!envelope || typeof envelope !== 'object') {
+    return {
+      eligibilityOk: false,
+      reasonCode: 'NO_ENVELOPE',
+      source: 'fallback',
+    };
+  }
+
+  const data = envelope?.data ?? envelope;
+
+  // PRIMARY PATH: backend provided an authoritative reason code
+  const backendCode: string | undefined = data?.exportGateReasonCodeNormalized;
+  if (typeof backendCode === 'string' && backendCode.length > 0) {
+    const codeUpper = backendCode.toUpperCase().trim();
+    return {
+      eligibilityOk: codeUpper === 'OK',
+      reasonCode: codeUpper,
+      source: 'backend',
+      backendReasonCode: backendCode,
+    };
+  }
+
+  // FALLBACK PATH: backend did not provide exportGateReasonCodeNormalized
+  // Check local signals: exportEligible + snapshotKind
+  const exportEligible =
+    data?.exportEligibleNormalized === true ||
+    data?.exportEligible === true ||
+    (data?.snapshots?.[0]?.exportEligible === true);
+
+  const snapshotKindRaw: string | undefined =
+    data?.snapshotKindNormalized || data?.snapshotKind;
+  const isGovernance =
+    typeof snapshotKindRaw === 'string' &&
+    snapshotKindRaw.toUpperCase().trim() === 'GOVERNANCE';
+
+  if (exportEligible && isGovernance) {
+    return {
+      eligibilityOk: true,
+      reasonCode: 'FALLBACK_OK',
+      source: 'fallback',
+    };
+  }
+
+  // No backend code, no local eligibility signal → not eligible
+  return {
+    eligibilityOk: false,
+    reasonCode: 'MISSING_BACKEND_EXPORT_GATE',
+    source: 'fallback',
   };
 }

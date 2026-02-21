@@ -362,7 +362,7 @@ import { normalizeStatusV1, EMPTY_STATUS_V1, GovernanceStatusV1 } from '../../sh
 import { parsePingResponse, shouldShowBackendNotResponding, type ParsedPingResponse } from './pingResponseParser';
 
 // ============================================================================
-// SNAPSHOT VARIANT ACTION MODEL (v7.45) — EXPORTED PURE FUNCTIONS
+// SNAPSHOT VARIANT ACTION MODEL (v7.46) — EXPORTED PURE FUNCTIONS
 // Single source of truth for button rendering across all snapshot variants.
 // Pure module: zero browser deps, fully testable in Node.js.
 // Re-exported here so that main.ts remains the canonical import path.
@@ -370,12 +370,14 @@ import { parsePingResponse, shouldShowBackendNotResponding, type ParsedPingRespo
 export {
   normalizeSnapshotKind,
   computeActionModel,
+  computeExportEligibilityFromBackend,
   type SnapshotKind,
   type EffectiveKind,
   type ActionModelInput,
   type ActionModelOutput,
+  type ExportEligibilityResult,
 } from './snapshotActionModel';
-import { normalizeSnapshotKind, computeActionModel } from './snapshotActionModel';
+import { normalizeSnapshotKind, computeActionModel, computeExportEligibilityFromBackend } from './snapshotActionModel';
 import type { EffectiveKind } from './snapshotActionModel';
 
 // ============================================================================
@@ -3325,6 +3327,10 @@ async function proceedWithBoot() {
     // Layer-0 Marketplace: Load dashboard state at startup (dumb reader pattern)
     // ========================================================================
     (async () => {
+      // v7.46: Preserve raw resolver envelope for export eligibility computation.
+      // The L0 mapper strips exportGateReasonCodeNormalized — we need the raw envelope
+      // so computeExportEligibilityFromBackend() can read backend truth directly.
+      let _rawResolverEnvelope: any = null;
       try {
         // STEP 1: Invoke backend resolver (single call only)
         const invokeResult = await forgeInvoke('ft_getDashboardState_v1', {});
@@ -3346,6 +3352,9 @@ async function proceedWithBoot() {
             }
           };
         }
+        
+        // v7.46: Store raw envelope BEFORE mapping (for export eligibility backend truth)
+        _rawResolverEnvelope = resolverResponse;
         
         // STEP 3: Map resolver response to dashboard state
         const mappedState = mapL0SnapshotResponse(resolverResponse);
@@ -3471,24 +3480,27 @@ async function proceedWithBoot() {
                   attachVariantSelectHandler(newVariantSelect);
                 }
                 
-                // v7.45: Relay action model after variant change using effectiveKind
+                // v7.46: Relay action model after variant change using effectiveKind + backend eligibility
                 {
                   const _varEffectiveKind: EffectiveKind = resolveSnapshotKindForExport(dashState as any);
                   const _varSealedFlag = !!(dashState as any).sealed;
-                  const _varExportGate = computeExportGateFromBackendTruth(dashState as any);
+                  const _varEligibility = computeExportEligibilityFromBackend(_rawResolverEnvelope);
                   const _varModel = computeActionModel({
                     status: dashState.status || 'UNKNOWN',
                     selectedVariant: newVariant,
                     effectiveKind: _varEffectiveKind,
-                    exportGateOk: _varExportGate.exportAllowed,
-                    exportGateReasonCode: _varExportGate.reasonCode,
+                    exportGateOk: _varEligibility.eligibilityOk,
+                    exportGateReasonCode: _varEligibility.reasonCode,
                     sealed: _varSealedFlag,
                     buildCoherenceOk: true,
                   });
                   relayMarkerToBackend('[FT_PROOF_UI_ACTION_MODEL]', {
                     selected: newVariant,
                     effectiveKind: _varEffectiveKind,
-                    exportGateReasonCode: _varExportGate.reasonCode,
+                    backendExportGateReasonCode: _varEligibility.backendReasonCode || null,
+                    computedEligibilityOk: _varEligibility.eligibilityOk,
+                    computedEligibilityReasonCode: _varEligibility.reasonCode,
+                    eligibilitySource: _varEligibility.source,
                     runVisible: _varModel.runVisible,
                     runEnabled: _varModel.runEnabled,
                     exportVisible: _varModel.exportVisible,
@@ -3633,14 +3645,16 @@ async function proceedWithBoot() {
           // This is the ROOT CAUSE FIX: "latest" is a selector label, NOT a snapshot kind.
           // Backend says GOVERNANCE or SEED — that's what determines export/seal visibility.
           const _effectiveKind: EffectiveKind = resolveSnapshotKindForExport(dashState as any);
-          // v7.45: Derive exportGateOk from backend truth (computeExportGateFromBackendTruth)
-          const _exportGate = computeExportGateFromBackendTruth(dashState as any);
+          // v7.46: Derive exportGateOk from RAW envelope (backend truth, not mapped dashState)
+          const _eligibility = computeExportEligibilityFromBackend(_rawResolverEnvelope);
 
-          // [FT_PROOF_UI_EFFECTIVE_KIND] — proof marker showing what backend resolved
+          // [FT_PROOF_UI_EFFECTIVE_KIND] — v7.46: includes eligibility source + backend reason code
           console.log('[FT_PROOF_UI_EFFECTIVE_KIND]', JSON.stringify({
             effectiveKind: _effectiveKind,
-            exportGateReasonCode: _exportGate.reasonCode,
-            exportGateOk: _exportGate.exportAllowed,
+            backendExportGateReasonCode: _eligibility.backendReasonCode || null,
+            computedEligibilityOk: _eligibility.eligibilityOk,
+            computedEligibilityReasonCode: _eligibility.reasonCode,
+            eligibilitySource: _eligibility.source,
             selectedVariant: dashState.selectedVariant || 'latest',
             ts: new Date().toISOString(),
           }));
@@ -3649,15 +3663,18 @@ async function proceedWithBoot() {
             status: dashState.status || 'UNKNOWN',
             selectedVariant: dashState.selectedVariant || 'latest',
             effectiveKind: _effectiveKind,
-            exportGateOk: _exportGate.exportAllowed,
-            exportGateReasonCode: _exportGate.reasonCode,
+            exportGateOk: _eligibility.eligibilityOk,
+            exportGateReasonCode: _eligibility.reasonCode,
             sealed: _sealedFlag,
             buildCoherenceOk: _buildCoherence.ok,
           });
 
           const _actionModelPayload = {
             effectiveKind: _effectiveKind,
-            exportGateReasonCode: _exportGate.reasonCode,
+            backendExportGateReasonCode: _eligibility.backendReasonCode || null,
+            computedEligibilityOk: _eligibility.eligibilityOk,
+            computedEligibilityReasonCode: _eligibility.reasonCode,
+            eligibilitySource: _eligibility.source,
             selectedVariant: dashState.selectedVariant || 'latest',
             runVisible: _actionModel.runVisible,
             runEnabled: _actionModel.runEnabled,
@@ -3680,7 +3697,10 @@ async function proceedWithBoot() {
           relayMarkerToBackend('[FT_PROOF_UI_ACTION_MODEL_INITIAL]', {
             selected: dashState.selectedVariant || 'latest',
             effectiveKind: _effectiveKind,
-            exportGateReasonCode: _exportGate.reasonCode,
+            backendExportGateReasonCode: _eligibility.backendReasonCode || null,
+            computedEligibilityOk: _eligibility.eligibilityOk,
+            computedEligibilityReasonCode: _eligibility.reasonCode,
+            eligibilitySource: _eligibility.source,
             runVisible: _actionModel.runVisible,
             runEnabled: _actionModel.runEnabled,
             exportVisible: _actionModel.exportVisible,
@@ -4109,24 +4129,35 @@ async function proceedWithBoot() {
         if (exportAccessButton) {
           const snapshotIdNormalized = (dashState as any).snapshotIdNormalized || (dashState as any).snapshotId || null;
 
-          // SINGLE GATE SOURCE OF TRUTH: backend truth is primary, local computation is fallback
-          const { exportAllowed, reasonCode, reasonMessageCustomer } = computeExportGateFromBackendTruth(dashState as any);
+          // v7.46: SINGLE GATE SOURCE OF TRUTH — uses raw envelope for backend truth
+          // Eligibility (can this snapshot be exported?) is separate from readiness (are artifacts ready?)
+          const _exportEligibility = computeExportEligibilityFromBackend(_rawResolverEnvelope);
+          const exportAllowed = _exportEligibility.eligibilityOk;
+          const reasonCode = _exportEligibility.reasonCode;
 
-          // EMIT [FT_PROOF_UI_EXPORT_GATE_EVALUATED] — proof marker per fix contract
+          // EMIT [FT_PROOF_UI_EXPORT_GATE_EVALUATED] — v7.46: eligibility vs readiness separation
           console.log('[FT_PROOF_UI_EXPORT_GATE_EVALUATED]', JSON.stringify({
             exportAllowed,
             reasonCode,
+            backendReasonCode: _exportEligibility.backendReasonCode || null,
+            eligibilitySource: _exportEligibility.source,
             snapshotId: snapshotIdNormalized,
           }));
           // Legacy marker kept for backward compatibility
           console.log('[FT_UI_EXPORT_KIND_CONTRACT_OK]', JSON.stringify({ exportAllowed, reasonCode, snapshotId: snapshotIdNormalized }));
 
           if (!exportAllowed) {
-            if (reasonCode === 'NOT_EXPORT_ELIGIBLE' || reasonCode === 'NO_SNAPSHOT') {
+            if (reasonCode === 'NOT_EXPORT_ELIGIBLE' || reasonCode === 'NO_SNAPSHOT' || reasonCode === 'NO_ENVELOPE') {
               // Hide button entirely — this snapshot type cannot be exported or no data exists
               exportAccessButton.style.display = 'none';
               console.log('[PHASE1_EXPORT_BLOCKED_HIDDEN]', JSON.stringify({ snapshotId: snapshotIdNormalized, reasonCode }));
             } else {
+              // v7.46: Derive customer message from reason code
+              const reasonMessageCustomer = reasonCode === 'MISSING_CANONICAL_HASH'
+                ? 'Export is not yet available. Please run an access review first.'
+                : reasonCode === 'SNAPSHOT_NOT_FOUND'
+                  ? 'No snapshot data is available yet. Please run an access review first.'
+                  : 'This snapshot is not available for export.';
               // Show disabled button WITH visible inline customer-safe message (no dead button)
               exportAccessButton.disabled = true;
               exportAccessButton.style.cursor = 'not-allowed';
