@@ -4245,7 +4245,8 @@ async function proceedWithBoot() {
                   console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
                     resolver: exportResolverKey,
                     snapshotId: _exportSnapshotId,
-                    reason: 'CONTRACT_BREACH_ENVELOPE_KIND',
+                    reasonCode: 'CONTRACT_BREACH_ENVELOPE_KIND',
+                    message: `Expected FT_ACTION_RESULT_V1, got ${result?.envelopeKind}`,
                   }));
                   exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH wrong envelopeKind (traceId=${traceIdForBreach})`;
                   exportAccessButton.disabled = false;
@@ -4258,13 +4259,18 @@ async function proceedWithBoot() {
                 
                 // Check if response has exportGate field (indicates resolver-side gating)
                 if (actionResult?.exportGate && !actionResult.exportGate.allowed) {
+                  // v7.48: Render backend reasonCode/message VERBATIM — never replace with SNAPSHOT_NOT_FOUND
+                  const backendReasonCode = actionResult.reasonCode || actionResult.exportGate.reasonCode || 'UNKNOWN';
+                  const backendMessage = actionResult.exportGate.message || actionResult.reason || actionResult.error?.message || '';
                   console.log('[PHASE1_EXPORT_BLOCKED]', JSON.stringify(actionResult.exportGate));
                   console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
                     resolver: exportResolverKey,
                     snapshotId: _exportSnapshotId,
-                    reason: 'EXPORT_GATE_BLOCKED_' + (actionResult.exportGate.reasonCode || 'UNKNOWN'),
+                    reasonCode: backendReasonCode,
+                    message: backendMessage,
                   }));
-                  exportAccessButton.textContent = `Export disabled: ${actionResult.exportGate.reasonCode}`;
+                  exportAccessButton.textContent = `Export disabled: ${backendReasonCode}`;
+                  exportAccessButton.title = backendMessage;
                   exportAccessButton.disabled = false;
                   return;
                 }
@@ -4306,11 +4312,14 @@ async function proceedWithBoot() {
                   exportAccessButton.textContent = 'Export Complete';
                 } else {
                   console.error('[PHASE1_EXPORT_FAILED]', exportData);
+                  // v7.48: Propagate backend reasonCode + message verbatim
+                  const backendReasonCode = actionResult?.reasonCode || actionResult?.exportGate?.reasonCode || null;
                   const failReason = actionResult?.error?.message || actionResult?.reason || 'Unknown error';
                   console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
                     resolver: exportResolverKey,
                     snapshotId: _exportSnapshotId,
-                    reason: failReason,
+                    reasonCode: backendReasonCode,
+                    message: failReason,
                   }));
                   if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
                     console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'Missing required fields on ok:false response', {
@@ -4332,7 +4341,8 @@ async function proceedWithBoot() {
                 console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
                   resolver: 'ft_getDashboardState_v1',
                   snapshotId: _exportSnapshotId,
-                  reason: error?.message || 'exception',
+                  reasonCode: 'INVOKE_EXCEPTION',
+                  message: error?.message || 'exception',
                 }));
                 exportAccessButton.textContent = 'Error: ' + error.message;
               } finally {
