@@ -5,6 +5,9 @@
  * @forge/bridge is bundled with the gadget and provides invoke() for resolver calls.
  */
 
+// v7.44: Served-bundle canary — proves which UI bundle is actually loaded in browser
+console.log('[FT_SERVED_BUNDLE_CANARY]', 'FT_SERVED_BUNDLE_CANARY__2f77da01__20260221T111520Z');
+
 // ============================================================================
 // CSP VIOLATION LISTENER (INIT FIRST - must run before any other code)
 // ============================================================================
