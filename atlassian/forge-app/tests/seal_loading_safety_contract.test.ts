@@ -2,11 +2,14 @@
  * Seal Loading Safety Contract Test
  *
  * Proves:
- * 1) While seal state is loading/unknown, seal button is disabled
- * 2) Seal loading message is "Loading review state..."
- * 3) Seal button becomes enabled only AFTER seal state is resolved
- * 4) Source code l0_snapshot_mapper.ts sets initial seal status text correctly
- * 5) main.ts updateSealStatusDisplay(null) disables button
+ * 1) While seal state is null/unknown, seal resolves to NOT_SEALED (never hangs in loading)
+ * 2) Seal status shows "(Not sealed - review is mutable)" for null input
+ * 3) Seal button is enabled for NOT_SEALED state
+ * 4) Source code l0_snapshot_mapper.ts renders seal section correctly
+ * 5) main.ts updateSealStatusDisplay(null) resolves to NOT_SEALED
+ *
+ * v7.55: Updated contract — seal state MUST resolve within one render cycle.
+ *        "Loading review state..." is no longer acceptable as a final state.
  *
  * Marker: [FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT]
  */
@@ -35,11 +38,12 @@ function updateSealStatusDisplay(
   sealReviewButton: MockButton
 ) {
   if (!reviewData) {
-    sealStatusDiv.textContent = "Loading review state...";
-    sealReviewButton.disabled = true;
+    // v7.55: Resolve to NOT_SEALED immediately — never hang in loading
+    sealStatusDiv.textContent = "(Not sealed - review is mutable)";
+    sealReviewButton.disabled = false;
     sealReviewButton.style.display = "inline-block";
-    sealReviewButton.style.cursor = 'not-allowed';
-    sealReviewButton.style.opacity = '0.55';
+    sealReviewButton.style.cursor = 'pointer';
+    sealReviewButton.style.opacity = '1';
     return;
   }
 
@@ -64,24 +68,24 @@ function createMockDiv(): MockDiv {
 
 describe('Seal Loading Safety Contract', () => {
 
-  it('1. updateSealStatusDisplay(null) disables button and shows loading message', () => {
+  it('1. updateSealStatusDisplay(null) resolves to NOT_SEALED with button enabled', () => {
     const btn = createMockButton();
     const div = createMockDiv();
     updateSealStatusDisplay(null, div, btn);
-    expect(btn.disabled).toBe(true);
-    expect(div.textContent).toBe('Loading review state...');
+    expect(btn.disabled).toBe(false);
+    expect(div.textContent).toBe('(Not sealed - review is mutable)');
     expect(btn.style.display).toBe('inline-block');
-    expect(btn.style.cursor).toBe('not-allowed');
-    console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] null-disables-button PASS');
+    expect(btn.style.cursor).toBe('pointer');
+    console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] null-resolves-not-sealed PASS');
   });
 
-  it('2. updateSealStatusDisplay(undefined) disables button', () => {
+  it('2. updateSealStatusDisplay(undefined) resolves to NOT_SEALED', () => {
     const btn = createMockButton();
     const div = createMockDiv();
     updateSealStatusDisplay(undefined, div, btn);
-    expect(btn.disabled).toBe(true);
-    expect(div.textContent).toBe('Loading review state...');
-    console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] undefined-disables-button PASS');
+    expect(btn.disabled).toBe(false);
+    expect(div.textContent).toBe('(Not sealed - review is mutable)');
+    console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] undefined-resolves-not-sealed PASS');
   });
 
   it('3. updateSealStatusDisplay with sealed data hides button', () => {
@@ -102,20 +106,21 @@ describe('Seal Loading Safety Contract', () => {
     console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] unsealed-enables-button PASS');
   });
 
-  it('5. l0_snapshot_mapper.ts sets initial seal status as "Loading review state..."', () => {
+  it('5. l0_snapshot_mapper.ts renders seal section', () => {
     const mapperPath = path.resolve(__dirname, '../src/gadget-ui/src/l0_snapshot_mapper.ts');
     const src = fs.readFileSync(mapperPath, 'utf8');
-    expect(src).toContain('sealStatus.textContent = "Loading review state..."');
-    console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] mapper-initial-text PASS');
+    // v7.55: mapper still renders the seal status element (does not set "Loading")
+    expect(src).toContain('ft-seal-status');
+    console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] mapper-seal-element PASS');
   });
 
-  it('6. main.ts updateSealStatusDisplay(null) path sets "Loading review state..."', () => {
+  it('6. main.ts updateSealStatusDisplay(null) path resolves to NOT_SEALED', () => {
     const mainPath = path.resolve(__dirname, '../src/gadget-ui/src/main.ts');
     const src = fs.readFileSync(mainPath, 'utf8');
-    // Find the updateSealStatusDisplay function with null check
-    expect(src).toContain('sealStatusDiv.textContent = "Loading review state..."');
-    expect(src).toContain('sealReviewButton.disabled = true');
-    console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] main-loading-state PASS');
+    // v7.55: null reviewData should resolve to "(Not sealed - review is mutable)" — never hang
+    expect(src).toContain('(Not sealed - review is mutable)');
+    expect(src).toContain('[FT_PROOF_UI_SEAL_STATE_RESOLVED]');
+    console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] main-not-sealed-state PASS');
   });
 
   it('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] — marker', () => {

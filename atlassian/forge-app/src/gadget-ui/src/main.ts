@@ -3884,13 +3884,13 @@ async function proceedWithBoot() {
           // Function to update seal status display
           function updateSealStatusDisplay(reviewData: any) {
             if (!reviewData) {
-              sealStatusDiv.textContent = "Loading review state...";
-              sealReviewButton.disabled = true;
+              // [FT_PROOF_UI_SEAL_STATE_RESOLVED] — resolve to NOT_SEALED, never hang in loading
+              sealStatusDiv.textContent = "(Not sealed - review is mutable)";
+              sealReviewButton.disabled = false;
               sealReviewButton.style.display = "inline-block";
-              sealReviewButton.style.cursor = 'not-allowed';
-              sealReviewButton.style.opacity = '0.55';
-              // [FT_PROOF_UI_SEAL_STATE_EMPTY] — deterministic empty state (no infinite loading)
-              console.log('[FT_PROOF_UI_SEAL_STATE_EMPTY]', JSON.stringify({ reviewData: null, ts: new Date().toISOString() }));
+              sealReviewButton.style.cursor = 'pointer';
+              sealReviewButton.style.opacity = '1';
+              console.log('[FT_PROOF_UI_SEAL_STATE_RESOLVED]', JSON.stringify({ state: 'NOT_SEALED', reviewData: null, ts: new Date().toISOString() }));
               return;
             }
 
@@ -3925,8 +3925,15 @@ async function proceedWithBoot() {
             }
           }
 
-          // Initial display (no review data yet)
-          updateSealStatusDisplay(null);
+          // v7.55: Resolve initial seal status from dashState (never leave in loading)
+          // [FT_PROOF_UI_SEAL_STATE_RESOLVED] — deterministic: SEALED, NOT_SEALED, or UNAVAILABLE
+          const _initialSealData = (dashState as any)?.sealed === true ? {
+            sealed: true,
+            sealedByRole: (dashState as any)?.sealedByRole || 'Unknown',
+            sealedTimestampUtc: (dashState as any)?.sealedTimestampUtc || null,
+            sealHash: (dashState as any)?.sealHash || null,
+          } : null;
+          updateSealStatusDisplay(_initialSealData);
 
           // Seal button click handler
           sealReviewButton.addEventListener('click', async () => {
@@ -3982,14 +3989,14 @@ async function proceedWithBoot() {
                 const errorMsg = result?.error || result?.reason || 'Unknown error';
                 console.error('[REVIEW_SEAL_ERROR]', result);
                 
-                sealStatusDiv.textContent = 'Unable to seal review. Please try again.';
+                sealStatusDiv.textContent = 'Seal unavailable. Review state could not be updated.';
                 sealStatusDiv.style.color = "#f44336";
                 sealReviewButton.textContent = originalText;
                 sealReviewButton.disabled = false;
               }
             } catch (error: any) {
               console.error('[REVIEW_SEAL_EXCEPTION]', error);
-              sealStatusDiv.textContent = 'Could not seal review. Please try again.';
+              sealStatusDiv.textContent = 'Seal unavailable. Service error during seal operation.';
               sealStatusDiv.style.color = "#f44336";
               sealReviewButton.textContent = originalText;
               sealReviewButton.disabled = false;
@@ -4206,11 +4213,11 @@ async function proceedWithBoot() {
             });
           } else {
             // GATE PASSED + snapshotId resolved: Attach normal click handler
-            // v7.47: Button label derived deterministically
-            exportAccessButton.textContent = 'Export Evidence Pack';
+            // v7.55: Button label buyer-safe, indicates ZIP download
+            exportAccessButton.textContent = 'Download Evidence ZIP';
             exportAccessButton.addEventListener('click', async () => {
               exportAccessButton.disabled = true;
-              exportAccessButton.textContent = 'Exporting...';
+              exportAccessButton.textContent = 'Preparing download...';
               
               try {
                 ensureCorrelationId();
@@ -4313,7 +4320,9 @@ async function proceedWithBoot() {
                   document.body.removeChild(link);
                   URL.revokeObjectURL(url);
                   
-                  exportAccessButton.textContent = 'Export Complete';
+                  exportAccessButton.textContent = 'Download Complete \u2713';
+                  // [FT_PROOF_UI_DOWNLOAD_TRIGGERED] \u2014 ZIP download initiated
+                  console.log('[FT_PROOF_UI_DOWNLOAD_TRIGGERED]', JSON.stringify({ snapshotId: _exportSnapshotId, ts: new Date().toISOString() }));
                 } else if (actionResult?.ok === true || exportData?.ok === true) {
                   // v7.54: Backend returned ok:true but missing zipBase64 — data delivery failure
                   const missingFields: string[] = [];

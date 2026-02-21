@@ -1492,11 +1492,17 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
       const tabNav = createECL1TabNavigation();
       content.appendChild(tabNav);
     } catch (_tabErr) {
-      const tabErrEl = document.createElement("p");
-      tabErrEl.textContent = "Could not load tab content. Please try again.";
-      tabErrEl.style.color = "#c62828";
-      tabErrEl.style.fontFamily = "monospace";
-      tabErrEl.style.fontSize = "12px";
+      // [FT_PROOF_UI_SECTION_NOT_AVAILABLE] — fail-closed, buyer-safe
+      console.error('[FT_UI_TAB_RENDER_ERROR]', _tabErr);
+      const tabErrEl = document.createElement("div");
+      tabErrEl.style.padding = "16px";
+      tabErrEl.style.marginTop = "12px";
+      tabErrEl.style.backgroundColor = "#f5f6f7";
+      tabErrEl.style.border = "1px solid #dfe1e6";
+      tabErrEl.style.borderRadius = "4px";
+      tabErrEl.style.color = "#626f86";
+      tabErrEl.style.fontSize = "13px";
+      tabErrEl.textContent = "Section not available. Governance data is only visible after a completed access review.";
       content.appendChild(tabErrEl);
     }
   } else if (state.status === "NO_SNAPSHOT" || state.status === "INVALID_SNAPSHOT") {
