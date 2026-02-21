@@ -504,12 +504,18 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
     if (resp.status === 'NOT_AVAILABLE') {
       container.innerHTML = '';
       const notAvailableMsg = document.createElement('div');
-      notAvailableMsg.style.color = '#555';
-      notAvailableMsg.style.fontSize = '12px';
-      notAvailableMsg.style.fontFamily = 'monospace';
-      notAvailableMsg.style.padding = '10px 0';
+      notAvailableMsg.style.color = '#626f86';
+      notAvailableMsg.style.fontSize = '13px';
+      notAvailableMsg.style.padding = '16px';
+      notAvailableMsg.style.backgroundColor = '#f5f6f7';
+      notAvailableMsg.style.border = '1px solid #dfe1e6';
+      notAvailableMsg.style.borderRadius = '4px';
       notAvailableMsg.textContent =
-        'Governance controls scoreboard will appear after evidence is generated.';
+        'Controls summary is not included in this build.';
+      const reasonEl = document.createElement('div');
+      reasonEl.style.cssText = 'font-size:11px;color:#8993a4;margin-top:6px;font-family:monospace;';
+      reasonEl.textContent = 'Reason: CONTROLS_PANEL_NOT_SHIPPED';
+      notAvailableMsg.appendChild(reasonEl);
       container.appendChild(notAvailableMsg);
       console.log('[FT_PROOF] UI_ECL_PANEL_NOT_AVAILABLE=1');
       return;

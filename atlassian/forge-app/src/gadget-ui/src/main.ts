@@ -3885,7 +3885,7 @@ async function proceedWithBoot() {
           function updateSealStatusDisplay(reviewData: any) {
             if (!reviewData) {
               // [FT_PROOF_UI_SEAL_STATE_RESOLVED] — resolve to NOT_SEALED, never hang in loading
-              sealStatusDiv.textContent = "(Not sealed - review is mutable)";
+              sealStatusDiv.textContent = "Not sealed (review is mutable)";
               sealReviewButton.disabled = false;
               sealReviewButton.style.display = "inline-block";
               sealReviewButton.style.cursor = 'pointer';
@@ -3920,7 +3920,7 @@ async function proceedWithBoot() {
               sealReviewButton.style.display = "none";
             } else {
               // Review is not sealed - show button
-              sealStatusDiv.textContent = "(Not sealed - review is mutable)";
+              sealStatusDiv.textContent = "Not sealed (review is mutable)";
               sealReviewButton.style.display = "inline-block";
             }
           }
@@ -4080,14 +4080,14 @@ async function proceedWithBoot() {
             return {
               exportAllowed: false,
               reasonCode: 'MISSING_CANONICAL_HASH',
-              reasonMessageCustomer: 'Export is not yet available. Please run an access review first.',
+              reasonMessageCustomer: 'Export is not yet available. Run an access review to generate evidence.',
             };
           }
           if (backendCode === 'SNAPSHOT_NOT_FOUND') {
             return {
               exportAllowed: false,
               reasonCode: 'SNAPSHOT_NOT_FOUND',
-              reasonMessageCustomer: 'No snapshot data is available yet. Please run an access review first.',
+              reasonMessageCustomer: 'No snapshot data is available yet. Run an access review to generate evidence.',
             };
           }
 
@@ -4105,7 +4105,7 @@ async function proceedWithBoot() {
             return {
               exportAllowed: false,
               reasonCode: 'SNAPSHOT_NOT_FOUND',
-              reasonMessageCustomer: 'No snapshot data is available yet. Please run an access review first.',
+              reasonMessageCustomer: 'No snapshot data is available yet. Run an access review to generate evidence.',
             };
           }
           if (snapshotKind === 'SEED') {
@@ -4126,7 +4126,7 @@ async function proceedWithBoot() {
             return {
               exportAllowed: false,
               reasonCode: 'MISSING_CANONICAL_HASH',
-              reasonMessageCustomer: 'Export is not yet available. Please run an access review first.',
+              reasonMessageCustomer: 'Export is not yet available. Run an access review to generate evidence.',
             };
           }
           return { exportAllowed: true, reasonCode: 'OK', reasonMessageCustomer: '' };
@@ -4167,11 +4167,11 @@ async function proceedWithBoot() {
               exportAccessButton.style.display = 'none';
               console.log('[PHASE1_EXPORT_BLOCKED_HIDDEN]', JSON.stringify({ snapshotId: _exportSnapshotId, reasonCode }));
             } else {
-              // v7.46: Derive customer message from reason code
+              // v7.56: Derive customer message from reason code — buyer-safe, no "please try again"
               const reasonMessageCustomer = reasonCode === 'MISSING_CANONICAL_HASH'
-                ? 'Export is not yet available. Please run an access review first.'
+                ? 'Export is not yet available. Run an access review to generate evidence.'
                 : reasonCode === 'SNAPSHOT_NOT_FOUND'
-                  ? 'No snapshot data is available yet. Please run an access review first.'
+                  ? 'No snapshot data is available yet. Run an access review to generate evidence.'
                   : 'This snapshot is not available for export.';
               // Show disabled button WITH visible inline customer-safe message (no dead button)
               exportAccessButton.disabled = true;
@@ -4204,7 +4204,7 @@ async function proceedWithBoot() {
             exportAccessButton.style.opacity = '0.55';
             exportAccessButton.setAttribute('aria-disabled', 'true');
             exportAccessButton.textContent = 'Export disabled: SNAPSHOT_NOT_FOUND';
-            exportAccessButton.title = 'No snapshot data is available yet. Please run an access review first.';
+            exportAccessButton.title = 'No snapshot data is available yet. Run an access review to generate evidence.';
             console.log('[PHASE1_EXPORT_BLOCKED_NO_SNAPSHOT_ID]', JSON.stringify({ snapshotId: null, eligibilityOk: true }));
 
             exportAccessButton.addEventListener('click', (e) => {
@@ -4320,7 +4320,14 @@ async function proceedWithBoot() {
                   document.body.removeChild(link);
                   URL.revokeObjectURL(url);
                   
-                  exportAccessButton.textContent = 'Download Complete \u2713';
+                  exportAccessButton.textContent = 'Download again';
+                  exportAccessButton.style.marginRight = '10px';
+                  // Insert non-clickable status chip before the button
+                  const _completeChip = document.createElement('span');
+                  _completeChip.setAttribute('data-testid', 'ft-export-complete-chip');
+                  _completeChip.style.cssText = 'display:inline-block;padding:4px 10px;font-size:12px;color:#1e4620;background:#e3fcef;border:1px solid #abf5d1;border-radius:3px;margin-right:8px;pointer-events:none;user-select:none;';
+                  _completeChip.textContent = 'Download complete \u2713';
+                  exportAccessButton.parentNode?.insertBefore(_completeChip, exportAccessButton);
                   // [FT_PROOF_UI_DOWNLOAD_TRIGGERED] \u2014 ZIP download initiated
                   console.log('[FT_PROOF_UI_DOWNLOAD_TRIGGERED]', JSON.stringify({ snapshotId: _exportSnapshotId, ts: new Date().toISOString() }));
                 } else if (actionResult?.ok === true || exportData?.ok === true) {

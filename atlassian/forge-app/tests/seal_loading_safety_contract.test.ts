@@ -39,7 +39,7 @@ function updateSealStatusDisplay(
 ) {
   if (!reviewData) {
     // v7.55: Resolve to NOT_SEALED immediately — never hang in loading
-    sealStatusDiv.textContent = "(Not sealed - review is mutable)";
+    sealStatusDiv.textContent = "Not sealed (review is mutable)";
     sealReviewButton.disabled = false;
     sealReviewButton.style.display = "inline-block";
     sealReviewButton.style.cursor = 'pointer';
@@ -50,7 +50,7 @@ function updateSealStatusDisplay(
   if (reviewData.sealed === true) {
     sealReviewButton.style.display = "none";
   } else {
-    sealStatusDiv.textContent = "(Not sealed - review is mutable)";
+    sealStatusDiv.textContent = "Not sealed (review is mutable)";
     sealReviewButton.style.display = "inline-block";
     sealReviewButton.disabled = false;
   }
@@ -73,7 +73,7 @@ describe('Seal Loading Safety Contract', () => {
     const div = createMockDiv();
     updateSealStatusDisplay(null, div, btn);
     expect(btn.disabled).toBe(false);
-    expect(div.textContent).toBe('(Not sealed - review is mutable)');
+    expect(div.textContent).toBe('Not sealed (review is mutable)');
     expect(btn.style.display).toBe('inline-block');
     expect(btn.style.cursor).toBe('pointer');
     console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] null-resolves-not-sealed PASS');
@@ -84,7 +84,7 @@ describe('Seal Loading Safety Contract', () => {
     const div = createMockDiv();
     updateSealStatusDisplay(undefined, div, btn);
     expect(btn.disabled).toBe(false);
-    expect(div.textContent).toBe('(Not sealed - review is mutable)');
+    expect(div.textContent).toBe('Not sealed (review is mutable)');
     console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] undefined-resolves-not-sealed PASS');
   });
 
@@ -117,8 +117,8 @@ describe('Seal Loading Safety Contract', () => {
   it('6. main.ts updateSealStatusDisplay(null) path resolves to NOT_SEALED', () => {
     const mainPath = path.resolve(__dirname, '../src/gadget-ui/src/main.ts');
     const src = fs.readFileSync(mainPath, 'utf8');
-    // v7.55: null reviewData should resolve to "(Not sealed - review is mutable)" — never hang
-    expect(src).toContain('(Not sealed - review is mutable)');
+    // v7.55: null reviewData should resolve to "Not sealed (review is mutable)" — never hang
+    expect(src).toContain('Not sealed (review is mutable)');
     expect(src).toContain('[FT_PROOF_UI_SEAL_STATE_RESOLVED]');
     console.log('[FT_TEST_PASS_SEAL_LOADING_SAFETY_CONTRACT] main-not-sealed-state PASS');
   });

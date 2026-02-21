@@ -1311,7 +1311,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     sealStatus.style.fontSize = "14px";
     sealStatus.style.cursor = "pointer";
     sealStatus.style.marginBottom = "12px";
-    sealStatus.textContent = "Loading review state...";
+    sealStatus.textContent = "Not sealed (review is mutable)";
     sealSection.appendChild(sealStatus);
 
     // FT_ECL_PHASE: ECL-4 REVIEW_SEAL_UI_BUTTON_ADD
@@ -1385,9 +1385,25 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     }
 
     // === DIAGNOSTICS / METADATA (Below enterprise sections) ===
+    // v7.56: Wrap technical details in a collapsed disclosure so buyers see clean UI
+    const techDetails = document.createElement("details");
+    techDetails.className = "l0-technical-details";
+    techDetails.style.marginTop = "24px";
+    techDetails.style.borderTop = "1px solid #dfe1e6";
+    techDetails.style.paddingTop = "12px";
+    const techSummary = document.createElement("summary");
+    techSummary.style.cursor = "pointer";
+    techSummary.style.fontSize = "13px";
+    techSummary.style.color = "#626f86";
+    techSummary.style.fontWeight = "500";
+    techSummary.style.userSelect = "none";
+    techSummary.textContent = "Technical details";
+    techDetails.appendChild(techSummary);
+
     // Build Provenance Strip: technical metadata for troubleshooting
     const provenanceStrip = document.createElement("div");
     provenanceStrip.className = "l0-provenance-strip";
+    provenanceStrip.style.marginTop = "8px";
     
     // Helper: Format build SHA for display (use backend if available, otherwise empty)
     const buildShaValue = state.buildInfo?.buildSha || state.backendBuildSha || "";
@@ -1441,7 +1457,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
       provenanceStrip.appendChild(fieldEl);
     });
     
-    content.appendChild(provenanceStrip);
+    techDetails.appendChild(provenanceStrip);
 
     const details = document.createElement("div");
     details.className = "l0-dashboard-details";
@@ -1469,7 +1485,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     noteEl.textContent = state.note;
     details.appendChild(noteEl);
 
-    content.appendChild(details);
+    techDetails.appendChild(details);
 
     // Snapshot metadata blocks (always render, even for seed snapshots)
     const metadataSection = renderMetadataBlocks(state.metadata || {}, isSeedSnapshot, {
@@ -1478,7 +1494,10 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
       schemaVersion: state.schemaVersion,
       snapshotType: isSeedSnapshot ? "Seed" : "Governance"
     });
-    content.appendChild(metadataSection);
+    techDetails.appendChild(metadataSection);
+
+    // Append the collapsed technical details disclosure
+    content.appendChild(techDetails);
     
     // === DEFINITIONS & GUIDANCE (Read-only context) ===
     // Fill remaining space with useful audit guidance
