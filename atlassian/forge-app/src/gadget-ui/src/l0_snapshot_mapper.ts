@@ -1490,7 +1490,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
       content.appendChild(tabNav);
     } catch (_tabErr) {
       const tabErrEl = document.createElement("p");
-      tabErrEl.textContent = "Tab navigation temporarily unavailable. Please refresh.";
+      tabErrEl.textContent = "Service temporarily unavailable. Please refresh.";
       tabErrEl.style.color = "#c62828";
       tabErrEl.style.fontFamily = "monospace";
       tabErrEl.style.fontSize = "12px";

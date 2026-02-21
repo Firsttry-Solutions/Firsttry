@@ -359,6 +359,21 @@ import { normalizeStatusV1, EMPTY_STATUS_V1, GovernanceStatusV1 } from '../../sh
 import { parsePingResponse, shouldShowBackendNotResponding, type ParsedPingResponse } from './pingResponseParser';
 
 // ============================================================================
+// SNAPSHOT VARIANT ACTION MODEL (v7.41.x) — EXPORTED PURE FUNCTIONS
+// Single source of truth for button rendering across all snapshot variants.
+// Pure module: zero browser deps, fully testable in Node.js.
+// Re-exported here so that main.ts remains the canonical import path.
+// ============================================================================
+export {
+  normalizeSnapshotKind,
+  computeActionModel,
+  type SnapshotKind,
+  type ActionModelInput,
+  type ActionModelOutput,
+} from './snapshotActionModel';
+import { normalizeSnapshotKind, computeActionModel } from './snapshotActionModel';
+
+// ============================================================================
 // BUILD & PROOF MARKERS
 // ============================================================================
 const UI_BUILD_VERSION = "UI_v2.14.0";
@@ -3410,6 +3425,9 @@ async function proceedWithBoot() {
         const attachVariantSelectHandler = (selectElement: HTMLSelectElement) => {
           selectElement.addEventListener('change', async (e) => {
             const newVariant = (e.target as HTMLSelectElement).value as "latest" | "seed";
+            // [FT_PROOF_UI_SNAPSHOT_SELECTED] — proof marker on every variant change
+            const _snapshotKind = normalizeSnapshotKind(newVariant);
+            console.log('[FT_PROOF_UI_SNAPSHOT_SELECTED]', JSON.stringify({ raw: newVariant, normalized: _snapshotKind, ts: new Date().toISOString() }));
             try {
               // Ensure correlation ID persists through this invoke
               ensureCorrelationId();
@@ -3537,6 +3555,40 @@ async function proceedWithBoot() {
               _btn.title = _buildCoherence.messageCustomer!;
               _btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
             }
+          }
+        }
+
+        // ================================================================
+        // [FT_PROOF_UI_ACTION_MODEL] — Emit action model proof on every render
+        // Single source of truth: computeActionModel() determines all button states
+        // ================================================================
+        {
+          const _sealedFlag = !!(dashState as any).sealed;
+          const _exportEligible = (dashState as any).exportEligibleNormalized === true || !!(dashState as any)?.snapshots?.[0]?.exportEligible;
+          const _canonicalHash = (dashState as any).canonicalHashNormalized || (dashState as any)?.snapshots?.[0]?.integrity?.value || null;
+          const _isH64 = (s: any): boolean => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
+          const _actionModel = computeActionModel({
+            status: dashState.status || 'UNKNOWN',
+            selectedVariant: dashState.selectedVariant || 'latest',
+            sealed: _sealedFlag,
+            exportEligible: _exportEligible,
+            hasCanonicalHash: _isH64(_canonicalHash),
+            buildCoherenceOk: _buildCoherence.ok,
+          });
+          console.log('[FT_PROOF_UI_ACTION_MODEL]', JSON.stringify({
+            ..._actionModel,
+            variant: normalizeSnapshotKind(dashState.selectedVariant || 'latest'),
+            status: dashState.status,
+            ts: new Date().toISOString(),
+          }));
+
+          // [FT_PROOF_UI_EXPORT_HIDDEN] — emitted whenever action model hides the export button
+          if (!_actionModel.exportVisible) {
+            console.log('[FT_PROOF_UI_EXPORT_HIDDEN]', JSON.stringify({
+              reasons: _actionModel.reasons,
+              variant: normalizeSnapshotKind(dashState.selectedVariant || 'latest'),
+              ts: new Date().toISOString(),
+            }));
           }
         }
 
@@ -3693,6 +3745,8 @@ async function proceedWithBoot() {
               sealReviewButton.style.display = "inline-block";
               sealReviewButton.style.cursor = 'not-allowed';
               sealReviewButton.style.opacity = '0.55';
+              // [FT_PROOF_UI_SEAL_STATE_EMPTY] — deterministic empty state (no infinite loading)
+              console.log('[FT_PROOF_UI_SEAL_STATE_EMPTY]', JSON.stringify({ reviewData: null, ts: new Date().toISOString() }));
               return;
             }
 
