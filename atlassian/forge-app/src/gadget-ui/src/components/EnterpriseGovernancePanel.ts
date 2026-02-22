@@ -500,24 +500,130 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
       return;
     }
 
-    // C2.5) NOT_AVAILABLE: no governance data yet — render neutral message (not an error)
+    // C2.5) NOT_AVAILABLE: no governance data yet — render deterministic controls summary
+    //        from whatever ecl/proofs data the backend DID return (always present).
     if (resp.status === 'NOT_AVAILABLE') {
       container.innerHTML = '';
-      const notAvailableMsg = document.createElement('div');
-      notAvailableMsg.style.color = '#626f86';
-      notAvailableMsg.style.fontSize = '13px';
-      notAvailableMsg.style.padding = '16px';
-      notAvailableMsg.style.backgroundColor = '#f5f6f7';
-      notAvailableMsg.style.border = '1px solid #dfe1e6';
-      notAvailableMsg.style.borderRadius = '4px';
-      notAvailableMsg.textContent =
-        'Controls summary is not included in this build.';
-      const reasonEl = document.createElement('div');
-      reasonEl.style.cssText = 'font-size:11px;color:#8993a4;margin-top:6px;font-family:monospace;';
-      reasonEl.textContent = 'Reason: CONTROLS_PANEL_NOT_SHIPPED';
-      notAvailableMsg.appendChild(reasonEl);
-      container.appendChild(notAvailableMsg);
-      console.log('[FT_PROOF] UI_ECL_PANEL_NOT_AVAILABLE=1');
+
+      // --- Controls Summary Header ---
+      const summaryHeader = document.createElement('div');
+      summaryHeader.style.cssText = 'font-weight:600;font-size:14px;color:#333;margin-bottom:12px;';
+      summaryHeader.textContent = 'Controls Summary';
+      container.appendChild(summaryHeader);
+
+      // --- ECL Controls Table (always available from backend, even in NOT_AVAILABLE state) ---
+      const eclData = resp.ecl;
+      const proofs = resp.proofs;
+      if (eclData && typeof eclData === 'object') {
+        const table = document.createElement('table');
+        table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;';
+
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        headerRow.style.borderBottom = '2px solid #dfe1e6';
+        ['Control', 'Status', 'Detail'].forEach(h => {
+          const th = document.createElement('th');
+          th.style.cssText = 'text-align:left;padding:6px 10px;color:#626f86;font-weight:600;';
+          th.textContent = h;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        const eclKeys = ['ECL1','ECL2','ECL3','ECL4','ECL5','ECL6','ECL7','ECL8'] as const;
+        const eclLabels: Record<string, string> = {
+          ECL1: 'Navigation & Structure',
+          ECL2: 'Governance Actions',
+          ECL3: 'Drift & Exposure',
+          ECL4: 'Review & Seal',
+          ECL5: 'Trust & Determinism',
+          ECL6: 'Evidence Vault',
+          ECL7: 'Audit & Control Mapping',
+          ECL8: 'Executive Metrics',
+        };
+        eclKeys.forEach((key, idx) => {
+          const entry = (eclData as any)[key];
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid #f0f0f0';
+          if (idx % 2 === 0) tr.style.backgroundColor = '#fafafa';
+
+          const tdName = document.createElement('td');
+          tdName.style.cssText = 'padding:6px 10px;color:#333;';
+          tdName.textContent = `${key}: ${eclLabels[key] || key}`;
+          tr.appendChild(tdName);
+
+          const tdStatus = document.createElement('td');
+          tdStatus.style.cssText = 'padding:6px 10px;font-family:monospace;';
+          if (entry && entry.pass === true) {
+            tdStatus.textContent = '\u2713 PASS';
+            tdStatus.style.color = '#2e7d32';
+          } else {
+            tdStatus.textContent = '\u2717 NOT READY';
+            tdStatus.style.color = '#c62828';
+          }
+          tr.appendChild(tdStatus);
+
+          const tdDetail = document.createElement('td');
+          tdDetail.style.cssText = 'padding:6px 10px;color:#626f86;font-size:11px;';
+          tdDetail.textContent = entry?.reason || '\u2014';
+          tr.appendChild(tdDetail);
+
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.appendChild(table);
+      }
+
+      // --- Proofs / Evidence Summary ---
+      if (proofs && typeof proofs === 'object') {
+        const proofSection = document.createElement('div');
+        proofSection.style.cssText = 'margin-top:8px;padding:10px;background:#f5f6f7;border:1px solid #dfe1e6;border-radius:4px;font-size:12px;';
+
+        const proofTitle = document.createElement('div');
+        proofTitle.style.cssText = 'font-weight:600;color:#333;margin-bottom:6px;font-size:13px;';
+        proofTitle.textContent = 'Evidence Status';
+        proofSection.appendChild(proofTitle);
+
+        const proofLines: [string, string][] = [
+          ['Snapshot Kind', proofs.snapshotKind || 'UNKNOWN'],
+          ['Export Eligible', proofs.exportEligible === true ? 'Yes' : 'No'],
+          ['Export Reason', proofs.exportReasonCode || '\u2014'],
+          ['Chain Length', String(proofs.chainLength ?? 0)],
+          ['Chain Verified', proofs.chainVerified === true ? 'Yes' : proofs.chainVerified === false ? 'No' : '\u2014'],
+          ['Drift Risk', proofs.driftRiskBand || 'UNKNOWN'],
+          ['Attestations', String(proofs.attestationCount ?? 0)],
+        ];
+        if (proofs.chainHeadSha256) {
+          proofLines.push(['Integrity Hash', proofs.chainHeadSha256]);
+        }
+
+        proofLines.forEach(([label, value]) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;padding:2px 0;';
+          const lbl = document.createElement('span');
+          lbl.style.color = '#626f86';
+          lbl.textContent = label;
+          const val = document.createElement('span');
+          val.style.cssText = 'font-family:monospace;color:#333;';
+          val.textContent = value;
+          row.appendChild(lbl);
+          row.appendChild(val);
+          proofSection.appendChild(row);
+        });
+
+        container.appendChild(proofSection);
+      }
+
+      // --- No controls note (only if no ecl data at all) ---
+      if (!eclData || typeof eclData !== 'object') {
+        const noControlsMsg = document.createElement('div');
+        noControlsMsg.style.cssText = 'color:#626f86;font-size:13px;padding:12px;background:#f5f6f7;border:1px solid #dfe1e6;border-radius:4px;';
+        noControlsMsg.textContent = 'No controls data available in this snapshot.';
+        container.appendChild(noControlsMsg);
+      }
+
+      console.log('[FT_PROOF] UI_ECL_PANEL_CONTROLS_SUMMARY_RENDERED=1');
       return;
     }
 

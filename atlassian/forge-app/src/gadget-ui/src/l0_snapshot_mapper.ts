@@ -341,7 +341,7 @@ function createSectionHeader(title: string): HTMLElement {
  * 
  * Renders 9 fixed tabs with placeholder content (no logic, no mock data)
  */
-function createECL1TabNavigation(): HTMLElement {
+function createECL1TabNavigation(state: L0DashboardState): HTMLElement {
   const container = document.createElement("div");
   container.className = "ft-ecl1-tab-container";
   container.style.display = "flex";
@@ -1508,7 +1508,7 @@ export function renderL0Dashboard(state: L0DashboardState): HTMLElement {
     // Wire ECL-1..8 tab navigation into the live render path so it is
     // included in the bundle (not tree-shaken) and displayed to the user.
     try {
-      const tabNav = createECL1TabNavigation();
+      const tabNav = createECL1TabNavigation(state);
       content.appendChild(tabNav);
     } catch (_tabErr) {
       // [FT_PROOF_UI_SECTION_NOT_AVAILABLE] — fail-closed, buyer-safe
