@@ -41,25 +41,25 @@ describe("hash logic sync contract: computePackHash ↔ verify.js", () => {
   // ─── C: computePackHash contract rules ────────────────────────────
 
   describe("computePackHash contract rules", () => {
-    it("concatenates using filename:content format", () => {
+    it("delegates to canonical buildPackHashInput", () => {
       const block = getComputePackHashBlock();
-      // The template literal `${filename}:${files[filename]}` proves the format
-      expect(block).toContain("${filename}:${files[filename]}");
-    });
-
-    it("iterates REQUIRED_FILES first (in order)", () => {
-      const block = getComputePackHashBlock();
-      // Must loop over this.REQUIRED_FILES before extras
+      expect(block).toContain("buildPackHashInput");
       expect(block).toContain("this.REQUIRED_FILES");
-      // The for-of pattern
-      expect(block).toMatch(/for\s*\(\s*const\s+\w+\s+of\s+this\.REQUIRED_FILES\s*\)/);
     });
 
-    it("includes extra files in sorted order", () => {
-      const block = getComputePackHashBlock();
-      // Must filter out REQUIRED_FILES and sort the rest
-      expect(block).toContain(".filter(");
-      expect(block).toContain(".sort()");
+    it("canonical buildPackHashInput concatenates using filename:content format", () => {
+      const fnStart = source.indexOf("export function buildPackHashInput");
+      expect(fnStart).toBeGreaterThan(-1);
+      const fnBlock = source.slice(fnStart, fnStart + 800);
+      expect(fnBlock).toContain("${filename}:${files[filename]}");
+    });
+
+    it("canonical buildPackHashInput iterates requiredFiles first then extras sorted", () => {
+      const fnStart = source.indexOf("export function buildPackHashInput");
+      const fnBlock = source.slice(fnStart, fnStart + 800);
+      expect(fnBlock).toMatch(/for\s*\(\s*const\s+\w+\s+of\s+requiredFiles\s*\)/);
+      expect(fnBlock).toContain(".filter(");
+      expect(fnBlock).toContain(".sort()");
     });
 
     it("uses SHA-256 and utf8 encoding", () => {
@@ -79,12 +79,10 @@ describe("hash logic sync contract: computePackHash ↔ verify.js", () => {
       expect(block).toMatch(/for\s*\(\s*const\s+\w+\s+of\s+REQUIRED_FILES\s*\)/);
     });
 
-    it("uses same filename:content concatenation format", () => {
+    it("uses canonical buildPackHashInput for hash computation", () => {
       const block = getVerifyJsBlock();
-      // In the verify.js template, the concatenation is done with + operators
-      // because it's a plain JS string, not a TS template literal.
-      // Pattern: combined += filename + ":" + content  (or equivalent)
-      expect(block).toMatch(/combined\s*\+=\s*\w+\s*\+\s*"?:?"?\s*\+\s*\w+/);
+      // verify.js calls the emitted canonical helper instead of duplicating logic
+      expect(block).toContain("buildPackHashInput(");
     });
 
     it("handles manifest self-reference by zeroing packHash before hashing", () => {
