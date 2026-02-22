@@ -9,7 +9,7 @@ while IFS= read -r f; do
   test -f "$f" || (echo "FAIL: allowlist file path missing in repo: $f" && exit 1)
   # Only enforce for files that still mention jobId
   if rg -n "jobId" "$f" >/dev/null; then
-    rg -n "abortIfMasterFailed" "$f" >/dev/null || (echo "FAIL: missing abortIfMasterFailed in $f" && exit 1)
+    rg -n "abortIfMasterFailed\(jobId\)" "$f" >/dev/null || (echo "FAIL: missing abortIfMasterFailed(jobId) in $f" && exit 1)
   fi
 done < "$ALLOWLIST"
 

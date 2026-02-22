@@ -22,6 +22,8 @@ export const SCHEDULE_LOCK_TTL_MS = 8 * 24 * 60 * 60 * 1000;
 // Job status keys (EXPLICIT)
 export const JOB_STATUS_PREFIX = "ft:v565:job:status:";                // + jobId
 export const JOB_FAILURE_EXPORT_PREFIX = "ft:v565:job:failureExport:"; // + jobId
+// Job meta key (EXPLICIT) — stored separately so status updates never overwrite meta
+export const JOB_META_PREFIX = "ft:v565:job:meta:";                    // + jobId
 export type JobStatus = "NEW" | "RUNNING" | "FAILED" | "DONE";
 
 export const ORPHAN_MAX_DEPTH = 3;
