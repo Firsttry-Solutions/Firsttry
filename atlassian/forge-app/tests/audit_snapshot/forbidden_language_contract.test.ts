@@ -142,6 +142,8 @@ describe('Buyer-Unfriendly UI Language Contract', () => {
         'Please try again',
         'Could not load tab content',
         'scoreboard will appear',
+        'not included in this build',
+        'CONTROLS_PANEL_NOT_SHIPPED',
     ];
 
     for (const file of UI_FILES) {
@@ -216,6 +218,83 @@ describe('Buyer-Unfriendly UI Language Contract', () => {
 
     it('[FT_TEST_PASS_UI_FORBIDDEN_LANGUAGE_CONTRACT] — marker', () => {
         console.log('[FT_TEST_PASS_UI_FORBIDDEN_LANGUAGE_CONTRACT]');
+        expect(true).toBe(true);
+    });
+});
+
+/**
+ * v7.57: Tab Render Safety Contract
+ *
+ * Ensures createECL1TabNavigation accepts `state` parameter so it never
+ * throws "ReferenceError: state is not defined" at runtime.
+ *
+ * Marker: [FT_TEST_PASS_TAB_RENDER_SAFETY]
+ */
+describe('Tab Render Safety Contract', () => {
+    const mapperPath = path.join(__dirname, '../../src/gadget-ui/src/l0_snapshot_mapper.ts');
+
+    it('createECL1TabNavigation must accept state parameter', () => {
+        const content = fs.readFileSync(mapperPath, 'utf-8');
+        // The function signature must include a state parameter
+        const sigMatch = content.match(/function\s+createECL1TabNavigation\s*\(([^)]*)\)/);
+        expect(sigMatch).not.toBeNull();
+        expect(sigMatch![1]).toContain('state');
+        console.log('[FT_TEST_PASS_TAB_RENDER_SAFETY] signature-has-state PASS');
+    });
+
+    it('createECL1TabNavigation call site must pass state', () => {
+        const content = fs.readFileSync(mapperPath, 'utf-8');
+        // Find the call site (not the definition) - should pass state
+        const lines = content.split('\n');
+        const callLines = lines.filter(line =>
+            line.includes('createECL1TabNavigation(') && !line.includes('function ')
+        );
+        expect(callLines.length).toBeGreaterThan(0);
+        for (const line of callLines) {
+            // Must pass state, not be an empty call
+            expect(line).toMatch(/createECL1TabNavigation\(\s*state\s*\)/);
+        }
+        console.log('[FT_TEST_PASS_TAB_RENDER_SAFETY] call-site-passes-state PASS');
+    });
+
+    it('[FT_TEST_PASS_TAB_RENDER_SAFETY] — marker', () => {
+        console.log('[FT_TEST_PASS_TAB_RENDER_SAFETY]');
+        expect(true).toBe(true);
+    });
+});
+
+/**
+ * v7.57: Controls Summary Shipped Contract
+ *
+ * Ensures EnterpriseGovernancePanel renders a real Controls Summary
+ * instead of a static NOT_SHIPPED placeholder.
+ *
+ * Marker: [FT_TEST_PASS_CONTROLS_SUMMARY_SHIPPED]
+ */
+describe('Controls Summary Shipped Contract', () => {
+    const panelPath = path.join(__dirname, '../../src/gadget-ui/src/components/EnterpriseGovernancePanel.ts');
+
+    it('governance panel must not contain NOT_SHIPPED placeholder', () => {
+        const content = fs.readFileSync(panelPath, 'utf-8');
+        expect(content).not.toContain('CONTROLS_PANEL_NOT_SHIPPED');
+        expect(content).not.toContain('not included in this build');
+        console.log('[FT_TEST_PASS_CONTROLS_SUMMARY_SHIPPED] no-not-shipped PASS');
+    });
+
+    it('governance panel must render ECL controls table', () => {
+        const content = fs.readFileSync(panelPath, 'utf-8');
+        // Must have Controls Summary heading
+        expect(content).toContain('Controls Summary');
+        // Must reference ECL control labels
+        expect(content).toContain('ECL1');
+        expect(content).toContain('ECL8');
+        // Must emit the rendered marker
+        expect(content).toContain('UI_ECL_PANEL_CONTROLS_SUMMARY_RENDERED');
+        console.log('[FT_TEST_PASS_CONTROLS_SUMMARY_SHIPPED] controls-table-present PASS');
+    });
+
+    it('[FT_TEST_PASS_CONTROLS_SUMMARY_SHIPPED] — marker', () => {
+        console.log('[FT_TEST_PASS_CONTROLS_SUMMARY_SHIPPED]');
         expect(true).toBe(true);
     });
 });
