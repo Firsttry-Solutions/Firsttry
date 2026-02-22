@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "5.6.5",
+  "publicHashAlgo": "sha256",
+  "tenantTagHashAlgo": "hmac-sha256",
+  "hashingMode": "SHA256_ONLY",
+  "tenantTagPresent": false,
+  "snapshotHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "ledger": {
+    "blocks": [
+      {
+        "index": 0,
+        "type": "GENESIS",
+        "previousHash": "0",
+        "payloadCanonical": "{\"schemaVersion\":\"5.6.5\",\"type\":\"GENESIS\"}",
+        "publicHash": "df49684e815681f9f9abe887fdd86135079fc7a2f6a659bbb8bd518ef1c25684"
+      }
+    ]
+  }
+}

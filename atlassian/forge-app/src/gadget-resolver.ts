@@ -70,6 +70,10 @@ import {
   enforceDashEnvelopeV1Invariant,
   FtDashboardContext,
 } from './contracts/ft_dash_envelope_v1';
+// v5.6.5: Schedule + catch-up resolver imports
+import * as v565Crypto from 'crypto';
+import { SCHEDULE_ENABLED_KEY, SCHEDULE_STATUS_KEY, V565_SCHEMA_VERSION } from './v565/constants';
+import { enqueueSnapshotMaster } from './jobs/v565/snapshotMasterEnqueueAdapter';
 
 // Create single canonical resolver instance
 const resolver = new Resolver();
@@ -286,6 +290,30 @@ resolver.define('ft_smokeIdentity_v1', safeResolver('ft_smokeIdentity_v1', async
 }));
 
 // CRITICAL: Export as 'handler' - this is what Forge expects from manifest
+// v5.6.5: Schedule management resolvers (merged into canonical resolver)
+resolver.define('ft_v565_schedule_get', safeResolver('ft_v565_schedule_get', async () => {
+  const enabled = (await storage.get(SCHEDULE_ENABLED_KEY)) === true;
+  const status = (await storage.get(SCHEDULE_STATUS_KEY)) as any;
+  return { schemaVersion: V565_SCHEMA_VERSION, enabled, status: status || null };
+}));
+
+resolver.define('ft_v565_schedule_set', safeResolver('ft_v565_schedule_set', async (req: any) => {
+  const enabled = !!(req as any)?.payload?.enabled;
+  await storage.set(SCHEDULE_ENABLED_KEY, enabled);
+  console.log("FT_PROOF_SCHEDULE_TOGGLE_v1 enabled=" + String(enabled));
+  return { ok: true };
+}));
+
+resolver.define('ft_v565_schedule_catchup', safeResolver('ft_v565_schedule_catchup', async () => {
+  const jobId = v565Crypto.randomUUID();
+  try {
+    await enqueueSnapshotMaster({ jobId, executionContext: "APP", trigger: "CATCH_UP_APP", dryRun: false });
+    return { ok: true, jobId };
+  } catch (e: any) {
+    return { ok: false, jobId, error: String(e?.message || e).slice(0, 220) };
+  }
+}));
+
 export const handler = resolver.getDefinitions();
 
 // v7.48: Re-export pure extraction helper for testing
