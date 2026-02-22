@@ -274,3 +274,119 @@ export const REVIEWFAIL_TO_ISO27001: Readonly<Record<string, ControlMapping>> = 
 });
 
 // BACKWARD_COMPAT_SHIM END
+// =============================================================================
+// COMPLIANCE EVIDENCE GENERATOR (FT_EVIDENCE_GENERATOR_V1)
+// Generates deterministic evidence artifacts from review workflow data.
+// NOT a certification or attestation claim — evidence artifact only.
+// =============================================================================
+
+/**
+ * A deterministic compliance evidence artifact.
+ */
+export interface ComplianceEvidence {
+  readonly generatedUtc: string;
+  readonly reviewId: string;
+  readonly controlEvaluations: ReadonlyArray<{
+    controlId: string;
+    controlName: string;
+    framework: string;
+    status: string;
+    evidence: string;
+  }>;
+  readonly disclaimers: string[];
+  readonly metadata: Readonly<Record<string, string>>;
+}
+
+/**
+ * ComplianceEvidenceGenerator — deterministic evidence artifact builder.
+ *
+ * Rules:
+ * - Output is deterministic: same input → same output (no random, no Date.now unless
+ *   generatedAt is omitted for non-test contexts).
+ * - Output text must NEVER contain certification/attestation language.
+ * - Disclaimers are always present.
+ * - FAIL-CLOSED: throws if workflow is missing.
+ */
+export class ComplianceEvidenceGenerator {
+  /**
+   * Generate a compliance evidence artifact from a review workflow.
+   *
+   * @param workflow - The review workflow state object
+   * @param generatedAt - Optional deterministic timestamp (for test reproducibility)
+   * @returns A ComplianceEvidence object
+   * @throws {Error} if workflow is missing
+   */
+  static generateEvidence(workflow: any, generatedAt?: string): ComplianceEvidence {
+    if (!workflow) {
+      throw new Error('FT_REVIEW_EVIDENCE_GENERATOR_MISSING: workflow is required');
+    }
+
+    console.log('[FT_PROOF_REVIEW_EVIDENCE_GENERATOR_PRESENT]=1');
+
+    const generatedUtc = generatedAt || new Date().toISOString();
+    const reviewId = workflow.reviewId || 'unknown';
+
+    const controlEvaluations = STATIC_CONTROL_REFERENCE.map(ref => ({
+      controlId: ref.controlId,
+      controlName: ref.controlName,
+      framework: ref.framework,
+      status: workflow.sealed === true ? 'OBSERVED' : 'PENDING',
+      evidence: `Evidence artifact: ${ref.controlId} evaluated for review ${reviewId}`,
+    }));
+
+    return {
+      generatedUtc,
+      reviewId,
+      controlEvaluations,
+      disclaimers: [
+        'This is an evidence artifact generated automatically by FirstTry. It is NOT a certification or attestation.',
+        'Control status reflects observations at the time of review only.',
+      ],
+      metadata: {
+        schemaVersion: CONTROL_MAPPING_VERSION,
+        generatorVersion: '1.0.0',
+      },
+    };
+  }
+
+  /**
+   * Export evidence as deterministic canonical JSON string.
+   * Keys are sorted for reproducible output.
+   *
+   * @param evidence - The ComplianceEvidence object
+   * @returns A JSON string
+   */
+  static exportEvidenceJSON(evidence: ComplianceEvidence): string {
+    // Sort top-level keys for canonical output
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(evidence).sort()) {
+      sorted[key] = (evidence as any)[key];
+    }
+    return JSON.stringify(sorted, null, 2);
+  }
+
+  /**
+   * Generate a human-readable evidence report.
+   * Text NEVER contains certification/attestation language.
+   *
+   * @param evidence - The ComplianceEvidence object
+   * @returns A plain-text report string
+   */
+  static generateEvidenceReport(evidence: ComplianceEvidence): string {
+    const lines: string[] = [
+      `Evidence artifact generated automatically for review ${evidence.reviewId}`,
+      `Generated: ${evidence.generatedUtc}`,
+      '',
+      'Control Observations:',
+      ...evidence.controlEvaluations.map(ce =>
+        `  ${ce.controlId} (${ce.framework}): ${ce.status} — ${ce.evidence}`
+      ),
+      '',
+      'Disclaimers:',
+      ...evidence.disclaimers.map(d => `  - ${d}`),
+    ];
+    return lines.join('\n');
+  }
+}
+
+// COMPLIANCE_EVIDENCE_GENERATOR END

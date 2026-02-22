@@ -315,6 +315,11 @@ verify();
     const schemaVersionFile = this.SCHEMA_VERSION;
     const verifyScript = this.generateVerifyScript();
     
+    // FAIL-CLOSED: Evidence generator must be available
+    if (!ComplianceEvidenceGenerator || typeof ComplianceEvidenceGenerator.generateEvidence !== 'function') {
+      throw new Error('FT_REVIEW_EVIDENCE_GENERATOR_MISSING');
+    }
+
     // Generate compliance evidence with optional test timestamp
     const evidence = ComplianceEvidenceGenerator.generateEvidence(workflow, testTimestamps?.generatedAt);
     const controlMappingFile = ComplianceEvidenceGenerator.exportEvidenceJSON(evidence);
