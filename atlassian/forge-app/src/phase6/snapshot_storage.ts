@@ -385,10 +385,13 @@ export class RetentionPolicyStorage {
       return JSON.parse(data as string);
     }
 
-    // Return default policy (no Date() - use external timestamp)
+    // Return default policy with timestamps
+    const nowIso = new Date().toISOString();
     return {
       tenant_id: this.tenantId,
       ...DEFAULT_RETENTION_POLICY,
+      created_at: nowIso,
+      updated_at: nowIso,
     };
   }
 }

@@ -29,8 +29,8 @@ modules:
       handler: continuous-drift/scheduled.run
     - key: get-status-snapshot-fn
       handler: gadget-resolver.handler
-    - key: ft-v565-scheduled-kickoff
-      handler: src/jobs/v565/snapshotScheduleKickoff.run
+    - key: ft-v565-sched-kickoff
+      handler: jobs/v565/snapshotScheduleKickoff.run
       timeoutSeconds: 60
 
   # PHASE 2: Scheduled drift monitor (runs daily)
@@ -40,7 +40,7 @@ modules:
       function: driftMonitorScheduled
       interval: day
     - key: ft-v565-weekly-snapshot
-      function: ft-v565-scheduled-kickoff
+      function: ft-v565-sched-kickoff
       interval: week
 
 permissions:
