@@ -26,5 +26,7 @@ Artifacts include:
 - 04_head_sha.txt
 - 05_skips_allowlist.txt
 - 06_evidence_sha256sums.txt
+- 07_env_versions.txt
+- 08_npm_ls_depth0.txt
 
 Only this evidence directory should be attached to enterprise review artifacts. "npm test" is for local development and is not treated as evidence.
