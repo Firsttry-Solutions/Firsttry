@@ -36,7 +36,7 @@ BUNDLE="./src/gadget-ui/dist/app.$(git rev-parse HEAD | cut -c1-40).js"
 
 if [ ! -f "$BUNDLE" ]; then
   # Fallback: find the actual bundle
-  BUNDLE=$(find ./src/gadget-ui/dist -name "app.*.js" -type f | head -1)
+  BUNDLE=$(find ./src/gadget-ui/dist -name "app.js" -type f | head -1)
   if [ -z "$BUNDLE" ]; then
     echo "FAIL: Bundle not found. Run 'npm run build' first."
     exit 1

@@ -2,7 +2,7 @@
 # Phase 6 STRICT Bundle Provenance Verifier
 # 
 # SPEC (fail-closed, no warnings allowed):
-# - Find exactly 1 bundle file: src/gadget-ui/dist/app.*.js
+# - Find exactly 1 bundle file: src/gadget-ui/dist/app.js
 # - Extract anchor from block comment: /* FT_IDENTITY_ANCHOR_V1|git=...|bundle=...|time=... */
 # - Call strip_and_hash.js to:
 #   * Verify exactly 1 block comment with anchor
@@ -17,13 +17,13 @@ set -e
 RUN_DIR="${RUN_DIR:-.}"
 
 # Find the gadget bundle file (must be exactly 1)
-BUNDLE_COUNT=$(ls -1 src/gadget-ui/dist/app.*.js 2>/dev/null | wc -l)
+BUNDLE_COUNT=$(ls -1 src/gadget-ui/dist/app.js 2>/dev/null | wc -l)
 if [ "$BUNDLE_COUNT" -ne 1 ]; then
   echo "ERROR: Expected exactly 1 bundle file, found $BUNDLE_COUNT" | tee -a "$RUN_DIR/provenance.log"
   exit 1
 fi
 
-BUNDLE="$(ls -1 src/gadget-ui/dist/app.*.js | head -1)"
+BUNDLE="$(ls -1 src/gadget-ui/dist/app.js | head -1)"
 echo "[verify_bundle_provenance] Bundle: $BUNDLE" | tee -a "$RUN_DIR/provenance.log"
 
 # Call strict hash verifier (will exit 1 on any error)

@@ -8,11 +8,11 @@ cd /workspaces/Firsttry/atlassian/forge-app
 
 echo "[verify_no_top_level_throw_in_entry] Checking entry bundle for top-level throw..."
 
-# Find the entry bundle (app.*.js)
-ENTRY=$(ls -1 src/gadget-ui/dist/app.*.js 2>/dev/null | head -1)
+# Find the entry bundle (app.js)
+ENTRY=$(ls -1 src/gadget-ui/dist/app.js 2>/dev/null | head -1)
 
 if [ -z "$ENTRY" ]; then
-  echo "ERROR: No app.*.js found in dist"
+  echo "ERROR: No app.js found in dist"
   exit 1
 fi
 

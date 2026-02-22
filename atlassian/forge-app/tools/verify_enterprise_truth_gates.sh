@@ -87,7 +87,7 @@ echo ""
 echo "========== PHASE 3: BUNDLE SELECTOR PRESENCE =========="
 
 # Find built bundle
-BUNDLE="$(ls -1 src/gadget-ui/dist/app.*.js 2>/dev/null | head -1 || true)"
+BUNDLE="$(ls -1 src/gadget-ui/dist/app.js 2>/dev/null | head -1 || true)"
 if [[ -z "$BUNDLE" ]]; then
   echo "FAIL: No built bundle found" | tee "$RUN_DIR/FAIL_REASON.txt"
   exit 1

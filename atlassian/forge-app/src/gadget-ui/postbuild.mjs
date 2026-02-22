@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * POST-BUILD SCRIPT: Filename-Based Cache Busting
+ * POST-BUILD SCRIPT: Stable Entry + Identity Anchor
  * 
  * After Vite builds:
  * 1. Read UI_GIT_SHA from src/gadget-ui/src/ui_build_meta.ts
- * 2. Rename index.js to app.<SHA>.js (filename-based cache-busting)
- * 3. Remove Vite's auto-injected index.js script tag from dist/index.html
- * 4. Inject EXACTLY ONE script tag: <script src="./app.<SHA>.js"></script>
+ * 2. Rename index.js to app.js (STABLE filename — eliminates CDN cache 404s)
+ * 3. Append identity anchor block comment for provenance verification
+ * 4. Remove Vite's auto-injected index.js script tag from dist/index.html
+ * 5. Inject EXACTLY ONE script tag: <script src="./app.js"></script>
  * 
- * Result: dist/index.html will have ONLY <script src="./app.<SHA>.js"></script>
- * Browser cache key is based on filename, NOT query param.
- * Different SHA = completely different filename = guaranteed cache miss.
- * Forge CDN will always serve the correct file.
+ * Result: dist/index.html will have ONLY <script src="./app.js"></script>
+ * The filename never changes between deploys — Forge CDN always finds it.
+ * Identity/provenance is embedded as a block comment inside app.js.
  */
 
 import fs from 'fs';
@@ -50,17 +50,17 @@ function main() {
 
     console.log(`[POSTBUILD] sha=${uiBuildSha}`);
 
-    // 2. Rename index.js to app.<SHA>.js (filename-based cache busting)
+    // 2. Rename index.js to app.js (STABLE filename — prevents CDN cache 404s)
     const indexJsPath = path.join(distDir, 'index.js');
-    const appShaJsPath = path.join(distDir, `app.${uiBuildSha}.js`);
+    const appJsPath = path.join(distDir, 'app.js');
 
     if (!fs.existsSync(indexJsPath)) {
       console.error(`[POSTBUILD] ERROR: ${indexJsPath} not found (expected Vite output)`);
       process.exit(1);
     }
 
-    fs.renameSync(indexJsPath, appShaJsPath);
-    console.log(`[POSTBUILD] wrote entry=app.${uiBuildSha}.js`);
+    fs.renameSync(indexJsPath, appJsPath);
+    console.log(`[POSTBUILD] wrote entry=app.js (stable filename, sha=${uiBuildSha})`);
 
     // ========================================================================
     // L0.1B: INJECT ACTUAL IDENTITY ANCHOR VIA BLOCK COMMENT ONLY
@@ -72,7 +72,7 @@ function main() {
     // time= build time ISO string
     // ========================================================================
     try {
-      const bundleContent = fs.readFileSync(appShaJsPath, 'utf-8');
+      const bundleContent = fs.readFileSync(appJsPath, 'utf-8');
       
       // Extract UI_BUILD_TIME_UTC from ui_build_meta.ts (MUST be deterministic git-commit time)
       const metaContent = fs.readFileSync(metaPath, 'utf-8');
@@ -115,7 +115,7 @@ function main() {
       // NOTE: Do NOT add newline before comment - strip_and_hash removes exactly this string
       const anchorComment = `/*\n * FT_IDENTITY_ANCHOR_V1|git=${gitSha}|bundle=${bundleShort}|time=${buildTimeUtc}\n */`;
       const finalContent = bundleContent + anchorComment;
-      fs.writeFileSync(appShaJsPath, finalContent, 'utf-8');
+      fs.writeFileSync(appJsPath, finalContent, 'utf-8');
       
       console.log(`[POSTBUILD] ✓ Appended anchor block comment (no code modifications)`);
     } catch (err) {
@@ -154,19 +154,19 @@ function main() {
     }
     console.log('[POSTBUILD] ✓ Asserts passed: no query-param cache bust, no legacy entry assets');
     
-    // Remove any existing script tags that reference app.*.js or index.js
+    // Remove any existing script tags that reference app*.js or index.js
     htmlContent = htmlContent.replace(
-      /<script[^>]*\s(src=["']\.\/)?(?:index\.js|app\.[0-9a-f]+\.js)["'][^>]*><\/script>/g,
+      /<script[^>]*src=["'][^"']*(?:index\.js|app\.[0-9a-f]+\.js|app\.js)["'][^>]*><\/script>/g,
       ''
     );
     
-    // Inject exactly ONE script tag with filename-based cache bust
-    const scriptTag = `<script type="module" src="./app.${uiBuildSha}.js"></script>`;
+    // Inject exactly ONE script tag with stable filename
+    const scriptTag = `<script type="module" src="./app.js"></script>`;
     
     if (htmlContent.includes('</head>')) {
       htmlContent = htmlContent.replace('</head>', `    ${scriptTag}\n</head>`);
       fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
-      console.log(`[POSTBUILD] index.html script=<script type="module" src="./app.${uiBuildSha}.js"></script>`);
+      console.log(`[POSTBUILD] index.html script=<script type="module" src="./app.js"></script>`);
     } else {
       console.error('[POSTBUILD] ERROR: </head> tag not found in index.html');
       process.exit(1);
@@ -188,19 +188,19 @@ function main() {
     }
 
     // Verify the loaded file exists
-    if (!fs.existsSync(appShaJsPath)) {
-      console.error(`[POSTBUILD] ERROR: File does not exist: ${appShaJsPath}`);
+    if (!fs.existsSync(appJsPath)) {
+      console.error(`[POSTBUILD] ERROR: File does not exist: ${appJsPath}`);
       process.exit(1);
     }
 
     // ========================================================================
-    // L0.1: WRITE ENTRY_PROOF.json FOR CACHE-BUST VERIFICATION
+    // L0.1: WRITE ENTRY_PROOF.json FOR STABLE ENTRY VERIFICATION
     // ========================================================================
     const entryProof = {
       build_sha: uiBuildSha,
-      entry_filename: `app.${uiBuildSha}.js`,
-      cache_bust_method: 'filename-based',
-      verification: 'Filename must be unique per build; different SHA guarantees cache miss'
+      entry_filename: 'app.js',
+      cache_bust_method: 'stable-filename-with-embedded-identity-anchor',
+      verification: 'Stable app.js eliminates CDN cache 404s; identity anchor inside proves provenance'
     };
     const entryProofPath = path.join(distDir, 'ENTRY_PROOF.json');
     fs.writeFileSync(entryProofPath, JSON.stringify(entryProof, null, 2), 'utf-8');
