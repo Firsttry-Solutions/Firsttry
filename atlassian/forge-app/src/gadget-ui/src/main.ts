@@ -592,7 +592,7 @@ function isValidBuildSha(x: unknown): boolean {
 }
 
 /**
- * Validates Build Time is ISO-8601 UTC with milliseconds optional, ending in Z
+ * Validates Build Time is RFC 3339 UTC with milliseconds optional, ending in Z
  */
 function isValidBuildTime(x: unknown): boolean {
     return typeof x === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(x);
@@ -689,10 +689,10 @@ function setHTML(id: string, value: string): boolean {
     return true;
 }
 
-function formatTimestampDisplay(iso?: string): string {
-    if (!iso) return 'Not available yet';
+function formatTimestampDisplay(utcStr?: string): string {
+    if (!utcStr) return 'Not available yet';
     try {
-        const date = new Date(iso);
+        const date = new Date(utcStr);
         return new Intl.DateTimeFormat('en-US', {
             year: 'numeric',
             month: 'short',
@@ -703,14 +703,14 @@ function formatTimestampDisplay(iso?: string): string {
             timeZoneName: 'short'
         }).format(date);
     } catch {
-        return iso;
+        return utcStr;
     }
 }
 
-function formatTimestampExport(iso?: string): string {
-    if (!iso) return 'Pending…';
+function formatTimestampExport(utcStr?: string): string {
+    if (!utcStr) return 'Pending…';
     try {
-        const date = new Date(iso);
+        const date = new Date(utcStr);
         return new Intl.DateTimeFormat('en-US', {
             year: 'numeric',
             month: 'short',
@@ -721,7 +721,7 @@ function formatTimestampExport(iso?: string): string {
             timeZoneName: 'short'
         }).format(date);
     } catch {
-        return iso;
+        return utcStr;
     }
 }
 
@@ -1195,7 +1195,7 @@ async function loadStatus() {
             // BACKBONE FIX #1: Map FtResolverResponseV1 correctly to RuntimeSignals
             // The backend response structure (FtResolverResponseV1) has:
             // - status: "BOOTSTRAP" | "OK" | "DEGRADED" | "FAILED"
-            // - ledger.scheduler_last_success_at_utc: ISO or null
+            // - ledger.scheduler_last_success_at_utc: UTC timestamp or null
             // - ledger.snapshot_count: number >= 0
             // DO NOT use normalizeStatusV1 defaults which mask real backend state!
             
@@ -4220,6 +4220,7 @@ async function proceedWithBoot() {
               exportAccessButton.textContent = 'Preparing download...';
               
               try {
+                // [FT_UI_ACTION_EXPORT_PHASE1_PACK_HANDLER]
                 ensureCorrelationId();
                 
                 // v7.47: resolver key + action type for export dispatch
@@ -4263,7 +4264,23 @@ async function proceedWithBoot() {
                 // Response has correct envelope kind - process action result
                 const actionResult = result as any;
                 const exportData = actionResult?.data || actionResult;
-                
+
+                // Early field validation: on ok:false, error/build/reason/traceId must exist
+                if (actionResult && !actionResult.ok) {
+                  if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
+                    console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'CONTRACT_BREACH missing fields on export response', {
+                      hasError: !!actionResult.error,
+                      hasBuild: !!actionResult.build,
+                      hasReason: !!actionResult.reason,
+                      hasTraceId: !!actionResult.traceId,
+                    });
+                    const earlyTraceId = actionResult?.traceId || actionResult?.error?.traceId || 'unknown';
+                    exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH missing fields (traceId=${earlyTraceId})`;
+                    exportAccessButton.disabled = false;
+                    return;
+                  }
+                }
+
                 // Check if response has exportGate field (indicates resolver-side gating)
                 if (actionResult?.exportGate && !actionResult.exportGate.allowed) {
                   // v7.48: Render backend reasonCode/message VERBATIM — never replace with SNAPSHOT_NOT_FOUND
@@ -4350,21 +4367,34 @@ async function proceedWithBoot() {
                   const backendReasonCode = actionResult?.reasonCode || exportData?.reasonCode || actionResult?.exportGate?.reasonCode || 'UNKNOWN';
                   const failReason = actionResult?.reason || actionResult?.error?.message || exportData?.reason || 'Export failed';
                   const traceId = actionResult?.traceId || actionResult?.error?.traceId || 'unknown';
-                  console.error('[PHASE1_EXPORT_FAIL]', {
-                    reasonCode: backendReasonCode,
-                    reason: failReason,
-                    traceId,
-                    hasError: !!actionResult?.error,
-                    hasBuild: !!actionResult?.build,
-                  });
-                  console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
-                    resolver: exportResolverKey,
-                    snapshotId: _exportSnapshotId,
-                    reasonCode: backendReasonCode,
-                    message: failReason,
-                    traceId,
-                  }));
-                  exportAccessButton.textContent = `Export Failed: ${backendReasonCode} — ${failReason} (traceId=${traceId})`;
+
+                  // Sanity check: error/build/reason/traceId fields must exist on failure
+                  if (!actionResult.error || !actionResult.build || !actionResult.reason || !actionResult.traceId) {
+                    console.error('[PHASE1_CONTRACT_BREACH_FIELDS]', 'CONTRACT_BREACH missing fields on ok:false export response', {
+                      hasError: !!actionResult.error,
+                      hasBuild: !!actionResult.build,
+                      hasReason: !!actionResult.reason,
+                      hasTraceId: !!actionResult.traceId,
+                      response: actionResult,
+                    });
+                    exportAccessButton.textContent = `Export Failed: CONTRACT_BREACH missing fields (traceId=${traceId})`;
+                  } else {
+                    console.error('[PHASE1_EXPORT_FAIL]', {
+                      reasonCode: backendReasonCode,
+                      reason: failReason,
+                      traceId,
+                      hasError: !!actionResult?.error,
+                      hasBuild: !!actionResult?.build,
+                    });
+                    console.log('[FT_PROOF_UI_EXPORT_INVOKE_FAIL]', JSON.stringify({
+                      resolver: exportResolverKey,
+                      snapshotId: _exportSnapshotId,
+                      reasonCode: backendReasonCode,
+                      message: failReason,
+                      traceId,
+                    }));
+                    exportAccessButton.textContent = `Export Failed: ${backendReasonCode} — ${failReason} (traceId=${traceId})`;
+                  }
                 }
               } catch (error: any) {
                 console.error('[PHASE1_EXPORT_ERROR]', error);
