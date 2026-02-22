@@ -11,9 +11,8 @@
  * - dryRun: verifies wiring is reachable without side-effects
  */
 import { storage } from "@forge/api";
-import * as crypto from "crypto";
-import { V565_SCHEMA_VERSION, capReason, nowUtcIso, JOB_STATUS_PREFIX } from "../../v565/constants";
-import { setJobStatus } from "./jobStatus";
+import { V565_SCHEMA_VERSION, capReason, nowUtcIso } from "../../v565/constants";
+import { setJobStatus, setJobMeta } from "./jobStatus";
 import { abortIfMasterFailed } from "./workerAbort";
 import { SnapshotCapturer } from "../../phase6/snapshot_capture";
 import { SnapshotStorage, SnapshotRunStorage } from "../../phase6/snapshot_storage";
@@ -48,27 +47,23 @@ export async function enqueueSnapshotMaster(args: EnqueueArgs): Promise<void> {
   }
 
   try {
-    // Worker abort: bail if master job already marked FAILED
-    if (await abortIfMasterFailed(args.jobId)) return;
+    const jobId = args.jobId;
 
-    // Persist job args into storage so workers can read execution context
-    const jobRecord = {
-      jobId: args.jobId,
+    // Worker abort: bail if master job already marked FAILED
+    if (await abortIfMasterFailed(jobId)) return;
+
+    // Persist job meta under separate key (never overwritten by status updates)
+    await setJobMeta({
+      schemaVersion: V565_SCHEMA_VERSION,
+      jobId,
       executionContext: args.executionContext,
       trigger: args.trigger,
-      schemaVersion: V565_SCHEMA_VERSION,
       createdAtUtc: nowUtcIso(),
-    };
-    await storage.set(JOB_STATUS_PREFIX + args.jobId, {
-      schemaVersion: V565_SCHEMA_VERSION,
-      status: "NEW" as const,
-      updatedAtUtc: nowUtcIso(),
-      executionContext: args.executionContext,
-      trigger: args.trigger,
     });
 
-    // Mark job as RUNNING
-    await setJobStatus(args.jobId, "RUNNING");
+    // Status transitions: NEW → RUNNING (meta is preserved in its own key)
+    await setJobStatus(jobId, "NEW");
+    await setJobStatus(jobId, "RUNNING");
 
     // Resolve tenant identity from provided context (scheduled triggers provide installContext)
     const tenantIdentity = args.context ? resolveTenantIdentity(args.context) : null;
@@ -90,9 +85,9 @@ export async function enqueueSnapshotMaster(args: EnqueueArgs): Promise<void> {
     }
 
     // Mark job as DONE
-    await setJobStatus(args.jobId, "DONE");
+    await setJobStatus(jobId, "DONE");
 
-    console.log("FT_PROOF_ADAPTER_WIRED_v1 ok=true jobId=" + args.jobId + " snapshotId=" + (snapshot?.snapshot_id || "none"));
+    console.log("FT_PROOF_ADAPTER_WIRED_v1 ok=true jobId=" + jobId + " snapshotId=" + (snapshot?.snapshot_id || "none"));
   } catch (e: any) {
     // Mark job as FAILED before re-throwing
     try { await setJobStatus(args.jobId, "FAILED"); } catch { /* best-effort */ }

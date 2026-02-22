@@ -60,8 +60,13 @@ export const run = async (event?: any): Promise<void> => {
   console.log(`FT_PROOF_SCHEDULE_TRIGGER_ENTRY_v1 weekKey=${weekKey} jobId=${jobId}`);
 
   try {
-    // Record deploy observation (for offset disclosure)
-    await storage.set(DEPLOY_OBSERVED_AT_KEY, nowUtcIso());
+    // Record deploy observation (for offset disclosure) — set-once, not overwritten
+    const existingObserved = (await storage.get(DEPLOY_OBSERVED_AT_KEY)) as string | undefined;
+    if (!existingObserved) {
+      const observed = nowUtcIso();
+      await storage.set(DEPLOY_OBSERVED_AT_KEY, observed);
+      console.log("FT_PROOF_DEPLOY_RESET_AWARE_v1 observedAtUtc=" + observed);
+    }
 
     // Opt-in gate: default OFF
     const enabled = (await storage.get(SCHEDULE_ENABLED_KEY)) === true;
