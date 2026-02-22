@@ -23,6 +23,49 @@ import { ReviewWorkflow, ReviewItem, ReviewDecision, ReviewException } from "../
 import { ComplianceEvidenceGenerator } from "../compliance/controlMapping";
 
 /**
+ * Canonical pack hash input builder — single source of truth.
+ * Both computePackHash() and the generated verify.js use this algorithm.
+ */
+export function buildPackHashInput(files: Record<string, string>, requiredFiles: string[]): string {
+  let combined = "";
+  // Deterministic order: required files first
+  for (const filename of requiredFiles) {
+    if (files[filename]) {
+      combined += `${filename}:${files[filename]}`;
+    }
+  }
+  // Then any extra files in sorted order
+  const extraFiles = Object.keys(files)
+    .filter((f) => !requiredFiles.includes(f))
+    .sort();
+  for (const filename of extraFiles) {
+    combined += `${filename}:${files[filename]}`;
+  }
+  return combined;
+}
+
+/**
+ * Emit the canonical buildPackHashInput as a JS function string.
+ * Embedded in verify.js so the hash algorithm exists in one place only.
+ */
+function emitBuildPackHashInputFunctionSource(): string {
+  return `function buildPackHashInput(files, REQUIRED_FILES) {
+  // [FT_VERIFY_PACKHASH_CANONICAL_BUILDER]
+  let combined = "";
+  for (const filename of REQUIRED_FILES) {
+    if (files[filename]) {
+      combined += filename + ":" + files[filename];
+    }
+  }
+  const extraFiles = Object.keys(files).filter(f => REQUIRED_FILES.indexOf(f) < 0).sort();
+  for (const filename of extraFiles) {
+    combined += filename + ":" + files[filename];
+  }
+  return combined;
+}`;
+}
+
+/**
  * Review export metadata
  */
 export interface ReviewExportMetadata {
@@ -209,6 +252,7 @@ export class ReviewExportPack {
    * Verification script for auditor replay
    */
   private static generateVerifyScript(): string {
+    const emittedHelper = emitBuildPackHashInputFunctionSource();
     return `/**
  * Review Pack Verification Script
  * 
@@ -237,6 +281,8 @@ const REQUIRED_FILES = [
   "verify.js",
   "schema-version.txt",
 ];
+
+${emittedHelper}
 
 function hash(data) {
   return crypto.createHash("sha256").update(data).digest("hex");
@@ -280,7 +326,7 @@ function verify() {
   console.log("[VERIFY] ✓ Schema version documented");
 
   // 5. Verify packHash integrity (fail-closed)
-  // packHash recomputation mirrors ReviewExportPack.computePackHash (must stay in sync)
+  // packHash recomputation uses the canonical hash input builder
   console.log("[VERIFY] recomputing packHash...");
   const packHash = manifest.packHash;
   if (!packHash || typeof packHash !== "string" || !/^[0-9a-f]{64}$/.test(packHash)) {
@@ -293,16 +339,18 @@ function verify() {
   const preHashManifest = Object.assign({}, manifest, { packHash: "" });
   const preHashManifestJson = JSON.stringify(preHashManifest, null, 2);
 
-  let combined = "";
+  // Build files map from disk, with manifest zeroed for self-reference handling
+  const files = {};
   for (const filename of REQUIRED_FILES) {
     if (fs.existsSync(filename)) {
-      const content = (filename === "review-manifest.json")
+      files[filename] = (filename === "review-manifest.json")
         ? preHashManifestJson
         : fs.readFileSync(filename, "utf8");
-      combined += filename + ":" + content;
     }
   }
-  const computedHash = crypto.createHash("sha256").update(combined, "utf8").digest("hex");
+
+  const recomputedInput = buildPackHashInput(files, REQUIRED_FILES);
+  const computedHash = crypto.createHash("sha256").update(recomputedInput, "utf8").digest("hex");
 
   if (computedHash !== packHash) {
     console.error("FAIL: packHash mismatch");
@@ -388,24 +436,8 @@ verify();
    * Compute pack hash (SHA-256 of all files concatenated in order)
    */
   static computePackHash(files: Record<string, string>): string {
-    let combined = "";
-
-    // Deterministic order: required files first, then any extras
-    for (const filename of this.REQUIRED_FILES) {
-      if (files[filename]) {
-        combined += `${filename}:${files[filename]}`;
-      }
-    }
-
-    // Add any extra files in sorted order
-    const extraFiles = Object.keys(files)
-      .filter((f) => !this.REQUIRED_FILES.includes(f))
-      .sort();
-    for (const filename of extraFiles) {
-      combined += `${filename}:${files[filename]}`;
-    }
-
-    const hash = crypto.createHash("sha256").update(combined, "utf8").digest("hex");
+    const input = buildPackHashInput(files, this.REQUIRED_FILES);
+    const hash = crypto.createHash("sha256").update(input, "utf8").digest("hex");
     console.log(`[FT_EXPORT_PACK] Pack hash=${hash}`);
 
     return hash;
