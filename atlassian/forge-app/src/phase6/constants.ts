@@ -84,6 +84,8 @@ export const DEFAULT_RETENTION_POLICY = {
   deletion_strategy: 'FIFO' as DeletionStrategy,
   uninstall_behavior: 'retain_for_days' as UninstallBehavior,
   uninstall_retain_days: 90,
+  created_at: '1970-01-01T00:00:00.000Z',
+  updated_at: '1970-01-01T00:00:00.000Z',
 };
 
 /**
