@@ -27,7 +27,7 @@ BUNDLE_PATHS=(
   "src/gadget-ui/dist/index.js"
   "src/gadget-ui/dist/gadget.js"
   "src/gadget-ui/dist/main.js"
-  "src/gadget-ui/dist/app.*.js"
+  "src/gadget-ui/dist/app.js"
   "build/gadget-ui.js"
   "dist/gadget-ui.js"
   "build/gadget.js"

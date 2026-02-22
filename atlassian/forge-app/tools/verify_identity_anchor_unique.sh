@@ -24,10 +24,10 @@ if [ ! -d "$GADGET_DIST_DIR" ]; then
 fi
 
 # Find the dist bundle
-BUNDLE_FILE=$(ls "$GADGET_DIST_DIR"/app.*.js 2>/dev/null | head -1)
+BUNDLE_FILE=$(ls "$GADGET_DIST_DIR"/app.js 2>/dev/null | head -1)
 
 if [ -z "$BUNDLE_FILE" ]; then
-  echo "[GATE_IDENTITY_ANCHOR] ERROR: No app.*.js bundle found in $GADGET_DIST_DIR" >&2
+  echo "[GATE_IDENTITY_ANCHOR] ERROR: No app.js bundle found in $GADGET_DIST_DIR" >&2
   exit 1
 fi
 

@@ -59,7 +59,7 @@ echo "✅ LAYER 2: PASS" | tee -a "$RUN_DIR/02_layer_status.txt"
 
 # Verify hash matches
 echo "[LAYER 2] Verifying provenance JSON..."
-BUNDLE="$(ls -1 src/gadget-ui/dist/app.*.js | head -1)"
+BUNDLE="$(ls -1 src/gadget-ui/dist/app.js | head -1)"
 node tools/strip_and_hash.js "$BUNDLE" 2>&1 | tee "$RUN_DIR/30_strip_and_hash.json" || {
   echo "STOP: strip_and_hash.js failed" | tee "$RUN_DIR/99_STOP_REPORT.txt"
   exit 1

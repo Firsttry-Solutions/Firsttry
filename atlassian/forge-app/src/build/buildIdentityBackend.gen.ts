@@ -11,13 +11,13 @@
  */
 
 /** Full 40-character git SHA (lowercase hex) from git rev-parse HEAD */
-export const BACKEND_GIT_SHA = 'bc4c172dc81d89ef5a74d8bc31401da2e3c77bc6';
+export const BACKEND_GIT_SHA = '3bde18dc41065d77531f2328b0daf47412d13292';
 
 /** Short form: first 7 characters of git SHA */
-export const BACKEND_GIT_SHA_SHORT = 'bc4c172';
+export const BACKEND_GIT_SHA_SHORT = '3bde18d';
 
 /** ISO-8601 UTC build time from git commit (git show -s --format=%cI HEAD) */
-export const BACKEND_BUILD_TIME_UTC = '2026-02-22T17:03:46Z';
+export const BACKEND_BUILD_TIME_UTC = '2026-02-22T17:33:01Z';
 
 /** App version from package.json */
 export const BACKEND_APP_VERSION = '2.14.0';

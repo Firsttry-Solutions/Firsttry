@@ -12,9 +12,9 @@ DIST_DIR="${1:-.}"
 echo "[PHASE_5_GATE_LEGACY_FLOW] Verifying legacy flow protection..."
 
 # Find main app bundle
-DIST_JS=$(find "$DIST_DIR/src/gadget-ui/dist" -name "app.*.js" 2>/dev/null | head -1)
+DIST_JS=$(find "$DIST_DIR/src/gadget-ui/dist" -name "app.js" 2>/dev/null | head -1)
 if [ -z "$DIST_JS" ]; then
-    echo "⚠ WARNING: No app.*.js found in dist"
+    echo "⚠ WARNING: No app.js found in dist"
     exit 0
 fi
 

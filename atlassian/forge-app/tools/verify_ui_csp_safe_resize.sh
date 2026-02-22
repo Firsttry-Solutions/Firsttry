@@ -26,10 +26,10 @@ echo "[RESIZE_GATE] CSP-Safe Resize Verification"
 echo "[RESIZE_GATE] =================================================="
 
 # Find the built bundle
-BUNDLE=$(find src/gadget-ui/dist -name 'app.*.js' 2>/dev/null | head -1)
+BUNDLE=$(find src/gadget-ui/dist -name 'app.js' 2>/dev/null | head -1)
 
 if [[ -z "$BUNDLE" ]]; then
-  echo "[RESIZE_GATE] ❌ FAIL: No bundle found at src/gadget-ui/dist/app.*.js"
+  echo "[RESIZE_GATE] ❌ FAIL: No bundle found at src/gadget-ui/dist/app.js"
   exit 1
 fi
 

@@ -194,7 +194,7 @@ echo "✓ No warnings in provenance flow" | tee "$RUN_DIR/22_build_clean.txt"
 
 # === STEP 8: Standalone provenance verification ===
 cd "$FORGE_APP"
-BUNDLE="$(ls -1 src/gadget-ui/dist/app.*.js | head -1)"
+BUNDLE="$(ls -1 src/gadget-ui/dist/app.js | head -1)"
 if [ -z "$BUNDLE" ] || [ ! -f "$BUNDLE" ]; then
   {
     echo "STOP: BUNDLE_FILE_NOT_FOUND"

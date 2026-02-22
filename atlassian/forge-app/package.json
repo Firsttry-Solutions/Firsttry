@@ -20,7 +20,7 @@
     "verify:dist:invoke-allowlist": "bash tools/verify_dist_invoke_allowlist.sh",
     "verify:required-files": "bash tools/verify_required_files_present.sh",
     "verify:source:anchor-unique": "bash tools/verify_source_identity_anchor_unique.sh",
-    "verify:bundle:integrity": "bash tools/verify_bundle_integrity.sh --bundle-file src/gadget-ui/dist/app.*.js",
+    "verify:bundle:integrity": "bash tools/verify_bundle_integrity.sh --bundle-file src/gadget-ui/dist/app.js",
     "verify:bundle:provenance": "bash tools/verify_bundle_provenance.sh",
     "verify:dist:anchor-unique": "bash tools/verify_identity_anchor_unique.sh",
     "verify:gates:selftest": "bash tools/test_gates_selftest.sh",

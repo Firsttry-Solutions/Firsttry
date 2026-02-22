@@ -77,7 +77,7 @@ echo ""
 echo "GATE 1: Bundle file selection..."
 EVIDENCE_FILE="$RUN_DIR/10_bundle_selected.txt"
 
-BUNDLE=$(find ./src/gadget-ui/dist -maxdepth 1 -name "app.*.js" -type f | sort -V | tail -1)
+BUNDLE=$(find ./src/gadget-ui/dist -maxdepth 1 -name "app.js" -type f | sort -V | tail -1)
 
 if [ -z "$BUNDLE" ]; then
   echo "❌ GATE 1 FAIL: No bundle found in ./src/gadget-ui/dist"
