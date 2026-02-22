@@ -20,5 +20,9 @@ node tools/posttest_clean_gate.js 2>&1 | tee "$EVIDENCE_DIR/02_posttest_clean_ga
 
 node tools/proof_no_skips_gate.js "$EVIDENCE_DIR/01_test_output.txt" 2>&1 | tee "$EVIDENCE_DIR/03_no_skips_gate.txt"
 
+# Create checksum file for all evidence artifacts
+( cd "$EVIDENCE_DIR" && ls -1 | sort | xargs -I{} sh -c 'test -f "{}" && sha256sum "{}"' ) \
+  | tee "$EVIDENCE_DIR/06_evidence_sha256sums.txt"
+
 echo "PASS: PROOF MODE"
 echo "EVIDENCE_DIR=$EVIDENCE_DIR"
