@@ -232,6 +232,7 @@ const REQUIRED_FILES = [
   "access-review.csv",
   "exceptions.csv",
   "snapshot-hash.txt",
+  "control-mapping.json",
   "schema-version.txt",
 ];
 
@@ -334,6 +335,11 @@ verify();
       "verify.js": verifyScript,
       "schema-version.txt": schemaVersionFile,
     };
+
+    // Compute packHash and write it into the manifest (truthful by construction)
+    const packHash = this.computePackHash(files);
+    manifest.packHash = packHash;
+    files["review-manifest.json"] = JSON.stringify(manifest, null, 2);
 
     console.log(
       `[FT_EXPORT_PACK] Generated ${Object.keys(files).length} files (deterministic)`
