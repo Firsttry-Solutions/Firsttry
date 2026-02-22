@@ -220,6 +220,7 @@ export class ReviewExportPack {
  * 3. CSV integrity
  * 4. SHA-256 hashes match
  * 5. Schema version compatibility
+ * 6. packHash integrity (recomputed vs manifest)
  */
 
 const fs = require("fs");
@@ -233,6 +234,7 @@ const REQUIRED_FILES = [
   "exceptions.csv",
   "snapshot-hash.txt",
   "control-mapping.json",
+  "verify.js",
   "schema-version.txt",
 ];
 
@@ -252,8 +254,9 @@ function verify() {
   console.log("[VERIFY] ✓ All required files present");
   
   // 2. Validate JSONs
+  let manifest;
   try {
-    const manifest = JSON.parse(fs.readFileSync("review-manifest.json", "utf8"));
+    manifest = JSON.parse(fs.readFileSync("review-manifest.json", "utf8"));
     const summary = JSON.parse(fs.readFileSync("review-summary.json", "utf8"));
     console.log("[VERIFY] ✓ JSON files valid");
   } catch (e) {
@@ -275,6 +278,39 @@ function verify() {
     console.warn("[VERIFY] ⚠ Schema version mismatch (expected 3.0.0, got " + schemaVersion + ")");
   }
   console.log("[VERIFY] ✓ Schema version documented");
+
+  // 5. Verify packHash integrity (fail-closed)
+  // packHash recomputation mirrors ReviewExportPack.computePackHash (must stay in sync)
+  console.log("[VERIFY] recomputing packHash...");
+  const packHash = manifest.packHash;
+  if (!packHash || typeof packHash !== "string" || !/^[0-9a-f]{64}$/.test(packHash)) {
+    console.error("FAIL: manifest.packHash missing or invalid (expected 64-char lowercase hex)");
+    process.exit(1);
+  }
+
+  // Recompute: computePackHash was called when manifest.packHash was "" (pre-hash state).
+  // We must replicate that: zero packHash, re-serialize manifest, then hash all files in order.
+  const preHashManifest = Object.assign({}, manifest, { packHash: "" });
+  const preHashManifestJson = JSON.stringify(preHashManifest, null, 2);
+
+  let combined = "";
+  for (const filename of REQUIRED_FILES) {
+    if (fs.existsSync(filename)) {
+      const content = (filename === "review-manifest.json")
+        ? preHashManifestJson
+        : fs.readFileSync(filename, "utf8");
+      combined += filename + ":" + content;
+    }
+  }
+  const computedHash = crypto.createHash("sha256").update(combined, "utf8").digest("hex");
+
+  if (computedHash !== packHash) {
+    console.error("FAIL: packHash mismatch");
+    console.error("  manifest.packHash: " + packHash);
+    console.error("  recomputed:        " + computedHash);
+    process.exit(1);
+  }
+  console.log("[VERIFY] ✓ packHash matches manifest (" + computedHash + ")");
   
   console.log("[VERIFY] ✓ PACK VERIFICATION PASS");
   process.exit(0);
