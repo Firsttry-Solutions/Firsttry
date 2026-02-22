@@ -82,18 +82,26 @@ if (summarySkipCount > 0 && skippedFiles.length === 0) {
   }
 }
 
+// Always print the exact allowlist
+console.log("Allowlist:");
+for (const entry of ALLOWLIST) {
+  console.log(`  ${entry}`);
+}
+
 // Report allowlisted skips as warnings
 const allowlistedFound = skippedFiles.filter((f) => ALLOWLIST.has(f));
 if (allowlistedFound.length > 0) {
   for (const f of allowlistedFound) {
     console.log(`WARN: allowlisted skip: ${f}`);
   }
+  console.log("FT_PROOF_NO_SKIPS_ALLOWLIST_v1 ok=true");
 }
 
 if (summarySkipCount > 0 && skippedFiles.length === 0 && summarySkipCount <= ALLOWLIST.size) {
   console.log(
     `WARN: ${summarySkipCount} skipped test(s) in summary (within allowlist budget of ${ALLOWLIST.size})`
   );
+  console.log("FT_PROOF_NO_SKIPS_ALLOWLIST_v1 ok=true");
 }
 
 console.log("FT_PROOF_NO_SKIPS_GATE_v1 ok=true");

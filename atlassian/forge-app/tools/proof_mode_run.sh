@@ -8,6 +8,9 @@ echo "$EVIDENCE_DIR" | tee "$EVIDENCE_DIR/EVIDENCE_DIR.txt"
 git status --porcelain | tee "$EVIDENCE_DIR/00_git_status.txt"
 test -z "$(git status --porcelain)" || (echo "FAIL: dirty tree" | tee -a "$EVIDENCE_DIR/00_git_status.txt" && exit 1)
 
+git rev-parse HEAD | tee "$EVIDENCE_DIR/04_head_sha.txt"
+printf "%s\n" "backbone_fix_a_correlation_echoing.test.ts" "p4_bridge_diagnostics_panel.test.ts" | tee "$EVIDENCE_DIR/05_skips_allowlist.txt"
+
 export FT_REQUIRE_CLEAN=1
 export FT_PROOF_MODE=1
 
