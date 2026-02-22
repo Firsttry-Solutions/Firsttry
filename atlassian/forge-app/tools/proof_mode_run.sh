@@ -28,6 +28,9 @@ echo "" >>"$EVIDENCE_DIR/08_npm_ls_depth0.txt"
 echo "[NPM_LS_EXIT_CODE]=$NPM_LS_EXIT" >>"$EVIDENCE_DIR/08_npm_ls_depth0.txt"
 set -e
 
+# Gadget-UI asset integrity gate (fail-closed)
+node tools/gadget_ui_asset_integrity_gate.js 2>&1 | tee "$EVIDENCE_DIR/09_gadget_ui_asset_integrity.txt"
+
 export FT_REQUIRE_CLEAN=1
 export FT_PROOF_MODE=1
 

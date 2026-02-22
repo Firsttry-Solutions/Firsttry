@@ -28,5 +28,6 @@ Artifacts include:
 - 06_evidence_sha256sums.txt
 - 07_env_versions.txt
 - 08_npm_ls_depth0.txt
+- 09_gadget_ui_asset_integrity.txt — gadget-ui index.html asset reference integrity (fail-closed)
 
 Only this evidence directory should be attached to enterprise review artifacts. "npm test" is for local development and is not treated as evidence.
