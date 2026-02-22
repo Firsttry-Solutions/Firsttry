@@ -21,6 +21,26 @@
 import api, { storage } from '@forge/api';
 // @ts-ignore route() is exported from @forge/api but TS definitions may lag
 const { route } = require('@forge/api') as typeof import('@forge/api');
+import { appendToChain } from '../governance/hashChain';
+import { SNAPSHOT_SCHEMA_VERSION, RULESET_VERSION } from '../governance/snapshotSchema';
+import * as crypto from 'crypto';
+
+/**
+ * Validate that a value is a full 64-character lowercase hex SHA-256.
+ * FAIL-CLOSED: throws on any violation.
+ */
+function assertHex64(name: string, v: unknown): string {
+  if (typeof v !== 'string') {
+    throw new Error(`FT_CANONICAL_HASH_INVALID:${name} must be a string, got ${typeof v}`);
+  }
+  if (v.length !== 64) {
+    throw new Error(`FT_CANONICAL_HASH_INVALID:${name} must be 64 chars, got ${v.length}`);
+  }
+  if (!/^[0-9a-f]{64}$/.test(v)) {
+    throw new Error(`FT_CANONICAL_HASH_INVALID:${name} must be lowercase hex [0-9a-f]{64}`);
+  }
+  return v;
+}
 
 /**
  * Main entry point invoked by gadget UI
@@ -191,6 +211,45 @@ export const handler = async (request: any): Promise<any> => {
     }));
 
     console.log(`[FT_ACCESS_SCAN_COMPLETE] Snapshot saved: ${snapshotId}, hash: ${snapshot.canonicalHash}`);
+
+    // ── STEP 10: Append governance snapshot to enterprise hash chain ──
+    // Build a minimal valid SnapshotPayload for the hash chain.
+    // No PII — only structural governance metadata.
+    const chainAppendedUtc = new Date().toISOString();
+    const chainPayload = buildPhase1ChainPayload({
+      siteId: snapshot.siteId || 'jira-site-001',
+      generatedUtc: createdAtUtc,
+      totalUsers: snapshot.totals?.totalUsers ?? 0,
+      activeUsers: snapshot.totals?.activeUsers ?? 0,
+      externalUsers: snapshot.totals?.externalUsers ?? 0,
+      globalAdminCount: snapshot.exposure?.globalAdmins?.length ?? 0,
+      publicProjectCount: snapshot.exposure?.publicProjects?.length ?? 0,
+      toxicFindingCount: snapshot.toxicFindings?.length ?? 0,
+      riskScore: snapshot.riskModel?.finalRiskScore ?? 0,
+      canonicalHash: snapshot.canonicalHash,
+    });
+    try {
+      const chainEntry = await appendToChain(chainPayload, chainAppendedUtc);
+      console.log(JSON.stringify({
+        marker: '[FT_PROOF_PHASE1_CHAIN_APPEND_OK]',
+        chainIndex: chainEntry.chainIndex,
+        snapshotHash: chainEntry.snapshotHash.slice(0, 12),
+      }));
+    } catch (chainErr: any) {
+      const chainErrMsg = chainErr instanceof Error ? chainErr.message : String(chainErr);
+      console.error(JSON.stringify({
+        marker: '[FT_PROOF_PHASE1_CHAIN_APPEND_FAIL]',
+        error: chainErrMsg,
+      }));
+      return {
+        ok: false,
+        status: 'FAILED',
+        reason: 'HASH_CHAIN_APPEND_FAILED',
+        reasonCode: 'HASH_CHAIN_APPEND_FAILED',
+        traceId: correlationId,
+        detail: chainErrMsg,
+      };
+    }
 
     // Determine risk tier
     const riskTier = snapshot.riskModel.finalRiskScore > 0.7 ? 'HIGH' : snapshot.riskModel.finalRiskScore > 0.4 ? 'MEDIUM' : 'LOW';
@@ -473,10 +532,56 @@ function buildAccessSnapshot(context: any): any {
     canonicalHash: '', // Will be computed below
   };
 
-  // Compute deterministic hash
+  // Compute deterministic hash — FULL 64-char SHA-256 (never truncated)
   const canonicalString = JSON.stringify(snapshot, Object.keys(snapshot).sort());
-  const crypto = require('crypto');
-  snapshot.canonicalHash = crypto.createHash('sha256').update(canonicalString).digest('hex').substring(0, 16);
+  const fullHash = crypto.createHash('sha256').update(canonicalString).digest('hex');
+  snapshot.canonicalHash = assertHex64('canonicalHash', fullHash);
+
+  console.log(JSON.stringify({ marker: '[FT_PROOF_PHASE1_CANONICAL_HASH_OK]', len: snapshot.canonicalHash.length, isHex64: true }));
 
   return snapshot;
+}
+
+/**
+ * Build a minimal valid SnapshotPayload for the enterprise hash chain.
+ * Contains NO PII — only structural governance metadata and counts.
+ * Exported for testing (pure function, no side effects).
+ *
+ * @param ctx - Phase-1 scan output summary (counts, canonicalHash, etc.)
+ * @returns A valid SnapshotPayload suitable for appendToChain()
+ */
+export function buildPhase1ChainPayload(ctx: {
+  siteId: string;
+  generatedUtc: string;
+  totalUsers: number;
+  activeUsers: number;
+  externalUsers: number;
+  globalAdminCount: number;
+  publicProjectCount: number;
+  toxicFindingCount: number;
+  riskScore: number;
+  canonicalHash: string;
+}) {
+  return {
+    users: [],    // Phase-1 chain entry uses counts, not user records (no PII)
+    roles: [],
+    permissions: [],
+    workflows: [],
+    appInstalls: [],
+    generatedUtc: ctx.generatedUtc,
+    schemaVersion: SNAPSHOT_SCHEMA_VERSION,
+    ruleSetVersion: RULESET_VERSION,
+    siteId: ctx.siteId,
+    // Phase-1 governance summary (structural — no PII)
+    phase1Summary: {
+      totalUsers: ctx.totalUsers,
+      activeUsers: ctx.activeUsers,
+      externalUsers: ctx.externalUsers,
+      globalAdminCount: ctx.globalAdminCount,
+      publicProjectCount: ctx.publicProjectCount,
+      toxicFindingCount: ctx.toxicFindingCount,
+      riskScore: ctx.riskScore,
+      canonicalHash: ctx.canonicalHash,
+    },
+  };
 }
