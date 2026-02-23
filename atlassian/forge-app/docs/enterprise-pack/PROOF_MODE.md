@@ -29,5 +29,6 @@ Artifacts include:
 - 07_env_versions.txt
 - 08_npm_ls_depth0.txt
 - 09_gadget_ui_asset_integrity.txt — gadget-ui index.html asset reference integrity (fail-closed)
+- 10_ui_smoke_production.txt — Playwright UI smoke test against live Jira (conditional; requires FT_UI_SMOKE=1 + FT_E2E_ISSUE_URL + FT_E2E_STORAGE_STATE)
 
 Only this evidence directory should be attached to enterprise review artifacts. "npm test" is for local development and is not treated as evidence.
