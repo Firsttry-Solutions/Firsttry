@@ -31,6 +31,13 @@ set -e
 # Gadget-UI asset integrity gate (fail-closed)
 node tools/gadget_ui_asset_integrity_gate.js 2>&1 | tee "$EVIDENCE_DIR/09_gadget_ui_asset_integrity.txt"
 
+# UI smoke production gate (conditional — requires live browser auth)
+if [ "${FT_UI_SMOKE:-}" = "1" ]; then
+  npx tsx tools/ui_smoke_production_gate.ts 2>&1 | tee "$EVIDENCE_DIR/10_ui_smoke_production.txt"
+else
+  echo "SKIPPED: FT_UI_SMOKE not set (no browser storageState)" | tee "$EVIDENCE_DIR/10_ui_smoke_production.txt"
+fi
+
 export FT_REQUIRE_CLEAN=1
 export FT_PROOF_MODE=1
 
