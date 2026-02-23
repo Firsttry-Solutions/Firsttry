@@ -285,12 +285,13 @@ export async function aggregateGovernanceState(): Promise<EnterpriseGovernanceSt
     lastAttestedUtc: lastAttestation ? lastAttestation.attestedUtc : null,
   };
 
-  // ok = true only when minimal governance requirements are met
-  const allEclPass = Object.values(ecl).every(e => e.pass);
+  // ok = true means the resolver ran successfully and returned a well-formed state.
+  // Individual control pass/fail is in the ecl object — UI renders those as rows.
+  // ok = false is reserved for REAL system faults (exceptions, schema corruption).
 
   return {
     marker: 'FT_ECL_ENTERPRISE_STATE_V1',
-    ok: allEclPass,
+    ok: true,
     generatedUtc: resolvedUtc,
     available: true,
     migrationRequired: false,
