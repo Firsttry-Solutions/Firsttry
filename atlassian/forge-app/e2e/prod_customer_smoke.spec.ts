@@ -30,6 +30,61 @@ test('FirstTry production customer smoke: screenshot + console + click proof', a
   await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(4000);
 
+  // ── Auth-gate check (fail-closed) ──────────────────────────────────────────
+  // Detects Atlassian login wall even when storageState is present but expired.
+  {
+    const currentUrl = page.url();
+    let authGateReason: string | null = null;
+
+    // 1. URL redirect to Atlassian identity provider
+    if (currentUrl.includes('id.atlassian.com')) {
+      authGateReason = `Redirected to login page: ${currentUrl}`;
+    }
+
+    // 2. "Log in to continue" text visible
+    if (!authGateReason) {
+      const loginText = page.getByText('Log in to continue', { exact: false });
+      if (await loginText.isVisible({ timeout: 2000 }).catch(() => false)) {
+        authGateReason = 'Login gate text "Log in to continue" is visible';
+      }
+    }
+
+    // 3. Social/SSO login buttons visible (best-effort, any one is sufficient)
+    if (!authGateReason) {
+      const loginButtons = ['Google', 'Microsoft', 'Apple', 'Slack', 'Passkey'];
+      for (const name of loginButtons) {
+        const btn = page.getByRole('button', { name, exact: false });
+        if (await btn.first().isVisible({ timeout: 1000 }).catch(() => false)) {
+          authGateReason = `Login button visible: "${name}"`;
+          break;
+        }
+      }
+    }
+
+    if (authGateReason) {
+      // Write evidence before throwing
+      await page.screenshot({ path: `${evidenceDir}/auth_gate.png`, fullPage: true });
+      fs.writeFileSync(
+        `${evidenceDir}/auth_gate_status.json`,
+        JSON.stringify({ authenticated: false, reason: authGateReason, url: currentUrl }, null, 2),
+        'utf8'
+      );
+      throw new Error(
+        `FAIL: Atlassian login gate detected; storageState invalid or expired. ` +
+        `Reason: ${authGateReason}. ` +
+        `Re-run: FT_E2E_STORAGE_STATE=/tmp/ft_storage_state.json node tools/e2e_save_storage_state_manual.mjs`
+      );
+    }
+
+    // Auth gate not detected — write positive evidence
+    fs.writeFileSync(
+      `${evidenceDir}/auth_gate_status.json`,
+      JSON.stringify({ authenticated: true, url: currentUrl }, null, 2),
+      'utf8'
+    );
+  }
+  // ── End auth-gate check ────────────────────────────────────────────────────
+
   await page.screenshot({ path: `${evidenceDir}/prod_ui.png`, fullPage: true });
 
   async function clickIfPossible(label: string, testId?: string) {
