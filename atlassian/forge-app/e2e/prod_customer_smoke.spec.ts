@@ -11,7 +11,14 @@ test('FirstTry production customer smoke: screenshot + console + click proof', a
   const evidenceDir = process.env.FT_EVIDENCE_DIR || `/tmp/ft_pw_prod_smoke_${new Date().toISOString().replace(/[:.]/g, '')}`;
   fs.mkdirSync(evidenceDir, { recursive: true });
 
-  const context = await browser.newContext({ storageState: '/tmp/ft_storage_state.json' });
+  const storageStatePath = process.env.FT_E2E_STORAGE_STATE || '/tmp/ft_storage_state.json';
+  if (!fs.existsSync(storageStatePath)) {
+    throw new Error(
+      `FAIL: storageState not found at ${storageStatePath}. ` +
+      'Run: FT_E2E_STORAGE_STATE=/tmp/ft_storage_state.json node tools/e2e_save_storage_state_manual.mjs'
+    );
+  }
+  const context = await browser.newContext({ storageState: storageStatePath });
   const page = await context.newPage();
 
   const consoleLines: string[] = [];
