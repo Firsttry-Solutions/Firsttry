@@ -492,11 +492,13 @@ export function renderEnterpriseGovernancePanel(): HTMLElement {
       return;
     }
 
-    // C2) Validate: ok must be present and true (required field)
-    if (resp.ok !== true) {
+    // C2) Validate: fail-closed ONLY for true system errors (status=ERROR, ok=false).
+    //      Component-level FAIL (e.g. some ECLs not passing) is NOT a panel failure —
+    //      those are rendered as red/amber rows in the controls table.
+    if (resp.ok !== true && resp.status === 'ERROR') {
       const reason = resp.reason ?? resp.error ?? 'UNKNOWN';
-      console.log(`[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=OK_FALSE resp_reason=${reason}`);
-      renderEngineFailed(container, `OK_FALSE: enterprise state not available (reason=${reason})`);
+      console.log(`[FT_PROOF] UI_ECL_PANEL_LOAD_FAILED=1 REASON=SYSTEM_ERROR resp_reason=${reason}`);
+      renderEngineFailed(container, `SYSTEM_ERROR: ${reason}`);
       return;
     }
 
