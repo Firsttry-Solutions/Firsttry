@@ -37,7 +37,15 @@ fi
 # Extract bundle path from index.html
 BUNDLE_REF=$(grep -oE 'app\.[a-f0-9]+\.(js|mjs)' "$GADGET_DIR/dist/index.html" 2>/dev/null | head -1 || true)
 if [ -z "$BUNDLE_REF" ]; then
-    fail "Cannot extract app bundle reference from index.html"
+    BUNDLE_REF=$(grep -oE 'app\.(js|mjs)' "$GADGET_DIR/dist/index.html" 2>/dev/null | head -1 || true)
+fi
+if [ -z "$BUNDLE_REF" ]; then
+    # Fallback: check for stable app.js directly
+    if [ -f "$GADGET_DIR/dist/app.js" ]; then
+        BUNDLE_REF="app.js"
+    else
+        fail "Cannot extract app bundle reference from index.html"
+    fi
 fi
 
 REAL_BUNDLE="$GADGET_DIR/dist/$BUNDLE_REF"
