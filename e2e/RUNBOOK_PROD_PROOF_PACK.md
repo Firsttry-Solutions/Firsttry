@@ -80,6 +80,25 @@ PROOF_PACK_ZIP=/tmp/ft_prod_proof_pack_20260224T073500Z/artifact.zip
 
 ---
 
+## 3a. Optional strict mode (Atlassian-only)
+
+To validate **only Atlassian-controlled domains** (blocking all third-party services), use:
+
+```bash
+FT_ATLASSIAN_ONLY=1 bash e2e/scripts/run_prod_dashboard_network_domain_allowlist_failclosed.sh
+```
+
+**Behavior in strict mode:**
+
+- **PASS** = Dashboard loaded using only Atlassian-owned domains (.atlassian.net, .atl-paas.net, .atlassian.com, .atlassian-dev.net)
+- **FAIL** = Third-party services were contacted (CloudFront CDN, Gravatar, Sentry, etc.). Evidence will show blocked hosts in `hosts_blocked.txt`
+
+Evidence includes `mode.txt` indicating either `DEFAULT` or `ATLASSIAN_ONLY`.
+
+**Use case:** Verify compliance with zero-external-dependency standards; detect unauthorized third-party integrations.
+
+---
+
 ## 4. Output Structure
 
 ### Top-level directory: `/tmp/ft_prod_proof_pack_<UTC>/`

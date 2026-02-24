@@ -32,6 +32,10 @@ if (expiryDate <= now) {
 // Compute policy hash
 const policyHash = crypto.createHash('sha256').update(policyContent).digest('hex');
 
+// Determine operating mode from environment
+const strictMode = process.env.FT_ATLASSIAN_ONLY === '1';
+const operatingMode = strictMode ? 'ATLASSIAN_ONLY' : 'DEFAULT';
+
 // Helper to check if hostname is allowed
 const isHostAllowed = (hostname: string): boolean => {
   const lowerHostname = hostname.toLowerCase();
@@ -52,7 +56,8 @@ const isHostAllowed = (hostname: string): boolean => {
   }
 
   // Check exact matches in third_party_exact_hosts (no wildcards)
-  if (allowlist.third_party_exact_hosts && allowlist.third_party_exact_hosts.some((h: string) => h.toLowerCase() === lowerHostname)) {
+  // Only allowed in DEFAULT mode, not in ATLASSIAN_ONLY mode
+  if (!strictMode && allowlist.third_party_exact_hosts && allowlist.third_party_exact_hosts.some((h: string) => h.toLowerCase() === lowerHostname)) {
     return true;
   }
 
@@ -96,6 +101,9 @@ test('prod dashboard - network domain allowlist proof', async ({ page, context }
   fs.writeFileSync(path.join(evidenceDir, 'allowlist.version.txt'), String(allowlist.version));
   fs.writeFileSync(path.join(evidenceDir, 'allowlist.hash.sha256.txt'), policyHash);
   fs.writeFileSync(path.join(evidenceDir, 'allowlist.expired_count.txt'), '0');
+
+  // Write operating mode
+  fs.writeFileSync(path.join(evidenceDir, 'mode.txt'), operatingMode);
 
   // Write evidence directory marker
   fs.writeFileSync(path.join(evidenceDir, 'EVIDENCE_DIR.txt'), evidenceDir);
