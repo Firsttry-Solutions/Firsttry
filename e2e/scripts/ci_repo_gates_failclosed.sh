@@ -377,6 +377,61 @@ fi
 echo ""
 
 # ============================================================================
+# Gate L: Network Domain Allowlist Policy Validation
+# ============================================================================
+echo "Gate L: Validating network domain allowlist policy rules..."
+
+POLICY_FILE="e2e/policy/prod_proof_allowlist.json"
+if [ ! -f "$POLICY_FILE" ]; then
+    gate_fail "$POLICY_FILE does not exist"
+else
+    # Define allowed Atlassian suffixes (hardcoded whitelist)
+    ALLOWED_SUFFIXES=".atlassian.net .atl-paas.net .atlassian.com .atlassian-dev.net"
+    
+    # Extract all suffixes from allowed_host_suffixes and verify against whitelist
+    if ! node -e "
+      const fs=require('fs');
+      const p=JSON.parse(fs.readFileSync('./$POLICY_FILE','utf8'));
+      const nda=p.network_domain_allowlist;
+      if(!nda.allowed_host_suffixes||!Array.isArray(nda.allowed_host_suffixes)){
+        throw new Error('allowed_host_suffixes missing or not array');
+      }
+      const allowed=['.atlassian.net','.atl-paas.net','.atlassian.com','.atlassian-dev.net'];
+      const offending=nda.allowed_host_suffixes.filter(s=>!allowed.includes(s));
+      if(offending.length>0){
+        throw new Error('Non-Atlassian suffixes found: '+offending.join(', '));
+      }
+    " 2>/dev/null; then
+        gate_fail "$POLICY_FILE: found non-Atlassian suffixes in allowed_host_suffixes"
+    else
+        gate_pass "$POLICY_FILE: allowed_host_suffixes contains only Atlassian-owned domains"
+    fi
+    
+    # Validate third_party_exact_hosts are exact hosts only (no suffixes)
+    if node -e "
+      const fs=require('fs');
+      const p=JSON.parse(fs.readFileSync('./$POLICY_FILE','utf8'));
+      const nda=p.network_domain_allowlist;
+      if(!nda.third_party_exact_hosts){
+        throw new Error('third_party_exact_hosts missing');
+      }
+      if(!Array.isArray(nda.third_party_exact_hosts)){
+        throw new Error('third_party_exact_hosts not an array');
+      }
+      const invalid=nda.third_party_exact_hosts.filter(h=>h.startsWith('.'));
+      if(invalid.length>0){
+        throw new Error('wildcard suffixes found in third_party_exact_hosts: '+invalid.join(', '));
+      }
+    " 2>/dev/null; then
+        gate_pass "$POLICY_FILE: third_party_exact_hosts contains only exact hosts (no wildcards)"
+    else
+        gate_fail "$POLICY_FILE: third_party_exact_hosts contains invalid suffixes"
+    fi
+fi
+
+echo ""
+
+# ============================================================================
 # Final Result
 # ============================================================================
 echo "=== Gate Summary ==="
