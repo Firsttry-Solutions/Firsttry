@@ -186,6 +186,13 @@ e2e/playwright-report/
 e2e/test-results/
 .auth/storageState.json
 
+# Playwright test evidence (never commit)
+playwright-report/
+test-results/
+*.har
+*trace*.zip
+*storageState*.json
+
 # Local-only proof artifacts (determinism safeguard)
 proof_artifacts/
 /test-results/

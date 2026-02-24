@@ -1,0 +1,37 @@
+name: Enterprise Repo Gates
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  enterprise-gates:
+    name: Enforce repo security gates
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine Node version
+        id: node-version
+        run: |
+          if [ -f .nvmrc ]; then
+            NODE_VERSION=$(cat .nvmrc | tr -d 'v\n')
+          else
+            NODE_VERSION="20"
+          fi
+          echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node-version.outputs.version }}
+
+      - name: Run enterprise repo gates
+        run: bash e2e/scripts/ci_repo_gates_failclosed.sh
