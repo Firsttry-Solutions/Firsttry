@@ -17,7 +17,9 @@ The Prod Proof Pack generator is a single fail-closed command that orchestrates 
 **What it proves:**
 - Jira production dashboard loads without mutations (POST/PUT/PATCH/DELETE)
 - No critical console errors, page errors, or HTTP 4xx/5xx responses
-- All network traffic respects allowlist policy
+- All network traffic respects allowlist policy (default + Atlassian-only modes)
+- Network domain compliance: Atlassian suffixes + approved third-party exact hosts
+- Dependency discovery: Third-party services actually required by the dashboard
 - Evidence immutability (via manifest + SHA256 verification)
 - Reproducible, deterministic evidence capture
 
@@ -38,6 +40,7 @@ Before running, ensure:
 e2e/scripts/run_prod_dashboard_smoke_failclosed.sh
 e2e/scripts/run_prod_dashboard_stability_contract_failclosed.sh
 e2e/scripts/run_prod_dashboard_network_nomutation_failclosed.sh
+e2e/scripts/run_prod_dashboard_network_domain_allowlist_failclosed.sh
 ```
 
 ### Required configuration files exist:
@@ -150,7 +153,27 @@ Evidence includes `mode.txt` indicating either `DEFAULT` or `ATLASSIAN_ONLY`.
 │       ├── *.png
 │       └── *.txt
 │
+│   ├── domain_allowlist_default/        # Domain allowlist in DEFAULT mode (must PASS)
+│   │   ├── SUCCESS.txt
+│   │   ├── hosts_seen.txt               # All contacted hostnames
+│   │   ├── hosts_blocked.txt            # Empty (all allowed)
+│   │   ├── mode.txt                     # "DEFAULT"
+│   │   ├── allowlist.version.txt
+│   │   ├── allowlist.hash.sha256.txt
+│   │   └── *.txt                        # Evidence metadata
+│   │
+│   └── domain_allowlist_strict/         # Domain allowlist in ATLASSIAN_ONLY mode (expected to fail)
+│       ├── FAIL.txt                     # Expected failure message
+│       ├── hosts_seen.txt               # All contacted hostnames
+│       ├── hosts_blocked.txt            # Third-party hosts (non empty)
+│       ├── mode.txt                     # "ATLASSIAN_ONLY"
+│       ├── allowlist.version.txt
+│       ├── allowlist.hash.sha256.txt
+│       └── *.txt                        # Evidence metadata
+│
 ├── artifact.zip                         # Portable bundle (MANIFEST + evidence + VERIFY.sh)
+│
+├── DEPENDENCY_STATEMENT.txt             # Domain allowlist compliance proof summary
 │
 ├── SUCCESS.txt                          # Indicates pack generation succeeded
 └── FORBIDDEN_FOUND.txt                  # Only present if forbidden files were detected (FAIL)
