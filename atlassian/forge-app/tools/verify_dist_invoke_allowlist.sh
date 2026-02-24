@@ -19,11 +19,19 @@ fi
 
 # Deterministic bundle discovery
 if [ -f "$DIST_DIR/index.html" ]; then
+    # Try to find hashed bundle (app.ABC123.js) first
     BUNDLE_REF=$(grep -oE 'app\.[a-f0-9]+\.(js|mjs)' "$DIST_DIR/index.html" 2>/dev/null | head -1)
+    # If not found, try stable filename (app.js)
+    if [ -z "$BUNDLE_REF" ]; then
+        BUNDLE_REF=$(grep -oE 'app\.(js|mjs)' "$DIST_DIR/index.html" 2>/dev/null | head -1)
+    fi
+    # If we found a reference, use it; otherwise look for files in dist
     if [ -n "$BUNDLE_REF" ]; then
         DIST_JS="$DIST_DIR/$BUNDLE_REF"
+    elif [ -f "$DIST_DIR/app.js" ]; then
+        DIST_JS="$DIST_DIR/app.js"
     else
-        echo "[GATE_INVOKE_ALLOWLIST] ERROR: Cannot resolve bundle from index.html"
+        echo "[GATE_INVOKE_ALLOWLIST] ERROR: Cannot resolve bundle (tried hashed and stable filenames)"
         exit 1
     fi
 else
