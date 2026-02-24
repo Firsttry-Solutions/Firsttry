@@ -16,8 +16,13 @@ if [ -z "$BUNDLE_FILE" ]; then
     DIST_DIR="$SCRIPT_DIR/../src/gadget-ui/dist"
     if [ -f "$DIST_DIR/index.html" ]; then
         BUNDLE_REF=$(grep -oE 'app\.[a-f0-9]+\.(js|mjs)' "$DIST_DIR/index.html" 2>/dev/null | head -1 || true)
+        if [ -z "$BUNDLE_REF" ]; then
+            BUNDLE_REF=$(grep -oE 'app\.(js|mjs)' "$DIST_DIR/index.html" 2>/dev/null | head -1 || true)
+        fi
         if [ -n "$BUNDLE_REF" ]; then
             BUNDLE_FILE="$DIST_DIR/$BUNDLE_REF"
+        elif [ -f "$DIST_DIR/app.js" ]; then
+            BUNDLE_FILE="$DIST_DIR/app.js"
         fi
     fi
 fi
