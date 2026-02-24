@@ -314,6 +314,69 @@ fi
 echo ""
 
 # ============================================================================
+# Gate K: Network Domain Allowlist Gate — presence and policy checks
+# ============================================================================
+echo "Gate K: Verifying network domain allowlist gate files..."
+
+DOMAIN_ALLOWLIST_RUNNER="e2e/scripts/run_prod_dashboard_network_domain_allowlist_failclosed.sh"
+if [ ! -f "$DOMAIN_ALLOWLIST_RUNNER" ]; then
+    gate_fail "$DOMAIN_ALLOWLIST_RUNNER does not exist"
+else
+    if [ -x "$DOMAIN_ALLOWLIST_RUNNER" ]; then
+        gate_pass "$DOMAIN_ALLOWLIST_RUNNER exists and is executable"
+    else
+        gate_fail "$DOMAIN_ALLOWLIST_RUNNER exists but is not executable"
+    fi
+fi
+
+DOMAIN_ALLOWLIST_TEST="e2e/tests/prod_dashboard_network_domain_allowlist.spec.ts"
+if [ -f "$DOMAIN_ALLOWLIST_TEST" ]; then
+    gate_pass "$DOMAIN_ALLOWLIST_TEST exists"
+else
+    gate_fail "$DOMAIN_ALLOWLIST_TEST missing"
+fi
+
+# Validate network_domain_allowlist in policy
+POLICY_FILE="e2e/policy/prod_proof_allowlist.json"
+if [ -f "$POLICY_FILE" ]; then
+    # Check network_domain_allowlist exists
+    if ! node -e "const p=require('./$POLICY_FILE'); if(!p.network_domain_allowlist){throw new Error('missing network_domain_allowlist')}" 2>/dev/null; then
+        gate_fail "$POLICY_FILE: missing network_domain_allowlist object"
+    else
+        gate_pass "$POLICY_FILE: network_domain_allowlist object exists"
+    fi
+    
+    # Validate network_domain_allowlist schema
+    if ! node -e "
+      const fs=require('fs');
+      const p=JSON.parse(fs.readFileSync('./$POLICY_FILE','utf8'));
+      const nda=p.network_domain_allowlist;
+      if(!nda.version||!nda.expires_utc||!nda.allowed_hosts||!Array.isArray(nda.allowed_hosts)||!nda.allowed_host_suffixes||!Array.isArray(nda.allowed_host_suffixes)){
+        throw new Error('invalid network_domain_allowlist schema');
+      }
+    " 2>/dev/null; then
+        gate_fail "$POLICY_FILE: network_domain_allowlist invalid schema"
+    else
+        gate_pass "$POLICY_FILE: network_domain_allowlist schema valid"
+    fi
+    
+    # Validate network_domain_allowlist not expired
+    if ! node -e "
+      const fs=require('fs');
+      const p=JSON.parse(fs.readFileSync('./$POLICY_FILE','utf8'));
+      const exp=new Date(p.network_domain_allowlist.expires_utc);
+      const now=new Date();
+      if(exp<=now)throw new Error('network_domain_allowlist expired');
+    " 2>/dev/null; then
+        gate_fail "$POLICY_FILE: network_domain_allowlist is expired"
+    else
+        gate_pass "$POLICY_FILE: network_domain_allowlist expires in future"
+    fi
+fi
+
+echo ""
+
+# ============================================================================
 # Final Result
 # ============================================================================
 echo "=== Gate Summary ==="
