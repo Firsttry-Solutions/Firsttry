@@ -253,6 +253,31 @@ fi
 echo ""
 
 # ============================================================================
+# Gate I: Stability Contract Gate — presence checks only
+# ============================================================================
+echo "Gate I: Verifying stability contract gate files..."
+
+STABILITY_RUNNER="e2e/scripts/run_prod_dashboard_stability_contract_failclosed.sh"
+if [ ! -f "$STABILITY_RUNNER" ]; then
+    gate_fail "$STABILITY_RUNNER does not exist"
+else
+    if [ -x "$STABILITY_RUNNER" ]; then
+        gate_pass "$STABILITY_RUNNER exists and is executable"
+    else
+        gate_fail "$STABILITY_RUNNER exists but is not executable"
+    fi
+fi
+
+STABILITY_TEST="e2e/tests/prod_dashboard_stability_contract.spec.ts"
+if [ -f "$STABILITY_TEST" ]; then
+    gate_pass "$STABILITY_TEST exists"
+else
+    gate_fail "$STABILITY_TEST missing"
+fi
+
+echo ""
+
+# ============================================================================
 # Final Result
 # ============================================================================
 echo "=== Gate Summary ==="
