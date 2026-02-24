@@ -45,5 +45,24 @@
       "justification": "Internal Atlassian UI serving mismatch; non-critical infrastructure signal",
       "expires_utc": "2026-05-24T07:30:00Z"
     }
-  ]
+  ],
+  "network_domain_allowlist": {
+    "version": 1,
+    "updated_utc": "2026-02-24T07:30:00Z",
+    "expires_utc": "2026-05-24T07:30:00Z",
+    "allowed_hosts": [
+      "firsttry.atlassian.net"
+    ],
+    "allowed_host_suffixes": [
+      ".atlassian.net",
+      ".atl-paas.net",
+      ".atlassian.com",
+      ".atlassian-dev.net",
+      ".cloudfront.net",
+      ".gravatar.com",
+      ".wp.com",
+      ".ingest.sentry.io"
+    ],
+    "justification": "Atlassian-controlled domains (.atlassian.net primary, .atl-paas.net PaaS, .atlassian.com corporate, .atlassian-dev.net CDN) plus required third-party services: .cloudfront.net (AWS CDN), .gravatar.com + .wp.com (user avatars), .ingest.sentry.io (error tracking). Fail-closed if other domains contacted."
+  }
 }
