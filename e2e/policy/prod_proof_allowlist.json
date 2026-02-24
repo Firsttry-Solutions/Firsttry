@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "updated_utc": "2026-02-24T07:30:00Z",
+  "rules": [
+    {
+      "id": "ALLOW_HTTP_404_USERPROPS",
+      "type": "http_status",
+      "status": 404,
+      "url_regex": "/rest/api/3/user/properties/",
+      "justification": "User property endpoints may not exist for all users; non-critical for dashboard stability",
+      "expires_utc": "2026-05-24T07:30:00Z"
+    },
+    {
+      "id": "ALLOW_CONSOLE_WARN_DEPRECATED_JS",
+      "type": "console_warn",
+      "message_regex": "DEPRECATED JS",
+      "justification": "Legacy Jira code uses deprecated APIs; harmless warnings during dashboard load",
+      "expires_utc": "2026-05-24T07:30:00Z"
+    },
+    {
+      "id": "ALLOW_CONSOLE_WARN_IFRAMESIZER",
+      "type": "console_warn",
+      "message_regex": "iFrameSizer",
+      "justification": "iFrameSizer deprecation warnings from embedded widgets; no impact on core stability",
+      "expires_utc": "2026-05-24T07:30:00Z"
+    },
+    {
+      "id": "ALLOW_CONSOLE_ERROR_FAILED_RESOURCE",
+      "type": "console_error",
+      "message_regex": "Failed to load resource",
+      "justification": "Non-critical 404s for missing resources; infrastructure instrumentation noise",
+      "expires_utc": "2026-05-24T07:30:00Z"
+    },
+    {
+      "id": "ALLOW_CONSOLE_ERROR_FT_PROOF_BUNDLE",
+      "type": "console_error",
+      "message_regex": "FT_PROOF_UI_BUNDLE_HASH_UNAVAILABLE",
+      "justification": "Internal Atlassian UI bundle hash mismatch; non-critical infrastructure signal",
+      "expires_utc": "2026-05-24T07:30:00Z"
+    },
+    {
+      "id": "ALLOW_CONSOLE_ERROR_UI_SERVE_MISMATCH",
+      "type": "console_error",
+      "message_regex": "UI_SERVE_MISMATCH",
+      "justification": "Internal Atlassian UI serving mismatch; non-critical infrastructure signal",
+      "expires_utc": "2026-05-24T07:30:00Z"
+    }
+  ]
+}

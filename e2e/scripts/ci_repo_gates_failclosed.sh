@@ -278,6 +278,42 @@ fi
 echo ""
 
 # ============================================================================
+# Gate J: Centralized Allowlist Policy Validation
+# ============================================================================
+echo "Gate J: Verifying centralized allowlist policy..."
+
+POLICY_FILE="e2e/policy/prod_proof_allowlist.json"
+if [ ! -f "$POLICY_FILE" ]; then
+    gate_fail "$POLICY_FILE does not exist"
+else
+    gate_pass "$POLICY_FILE exists"
+    
+    # Validate JSON parsing
+    if ! node -e "const p=require('./$POLICY_FILE'); if(!p.version||!p.rules||!Array.isArray(p.rules)){throw new Error('invalid schema')}" 2>/dev/null; then
+        gate_fail "$POLICY_FILE: invalid JSON or schema"
+    else
+        gate_pass "$POLICY_FILE: JSON schema valid"
+    fi
+    
+    # Validate no expired rules
+    if ! node -e "
+      const fs=require('fs');
+      const p=JSON.parse(fs.readFileSync('./$POLICY_FILE','utf8'));
+      const now=new Date();
+      p.rules.forEach(r=>{
+        const exp=new Date(r.expires_utc);
+        if(exp<=now)throw new Error('rule '+r.id+' expired');
+      });
+    " 2>/dev/null; then
+        gate_fail "$POLICY_FILE: contains expired rules"
+    else
+        gate_pass "$POLICY_FILE: all rules valid and non-expired"
+    fi
+fi
+
+echo ""
+
+# ============================================================================
 # Final Result
 # ============================================================================
 echo "=== Gate Summary ==="

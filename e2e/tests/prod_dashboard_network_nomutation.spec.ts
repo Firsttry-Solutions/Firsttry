@@ -1,11 +1,51 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 const DASHBOARD_URL = 'https://firsttry.atlassian.net/jira/dashboards/10102';
 const EVIDENCE_BASE = '/tmp';
 const EVIDENCE_PREFIX = 'ft_dashboard_nomutation_';
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+// Load and validate policy
+const policyPath = path.join(__dirname, '../policy/prod_proof_allowlist.json');
+if (!fs.existsSync(policyPath)) {
+  throw new Error(`Allowlist policy not found at ${policyPath}`);
+}
+
+const policyContent = fs.readFileSync(policyPath, 'utf-8');
+const policy = JSON.parse(policyContent);
+
+// Validate policy structure
+if (!policy.version || !policy.rules || !Array.isArray(policy.rules)) {
+  throw new Error('Invalid policy structure: missing version or rules array');
+}
+
+// Validate and filter expired rules
+const now = new Date();
+const validRules = policy.rules.filter((rule: any) => {
+  if (!rule.expires_utc) {
+    throw new Error(`Rule ${rule.id} missing expires_utc`);
+  }
+  const expiryDate = new Date(rule.expires_utc);
+  return expiryDate > now;
+});
+
+const expiredCount = policy.rules.length - validRules.length;
+if (expiredCount > 0) {
+  throw new Error(`Policy has ${expiredCount} expired rules; fail-closed`);
+}
+
+// Compute policy hash
+const policyHash = crypto.createHash('sha256').update(policyContent).digest('hex');
+
+// Helper to check if request is allowlisted
+const isAllowlisted = (method: string, url: string): boolean => {
+  // Only check for HTTP 404 POST mutations (unlikely but let's be safe)
+  // For now, we're primarily checking nomutation, so no real allowlists apply here
+  return false;
+};
 
 test('prod dashboard - network non-mutation proof', async ({ page }) => {
   // Create evidence directory
@@ -14,6 +54,11 @@ test('prod dashboard - network non-mutation proof', async ({ page }) => {
   if (!fs.existsSync(evidenceDir)) {
     fs.mkdirSync(evidenceDir, { recursive: true });
   }
+
+  // Write allowlist metadata
+  fs.writeFileSync(path.join(evidenceDir, 'allowlist.version.txt'), String(policy.version));
+  fs.writeFileSync(path.join(evidenceDir, 'allowlist.hash.sha256.txt'), policyHash);
+  fs.writeFileSync(path.join(evidenceDir, 'allowlist.expired_count.txt'), String(expiredCount));
 
   // Set auth context from storage state
   const storageStatePath = path.join(__dirname, '../.auth/storageState.json');
