@@ -1,12 +1,71 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 const DASHBOARD_URL = 'https://firsttry.atlassian.net/jira/dashboards/10102';
 const EVIDENCE_BASE = '/tmp';
 const EVIDENCE_PREFIX = 'ft_dashboard_stability_';
 const READY_TIMEOUT_MS = 30000;
 const JIRA_API_PATTERNS = ['/rest/api/', '/rest/autoproxy/', '/rest/jiraplugin/', '/rest/internal/', '/rest/webResources/'];
+
+// Load and validate policy
+const policyPath = path.join(__dirname, '../policy/prod_proof_allowlist.json');
+if (!fs.existsSync(policyPath)) {
+  throw new Error(`Allowlist policy not found at ${policyPath}`);
+}
+
+const policyContent = fs.readFileSync(policyPath, 'utf-8');
+const policy = JSON.parse(policyContent);
+
+// Validate policy structure
+if (!policy.version || !policy.rules || !Array.isArray(policy.rules)) {
+  throw new Error('Invalid policy structure: missing version or rules array');
+}
+
+// Validate and filter expired rules
+const now = new Date();
+const validRules = policy.rules.filter((rule: any) => {
+  if (!rule.expires_utc) {
+    throw new Error(`Rule ${rule.id} missing expires_utc`);
+  }
+  const expiryDate = new Date(rule.expires_utc);
+  return expiryDate > now;
+});
+
+const expiredCount = policy.rules.length - validRules.length;
+if (expiredCount > 0) {
+  throw new Error(`Policy has ${expiredCount} expired rules; fail-closed`);
+}
+
+// Compute policy hash
+const policyHash = crypto.createHash('sha256').update(policyContent).digest('hex');
+
+// Helper to check if message is allowlisted
+const isAllowlisted = (message: string, type: 'console_error' | 'console_warn' | 'http_status', statusCode?: number): boolean => {
+  return validRules.some((rule: any) => {
+    if (rule.type === type) {
+      if (type === 'http_status') {
+        if (rule.status === statusCode) {
+          try {
+            const regex = new RegExp(rule.url_regex);
+            return regex.test(message);
+          } catch (e) {
+            return false;
+          }
+        }
+      } else {
+        try {
+          const regex = new RegExp(rule.message_regex);
+          return regex.test(message);
+        } catch (e) {
+          return false;
+        }
+      }
+    }
+    return false;
+  });
+};
 
 test('prod dashboard - stability contract gate', async ({ page }) => {
   // Create evidence directory
@@ -15,6 +74,11 @@ test('prod dashboard - stability contract gate', async ({ page }) => {
   if (!fs.existsSync(evidenceDir)) {
     fs.mkdirSync(evidenceDir, { recursive: true });
   }
+
+  // Write allowlist metadata
+  fs.writeFileSync(path.join(evidenceDir, 'allowlist.version.txt'), String(policy.version));
+  fs.writeFileSync(path.join(evidenceDir, 'allowlist.hash.sha256.txt'), policyHash);
+  fs.writeFileSync(path.join(evidenceDir, 'allowlist.expired_count.txt'), String(expiredCount));
 
   // Timing tracking
   const startTime = Date.now();
@@ -71,19 +135,6 @@ test('prod dashboard - stability contract gate', async ({ page }) => {
       });
     }
   });
-
-  // Utility to check if a console message is non-critical
-  const isNonCriticalConsoleError = (msg: string): boolean => {
-    // Filter out known infrastructure/deprecation warnings
-    const filters = [
-      'FT_PROOF_UI_BUNDLE_HASH_UNAVAILABLE',
-      'UI_SERVE_MISMATCH',
-      'DEPRECATED JS',
-      'iFrameSizer',
-      'Failed to load resource',
-    ];
-    return filters.some((filter) => msg.includes(filter));
-  };
 
   // Navigate to dashboard
   await page.goto(DASHBOARD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -161,15 +212,15 @@ test('prod dashboard - stability contract gate', async ({ page }) => {
   let testPassed = true;
   const failures: string[] = [];
 
-  // Validation 1: No critical console errors
-  const criticalConsoleErrors = consoleErrors.filter((msg) => !isNonCriticalConsoleError(msg));
+  // Validation 1: No critical console errors (apply allowlist)
+  const criticalConsoleErrors = consoleErrors.filter((msg) => !isAllowlisted(msg, 'console_error'));
   if (criticalConsoleErrors.length > 0) {
     testPassed = false;
     failures.push(`Found ${criticalConsoleErrors.length} critical console.error events`);
   }
 
-  // Validation 2: No critical console warnings
-  const criticalConsoleWarnings = consoleWarnings.filter((msg) => !isNonCriticalConsoleError(msg));
+  // Validation 2: No critical console warnings (apply allowlist)
+  const criticalConsoleWarnings = consoleWarnings.filter((msg) => !isAllowlisted(msg, 'console_warn'));
   if (criticalConsoleWarnings.length > 0) {
     testPassed = false;
     failures.push(`Found ${criticalConsoleWarnings.length} critical console.warning events`);
@@ -181,10 +232,13 @@ test('prod dashboard - stability contract gate', async ({ page }) => {
     failures.push(`Found ${pageErrors.length} page error events`);
   }
 
-  // Validation 4: No HTTP 4xx/5xx for Jira APIs
-  if (httpErrors.length > 0) {
+  // Validation 4: No HTTP 4xx/5xx for Jira APIs (apply allowlist)
+  const criticalHttpErrors = httpErrors.filter(
+    (err) => !isAllowlisted(err.url, 'http_status', err.status)
+  );
+  if (criticalHttpErrors.length > 0) {
     testPassed = false;
-    failures.push(`Found ${httpErrors.length} HTTP >= 400 responses`);
+    failures.push(`Found ${criticalHttpErrors.length} HTTP >= 400 responses`);
   }
 
   // Validation 5: Dashboard ready reached within timeout
