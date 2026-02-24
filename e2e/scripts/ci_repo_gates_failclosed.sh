@@ -215,6 +215,19 @@ fi
 echo ""
 
 # ============================================================================
+# Gate G: Read-Only Proof Gate
+# ============================================================================
+echo "Gate G: Running read-only proof gate..."
+
+if bash e2e/scripts/ci_readonly_proof_gate_failclosed.sh >/dev/null 2>&1; then
+    gate_pass "Read-only proof gate passed"
+else
+    gate_fail "Read-only proof gate failed"
+fi
+
+echo ""
+
+# ============================================================================
 # Final Result
 # ============================================================================
 echo "=== Gate Summary ==="
