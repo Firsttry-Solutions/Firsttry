@@ -87,7 +87,7 @@ TEST_OUTPUT_FILE="${RUN_DIR}/test_output.log"
 TEST_EXIT_CODE=0
 
 cd "${REPO_ROOT}"
-if npx playwright test "${TEST_FILE}" --reporter=line 2>&1 | tee "${TEST_OUTPUT_FILE}"; then
+if FT_ATLASSIAN_ONLY="${FT_ATLASSIAN_ONLY:-0}" npx playwright test "${TEST_FILE}" --reporter=line 2>&1 | tee "${TEST_OUTPUT_FILE}"; then
   TEST_EXIT_CODE=0
 else
   TEST_EXIT_CODE=$?
@@ -153,6 +153,11 @@ log_info "Copying test evidence..."
 
 mkdir -p "${RUN_DIR}/evidence"
 cp -r "${CHILD_EVIDENCE_DIR}"/* "${RUN_DIR}/evidence/" || fail "Failed to copy evidence"
+
+# Record mode at runner level too
+if [[ -f "${CHILD_EVIDENCE_DIR}/mode.txt" ]]; then
+  cp "${CHILD_EVIDENCE_DIR}/mode.txt" "${RUN_DIR}/mode.txt"
+fi
 
 log_info "Evidence copied"
 
