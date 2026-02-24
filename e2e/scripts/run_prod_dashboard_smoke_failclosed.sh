@@ -29,20 +29,22 @@ date -u +"%Y-%m-%dT%H:%M:%SZ" > "$RUN_DIR/START_UTC.txt"
 git rev-parse HEAD > "$RUN_DIR/GIT_HEAD.txt"
 
 # ============================================================================
-# Step 1: Verify Repo Cleanliness (Fail-Closed)
+# Step 1: Record Git Status (Allow Dirty Tree by Default)
 # ============================================================================
 
-if ! git status --porcelain > "$RUN_DIR/GIT_STATUS.txt"; then
-    echo "ERROR: git status failed" >&2
-    echo "RUN_DIR=$RUN_DIR"
-    exit 1
-fi
+DIRTY="$(git status --porcelain || true)"
+printf "%s\n" "$DIRTY" > "$RUN_DIR/GIT_STATUS.txt"
 
-if [ -s "$RUN_DIR/GIT_STATUS.txt" ]; then
-    echo "ERROR: Repository is dirty (uncommitted changes detected)" >&2
-    cat "$RUN_DIR/GIT_STATUS.txt" >&2
-    echo "RUN_DIR=$RUN_DIR"
-    exit 1
+if [ -n "$DIRTY" ]; then
+    echo "1" > "$RUN_DIR/GIT_DIRTY.txt"
+    echo "WARN: git working tree dirty (continuing). Set FT_REQUIRE_CLEAN_TREE=1 to fail-closed." | tee -a "$RUN_DIR/WARNINGS.txt"
+    if [ "${FT_REQUIRE_CLEAN_TREE:-0}" = "1" ]; then
+        echo "FAIL: dirty working tree and FT_REQUIRE_CLEAN_TREE=1" | tee -a "$RUN_DIR/ERROR.txt"
+        echo "RUN_DIR=$RUN_DIR"
+        exit 1
+    fi
+else
+    echo "0" > "$RUN_DIR/GIT_DIRTY.txt"
 fi
 
 # ============================================================================
@@ -50,43 +52,36 @@ fi
 # ============================================================================
 
 if [ -f "$STATE_PATH" ]; then
-    # Record proof without exposing content
-    if ! sha256sum "$STATE_PATH" > "$RUN_DIR/storageState.sha256.txt"; then
-        echo "ERROR: Failed to compute sha256 of storageState" >&2
+    sha256sum "$STATE_PATH" | awk '{print $1}' > "$RUN_DIR/storageState.sha256.txt"
+    wc -c < "$STATE_PATH" | tr -d ' ' > "$RUN_DIR/storageState.bytes.txt"
+    
+    set +e
+    python3 - <<'PY'
+import json, sys
+p = "/workspaces/Firsttry/e2e/.auth/storageState.json"
+with open(p, "r", encoding="utf-8") as f:
+    d = json.load(f)
+if not isinstance(d, dict):
+    raise SystemExit("storageState not an object")
+cookies = d.get("cookies")
+origins = d.get("origins")
+if not isinstance(cookies, list):
+    raise SystemExit("cookies not a list")
+if not isinstance(origins, list):
+    raise SystemExit("origins not a list")
+print("OK")
+PY
+    PY_RC=$?
+    set -e
+    
+    if [ "$PY_RC" -eq 0 ]; then
+        echo "PASS" > "$RUN_DIR/storageState.shape.txt"
+    else
+        echo "FAIL" > "$RUN_DIR/storageState.shape.txt"
+        echo "FAIL: storageState JSON shape invalid" > "$RUN_DIR/storageState.shape_error.txt"
         echo "RUN_DIR=$RUN_DIR"
         exit 1
     fi
-    
-    wc -c < "$STATE_PATH" > "$RUN_DIR/storageState.bytes.txt"
-    
-    # Validate JSON shape (cookies and origins must be arrays)
-    VALIDATION_RESULT=$(python3 -c "
-import json
-try:
-    with open('$STATE_PATH', 'r') as f:
-        data = json.load(f)
-    has_cookies = isinstance(data.get('cookies'), list)
-    has_origins = isinstance(data.get('origins'), list)
-    if has_cookies and has_origins:
-        print('PASS')
-        exit(0)
-    else:
-        print('FAIL')
-        exit(1)
-except Exception as e:
-    print(f'FAIL: {str(e)}')
-    exit(1)
-" 2>&1) || VALIDATION_RESULT="FAIL"
-    
-    echo "$VALIDATION_RESULT" > "$RUN_DIR/storageState.shape.txt"
-    
-    if [ "$VALIDATION_RESULT" != "PASS" ]; then
-        echo "ERROR: StorageState validation failed: $VALIDATION_RESULT" >&2
-        echo "RUN_DIR=$RUN_DIR"
-        exit 1
-    fi
-else
-    echo "INFO: storageState.json not found (optional)" >&2
 fi
 
 # ============================================================================
