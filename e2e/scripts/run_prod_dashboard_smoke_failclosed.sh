@@ -60,37 +60,28 @@ if [ -f "$STATE_PATH" ]; then
     wc -c < "$STATE_PATH" > "$RUN_DIR/storageState.bytes.txt"
     
     # Validate JSON shape (cookies and origins must be arrays)
-    if python3 << 'PYEOF' "$STATE_PATH" "$RUN_DIR/storageState.shape.txt"
+    VALIDATION_RESULT=$(python3 -c "
 import json
-import sys
-
-state_path = sys.argv[1]
-output_file = sys.argv[2]
-
 try:
-    with open(state_path, 'r') as f:
+    with open('$STATE_PATH', 'r') as f:
         data = json.load(f)
-    
-    # Check required fields
     has_cookies = isinstance(data.get('cookies'), list)
     has_origins = isinstance(data.get('origins'), list)
-    
     if has_cookies and has_origins:
-        with open(output_file, 'w') as f:
-            f.write("PASS")
-        sys.exit(0)
+        print('PASS')
+        exit(0)
     else:
-        with open(output_file, 'w') as f:
-            f.write("FAIL")
-        sys.exit(1)
+        print('FAIL')
+        exit(1)
 except Exception as e:
-    with open(output_file, 'w') as f:
-        f.write(f"FAIL: {e}")
-    sys.exit(1)
-PYEOF
-    then
-        echo "ERROR: StorageState validation failed" >&2
-        cat "$RUN_DIR/storageState.shape.txt" >&2
+    print(f'FAIL: {str(e)}')
+    exit(1)
+" 2>&1) || VALIDATION_RESULT="FAIL"
+    
+    echo "$VALIDATION_RESULT" > "$RUN_DIR/storageState.shape.txt"
+    
+    if [ "$VALIDATION_RESULT" != "PASS" ]; then
+        echo "ERROR: StorageState validation failed: $VALIDATION_RESULT" >&2
         echo "RUN_DIR=$RUN_DIR"
         exit 1
     fi
