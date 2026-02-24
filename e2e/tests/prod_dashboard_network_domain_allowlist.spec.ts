@@ -36,18 +36,23 @@ const policyHash = crypto.createHash('sha256').update(policyContent).digest('hex
 const isHostAllowed = (hostname: string): boolean => {
   const lowerHostname = hostname.toLowerCase();
 
-  // Check exact matches
+  // Check exact matches in allowed_hosts
   if (allowlist.allowed_hosts.some((h: string) => h.toLowerCase() === lowerHostname)) {
     return true;
   }
 
-  // Check suffix matches (must start with .)
-  if (allowlist.allowed_host_suffixes.some((suffix: string) => {
+  // Check suffix matches (must start with .) in allowed_host_suffixes (Atlassian only)
+  if (allowlist.allowed_host_suffixes && allowlist.allowed_host_suffixes.some((suffix: string) => {
     if (!suffix.startsWith('.')) {
       return false; // Skip invalid suffixes
     }
     return lowerHostname.endsWith(suffix.toLowerCase());
   })) {
+    return true;
+  }
+
+  // Check exact matches in third_party_exact_hosts (no wildcards)
+  if (allowlist.third_party_exact_hosts && allowlist.third_party_exact_hosts.some((h: string) => h.toLowerCase() === lowerHostname)) {
     return true;
   }
 

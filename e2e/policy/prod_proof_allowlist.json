@@ -48,7 +48,7 @@
   ],
   "network_domain_allowlist": {
     "version": 1,
-    "updated_utc": "2026-02-24T07:30:00Z",
+    "updated_utc": "2026-02-24T08:15:39Z",
     "expires_utc": "2026-05-24T07:30:00Z",
     "allowed_hosts": [
       "firsttry.atlassian.net"
@@ -57,12 +57,14 @@
       ".atlassian.net",
       ".atl-paas.net",
       ".atlassian.com",
-      ".atlassian-dev.net",
-      ".cloudfront.net",
-      ".gravatar.com",
-      ".wp.com",
-      ".ingest.sentry.io"
+      ".atlassian-dev.net"
     ],
-    "justification": "Atlassian-controlled domains (.atlassian.net primary, .atl-paas.net PaaS, .atlassian.com corporate, .atlassian-dev.net CDN) plus required third-party services: .cloudfront.net (AWS CDN), .gravatar.com + .wp.com (user avatars), .ingest.sentry.io (error tracking). Fail-closed if other domains contacted."
+    "third_party_exact_hosts": [
+      "d14pyph35tkz5d.cloudfront.net",
+      "secure.gravatar.com",
+      "i0.wp.com",
+      "o55978.ingest.sentry.io"
+    ],
+    "justification": "Enterprise-grade domain allowlist: Atlassian-owned suffixes (.atlassian.net primary, .atl-paas.net PaaS, .atlassian.com corporate, .atlassian-dev.net CDN) for dynamic infrastructure. Third-party services pinned to exact observed hosts only (no wildcard suffixes): CloudFront CDN, Gravatar avatars, WordPress Gravatar CDN, Sentry error tracking. Fail-closed on any unlisted domain."
   }
 }
