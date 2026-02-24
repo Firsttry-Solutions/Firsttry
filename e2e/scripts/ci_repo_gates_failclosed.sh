@@ -228,6 +228,31 @@ fi
 echo ""
 
 # ============================================================================
+# Gate H: Runtime Non-Mutation Proof Gate — presence checks only
+# ============================================================================
+echo "Gate H: Verifying runtime non-mutation proof gate files..."
+
+NOMUTATION_RUNNER="e2e/scripts/run_prod_dashboard_network_nomutation_failclosed.sh"
+if [ ! -f "$NOMUTATION_RUNNER" ]; then
+    gate_fail "$NOMUTATION_RUNNER does not exist"
+else
+    if [ -x "$NOMUTATION_RUNNER" ]; then
+        gate_pass "$NOMUTATION_RUNNER exists and is executable"
+    else
+        gate_fail "$NOMUTATION_RUNNER exists but is not executable"
+    fi
+fi
+
+NOMUTATION_TEST="e2e/tests/prod_dashboard_network_nomutation.spec.ts"
+if [ -f "$NOMUTATION_TEST" ]; then
+    gate_pass "$NOMUTATION_TEST exists"
+else
+    gate_fail "$NOMUTATION_TEST missing"
+fi
+
+echo ""
+
+# ============================================================================
 # Final Result
 # ============================================================================
 echo "=== Gate Summary ==="
