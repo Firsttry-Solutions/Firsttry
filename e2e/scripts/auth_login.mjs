@@ -33,7 +33,7 @@
  */
 
 import { chromium } from 'playwright';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, statSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 const REPO_ROOT = '/workspaces/Firsttry';
@@ -123,6 +123,37 @@ console.log('');
 
 // Create auth directory if needed
 mkdirSync(AUTH_DIR, { recursive: true });
+
+// === EARLY EXIT: already authenticated and storageState is valid ===
+if (existsSync(storageStatePath)) {
+  try {
+    const raw = readFileSync(storageStatePath, 'utf-8');
+    if (raw.length >= 500) {
+      const data = JSON.parse(raw);
+      if (
+        typeof data === 'object' && data !== null &&
+        Array.isArray(data.cookies) &&
+        Array.isArray(data.origins)
+      ) {
+        // At least one cookie with domain containing atlassian.net
+        const hasAtlassianCookieDomain = data.cookies.some(
+          c => typeof c === 'object' && typeof c.domain === 'string' && c.domain.includes('atlassian.net')
+        );
+        // At least one origin with origin containing https:// and atlassian.net
+        const hasAtlassianOrigin = data.origins.some(
+          o => typeof o === 'object' && typeof o.origin === 'string' && o.origin.includes('https://') && o.origin.includes('atlassian.net')
+        );
+        if (hasAtlassianCookieDomain && hasAtlassianOrigin) {
+          console.log('[AUTH] Already authenticated; storageState valid');
+          console.log(`[AUTH] cookies: ${data.cookies.length}, origins: ${data.origins.length}, bytes: ${raw.length}`);
+          process.exit(0);
+        }
+      }
+    }
+  } catch (_) {
+    // invalid/corrupt file — fall through to re-authenticate
+  }
+}
 
 async function authenticate() {
   const browser = await chromium.launch({
@@ -267,8 +298,7 @@ async function authenticate() {
   
   // === DISK VALIDATION: Ensure file is valid on disk ===
   try {
-    const fs = require('fs');
-    const stat = fs.statSync(storageStatePath);
+    const stat = statSync(storageStatePath);
     
     if (stat.size < 2000) {
       console.error(`[AUTH] ✗ FATAL: storageState file too small (${stat.size} bytes), expected > 2000`);
@@ -283,7 +313,7 @@ async function authenticate() {
     }
     
     // Verify JSON parse
-    const diskContent = fs.readFileSync(storageStatePath, 'utf-8');
+    const diskContent = readFileSync(storageStatePath, 'utf-8');
     const diskJson = JSON.parse(diskContent);
     
     const diskCookies = diskJson.cookies || [];
