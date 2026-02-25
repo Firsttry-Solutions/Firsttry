@@ -2,67 +2,106 @@
 set -euo pipefail
 
 # verify_proof_discipline.sh
-#
-# Proof-discipline gate: Verify Phase 2 NEW gates are deterministic
-# (do NOT use || true or timeout patterns that weaken proof)
-#
-# Phase 2 NEW gates must be clean:
-#  - tools/production/verify_no_outbound_runtime.sh (CR7)
-#  - tools/production/verify_scopes_justified.mjs (CR8)
-#
-# Exit 0: No violations found (PASS)
-# Exit 1: Violations found (FAIL)
+# Proof-discipline gate: prevent proof-weakening patterns in production gates.
+# Exit 0: PASS (no violations)
+# Exit 1: FAIL (violations or missing prerequisites)
 
-E="${FT_PROD_READY_E:-.}"
+# ----------------------------
+# Resolve evidence directory (FAIL-CLOSED)
+# ----------------------------
+E="${FT_PROD_READY_E:-}"
+if [[ -z "$E" ]] && [[ -f /tmp/ft_prod_ready_dir.txt ]]; then
+  E="$(cat /tmp/ft_prod_ready_dir.txt)"
+fi
+
+if [[ -z "$E" ]] || [[ ! -d "$E" ]]; then
+  echo "[DISCIPLINE] FAIL: Evidence directory not set or does not exist. Set FT_PROD_READY_E or create /tmp/ft_prod_ready_dir.txt" >&2
+  exit 1
+fi
+
 mkdir -p "$E/13_repo_scans"
 
-echo "[DISCIPLINE] Verifying Phase 2 gate discipline (NO || true, NO timeout)..."
+OUT="$E/13_repo_scans/phase2_discipline.txt"
+EXIT_EVID="$E/13_repo_scans/verify_proof_discipline.exit_code.txt"
 
-# ========================================================================
-# Manual verification of Phase 2 NEW gates
-# ========================================================================
+# Initialize exit evidence as FAIL by default (fail-closed)
+echo "1" > "$EXIT_EVID"
+
+# ----------------------------
+# Files to check (orchestrator + the 6 invoked scripts)
+# ----------------------------
+FILES=(
+  "tools/production/run_prod_ready_audit.sh"
+  "tools/production/verify_tests_clean.sh"
+  "tools/production/run_build_proof.sh"
+  "tools/production/verify_ui_markers.sh"
+  "tools/production/verify_no_outbound_runtime.sh"
+  "tools/production/verify_scopes_justified.mjs"
+)
+
+# ----------------------------
+# Forbidden patterns (ERE-safe, portable)
+# ----------------------------
+PATTERNS=(
+  "\\|\\|[[:space:]]*true"
+  "(^|[^[:alnum:]_])timeout([^[:alnum:]_]|$)"
+  "(^|[^[:alnum:]_])sleep([^[:alnum:]_]|$)"
+  "(^|[^[:alnum:]_])nohup([^[:alnum:]_]|$)"
+  "(^|[^[:alnum:]_])disown([^[:alnum:]_]|$)"
+  "&[[:space:]]*$"
+  "\\|\\|[[:space:]]*:"
+  "\\|\\|[[:space:]]*exit[[:space:]]+0([^[:alnum:]_]|$)"
+  ";[[:space:]]*true([^[:alnum:]_]|$)"
+)
+
+# Start evidence (overwrite)
+{
+  echo "[DISCIPLINE] Proof discipline check"
+  echo "Checked files:"
+  for f in "${FILES[@]}"; do echo "  - $f"; done
+  echo "Checked patterns:"
+  for p in "${PATTERNS[@]}"; do echo "  - /$p/"; done
+  echo ""
+} > "$OUT"
 
 VIOLATIONS=0
-SCRIPT1="tools/production/verify_no_outbound_runtime.sh"
-SCRIPT2="tools/production/verify_scopes_justified.mjs"
 
-echo "[DISCIPLINE] Checking $SCRIPT1..."
-if grep -q "||[[:space:]]*true" "$SCRIPT1" 2>/dev/null; then
-  echo "[DISCIPLINE] VIOLATION: || true found"
-  ((VIOLATIONS++))
-else
-  echo "[DISCIPLINE] PASS: No || true"
-fi
+for f in "${FILES[@]}"; do
+  if [[ ! -f "$f" ]]; then
+    echo "[DISCIPLINE] VIOLATION: Missing file: $f" | tee -a "$OUT"
+    VIOLATIONS=$((VIOLATIONS + 1))
+    continue
+  fi
+  if [[ ! -r "$f" ]]; then
+    echo "[DISCIPLINE] VIOLATION: Unreadable file: $f" | tee -a "$OUT"
+    VIOLATIONS=$((VIOLATIONS + 1))
+    continue
+  fi
 
-echo "[DISCIPLINE] Checking $SCRIPT2..."
-if grep -q "||[[:space:]]*true" "$SCRIPT2" 2>/dev/null; then
-  echo "[DISCIPLINE] VIOLATION: || true found"
-  ((VIOLATIONS++))
-else
-  echo "[DISCIPLINE] PASS: No || true"
-fi
+  echo "[DISCIPLINE] Checking: $f" | tee -a "$OUT"
 
-# ========================================================================
-# Evidence output
-# ========================================================================
+  for p in "${PATTERNS[@]}"; do
+    HITS="$(mktemp)"
+    # grep returns: 0 match, 1 no match, 2 error
+    if grep -nE "$p" "$f" >"$HITS" 2>/dev/null; then
+      echo "[DISCIPLINE] VIOLATION: pattern=/$p/ in $f" | tee -a "$OUT"
+      head -20 "$HITS" | sed 's/^/  /' | tee -a "$OUT"
+      VIOLATIONS=$((VIOLATIONS + 1))
+    fi
+    rm -f "$HITS"
+  done
 
-{
-  echo "Phase 2 gate discipline check:"
-  echo "  - $SCRIPT1: CLEAN"
-  echo "  - $SCRIPT2: CLEAN"
-  echo "Violations found: $VIOLATIONS"
-} > "$E/13_repo_scans/phase2_discipline.txt"
+  echo "" | tee -a "$OUT"
+done
 
-# ========================================================================
-# Fail-closed exit
-# ========================================================================
+echo "[DISCIPLINE] Violations found: $VIOLATIONS" | tee -a "$OUT"
 
-if [[ $VIOLATIONS -gt 0 ]]; then
-  echo "[DISCIPLINE] VERDICT: FAIL - Phase 2 gates have discipline violations"
-  echo "1" > "$E/13_repo_scans/verify_proof_discipline.exit_code.txt"
+if [[ "$VIOLATIONS" -gt 0 ]]; then
+  echo "1" > "$EXIT_EVID"
+  echo "[DISCIPLINE] VERDICT: FAIL" | tee -a "$OUT"
   exit 1
 else
-  echo "[DISCIPLINE] VERDICT: PASS - Phase 2 gates comply with discipline"
-  echo "0" > "$E/13_repo_scans/verify_proof_discipline.exit_code.txt"
+  echo "0" > "$EXIT_EVID"
+  echo "[DISCIPLINE] VERDICT: PASS" | tee -a "$OUT"
   exit 0
 fi
