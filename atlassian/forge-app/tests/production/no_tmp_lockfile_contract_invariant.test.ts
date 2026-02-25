@@ -5,11 +5,19 @@
  * removed from the production audit system. FT_PROD_READY_E is now the SOLE
  * source of truth for the evidence directory location.
  *
- * Key invariants:
+ * Scope: This test enforces the lockfile absence ONLY in production execution paths
+ * and documentation. Tests themselves may reference the sentinel string to assert
+ * its absence elsewhere (this file is the only intended reference point).
+ *
+ * Key invariants (PRODUCTION CODE ONLY):
  * - NO references to /tmp/ft_prod_ready_dir.txt exist in tools/production/*.sh
  * - NO references to /tmp/ft_prod_ready_dir.txt exist in docs/production/*.md
  * - ALL core scripts validate FT_PROD_READY_E with hard-fail semantics
  * - NO fallback logic exists (fail-closed enforcement required)
+ *
+ * Tests allowed to reference the string:
+ * - This file (invariant assertion itself)
+ * - run_prod_ready_audit_truthfulness_invariant.test.ts (for structure validation)
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -147,6 +155,41 @@ describe('No /tmp Lockfile Contract Invariant', () => {
           `${scriptName} must not use /tmp fallback`
         ).not.toContain('/tmp/ft_prod_ready_dir');
       }
+    });
+  });
+
+  describe('Scope validation: lockfile absence enforcement', () => {
+    it('enforces production code/docs scope (does NOT scan src/ or other paths)', () => {
+      // This test documents the intentional scope: only production execution paths
+      // (tools/, docs/) must have zero lockfile references.
+      // src/ and other repo paths are explicitly out of scope for this invariant.
+
+      const bashFiles = fs
+        .readdirSync(TOOLS_PROD)
+        .filter((f) => f.endsWith('.sh'));
+      const docFiles = fs
+        .readdirSync(DOCS_PROD)
+        .filter((f) => f.endsWith('.md'));
+
+      // Verify we actually scanned both directories
+      expect(
+        bashFiles.length,
+        'tools/production should contain bash scripts'
+      ).toBeGreaterThan(0);
+      expect(
+        docFiles.length,
+        'docs/production should contain markdown files'
+      ).toBeGreaterThan(0);
+
+      // Confirm the scope of this invariant
+      expect(
+        TOOLS_PROD,
+        'Scope verified: scanning tools/production'
+      ).toContain('tools/production');
+      expect(
+        DOCS_PROD,
+        'Scope verified: scanning docs/production'
+      ).toContain('docs/production');
     });
   });
 });
