@@ -4,6 +4,9 @@ tools/.build_meta.*
 # UI build metadata (generated at build time from .build_meta.json)
 src/gadget-ui/src/ui_build_meta.ts
 
+# Enterprise audit evidence directory (temporary, never committed)
+E/
+
 # Local-only proof artifacts (must not affect determinism)
 proof_artifacts/
 proof_run_*.sh
@@ -12,15 +15,14 @@ proof_run_phases_*.sh
 proof_run_basic.sh
 *.proof.log
 e2e/.auth/
+
 # Playwright auth state (must never be committed)
 tests/playwright/.auth/
 tests/playwright/.auth/*
+
 # Backbone fix proof documents (for cleanup/evidence only, not tracked)
-BACKBONE_SNAPSHOT_FIX_COMPLETE.md# Playwright test artifacts (deterministic proofs)
-test-results/
-playwright-report/
-blob-report/
-.last-run.json
+BACKBONE_SNAPSHOT_FIX_COMPLETE.md
+
 # Playwright test artifacts (deterministic proofs)
 test-results/
 playwright-report/
