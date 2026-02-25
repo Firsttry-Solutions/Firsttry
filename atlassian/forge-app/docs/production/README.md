@@ -7,7 +7,60 @@
 
 ---
 
-## 📋 Documentation Files
+## � One-Shot Audit Pack (Hostile Enterprise Review)
+
+For enterprise reviewers needing a complete, verifiable, offline-auditable evidence pack in a single run:
+
+```bash
+# Set up evidence directory
+export FT_PROD_READY_E="/tmp/ft_audit_pack_$(date -u +%Y%m%dT%H%M%SZ)"
+mkdir -p "$FT_PROD_READY_E"
+
+# Run complete audit pack generation
+cd /workspaces/Firsttry/atlassian/forge-app
+bash tools/production/run_audit_pack.sh
+
+# Check verdict
+cat "$FT_PROD_READY_E/AUDIT_PACK_VERDICT.txt"
+
+# Verify pack integrity (offline)
+bash "$FT_PROD_READY_E/AUDIT_PACK_VERIFY.sh"
+```
+
+### Generated Outputs
+
+**Top-level files in `$FT_PROD_READY_E/`:**
+
+| File | Purpose |
+|------|---------|
+| `AUDIT_PACK_VERDICT.txt` | PASS or FAIL (matches exit code) |
+| `AUDIT_PACK_SUMMARY.md` | Human-readable summary (relative paths only) |
+| `AUDIT_PACK_MANIFEST.sha256` | Deterministic SHA256 checksums of all evidence |
+| `AUDIT_PACK_VERIFY.sh` | Offline verification script (no internet required) |
+
+**Evidence directories:**
+- `09_release/` - Production readiness evidence (from `run_prod_ready_audit.sh`)
+- `14_enterprise_audit/` - Enterprise audit evidence (from `run_enterprise_audit.sh`)
+
+### Offline Verification
+
+After receiving the pack, verify integrity without re-running audits:
+
+```bash
+cd "$AUDIT_PACK_LOCATION"
+bash AUDIT_PACK_VERIFY.sh
+# Check exit code: 0 = verified, 1 = tampered/incomplete
+```
+
+The verifier:
+- Recomputes SHA256 for all evidence files
+- Compares against recorded manifest
+- Fails if files are missing or corrupted
+- Allows non-critical files (timestamps in logs, etc.) with warning
+
+---
+
+## �📋 Documentation Files
 
 ### Production Index & Status Tracking
 - [00_PRODUCTION_READY_INDEX.md](00_PRODUCTION_READY_INDEX.md)
