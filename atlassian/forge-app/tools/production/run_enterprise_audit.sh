@@ -36,8 +36,6 @@ OVERALL_EXIT=0
 {
   echo "ENTERPRISE AUDIT RUNNER - CR7/CR8 CLOSURE"
   echo "========================================="
-  echo "Evidence Dir: ${AUDIT_DIR}"
-  echo "Repo: ${REPO_ROOT}"
   echo ""
 } | tee "${SUMMARY_FILE}"
 
