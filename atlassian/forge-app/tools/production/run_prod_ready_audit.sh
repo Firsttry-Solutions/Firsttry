@@ -6,23 +6,16 @@ set -uo pipefail
 # Design: Synchronous execution, real exit codes, deterministic evidence generation
 
 # ==============================================================================
-# Evidence directory resolution (fail-closed)
+# Evidence directory resolution (fail-closed, FT_PROD_READY_E is SOLE source)
 # ==============================================================================
 E="${FT_PROD_READY_E:-}"
-if [ -z "$E" ] && [ -f /tmp/ft_prod_ready_dir.txt ]; then
-  E="$(cat /tmp/ft_prod_ready_dir.txt)"
-fi
-
 if [ -z "$E" ] || [ ! -d "$E" ]; then
-  echo "FAIL: Evidence directory not set or does not exist" >&2
+  echo "FAIL: FT_PROD_READY_E must be set to an existing directory path" >&2
   exit 1
 fi
 
 # Pre-create all required evidence subdirectories (fail-closed)
 mkdir -p "$E/03_tests" "$E/04_build" "$E/05_ui" "$E/09_release" "$E/13_repo_scans"
-
-# Write E directory to lock file so steps can find it
-echo "$E" > /tmp/ft_prod_ready_dir.txt
 
 cd /workspaces/Firsttry/atlassian/forge-app
 

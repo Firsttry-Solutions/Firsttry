@@ -6,19 +6,16 @@
 set -euo pipefail
 
 # ==============================================================================
-# Determine E directory - Deterministic
+# Resolve evidence directory (FT_PROD_READY_E contract, fail-closed)
 # ==============================================================================
-if [[ -n "${FT_PROD_READY_E:-}" ]]; then
-  E="$FT_PROD_READY_E"
-elif [[ -f /tmp/ft_prod_ready_dir.txt ]]; then
-  E=$(cat /tmp/ft_prod_ready_dir.txt)
-else
-  echo "[GATE_OUTBOUND] FAIL: E directory not set. Set FT_PROD_READY_E or create /tmp/ft_prod_ready_dir.txt"
+E="${FT_PROD_READY_E:-}"
+if [[ -z "$E" ]]; then
+  echo "[GATE_OUTBOUND] FAIL: FT_PROD_READY_E must be set to an evidence directory path" >&2
   exit 1
 fi
 
 if [[ ! -d "$E" ]]; then
-  echo "[GATE_OUTBOUND] FAIL: E directory does not exist: $E"
+  echo "[GATE_OUTBOUND] FAIL: FT_PROD_READY_E directory does not exist: $E" >&2
   exit 1
 fi
 

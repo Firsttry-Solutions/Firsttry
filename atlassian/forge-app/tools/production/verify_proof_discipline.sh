@@ -10,12 +10,13 @@ set -euo pipefail
 # Resolve evidence directory (FAIL-CLOSED)
 # ----------------------------
 E="${FT_PROD_READY_E:-}"
-if [[ -z "$E" ]] && [[ -f /tmp/ft_prod_ready_dir.txt ]]; then
-  E="$(cat /tmp/ft_prod_ready_dir.txt)"
+if [[ -z "$E" ]]; then
+  echo "[DISCIPLINE] FAIL: FT_PROD_READY_E must be set to an evidence directory path" >&2
+  exit 1
 fi
 
-if [[ -z "$E" ]] || [[ ! -d "$E" ]]; then
-  echo "[DISCIPLINE] FAIL: Evidence directory not set or does not exist. Set FT_PROD_READY_E or create /tmp/ft_prod_ready_dir.txt" >&2
+if [[ ! -d "$E" ]]; then
+  echo "[DISCIPLINE] FAIL: FT_PROD_READY_E directory does not exist: $E" >&2
   exit 1
 fi
 

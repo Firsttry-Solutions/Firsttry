@@ -6,20 +6,20 @@ set -euo pipefail
 # ==============================================================================
 # Purpose: Extract build command from package.json, run it with full proof
 # Requirements:
-#   - E dir from /tmp/ft_prod_ready_dir.txt
+#   - FT_PROD_READY_E must be set to evidence directory
 #   - Hard gate on dirty tree (allowlist: docs/production/*, tools/production/*, tests/production/*)
 #   - Determine build command from package.json scripts
 #   - Save build output, exit code, gatekeeping summary
 
-# Read E from lock file
-if [[ ! -f /tmp/ft_prod_ready_dir.txt ]]; then
-  echo "FAIL: /tmp/ft_prod_ready_dir.txt not found. Run production audit setup first."
+# Resolve evidence directory (FT_PROD_READY_E contract, fail-closed)
+E="${FT_PROD_READY_E:-}"
+if [[ -z "$E" ]]; then
+  echo "FAIL: FT_PROD_READY_E must be set to an evidence directory path" >&2
   exit 1
 fi
 
-E=$(cat /tmp/ft_prod_ready_dir.txt)
-if [[ ! -d "$E/04_build" ]]; then
-  echo "FAIL: Evidence directory $E/04_build does not exist."
+if [[ ! -d "$E" ]] || [[ ! -d "$E/04_build" ]]; then
+  echo "FAIL: FT_PROD_READY_E directory or required subdirectory does not exist: $E/04_build" >&2
   exit 1
 fi
 

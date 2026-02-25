@@ -22,15 +22,14 @@ node -v  # Must be v20.20.0+
 npm -v   # Must be v10.8.2+
 
 # 4. Run production readiness audit
-export E="/tmp/ft_prod_ready_$(date -u +%Y%m%dT%H%M%SZ)"
-mkdir -p "$E"/{00_env,01_git,02_inventory,03_tests,04_build,05_ui,06_docs,07_security,08_marketplace,09_release,10_diffs}
-echo "$E" > /tmp/ft_prod_ready_dir.txt
+export FT_PROD_READY_E="/tmp/ft_prod_ready_$(date -u +%Y%m%dT%H%M%SZ)"
+mkdir -p "$FT_PROD_READY_E"/{00_env,01_git,02_inventory,03_tests,04_build,05_ui,06_docs,07_security,08_marketplace,09_release,10_diffs}
 
 cd /workspaces/Firsttry/atlassian/forge-app
 tools/production/run_prod_ready_audit.sh
 
 # 5. Check verdict
-echo "Verdict: $(cat \"$E/PROD_READY_VERDICT.txt\")"
+echo "Verdict: $(cat \"$FT_PROD_READY_E/PROD_READY_VERDICT.txt\")"
 
 # Expected output:
 #   Verdict: PASS

@@ -42,12 +42,13 @@ fi
 # Resolve evidence directory (fail-closed)
 # ==============================================================================
 E="${FT_PROD_READY_E:-}"
-if [[ -z "$E" ]] && [[ -f /tmp/ft_prod_ready_dir.txt ]]; then
-  E="$(cat /tmp/ft_prod_ready_dir.txt)"
+if [[ -z "$E" ]]; then
+  echo "FAIL: FT_PROD_READY_E must be set to an evidence directory path" >&2
+  exit 1
 fi
 
-if [[ -z "$E" ]] || [[ ! -d "$E" ]]; then
-  echo "FAIL: Evidence directory not set or does not exist. Set FT_PROD_READY_E and ensure directory exists." >&2
+if [[ ! -d "$E" ]]; then
+  echo "FAIL: FT_PROD_READY_E directory does not exist: $E" >&2
   exit 1
 fi
 

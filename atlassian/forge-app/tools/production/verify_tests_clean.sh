@@ -6,19 +6,19 @@ set -euo pipefail
 # ==============================================================================
 # Purpose: Hard-gate on dirty working tree, then run npm test with full proof
 # Requirements:
-#   - E dir from /tmp/ft_prod_ready_dir.txt
+#   - FT_PROD_READY_E must be set to evidence directory
 #   - Only allow uncommitted changes in: docs/production/*, tools/production/*, tests/production/*
 #   - Save all test output and exit code for evidence
 
-# Read E from lock file
-if [[ ! -f /tmp/ft_prod_ready_dir.txt ]]; then
-  echo "FAIL: /tmp/ft_prod_ready_dir.txt not found. Run production audit setup first."
+# Resolve evidence directory (FT_PROD_READY_E contract, fail-closed)
+E="${FT_PROD_READY_E:-}"
+if [[ -z "$E" ]]; then
+  echo "FAIL: FT_PROD_READY_E must be set to an evidence directory path" >&2
   exit 1
 fi
 
-E=$(cat /tmp/ft_prod_ready_dir.txt)
-if [[ ! -d "$E/03_tests" ]]; then
-  echo "FAIL: Evidence directory $E/03_tests does not exist."
+if [[ ! -d "$E" ]] || [[ ! -d "$E/03_tests" ]]; then
+  echo "FAIL: FT_PROD_READY_E directory or required subdirectory does not exist: $E/03_tests" >&2
   exit 1
 fi
 
