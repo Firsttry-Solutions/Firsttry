@@ -8,7 +8,7 @@
 
 ## CR7 - Security/Trust Pack Truthfulness
 
-All claims in this pack must be mapped to code evidence. Inventory scans present in E/02_inventory/*.txt.
+All claims in this pack must be mapped to code evidence. Inventory scans present in $E/02_inventory/*.txt.
 
 ---
 
@@ -18,10 +18,10 @@ All claims in this pack must be mapped to code evidence. Inventory scans present
 
 **Evidence Command**:
 ```bash
-rg -n "fetch\(|axios|node-fetch|https?://" src tools > E/02_inventory/rg_outbound_network.txt
+rg -n "fetch\(|axios|node-fetch|https?://" src tools > $E/02_inventory/rg_outbound_network.txt
 ```
 
-**Evidence File**: E/02_inventory/rg_outbound_network.txt (156 lines)
+**Evidence File**: $E/02_inventory/rg_outbound_network.txt (156 lines)
 
 **Findings**:
 - 156 outbound network references detected
@@ -34,7 +34,7 @@ rg -n "fetch\(|axios|node-fetch|https?://" src tools > E/02_inventory/rg_outboun
 **Reason**: Requires code line-by-line inspection to verify destination and method. Raw inventory shows patterns but doesn't prove endpoint URLs or authentication.
 
 **Required Proof**:
-- Sample of 3-5 network calls from E/02_inventory/rg_outbound_network.txt
+- Sample of 3-5 network calls from $E/02_inventory/rg_outbound_network.txt
 - Confirmation that each uses requestJira from @forge/api
 - No direct fetch/axios to external URLs
 - No data POST to non-Jira endpoints
@@ -50,10 +50,10 @@ rg -n "fetch\(|axios|node-fetch|https?://" src tools > E/02_inventory/rg_outboun
 
 **Evidence Command**:
 ```bash
-rg -n "requestJira|asApp|asUser|PUT|POST|DELETE" src > E/02_inventory/rg_mutation_signals.txt
+rg -n "requestJira|asApp|asUser|PUT|POST|DELETE" src > $E/02_inventory/rg_mutation_signals.txt
 ```
 
-**Evidence File**: E/02_inventory/rg_mutation_signals.txt (266 lines)
+**Evidence File**: $E/02_inventory/rg_mutation_signals.txt (266 lines)
 
 **Findings**:
 - 266 mutation-like patterns detected
@@ -218,8 +218,8 @@ Storage Debug Redaction Tests:
 
 | Section | Claim | Status | Evidence | Action |
 |---------|-------|--------|----------|--------|
-| 1 | No outbound data egress | 🟡 NOT PROVEN | E/02_inventory/rg_outbound_network.txt | Inspect 5-10 sample calls |
-| 2 | Read-only access | 🔴 FAIL | E/02_inventory/rg_mutation_signals.txt (266 refs) | Verify PUT/POST/DELETE scope |
+| 1 | No outbound data egress | 🛸 NOT PROVEN | $E/02_inventory/rg_outbound_network.txt | Inspect 5-10 sample calls |
+| 2 | Read-only access | 🚨 FAIL | $E/02_inventory/rg_mutation_signals.txt (266 refs) | Verify PUT/POST/DELETE scope |
 | 3 | No PII logging | ✅ PASS | tests/test_storage_debug_redaction.ts | Regression test in place |
 | 4 | Fail-closed gates | ✅ PASS | GAPS A-F all SEALED (46/46 tests) | Comprehensive enforcement |
 | 5 | Tenant isolation | ✅ PASS | tenantIsolation.spec.ts tests | Verified during test run |
@@ -236,12 +236,12 @@ Storage Debug Redaction Tests:
 
 Before production-ready verdict can be issued:
 
-1. **Inspect E/02_inventory/rg_mutation_signals.txt**
+1. **Inspect $E/02_inventory/rg_mutation_signals.txt**
    - Count distinct requestJira call patterns
    - Identify any PUT|POST|DELETE operations targeting user Jira data
    - If found: Update manifest.yml scopes and docs to reflect read-write access
 
-2. **Inspect E/02_inventory/rg_outbound_network.txt**
+2. **Inspect $E/02_inventory/rg_outbound_network.txt**
    - Sample 5 network calls
    - Confirm each uses @forge/api requestJira (no direct fetch/axios)
    - Confirm no external URLs

@@ -36,7 +36,7 @@ This pack contains all evidence required for marketplace submission, including:
 - ✅ Scopes immutability enforced by CI gate
 - ✅ Scope allowlist in place (no WRITE scopes requested)
 - ✅ All 21 requestJira calls classified (15 READ, 0 WRITE, 6 dynamic endpoints under review)
-- ✅ Evidence: `E/14_enterprise_audit/requestjira_map.csv`
+- ✅ Evidence: `$E/14_enterprise_audit/requestjira_map.csv`
 
 **Verdict**: ✅ **PASS**  
 **Reason**: All declared scopes justified and used within app code. No scope creep detected.
@@ -54,9 +54,9 @@ This pack contains all evidence required for marketplace submission, including:
 4. ✅ Exports are internal JSON artifacts, returned to authenticated Jira admin
 
 **Evidence**:
-- ✅ `E/14_enterprise_audit/requestjira_map.csv` - 21 calls all classified as READ via Forge API
-- ✅ `E/14_enterprise_audit/zero_egress_inventory.txt` - 5 false positives (test code), 0 actual external clients
-- ✅ `E/14_enterprise_audit/zero_egress_summary.txt` - Zero external egress confirmed
+- ✅ `$E/14_enterprise_audit/requestjira_map.csv` - 21 calls all classified as READ via Forge API
+- ✅ `$E/14_enterprise_audit/zero_egress_inventory.txt` - 5 false positives (test code), 0 actual external clients
+- ✅ `$E/14_enterprise_audit/zero_egress_summary.txt` - Zero external egress confirmed
 - ✅ Code audit: No breach of @forge/api boundary
 
 **Verdict**: ✅ **PASS**  
@@ -236,8 +236,8 @@ This pack contains all evidence required for marketplace submission, including:
 | Export pack signing | SHA256 commit + UI markers | Tool: `tools/verify_ecl_state.mjs` |
 
 **Evidence Files**:
-- `E/12_git_commit_proof/` (version history)
-- `E/14_enterprise_audit/requestjira_map.csv` (21 scoped calls verified)
+- `$E/12_git_commit_proof/` (version history)
+- `$E/14_enterprise_audit/requestjira_map.csv` (21 scoped calls verified)
 
 ---
 
@@ -298,7 +298,7 @@ This pack contains all evidence required for marketplace submission, including:
 |--------|-------|-----------|-----------------|--------|
 | **Tenant Cross-Access** | Admin escalation to other tenant | Scope allowlist enforcement + Jira API auth | `src/milestone1/engines/access-engine.ts:70` (verified: read-only GET only) | ✅ ACTIVE |
 | **Scope Escalation** | App requests WRITE scope not declared | Manifest.yml declares read-only scopes only | manifest.yml: `read:jira-user, read:jira-work, storage:app` | ✅ ENFORCED |
-| **Data Exfiltration** | External HTTP calls bypass Jira auth | Zero egress audit: 0 external URLs detected | `E/14_enterprise_audit/zero_egress_summary.txt` (5 clients reviewed, all test code) | ✅ VERIFIED |
+| **Data Exfiltration** | External HTTP calls bypass Jira auth | Zero egress audit: 0 external URLs detected | `$E/14_enterprise_audit/zero_egress_summary.txt` (5 clients reviewed, all test code) | ✅ VERIFIED |
 | **Partial Disclosure** | Incomplete export forgery | Deterministic zip + build identity markers | `src/zip/deterministicZip.ts` + 5 UI proof markers | ✅ TESTED |
 | **Ledger Tampering** | Audit trail modification | Append-only immutable ledger in Forge storage | `src/evidence/evidenceVault.ts` (integrity checks on read) | ✅ ACTIVE |
 
@@ -312,7 +312,7 @@ TOTAL_CALLS=21
   REVIEW_REQUIRED (dynamic):       6 (all wrappers in jiraRequestGuard.ts)
 VERDICT: All calls are authenticated Jira API via Forge requestJira context
 ```
-**Evidence**: `E/14_enterprise_audit/requestjira_map.csv` (21 rows, classified)
+**Evidence**: `$E/14_enterprise_audit/requestjira_map.csv` (21 rows, classified)
 
 **Zero Egress Audit**: ✅ VERIFIED  
 ```
@@ -324,7 +324,7 @@ EXTERNAL_HTTP_CLIENTS: 5 potential matches detected
 EXTERNAL_URLS: 0 (zero production egress confirmed)
 VERDICT: No external network traffic in production code
 ```
-**Evidence**: `E/14_enterprise_audit/zero_egress_inventory.txt` (verified contexts)
+**Evidence**: `$E/14_enterprise_audit/zero_egress_inventory.txt` (verified contexts)
 
 **Scope-to-Endpoint Mapping**: ✅ VERIFIED
 ```
@@ -333,7 +333,7 @@ read:jira-work       ← 15 calls to /permissions, /project, /fieldconfiguration
 storage:app          ← Ledger + snapshots (read/write)
 VERDICT: All scopes justified by actual API usage
 ```
-**Evidence**: `E/14_enterprise_audit/scopes_justification_table.md`
+**Evidence**: `$E/14_enterprise_audit/scopes_justification_table.md`
 
 ---
 
@@ -341,8 +341,8 @@ VERDICT: All scopes justified by actual API usage
 
 | Test | Result | Evidence |
 |------|--------|----------|
-| Enterprise audit (requestJira) | ✅ PASS | E/14_enterprise_audit/requestjira_map.csv (21/21 classified) |
-| Enterprise audit (zero egress) | ✅ PASS | E/14_enterprise_audit/zero_egress_summary.txt (0 external URLs) |
+| Enterprise audit (requestJira) | ✅ PASS | $E/14_enterprise_audit/requestjira_map.csv (21/21 classified) |
+| Enterprise audit (zero egress) | ✅ PASS | $E/14_enterprise_audit/zero_egress_summary.txt (0 external URLs) |
 | Scope allowlist immutability | ✅ PASS | [FT_SCOPE_ALLOWLIST_ENFORCED] |
 | Scope regression | ✅ PASS | [FT_SCOPE_REGRESSION_TEST_PASS] |
 | Tenant isolation | ✅ PASS | [FT_TENANT_ISOLATION_ACTIVE] (46/46 gaps closed) |
@@ -384,7 +384,7 @@ VERDICT: All scopes justified by actual API usage
 **Audit Reference**:
 - Audit Date: 2026-02-25
 - Audit Tool: `tools/production/enterprise_audit.py` + `tools/production/run_enterprise_audit.sh`
-- Evidence Directory: `E/14_enterprise_audit/`
+- Evidence Directory: `$E/14_enterprise_audit/` (set via `FT_PROD_READY_E` environment variable)
 - Threat Model: `docs/THREAT_MODEL_ENTERPRISE.md`
 - [ ] Confirm support SLA in place or document Phase-4 interim approach
 

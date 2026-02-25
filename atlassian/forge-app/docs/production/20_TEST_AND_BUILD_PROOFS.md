@@ -16,9 +16,9 @@ npm test
 ```
 
 **Evidence**:
-- Full log: E/03_tests/npm_test_full.log
-- Exit code: E/03_tests/npm_test_exit_code.txt → **0**
-- Summary (tail): E/03_tests/npm_test_summary_tail.txt
+- Full log: $E/03_tests/npm_test_full.log
+- Exit code: $E/03_tests/npm_test_exit_code.txt → **0**
+- Summary (tail): $E/03_tests/npm_test_summary_tail.txt
 
 **Key Results**:
 - Test files: 260 passed | 2 skipped (262 total)
@@ -59,10 +59,10 @@ npm run build:gadget
 ```
 
 **Evidence**:
-- Build command: E/04_build/build_command.txt
-- Package scripts: E/04_build/package_scripts.json
-- Full log: E/04_build/build_full.log
-- Exit code: E/04_build/build_exit_code.txt (generated after last successful verification)
+- Build command: $E/04_build/build_command.txt
+- Package scripts: $E/04_build/package_scripts.json
+- Full log: $E/04_build/build_full.log
+- Exit code: $E/04_build/build_exit_code.txt (generated after last successful verification)
 
 **Build Chain Execution**:
 1. ✅ Prebuild gates
@@ -110,13 +110,13 @@ The `verify:dist:invoke-allowlist` gate performs regex scanning on the 175KB dis
 4. eligibilitySource
 5. computedEligibilityOk
 
-**Source Presence** (E/05_ui/source_marker_locations.txt):
+**Source Presence** ($E/05_ui/source_marker_locations.txt):
 - Found 29 marker references across source files
 - Markers present in:
   - src/gadget-ui/src/main.ts (primary locations)
   - src/gadget-ui/src/snapshotActionModel.ts (definitions)
 
-**Dist Bundle Verification** (E/05_ui/dist_marker_counts.txt):
+**Dist Bundle Verification** ($E/05_ui/dist_marker_counts.txt):
 ```
 FT_PROOF_UI_EFFECTIVE_KIND: 1       ✓
 FT_PROOF_UI_EXPORT_GATE_EVALUATED: 1 ✓
@@ -154,9 +154,9 @@ All markers present in built dist/app.js (175.57 KB).
 
 | CR | Test | Status | Evidence |
 |----|------|--------|----------|
-|CR1| npm test | ✅PASS | E/03_tests/npm_test_exit_code.txt = 0 |
+|CR1| npm test | ✅PASS | $E/03_tests/npm_test_exit_code.txt = 0 |
 |CR2| npm run build | ✅PASS | All gates pass (8/8), build deterministic|
-|CR3| UI marker scan | ✅PASS | E/05_ui/dist_marker_counts.txt (all 5 markers present) |
+|CR3| UI marker scan | ✅PASS | $E/05_ui/dist_marker_counts.txt (all 5 markers present) |
 
 **Recommendation**:
 - ✅ Tests fully passing with comprehensive gap enforcement
