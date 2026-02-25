@@ -14,8 +14,8 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 ### CR1: Full Test Run Completes (exit code 0)
 
 **Status**: ✅ **PASS**  
-**Evidence**: [E/03_tests/npm_test_exit_code.txt](../../tmp/ft_prod_ready_20260224T125001Z/03_tests/npm_test_exit_code.txt) = **0**  
-**Description**: npm test completed with exit code 0, full log at E/03_tests/npm_test_full.log  
+**Evidence**: [$E/03_tests/npm_test_exit_code.txt](../../tmp/ft_prod_ready_20260224T125001Z/03_tests/npm_test_exit_code.txt) = **0**  
+**Description**: npm test completed with exit code 0, full log at $E/03_tests/npm_test_full.log  
 **Fix Applied**: None  
 **Test Results**: 2728/2753 tests passed, 260/262 test files passed. All GAPS A-F enforcement verified (46/46 tests sealing all gaps)
 
@@ -24,7 +24,7 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 ### CR2: Build Chain Completes (exit code 0)
 
 **Status**: ✅ **PASS**  
-**Evidence**: E/04_build/verify_dist_invoke_allowlist.exit_code.txt = 0; E/04_build/verify_dist_invoke_allowlist.run.log shows successful completion  
+**Evidence**: $E/04_build/verify_dist_invoke_allowlist.exit_code.txt = 0; $E/04_build/verify_dist_invoke_allowlist.run.log shows successful completion  
 **Description**: npm run build command executes deterministic build chain with 30+ verification gates. Build output and metadata injection verified working. Final verification gate (verify:dist:invoke-allowlist) now completes deterministically without timeout.  
 **Fix Applied**: [tools/verify_dist_invoke_allowlist.sh](../../../tools/verify_dist_invoke_allowlist.sh) - Replaced bash pipeline processing with single-pass Python3 analysis to eliminate timeout risk and ensure deterministic termination (exit 0, 4 invokes detected, marker verified, PASS).  
 **Notes**: Build succeeds with deterministic output (UI bundle 175.57 KB, build identity anchored). Verification gate now completes efficiently without hanging.
@@ -34,7 +34,7 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 ### CR3: UI Proof Markers in Shipped Dist JS
 
 **Status**: ✅ **PASS**  
-**Evidence**: E/05_ui/dist_marker_counts.txt (all 5 markers presence verified in dist/app.js)  
+**Evidence**: $E/05_ui/dist_marker_counts.txt (all 5 markers presence verified in dist/app.js)  
 **Description**: All 5 proof markers present in built dist JS:
 - FT_PROOF_UI_EFFECTIVE_KIND: 1 ✓
 - FT_PROOF_UI_EXPORT_GATE_EVALUATED: 1 ✓
@@ -76,7 +76,7 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 **Evidence**: 
 - No forbidden files modified: package.json, package-lock.json, manifest.yml, src/gadget-ui/dist/* all untouched ✅
 - Canonical dirty-tree gate: [tools/production/verify_clean_tree_allowlist.sh](../../../tools/production/verify_clean_tree_allowlist.sh) ✅
-- Orchestrator passes dirty-tree gate: E/09_release/run_prod_ready_audit.exit_code.txt shows gate PASS ✅
+- Orchestrator passes dirty-tree gate: $E/09_release/run_prod_ready_audit.exit_code.txt shows gate PASS ✅
 
 **Description**: 
 - Forbidden files discipline verified (no modifications detected)
@@ -114,11 +114,11 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 
 **Status**: ✅ **PASS** (Phase 2 Hardened)  
 **Evidence**: 
-- **Outbound Isolation (Deterministic)**: [E/13_repo_scans/verify_no_outbound_runtime.exit_code.txt](E/13_repo_scans/verify_no_outbound_runtime.exit_code.txt) = **0** ✅
+- **Outbound Isolation (Deterministic)**: [$E/13_repo_scans/verify_no_outbound_runtime.exit_code.txt]($E/13_repo_scans/verify_no_outbound_runtime.exit_code.txt) = **0** ✅
   - Gate: tools/production/verify_no_outbound_runtime.sh
   - Method: Automated scan + Python classification (no `|| true`, no timeouts)
   - Result: Zero forbidden HTTP primitives in src/ (axios, fetch, node-fetch, direct Request calls all absent)
-  - Evidence: E/13_repo_scans/outbound_forbidden_count.txt = 0, outbound_forbidden_patterns.txt (empty)
+  - Evidence: $E/13_repo_scans/outbound_forbidden_count.txt = 0, outbound_forbidden_patterns.txt (empty)
   - Fix Applied: src/storage_debug.ts line 80 - Changed direct HTTP call to Atlassian API to use Forge-managed API (api.asUser().requestConfluence())
   
 - **Data retention** (storage redaction enforced) ✅  
@@ -137,22 +137,22 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 
 **Status**: ✅ **PASS** (Phase 2 Hardened)  
 **Evidence**: 
-- **Scopes Justification (Deterministic)**: [E/13_repo_scans/scopes_verdict.txt](E/13_repo_scans/scopes_verdict.txt) = **PASS** ✅
+- **Scopes Justification (Deterministic)**: [$E/13_repo_scans/scopes_verdict.txt]($E/13_repo_scans/scopes_verdict.txt) = **PASS** ✅
   - Gate: tools/production/verify_scopes_justified.mjs (Node.js)
-  - Declared Scopes (E/13_repo_scans/scopes_declared.txt):
+  - Declared Scopes ($E/13_repo_scans/scopes_declared.txt):
     - read:jira-user (5 usage hits) ✅
     - read:jira-work (5 usage hits) ✅
     - storage:app (5 usage hits) ✅
   - Method: Automated scan for requestJira() calls and storage.*/() patterns in src/
   - Result: All 3 declared scopes have usage evidence (PASS)
-  - Evidence: E/13_repo_scans/scopes_usage_hits.txt shows usage counts per scope
+  - Evidence: $E/13_repo_scans/scopes_usage_hits.txt shows usage counts per scope
 
 - **Admin visibility** (UI proof markers verified) ✅  
 - **Admin control** (scope allowlist enforced) ✅  
 - **Operational readiness** (support contact, monitoring tests) ✅  
 - **Change management** (deterministic versioning) ✅  
 - **Documentation** (SECURITY.md, PRIVACY.md present) ✅  
-- **Proof Discipline** (E/13_repo_scans/verify_proof_discipline.exit_code.txt = 0): Phase 2 gates verified to contain NO `|| true` and NO timeout patterns ✅
+- **Proof Discipline** ($E/13_repo_scans/verify_proof_discipline.exit_code.txt = 0): Phase 2 gates verified to contain NO `|| true` and NO timeout patterns ✅
 
 **Description**: Marketplace pack now **hardened with deterministic verification gates** for all scopes. No over-scoping detected.
 
@@ -194,10 +194,10 @@ This audit phase added deterministic, fail-closed gates to eliminate narrative p
 
 | Gate | Purpose | Evidence | Exit Code |
 |------|---------|----------|-----------|
-| verify_no_outbound_runtime.sh | CR7: Zero unauthorized HTTP calls | E/13_repo_scans/outbound_forbidden_count.txt = 0 | 0 ✅ |
-| verify_scopes_justified.mjs | CR8: All scopes declared and used | E/13_repo_scans/scopes_verdict.txt = PASS | 0 ✅ |
-| verify_proof_discipline.sh | Proof discipline: No || true, no timeout | E/13_repo_scans/verify_proof_discipline.exit_code.txt = 0 | 0 ✅ |
-| requestJira_readonly_invariant.test.ts | CR4: No Jira mutations via requestJira | E/12_regress/requestJira_readonly_invariant.exit_code.txt = 0 | 0 ✅ |
+| verify_no_outbound_runtime.sh | CR7: Zero unauthorized HTTP calls | $E/13_repo_scans/outbound_forbidden_count.txt = 0 | 0 ✅ |
+| verify_scopes_justified.mjs | CR8: All scopes declared and used | $E/13_repo_scans/scopes_verdict.txt = PASS | 0 ✅ |
+| verify_proof_discipline.sh | Proof discipline: No || true, no timeout | $E/13_repo_scans/verify_proof_discipline.exit_code.txt = 0 | 0 ✅ |
+| requestJira_readonly_invariant.test.ts | CR4: No Jira mutations via requestJira | $E/12_regress/requestJira_readonly_invariant.exit_code.txt = 0 | 0 ✅ |
 
 **To Proceed**:
 - ✅ All 9/9 CR verdicts now PASS with evidence files
@@ -205,8 +205,8 @@ This audit phase added deterministic, fail-closed gates to eliminate narrative p
 - ✅ No forbidden files modified (package.json, package-lock.json, manifest.yml, src/gadget-ui/dist/*)
 - ✅ Proof discipline: Every PASS claim backed by machine-generated evidence (exit codes, file counts)
 - Ready for marketplace submission with Phase 2 hardening in place
-1. **Inspect E/02_inventory/rg_outbound_network.txt** - Confirm all 156 calls use requestJira (@forge/api)
-2. **Inspect E/02_inventory/rg_mutation_signals.txt** - Confirm all 266 refs are app storage or read-only Jira calls
+1. **Inspect $E/02_inventory/rg_outbound_network.txt** - Confirm all 156 calls use requestJira (@forge/api)
+2. **Inspect $E/02_inventory/rg_mutation_signals.txt** - Confirm all 266 refs are app storage or read-only Jira calls
 3. **Complete STEP 5** - Verifier/export pack runnability investigation
 4. **Update CR7 & CR8** - Resolve blockers with evidence, update marketplace pack scopes section
 5. **Re-run audit** - Final production-ready audit with all CR statuses = PASS

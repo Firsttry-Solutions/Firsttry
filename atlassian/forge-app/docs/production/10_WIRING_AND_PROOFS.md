@@ -20,11 +20,11 @@ This document maps every wiring claim to source code evidence, runnable commands
 - src/metrics/riskIndex.ts
 
 **Caller Files**:
-- Inventory: E/02_inventory/rg_packhash.txt (144 lines of references)
+- Inventory: $E/02_inventory/rg_packhash.txt (144 lines of references)
 
 **Proof Command Run**:
 ```
-rg -n "packHash|computePackHash|verify\.js" src tools tests docs > E/02_inventory/rg_packhash.txt
+rg -n "packHash|computePackHash|verify\.js" src tools tests docs > $E/02_inventory/rg_packhash.txt
 ```
 
 **Verdict**: 🟡 **NOT PROVEN**  
@@ -51,7 +51,7 @@ rg -n "packHash|computePackHash|verify\.js" src tools tests docs > E/02_inventor
 
 **Proof Command Run**:
 ```
-rg -n "ledger|claims|integrity" src > E/02_inventory/rg_ledger_terms.txt
+rg -n "ledger|claims|integrity" src > $E/02_inventory/rg_ledger_terms.txt
 ```
 
 **Verdict**: 🔴 **FAIL**  
@@ -81,7 +81,7 @@ rg -n "ledger|claims|integrity" src > E/02_inventory/rg_ledger_terms.txt
 
 **Proof Command Run**:
 ```
-rg -n "drift|DRIFT" src > E/02_inventory/rg_drift_terms.txt
+rg -n "drift|DRIFT" src > $E/02_inventory/rg_drift_terms.txt
 ```
 
 **Verdict**: 🟡 **NOT PROVEN**  
@@ -104,7 +104,7 @@ rg -n "drift|DRIFT" src > E/02_inventory/rg_drift_terms.txt
 - UI code that displays reasonCode
 - Backend contract (export schema)
 
-**Inventory Evidence**: E/02_inventory/rg_reason_codes.txt (762 lines)
+**Inventory Evidence**: $E/02_inventory/rg_reason_codes.txt (762 lines)
 
 **Pipeline Stages**:
 1. **Production** (backend): Code that generates `reasonCode` / `backendReasonCode`
@@ -113,8 +113,8 @@ rg -n "drift|DRIFT" src > E/02_inventory/rg_drift_terms.txt
 
 **Proof Commands Run**:
 ```
-rg -n "NOT_READY|NOT_DECLARED|reasonCode|backendReasonCode|eligibility" src > E/02_inventory/rg_reason_codes.txt
-rg -n "NOT_READY|NOT_DECLARED|reasonCode|backendReasonCode" tests > E/02_inventory/rg_reason_codes_tests.txt
+rg -n "NOT_READY|NOT_DECLARED|reasonCode|backendReasonCode|eligibility" src > $E/02_inventory/rg_reason_codes.txt
+rg -n "NOT_READY|NOT_DECLARED|reasonCode|backendReasonCode" tests > $E/02_inventory/rg_reason_codes_tests.txt
 ```
 
 **Verdict**: 🟡 **NOT PROVEN**  
@@ -136,7 +136,7 @@ rg -n "NOT_READY|NOT_DECLARED|reasonCode|backendReasonCode" tests > E/02_invento
 
 **Proof Command Run**:
 ```
-find tools -maxdepth 2 -type f \( -name "*verify*" -o -name "*export*" -o -name "*pack*" \) | sort > E/06_docs/tools_find_verifier_export.txt
+find tools -maxdepth 2 -type f \( -name "*verify*" -o -name "*export*" -o -name "*pack*" \) | sort > $E/06_docs/tools_find_verifier_export.txt
 ls -la tools | tee "$E/06_docs/tools_ls.txt"
 ```
 
@@ -161,7 +161,7 @@ ls -la tools | tee "$E/06_docs/tools_ls.txt"
 
 **Proof Command Run**:
 ```
-rg -n "export|Export" src tools tests | grep -i "bundle\|pack\|zip" > E/02_inventory/rg_export_pipeline.txt
+rg -n "export|Export" src tools tests | grep -i "bundle\|pack\|zip" > $E/02_inventory/rg_export_pipeline.txt
 ```
 
 **Verdict**: 🟡 **NOT PROVEN**  
@@ -192,8 +192,8 @@ rg -n "export|Export" src tools tests | grep -i "bundle\|pack\|zip" > E/02_inven
 **Proof Command Run** (to execute in STEP 4):
 ```
 rg -n "FT_PROOF_UI_EFFECTIVE_KIND|FT_PROOF_UI_EXPORT_GATE_EVALUATED|backendReasonCode|eligibilitySource|computedEligibilityOk" \
-   src/gadget-ui/src > E/05_ui/source_marker_locations.txt
-grep -ao "FT_PROOF_UI_EFFECTIVE_KIND\|FT_PROOF_UI_EXPORT_GATE_EVALUATED\|backendReasonCode\|eligibilitySource\|computedEligibilityOk" src/gadget-ui/dist/*.js | wc -l > E/05_ui/dist_marker_counts.txt
+   src/gadget-ui/src > $E/05_ui/source_marker_locations.txt
+grep -ao "FT_PROOF_UI_EFFECTIVE_KIND|FT_PROOF_UI_EXPORT_GATE_EVALUATED|backendReasonCode|eligibilitySource|computedEligibilityOk" src/gadget-ui/dist/*.js | wc -l > $E/05_ui/dist_marker_counts.txt
 ```
 
 **Verdict**: 🟡 **NOT PROVEN**  
@@ -212,9 +212,9 @@ grep -ao "FT_PROOF_UI_EFFECTIVE_KIND\|FT_PROOF_UI_EXPORT_GATE_EVALUATED\|backend
 
 **Proof Command Run**:
 ```
-rg -n "requestJira|asApp|asUser" src > E/02_inventory/rg_jira_api_usage.txt
-rg -n "fetch\(|axios|node-fetch|https?://" src tools > E/02_inventory/rg_outbound_network.txt
-rg -n "PUT|POST|DELETE" src > E/02_inventory/rg_mutation_check_term.txt
+rg -n "requestJira|asApp|asUser" src > $E/02_inventory/rg_jira_api_usage.txt
+rg -n "fetch\(|axios|node-fetch|https?://" src tools > $E/02_inventory/rg_outbound_network.txt
+rg -n "PUT|POST|DELETE" src > $E/02_inventory/rg_mutation_check_term.txt
 ```
 
 **Inventory Counts**:
@@ -253,7 +253,7 @@ rg -n "PUT|POST|DELETE" src > E/02_inventory/rg_mutation_check_term.txt
 
 **Proof Command Run** (re-run from prior inventory):
 ```
-rg -n "read.only|deterministic|fail.closed|offline.verifi|egress" docs SECURITY.md > E/02_inventory/rg_docs_key_claims.txt
+rg -n "read.only|deterministic|fail.closed|offline.verifi|egress" docs SECURITY.md > $E/02_inventory/rg_docs_key_claims.txt
 ```
 
 **Verdict**: 🟡 **NOT PROVEN**  
@@ -288,7 +288,7 @@ rg -n "read.only|deterministic|fail.closed|offline.verifi|egress" docs SECURITY.
 2. **W8 Blocker**: 156 outbound network references + 266 mutation signals require detailed justification. If mutations include Jira API PUT/POST/DELETE, read-only claim is FALSE.
 
 **Action Required Before Production**:
-- Inspect all 266 mutation signal matches in E/02_inventory/rg_mutation_signals.txt
+- Inspect all 266 mutation signal matches in $E/02_inventory/rg_mutation_signals.txt
 - Confirm all are non-Jira OR confirm Jira mutations are NOT present
 - If mutations exist on Jira side: update scopes claim and docs accordingly
 
@@ -297,12 +297,12 @@ rg -n "read.only|deterministic|fail.closed|offline.verifi|egress" docs SECURITY.
 ## Evidence Location Reference
 
 ```
-E/02_inventory/rg_packhash.txt              → W1 source inventory
-E/02_inventory/rg_reason_codes.txt          → W4 source inventory
-E/02_inventory/rg_outbound_network.txt      → W8 outbound scan (156 lines)
-E/02_inventory/rg_mutation_signals.txt      → W8 mutation scan (266 lines)
-E/05_ui/source_marker_locations.txt         → W7 source markers (pending STEP 4)
-E/05_ui/dist_marker_counts.txt              → W7 dist markers (pending STEP 4)
-E/06_docs/tools_find_verifier_export.txt    → W5 verifier inventory (pending STEP 5)
+$E/02_inventory/rg_packhash.txt              → W1 source inventory
+$E/02_inventory/rg_reason_codes.txt          → W4 source inventory
+$E/02_inventory/rg_outbound_network.txt      → W8 outbound scan (156 lines)
+$E/02_inventory/rg_mutation_signals.txt      → W8 mutation scan (266 lines)
+$E/05_ui/source_marker_locations.txt         → W7 source markers (pending STEP 4)
+$E/05_ui/dist_marker_counts.txt              → W7 dist markers (pending STEP 4)
+$E/06_docs/tools_find_verifier_export.txt    → W5 verifier inventory (pending STEP 5)
 ```
 

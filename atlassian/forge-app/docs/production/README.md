@@ -54,8 +54,8 @@ Current verdicts:
 - Section 9 (Rollback): ✅ PASS - Versioning deterministic
 
 **Critical Blockers** (must resolve before production):
-1. **Network Egress Verification** - Inspect E/02_inventory/rg_outbound_network.txt
-2. **Mutation Scope Verification** - Inspect E/02_inventory/rg_mutation_signals.txt
+1. **Network Egress Verification** - Inspect $E/02_inventory/rg_outbound_network.txt
+2. **Mutation Scope Verification** - Inspect $E/02_inventory/rg_mutation_signals.txt
 
 #### [40_MARKETPLACE_READINESS_PACK.md](40_MARKETPLACE_READINESS_PACK.md) - CR8 Marketplace
 Current verdicts:
@@ -87,14 +87,14 @@ Current verdicts:
 - [tools/production/run_prod_ready_audit.sh](../../../tools/production/run_prod_ready_audit.sh) (4.2 KB)
   - Master orchestrator: runs GATE 1-3 in sequence
   - Sets/reuses evidence directory (/tmp/ft_prod_ready_YYYYMMDDTHHMMSSZ)
-  - Writes final verdict to $E/PROD_READY_VERDICT.txt
+  - Writes final verdict to $E/PROD_READY_VERDICT.txt (via FT_PROD_READY_E environment variable)
   - Exit code: 0 (PASS) or 1 (FAIL)
 
 ### CR1 - Tests Gate
 - [tools/production/verify_tests_clean.sh](../../../tools/production/verify_tests_clean.sh) (2.5 KB)
   - Gate 1: Dirty tree check (allowlist: docs/production/, tools/production/, tests/production/, *.gen.ts files)
   - Gate 2: npm test execution
-  - Output: E/03_tests/{npm_test_full.log, npm_test_exit_code.txt, npm_test_summary_tail.txt}
+  - Output: $E/03_tests/{npm_test_full.log, npm_test_exit_code.txt, npm_test_summary_tail.txt}
   - Exit code: 0 (PASS) or 1 (FAIL test)
 
 ### CR2 - Build Gate
@@ -102,7 +102,7 @@ Current verdicts:
   - Gate 1: Dirty tree check (same allowlist)
   - Gate 2: Determine build command from package.json scripts
   - Gate 3: npm run <build_command> execution  
-  - Output: E/04_build/{build_full.log, build_exit_code.txt, build_gate_summary.txt, build_command.txt}
+  - Output: $E/04_build/{build_full.log, build_exit_code.txt, build_gate_summary.txt, build_command.txt}
   - Exit code: 0 (PASS) or 1 (FAIL build)
 
 ### CR3 - UI Markers Gate
@@ -111,7 +111,7 @@ Current verdicts:
   - Gate 2: Verify marker presence in source
   - Gate 3: Count marker occurrences in ALL dist JS
   - Fail-closed: If source has marker but dist count = 0 → FAIL
-  - Output: E/05_ui/{dist_js_list.txt, source_marker_locations.txt, dist_marker_counts.txt}
+  - Output: $E/05_ui/{dist_js_list.txt, source_marker_locations.txt, dist_marker_counts.txt}
   - Exit code: 0 (PASS with all markers) or 1 (FAIL if marker missing)
 
 ### Fixed Verification Script
@@ -143,13 +143,11 @@ PROD_READY_VERDICT.txt   Final one-line verdict (FAIL for this audit)
 
 ### Key Evidence Files
 
-| File | Content | Usage |
-|------|---------|-------|
-| E/03_tests/npm_test_exit_code.txt | 0 | Proves CR1 PASS |
-| E/03_tests/npm_test_full.log | 2728/2753 PASS | Tests comprehensive |
-| E/05_ui/dist_marker_counts.txt | All 5 markers > 0 | Proves CR3 PASS |
-| E/02_inventory/rg_outbound_network.txt | 156 lines | **BLOCKER - must inspect** |
-| E/02_inventory/rg_mutation_signals.txt | 266 lines | **BLOCKER - must inspect** |
+| $E/03_tests/npm_test_exit_code.txt | 0 | Proves CR1 PASS |
+| $E/03_tests/npm_test_full.log | 2728/2753 PASS | Tests comprehensive |
+| $E/05_ui/dist_marker_counts.txt | All 5 markers > 0 | Proves CR3 PASS |
+| $E/02_inventory/rg_outbound_network.txt | 156 lines | **BLOCKER - must inspect** |
+| $E/02_inventory/rg_mutation_signals.txt | 266 lines | **BLOCKER - must inspect** |
 
 ---
 
@@ -159,9 +157,9 @@ PROD_READY_VERDICT.txt   Final one-line verdict (FAIL for this audit)
 
 | CR | Requirement | Evidence | Status | Action |
 |----|-------------|----------|--------|--------|
-| 1  | Tests exit 0 | E/03_tests/npm_test_exit_code.txt | ✅ PASS | None |
-| 2  | Build completes | E/04_build build_exit_code.txt = 0 | ✅ PASS | All 8 verification gates pass |
-| 3  | UI markers present | E/05_ui/dist_marker_counts.txt | ✅ PASS | None |
+| 1  | Tests exit 0 | $E/03_tests/npm_test_exit_code.txt | ✅ PASS | None |
+| 2  | Build completes | $E/04_build/build_exit_code.txt = 0 | ✅ PASS | All 8 verification gates pass |
+| 3  | UI markers present | $E/05_ui/dist_marker_counts.txt | ✅ PASS | None |
 | 4  | Reason codes wired | docs/production/10_WIRING_AND_PROOFS.md W4 | ✅ PASS | None |
 | 5  | Export/verifier pack | (deferred) | 🟡 NOT PROVEN | STEP 5 investigation |
 | 6  | No forbidden files changed | git status + exception log | ✅ PASS | None |
@@ -186,7 +184,7 @@ PROD_READY_VERDICT.txt   Final one-line verdict (FAIL for this audit)
 
 ### For Security/Compliance Team
 1. Review [30_SECURITY_TRUST_PACK.md](30_SECURITY_TRUST_PACK.md) - All security claims
-2. Inspect E/02_inventory files - Confirm network & mutation scope assumptions
+2. Inspect $E/02_inventory files - Confirm network & mutation scope assumptions
 3. Cross-check [10_WIRING_AND_PROOFS.md](10_WIRING_AND_PROOFS.md) W1-W9 - Architecture coverage
 
 ### For Marketplace Submission
@@ -206,7 +204,7 @@ PROD_READY_VERDICT.txt   Final one-line verdict (FAIL for this audit)
 ### Related Documentation
 - Repository README: /workspaces/Firsttry/atlassian/forge-app/README.md
 - Existing audit report: /workspaces/Firsttry/REPO_PROGRESS_ENTERPRISE_AUDIT.md (Phase 4 validation)
-- Test output: See E/03_tests/npm_test_full.log (2728 passing tests detailed breakdown)
+- Test output: See $E/03_tests/npm_test_full.log (2728 passing tests detailed breakdown)
 
 ### Prior Audit Evidence
 The Phase 4 validation report demonstrates:

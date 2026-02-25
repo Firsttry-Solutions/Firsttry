@@ -30,7 +30,7 @@ cd /workspaces/Firsttry/atlassian/forge-app
 tools/production/run_prod_ready_audit.sh
 
 # 5. Check verdict
-echo "Verdict: $(cat "$E/PROD_READY_VERDICT.txt")"
+echo "Verdict: $(cat \"$E/PROD_READY_VERDICT.txt\")"
 
 # Expected output:
 #   Verdict: PASS
@@ -260,7 +260,7 @@ If a forbidden file MUST change:
    - Change: Upgraded typescript from 5.0 to 5.1 to fix build error in Phase-4 verification
    - Before hash: e3f2c1d9...
    - After hash: a2b9f7c3...
-   - Diff: E/10_diffs/package.json.diff
+   - Diff: $E/10_diffs/package.json.diff
    - Exit code impact: Tests still pass (npm test = 0)
    ```
 
