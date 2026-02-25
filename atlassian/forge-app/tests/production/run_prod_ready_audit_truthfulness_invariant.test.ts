@@ -8,7 +8,8 @@
  * - EXIT_FILE is initialized to "1" (fail-closed) at start
  * - VERDICT_FILE is overwritten deterministically based on OVERALL_EXIT
  * - All required subdirectories are pre-created
- * - Lock file /tmp/ft_prod_ready_dir.txt is created
+ * - FT_PROD_READY_E is the SOLE source of truth for evidence directory
+ * - No /tmp/ft_prod_ready_dir.txt fallback exists (removed)
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -40,14 +41,20 @@ describe('Production Readiness Orchestrator Truthfulness Invariant', () => {
       ).toContain('mkdir -p "$E/03_tests" "$E/04_build" "$E/05_ui" "$E/09_release" "$E/13_repo_scans"');
     });
 
-    it('orchestrator must write /tmp/ft_prod_ready_dir.txt lock file', () => {
+    it('orchestrator must validate FT_PROD_READY_E as sole source of truth', () => {
       const scriptContent = fs.readFileSync(SCRIPT_PATH, 'utf-8');
 
-      // Check for lock file creation
+      // Check for FT_PROD_READY_E validation
       expect(
         scriptContent,
-        'Script must write E directory to /tmp/ft_prod_ready_dir.txt'
-      ).toContain('echo "$E" > /tmp/ft_prod_ready_dir.txt');
+        'Script must validate FT_PROD_READY_E is set'
+      ).toContain('FT_PROD_READY_E');
+
+      // Check that /tmp/ft_prod_ready_dir.txt fallback is REMOVED
+      expect(
+        scriptContent,
+        'Script must NOT have /tmp/ft_prod_ready_dir.txt fallback'
+      ).not.toContain('ft_prod_ready_dir.txt');
     });
 
     it('orchestrator must set verdict based ONLY on OVERALL_EXIT', () => {

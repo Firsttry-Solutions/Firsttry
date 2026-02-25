@@ -6,21 +6,21 @@ set -euo pipefail
 # ==============================================================================
 # Purpose: Verify UI proof markers exist in source and shipped dist JS
 # Requirements:
-#   - E dir from /tmp/ft_prod_ready_dir.txt
+#   - FT_PROD_READY_E must be set to evidence directory
 #   - List dist JS files
 #   - Proof marker presence in source
 #   - Count marker occurrences in ALL dist JS files
 #   - FAIL if required marker in source but 0 count in dist
 
-# Read E from lock file
-if [[ ! -f /tmp/ft_prod_ready_dir.txt ]]; then
-  echo "FAIL: /tmp/ft_prod_ready_dir.txt not found. Run production audit setup first."
+# Resolve evidence directory (FT_PROD_READY_E contract, fail-closed)
+E="${FT_PROD_READY_E:-}"
+if [[ -z "$E" ]]; then
+  echo "FAIL: FT_PROD_READY_E must be set to an evidence directory path" >&2
   exit 1
 fi
 
-E=$(cat /tmp/ft_prod_ready_dir.txt)
-if [[ ! -d "$E/05_ui" ]]; then
-  echo "FAIL: Evidence directory $E/05_ui does not exist."
+if [[ ! -d "$E" ]] || [[ ! -d "$E/05_ui" ]]; then
+  echo "FAIL: FT_PROD_READY_E directory or required subdirectory does not exist: $E/05_ui" >&2
   exit 1
 fi
 
