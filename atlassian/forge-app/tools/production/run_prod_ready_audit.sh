@@ -46,8 +46,8 @@ run_step() {
   local cmd="$3"
 
   # Log step start
-  echo "Step ${step_no}/6: ${label}" >> "$STEP_SUMMARY"
-  echo "Step ${step_no}/6: ${label}" >> "$FULL_LOG"
+  echo "Step ${step_no}/7: ${label}" >> "$STEP_SUMMARY"
+  echo "Step ${step_no}/7: ${label}" >> "$FULL_LOG"
 
   # Execute step (capture exit code immediately)
   bash -c "$cmd" >> "$FULL_LOG" 2>&1
@@ -95,6 +95,10 @@ run_step 5 "Scopes justification verification" \
 # STEP 6: Proof discipline verification
 run_step 6 "Proof discipline verification" \
   "FT_PROD_READY_E=\"$E\" bash tools/production/verify_proof_discipline.sh"
+
+# STEP 7: Repo-root E/ references verification
+run_step 7 "No repo-root E refs verification" \
+  "FT_PROD_READY_E=\"$E\" bash tools/production/verify_no_repo_root_E_refs.sh"
 
 # ==============================================================================
 # Finalization: Write evidence files and exit with recorded code
