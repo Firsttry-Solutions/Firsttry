@@ -18,7 +18,11 @@ if [ -z "$E" ] || [ ! -d "$E" ]; then
   exit 1
 fi
 
-mkdir -p "$E/09_release"
+# Pre-create all required evidence subdirectories (fail-closed)
+mkdir -p "$E/03_tests" "$E/04_build" "$E/05_ui" "$E/09_release" "$E/13_repo_scans"
+
+# Write E directory to lock file so steps can find it
+echo "$E" > /tmp/ft_prod_ready_dir.txt
 
 cd /workspaces/Firsttry/atlassian/forge-app
 
@@ -30,8 +34,11 @@ STEP_SUMMARY="$E/09_release/run_prod_ready_audit.step_summary.txt"
 VERDICT_FILE="$E/PROD_READY_VERDICT.txt"
 FULL_LOG="$E/09_release/run_prod_ready_audit.full.log"
 
-# Initialize state
+# Initialize state (fail-closed)
 OVERALL_EXIT=0
+
+# Initialize exit code file to FAIL (1) by default
+echo "1" > "$EXIT_FILE"
 
 # Clear old artifacts
 : > "$STEP_SUMMARY"
@@ -106,21 +113,35 @@ run_step 7 "No repo-root E refs verification" \
 echo "" >> "$STEP_SUMMARY"
 echo "FINAL: exit=$OVERALL_EXIT" >> "$STEP_SUMMARY"
 
-# Write numeric exit code
-echo "$OVERALL_EXIT" > "$EXIT_FILE"
-
-# Write verdict based on exit code
+# Write exit code file (ALWAYS, overwriting any previous value - fail-closed)
+# Initialize to fail, then set to pass only if OVERALL_EXIT is 0
 if [ "$OVERALL_EXIT" -eq 0 ]; then
-  echo "PASS" > "$VERDICT_FILE"
-  echo "All verifications passed. Production ready." >> "$FULL_LOG"
+  echo "0" > "$EXIT_FILE"
 else
-  echo "FAIL" > "$VERDICT_FILE"
-  echo "One or more verifications failed." >> "$FULL_LOG"
+  echo "1" > "$EXIT_FILE"
 fi
 
+# Write verdict file (ALWAYS, overwriting any previous value - single source of truth)
+# Verdict is derived ONLY from OVERALL_EXIT
+if [ "$OVERALL_EXIT" -eq 0 ]; then
+  echo "PASS" > "$VERDICT_FILE"
+  VERDICT_MSG="All verifications passed. Production ready."
+else
+  echo "FAIL" > "$VERDICT_FILE"
+  VERDICT_MSG="One or more verifications failed."
+fi
+
+# Log verdict and evidence location
+echo "$VERDICT_MSG" >> "$FULL_LOG"
 echo "" >> "$FULL_LOG"
 echo "Evidence directory: $E" >> "$FULL_LOG"
 echo "Exit code: $OVERALL_EXIT" >> "$FULL_LOG"
+
+# Print verdict to stdout (matches what was written)
+echo ""
+echo "========================================="
+echo "VERDICT: $(cat "$VERDICT_FILE")"
+echo "========================================="
 
 # Exit with actual numeric code (not inferred)
 exit "$OVERALL_EXIT"
