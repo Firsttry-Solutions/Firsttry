@@ -53,11 +53,11 @@ if grep -q '"build"' "$SCRIPT_JSON"; then
   echo "Found: npm run build"
 else
   # Else prefer "build:gadget" or any script containing "build" AND "gadget"
-  BUILD_CMD=$(grep -o '"[^"]*build[^"]*gadget[^"]*"' "$SCRIPT_JSON" | head -1 | tr -d '"' || true)
+  BUILD_CMD=$(grep -o '"[^"]*build[^"]*gadget[^"]*"' "$SCRIPT_JSON" | head -1 | tr -d '"')
   
   if [[ -z "$BUILD_CMD" ]]; then
     # Last attempt: any script with "build" in name
-    BUILD_CMD=$(grep -o '"[^"]*build[^"]*"' "$SCRIPT_JSON" | head -1 | tr -d '"' || true)
+    BUILD_CMD=$(grep -o '"[^"]*build[^"]*"' "$SCRIPT_JSON" | head -1 | tr -d '"')
   fi
   
   if [[ -z "$BUILD_CMD" ]]; then
