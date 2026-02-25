@@ -9,7 +9,7 @@
  * - VERDICT_FILE is overwritten deterministically based on OVERALL_EXIT
  * - All required subdirectories are pre-created
  * - FT_PROD_READY_E is the SOLE source of truth for evidence directory
- * - No /tmp/ft_prod_ready_dir.txt fallback exists (removed)
+ * - No /tmp/ft_prod_ready_dir.txt fallback logic in orchestrator (production only)
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
