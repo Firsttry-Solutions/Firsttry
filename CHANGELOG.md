@@ -2,6 +2,47 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.4.2] - 2026-02-26
+
+### Added / Changed — F100 Trust Portal: version governance + professional layout
+
+**Portal Pack Version**: `4.4.2`
+
+**Version governance (all 35 docs)** — breaking buyer-trust confusion fixed:
+- Changed `**Version**: 1.0` → `**Version**: 4.4.2` in all 35 docs under
+  `atlassian/forge-app/docs/{trust,operations,procurement,evidence}/`
+- Chosen model: `Version` field == `portal_pack_version` from manifest; eliminates
+  the misleading "1.0 vs 4.4.x" discrepancy visible in rendered pages
+
+**`atlassian/forge-app/tools/build_trust_portal.mjs`** (upgraded — F100 layout):
+- **Styled doc-meta-card** — replaces raw bolded metadata lines at top of each page:
+  `Pack v4.4.2 | Rev 4.4.2 | Owner | Last Updated | Review | Doc ID` in a clean
+  card component with Atlassian blue-top border and accessible ARIA labelling
+- **Strip metadata lines from prose** — `**Version**:`, `**Owner**:`, `**Last Updated**:`,
+  `**Review Cycle**:`, `**Doc ID**:` lines are stripped before markdown rendering;
+  content no longer begins with a raw-markdown-style metadata dump
+- **Heading anchor links** — every `<h2>` and `<h3>` gets a `¶` anchor link on hover
+  for direct deep-linking into document sections
+- **Table hover highlight** — `tr:hover td` gets brand-light background for readability
+- **Homepage CTAs** — added "Browse Raw Docs" (GitHub link) and "Start Here: Enterprise
+  Pack Index" action buttons below the badge row
+- CSS additions: `.doc-meta-card`, `.dmc-*`, `.anchor-link`, `.pack-cta`, `.pack-version-label`
+
+**`atlassian/forge-app/tools/audit_trust_portal_source_full.mjs`** (hardened):
+- Added check 2b: `Version` field in each doc must equal `portal_pack_version` from
+  manifest; fails closed with exact sed fix command if mismatched
+
+**`atlassian/forge-app/tools/pages_pack_manifest.json`**:
+- `version`, `portal_version`, `portal_pack_version`: `4.4.1` → `4.4.2`
+
+### Gates (all pass)
+- `audit_trust_portal_source_full.mjs`: 35/35 PASS (Version check enforced)
+- `verify_pages_site_artifact.sh`: PASS (v4.4.2, 36 routes, 39 required_files)
+- `md_link_check.mjs`: ✅
+- `truth_claims_gate.mjs`: ✅
+- `email_integrity_gate.mjs`: ✅
+- `enterprise_docs_gate.sh`: ✅
+
 ## [v1.0-enterprise-docs-v4.4.1] - 2026-02-26
 
 ### Added — Full Crawler Audit, Evidence Index, CI Artifact Upload

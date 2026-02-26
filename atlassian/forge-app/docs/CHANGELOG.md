@@ -2,6 +2,21 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.4.2 — 2026-02-26 — F100 Trust Portal: version governance + professional layout
+
+### Changed
+- All 35 docs: `**Version**: 1.0` → `**Version**: 4.4.2` (version == portal_pack_version;
+  eliminates confusing "1.0" vs pack version mismatch visible to buyers)
+- `build_trust_portal.mjs`: styled `doc-meta-card` replaces raw bold metadata lines;
+  heading anchor links; table row hover; homepage CTAs (Browse Raw Docs + Start Here)
+- `audit_trust_portal_source_full.mjs`: check 2b — Version field must == portal_pack_version
+- `pages_pack_manifest.json`: bumped to 4.4.2
+
+### Gates (all pass)
+- `audit_trust_portal_source_full.mjs`: 35/35 PASS
+- `verify_pages_site_artifact.sh`: PASS (v4.4.2, 36 routes, 39 required_files)
+- `md_link_check.mjs`, `truth_claims_gate.mjs`, `email_integrity_gate.mjs`, `enterprise_docs_gate.sh`: ✅
+
 ## v4.4.1 — 2026-02-26 — Full Crawler Audit, Evidence Index, CI Artifacts
 
 ### Added

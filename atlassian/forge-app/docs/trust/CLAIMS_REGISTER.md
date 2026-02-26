@@ -1,6 +1,6 @@
 # Claims Register - Truth Audit System
 
-**Version**: 1.0  
+**Version**: 4.4.2  
 **Owner**: FirstTry Security Team  
 **Last Updated**: 2026-02-26  
 **Review Cycle**: Quarterly (Q2 2026)
