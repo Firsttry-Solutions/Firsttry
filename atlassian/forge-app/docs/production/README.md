@@ -23,9 +23,17 @@ bash tools/production/run_audit_pack.sh
 # Check verdict
 cat "$FT_PROD_READY_E/AUDIT_PACK_VERDICT.txt"
 
-# Verify pack integrity (offline)
+# Verify pack integrity (offline - can run from any directory)
 bash "$FT_PROD_READY_E/AUDIT_PACK_VERIFY.sh"
 ```
+
+### Exit Code Semantics
+
+The runner normalizes all exit codes to binary outcomes:
+- `exit 0`: Both prod-ready and enterprise audits returned success (PASS verdict)
+- `exit 1`: One or both audits failed (FAIL verdict), or forced failure condition
+
+This ensures exit codes are never leaked from upstream scripts (e.g., NODE_OPTIONS errors).
 
 ### Generated Outputs
 
@@ -33,30 +41,62 @@ bash "$FT_PROD_READY_E/AUDIT_PACK_VERIFY.sh"
 
 | File | Purpose |
 |------|---------|
-| `AUDIT_PACK_VERDICT.txt` | PASS or FAIL (matches exit code) |
-| `AUDIT_PACK_SUMMARY.md` | Human-readable summary (relative paths only) |
-| `AUDIT_PACK_MANIFEST.sha256` | Deterministic SHA256 checksums of all evidence |
-| `AUDIT_PACK_VERIFY.sh` | Offline verification script (no internet required) |
+| `AUDIT_PACK_VERDICT.txt` | PASS or FAIL (matches exit code: 0=PASS, 1=FAIL) |
+| `AUDIT_PACK_SUMMARY.md` | Human-readable summary (relative paths only, no timestamps) |
+| `AUDIT_PACK_MANIFEST.sha256` | Deterministic SHA256 checksums (excludes volatile logs) |
+| `AUDIT_PACK_VERIFY.sh` | Offline verification script (works from any directory) |
 
 **Evidence directories:**
 - `09_release/` - Production readiness evidence (from `run_prod_ready_audit.sh`)
 - `14_enterprise_audit/` - Enterprise audit evidence (from `run_enterprise_audit.sh`)
 
-### Offline Verification
+### Deterministic Manifest Policy
 
-After receiving the pack, verify integrity without re-running audits:
+The manifest (`AUDIT_PACK_MANIFEST.sha256`) includes only deterministic evidence files:
+
+**Included:**
+- Exit codes, verdicts, and summaries (e.g., `03_tests/npm_test_exit_code.txt`, `04_build/build_exit_code.txt`)
+- Deterministic structured evidence (e.g., `14_enterprise_audit/requestjira_map.csv`)
+
+**Excluded (supplemental/volatile):**
+- Full logs (`*_full.log`, e.g., `npm_test_full.log`, `build_full.log`, `run_prod_ready_audit.full.log`)
+- Volatile listings (`*_list.txt`, `*_all.txt`, `*_locations.txt`)
+- Operator logs (`stdout.txt`, `stderr.txt`) - created when output is redirected (e.g., `bash script.sh >$E/stdout.txt 2>&1`)
+- Reason: These files may vary across runs (timestamps, build variations, operator redirection); summaries are deterministic
+
+**Result:** Two successive runs with identical repo state produce byte-identical manifests.
+
+### Operator Log Handling
+
+Operators may redirect the audit pack script output:
 
 ```bash
+FT_PROD_READY_E="$E" bash tools/production/run_audit_pack.sh >"$E/stdout.txt" 2>&1
+```
+
+The `stdout.txt` file is **intentionally excluded** from the integrity manifest. This prevents false-positive verification failures when operators redirect logs, while maintaining tamper-detection for core pack artifacts (AUDIT_PACK_SUMMARY.md, AUDIT_PACK_VERDICT.txt, etc.).
+
+**Integrity scope:** The manifest verifies deterministic evidence files only, not operator logs. Core artifacts remain tamper-detectable.
+
+### Offline Verification
+
+After receiving the pack, verify integrity without re-running audits or accessing the internet:
+
+```bash
+# From any directory
+bash /path/to/AUDIT_PACK_VERIFY.sh
+
+# Or if in evidence directory
 cd "$AUDIT_PACK_LOCATION"
 bash AUDIT_PACK_VERIFY.sh
-# Check exit code: 0 = verified, 1 = tampered/incomplete
 ```
 
 The verifier:
-- Recomputes SHA256 for all evidence files
-- Compares against recorded manifest
-- Fails if files are missing or corrupted
-- Allows non-critical files (timestamps in logs, etc.) with warning
+- Locates manifest and evidence files relative to script location (works from any CWD)
+- Recomputes SHA256 for all manifest-listed evidence files
+- Compares against recorded checksums
+- Fails (exit 1) if files are missing or corrupted (evidence of tampering)
+- Allows non-manifest files with warning
 
 ---
 

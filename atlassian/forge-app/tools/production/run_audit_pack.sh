@@ -180,8 +180,8 @@ cd "$E"
   find . -type f \
     ! -name "AUDIT_PACK_MANIFEST.sha256" \
     ! -name "AUDIT_PACK_VERIFY.sh" \
-    ! -name "AUDIT_PACK_SUMMARY.md" \
-    ! -name "AUDIT_PACK_VERDICT.txt" \
+    ! -name "stdout.txt" \
+    ! -name "stderr.txt" \
     ! -name "*full.log" \
     ! -name "*_list.txt" \
     ! -name "*_all.txt" \
