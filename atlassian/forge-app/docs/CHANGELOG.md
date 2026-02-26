@@ -2,6 +2,20 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.3.5 — 2026-02-26 — Fix YAML syntax error that prevented docs.yml from running
+
+### Fixed
+- **Root cause of 404:** `docs.yml` heredoc with HTML at column 0 broke YAML block scalar
+  parsing; GitHub Actions rejected the workflow; site never deployed; live URL was 404
+- `tools/build_pages_site.mjs` (new): stand-alone Node ESM script that reads manifest,
+  copies publish_dirs, writes index.html via JS template literal - no YAML heredoc
+- `docs.yml`: build step replaced with `node atlassian/forge-app/tools/build_pages_site.mjs`
+  (single line); smoke proof simplified; build_pages_site.mjs added to trigger paths
+- `pages_pack_manifest.json`: version 4.3.4 → 4.3.5
+- YAML validated with PyYAML safe_load before commit
+
+---
+
 ## v4.3.4 — 2026-02-26 — Pages pack manifest + manifest-driven build and verification
 
 ### Added
