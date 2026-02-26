@@ -42,8 +42,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Step 1: Scan with ripgrep
-rg "\.requestJira\(" "${SRC_DIR}" -A 5 -B 0 --with-filename -n > "$TEMP_RG" 2>&1 || true
+# Step 1: Scan with ripgrep (fail-closed on command failure)
+if ! rg "\.requestJira\(" "${SRC_DIR}" -A 5 -B 0 --with-filename -n > "$TEMP_RG" 2>&1; then
+  echo "FAIL: ripgrep scanning for requestJira calls failed" >&2
+  exit 1
+fi
 
 # Step 2: Run external processor
 STATS=$(node "$PROCESSOR" "$TEMP_RG" "$CSV_FILE" 2>/dev/null || echo '{"total":0,"read":0,"write":0,"unknown":0}')
