@@ -28,6 +28,7 @@ VERDICT_FILE="$E/PROD_READY_VERDICT.txt"
 FULL_LOG="$E/09_release/run_prod_ready_audit.full.log"
 
 # Initialize state (fail-closed)
+TOTAL_STEPS=8
 OVERALL_EXIT=0
 
 # Initialize exit code file to FAIL (1) by default
@@ -46,8 +47,8 @@ run_step() {
   local cmd="$3"
 
   # Log step start
-  echo "Step ${step_no}/7: ${label}" >> "$STEP_SUMMARY"
-  echo "Step ${step_no}/7: ${label}" >> "$FULL_LOG"
+  echo "Step ${step_no}/${TOTAL_STEPS}: ${label}" >> "$STEP_SUMMARY"
+  echo "Step ${step_no}/${TOTAL_STEPS}: ${label}" >> "$FULL_LOG"
 
   # Execute step (capture exit code immediately)
   bash -c "$cmd" >> "$FULL_LOG" 2>&1
