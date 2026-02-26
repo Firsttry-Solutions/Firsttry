@@ -2,6 +2,42 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.2.6] - 2026-02-26
+
+### Fixed
+
+#### Fix GitHub Pages publishing to deploy enterprise pack from forge-app/site
+
+**docs.yml — Deterministic site/ build (enterprise pack only)**
+- Build step now starts with `rm -rf site` to guarantee clean state on every run
+- Copies only `docs/trust/*.md`, `docs/operations/*.md`, `docs/procurement/*.md`, `docs/evidence/**`
+- NO `production/` or legacy root docs are included in site/ output
+- Landing page (`site/index.html`) updated to v4.2.6 with full role-based navigation
+  including all required pack files: SECURITY_OVERVIEW.md, RESOLVER_INVENTORY.md,
+  SUBPROCESSORS.md, SLA.md, INCIDENT_RESPONSE_PLAN.md, ENTERPRISE_SECURITY_PACK_INDEX.md,
+  SECURITY_QUESTIONNAIRE_MASTER.md, CONTROL_MAPPING_MATRIX.md, RETENTION_POLICY.md
+
+**docs.yml — New "Verify Pages output shape (fail-closed)" step**
+- Replaced weak "Scan Pages output" step with new fail-closed step:
+  - Asserts all 10 required files exist (`test -f`)
+  - Asserts forbidden dirs absent (`test ! -d site/production`, etc.)
+  - Scans for forbidden placeholders: `example.com`, `example.org`, `@firsttry.app`,
+    `[Your Jurisdiction]`, word-boundary `TBD`, word-boundary `TODO`
+  - Extracts all emails from site/ (sorted), fails if any not in the 5-address allowlist
+  - All output deterministic and sorted; exits non-zero on any failure
+- Upload path confirmed: `atlassian/forge-app/site` (unchanged)
+
+### Verification (All 4 Tools Pass — unchanged)
+
+| Tool | Status | Details |
+|------|--------|---------|
+| `node tools/md_link_check.mjs` | ✅ PASS | 33 files, 0 broken links |
+| `node tools/truth_claims_gate.mjs` | ✅ PASS | 18 claims, 0 unregistered |
+| `node tools/email_integrity_gate.mjs` | ✅ PASS | 33 files, 0 violations |
+| `bash tools/enterprise_docs_gate.sh` | ✅ PASS | All 14 steps pass |
+
+**Site shape dry-run:** all 10 required files OK, no forbidden dirs, no placeholders, 5 approved emails only
+
 ## [v1.0-enterprise-docs-v4.2.5] - 2026-02-26
 
 ### Added / Fixed

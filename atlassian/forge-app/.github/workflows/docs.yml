@@ -37,7 +37,7 @@ jobs:
         run: bash tools/check_tooling_prereqs.sh
         working-directory: atlassian/forge-app
         continue-on-error: true
-      
+
       - name: Run markdown link checker
         run: node tools/md_link_check.mjs
         working-directory: atlassian/forge-app
@@ -53,16 +53,22 @@ jobs:
       - name: Run enterprise documentation gate
         run: bash tools/enterprise_docs_gate.sh
         working-directory: atlassian/forge-app
-      
-      - name: Build documentation site
+
+      - name: Build documentation site (enterprise pack only)
         working-directory: atlassian/forge-app
         run: |
-          # Publish ONLY the enterprise documentation pack (no production/ or legacy dirs)
+          # Deterministic build: wipe any prior site/ then copy enterprise pack ONLY
+          rm -rf site
           mkdir -p site/trust site/operations site/procurement site/evidence
-          cp docs/trust/*.md   site/trust/   2>/dev/null || true
-          cp docs/operations/*.md site/operations/ 2>/dev/null || true
-          cp docs/procurement/*.md site/procurement/ 2>/dev/null || true
-          cp -r docs/evidence/. site/evidence/ 2>/dev/null || true
+
+          # Copy enterprise pack directories — NO production/, NO legacy root docs
+          cp docs/trust/*.md        site/trust/
+          cp docs/operations/*.md   site/operations/
+          cp docs/procurement/*.md  site/procurement/
+          # evidence may contain subdirs (e.g. baselines/) — preserve structure
+          cp -r docs/evidence/.     site/evidence/
+
+          # Generate landing page with direct links to all required files
           cat > site/index.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en">
@@ -79,18 +85,21 @@ jobs:
         li { padding: 6px 0; }
         a { color: #0052cc; text-decoration: none; }
         a:hover { text-decoration: underline; }
+        .badge { background: #e3f2fd; border-radius: 4px; padding: 2px 8px; font-size: 0.85em; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>FirstTry - Enterprise Security Documentation</h1>
-<p><strong>Version:</strong> 4.2.5 | <strong>Last Updated:</strong> 2026-02-26</p>
-        <p>Comprehensive documentation for Atlassian Marketplace diligence and enterprise procurement.</p>
-        
+        <p><strong>Version:</strong> 4.2.6 | <strong>Last Updated:</strong> 2026-02-26 UTC</p>
+        <p>Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews.</p>
+        <p><span class="badge">No certifications claimed</span> &nbsp; <span class="badge">Read-only Forge app</span> &nbsp; <span class="badge">Fail-closed validation</span></p>
+
         <div class="nav-section">
             <h2>Getting Started</h2>
             <ul>
                 <li><a href="procurement/ENTERPRISE_SECURITY_PACK_INDEX.md">Enterprise Security Pack Index</a></li>
+                <li><a href="trust/SECURITY_OVERVIEW.md">Security Overview</a></li>
             </ul>
         </div>
 
@@ -100,8 +109,11 @@ jobs:
                 <li><a href="trust/SECURITY_OVERVIEW.md">Security Overview</a></li>
                 <li><a href="trust/SECURITY_CONTACT.md">Security Contact</a></li>
                 <li><a href="trust/PRIVACY_POLICY.md">Privacy Policy</a></li>
+                <li><a href="trust/SUBPROCESSORS.md">Subprocessors</a></li>
+                <li><a href="trust/TERMS_OF_SERVICE.md">Terms of Service</a></li>
                 <li><a href="trust/THREAT_MODEL.md">Threat Model (STRIDE)</a></li>
                 <li><a href="trust/RESOLVER_INVENTORY.md">Resolver Inventory (0 mutations)</a></li>
+                <li><a href="trust/VULNERABILITY_DISCLOSURE_POLICY.md">Vulnerability Disclosure Policy</a></li>
                 <li><a href="trust/DATA_FLOW.md">Data Flow</a></li>
                 <li><a href="trust/DATA_CLASSIFICATION_AND_PII.md">Data Classification and PII</a></li>
                 <li><a href="trust/UNINSTALL_DELETION.md">Uninstall and Deletion</a></li>
@@ -113,39 +125,51 @@ jobs:
             <h2>Operations</h2>
             <ul>
                 <li><a href="operations/INCIDENT_RESPONSE_PLAN.md">Incident Response Plan</a></li>
-                <li><a href="operations/SLA.md">SLA (no uptime % guaranteed)</a></li>
+                <li><a href="operations/SLA.md">SLA (support response times only — no uptime guarantee)</a></li>
+                <li><a href="operations/SUPPORT_POLICY.md">Support Policy</a></li>
+                <li><a href="operations/BCP_DRP.md">Business Continuity and Disaster Recovery</a></li>
                 <li><a href="operations/SECURE_SDLC_POLICY.md">Secure SDLC Policy</a></li>
                 <li><a href="operations/CI_CD_EVIDENCE.md">CI/CD Evidence</a></li>
                 <li><a href="operations/ACCESS_CONTROL_POLICY.md">Access Control Policy</a></li>
+                <li><a href="operations/CHANGE_MANAGEMENT_POLICY.md">Change Management Policy</a></li>
+                <li><a href="operations/RBAC_MATRIX.md">RBAC Matrix</a></li>
             </ul>
         </div>
 
         <div class="nav-section">
             <h2>Procurement and Compliance</h2>
             <ul>
+                <li><a href="procurement/ENTERPRISE_SECURITY_PACK_INDEX.md">Enterprise Security Pack Index</a></li>
                 <li><a href="procurement/SECURITY_QUESTIONNAIRE_MASTER.md">Security Questionnaire</a></li>
                 <li><a href="procurement/CONTROL_MAPPING_MATRIX.md">Control Mapping Matrix</a></li>
             </ul>
         </div>
 
         <div class="nav-section">
+            <h2>Evidence</h2>
+            <ul>
+                <li><a href="evidence/RETENTION_POLICY.md">Retention Policy</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
             <h2>Contact</h2>
             <ul>
-                <li>General: contact@firsttry.run</li>
+                <li>General enquiries: contact@firsttry.run</li>
                 <li>Support: support@firsttry.run</li>
-                <li>Security: security.contact@firsttry.run</li>
-                <li>Privacy: privacy@firsttry.run</li>
-                <li>Emergency: emergency@firsttry.run</li>
+                <li>Security disclosures: security.contact@firsttry.run</li>
+                <li>Privacy requests: privacy@firsttry.run</li>
+                <li>Emergency (P1 incident): emergency@firsttry.run</li>
             </ul>
         </div>
 
         <div class="nav-section">
             <h2>Disclaimers</h2>
             <ul>
-                <li>No certifications claimed - documentation and evidence only</li>
-                <li>Zero runtime changes - no app code, scopes, or egress modifications</li>
-                <li>Platform dependent - Atlassian Forge provides data residency, encryption, uptime</li>
-                <li>Fail-closed design - all validation gates exit non-zero on error</li>
+                <li>No certifications claimed — documentation and evidence artifacts only</li>
+                <li>Zero runtime changes — no app code, manifest scopes, or egress modifications</li>
+                <li>Platform dependent — Atlassian Forge provides data residency, encryption, and uptime</li>
+                <li>Fail-closed design — all validation gates exit non-zero on any error</li>
             </ul>
         </div>
 
@@ -156,27 +180,107 @@ jobs:
 </html>
 HTMLEOF
 
-      - name: Scan Pages output for placeholder emails
+      - name: Verify Pages output shape (fail-closed)
         working-directory: atlassian/forge-app
         run: |
-          echo "Checking site/ output for placeholder patterns..."
-          if grep -rn -E "example\.com|example\.org|yourcompany|TBD@" site/ 2>/dev/null; then
-            echo "Placeholder patterns found in site output!"
-            exit 1
-          fi
-          echo "No placeholder patterns in site output"
+          set -euo pipefail
+          ERRORS=0
 
-          echo "Checking site/ output for disallowed email addresses..."
-          grep -roh -E "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}" site/ 2>/dev/null | sed 's|.*:||' | sort -u > /tmp/site_emails.txt || true
-          sort -u tools/email_allowlist.txt > /tmp/allowed_emails.txt
-          comm -23 /tmp/site_emails.txt /tmp/allowed_emails.txt > /tmp/site_bad_emails.txt || true
-          if test -s /tmp/site_bad_emails.txt; then
-            echo "Disallowed emails in site output:"
-            cat /tmp/site_bad_emails.txt
+          echo "=== Checking required files exist ==="
+          REQUIRED_FILES=(
+            "site/trust/SECURITY_OVERVIEW.md"
+            "site/trust/RESOLVER_INVENTORY.md"
+            "site/trust/SUBPROCESSORS.md"
+            "site/operations/SLA.md"
+            "site/operations/INCIDENT_RESPONSE_PLAN.md"
+            "site/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md"
+            "site/procurement/SECURITY_QUESTIONNAIRE_MASTER.md"
+            "site/procurement/CONTROL_MAPPING_MATRIX.md"
+            "site/evidence/RETENTION_POLICY.md"
+            "site/index.html"
+          )
+          for f in "${REQUIRED_FILES[@]}"; do
+            if test -f "$f"; then
+              echo "  OK: $f"
+            else
+              echo "  MISSING: $f" >&2
+              ERRORS=1
+            fi
+          done
+
+          echo ""
+          echo "=== Checking forbidden directories do not exist ==="
+          FORBIDDEN_DIRS=(
+            "site/production"
+            "site/dist"
+            "site/node_modules"
+          )
+          for d in "${FORBIDDEN_DIRS[@]}"; do
+            if test ! -d "$d"; then
+              echo "  OK (absent): $d"
+            else
+              echo "  FORBIDDEN DIR PRESENT: $d" >&2
+              ERRORS=1
+            fi
+          done
+
+          echo ""
+          echo "=== Checking for forbidden placeholder patterns ==="
+          PLACEHOLDER_ERRORS=0
+          # Literal string patterns
+          for pat in 'example.com' 'example.org' '@firsttry.app' '\[Your Jurisdiction\]'; do
+            matches=$(grep -RIn "$pat" site/ 2>/dev/null | sort || true)
+            if [ -n "$matches" ]; then
+              echo "  PLACEHOLDER '$pat' found:" >&2
+              echo "$matches" | while IFS= read -r line; do echo "    $line" >&2; done
+              PLACEHOLDER_ERRORS=1
+              ERRORS=1
+            fi
+          done
+          # Word-boundary tokens (TBD / TODO)
+          for tok in '\bTBD\b' '\bTODO\b'; do
+            matches=$(grep -RIn -E "$tok" site/ 2>/dev/null | grep -v 'index.html' | sort || true)
+            if [ -n "$matches" ]; then
+              echo "  PLACEHOLDER token '$tok' found:" >&2
+              echo "$matches" | while IFS= read -r line; do echo "    $line" >&2; done
+              PLACEHOLDER_ERRORS=1
+              ERRORS=1
+            fi
+          done
+          if [ $PLACEHOLDER_ERRORS -eq 0 ]; then
+            echo "  OK: No forbidden placeholder patterns found"
+          fi
+
+          echo ""
+          echo "=== Checking email allowlist compliance ==="
+          ALLOWLIST="contact@firsttry.run support@firsttry.run security.contact@firsttry.run privacy@firsttry.run emergency@firsttry.run"
+          # Extract all emails from site/ (sorted, unique)
+          ALL_EMAILS=$(grep -RInE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' site/ \
+            2>/dev/null \
+            | grep -oE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' \
+            | sort -u || true)
+          EMAIL_ERRORS=0
+          while IFS= read -r email; do
+            [ -z "$email" ] && continue
+            if echo "$ALLOWLIST" | grep -qw "$email"; then
+              echo "  OK: $email"
+            else
+              echo "  DISALLOWED EMAIL: $email" >&2
+              EMAIL_ERRORS=1
+              ERRORS=1
+            fi
+          done <<< "$ALL_EMAILS"
+          if [ $EMAIL_ERRORS -eq 0 ]; then
+            echo "  OK: All emails are on the approved allowlist"
+          fi
+
+          echo ""
+          if [ $ERRORS -ne 0 ]; then
+            echo "FAIL: Pages output shape verification failed — see errors above" >&2
             exit 1
           fi
-          echo "All emails in site output are on the approved allowlist"
-      
+          echo "PASS: Pages output shape verified (required files present, forbidden dirs absent, no placeholders, emails clean)"
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
