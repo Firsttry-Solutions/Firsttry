@@ -15,12 +15,17 @@ on:
       - "atlassian/forge-app/tools/build_trust_portal.mjs"
       - "atlassian/forge-app/tools/audit_trust_portal_source.mjs"
       - "atlassian/forge-app/tools/audit_trust_portal_live.mjs"
+      - "atlassian/forge-app/tools/audit_trust_portal_source_full.mjs"
+      - "atlassian/forge-app/tools/audit_trust_portal_live_full.mjs"
       - "atlassian/forge-app/tools/vendor/**"
   workflow_dispatch:
 
 concurrency:
   group: pages-deploy
   cancel-in-progress: true
+
+env:
+  AUDIT_DIR: /tmp/ft_portal_audit_${{ github.run_number }}
 
 jobs:
   validate-and-publish:
@@ -87,15 +92,17 @@ jobs:
       - name: Verify Pages site artifact (fail-closed shape + content policy)
         run: bash atlassian/forge-app/tools/verify_pages_site_artifact.sh ./site
 
-      - name: Audit trust portal source (fail-closed per-doc metadata + quality)
-        run: node atlassian/forge-app/tools/audit_trust_portal_source.mjs
+      - name: Audit trust portal source — full (fail-closed per-doc metadata + quality)
+        run: node atlassian/forge-app/tools/audit_trust_portal_source_full.mjs
+        env:
+          AUDIT_DIR: ${{ env.AUDIT_DIR }}
 
       - name: Upload source audit report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: portal-source-audit-${{ github.run_number }}
-          path: /tmp/ft_portal_audit_source_*/
+          path: ${{ env.AUDIT_DIR }}/source_audit*
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -131,15 +138,17 @@ jobs:
             sleep $SLEEP_SEC
           done
 
-      - name: Audit trust portal live (fail-closed per-page version + doc-id checks)
-        run: node atlassian/forge-app/tools/audit_trust_portal_live.mjs
+      - name: Audit trust portal live — full (fail-closed per-page version + doc-id + email)
+        run: node atlassian/forge-app/tools/audit_trust_portal_live_full.mjs
+        env:
+          AUDIT_DIR: ${{ env.AUDIT_DIR }}
 
       - name: Upload live audit report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: portal-live-audit-${{ github.run_number }}
-          path: /tmp/ft_portal_audit_live_*/
+          path: ${{ env.AUDIT_DIR }}/live_audit*
 
       - name: Report success
         if: success()

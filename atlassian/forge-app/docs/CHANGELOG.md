@@ -2,6 +2,29 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.4.1 — 2026-02-26 — Full Crawler Audit, Evidence Index, CI Artifacts
+
+### Added
+- `EVIDENCE_INDEX.md` (FT-EVID-002): authoritative evidence map; published at
+  `evidence/evidence-index.html`
+- `audit_trust_portal_live_full.mjs`: full live crawler audit — home + all nav routes;
+  checks portal_pack_version, doc_id, emails, pseudo-links; outputs JSON+MD to `$AUDIT_DIR`
+- `audit_trust_portal_source_full.mjs`: full source audit — all metadata keys, doc_id
+  match, Last Updated format, no pseudo-link hrefs; 35/35 PASS
+
+### Changed
+- `pages_pack_manifest.json`: 4.4.0 → 4.4.1; added FT-EVID-002 to nav + required_files
+- `docs.yml`: `env.AUDIT_DIR`, full audit steps, deterministic artifact paths
+- `verify_pages_live.sh`: added `/evidence/evidence-index.html` to REQUIRED_PATHS
+
+### Gates (all pass)
+- `audit_trust_portal_source_full.mjs`: 35/35 PASS
+- `verify_pages_site_artifact.sh`: PASS (36 routes, 39 required_files)
+- `md_link_check.mjs`: ✅
+- `truth_claims_gate.mjs`: ✅
+- `email_integrity_gate.mjs`: ✅
+- `enterprise_docs_gate.sh`: ✅
+
 ## v4.4.0 — 2026-02-26 — F100 Trust Portal: Automated Audits + Doc IDs + Portal Pack Version
 
 ### Added

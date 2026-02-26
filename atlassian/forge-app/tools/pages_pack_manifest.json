@@ -1,12 +1,18 @@
 {
-  "version": "4.4.0",
-  "portal_version": "4.4.0",
-  "portal_pack_version": "4.4.0",
+  "version": "4.4.1",
+  "portal_version": "4.4.1",
+  "portal_pack_version": "4.4.1",
   "portal_base_url": "https://firsttry-solutions.github.io/Firsttry",
   "portal_title": "FirstTry Trust Center",
   "portal_tagline": "Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews.",
   "metadata_contract": {
-    "required_keys": ["Doc ID", "Version", "Owner", "Last Updated", "Review Cycle"],
+    "required_keys": [
+      "Doc ID",
+      "Version",
+      "Owner",
+      "Last Updated",
+      "Review Cycle"
+    ],
     "doc_id_pattern": "^FT-[A-Z]+-[0-9]{3}$",
     "last_updated_pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
     "contact": "security.contact@firsttry.run"
@@ -56,7 +62,8 @@
     "site/procurement/enterprise-pack-index.html",
     "site/procurement/security-questionnaire.html",
     "site/procurement/control-mapping-matrix.html",
-    "site/evidence/retention-policy.html"
+    "site/evidence/retention-policy.html",
+    "site/evidence/evidence-index.html"
   ],
   "portal_nav": [
     {
@@ -291,6 +298,12 @@
           "src": "atlassian/forge-app/docs/evidence/RETENTION_POLICY.md",
           "route": "evidence/retention-policy.html",
           "doc_id": "FT-EVID-001"
+        },
+        {
+          "title": "Evidence Index",
+          "src": "atlassian/forge-app/docs/evidence/EVIDENCE_INDEX.md",
+          "route": "evidence/evidence-index.html",
+          "doc_id": "FT-EVID-002"
         }
       ]
     }
