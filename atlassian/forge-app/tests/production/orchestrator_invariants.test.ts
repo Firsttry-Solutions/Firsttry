@@ -97,14 +97,17 @@ describe('Orchestrator Invariants', () => {
   });
 
   it('should write evidence files explicitly at end', () => {
-    // Check for explicit writes of exit code file and verdict file
-    // Matches patterns: echo "0" > "$EXIT_FILE" or echo "PASS" > "$VERDICT_FILE"
+    // BOTH evidence writes must be present and explicit at end of script
+    // Check for explicit writes of exit code file AND verdict file
+    // Matches patterns: echo "0" > "$EXIT_FILE" or echo "1" > "$EXIT_FILE"
+    // AND echo "PASS" > "$VERDICT_FILE" or echo "FAIL" > "$VERDICT_FILE"
     const hasExitCodeWrite = /echo\s+"[01]"\s+>\s+"?\$\{?EXIT_FILE\}?"?/.test(
       orchestratorContent
     );
     const hasVerdictWrite = /echo\s+"(PASS|FAIL)"\s+>\s+"?\$\{?VERDICT_FILE\}?"?/.test(
       orchestratorContent
     );
-    expect(hasExitCodeWrite || hasVerdictWrite).toBe(true);
+    // BOTH must be true (not OR) - fail-closed ensures explicit finalization block
+    expect(hasExitCodeWrite && hasVerdictWrite).toBe(true);
   });
 });
