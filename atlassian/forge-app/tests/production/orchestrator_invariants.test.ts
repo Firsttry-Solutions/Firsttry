@@ -127,4 +127,72 @@ describe('Orchestrator Invariants', () => {
     // BOTH must be true (not OR) - fail-closed ensures explicit finalization block
     expect(hasExitCodeWrite && hasVerdictWrite).toBe(true);
   });
+
+  it('should define function generate_proof_pack_binding', () => {
+    const hasFunction = /generate_proof_pack_binding\s*\(\s*\)/.test(
+      orchestratorContent
+    );
+    expect(hasFunction).toBe(true);
+  });
+
+  it('should write prod_ready_manifest_files.txt in binding function', () => {
+    const hasManifestFiles = /prod_ready_manifest_files\.txt/.test(
+      orchestratorContent
+    );
+    expect(hasManifestFiles).toBe(true);
+  });
+
+  it('should write prod_ready_manifest_sha256.txt in binding function', () => {
+    const hasManifestSha256 = /prod_ready_manifest_sha256\.txt/.test(
+      orchestratorContent
+    );
+    expect(hasManifestSha256).toBe(true);
+  });
+
+  it('should write prod_ready_packhash.txt in binding function', () => {
+    const hasPackHash = /prod_ready_packhash\.txt/.test(
+      orchestratorContent
+    );
+    expect(hasPackHash).toBe(true);
+  });
+
+  it('should call generate_proof_pack_binding in finalization block', () => {
+    const hasCall = /generate_proof_pack_binding/.test(
+      orchestratorContent
+    );
+    expect(hasCall).toBe(true);
+  });
+
+  it('should set LC_ALL=C for deterministic ordering', () => {
+    const hasLC_ALL = /LC_ALL=C/.test(orchestratorContent);
+    expect(hasLC_ALL).toBe(true);
+  });
+
+  it('should use find with deterministic sort for manifest', () => {
+    const hasFind = /find\s+\.\s+-type\s+f/.test(orchestratorContent);
+    const hasSort = /LC_ALL=C\s+sort/.test(orchestratorContent);
+    expect(hasFind && hasSort).toBe(true);
+  });
+
+  it('should exclude stdout/stderr from manifest', () => {
+    const hasExcludeStdout = /stdout\.txt/.test(orchestratorContent);
+    const hasExcludeStderr = /stderr\.txt/.test(orchestratorContent);
+    expect(hasExcludeStdout && hasExcludeStderr).toBe(true);
+  });
+
+  it('should use sha256sum for file hashing', () => {
+    const hasSha256 = /sha256sum/.test(orchestratorContent);
+    expect(hasSha256).toBe(true);
+  });
+
+  it('should set OVERALL_EXIT=1 if binding generation fails', () => {
+    const hasFailCheck = /OVERALL_EXIT=1/.test(orchestratorContent);
+    expect(hasFailCheck).toBe(true);
+  });
+
+  it('should have fail-closed error handling in binding function', () => {
+    const hasErrorHandler = /ERROR:.*failed/.test(orchestratorContent);
+    const hasReturnCheck = /\|\|\s+return\s+1/.test(orchestratorContent);
+    expect(hasErrorHandler && hasReturnCheck).toBe(true);
+  });
 });
