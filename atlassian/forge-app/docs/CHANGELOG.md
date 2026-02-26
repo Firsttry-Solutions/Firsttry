@@ -2,6 +2,18 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.3.1 — 2026-02-26 — Fix CI cold-install proof: pre-generate build identity files before npm test
+
+- FIXED: `tools/prove_clean_install.sh` — added Step 5a: pre-generates `src/build/backend_build.ts`
+  and `src/build/buildIdentityBackend.gen.ts` via `node tools/build_meta.mjs` and
+  `node tools/gen_backend_build_identity.mjs` before running `npm test`
+- ROOT CAUSE: these files are gitignored and do not exist on a fresh clone; source modules
+  import from them; `npm test` (Step 5) failed with "Cannot find module" because
+  `build:gadget` (Step 6, which regenerates them) ran after tests
+- EFFECT: `npm test` now passes on cold clone; `build:gadget` in Step 6 regenerates files
+  identically; CI "Verify repo clean after proof" unaffected (files remain gitignored)
+- Local status: npm test ✅ (2852 pass)  prove_clean_install.sh ✅  git status ✅
+
 ## v4.3.0 — 2026-02-26 — Complete CI isolation + required email placement enforcement
 
 - UPDATED: `ci-core.yml` — added `!atlassian/forge-app/docs/**` and `!.github/workflows/docs.yml` exclusions
