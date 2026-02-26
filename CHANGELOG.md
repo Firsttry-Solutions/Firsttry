@@ -2,6 +2,24 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.2.7] - 2026-02-26
+
+### Fixed
+
+#### Move Pages workflow to repo root so GitHub Actions actually runs it
+
+**Root cause**: GitHub Actions only executes workflows from `.github/workflows/` at the repo root.
+The docs workflow lived at `atlassian/forge-app/.github/workflows/docs.yml` and was **never executed** by GitHub Actions.
+
+- CREATED: `.github/workflows/docs.yml` at repo root — full enterprise docs validation & publish workflow
+  - All steps use `working-directory: atlassian/forge-app` so tools and docs paths resolve correctly
+  - Upload-pages-artifact path: `atlassian/forge-app/site` (correct for root-context runner)
+  - Added "Smoke proof" step: `find atlassian/forge-app/site -maxdepth 2 -type f | sort | head -200`
+    then asserts SECURITY_OVERVIEW.md, SLA.md, ENTERPRISE_SECURITY_PACK_INDEX.md exist
+  - "Verify Pages output shape (fail-closed)" step retained (full 10-file check + forbidden dirs + placeholder + email)
+- DELETED: `atlassian/forge-app/.github/workflows/docs.yml` — was never executed; root workflow is source of truth
+- All 4 local gates pass: md_link_check ✅  truth_claims_gate ✅  email_integrity_gate ✅  enterprise_docs_gate ✅
+
 ## [v1.0-enterprise-docs-v4.2.6] - 2026-02-26
 
 ### Fixed
