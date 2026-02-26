@@ -9,7 +9,11 @@
 # 1. Removes node_modules and clears npm cache
 # 2. Verifies package-lock.json exists (determinism requirement)
 # 3. Runs 'npm ci' (reproducible install from lockfile)
-# 4. Runs full test suite
+# 4a. Pre-generates build identity files (backend_build.ts, buildIdentityBackend.gen.ts)
+#     These are gitignored generated files required by source modules imported in tests.
+#     build:gadget regenerates them identically in step 5; this ensures npm test succeeds
+#     on a clean clone where these files do not yet exist on disk.
+# 4. Runs full test suite (requires build identity files from step 4a)
 # 5. Runs build:gadget (all gates)
 # 6. Validates lockfile is valid JSON
 #
@@ -93,6 +97,20 @@ if npm ci 2>&1; then
 else
   echo -e "${RED}✗ FAIL: npm ci failed${NC}"
   echo -e "${RED}Verify package-lock.json is valid and all dependencies are available${NC}"
+  exit 1
+fi
+echo ""
+
+# Step 5a: Pre-generate build identity files (required before npm test)
+# backend_build.ts and buildIdentityBackend.gen.ts are gitignored generated files.
+# They must exist for source modules that import from them (e.g. resolvers, governance).
+# build:gadget regenerates them in Step 6; this pre-generation ensures npm test succeeds
+# on a clean clone where these files do not yet exist on disk.
+echo -e "${YELLOW}[STEP 5a]${NC} Pre-generating build identity files (required for npm test)..."
+if node tools/build_meta.mjs 2>&1 | tail -5 && node tools/gen_backend_build_identity.mjs 2>&1 | tail -5; then
+  echo -e "${GREEN}✓${NC} Build identity files generated (backend_build.ts, buildIdentityBackend.gen.ts)"
+else
+  echo -e "${RED}✗ FAIL: Pre-generation of build identity files failed${NC}"
   exit 1
 fi
 echo ""

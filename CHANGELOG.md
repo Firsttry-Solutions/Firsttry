@@ -2,6 +2,27 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.3.1] - 2026-02-26
+
+### Fixed
+
+#### CI Core cold-install proof: pre-generate build identity files before npm test
+
+**`atlassian/forge-app/tools/prove_clean_install.sh`**
+- Added Step 5a: runs `node tools/build_meta.mjs` and `node tools/gen_backend_build_identity.mjs`
+  before `npm test` to generate `src/build/backend_build.ts` and
+  `src/build/buildIdentityBackend.gen.ts`
+- Root cause: these files are gitignored generated files that do not exist on a fresh
+  clone; multiple source modules import from them; `npm test` (Step 5) failed with
+  "Cannot find module" on a cold clone because `build:gadget` (which generates them)
+  ran after the test step
+- Fix: pre-generation in Step 5a creates the files with the real git SHA before tests
+  run; `build:gadget` in Step 6 regenerates them identically — no dirty-tree side-effect
+- The CI "Verify repo clean after proof" check is unaffected (files remain gitignored)
+
+Local gate status (2026-02-26):
+  npm test ✅ (2852/2877 pass)  prove_clean_install.sh ✅  git status --porcelain ✅
+
 ## [v1.0-enterprise-docs-v4.3.0] - 2026-02-26
 
 ### Changed
