@@ -2,6 +2,30 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.2.8] - 2026-02-26
+
+### Added
+
+#### Fail-closed live GitHub Pages verification
+
+**`atlassian/forge-app/tools/verify_pages_live.sh` (new)**
+- Bash script (`set -euo pipefail`) verifying the live site post-deploy
+- Checks HTTP 200 for all 10 required enterprise pack URLs
+- Checks HTTP non-200 for forbidden paths (`/production/`, `/dist/`, `/node_modules/`)
+- Scans fetched content for placeholder patterns (`example.com`, `example.org`,
+  `@firsttry.app`, `[Your Jurisdiction]`, whole-word `TBD`, whole-word `TODO`)
+- Extracts all emails from fetched content and fails if any are not on the 5-address allowlist
+- Prints deterministic `PASS`/`FAIL` summary per URL; exits non-zero on any failure
+
+**`.github/workflows/docs.yml` — new post-deploy step**
+- "Verify live GitHub Pages (fail-closed, with propagation retries)" added after `deploy-pages`
+- Retries up to 6 times with 10-second sleep between attempts to handle CDN propagation
+- Fails workflow if all 6 attempts fail
+- No runtime code changes; no new npm dependencies
+
+Local gate status (2026-02-26T085354Z):
+  md_link_check ✅  truth_claims_gate ✅  email_integrity_gate ✅  enterprise_docs_gate ✅
+
 ## [v1.0-enterprise-docs-v4.2.7] - 2026-02-26
 
 ### Fixed

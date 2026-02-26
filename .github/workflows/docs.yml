@@ -318,7 +318,28 @@ HTMLEOF
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-      
+
+      - name: Verify live GitHub Pages (fail-closed, with propagation retries)
+        run: |
+          set -euo pipefail
+          MAX_TRIES=6
+          SLEEP_SEC=10
+          attempt=0
+          while true; do
+            attempt=$((attempt + 1))
+            echo "=== Attempt $attempt / $MAX_TRIES ==="
+            if bash atlassian/forge-app/tools/verify_pages_live.sh; then
+              echo "Live verification PASSED on attempt $attempt"
+              exit 0
+            fi
+            if [ $attempt -ge $MAX_TRIES ]; then
+              echo "FAIL: Live verification failed after $MAX_TRIES attempts" >&2
+              exit 1
+            fi
+            echo "Waiting ${SLEEP_SEC}s for GitHub Pages propagation..."
+            sleep $SLEEP_SEC
+          done
+
       - name: Report success
         if: success()
         run: |

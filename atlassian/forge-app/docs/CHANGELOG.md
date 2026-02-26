@@ -2,6 +2,19 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.2.8 — 2026-02-26 — Add fail-closed live GitHub Pages verification
+
+- CREATED: `tools/verify_pages_live.sh` — bash script verifying live site post-deploy
+  - HTTP 200 check for all 10 required enterprise pack URLs
+  - HTTP non-200 check for forbidden paths (/production/, /dist/, /node_modules/)
+  - Per-page placeholder scan + email allowlist enforcement on fetched content
+  - Deterministic PASS/FAIL summary; exits non-zero on any failure
+- UPDATED: `.github/workflows/docs.yml` — added "Verify live GitHub Pages" step after deploy
+  - 6 retries × 10s sleep to handle GitHub Pages CDN propagation
+  - Fail-closed: fails workflow if all retries exhausted
+- No runtime changes; no new npm dependencies
+- Local gates: md_link_check ✅  truth_claims_gate ✅  email_integrity_gate ✅  enterprise_docs_gate ✅
+
 ## v4.2.7 — 2026-02-26 — Move Pages workflow to repo root so Actions actually runs
 
 - CREATED: `.github/workflows/docs.yml` at repo root — GitHub Actions only reads workflows from repo root
