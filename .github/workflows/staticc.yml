@@ -170,11 +170,17 @@ jobs:
           test -f "$OUT/security/index.html"
           test -f "$OUT/privacy/index.html"
 
+      # DISABLED: docs.yml (enterprise pack) is the sole Pages deploy source.
+      # These steps are disabled to prevent staticc.yml from overwriting the
+      # enterprise documentation artifact. Re-enable only after coordinating
+      # with docs.yml concurrency group.
       - name: Upload artifact (static site)
+        if: false
         uses: actions/upload-pages-artifact@v3
         with:
           path: "_site"
 
       - name: Deploy to GitHub Pages
+        if: false
         id: deployment
         uses: actions/deploy-pages@v4

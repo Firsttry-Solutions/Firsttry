@@ -2,6 +2,17 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.3.2 — 2026-02-26 — GitHub Pages: enterprise pack only + fail-closed artifact policy
+
+- DISABLED: `staticc.yml` upload-pages-artifact + deploy-pages steps (`if: false`)
+  — prevents legacy docs overwriting the enterprise pack artifact
+- NEW: `tools/verify_pages_site_artifact.sh` — standalone fail-closed script;
+  checks required files, forbidden dirs, placeholders (grep -F), email allowlist
+- UPDATED: `docs.yml` — replaced inline shape verificaton with script call;
+  updated landing page version 4.2.7 → 4.3.2
+- MANUAL ACTION: GitHub Pages source must be set to "GitHub Actions" in repo Settings → Pages
+- Local gates: all 4 gates ✅  verify_pages_site_artifact.sh ✅
+
 ## v4.3.1 — 2026-02-26 — Fix CI cold-install proof: pre-generate build identity files before npm test
 
 - FIXED: `tools/prove_clean_install.sh` — added Step 5a: pre-generates `src/build/backend_build.ts`

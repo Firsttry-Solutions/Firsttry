@@ -99,7 +99,7 @@ jobs:
 <body>
     <div class="container">
         <h1>FirstTry - Enterprise Security Documentation</h1>
-        <p><strong>Version:</strong> 4.2.7 | <strong>Last Updated:</strong> 2026-02-26 UTC</p>
+        <p><strong>Version:</strong> 4.3.2 | <strong>Last Updated:</strong> 2026-02-26 UTC</p>
         <p>Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews.</p>
         <p><span class="badge">No certifications claimed</span> &nbsp; <span class="badge">Read-only Forge app</span> &nbsp; <span class="badge">Fail-closed validation</span></p>
 
@@ -214,106 +214,9 @@ HTMLEOF
           fi
           echo "PASS: All 3 smoke-proof files present in site/"
 
-      - name: Verify Pages output shape (fail-closed)
+      - name: Verify Pages site artifact (shape + content policy)
         working-directory: atlassian/forge-app
-        run: |
-          set -euo pipefail
-          ERRORS=0
-
-          echo "=== Checking required files exist ==="
-          REQUIRED_FILES=(
-            "site/trust/SECURITY_OVERVIEW.md"
-            "site/trust/RESOLVER_INVENTORY.md"
-            "site/trust/SUBPROCESSORS.md"
-            "site/operations/SLA.md"
-            "site/operations/INCIDENT_RESPONSE_PLAN.md"
-            "site/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md"
-            "site/procurement/SECURITY_QUESTIONNAIRE_MASTER.md"
-            "site/procurement/CONTROL_MAPPING_MATRIX.md"
-            "site/evidence/RETENTION_POLICY.md"
-            "site/index.html"
-          )
-          for f in "${REQUIRED_FILES[@]}"; do
-            if test -f "$f"; then
-              echo "  OK: $f"
-            else
-              echo "  MISSING: $f" >&2
-              ERRORS=1
-            fi
-          done
-
-          echo ""
-          echo "=== Checking forbidden directories do not exist ==="
-          FORBIDDEN_DIRS=(
-            "site/production"
-            "site/dist"
-            "site/node_modules"
-          )
-          for d in "${FORBIDDEN_DIRS[@]}"; do
-            if test ! -d "$d"; then
-              echo "  OK (absent): $d"
-            else
-              echo "  FORBIDDEN DIR PRESENT: $d" >&2
-              ERRORS=1
-            fi
-          done
-
-          echo ""
-          echo "=== Checking for forbidden placeholder patterns ==="
-          PLACEHOLDER_ERRORS=0
-          # Literal string patterns
-          for pat in 'example.com' 'example.org' '@firsttry.app' '\[Your Jurisdiction\]'; do
-            matches=$(grep -RIn "$pat" site/ 2>/dev/null | sort || true)
-            if [ -n "$matches" ]; then
-              echo "  PLACEHOLDER '$pat' found:" >&2
-              echo "$matches" | while IFS= read -r line; do echo "    $line" >&2; done
-              PLACEHOLDER_ERRORS=1
-              ERRORS=1
-            fi
-          done
-          # Word-boundary tokens (TBD / TODO)
-          for tok in '\bTBD\b' '\bTODO\b'; do
-            matches=$(grep -RIn -E "$tok" site/ 2>/dev/null | grep -v 'index.html' | sort || true)
-            if [ -n "$matches" ]; then
-              echo "  PLACEHOLDER token '$tok' found:" >&2
-              echo "$matches" | while IFS= read -r line; do echo "    $line" >&2; done
-              PLACEHOLDER_ERRORS=1
-              ERRORS=1
-            fi
-          done
-          if [ $PLACEHOLDER_ERRORS -eq 0 ]; then
-            echo "  OK: No forbidden placeholder patterns found"
-          fi
-
-          echo ""
-          echo "=== Checking email allowlist compliance ==="
-          ALLOWLIST="contact@firsttry.run support@firsttry.run security.contact@firsttry.run privacy@firsttry.run emergency@firsttry.run"
-          # Extract all emails from site/ (sorted, unique)
-          ALL_EMAILS=$(grep -RInE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' site/ \
-            2>/dev/null \
-            | grep -oE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' \
-            | sort -u || true)
-          EMAIL_ERRORS=0
-          while IFS= read -r email; do
-            [ -z "$email" ] && continue
-            if echo "$ALLOWLIST" | grep -qw "$email"; then
-              echo "  OK: $email"
-            else
-              echo "  DISALLOWED EMAIL: $email" >&2
-              EMAIL_ERRORS=1
-              ERRORS=1
-            fi
-          done <<< "$ALL_EMAILS"
-          if [ $EMAIL_ERRORS -eq 0 ]; then
-            echo "  OK: All emails are on the approved allowlist"
-          fi
-
-          echo ""
-          if [ $ERRORS -ne 0 ]; then
-            echo "FAIL: Pages output shape verification failed — see errors above" >&2
-            exit 1
-          fi
-          echo "PASS: Pages output shape verified (required files present, forbidden dirs absent, no placeholders, emails clean)"
+        run: bash tools/verify_pages_site_artifact.sh site
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
