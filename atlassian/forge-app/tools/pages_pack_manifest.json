@@ -1,5 +1,5 @@
 {
-  "version": "4.3.4",
+  "version": "4.3.5",
   "publish_root": "site",
   "required_files": [
     "site/index.html",

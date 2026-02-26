@@ -2,6 +2,34 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.3.5] - 2026-02-26
+
+### Fixed
+
+#### YAML syntax error in docs.yml broke all GitHub Actions workflow runs
+
+**Root cause:** `docs.yml` build step used a bash heredoc (`cat > site/index.html << HTMLEOF`) with HTML content starting at column 0. YAML block scalar parsing terminates when a line is less-indented than the established block level (column 10), so PyYAML stopped parsing the `run:` block at `<!DOCTYPE html>` (column 0) and treated the HTML as top-level YAML. GitHub Actions rejected the entire workflow file, so docs.yml never ran, site was never deployed, and `https://firsttry-solutions.github.io/Firsttry/` returned 404.
+
+**Fix (`atlassian/forge-app/tools/build_pages_site.mjs`)** (new)
+- Stand-alone Node ESM script: reads `pages_pack_manifest.json`, copies all
+  `publish_dirs` into `site/`, writes `site/index.html` using JS template literals
+  (no heredoc in YAML)
+- Called from docs.yml as a single line: `node atlassian/forge-app/tools/build_pages_site.mjs`
+- Version and date injected from manifest + `new Date().toISOString()`
+- All five approved email addresses present in generated HTML
+
+**Fix (`.github/workflows/docs.yml`)**
+- Replaced 160-line YAML-breaking heredoc build step with:
+  `run: node atlassian/forge-app/tools/build_pages_site.mjs`
+- Replaced complex smoke proof with a 2-line list-and-grep step
+- Added `build_pages_site.mjs` to trigger paths
+- YAML validated with PyYAML `safe_load` — no errors
+
+**Fix (`atlassian/forge-app/tools/pages_pack_manifest.json`)**
+- Version bumped 4.3.4 → 4.3.5
+
+---
+
 ## [v1.0-enterprise-docs-v4.3.4] - 2026-02-26
 
 ### Added
