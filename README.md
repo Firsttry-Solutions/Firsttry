@@ -10,7 +10,23 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 
 ---
 
-## 📋 Scope Boundaries & Explicit Non-Goals
+## � Enterprise Security & Compliance Documentation
+
+### Complete Security Package for Marketplace & Enterprise Diligence
+
+**For procurement teams, security audits, and enterprise buyers**: See **[forge-app/docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md](forge-app/docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md)** — comprehensive index covering:
+
+- **Trust Center** (18 docs): Security architecture, threat modeling (STRIDE), data flows, platform dependencies, crypto specs, deletion SLAs
+- **Operations** (11 docs): Incident response (with severity matrix), SDLC, CI/CD evidence, change management, SLAs (NO uptime guarantees), support response times
+- **Procurement** (3 docs): Master index, pre-filled security questionnaire, SOC2/ISO27k/CAIQ control mapping
+
+All documentation backed by deterministic evidence artifacts and fail-closed validation gates. **NO certifications claimed** — documentation and evidence only.
+
+→ **[forge-app/docs/README.md](forge-app/docs/README.md)** for full navigation by role (CISO, Reviewer, Jira Admin, Compliance Officer)
+
+---
+
+## �📋 Scope Boundaries & Explicit Non-Goals
 
 This application is intentionally limited in scope.
 

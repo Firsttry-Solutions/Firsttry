@@ -2,24 +2,33 @@
 
 ---
 
+## � ENTERPRISE SECURITY DOCUMENTATION
+
+**Looking for security, compliance, and procurement docs?** See **[procurement/ENTERPRISE_SECURITY_PACK_INDEX.md](procurement/ENTERPRISE_SECURITY_PACK_INDEX.md)** — comprehensive index for security diligence, control mapping, and evidence bundles.
+
+---
+
 ## 🚀 START HERE (Choose Your Path)
 
-### For Enterprise Buyers
-→ **[ENTERPRISE_PACKET.md](ENTERPRISE_PACKET.md)** — Curated docs for decision-makers (C-suite, legal, security)  
-_45-60 min read covering business case, security, privacy, implementation, pricing_
+### For Enterprise Procurement/CISO
+→ **[procurement/ENTERPRISE_SECURITY_PACK_INDEX.md](procurement/ENTERPRISE_SECURITY_PACK_INDEX.md)** — Master index for all security documentation  
+→ **[procurement/SECURITY_QUESTIONNAIRE_MASTER.md](procurement/SECURITY_QUESTIONNAIRE_MASTER.md)** — Pre-answered vendor diligence questionnaire  
+→ **[procurement/CONTROL_MAPPING_MATRIX.md](procurement/CONTROL_MAPPING_MATRIX.md)** — SOC2, ISO27k, CAIQ framework mappings  
+→ **[trust/THREAT_MODEL.md](trust/THREAT_MODEL.md)** — STRIDE analysis with mitigations
 
 ### For Marketplace Reviewers  
-→ **[REVIEWER_PACKET.md](REVIEWER_PACKET.md)** — Comprehensive approval packet for Atlassian Marketplace reviewers  
-_60-90 min read with verification checklists and decision matrix_
+→ **[trust/SECURITY_OVERVIEW.md](trust/SECURITY_OVERVIEW.md)** — Security posture and shared responsibility model  
+→ **[trust/RESOLVER_INVENTORY.md](trust/RESOLVER_INVENTORY.md)** — Evidence of read-only operations (no mutations)  
+→ **[operations/CI_CD_EVIDENCE.md](operations/CI_CD_EVIDENCE.md)** — Dependency scanning and evidence artifacts
 
 ### For Jira Admins (Implementation)
-→ **[AUDIT_USAGE_GUIDE.md](AUDIT_USAGE_GUIDE.md)** — Step-by-step installation and usage guide  
-_5-10 min setup, 5 min configuration, 30-60 days to audit-ready_
+→ **[trust/CUSTOMER_RESPONSIBILITIES.md](trust/CUSTOMER_RESPONSIBILITIES.md)** — Your obligations and configuration steps  
+→ **[trust/UNINSTALL_DELETION.md](trust/UNINSTALL_DELETION.md)** — Data deletion workflow and SLA
 
 ### For Security/Compliance Review
-→ **[READ_ONLY_ASSURANCE.md](READ_ONLY_ASSURANCE.md)** — Authoritative read-only verification  
-→ **[FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md)** — Single source of truth for all factual claims  
-→ **[DOC_STANDARD.md](DOC_STANDARD.md)** — Documentation quality standard and template
+→ **[trust/SECURITY_OVERVIEW.md](trust/SECURITY_OVERVIEW.md)** — Security model and controls  
+→ **[operations/INCIDENT_RESPONSE_PLAN.md](operations/INCIDENT_RESPONSE_PLAN.md)** — Incident handling procedures  
+→ **[operations/SLA.md](operations/SLA.md)** — Support response SLAs (NO uptime guarantees)
 
 ---
 

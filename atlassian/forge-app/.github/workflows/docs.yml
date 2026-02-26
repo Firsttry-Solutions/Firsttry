@@ -1,0 +1,42 @@
+name: Enterprise Documentation Gate
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  enterprise-docs-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git diffs
+      
+      - name: Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: npm clean install
+        run: npm ci
+      
+      - name: Check tooling prerequisites
+        run: bash tools/check_tooling_prereqs.sh
+        continue-on-error: true  # Note: forge/trivy may not be available on runner
+        # This is expected; workflow will fail if truly critical tools missing
+      
+      - name: Run markdown link checker
+        run: node tools/md_link_check.mjs
+      
+      - name: Run enterprise documentation gate
+        run: bash tools/enterprise_docs_gate.sh
+      
+      - name: Report status
+        if: success()
+        run: |
+          echo "✅ Enterprise Documentation Gate PASSED"
+          echo "Tag: ${{ github.ref }}"
