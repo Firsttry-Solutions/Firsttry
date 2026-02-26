@@ -2,6 +2,39 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.3.2] - 2026-02-26
+
+### Fixed
+
+#### GitHub Pages: enterprise pack is now the sole published artifact
+
+**`.github/workflows/staticc.yml`**
+- Disabled `actions/upload-pages-artifact` and `actions/deploy-pages` steps (added `if: false`)
+- Root cause: staticc.yml was the only other active workflow with deploy-pages; its
+  `workflow_dispatch` trigger allowed it to overwrite the enterprise pack artifact
+- Build/validation steps left intact; only the deploy steps disabled
+- GitHub Pages source: **must be set to "GitHub Actions"** in repo Settings → Pages
+
+**`atlassian/forge-app/tools/verify_pages_site_artifact.sh`** (new)
+- Standalone fail-closed script: asserts required files, forbidden dirs absent,
+  no placeholder tokens (example.com/org, @firsttry.app, [Your Jurisdiction], TBD, TODO),
+  all emails on 5-address allowlist — exits non-zero on any failure
+- Uses `grep -F` for literal placeholder patterns to prevent regex false positives
+
+**`.github/workflows/docs.yml`**
+- Replaced 80-line inline "Verify Pages output shape" step with
+  `bash tools/verify_pages_site_artifact.sh site` (single call, same semantics)
+- Updated landing page version string: 4.2.7 → 4.3.2
+
+Local gate status (2026-02-26):
+  md_link_check ✅  truth_claims_gate ✅  email_integrity_gate ✅  enterprise_docs_gate ✅
+  verify_pages_site_artifact.sh ✅ (10/10 required files, 0 placeholders, 5/5 emails OK)
+
+GitHub Pages checklist (manual action required):
+  [ ] Repo Settings → Pages → Source: GitHub Actions (not a branch/folder)
+  [ ] Only .github/workflows/docs.yml should be the deploying workflow
+  [ ] staticc.yml deploy steps are now disabled (if: false)
+
 ## [v1.0-enterprise-docs-v4.3.1] - 2026-02-26
 
 ### Fixed
