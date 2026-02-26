@@ -156,13 +156,12 @@ generate_proof_pack_binding() {
       return 1
     fi
 
-    # manifest_hash_inputs: manifest_files MINUS the computed-output files AND full.log
+    # manifest_hash_inputs: manifest_files MINUS the two computed-output files only
     # - manifest_sha256 and packhash cannot be included in their own input set
-    # - run_prod_ready_audit.full.log is excluded because finalization writes occur
-    #   after this function returns (post-binding lines are not captured in the hash)
+    # - run_prod_ready_audit.full.log IS included: all final writes to it happen
+    #   BEFORE generate_proof_pack_binding is called (see finalization section below)
     grep -v '^09_release/prod_ready_manifest_sha256\.txt$' "$manifest_files" \
       | grep -v '^09_release/prod_ready_packhash\.txt$' \
-      | grep -v '^09_release/run_prod_ready_audit\.full\.log$' \
       > "$manifest_hash_inputs"
 
     if [ ! -s "$manifest_hash_inputs" ]; then
@@ -198,29 +197,22 @@ generate_proof_pack_binding() {
 }
 
 # ==============================================================================
-# Finalization: Generate binding + write evidence files and exit with recorded code
+# Finalization:
+#   1. Write all final evidence (EXIT_FILE, VERDICT_FILE, FULL_LOG banner) FIRST.
+#   2. Call generate_proof_pack_binding LAST — so full.log is fully written and
+#      can be included in hash_inputs with a stable hash.
 # ==============================================================================
 echo "" >> "$STEP_SUMMARY"
 echo "FINAL: exit=$OVERALL_EXIT" >> "$STEP_SUMMARY"
 
-# Generate tamper-evident proof pack binding (MUST succeed or mark overall failure)
-if ! generate_proof_pack_binding >> "$FULL_LOG" 2>&1; then
-  echo "ERROR: failed to generate proof pack binding" >> "$FULL_LOG"
-  OVERALL_EXIT=1
-else
-  echo "✓ Proof pack binding generated successfully" >> "$FULL_LOG"
-fi
-
-# Write exit code file (ALWAYS, overwriting any previous value - fail-closed)
-# Initialize to fail, then set to pass only if OVERALL_EXIT is 0
+# Write exit code file (fail-closed: 1 unless OVERALL_EXIT is 0)
 if [ "$OVERALL_EXIT" -eq 0 ]; then
   echo "0" > "$EXIT_FILE"
 else
   echo "1" > "$EXIT_FILE"
 fi
 
-# Write verdict file (ALWAYS, overwriting any previous value - single source of truth)
-# Verdict is derived ONLY from OVERALL_EXIT
+# Write verdict file (single source of truth, derived ONLY from OVERALL_EXIT)
 if [ "$OVERALL_EXIT" -eq 0 ]; then
   echo "PASS" > "$VERDICT_FILE"
   VERDICT_MSG="All verifications passed. Production ready."
@@ -229,13 +221,22 @@ else
   VERDICT_MSG="One or more verifications failed."
 fi
 
-# Log verdict and evidence location
+# *** LAST WRITES TO FULL_LOG — nothing may append to FULL_LOG after this block ***
 echo "$VERDICT_MSG" >> "$FULL_LOG"
 echo "" >> "$FULL_LOG"
 echo "Evidence directory: $E" >> "$FULL_LOG"
 echo "Exit code: $OVERALL_EXIT" >> "$FULL_LOG"
+# *** END LAST WRITES TO FULL_LOG ***
 
-# Print verdict to stdout (matches what was written)
+# Generate tamper-evident proof pack binding (seals full.log — MUST be last)
+# Binding output goes to stdout/stderr (captured in stdout.txt/stderr.txt by caller),
+# NOT appended to FULL_LOG, so full.log hash remains stable.
+if ! generate_proof_pack_binding; then
+  echo "ERROR: failed to generate proof pack binding" >&2
+  OVERALL_EXIT=1
+fi
+
+# Print verdict to stdout (matches what was written to VERDICT_FILE)
 echo ""
 echo "========================================="
 echo "VERDICT: $(cat "$VERDICT_FILE")"

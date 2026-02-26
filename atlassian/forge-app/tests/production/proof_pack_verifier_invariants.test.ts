@@ -32,8 +32,8 @@ mkdir -p "$PACK/09_release"
 echo "PASS"             > "$PACK/PROD_READY_VERDICT.txt"
 echo "0"                > "$PACK/09_release/run_prod_ready_audit.exit_code.txt"
 echo "step output data" > "$PACK/09_release/some_step.txt"
-# Simulate full.log — it exists in the pack but is post-binding written in real runs,
-# so it is excluded from hash_inputs (same as manifest_sha256/packhash)
+# full.log is fully written before binding generation (all final writes happen first),
+# so it is included in hash_inputs and gets a stable sha256
 echo "audit log data"   > "$PACK/09_release/run_prod_ready_audit.full.log"
 
 cd "$PACK"
@@ -58,11 +58,10 @@ find . -type f \\
   | grep -v '^stderr\\.txt$' \\
   | LC_ALL=C sort > 09_release/prod_ready_manifest_files.txt
 
-# hash_inputs: manifest_files minus computed-output files AND the full.log
-# (full.log has post-binding writes in real audit runs — must not be hashed)
+# hash_inputs: manifest_files minus the two computed-output files only
+# (full.log IS included: all writes to it finish before binding generation)
 grep -v '^09_release/prod_ready_manifest_sha256\.txt$' 09_release/prod_ready_manifest_files.txt \\
   | grep -v '^09_release/prod_ready_packhash\.txt$' \\
-  | grep -v '^09_release/run_prod_ready_audit\.full\.log$' \\
   > 09_release/prod_ready_manifest_hash_inputs.txt
 
 # manifest_sha256: sha256 of each file in hash_inputs (in order)
@@ -259,14 +258,14 @@ describe('Proof Pack Verifier Invariants', () => {
     expect(exclusions).not.toContain('prod_ready_packhash.txt');
   });
 
-  it('valid pack: hash_inputs must NOT include manifest_sha256, packhash, or full.log', () => {
+  it('valid pack: hash_inputs must NOT include manifest_sha256 or packhash, but MUST include full.log', () => {
     createValidPack(packDir);
     const hashInputs = fs.readFileSync(
       path.join(packDir, '09_release/prod_ready_manifest_hash_inputs.txt'), 'utf-8'
     );
     expect(hashInputs).not.toContain('prod_ready_manifest_sha256.txt');
     expect(hashInputs).not.toContain('prod_ready_packhash.txt');
-    // full.log excluded because the orchestrator writes to it after binding generation
-    expect(hashInputs).not.toContain('run_prod_ready_audit.full.log');
+    // full.log IS in hash_inputs: all writes to it finish before binding generation
+    expect(hashInputs).toContain('run_prod_ready_audit.full.log');
   });
 });

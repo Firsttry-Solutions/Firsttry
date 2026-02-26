@@ -294,12 +294,11 @@ describe('Orchestrator Invariants', () => {
     expect(excludesPackhash).toBe(true);
   });
 
-  it('hash_inputs must exclude run_prod_ready_audit.full.log (post-binding writes invalidate its hash)', () => {
-    // The orchestrator writes to full.log AFTER generate_proof_pack_binding returns
-    // (e.g. "Proof pack binding generated successfully", the verdict message, etc.)
-    // Excluding it from hash_inputs prevents a guaranteed hash mismatch; the file
-    // is still listed in manifest_files for completeness.
-    const excludesFullLog = /grep\s+-v.*\^09_release\/run_prod_ready_audit\\\.full\\\.log\$/.test(orchestratorContent);
-    expect(excludesFullLog).toBe(true);
+  it('hash_inputs must include run_prod_ready_audit.full.log (all writes happen before binding)', () => {
+    // All final writes to full.log (verdict, evidence path, exit code) happen
+    // BEFORE generate_proof_pack_binding is called, so full.log has a stable hash
+    // and can be included in hash_inputs. The exclusion grep -v must NOT cover it.
+    const excludesFullLog = /grep\s+-v.*\^09_release\/run_prod_ready_audit\\.full\\.log\$/.test(orchestratorContent);
+    expect(excludesFullLog).toBe(false);
   });
 });

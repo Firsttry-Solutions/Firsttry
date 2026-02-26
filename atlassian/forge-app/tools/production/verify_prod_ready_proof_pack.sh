@@ -128,7 +128,6 @@ trap 'rm -f "$RECOMPUTED_HASH_INPUTS"' EXIT
 
 grep -v '^09_release/prod_ready_manifest_sha256\.txt$' "$MANIFEST_FILES" \
   | grep -v '^09_release/prod_ready_packhash\.txt$' \
-  | grep -v '^09_release/run_prod_ready_audit\.full\.log$' \
   > "$RECOMPUTED_HASH_INPUTS"
 
 if ! diff -q "$RECOMPUTED_HASH_INPUTS" "$MANIFEST_HASH_INPUTS" > /dev/null 2>&1; then
