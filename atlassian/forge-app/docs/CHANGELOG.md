@@ -2,6 +2,31 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.4.0 — 2026-02-26 — F100 Trust Portal: Automated Audits + Doc IDs + Portal Pack Version
+
+### Added
+- `audit_trust_portal_source.mjs` (new): per-doc source audit — metadata keys, Doc ID
+  format, Last Updated format, placeholders, H1 count, HTML link integrity
+- `audit_trust_portal_live.mjs` (new): per-page live audit — HTTP 200, Portal Pack
+  Version string, doc_id in body, allowlist emails, forbidden paths
+- `inject_doc_ids.mjs` (new): one-shot idempotent script to add Doc IDs to all docs
+- Doc IDs injected into all 34 markdown source docs (FT-TRUST/OPS/PROC/EVID series)
+
+### Changed
+- `build_trust_portal.mjs`: reads `portal_pack_version` from manifest; embeds
+  `Portal Pack Version: 4.4.0` in every page's Document Info panel and footer
+- `pages_pack_manifest.json`: version 4.3.6 → 4.4.0; added `portal_pack_version`,
+  `portal_base_url`, `metadata_contract`; `required_files` 13 → 38 entries
+- `docs.yml`: audit steps + artifact uploads added for source + live audits
+
+### Gates (all pass)
+- `audit_trust_portal_source.mjs`: 34/34 PASS
+- `verify_pages_site_artifact.sh`: PASS
+- `md_link_check.mjs`: ✅
+- `truth_claims_gate.mjs`: ✅
+- `email_integrity_gate.mjs`: ✅
+- `enterprise_docs_gate.sh`: ✅
+
 ## v4.3.6 — 2026-02-26 — F100 Trust Center Portal: HTML rendering + nav + search
 
 ### Added
