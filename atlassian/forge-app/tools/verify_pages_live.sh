@@ -38,6 +38,7 @@ REQUIRED_PATHS=(
   "/procurement/security-questionnaire.html"
   "/procurement/control-mapping-matrix.html"
   "/evidence/retention-policy.html"
+  "/evidence/evidence-index.html"
 )
 
 # Paths that must NOT return 200

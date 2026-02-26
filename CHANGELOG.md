@@ -2,6 +2,56 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.4.1] - 2026-02-26
+
+### Added — Full Crawler Audit, Evidence Index, CI Artifact Upload
+
+**Portal Pack Version**: `4.4.1`
+
+**`atlassian/forge-app/docs/evidence/EVIDENCE_INDEX.md`** (new, FT-EVID-002)
+- Authoritative entry-point index linking all evidence categories: security,
+  privacy, operational, procurement
+- Published at `evidence/evidence-index.html` in the portal
+
+**`atlassian/forge-app/tools/audit_trust_portal_live_full.mjs`** (new)
+- Full live crawler: fetches home + every portal_nav route from `portal_base_url`
+- Asserts HTTP 200, `Portal Pack Version: 4.4.1` in every page body, doc_id in
+  every doc page, no forbidden placeholders, email allowlist, forbidden-path checks
+- Scans for `docs/<section>/` pseudo-links in rendered page bodies
+- Outputs `live_audit.json` + `live_audit.md` to `$AUDIT_DIR`
+- Fails closed (exit 1) on any failure
+
+**`atlassian/forge-app/tools/audit_trust_portal_source_full.mjs`** (new)
+- Per-doc source audit: all required metadata keys, doc_id matches manifest,
+  Last Updated date format, no forbidden placeholders in prose, no pseudo-link
+  hrefs with `docs/<section>/`, single H1 outside code fences
+- Outputs `source_audit.json` + `source_audit.md` to `$AUDIT_DIR`
+- Fails closed (exit 1) on any failure; 35/35 PASS
+
+**`atlassian/forge-app/tools/pages_pack_manifest.json`** (updated)
+- Version bumped: `4.4.0` → `4.4.1`
+- Added FT-EVID-002 (Evidence Index) to `portal_nav` Evidence group
+- Added `site/evidence/evidence-index.html` to `required_files` (now 39 entries)
+
+**`.github/workflows/docs.yml`** (updated)
+- Added `env.AUDIT_DIR` workflow-level variable for deterministic artifact paths
+- Added trigger paths for both new full audit scripts
+- Replaced source/live audit steps with `_full` variants
+- Artifact uploads now reference `$AUDIT_DIR/source_audit*` and `$AUDIT_DIR/live_audit*`
+
+**`atlassian/forge-app/tools/verify_pages_live.sh`** (updated)
+- Added `/evidence/evidence-index.html` to REQUIRED_PATHS
+
+**All local gates passed:**
+- `audit_trust_portal_source_full.mjs`: 35/35 PASS
+- `verify_pages_site_artifact.sh ./site`: PASS (v4.4.1, 36 portal routes, 39 required_files)
+- `md_link_check.mjs`: ✅
+- `truth_claims_gate.mjs`: ✅ ALL CHECKS PASSED
+- `email_integrity_gate.mjs`: ✅
+- `enterprise_docs_gate.sh`: ✅
+
+---
+
 ## [v1.0-enterprise-docs-v4.4.0] - 2026-02-26
 
 ### Added — F100 Trust Portal: Automated Audits + Doc IDs + Portal Pack Version
