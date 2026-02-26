@@ -106,10 +106,91 @@ run_step 8 "Enterprise audit verification" \
   "FT_PROD_READY_E=\"$E\" bash tools/production/run_enterprise_audit.sh"
 
 # ==============================================================================
-# Finalization: Write evidence files and exit with recorded code
+# Function: Generate deterministic manifest + sha256 hashes + packhash binding
+# ==============================================================================
+generate_proof_pack_binding() {
+  local manifest_files="$E/09_release/prod_ready_manifest_files.txt"
+  local manifest_sha256="$E/09_release/prod_ready_manifest_sha256.txt"
+  local packhash_file="$E/09_release/prod_ready_packhash.txt"
+  local exclusions_file="$E/09_release/prod_ready_manifest_exclusions.txt"
+
+  # Ensure clean slate
+  : > "$manifest_files"
+  : > "$manifest_sha256"
+  : > "$packhash_file"
+  : > "$exclusions_file"
+
+  # Change to evidence directory for deterministic paths
+  (
+    cd "$E" || return 1
+
+    # Build sorted file list (deterministic, LC_ALL=C for byte-order)
+    # Exclude the manifest files themselves to avoid circular dependencies
+    export LC_ALL=C
+    find . -type f -print \
+      | sed 's|^\./||' \
+      | grep -v '^09_release/prod_ready_manifest' \
+      | grep -v '^09_release/prod_ready_packhash' \
+      | grep -v '^stdout\.txt$' \
+      | grep -v '^stderr\.txt$' \
+      | LC_ALL=C sort > "$manifest_files"
+
+    if [ ! -s "$manifest_files" ]; then
+      echo "ERROR: manifest_files is empty or unreadable" >&2
+      return 1
+    fi
+
+    # Record exclusions (nondeterministic stdout/stderr logs)
+    {
+      echo "09_release/prod_ready_manifest_files.txt"
+      echo "09_release/prod_ready_manifest_sha256.txt"
+      echo "09_release/prod_ready_packhash.txt"
+      echo "09_release/prod_ready_manifest_exclusions.txt"
+      echo "stdout.txt"
+      echo "stderr.txt"
+    } | LC_ALL=C sort > "$exclusions_file"
+
+    # Compute sha256 for each file in manifest order
+    # Piping through sha256sum to ensure deterministic output
+    while IFS= read -r filepath; do
+      sha256sum "$filepath" 2>/dev/null || {
+        echo "ERROR: failed to hash $filepath" >&2
+        return 1
+      }
+    done < "$manifest_files" > "$manifest_sha256"
+
+    if [ ! -s "$manifest_sha256" ]; then
+      echo "ERROR: manifest_sha256 is empty or unreadable" >&2
+      return 1
+    fi
+
+    # Compute packhash: hash of the manifest_sha256 file itself
+    sha256sum "$manifest_sha256" | awk '{print $1}' > "$packhash_file"
+
+    if [ ! -s "$packhash_file" ]; then
+      echo "ERROR: packhash_file is empty or unreadable" >&2
+      return 1
+    fi
+
+    return 0
+  ) || return 1
+
+  return 0
+}
+
+# ==============================================================================
+# Finalization: Generate binding + write evidence files and exit with recorded code
 # ==============================================================================
 echo "" >> "$STEP_SUMMARY"
 echo "FINAL: exit=$OVERALL_EXIT" >> "$STEP_SUMMARY"
+
+# Generate tamper-evident proof pack binding (MUST succeed or mark overall failure)
+if ! generate_proof_pack_binding >> "$FULL_LOG" 2>&1; then
+  echo "ERROR: failed to generate proof pack binding" >> "$FULL_LOG"
+  OVERALL_EXIT=1
+else
+  echo "✓ Proof pack binding generated successfully" >> "$FULL_LOG"
+fi
 
 # Write exit code file (ALWAYS, overwriting any previous value - fail-closed)
 # Initialize to fail, then set to pass only if OVERALL_EXIT is 0
