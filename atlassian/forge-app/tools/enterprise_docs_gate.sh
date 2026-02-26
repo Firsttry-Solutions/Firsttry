@@ -18,6 +18,11 @@ echo ""
 echo "2. Checking markdown links..."
 node "$(dirname "$0")/md_link_check.mjs" || exit 1
 
+# Truth Audit check (claims register validation)
+echo ""
+echo "2a. Running Truth Audit (CLAIMS_REGISTER.md validation)..."
+node "$(dirname "$0")/truth_claims_gate.mjs" || exit 1
+
 # Required docs existence check
 echo ""
 echo "3. Verifying required docs exist and are non-empty..."
@@ -41,6 +46,7 @@ REQUIRED_DOCS=(
   "docs/trust/THREAT_MODEL.md"
   "docs/trust/CUSTOMER_RESPONSIBILITIES.md"
   "docs/trust/RESOLVER_INVENTORY.md"
+  "docs/trust/CLAIMS_REGISTER.md"
   "docs/operations/INCIDENT_RESPONSE_PLAN.md"
   "docs/operations/CHANGE_MANAGEMENT_POLICY.md"
   "docs/operations/ACCESS_CONTROL_POLICY.md"
