@@ -2,6 +2,14 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.2.6 — 2026-02-26 — Fix GitHub Pages publishing to deploy enterprise pack from forge-app/site
+
+- UPDATED: `docs.yml` — deterministic site/ build: `rm -rf site` first, then selective copy of enterprise pack
+- NEW STEP: "Verify Pages output shape (fail-closed)" — asserts required files, forbidden dirs, placeholder scan, strict email allowlist check (sorted output)
+- REMOVED: old "Scan Pages output for placeholder emails" step (replaced by new fail-closed step)
+- Landing page updated to v4.2.6 with full pack navigation (all required files linked)
+- Verification: all 4 gates pass; site shape dry-run: 10/10 required files OK, 0 placeholders, 5 approved emails
+
 ## v4.2.5 — 2026-02-26 — Pages content alignment + email integrity + placeholder purge
 
 - UPDATED: `docs.yml` — selective site/ build (trust/ operations/ procurement/ evidence/ only)
