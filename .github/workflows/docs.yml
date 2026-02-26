@@ -10,6 +10,7 @@ on:
       - "atlassian/forge-app/docs/CHANGELOG.md"
       - "atlassian/forge-app/tools/verify_pages_site_artifact.sh"
       - "atlassian/forge-app/tools/verify_pages_live.sh"
+      - "atlassian/forge-app/tools/pages_pack_manifest.json"
   workflow_dispatch:
 
 concurrency:
@@ -64,23 +65,36 @@ jobs:
         run: bash tools/enterprise_docs_gate.sh
         working-directory: atlassian/forge-app
 
-      - name: Build documentation site (enterprise pack only — repo root site/)
+      - name: Build documentation site (enterprise pack only — manifest-driven, repo root site/)
         run: |
           set -euo pipefail
+          MANIFEST=atlassian/forge-app/tools/pages_pack_manifest.json
+
+          # Read version from manifest (single source of truth)
+          VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')).version)")
+          echo "Building site/ for enterprise pack v$VERSION"
+
           # Deterministic build at repo root — eliminates working-directory ambiguity.
           # Wipe any prior site/ (including legacy _site/ from staticc.yml) then
-          # copy ONLY the enterprise pack. NO production/, NO legacy root docs.
+          # copy ONLY the enterprise pack dirs listed in manifest.publish_dirs.
           rm -rf site _site
-          mkdir -p site/trust site/operations site/procurement site/evidence
 
-          cp atlassian/forge-app/docs/trust/*.md        site/trust/
-          cp atlassian/forge-app/docs/operations/*.md   site/operations/
-          cp atlassian/forge-app/docs/procurement/*.md  site/procurement/
-          # evidence may contain subdirs (e.g. baselines/) — preserve structure
-          cp -r atlassian/forge-app/docs/evidence/.     site/evidence/
+          # Create target dirs and copy all publish_dirs from manifest
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const m = JSON.parse(fs.readFileSync('$MANIFEST','utf8'));
+            const dirs = m.publish_dirs.map(d => ({
+              src: d,
+              dest: path.join(m.publish_root, path.basename(d))
+            }));
+            dirs.forEach(({dest}) => process.stdout.write('mkdir -p ' + dest + '\\n'));
+            dirs.forEach(({src, dest}) => process.stdout.write('cp -r ' + src + '/. ' + dest + '/\\n'));
+          " | bash
 
-          # Generate landing page
-          cat > site/index.html << 'HTMLEOF'
+          # Generate landing page (version read from manifest above)
+          # Write proper index.html with version from manifest
+          cat > site/index.html << HTMLEOF
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,7 +116,7 @@ jobs:
 <body>
     <div class="container">
         <h1>FirstTry - Enterprise Security Documentation</h1>
-        <p><strong>Version:</strong> 4.3.3 | <strong>Last Updated:</strong> 2026-02-26 UTC</p>
+        <p><strong>Version:</strong> $VERSION | <strong>Last Updated:</strong> $(date -u +%Y-%m-%d) UTC</p>
         <p>Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews.</p>
         <p><span class="badge">No certifications claimed</span> &nbsp; <span class="badge">Read-only Forge app</span> &nbsp; <span class="badge">Fail-closed validation</span></p>
 
@@ -185,43 +199,41 @@ jobs:
         </div>
 
         <hr>
-        <p>Repository: <a href="https://github.com/Firsttry-Solutions/Firsttry">Firsttry-Solutions/Firsttry</a> | Validated: 2026-02-26 UTC</p>
+        <p>Repository: <a href="https://github.com/Firsttry-Solutions/Firsttry">Firsttry-Solutions/Firsttry</a> | Validated: $(date -u +%Y-%m-%d) UTC</p>
     </div>
 </body>
 </html>
 HTMLEOF
+          echo "site/index.html written (v$VERSION)"
 
-      - name: Smoke proof — list and assert required files in repo-root site/
+      - name: Smoke proof — list and assert required files (manifest-driven)
         run: |
           set -euo pipefail
+          MANIFEST=atlassian/forge-app/tools/pages_pack_manifest.json
+
           echo "=== Deployed file listing (site/) ==="
           find site -maxdepth 3 -type f | sort | head -200
 
           echo ""
-          echo "=== Asserting required files exist ==="
+          echo "=== Asserting required files (from manifest) ==="
           ERRORS=0
-          for f in \
-            "site/index.html" \
-            "site/trust/SECURITY_OVERVIEW.md" \
-            "site/trust/SUBPROCESSORS.md" \
-            "site/operations/SLA.md" \
-            "site/operations/INCIDENT_RESPONSE_PLAN.md" \
-            "site/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md" \
-            "site/procurement/SECURITY_QUESTIONNAIRE_MASTER.md" \
-            "site/procurement/CONTROL_MAPPING_MATRIX.md" \
-            "site/evidence/RETENTION_POLICY.md"; do
+          while IFS= read -r f; do
             if test -f "$f"; then
               echo "  OK: $f"
             else
               echo "  MISSING: $f" >&2
               ERRORS=1
             fi
-          done
+          done < <(node -e "
+            const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8'));
+            m.required_files.forEach(f=>console.log(f));
+          ")
+
           if [ $ERRORS -ne 0 ]; then
             echo "FAIL: Smoke proof — required files missing from site/" >&2
             exit 1
           fi
-          echo "PASS: All required files present in site/"
+          echo "PASS: All required files present in site/ (manifest-driven)"
 
       - name: Verify Pages site artifact (fail-closed shape + content policy)
         run: bash atlassian/forge-app/tools/verify_pages_site_artifact.sh ./site

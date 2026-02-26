@@ -1,0 +1,22 @@
+{
+  "version": "4.3.4",
+  "publish_root": "site",
+  "required_files": [
+    "site/index.html",
+    "site/trust/SECURITY_OVERVIEW.md",
+    "site/trust/RESOLVER_INVENTORY.md",
+    "site/trust/SUBPROCESSORS.md",
+    "site/operations/SLA.md",
+    "site/operations/INCIDENT_RESPONSE_PLAN.md",
+    "site/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md",
+    "site/procurement/SECURITY_QUESTIONNAIRE_MASTER.md",
+    "site/procurement/CONTROL_MAPPING_MATRIX.md",
+    "site/evidence/RETENTION_POLICY.md"
+  ],
+  "publish_dirs": [
+    "atlassian/forge-app/docs/trust",
+    "atlassian/forge-app/docs/operations",
+    "atlassian/forge-app/docs/procurement",
+    "atlassian/forge-app/docs/evidence"
+  ]
+}

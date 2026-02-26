@@ -2,6 +2,37 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.3.4] - 2026-02-26
+
+### Added
+
+#### Pages pack manifest + manifest-driven build and verification
+
+**`atlassian/forge-app/tools/pages_pack_manifest.json`** (new)
+- Single source of truth for what the enterprise pack publishes: `version`, `publish_root`,
+  `required_files` (10 paths), `publish_dirs` (4 source directories)
+- All downstream tools (verifier, docs.yml smoke proof) read from this file
+
+#### Artifact verifier now manifest-driven
+
+**`atlassian/forge-app/tools/verify_pages_site_artifact.sh`** (updated)
+- Reads `required_files` from `pages_pack_manifest.json` at runtime (via `node -e`)
+- Prints manifest version in header for every run
+- No more hardcoded required_files list — adding a file to the manifest is sufficient
+- All other checks (forbidden dirs, placeholder scan, email allowlist) unchanged
+
+#### docs.yml now manifest-driven; homepage source proven
+
+**`.github/workflows/docs.yml`** (updated)
+- Build step reads `publish_dirs` from manifest via `node -e`, emits `mkdir -p` + `cp -r` per dir
+- Version in `site/index.html` read from manifest (`$VERSION`) — single source of truth
+- Date in `site/index.html` dynamically set via `$(date -u +%Y-%m-%d)` — always current
+- Smoke proof step reads `required_files` from manifest via `node -e` — no drift from verifier
+- Trigger paths include `atlassian/forge-app/tools/pages_pack_manifest.json`
+- No runtime code changes (atlassian/forge-app/src/** untouched)
+
+---
+
 ## [v1.0-enterprise-docs-v4.3.3] - 2026-02-26
 
 ### Fixed

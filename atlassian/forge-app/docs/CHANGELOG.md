@@ -2,6 +2,22 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.3.4 — 2026-02-26 — Pages pack manifest + manifest-driven build and verification
+
+### Added
+- `tools/pages_pack_manifest.json`: single source of truth for enterprise pack contents
+  (version, publish_dirs, required_files). All downstream tools derive from this.
+- `verify_pages_site_artifact.sh`: now reads required_files from manifest at runtime;
+  prints manifest version in every run header; no hardcoded list to drift
+- `docs.yml`: build step now manifest-driven (node parses manifest, emits copy cmds);
+  index.html version from manifest `$VERSION`; date dynamically set; smoke proof
+  reads manifest required_files; manifest path added to trigger paths
+- Homepage source proven: `site/index.html` is the SOLE landing page, generated
+  entirely by the inline heredoc in the build step using `$VERSION` from manifest
+- No runtime code changes (atlassian/forge-app/src/** untouched)
+
+---
+
 ## v4.3.3 — 2026-02-26 — GitHub Pages: repo-root site build; fail-closed artifact + live verify
 
 ### Fixed
