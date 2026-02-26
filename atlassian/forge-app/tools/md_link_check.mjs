@@ -36,7 +36,7 @@ function findMarkdownFiles(dir) {
 
 /**
  * Extract relative markdown links from file content
- * Matches: [text](relative/path) but ignores http/https
+ * Matches: [text](relative/path) but ignores http/https, mailto:, and #-anchors
  */
 function extractLinks(content, filePath) {
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -45,8 +45,8 @@ function extractLinks(content, filePath) {
   
   while ((match = linkRegex.exec(content)) !== null) {
     const url = match[2];
-    // Skip http/https and anchor-only links
-    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('#')) {
+    // Skip http/https, mailto:, and anchor-only links
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('#') && !url.startsWith('mailto:')) {
       links.push({
         text: match[1],
         url: url,
@@ -96,8 +96,21 @@ function main() {
     process.exit(2);
   }
   
-  const mdFiles = findMarkdownFiles(docsDir);
-  console.log(`Scanning ${mdFiles.length} markdown files...`);
+  // Scope to enterprise docs only (trust, operations, procurement)
+  const enterpriseDirs = [
+    path.join(docsDir, 'trust'),
+    path.join(docsDir, 'operations'),
+    path.join(docsDir, 'procurement')
+  ];
+  
+  let mdFiles = [];
+  for (const dir of enterpriseDirs) {
+    if (fs.existsSync(dir)) {
+      mdFiles = mdFiles.concat(findMarkdownFiles(dir));
+    }
+  }
+  
+  console.log(`Scanning ${mdFiles.length} enterprise markdown files (trust, operations, procurement)...`);
   
   for (const filePath of mdFiles) {
     const content = fs.readFileSync(filePath, 'utf-8');

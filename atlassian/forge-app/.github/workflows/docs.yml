@@ -13,6 +13,10 @@ jobs:
       contents: read
       pages: write
       id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
       - name: Checkout code
@@ -27,133 +31,148 @@ jobs:
       
       - name: npm clean install
         run: npm ci
+        working-directory: atlassian/forge-app
       
       - name: Check tooling prerequisites
         run: bash tools/check_tooling_prereqs.sh
+        working-directory: atlassian/forge-app
         continue-on-error: true
       
       - name: Run markdown link checker
         run: node tools/md_link_check.mjs
+        working-directory: atlassian/forge-app
       
       - name: Run truth audit (claims register validation)
         run: node tools/truth_claims_gate.mjs
+        working-directory: atlassian/forge-app
+      
+      - name: Run email integrity gate
+        run: node tools/email_integrity_gate.mjs
+        working-directory: atlassian/forge-app
       
       - name: Run enterprise documentation gate
         run: bash tools/enterprise_docs_gate.sh
+        working-directory: atlassian/forge-app
       
       - name: Build documentation site
+        working-directory: atlassian/forge-app
         run: |
-          # Create site directory
           mkdir -p site
-          
-          # Copy all documentation
           cp -r docs/* site/
-          
-          # Create landing page index.html
-          cat > site/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>FirstTry - Enterprise Security Documentation</title>
-              <style>
-                  body {
-                      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                      line-height: 1.6;
-                      color: #333;
-                      max-width: 1000px;
-                      margin: 0 auto;
-                      padding: 20px;
-                      background: #f5f5f5;
-                  }
-                  h1, h2 { color: #0052cc; }
-                  .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                  .nav-section { margin: 30px 0; }
-                  .nav-section h2 { margin-top: 0; }
-                  ul { list-style: none; padding: 0; }
-                  li { padding: 8px 0; }
-                  a { color: #0052cc; text-decoration: none; }
-                  a:hover { text-decoration: underline; }
-                  .badge { display: inline-block; background: #0052cc; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-left: 10px; }
-                  code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
-              </style>
-          </head>
-          <body>
-              <div class="container">
-                  <h1>🔐 FirstTry - Enterprise Security Documentation</h1>
-                  <p><strong>Version:</strong> 4.2.3 | <strong>Last Updated:</strong> 2026-02-26</p>
-                  <p>Comprehensive documentation for Atlassian Marketplace diligence and enterprise procurement.</p>
-                  
-                  <div class="nav-section">
-                      <h2>📚 Getting Started</h2>
-                      <ul>
-                          <li><a href="README.md">📋 Documentation Index & Navigation</a> - Start here for role-based guidance</li>
-                          <li><a href="procurement/ENTERPRISE_SECURITY_PACK_INDEX.md">🎯 Enterprise Security Pack Index</a> - Master index for all compliance & procurement docs</li>
-                      </ul>
-                  </div>
-                  
-                  <div class="nav-section">
-                      <h2>🛡️ Trust Center</h2>
-                      <p>Security architecture, threat modeling, and data handling documentation.</p>
-                      <ul>
-                          <li><a href="trust/SECURITY_OVERVIEW.md">Security Overview</a> - Shared responsibility model & security claims</li>
-                          <li><a href="trust/THREAT_MODEL.md">Threat Model</a> - STRIDE-based threat analysis (18 scenarios)</li>
-                          <li><a href="trust/RESOLVER_INVENTORY.md">Resolver Inventory</a> - API endpoint audit (0 mutations)</li>
-                          <li><a href="trust/DATA_FLOW.md">Data Flow</a> - What data is read, processed, stored</li>
-                          <li><a href="trust/DATA_CLASSIFICATION_AND_PII.md">Data Classification & PII</a> - PII handling & minimization</li>
-                          <li><a href="trust/UNINSTALL_DELETION.md">Uninstall & Deletion</a> - Data deletion workflow (30-day Forge SLA)</li>
-                          <li><a href="trust/CLAIMS_REGISTER.md">Claims Register</a> <span class="badge">TRUTH AUDIT</span> - Official claims with proof mappings</li>
-                      </ul>
-                  </div>
-                  
-                  <div class="nav-section">
-                      <h2>🔧 Operations</h2>
-                      <p>Operational procedures, SLAs, and incident response.</p>
-                      <ul>
-                          <li><a href="operations/INCIDENT_RESPONSE_PLAN.md">Incident Response Plan</a> - Severity tiers & response SLAs</li>
-                          <li><a href="operations/SLA.md">SLA</a> - <strong>NO uptime percentage guaranteed</strong>; support response times only</li>
-                          <li><a href="operations/SECURE_SDLC_POLICY.md">Secure SDLC Policy</a> - Development & testing procedures</li>
-                          <li><a href="operations/CI_CD_EVIDENCE.md">CI/CD Evidence</a> - Evidence generation commands & procedures</li>
-                          <li><a href="operations/ACCESS_CONTROL_POLICY.md">Access Control Policy</a> - Least privilege & MFA requirements</li>
-                      </ul>
-                  </div>
-                  
-                  <div class="nav-section">
-                      <h2>📋 Procurement & Compliance</h2>
-                      <p>Control mapping, questionnaires, and compliance frameworks.</p>
-                      <ul>
-                          <li><a href="procurement/SECURITY_QUESTIONNAIRE_MASTER.md">Security Questionnaire</a> - Pre-answered vendor diligence Q&A</li>
-                          <li><a href="procurement/CONTROL_MAPPING_MATRIX.md">Control Mapping</a> - SOC2, ISO27k, CAIQ, GDPR, NIST alignments</li>
-                      </ul>
-                  </div>
-                  
-                  <div class="nav-section">
-                      <h2>⚖️ Important Disclaimers</h2>
-                      <ul>
-                          <li>❌ <strong>No Certifications Claimed</strong> - Documentation and evidence provided for diligence only</li>
-                          <li>🔧 <strong>Zero Runtime Changes</strong> - No app code, scopes, or egress modifications</li>
-                          <li>📡 <strong>Platform Dependent</strong> - All data residency, encryption, uptime SLAs provided by Atlassian Forge</li>
-                          <li>🛡️ <strong>Fail-Closed Design</strong> - Validation gates exit non-zero on any error</li>
-                      </ul>
-                  </div>
-                  
-                  <hr style="margin: 40px 0; border: none; border-top: 1px solid #ddd;">
-                  
-                  <div style="color: #666; font-size: 14px;">
-                      <p><strong>Audit & Validation:</strong></p>
-                      <ul>
-                          <li>✅ Truth Audit (CLAIMS_REGISTER.md) - All claims backed by evidence</li>
-                          <li>✅ Link Validation (md_link_check.mjs) - All markdown links verified</li>
-                          <li>✅ Enterprise Gate (enterprise_docs_gate.sh) - 14-point structural validation</li>
-                      </ul>
-                      <p><strong>Repository:</strong> <a href="https://github.com/Firsttry-Solutions/Firsttry">Firsttry-Solutions/Firsttry</a></p>
-                      <p><strong>Last Validation:</strong> 2026-02-26 UTC</p>
-                  </div>
-              </div>
-          </body>
-          </html>
-          EOF
+          cat > site/index.html << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FirstTry - Enterprise Security Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        h1, h2 { color: #0052cc; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-section { margin: 30px 0; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 6px 0; }
+        a { color: #0052cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FirstTry - Enterprise Security Documentation</h1>
+        <p><strong>Version:</strong> 4.2.4 | <strong>Last Updated:</strong> 2026-02-26</p>
+        <p>Comprehensive documentation for Atlassian Marketplace diligence and enterprise procurement.</p>
+
+        <div class="nav-section">
+            <h2>Getting Started</h2>
+            <ul>
+                <li><a href="README.md">Documentation Index and Navigation</a></li>
+                <li><a href="procurement/ENTERPRISE_SECURITY_PACK_INDEX.md">Enterprise Security Pack Index</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <h2>Trust Center</h2>
+            <ul>
+                <li><a href="trust/SECURITY_OVERVIEW.md">Security Overview</a></li>
+                <li><a href="trust/SECURITY_CONTACT.md">Security Contact</a></li>
+                <li><a href="trust/PRIVACY_POLICY.md">Privacy Policy</a></li>
+                <li><a href="trust/THREAT_MODEL.md">Threat Model (STRIDE)</a></li>
+                <li><a href="trust/RESOLVER_INVENTORY.md">Resolver Inventory (0 mutations)</a></li>
+                <li><a href="trust/DATA_FLOW.md">Data Flow</a></li>
+                <li><a href="trust/DATA_CLASSIFICATION_AND_PII.md">Data Classification and PII</a></li>
+                <li><a href="trust/UNINSTALL_DELETION.md">Uninstall and Deletion</a></li>
+                <li><a href="trust/CLAIMS_REGISTER.md">Claims Register (Truth Audit)</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <h2>Operations</h2>
+            <ul>
+                <li><a href="operations/INCIDENT_RESPONSE_PLAN.md">Incident Response Plan</a></li>
+                <li><a href="operations/SLA.md">SLA (no uptime % guaranteed)</a></li>
+                <li><a href="operations/SECURE_SDLC_POLICY.md">Secure SDLC Policy</a></li>
+                <li><a href="operations/CI_CD_EVIDENCE.md">CI/CD Evidence</a></li>
+                <li><a href="operations/ACCESS_CONTROL_POLICY.md">Access Control Policy</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <h2>Procurement and Compliance</h2>
+            <ul>
+                <li><a href="procurement/SECURITY_QUESTIONNAIRE_MASTER.md">Security Questionnaire</a></li>
+                <li><a href="procurement/CONTROL_MAPPING_MATRIX.md">Control Mapping Matrix</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <h2>Contact</h2>
+            <ul>
+                <li>General: contact@firsttry.run</li>
+                <li>Support: support@firsttry.run</li>
+                <li>Security: security.contact@firsttry.run</li>
+                <li>Privacy: privacy@firsttry.run</li>
+                <li>Emergency: emergency@firsttry.run</li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <h2>Disclaimers</h2>
+            <ul>
+                <li>No certifications claimed - documentation and evidence only</li>
+                <li>Zero runtime changes - no app code, scopes, or egress modifications</li>
+                <li>Platform dependent - Atlassian Forge provides data residency, encryption, uptime</li>
+                <li>Fail-closed design - all validation gates exit non-zero on error</li>
+            </ul>
+        </div>
+
+        <hr>
+        <p>Repository: <a href="https://github.com/Firsttry-Solutions/Firsttry">Firsttry-Solutions/Firsttry</a> | Validated: 2026-02-26 UTC</p>
+    </div>
+</body>
+</html>
+HTMLEOF
+
+      - name: Scan Pages output for placeholder emails
+        working-directory: atlassian/forge-app
+        run: |
+          echo "Checking site/ output for placeholder patterns..."
+          if grep -rn -E "example\.com|example\.org|yourcompany|TBD@" site/ 2>/dev/null; then
+            echo "Placeholder patterns found in site output!"
+            exit 1
+          fi
+          echo "No placeholder patterns in site output"
+
+          echo "Checking site/ output for disallowed email addresses..."
+          grep -roh -E "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}" site/ 2>/dev/null | sed 's|.*:||' | sort -u > /tmp/site_emails.txt || true
+          sort -u tools/email_allowlist.txt > /tmp/allowed_emails.txt
+          comm -23 /tmp/site_emails.txt /tmp/allowed_emails.txt > /tmp/site_bad_emails.txt || true
+          if test -s /tmp/site_bad_emails.txt; then
+            echo "Disallowed emails in site output:"
+            cat /tmp/site_bad_emails.txt
+            exit 1
+          fi
+          echo "All emails in site output are on the approved allowlist"
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -161,7 +180,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'site'
+          path: 'atlassian/forge-app/site'
       
       - name: Deploy to GitHub Pages
         id: deployment
@@ -170,6 +189,6 @@ jobs:
       - name: Report success
         if: success()
         run: |
-          echo "✅ Enterprise Documentation Validation & Publish PASSED"
-          echo "📖 Pages URL: https://firsttry-solutions.github.io/Firsttry/"
+          echo "Enterprise Documentation Validation and Publish PASSED"
+          echo "Pages URL: https://firsttry-solutions.github.io/Firsttry/"
           echo "Tag: ${{ github.ref }}"

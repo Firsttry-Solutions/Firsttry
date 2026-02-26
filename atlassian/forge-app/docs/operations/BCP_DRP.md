@@ -92,6 +92,15 @@ FirstTry's disaster recovery posture is dependent on Atlassian Forge platform av
 
 ---
 
+## 7. Emergency Contact
+
+For business-impacting incidents requiring immediate escalation:
+
+**Emergency**: [emergency@firsttry.run](mailto:emergency@firsttry.run)
+**Security**: [security.contact@firsttry.run](mailto:security.contact@firsttry.run)
+
+---
+
 ## References
 
 - [FORGE_PLATFORM_DEPENDENCY.md](../trust/FORGE_PLATFORM_DEPENDENCY.md): Platform SLA details

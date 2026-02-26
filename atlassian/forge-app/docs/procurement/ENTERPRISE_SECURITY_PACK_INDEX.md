@@ -204,9 +204,10 @@ This documentation and evidence demonstrates our security practices, governance,
 
 ## Contacts
 
-- **Security**: security@firsttry.run
-- **Procurement**: legal@firsttry.run
+- **Security**: security.contact@firsttry.run
+- **General Inquiries**: contact@firsttry.run
 - **Support**: support@firsttry.run
+- **Privacy**: privacy@firsttry.run
 
 ---
 

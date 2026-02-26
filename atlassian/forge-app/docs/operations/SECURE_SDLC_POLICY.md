@@ -85,7 +85,7 @@
 ## 5. Vulnerability Management
 
 ### Disclosure
-- Report to security@firsttry.run (never public channels)
+- Report to security.contact@firsttry.run (never public channels)
 - See [VULNERABILITY_DISCLOSURE_POLICY.md](../trust/VULNERABILITY_DISCLOSURE_POLICY.md)
 
 ### Patch Timeline

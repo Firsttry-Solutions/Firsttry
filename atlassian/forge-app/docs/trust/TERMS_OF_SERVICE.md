@@ -101,7 +101,7 @@ We may update these terms at any time. Material changes will be noted in release
 
 ## 11. Contact
 
-Questions about these terms: [legal@firsttry.run](mailto:legal@firsttry.run)
+Questions about these terms: [contact@firsttry.run](mailto:contact@firsttry.run)
 
 ---
 

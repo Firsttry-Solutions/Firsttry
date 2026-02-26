@@ -108,7 +108,7 @@ See [SECURITY_OVERVIEW.md](SECURITY_OVERVIEW.md) for encryption, access control,
 
 ## 9. Contact
 
-Privacy inquiries: [security@firsttry.run](mailto:security@firsttry.run) or see [SECURITY_CONTACT.md](SECURITY_CONTACT.md)
+Privacy inquiries: [privacy@firsttry.run](mailto:privacy@firsttry.run) or see [SECURITY_CONTACT.md](SECURITY_CONTACT.md)
 
 ---
 

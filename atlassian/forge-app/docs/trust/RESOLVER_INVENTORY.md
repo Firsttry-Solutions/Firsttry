@@ -72,4 +72,4 @@ This inventory lists all FirstTry resolver files that call external APIs (Jira),
 ## References
 
 - [SECURITY_OVERVIEW.md](SECURITY_OVERVIEW.md): Mutation claim context
-- [docs/evidence/baselines/](../evidence/baselines/): SHA256 baseline for deterministic scanning
+- [../evidence/baselines/README.md](../evidence/baselines/README.md): SHA256 baseline for deterministic scanning
