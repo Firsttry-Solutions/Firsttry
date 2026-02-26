@@ -2,6 +2,63 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.3.6] - 2026-02-26
+
+### Added — F100 Trust Center Portal
+
+**Goal:** Convert GitHub Pages output from raw markdown pages into a professional Trust
+Center portal with persistent sidebar navigation, metadata panels, styled HTML rendering,
+and client-side search — without touching any runtime app code.
+
+**`atlassian/forge-app/tools/build_trust_portal.mjs`** (new)
+- Reads `pages_pack_manifest.json` `portal_nav` array
+- Copies raw markdown into `site/raw/` (transparency + "View raw" links)
+- Renders each markdown doc to a styled HTML page using vendored `marked` v9.1.6
+- HTML template: persistent left sidebar nav, top header bar, breadcrumbs,
+  right metadata panel (doc_id, Version, Owner, Last Updated, Review Cycle),
+  "Print page" button, "View raw markdown" link
+- Generates `site/assets/portal.css` — professional enterprise CSS with sidebar
+  layout, table styling, code blocks, print media query
+- Generates `site/assets/portal.js` — client-side: sidebar toggle (mobile),
+  inline nav filter, full-text search overlay from `search_index.json`
+- Generates `site/assets/search_index.json` — 35 entries (title, route, doc_id,
+  group, headings, excerpt)
+- Generates `site/index.html` — executive landing page with quick-link cards,
+  nav grids per section, contact block, disclaimers, version badge
+- Fails closed (exits non-zero) if any source markdown is missing
+
+**`atlassian/forge-app/tools/vendor/marked.min.js`** (new, vendored)
+- Pinned: marked v9.1.6 (MIT)
+- Loaded via `createRequire` in ESM context — no npm install required
+- Committed to repo: deterministic, no CDN dependency at build time
+
+**`atlassian/forge-app/tools/pages_pack_manifest.json`** (updated)
+- Version: 4.3.5 → 4.3.6 (`portal_version` and `version` fields)
+- Added: `portal_title`, `portal_tagline`, `portal_nav` (5 groups, 35 doc items)
+- Updated: `required_files` now lists 13 portal HTML routes + assets
+  (replaces old raw `.md` path list)
+
+**`atlassian/forge-app/tools/build_pages_site.mjs`** (updated)
+- Slim delegation wrapper: calls `build_trust_portal.mjs` via `execSync`
+- Preserves existing `docs.yml` build step (`node atlassian/forge-app/tools/build_pages_site.mjs`) unchanged
+
+**`atlassian/forge-app/tools/verify_pages_site_artifact.sh`** (updated)
+- (a) Required files check: uses `portal_version` (was `version`)
+- (b) NEW: iterates `portal_nav` routes, asserts each HTML file exists (35 routes)
+- (c) NEW: asserts `portal.css`, `portal.js`, `search_index.json` exist
+- (d–f) Forbidden dirs, placeholder scan, email allowlist: unchanged
+
+**`atlassian/forge-app/tools/verify_pages_live.sh`** (updated)
+- `REQUIRED_PATHS` updated to portal HTML routes (`.html`) + assets
+- Added Section 4: portal layout content check on Security Overview page
+- Removed old `.md` raw paths
+
+**`.github/workflows/docs.yml`** (updated)
+- Trigger paths: added `build_trust_portal.mjs` and `tools/vendor/**`
+- Build step unchanged: `node atlassian/forge-app/tools/build_pages_site.mjs`
+
+---
+
 ## [v1.0-enterprise-docs-v4.3.5] - 2026-02-26
 
 ### Fixed

@@ -2,6 +2,23 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.3.6 — 2026-02-26 — F100 Trust Center Portal: HTML rendering + nav + search
+
+### Added
+- `build_trust_portal.mjs` (new): renders 35 markdown docs to styled HTML portal pages
+  with sidebar nav, breadcrumbs, metadata panel, print support, view-raw links
+- `vendor/marked.min.js` (new): pinned marked v9.1.6 (MIT), vendored for determinism
+- `portal.css`: professional enterprise layout (sidebar + content + meta panel),
+  table/code styling, mobile off-canvas sidebar, print CSS
+- `portal.js`: sidebar toggle, inline nav filter, full-text search from search_index.json
+- `search_index.json` (generated): 35 entries with title/heading/excerpt/doc_id
+- `portal_nav` in manifest: 5 groups, 35 items, with title/src/route/doc_id
+- Executive `index.html`: quick-link cards, section grids, contact block, badges
+- All existing fail-closed gates updated for portal HTML routes
+- `verify_pages_site_artifact.sh`: checks all 35 portal routes + 3 assets
+- `verify_pages_live.sh`: checks HTML routes (not .md paths), portal content check
+- No runtime code changed; no app code, manifest, or Forge config touched
+
 ## v4.3.5 — 2026-02-26 — Fix YAML syntax error that prevented docs.yml from running
 
 ### Fixed
