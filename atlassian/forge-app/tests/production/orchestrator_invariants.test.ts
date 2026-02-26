@@ -195,4 +195,111 @@ describe('Orchestrator Invariants', () => {
     const hasReturnCheck = /\|\|\s+return\s+1/.test(orchestratorContent);
     expect(hasErrorHandler && hasReturnCheck).toBe(true);
   });
+
+  // ── NEW INVARIANTS: cwd-independence, self-describing manifest, hash_inputs ──
+
+  it('should compute SCRIPT_DIR at top (cwd-independent)', () => {
+    const hasScriptDir = /SCRIPT_DIR="\$\(cd "\$\(dirname "\$\{BASH_SOURCE\[0\]\}"/.test(orchestratorContent);
+    expect(hasScriptDir).toBe(true);
+  });
+
+  it('should compute REPO_ROOT relative to SCRIPT_DIR', () => {
+    const hasRepoRoot = /REPO_ROOT="\$\(cd "\$SCRIPT_DIR/.test(orchestratorContent);
+    expect(hasRepoRoot).toBe(true);
+  });
+
+  it('should cd to "$REPO_ROOT" immediately after computing it', () => {
+    const hasCdRepoRoot = /cd\s+"\$REPO_ROOT"/.test(orchestratorContent);
+    expect(hasCdRepoRoot).toBe(true);
+  });
+
+  it('should NOT hardcode /workspaces path for cd (cwd-independent)', () => {
+    const hasHardcodedCd = /^cd\s+\/workspaces/m.test(orchestratorContent);
+    expect(hasHardcodedCd).toBe(false);
+  });
+
+  it('should include prod_ready_manifest_files.txt in manifest_files (self-describing)', () => {
+    // The find command must NOT exclude manifest_files — binding files must NOT be grep-v'd
+    // Presence of manifest_files var definition is necessary but not sufficient;
+    // confirm is NOT excluded in find pipeline by looking for absence of manifest_files exclusion grep
+    const hasManifestFilesVar = /prod_ready_manifest_files\.txt/.test(orchestratorContent);
+    // Binding files must NOT appear in a grep -v exclusion line
+    const hasManifestFilesExcluded = /grep\s+-v.*prod_ready_manifest_files/.test(orchestratorContent);
+    expect(hasManifestFilesVar).toBe(true);
+    expect(hasManifestFilesExcluded).toBe(false);
+  });
+
+  it('should include prod_ready_manifest_sha256.txt in manifest_files list', () => {
+    // manifest_sha256 must appear exactly once in the script — in the hash_inputs
+    // filter (grep -v exclusion), NOT in the find pipeline that builds manifest_files.
+    // Count = 1 means it's excluded from hash_inputs only (correct), not from find.
+    const count = (orchestratorContent.match(
+      /grep\s+-v.*\^09_release\/prod_ready_manifest_sha256/g
+    ) || []).length;
+    expect(count).toBe(1);
+  });
+
+  it('should include prod_ready_packhash.txt in manifest_files list', () => {
+    // packhash must appear exactly once in the script — in the hash_inputs
+    // filter (grep -v exclusion), NOT in the find pipeline that builds manifest_files.
+    const count = (orchestratorContent.match(
+      /grep\s+-v.*\^09_release\/prod_ready_packhash/g
+    ) || []).length;
+    expect(count).toBe(1);
+  });
+
+  it('should include prod_ready_manifest_exclusions.txt in manifest_files list', () => {
+    const hasExclusionsExcluded = /grep\s+-v.*prod_ready_manifest_exclusions/.test(orchestratorContent);
+    expect(hasExclusionsExcluded).toBe(false);
+  });
+
+  it('exclusions list must include stdout.txt and stderr.txt', () => {
+    // The exclusions_file must be written with stdout/stderr entries
+    const hasStdoutInExclusions = /echo\s+"stdout\.txt"/.test(orchestratorContent);
+    const hasStderrInExclusions = /echo\s+"stderr\.txt"/.test(orchestratorContent);
+    expect(hasStdoutInExclusions && hasStderrInExclusions).toBe(true);
+  });
+
+  it('exclusions list must NOT include binding artifacts', () => {
+    // The static exclusions block must not echo the binding file names
+    const excludesManifestFiles = /echo\s+"09_release\/prod_ready_manifest_files\.txt"/.test(orchestratorContent);
+    const excludesManifestSha256 = /echo\s+"09_release\/prod_ready_manifest_sha256\.txt"/.test(orchestratorContent);
+    const excludesPackhash = /echo\s+"09_release\/prod_ready_packhash\.txt"/.test(orchestratorContent);
+    expect(excludesManifestFiles).toBe(false);
+    expect(excludesManifestSha256).toBe(false);
+    expect(excludesPackhash).toBe(false);
+  });
+
+  it('should create prod_ready_manifest_hash_inputs.txt (hash_inputs list)', () => {
+    const hasHashInputsVar = /prod_ready_manifest_hash_inputs\.txt/.test(orchestratorContent);
+    expect(hasHashInputsVar).toBe(true);
+  });
+
+  it('should compute manifest_sha256 from hash_inputs (not manifest_files)', () => {
+    // The while loop must read from manifest_hash_inputs, not manifest_files
+    const readsFromHashInputs = /done\s+<\s+"\$manifest_hash_inputs"\s+>\s+"\$manifest_sha256"/.test(orchestratorContent);
+    expect(readsFromHashInputs).toBe(true);
+  });
+
+  it('should derive packhash from manifest_sha256.txt file (not old $manifest_sha256 var)', () => {
+    // packhash = sha256sum "09_release/prod_ready_manifest_sha256.txt"
+    const derivesFromFile = /sha256sum\s+"09_release\/prod_ready_manifest_sha256\.txt"/.test(orchestratorContent);
+    expect(derivesFromFile).toBe(true);
+  });
+
+  it('hash_inputs must exclude manifest_sha256 and packhash via grep -v', () => {
+    const excludesSha256 = /grep\s+-v.*\^09_release\/prod_ready_manifest_sha256\\\.txt\$/.test(orchestratorContent);
+    const excludesPackhash = /grep\s+-v.*\^09_release\/prod_ready_packhash\\\.txt\$/.test(orchestratorContent);
+    expect(excludesSha256).toBe(true);
+    expect(excludesPackhash).toBe(true);
+  });
+
+  it('hash_inputs must exclude run_prod_ready_audit.full.log (post-binding writes invalidate its hash)', () => {
+    // The orchestrator writes to full.log AFTER generate_proof_pack_binding returns
+    // (e.g. "Proof pack binding generated successfully", the verdict message, etc.)
+    // Excluding it from hash_inputs prevents a guaranteed hash mismatch; the file
+    // is still listed in manifest_files for completeness.
+    const excludesFullLog = /grep\s+-v.*\^09_release\/run_prod_ready_audit\\\.full\\\.log\$/.test(orchestratorContent);
+    expect(excludesFullLog).toBe(true);
+  });
 });

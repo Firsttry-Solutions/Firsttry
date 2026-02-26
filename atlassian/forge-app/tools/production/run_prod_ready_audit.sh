@@ -6,6 +6,13 @@ set -uo pipefail
 # Design: Synchronous execution, real exit codes, deterministic evidence generation
 
 # ==============================================================================
+# CWD-INDEPENDENT: resolve script and repo root regardless of caller cwd
+# ==============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT" || { echo "FAIL: cannot cd to REPO_ROOT: $REPO_ROOT" >&2; exit 1; }
+
+# ==============================================================================
 # Evidence directory resolution (fail-closed, FT_PROD_READY_E is SOLE source)
 # ==============================================================================
 E="${FT_PROD_READY_E:-}"
@@ -17,7 +24,7 @@ fi
 # Pre-create all required evidence subdirectories (fail-closed)
 mkdir -p "$E/03_tests" "$E/04_build" "$E/05_ui" "$E/09_release" "$E/13_repo_scans" "$E/14_enterprise_audit"
 
-cd /workspaces/Firsttry/atlassian/forge-app
+# Stay at REPO_ROOT for all tool invocations (do NOT cd inside step commands)
 
 # ==============================================================================
 # Define evidence file paths
@@ -110,27 +117,36 @@ run_step 8 "Enterprise audit verification" \
 # ==============================================================================
 generate_proof_pack_binding() {
   local manifest_files="$E/09_release/prod_ready_manifest_files.txt"
+  local manifest_hash_inputs="$E/09_release/prod_ready_manifest_hash_inputs.txt"
   local manifest_sha256="$E/09_release/prod_ready_manifest_sha256.txt"
   local packhash_file="$E/09_release/prod_ready_packhash.txt"
   local exclusions_file="$E/09_release/prod_ready_manifest_exclusions.txt"
 
   # Ensure clean slate
   : > "$manifest_files"
+  : > "$manifest_hash_inputs"
   : > "$manifest_sha256"
   : > "$packhash_file"
   : > "$exclusions_file"
 
-  # Change to evidence directory for deterministic paths
+  # Change to evidence directory for deterministic relative paths
   (
     cd "$E" || return 1
 
-    # Build sorted file list (deterministic, LC_ALL=C for byte-order)
-    # Exclude the manifest files themselves to avoid circular dependencies
     export LC_ALL=C
+
+    # Exclusions: ONLY the truly nondeterministic runtime logs
+    # Binding files are NO LONGER excluded — the manifest must be self-describing
+    {
+      echo "stdout.txt"
+      echo "stderr.txt"
+    } | LC_ALL=C sort > "$exclusions_file"
+
+    # manifest_files: ALL evidence files except stdout/stderr
+    # Binding files (manifest_files, manifest_sha256, manifest_hash_inputs, packhash,
+    # exclusions) ARE included — the manifest is self-describing
     find . -type f -print \
       | sed 's|^\./||' \
-      | grep -v '^09_release/prod_ready_manifest' \
-      | grep -v '^09_release/prod_ready_packhash' \
       | grep -v '^stdout\.txt$' \
       | grep -v '^stderr\.txt$' \
       | LC_ALL=C sort > "$manifest_files"
@@ -140,32 +156,35 @@ generate_proof_pack_binding() {
       return 1
     fi
 
-    # Record exclusions (nondeterministic stdout/stderr logs)
-    {
-      echo "09_release/prod_ready_manifest_files.txt"
-      echo "09_release/prod_ready_manifest_sha256.txt"
-      echo "09_release/prod_ready_packhash.txt"
-      echo "09_release/prod_ready_manifest_exclusions.txt"
-      echo "stdout.txt"
-      echo "stderr.txt"
-    } | LC_ALL=C sort > "$exclusions_file"
+    # manifest_hash_inputs: manifest_files MINUS the computed-output files AND full.log
+    # - manifest_sha256 and packhash cannot be included in their own input set
+    # - run_prod_ready_audit.full.log is excluded because finalization writes occur
+    #   after this function returns (post-binding lines are not captured in the hash)
+    grep -v '^09_release/prod_ready_manifest_sha256\.txt$' "$manifest_files" \
+      | grep -v '^09_release/prod_ready_packhash\.txt$' \
+      | grep -v '^09_release/run_prod_ready_audit\.full\.log$' \
+      > "$manifest_hash_inputs"
 
-    # Compute sha256 for each file in manifest order
-    # Piping through sha256sum to ensure deterministic output
+    if [ ! -s "$manifest_hash_inputs" ]; then
+      echo "ERROR: manifest_hash_inputs is empty or unreadable" >&2
+      return 1
+    fi
+
+    # Compute sha256 for each file listed in hash_inputs (deterministic order)
     while IFS= read -r filepath; do
       sha256sum "$filepath" 2>/dev/null || {
         echo "ERROR: failed to hash $filepath" >&2
         return 1
       }
-    done < "$manifest_files" > "$manifest_sha256"
+    done < "$manifest_hash_inputs" > "$manifest_sha256"
 
     if [ ! -s "$manifest_sha256" ]; then
       echo "ERROR: manifest_sha256 is empty or unreadable" >&2
       return 1
     fi
 
-    # Compute packhash: hash of the manifest_sha256 file itself
-    sha256sum "$manifest_sha256" | awk '{print $1}' > "$packhash_file"
+    # Compute packhash: sha256 of manifest_sha256.txt (tamper-evident binding)
+    sha256sum "09_release/prod_ready_manifest_sha256.txt" | awk '{print $1}' > "$packhash_file"
 
     if [ ! -s "$packhash_file" ]; then
       echo "ERROR: packhash_file is empty or unreadable" >&2
