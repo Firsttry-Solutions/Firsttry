@@ -623,7 +623,7 @@ const INDEX_HTML = `<!DOCTYPE html>
       <span class="badge">No certifications claimed</span>
       <span class="badge green">Read-only Forge app</span>
       <span class="badge green">Fail-closed validation</span>
-      <span class="badge amber">Version: ${escHtml(VERSION)} | ${escHtml(TODAY)} UTC</span>
+      <span class="badge amber">Portal Pack Version: ${escHtml(PACK_VERSION || VERSION)} | ${escHtml(TODAY)} UTC</span>
     </div>
 
     <div class="nav-section">
@@ -658,7 +658,7 @@ const INDEX_HTML = `<!DOCTYPE html>
 
     <p style="font-size:.78rem;color:var(--muted);margin-top:32px">
       Repository: <a href="https://github.com/Firsttry-Solutions/Firsttry">Firsttry-Solutions/Firsttry</a>
-      &nbsp;|&nbsp; Version: ${escHtml(VERSION)} &nbsp;|&nbsp; Validated: ${escHtml(TODAY)} UTC
+      &nbsp;|&nbsp; Portal Pack Version: ${escHtml(PACK_VERSION || VERSION)} &nbsp;|&nbsp; Validated: ${escHtml(TODAY)} UTC
     </p>
   </div>
   <script src="assets/portal.js"></script>

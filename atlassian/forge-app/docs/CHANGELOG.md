@@ -7,12 +7,15 @@ All notable changes to documentation and release artifacts are recorded here.
 ### Added
 - `EVIDENCE_INDEX.md` (FT-EVID-002): authoritative evidence map; published at
   `evidence/evidence-index.html`
-- `audit_trust_portal_live_full.mjs`: full live crawler audit — home + all nav routes;
-  checks portal_pack_version, doc_id, emails, pseudo-links; outputs JSON+MD to `$AUDIT_DIR`
+- `audit_trust_portal_live_full.mjs`: live crawler — HTTP 200, Portal Pack Version
+  4.4.1 on every page incl. home, doc_id per page, email allowlist, pseudo-link
+  `href=` check (not text mentions), assets, forbidden paths; JSON+MD to $AUDIT_DIR
 - `audit_trust_portal_source_full.mjs`: full source audit — all metadata keys, doc_id
-  match, Last Updated format, no pseudo-link hrefs; 35/35 PASS
+  match, Last Updated format, no pseudo-link hrefs in markdown links; 35/35 PASS
 
 ### Changed
+- `build_trust_portal.mjs`: home page badge changed `Version:` → `Portal Pack Version:`
+  so index.html passes the live audit pack-version assertion
 - `pages_pack_manifest.json`: 4.4.0 → 4.4.1; added FT-EVID-002 to nav + required_files
 - `docs.yml`: `env.AUDIT_DIR`, full audit steps, deterministic artifact paths
 - `verify_pages_live.sh`: added `/evidence/evidence-index.html` to REQUIRED_PATHS

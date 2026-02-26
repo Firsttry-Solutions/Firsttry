@@ -17,7 +17,8 @@ All notable changes to FirstTry are documented in this file.
 - Full live crawler: fetches home + every portal_nav route from `portal_base_url`
 - Asserts HTTP 200, `Portal Pack Version: 4.4.1` in every page body, doc_id in
   every doc page, no forbidden placeholders, email allowlist, forbidden-path checks
-- Scans for `docs/<section>/` pseudo-links in rendered page bodies
+- Pseudo-link check: flags only actual `<a href="docs/<section>/">` links in
+  rendered HTML — plain-text prose mentions and code spans are allowed
 - Outputs `live_audit.json` + `live_audit.md` to `$AUDIT_DIR`
 - Fails closed (exit 1) on any failure
 
@@ -41,6 +42,11 @@ All notable changes to FirstTry are documented in this file.
 
 **`atlassian/forge-app/tools/verify_pages_live.sh`** (updated)
 - Added `/evidence/evidence-index.html` to REQUIRED_PATHS
+
+**`atlassian/forge-app/tools/build_trust_portal.mjs`** (updated)
+- Home page (`index.html`) version badge now reads
+  `Portal Pack Version: 4.4.1` (was `Version: 4.4.1`) so live audit can assert the
+  canonical pack-version string on every page including the index
 
 **All local gates passed:**
 - `audit_trust_portal_source_full.mjs`: 35/35 PASS
