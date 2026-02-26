@@ -35,16 +35,16 @@ echo "Scanning for external HTTP clients and URLs..." >&2
 # Exclude: local fetch(window.location...), comments, test files, sourceScan.ts (security audit tool)
 CLIENTS=$(rg "fetch\(|axios|node-fetch|http\.request|https\.request" "${SRC_DIR}" \
   --type ts --type js --no-heading 2>&1 | \
-  { grep -v "test\|.spec\|.test\|requestJira\|window.location\|// \|/\*\|sourceScan\|re:" || true; } | \
-  wc -l)
+  grep -v "test\|.spec\|.test\|requestJira\|window.location\|// \|/\*\|sourceScan\|re:" | \
+  wc -l || echo 0)
 EXTERNAL_CLIENTS=$(echo "$CLIENTS" | tr -d ' ')
 
 # Count external URLs in TypeScript code only 
 # Exclude: atlassian, localhost, comments, test files
 URLS=$(rg "https?://" "${SRC_DIR}" \
   --type ts --type js --no-heading 2>&1 | \
-  { grep -v "atlassian\|localhost\|127\.0\.0\.1\|test\|.spec\|.test\|// \|/\*" || true; } | \
-  wc -l)
+  grep -v "atlassian\|localhost\|127\.0\.0\.1\|test\|.spec\|.test\|// \|/\*" | \
+  wc -l || echo 0)
 EXTERNAL_URLS=$(echo "$URLS" | tr -d ' ')
 
 # Count Forge API calls for reference

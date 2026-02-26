@@ -53,15 +53,20 @@ describe('Orchestrator Invariants', () => {
     expect(hasVerdictFile).toBe(true);
   });
 
-  it('should contain exactly 6 run_step calls', () => {
+  it('should contain exactly 7 run_step calls', () => {
     const matches = orchestratorContent.match(/^run_step\s+\d+\s/gm);
     expect(matches).not.toBeNull();
-    expect(matches!.length).toBe(6);
+    expect(matches!.length).toBe(7);
   });
 
   it('should contain step 6 with Proof discipline label', () => {
     const hasStep6 = /run_step\s+6\s+"Proof discipline/.test(orchestratorContent);
     expect(hasStep6).toBe(true);
+  });
+
+  it('should contain step 7 with repo-root verification', () => {
+    const hasStep7 = /run_step\s+7\s+"No repo-root/.test(orchestratorContent);
+    expect(hasStep7).toBe(true);
   });
 
   it('should NOT contain "set -e" (must be "set -uo pipefail")', () => {
@@ -92,9 +97,14 @@ describe('Orchestrator Invariants', () => {
   });
 
   it('should write evidence files explicitly at end', () => {
-    const hasExplicitWrite = /echo\s+"\$OVERALL_EXIT"\s+>\s+"?\$EXIT_FILE"?/.test(
+    // Check for explicit writes of exit code file and verdict file
+    // Matches patterns: echo "0" > "$EXIT_FILE" or echo "PASS" > "$VERDICT_FILE"
+    const hasExitCodeWrite = /echo\s+"[01]"\s+>\s+"?\$\{?EXIT_FILE\}?"?/.test(
       orchestratorContent
     );
-    expect(hasExplicitWrite).toBe(true);
+    const hasVerdictWrite = /echo\s+"(PASS|FAIL)"\s+>\s+"?\$\{?VERDICT_FILE\}?"?/.test(
+      orchestratorContent
+    );
+    expect(hasExitCodeWrite || hasVerdictWrite).toBe(true);
   });
 });

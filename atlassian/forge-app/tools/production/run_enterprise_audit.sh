@@ -114,6 +114,8 @@ fi
 
 echo ""
 echo "Evidence files:"
-ls -lh "${AUDIT_DIR}" | grep -E "\.(csv|txt|md)$" || true
+if ! ls -lh "${AUDIT_DIR}" 2>/dev/null | grep -E "\.(csv|txt|md)$"; then
+  echo "(No evidence files found)" >&2
+fi
 
 exit ${OVERALL_EXIT}

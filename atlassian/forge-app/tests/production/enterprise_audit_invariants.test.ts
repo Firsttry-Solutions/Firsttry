@@ -142,9 +142,16 @@ describe('Enterprise Audit Invariants', () => {
         const scriptPath = path.join(TOOLS_PROD, script);
         const content = fs.readFileSync(scriptPath, 'utf-8');
         
-        // Must have exit 0 and exit 1 calls
+        // Check for explicit exit codes (shell: "exit 0/1", JavaScript: "process.exit(0/1)")
+        const isShellScript = /\.sh$/.test(script);
+        const shellExitPattern = /exit\s+0|exit\s+1/;
+        const jsExitPattern = /process\.exit\(0\)|process\.exit\(1\)/;
+        const hasExplicitExit = isShellScript ? 
+          shellExitPattern.test(content) : 
+          jsExitPattern.test(content);
+        
         expect(
-          /exit\s+0|exit\s+1/.test(content),
+          hasExplicitExit,
           `${script} must use explicit exit codes`
         ).toBe(true);
       }

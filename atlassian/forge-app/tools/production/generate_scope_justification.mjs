@@ -90,6 +90,9 @@ fs.mkdirSync(AUDIT_DIR, { recursive: true });
 fs.writeFileSync(OUTPUT_FILE, `# Scope Justification Table\n\n${table.join('\n')}\n`);
 console.log(table.join('\n'));
 
+// Explicit success exit
+process.exit(0);
+
 function mapEndpointToScope(endpoint) {
   if (endpoint.includes('/myself') || endpoint.includes('/user')) return 'read:jira-user';
   if (endpoint.includes('/project') || endpoint.includes('/issue')) return 'read:jira-work';
