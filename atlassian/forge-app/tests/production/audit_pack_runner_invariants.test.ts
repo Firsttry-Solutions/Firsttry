@@ -144,23 +144,23 @@ describe('Audit Pack Runner Invariants', () => {
 
       expect(
         content,
-        'Must exclude AUDIT_PACK_MANIFEST.sha256 from manifest'
+        'Must exclude AUDIT_PACK_MANIFEST.sha256 (self-reference) from manifest'
       ).toContain('! -name "AUDIT_PACK_MANIFEST.sha256"');
 
       expect(
         content,
-        'Must exclude AUDIT_PACK_VERIFY.sh from manifest'
+        'Must exclude AUDIT_PACK_VERIFY.sh (verifier script) from manifest'
       ).toContain('! -name "AUDIT_PACK_VERIFY.sh"');
 
       expect(
         content,
-        'Must exclude AUDIT_PACK_SUMMARY.md from manifest'
-      ).toContain('! -name "AUDIT_PACK_SUMMARY.md"');
+        'Must NOT exclude AUDIT_PACK_SUMMARY.md (tamper-detectable core artifact)'
+      ).not.toContain('! -name "AUDIT_PACK_SUMMARY.md"');
 
       expect(
         content,
-        'Must exclude AUDIT_PACK_VERDICT.txt from manifest'
-      ).toContain('! -name "AUDIT_PACK_VERDICT.txt"');
+        'Must NOT exclude AUDIT_PACK_VERDICT.txt (tamper-detectable core artifact)'
+      ).not.toContain('! -name "AUDIT_PACK_VERDICT.txt"');
     });
   });
 
@@ -266,10 +266,25 @@ describe('Audit Pack Runner Invariants', () => {
         content,
         'Must exclude rg_outbound* (volatile grep output)'
       ).toContain('! -name "rg_outbound*"');
+
+      expect(
+        content,
+        'Must exclude stdout.txt (operator-created logs)'
+      ).toContain('! -name "stdout.txt"');
+
+      expect(
+        content,
+        'Must exclude stderr.txt (operator-created logs)'
+      ).toContain('! -name "stderr.txt"');
     });
 
     it('includes deterministic evidence files in manifest', () => {
       const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
+
+      expect(
+        content,
+        'Must NOT exclude AUDIT_PACK_SUMMARY.md (tamper-detectable)'
+      ).not.toContain('! -name "AUDIT_PACK_SUMMARY.md"');
 
       expect(
         content,
