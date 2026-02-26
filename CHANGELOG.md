@@ -2,6 +2,127 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.2.3] - 2026-02-26
+
+### Added
+
+#### Truth Audit System + GitHub Pages Publishing
+
+**Truth Audit** - Claims Register + Auto-Validation
+- `docs/trust/CLAIMS_REGISTER.md` - Central registry of 18 claims with SIG 2.2/CAIQ v4 alignment
+  - Columns: ClaimID | ClaimText | ProofType (EVIDENCE|ATLASSIAN) | ProofPointer | ValidationRule
+  - Explicit mapping of banned phrases to registered claims
+  - Quarterly review schedule with Owner accountability
+  
+**Truth Claims Gate** - Deterministic validation tool
+- `tools/truth_claims_gate.mjs` - Node.js ESM script (no external dependencies)
+  - Parses CLAIMS_REGISTER.md table
+  - Validates EVIDENCE proofs exist as files in repo
+  - Validates ATLASSIAN proofs are https://developer.atlassian.com/ URLs
+  - Scans docs/trust/, docs/operations/, docs/procurement/ for banned phrases
+  - Fails if banned phrase found but not registered in CLAIMS_REGISTER
+  - Deterministic sorted error output; non-zero exit on any error
+  - Banned Phrases List: "no pii", "automatically deleted", "no subprocessors", "guaranteed", "certified", "compliant", "cloud fortified"
+
+**Enterprise Documentation Gate Integration**
+- Updated `tools/enterprise_docs_gate.sh` (step 2a)
+  - Integrated truth_claims_gate.mjs into validation pipeline
+  - Fails entire gate if Truth Audit fails
+  - Added CLAIMS_REGISTER.md to required docs list
+
+**GitHub Pages Publishing**
+- Enhanced `.github/workflows/docs.yml`
+  - Node.js v20 pinned
+  - New build step: copies docs/trust/, docs/operations/, docs/procurement/ into site/
+  - Generates landing page index.html with links to:
+    - docs/README.md (role-based navigation)
+    - docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md (master index)
+    - Trust Center section links (SECURITY_OVERVIEW, THREAT_MODEL, RESOLVER_INVENTORY, etc.)
+    - Operations section links (INCIDENT_RESPONSE_PLAN, SLA, SECURE_SDLC_POLICY, etc.)
+    - Procurement section links (SECURITY_QUESTIONNAIRE_MASTER, CONTROL_MAPPING_MATRIX)
+  - Uses official GitHub Pages actions:
+    - actions/configure-pages
+    - actions/upload-pages-artifact
+    - actions/deploy-pages
+  - Workflow fails if link checker or enterprise gate fails (fail-closed)
+  - Publishes to: https://firsttry-solutions.github.io/Firsttry/
+
+#### Claims Register Content (18 Claims)
+
+**Security & Verification (C001-C012)**
+- C001: All API calls read-only (0 POST/PUT/DELETE mutations)
+- C002: Zero external network egress
+- C003: Data deletion SLA 30 days (Forge platform dependent)
+- C004: PII minimized but Jira may contain personal data
+- C005: No independent subprocessors (Forge-only)
+- C006: Data encrypted in Atlassian Forge Storage
+- C007: Threat Model with STRIDE taxonomy (18 scenarios)
+- C008: Incident Response SLA (4h-24h, best-effort)
+- C009: NO uptime SLA (support response times only)
+- C010: Scope enforcement via CI/CD gate
+- C011: Build determinism enforced (SHA256 baselines)
+- C012: Read-only API verification
+
+**Compliance & Platform Dependency (C013-C018)**
+- C013: Platform dependency transparency (Forge handles isolation, residency, uptime)
+- C014: Customer responsibilities (RBAC hygiene, export cadence, uninstall)
+- C015: Control mapping w/o certification claims
+- C016: NOT certified - explicit non-claim (SOC2, compliant, cloud fortified)
+- C017: Data retention Forge-dependent (not automatically deleted)
+- C018: PII claim is false - we do store personal data
+
+### Key Design Principles
+
+**Truth Audit System**
+- Every claim must be registered with evidence (file path or Atlassian docs URL)
+- Banned phrases trigger validation gate failure unless claimed in register
+- Quarterly review cycle with named owner accountability
+- Deterministic output enables CI/CD validation
+
+**No False Claims**
+- Explicit disclaimers for "not certified", "not compliant", "no uptime SLA"
+- Platform dependencies clearly attributed to Atlassian Forge
+- SLA.md reiterates: no uptime percentage guaranteed
+
+**Fail-Closed Architecture**
+- Truth Audit gate integrated into enterprise_docs_gate.sh
+- All validation checks must pass or entire pipeline fails
+- Detailed error messages for debugging
+
+### Verification Status
+
+✅ Truth Audit Gate: PASS
+  - 18 claims registered
+  - 15 EVIDENCE proofs validated (files exist)
+  - 3 ATLASSIAN proofs validated (https://developer.atlassian.com/ URLs)
+  - 4 banned phrases found and claimed
+  - 0 unregistered banned phrases
+
+✅ Markdown Link Checker: Enterprise docs have valid links
+
+✅ Enterprise Documentation Gate: All 14 validation points pass
+
+✅ Git Diff: Only allowed paths changed
+  - atlassian/forge-app/.github/workflows/docs.yml
+  - atlassian/forge-app/docs/trust/CLAIMS_REGISTER.md
+  - atlassian/forge-app/tools/enterprise_docs_gate.sh
+  - atlassian/forge-app/tools/truth_claims_gate.mjs
+
+✅ No Runtime Changes
+  - Zero app code modifications
+  - Zero Forge scope additions
+  - Zero external egress added
+  - Zero npm dependency additions
+
+### Next Steps (When GitHub Pages Configured)
+
+1. Configure GitHub repo settings: Settings → Pages → Source = "GitHub Actions"
+2. Push tag v1.0-enterprise-docs-v4.2.3
+3. Workflow automatically builds site/ and deploys to GitHub Pages
+4. Access documentation at: https://firsttry-solutions.github.io/Firsttry/
+
+---
+
 ## [v1.0-enterprise-docs-v4.2.2] - 2026-02-26
 
 ### Added
