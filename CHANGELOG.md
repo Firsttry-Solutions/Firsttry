@@ -2,6 +2,35 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.3.0] - 2026-02-26
+
+### Changed
+
+#### Complete CI isolation + required email placement enforcement
+
+**`.github/workflows/ci-core.yml` + `evidence-guard.yml`**
+- Added `!atlassian/forge-app/docs/**` and `!.github/workflows/docs.yml` exclusions to
+  `push: paths:` so docs-only commits do NOT trigger runtime CI
+
+**`.github/workflows/docs.yml`**
+- Added `atlassian/forge-app/docs/CHANGELOG.md` to trigger paths
+
+**`atlassian/forge-app/tools/enterprise_docs_gate.sh`**
+- Added `example\.org` to PLACEHOLDER_PATTERNS in step 2c (was missing)
+
+**`atlassian/forge-app/tools/email_integrity_gate.mjs`** (v4.3.0)
+- Fixed REQUIRED_PRESENCE check: if a required doc does not exist on disk, now emits
+  `MISSING_REQUIRED_DOC [path]: file does not exist` error (was silently skipped)
+- Now fail-closed on both missing-file and missing-email scenarios
+
+Local gate status (2026-02-26):
+  md_link_check ✅  truth_claims_gate ✅  email_integrity_gate ✅  enterprise_docs_gate ✅
+
+Docs-only simulation: only `docs.yml` triggers on `atlassian/forge-app/docs/**` changes;
+all 6 runtime workflows (ci-core, evidence-guard, enterprise_repo_gates,
+forge-app-repro-proof, gates, placeholders-guard, reviewer-gates, reviewer_gate_ci)
+exclude `atlassian/forge-app/docs/**` from their push path filters.
+
 ## [v1.0-enterprise-docs-v4.2.9] - 2026-02-26
 
 ### Changed

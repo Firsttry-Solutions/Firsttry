@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Email Integrity Gate - Enterprise Docs Only (v4.2.5)
+ * Email Integrity Gate - Enterprise Docs Only (v4.3.0)
  * Node v20 ESM — No external dependencies.
  *
  * Enforces:
@@ -145,7 +145,15 @@ for (const { abs, rel } of allFiles) scanFile(abs, rel);
 for (const [email, required] of Object.entries(REQUIRED_PRESENCE)) {
   for (const doc of required) {
     const found = fileEmails.get(doc);
-    if (found === undefined) continue; // doc not scanned (doesn't exist in scope)
+    if (found === undefined) {
+      const absDoc = path.join(repoRoot, doc);
+      if (!fs.existsSync(absDoc)) {
+        errors.push(`MISSING_REQUIRED_DOC [${doc}]: file does not exist — required to contain ${email}`);
+      } else {
+        errors.push(`REQUIRED_MISSING [${doc}]: "${email}" must appear in this document`);
+      }
+      continue;
+    }
     if (!found.has(email)) errors.push(`REQUIRED_MISSING [${doc}]: "${email}" must appear in this document`);
   }
 }
