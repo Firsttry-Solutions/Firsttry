@@ -2,6 +2,25 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.3.3] - 2026-02-26
+
+### Fixed
+
+#### GitHub Pages: site now built at repo root; fail-closed artifact + live verification
+
+**`.github/workflows/docs.yml`**
+- Removed `working-directory: atlassian/forge-app` from build step — site is now built
+  directly at repo root, eliminating subdirectory path ambiguity in the Pages artifact
+- Build commands updated to use explicit `cp atlassian/forge-app/docs/...` → `site/...`
+  paths; `rm -rf site _site` pre-cleans on every run
+- Artifact upload path changed from `atlassian/forge-app/site` → `site` (repo root)
+- `verify_pages_site_artifact.sh` called as
+  `bash atlassian/forge-app/tools/verify_pages_site_artifact.sh ./site` (no working-dir)
+- Live-verify retry extended from 6 × 10 s → 20 × 30 s (10-minute max)
+- Trigger paths include `tools/verify_pages_site_artifact.sh` and `tools/verify_pages_live.sh`
+
+---
+
 ## [v1.0-enterprise-docs-v4.3.2] - 2026-02-26
 
 ### Fixed

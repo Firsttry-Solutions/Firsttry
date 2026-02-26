@@ -2,6 +2,18 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.3.3 — 2026-02-26 — GitHub Pages: repo-root site build; fail-closed artifact + live verify
+
+### Fixed
+- Site built at repo root (`site/`) — removed `working-directory: atlassian/forge-app`
+  ambiguity; artifact upload path is now simply `site`
+- `verify_pages_site_artifact.sh ./site` called from repo root (no working-dir)
+- Live-verify retry: 20 × 30 s (10 min max)
+- Trigger paths: `tools/verify_pages_site_artifact.sh` + `tools/verify_pages_live.sh` added
+- `_site/site.css` stale artifact removed and excluded from repo
+
+---
+
 ## v4.3.2 — 2026-02-26 — GitHub Pages: enterprise pack only + fail-closed artifact policy
 
 - DISABLED: `staticc.yml` upload-pages-artifact + deploy-pages steps (`if: false`)

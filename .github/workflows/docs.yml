@@ -8,6 +8,8 @@ on:
       - ".github/workflows/docs.yml"
       - "CHANGELOG.md"
       - "atlassian/forge-app/docs/CHANGELOG.md"
+      - "atlassian/forge-app/tools/verify_pages_site_artifact.sh"
+      - "atlassian/forge-app/tools/verify_pages_live.sh"
   workflow_dispatch:
 
 concurrency:
@@ -62,21 +64,22 @@ jobs:
         run: bash tools/enterprise_docs_gate.sh
         working-directory: atlassian/forge-app
 
-      - name: Build documentation site (enterprise pack only)
-        working-directory: atlassian/forge-app
+      - name: Build documentation site (enterprise pack only — repo root site/)
         run: |
-          # Deterministic build: wipe any prior site/ then copy enterprise pack ONLY
-          rm -rf site
+          set -euo pipefail
+          # Deterministic build at repo root — eliminates working-directory ambiguity.
+          # Wipe any prior site/ (including legacy _site/ from staticc.yml) then
+          # copy ONLY the enterprise pack. NO production/, NO legacy root docs.
+          rm -rf site _site
           mkdir -p site/trust site/operations site/procurement site/evidence
 
-          # Copy enterprise pack directories — NO production/, NO legacy root docs
-          cp docs/trust/*.md        site/trust/
-          cp docs/operations/*.md   site/operations/
-          cp docs/procurement/*.md  site/procurement/
+          cp atlassian/forge-app/docs/trust/*.md        site/trust/
+          cp atlassian/forge-app/docs/operations/*.md   site/operations/
+          cp atlassian/forge-app/docs/procurement/*.md  site/procurement/
           # evidence may contain subdirs (e.g. baselines/) — preserve structure
-          cp -r docs/evidence/.     site/evidence/
+          cp -r atlassian/forge-app/docs/evidence/.     site/evidence/
 
-          # Generate landing page with direct links to all required files
+          # Generate landing page
           cat > site/index.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en">
@@ -99,7 +102,7 @@ jobs:
 <body>
     <div class="container">
         <h1>FirstTry - Enterprise Security Documentation</h1>
-        <p><strong>Version:</strong> 4.3.2 | <strong>Last Updated:</strong> 2026-02-26 UTC</p>
+        <p><strong>Version:</strong> 4.3.3 | <strong>Last Updated:</strong> 2026-02-26 UTC</p>
         <p>Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews.</p>
         <p><span class="badge">No certifications claimed</span> &nbsp; <span class="badge">Read-only Forge app</span> &nbsp; <span class="badge">Fail-closed validation</span></p>
 
@@ -188,19 +191,25 @@ jobs:
 </html>
 HTMLEOF
 
-      - name: Smoke proof - list and assert deployed files
+      - name: Smoke proof — list and assert required files in repo-root site/
         run: |
           set -euo pipefail
           echo "=== Deployed file listing (site/) ==="
-          find atlassian/forge-app/site -maxdepth 2 -type f | sort | head -200
+          find site -maxdepth 3 -type f | sort | head -200
 
           echo ""
           echo "=== Asserting required files exist ==="
           ERRORS=0
           for f in \
-            "atlassian/forge-app/site/trust/SECURITY_OVERVIEW.md" \
-            "atlassian/forge-app/site/operations/SLA.md" \
-            "atlassian/forge-app/site/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md"; do
+            "site/index.html" \
+            "site/trust/SECURITY_OVERVIEW.md" \
+            "site/trust/SUBPROCESSORS.md" \
+            "site/operations/SLA.md" \
+            "site/operations/INCIDENT_RESPONSE_PLAN.md" \
+            "site/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md" \
+            "site/procurement/SECURITY_QUESTIONNAIRE_MASTER.md" \
+            "site/procurement/CONTROL_MAPPING_MATRIX.md" \
+            "site/evidence/RETENTION_POLICY.md"; do
             if test -f "$f"; then
               echo "  OK: $f"
             else
@@ -212,29 +221,29 @@ HTMLEOF
             echo "FAIL: Smoke proof — required files missing from site/" >&2
             exit 1
           fi
-          echo "PASS: All 3 smoke-proof files present in site/"
+          echo "PASS: All required files present in site/"
 
-      - name: Verify Pages site artifact (shape + content policy)
-        working-directory: atlassian/forge-app
-        run: bash tools/verify_pages_site_artifact.sh site
+      - name: Verify Pages site artifact (fail-closed shape + content policy)
+        run: bash atlassian/forge-app/tools/verify_pages_site_artifact.sh ./site
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
-      - name: Upload Pages artifact
+      - name: Upload Pages artifact (repo-root site/)
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'atlassian/forge-app/site'
+          path: 'site'
       
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify live GitHub Pages (fail-closed, with propagation retries)
+      - name: Verify live GitHub Pages (fail-closed, 10-min backoff retries)
         run: |
           set -euo pipefail
-          MAX_TRIES=6
-          SLEEP_SEC=10
+          # 20 retries × 30s = 10 minutes max for Pages propagation
+          MAX_TRIES=20
+          SLEEP_SEC=30
           attempt=0
           while true; do
             attempt=$((attempt + 1))
@@ -244,7 +253,7 @@ HTMLEOF
               exit 0
             fi
             if [ $attempt -ge $MAX_TRIES ]; then
-              echo "FAIL: Live verification failed after $MAX_TRIES attempts" >&2
+              echo "FAIL: Live verification failed after $MAX_TRIES attempts (10 min)" >&2
               exit 1
             fi
             echo "Waiting ${SLEEP_SEC}s for GitHub Pages propagation..."
