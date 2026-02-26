@@ -74,6 +74,18 @@ describe('Orchestrator Invariants', () => {
     expect(hasStep8).toBe(true);
   });
 
+  it('should contain TOTAL_STEPS=8 variable definition', () => {
+    const hasTotalSteps = /TOTAL_STEPS\s*=\s*8/.test(orchestratorContent);
+    expect(hasTotalSteps).toBe(true);
+  });
+
+  it('should use ${TOTAL_STEPS} in step logging, not hardcoded /7', () => {
+    const usesTotalStepsVar = /Step\s+\$\{step_no\}\/\$\{TOTAL_STEPS\}/.test(orchestratorContent);
+    const hasHardcoded7 = /Step\s+[\$\{]*step_no[\}]*\/7/.test(orchestratorContent);
+    expect(usesTotalStepsVar).toBe(true);
+    expect(hasHardcoded7).toBe(false);
+  });
+
   it('should NOT contain "set -e" (must be "set -uo pipefail")', () => {
     const hasSete = /set\s+-[a-zA-Z]*e[a-zA-Z]*\s+pipefail/.test(orchestratorContent);
     expect(hasSete).toBe(false);
