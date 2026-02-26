@@ -230,7 +230,7 @@ echo "" >> "$FULL_LOG"
 echo "Evidence directory: $E" >> "$FULL_LOG"
 echo "Exit code: $OVERALL_EXIT" >> "$FULL_LOG"
 
-# ── PASS 1: generate binding to learn the packhash value ────────────────────────
+# ── PASS 1: generate binding to learn the preseal packhash value ──────────────
 if ! generate_proof_pack_binding; then
   echo "ERROR: failed to generate proof pack binding (pass 1)" >&2
   OVERALL_EXIT=1
@@ -241,21 +241,30 @@ if ! generate_proof_pack_binding; then
   exit "$OVERALL_EXIT"
 fi
 
+# Capture the PRESEAL hash (pass-1 binding, before PROOF_PACK_* lines are appended)
+_PRESEAL_HASH="$(cat "$E/09_release/prod_ready_packhash.txt")"
+
 # Append PROOF_PACK_* summary lines to FULL_LOG so a reviewer can verify offline
-# without reading script code. These lines are sealed in pass 2 below.
-_PROOF_PACKHASH="$(cat "$E/09_release/prod_ready_packhash.txt")"
+# without reading script code. These lines (including PRESEAL) are sealed in pass 2.
 echo "" >> "$FULL_LOG"
 echo "PROOF_PACK_DIR: $E" >> "$FULL_LOG"
-echo "PROOF_PACK_PACKHASH: $_PROOF_PACKHASH" >> "$FULL_LOG"
+echo "PROOF_PACK_PACKHASH_PRESEAL: $_PRESEAL_HASH" >> "$FULL_LOG"
 echo "PROOF_PACK_HASH_INPUTS_FILE: 09_release/prod_ready_manifest_hash_inputs.txt" >> "$FULL_LOG"
 echo "PROOF_PACK_EXCLUSIONS_FILE: 09_release/prod_ready_manifest_exclusions.txt" >> "$FULL_LOG"
 echo "PROOF_PACK_VERIFY_CMD: bash tools/production/verify_prod_ready_proof_pack.sh \"$E\"" >> "$FULL_LOG"
 
-# ── PASS 2 (RESEAL): reseal so PROOF_PACK_* lines above are included in hash ────
+# ── PASS 2 (RESEAL): reseal so PROOF_PACK_PRESEAL + other lines above are sealed ──
 if ! generate_proof_pack_binding; then
   echo "ERROR: failed to generate proof pack binding (pass 2 / reseal)" >&2
   OVERALL_EXIT=1
 fi
+
+# Append FINAL hash line AFTER pass 2 completes.
+# PROOF_PACK_PACKHASH_FINAL is NOT sealed by the binding (would require a third pass).
+# It is derived directly from prod_ready_packhash.txt and the verifier enforces
+# FINAL == prod_ready_packhash.txt byte-for-byte, making it provable without sealing.
+_FINAL_HASH="$(cat "$E/09_release/prod_ready_packhash.txt")"
+echo "PROOF_PACK_PACKHASH_FINAL: $_FINAL_HASH" >> "$FULL_LOG"
 
 # Print verdict to stdout (matches what was written to VERDICT_FILE)
 echo ""

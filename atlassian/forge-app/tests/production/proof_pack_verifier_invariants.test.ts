@@ -71,23 +71,29 @@ while IFS= read -r f; do
   sha256sum "$f"
 done < 09_release/prod_ready_manifest_hash_inputs.txt > 09_release/prod_ready_manifest_sha256.txt
 
-# packhash pass 1: sha256 of manifest_sha256.txt
+# packhash pass 1 (PRESEAL): sha256 of manifest_sha256.txt
 sha256sum 09_release/prod_ready_manifest_sha256.txt | awk '{print $1}' > 09_release/prod_ready_packhash.txt
 
+# Capture PRESEAL hash
+_preseal=$(cat 09_release/prod_ready_packhash.txt)
+
 # Append PROOF_PACK_* summary lines to full.log (mirrors run_prod_ready_audit.sh)
-_ph=$(cat 09_release/prod_ready_packhash.txt)
 echo "" >> 09_release/run_prod_ready_audit.full.log
 echo "PROOF_PACK_DIR: $PACK" >> 09_release/run_prod_ready_audit.full.log
-echo "PROOF_PACK_PACKHASH: $_ph" >> 09_release/run_prod_ready_audit.full.log
+echo "PROOF_PACK_PACKHASH_PRESEAL: $_preseal" >> 09_release/run_prod_ready_audit.full.log
 echo "PROOF_PACK_HASH_INPUTS_FILE: 09_release/prod_ready_manifest_hash_inputs.txt" >> 09_release/run_prod_ready_audit.full.log
 echo "PROOF_PACK_EXCLUSIONS_FILE: 09_release/prod_ready_manifest_exclusions.txt" >> 09_release/run_prod_ready_audit.full.log
 echo "PROOF_PACK_VERIFY_CMD: bash tools/production/verify_prod_ready_proof_pack.sh \"$PACK\"" >> 09_release/run_prod_ready_audit.full.log
 
-# Reseal pass 2: recompute binding so PROOF_PACK lines are included in hash
+# Reseal pass 2: recompute binding so PROOF_PACK_PRESEAL lines are included in hash
 while IFS= read -r f; do
   sha256sum "$f"
 done < 09_release/prod_ready_manifest_hash_inputs.txt > 09_release/prod_ready_manifest_sha256.txt
 sha256sum 09_release/prod_ready_manifest_sha256.txt | awk '{print $1}' > 09_release/prod_ready_packhash.txt
+
+# Capture FINAL hash (authoritative; written after pass 2, not sealed)
+_final=$(cat 09_release/prod_ready_packhash.txt)
+echo "PROOF_PACK_PACKHASH_FINAL: $_final" >> 09_release/run_prod_ready_audit.full.log
 `;
 
 function createValidPack(packDir: string): void {
@@ -224,18 +230,17 @@ describe('Proof Pack Verifier Invariants', () => {
     expect(r.stdout).not.toContain('STATUS      : PASS');
   });
 
-  // ── Missing PROOF_PACK_PACKHASH label in full.log ────────────────────────────
-  it('should fail (exit 1) when full.log has no PROOF_PACK_PACKHASH: label', () => {
-    // Build a pack whose full.log intentionally has no PROOF_PACK_PACKHASH label.
-    // The binding is still valid for this content (no label = never written by real script).
-    const SCRIPT_NO_LABEL = `#!/bin/bash
+  // ── Missing PROOF_PACK_PACKHASH_PRESEAL label in full.log ─────────────────────
+  it('should fail (exit 1) when full.log has no PROOF_PACK_PACKHASH_PRESEAL: label', () => {
+    // Pack sealed correctly (single-pass, no PRESEAL label), then FINAL appended.
+    // Verifier strips FINAL before hashing → hash matches. Then PRESEAL missing → FAIL.
+    const SCRIPT_NO_PRESEAL = `#!/bin/bash
 set -euo pipefail
 PACK="$1"
 mkdir -p "$PACK/09_release"
 echo "PASS"             > "$PACK/PROD_READY_VERDICT.txt"
 echo "0"                > "$PACK/09_release/run_prod_ready_audit.exit_code.txt"
 echo "step output data" > "$PACK/09_release/some_step.txt"
-# full.log WITHOUT any PROOF_PACK_PACKHASH line
 echo "All verifications passed." > "$PACK/09_release/run_prod_ready_audit.full.log"
 cd "$PACK"
 : > 09_release/prod_ready_manifest_files.txt
@@ -251,19 +256,86 @@ grep -v '^09_release/prod_ready_manifest_sha256\\.txt\$' 09_release/prod_ready_m
   > 09_release/prod_ready_manifest_hash_inputs.txt
 while IFS= read -r f; do sha256sum "$f"; done < 09_release/prod_ready_manifest_hash_inputs.txt > 09_release/prod_ready_manifest_sha256.txt
 sha256sum 09_release/prod_ready_manifest_sha256.txt | awk '{print $1}' > 09_release/prod_ready_packhash.txt
+_f=$(cat 09_release/prod_ready_packhash.txt)
+# Only FINAL, no PRESEAL — FINAL is post-seal annotation; matches packhash.txt
+echo "PROOF_PACK_PACKHASH_FINAL: $_f" >> 09_release/run_prod_ready_audit.full.log
 `;
-    const scriptPath = path.join(os.tmpdir(), `ft_nolabel_${process.pid}.sh`);
-    fs.writeFileSync(scriptPath, SCRIPT_NO_LABEL, { mode: 0o755 });
-    try {
-      execSync(`bash "${scriptPath}" "${packDir}"`, { stdio: 'pipe' });
-    } finally {
-      try { fs.unlinkSync(scriptPath); } catch {}
-    }
+    const scriptPath = path.join(os.tmpdir(), `ft_nopreseal_${process.pid}.sh`);
+    fs.writeFileSync(scriptPath, SCRIPT_NO_PRESEAL, { mode: 0o755 });
+    try { execSync(`bash "${scriptPath}" "${packDir}"`, { stdio: 'pipe' }); }
+    finally { try { fs.unlinkSync(scriptPath); } catch {} }
 
     const r = runVerifier(packDir);
     expect(r.exitCode).toBe(1);
     expect(r.stderr).toContain('FAIL');
-    expect(r.stderr).toContain('PROOF_PACK_PACKHASH');
+    expect(r.stderr).toContain('PROOF_PACK_PACKHASH_PRESEAL');
+    expect(r.stdout).not.toContain('STATUS      : PASS');
+  });
+
+  // ── Missing PROOF_PACK_PACKHASH_FINAL label in full.log ────────────────────────
+  it('should fail (exit 1) when full.log has no PROOF_PACK_PACKHASH_FINAL: label', () => {
+    // Pack with reseal-once, PRESEAL written before pass 2, but no FINAL appended.
+    // Hash check passes (no FINAL line to strip). Then FINAL missing → FAIL.
+    const SCRIPT_NO_FINAL = `#!/bin/bash
+set -euo pipefail
+PACK="$1"
+mkdir -p "$PACK/09_release"
+echo "PASS"             > "$PACK/PROD_READY_VERDICT.txt"
+echo "0"                > "$PACK/09_release/run_prod_ready_audit.exit_code.txt"
+echo "step output data" > "$PACK/09_release/some_step.txt"
+echo "All verifications passed." > "$PACK/09_release/run_prod_ready_audit.full.log"
+cd "$PACK"
+: > 09_release/prod_ready_manifest_files.txt
+: > 09_release/prod_ready_manifest_hash_inputs.txt
+: > 09_release/prod_ready_manifest_sha256.txt
+: > 09_release/prod_ready_packhash.txt
+: > 09_release/prod_ready_manifest_exclusions.txt
+printf 'stderr.txt\\nstdout.txt\\n' > 09_release/prod_ready_manifest_exclusions.txt
+export LC_ALL=C
+find . -type f | sed 's|^\\./||' | grep -v '^stdout\\.txt\$' | grep -v '^stderr\\.txt\$' | LC_ALL=C sort > 09_release/prod_ready_manifest_files.txt
+grep -v '^09_release/prod_ready_manifest_sha256\\.txt\$' 09_release/prod_ready_manifest_files.txt \\
+  | grep -v '^09_release/prod_ready_packhash\\.txt\$' \\
+  > 09_release/prod_ready_manifest_hash_inputs.txt
+# Pass 1
+while IFS= read -r f; do sha256sum "$f"; done < 09_release/prod_ready_manifest_hash_inputs.txt > 09_release/prod_ready_manifest_sha256.txt
+sha256sum 09_release/prod_ready_manifest_sha256.txt | awk '{print $1}' > 09_release/prod_ready_packhash.txt
+_p=$(cat 09_release/prod_ready_packhash.txt)
+echo "" >> 09_release/run_prod_ready_audit.full.log
+echo "PROOF_PACK_PACKHASH_PRESEAL: $_p" >> 09_release/run_prod_ready_audit.full.log
+echo "PROOF_PACK_HASH_INPUTS_FILE: 09_release/prod_ready_manifest_hash_inputs.txt" >> 09_release/run_prod_ready_audit.full.log
+# Pass 2 (reseal with PRESEAL lines in full.log, no FINAL)
+while IFS= read -r f; do sha256sum "$f"; done < 09_release/prod_ready_manifest_hash_inputs.txt > 09_release/prod_ready_manifest_sha256.txt
+sha256sum 09_release/prod_ready_manifest_sha256.txt | awk '{print $1}' > 09_release/prod_ready_packhash.txt
+# Intentionally do NOT append FINAL
+`;
+    const scriptPath = path.join(os.tmpdir(), `ft_nofinal_${process.pid}.sh`);
+    fs.writeFileSync(scriptPath, SCRIPT_NO_FINAL, { mode: 0o755 });
+    try { execSync(`bash "${scriptPath}" "${packDir}"`, { stdio: 'pipe' }); }
+    finally { try { fs.unlinkSync(scriptPath); } catch {} }
+
+    const r = runVerifier(packDir);
+    expect(r.exitCode).toBe(1);
+    expect(r.stderr).toContain('FAIL');
+    expect(r.stderr).toContain('PROOF_PACK_PACKHASH_FINAL');
+    expect(r.stdout).not.toContain('STATUS      : PASS');
+  });
+
+  // ── FINAL mismatch: FINAL value != prod_ready_packhash.txt ──────────────────────
+  it('should fail (exit 1) when PROOF_PACK_PACKHASH_FINAL does not match prod_ready_packhash.txt', () => {
+    createValidPack(packDir);
+    // Replace FINAL line in full.log with a different 64-hex value
+    const logPath = path.join(packDir, '09_release/run_prod_ready_audit.full.log');
+    const content = fs.readFileSync(logPath, 'utf-8');
+    const tampered = content.replace(
+      /^PROOF_PACK_PACKHASH_FINAL: [0-9a-f]{64}$/m,
+      'PROOF_PACK_PACKHASH_FINAL: ' + 'b'.repeat(64)
+    );
+    fs.writeFileSync(logPath, tampered);
+
+    const r = runVerifier(packDir);
+    expect(r.exitCode).toBe(1);
+    expect(r.stderr).toContain('FAIL');
+    expect(r.stderr).toContain('PROOF_PACK_PACKHASH_FINAL');
     expect(r.stdout).not.toContain('STATUS      : PASS');
   });
 

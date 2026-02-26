@@ -309,9 +309,16 @@ describe('Orchestrator Invariants', () => {
     expect(calls).toBe(2);
   });
 
-  it('should write PROOF_PACK_PACKHASH: label to FULL_LOG between pass-1 and reseal', () => {
-    // The PROOF_PACK_PACKHASH: line makes full.log self-contained for offline reviewers.
-    const hasLabel = /PROOF_PACK_PACKHASH:/.test(orchestratorContent);
-    expect(hasLabel).toBe(true);
+  it('should write PROOF_PACK_PACKHASH_PRESEAL: and PROOF_PACK_PACKHASH_FINAL: labels to FULL_LOG', () => {
+    // Two-hash model: PRESEAL is the pass-1 binding hash (sealed in pass 2),
+    // FINAL is the authoritative post-reseal hash (written after pass 2, enforced
+    // by verifier to equal prod_ready_packhash.txt).
+    const hasPreseal = /PROOF_PACK_PACKHASH_PRESEAL:/.test(orchestratorContent);
+    const hasFinal   = /PROOF_PACK_PACKHASH_FINAL:/.test(orchestratorContent);
+    expect(hasPreseal).toBe(true);
+    expect(hasFinal).toBe(true);
+    // Old single-label must be gone
+    const hasOldLabel = /PROOF_PACK_PACKHASH:[^_]/.test(orchestratorContent);
+    expect(hasOldLabel).toBe(false);
   });
 });
