@@ -2,6 +2,15 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.2.9 — 2026-02-26 — CI isolation for documentation deploy
+
+- UPDATED: `.github/workflows/docs.yml` trigger: tag-push → branch+paths (docs/**, docs.yml, CHANGELOG.md)
+- ADDED: `concurrency: group: pages-deploy, cancel-in-progress: true` to docs.yml
+- UPDATED (x6): `enterprise_repo_gates.yml`, `forge-app-repro-proof.yml`, `gates.yml`,
+  `placeholders-guard.yml`, `reviewer-gates.yml`, `reviewer_gate_ci.yml` — added app-code path
+  filters to push triggers so docs-only changes do not fire runtime CI
+- No runtime code changes; no npm dependency changes
+
 ## v4.2.8 — 2026-02-26 — Add fail-closed live GitHub Pages verification
 
 - CREATED: `tools/verify_pages_live.sh` — bash script verifying live site post-deploy

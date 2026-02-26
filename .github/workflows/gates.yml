@@ -3,6 +3,13 @@ on:
   pull_request:
   push:
     branches: [main]
+    paths:
+      - "atlassian/forge-app/src/**"
+      - "atlassian/forge-app/manifest.yml"
+      - "atlassian/forge-app/package.json"
+      - "atlassian/forge-app/package-lock.json"
+      - "!atlassian/forge-app/docs/**"
+      - "!.github/workflows/docs.yml"
 
 jobs:
   gate_docs:
