@@ -33,19 +33,51 @@ echo "Scanning for external HTTP clients and URLs..." >&2
 
 # Count external HTTP clients in TypeScript code only
 # Exclude: local fetch(window.location...), comments, test files, sourceScan.ts (security audit tool)
-CLIENTS=$(rg "fetch\(|axios|node-fetch|http\.request|https\.request" "${SRC_DIR}" \
-  --type ts --type js --no-heading 2>&1 | \
-  grep -v "test\|.spec\|.test\|requestJira\|window.location\|// \|/\*\|sourceScan\|re:" | \
-  wc -l || echo 0)
-EXTERNAL_CLIENTS=$(echo "$CLIENTS" | tr -d ' ')
+# Scan with rg; grep filters results. Grep exit 1 (no matches) is acceptable; exit 2+ is failure.
+TEMP_CLIENTS="${AUDIT_DIR}/temp_clients.txt"
+if ! rg "fetch\(|axios|node-fetch|http\.request|https\.request" "${SRC_DIR}" \
+  --type ts --type js --no-heading >"${TEMP_CLIENTS}" 2>&1; then
+  echo "FAIL: rg scan for HTTP clients failed" >&2
+  exit 1
+fi
+# Filter results; grep exit 1 = no matches (OK, count as 0), exit 2+ = error (FAIL)
+TRIM_CLIENTS="${AUDIT_DIR}/trimmed_clients.txt"
+if grep -v "test\|.spec\|.test\|requestJira\|window.location\|// \|/\*\|sourceScan\|re:" "${TEMP_CLIENTS}" >"${TRIM_CLIENTS}" 2>&1; then
+  : # grep succeeded (found matches)
+else
+  grep_ec=$?
+  if [[ $grep_ec -eq 1 ]]; then
+    : >"${TRIM_CLIENTS}"  # no matches, create empty file
+  else
+    echo "FAIL: grep filter for HTTP clients failed (exit code: $grep_ec)" >&2
+    exit 1
+  fi
+fi
+EXTERNAL_CLIENTS=$(wc -l <"${TRIM_CLIENTS}" | tr -d ' ')
 
 # Count external URLs in TypeScript code only 
 # Exclude: atlassian, localhost, comments, test files
-URLS=$(rg "https?://" "${SRC_DIR}" \
-  --type ts --type js --no-heading 2>&1 | \
-  grep -v "atlassian\|localhost\|127\.0\.0\.1\|test\|.spec\|.test\|// \|/\*" | \
-  wc -l || echo 0)
-EXTERNAL_URLS=$(echo "$URLS" | tr -d ' ')
+# Grep exit 1 = no matches (OK, count as 0), exit 2+ = error (FAIL)
+TEMP_URLS="${AUDIT_DIR}/temp_urls.txt"
+if ! rg "https?://" "${SRC_DIR}" \
+  --type ts --type js --no-heading >"${TEMP_URLS}" 2>&1; then
+  echo "FAIL: rg scan for external URLs failed" >&2
+  exit 1
+fi
+# Filter results; grep exit 1 = no matches (OK, count as 0), exit 2+ = error (FAIL)
+TRIM_URLS="${AUDIT_DIR}/trimmed_urls.txt"
+if grep -v "atlassian\|localhost\|127\.0\.0\.1\|test\|.spec\|.test\|// \|/\*" "${TEMP_URLS}" >"${TRIM_URLS}" 2>&1; then
+  : # grep succeeded (found matches)
+else
+  grep_ec=$?
+  if [[ $grep_ec -eq 1 ]]; then
+    : >"${TRIM_URLS}"  # no matches, create empty file
+  else
+    echo "FAIL: grep filter for external URLs failed (exit code: $grep_ec)" >&2
+    exit 1
+  fi
+fi
+EXTERNAL_URLS=$(wc -l <"${TRIM_URLS}" | tr -d ' ')
 
 # Count Forge API calls for reference
 FORGE_CALLS=$(rg "requestJira|@forge" "${SRC_DIR}" --no-heading 2>&1 | wc -l | tr -d ' ')
