@@ -1,22 +1,265 @@
 {
-  "version": "4.3.5",
+  "version": "4.3.6",
+  "portal_version": "4.3.6",
+  "portal_title": "FirstTry Trust Center",
+  "portal_tagline": "Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews.",
   "publish_root": "site",
-  "required_files": [
-    "site/index.html",
-    "site/trust/SECURITY_OVERVIEW.md",
-    "site/trust/RESOLVER_INVENTORY.md",
-    "site/trust/SUBPROCESSORS.md",
-    "site/operations/SLA.md",
-    "site/operations/INCIDENT_RESPONSE_PLAN.md",
-    "site/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md",
-    "site/procurement/SECURITY_QUESTIONNAIRE_MASTER.md",
-    "site/procurement/CONTROL_MAPPING_MATRIX.md",
-    "site/evidence/RETENTION_POLICY.md"
-  ],
   "publish_dirs": [
     "atlassian/forge-app/docs/trust",
     "atlassian/forge-app/docs/operations",
     "atlassian/forge-app/docs/procurement",
     "atlassian/forge-app/docs/evidence"
+  ],
+  "required_files": [
+    "site/index.html",
+    "site/assets/portal.css",
+    "site/assets/portal.js",
+    "site/assets/search_index.json",
+    "site/trust/security-overview.html",
+    "site/trust/resolver-inventory.html",
+    "site/trust/subprocessors.html",
+    "site/operations/sla.html",
+    "site/operations/incident-response-plan.html",
+    "site/procurement/enterprise-pack-index.html",
+    "site/procurement/security-questionnaire.html",
+    "site/procurement/control-mapping-matrix.html",
+    "site/evidence/retention-policy.html"
+  ],
+  "portal_nav": [
+    {
+      "group": "Overview",
+      "items": [
+        {
+          "title": "Enterprise Security Pack Index",
+          "src": "atlassian/forge-app/docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md",
+          "route": "procurement/enterprise-pack-index.html",
+          "doc_id": "FT-PROC-001"
+        }
+      ]
+    },
+    {
+      "group": "Trust Center",
+      "items": [
+        {
+          "title": "Security Overview",
+          "src": "atlassian/forge-app/docs/trust/SECURITY_OVERVIEW.md",
+          "route": "trust/security-overview.html",
+          "doc_id": "FT-TRUST-001"
+        },
+        {
+          "title": "Security Contact",
+          "src": "atlassian/forge-app/docs/trust/SECURITY_CONTACT.md",
+          "route": "trust/security-contact.html",
+          "doc_id": "FT-TRUST-002"
+        },
+        {
+          "title": "Vulnerability Disclosure Policy",
+          "src": "atlassian/forge-app/docs/trust/VULNERABILITY_DISCLOSURE_POLICY.md",
+          "route": "trust/vulnerability-disclosure-policy.html",
+          "doc_id": "FT-TRUST-003"
+        },
+        {
+          "title": "Privacy Policy",
+          "src": "atlassian/forge-app/docs/trust/PRIVACY_POLICY.md",
+          "route": "trust/privacy-policy.html",
+          "doc_id": "FT-TRUST-004"
+        },
+        {
+          "title": "Subprocessors",
+          "src": "atlassian/forge-app/docs/trust/SUBPROCESSORS.md",
+          "route": "trust/subprocessors.html",
+          "doc_id": "FT-TRUST-005"
+        },
+        {
+          "title": "Terms of Service",
+          "src": "atlassian/forge-app/docs/trust/TERMS_OF_SERVICE.md",
+          "route": "trust/terms-of-service.html",
+          "doc_id": "FT-TRUST-006"
+        },
+        {
+          "title": "Threat Model (STRIDE)",
+          "src": "atlassian/forge-app/docs/trust/THREAT_MODEL.md",
+          "route": "trust/threat-model.html",
+          "doc_id": "FT-TRUST-007"
+        },
+        {
+          "title": "Resolver Inventory (0 mutations)",
+          "src": "atlassian/forge-app/docs/trust/RESOLVER_INVENTORY.md",
+          "route": "trust/resolver-inventory.html",
+          "doc_id": "FT-TRUST-008"
+        },
+        {
+          "title": "Data Flow",
+          "src": "atlassian/forge-app/docs/trust/DATA_FLOW.md",
+          "route": "trust/data-flow.html",
+          "doc_id": "FT-TRUST-009"
+        },
+        {
+          "title": "Data Classification and PII",
+          "src": "atlassian/forge-app/docs/trust/DATA_CLASSIFICATION_AND_PII.md",
+          "route": "trust/data-classification-pii.html",
+          "doc_id": "FT-TRUST-010"
+        },
+        {
+          "title": "Architecture",
+          "src": "atlassian/forge-app/docs/trust/ARCHITECTURE.md",
+          "route": "trust/architecture.html",
+          "doc_id": "FT-TRUST-011"
+        },
+        {
+          "title": "Forge Platform Dependency",
+          "src": "atlassian/forge-app/docs/trust/FORGE_PLATFORM_DEPENDENCY.md",
+          "route": "trust/forge-platform-dependency.html",
+          "doc_id": "FT-TRUST-012"
+        },
+        {
+          "title": "Customer Responsibilities",
+          "src": "atlassian/forge-app/docs/trust/CUSTOMER_RESPONSIBILITIES.md",
+          "route": "trust/customer-responsibilities.html",
+          "doc_id": "FT-TRUST-013"
+        },
+        {
+          "title": "Claims Register (Truth Audit)",
+          "src": "atlassian/forge-app/docs/trust/CLAIMS_REGISTER.md",
+          "route": "trust/claims-register.html",
+          "doc_id": "FT-TRUST-014"
+        },
+        {
+          "title": "Uninstall and Deletion",
+          "src": "atlassian/forge-app/docs/trust/UNINSTALL_DELETION.md",
+          "route": "trust/uninstall-deletion.html",
+          "doc_id": "FT-TRUST-015"
+        },
+        {
+          "title": "Export Spec",
+          "src": "atlassian/forge-app/docs/trust/EXPORT_SPEC.md",
+          "route": "trust/export-spec.html",
+          "doc_id": "FT-TRUST-016"
+        },
+        {
+          "title": "Ledger Crypto Spec",
+          "src": "atlassian/forge-app/docs/trust/LEDGER_CRYPTO_SPEC.md",
+          "route": "trust/ledger-crypto-spec.html",
+          "doc_id": "FT-TRUST-017"
+        },
+        {
+          "title": "Serialization Schema",
+          "src": "atlassian/forge-app/docs/trust/SERIALIZATION_SCHEMA.md",
+          "route": "trust/serialization-schema.html",
+          "doc_id": "FT-TRUST-018"
+        },
+        {
+          "title": "Security TXT",
+          "src": "atlassian/forge-app/docs/trust/SECURITY_TXT.md",
+          "route": "trust/security-txt.html",
+          "doc_id": "FT-TRUST-019"
+        }
+      ]
+    },
+    {
+      "group": "Operations",
+      "items": [
+        {
+          "title": "SLA (support response times only)",
+          "src": "atlassian/forge-app/docs/operations/SLA.md",
+          "route": "operations/sla.html",
+          "doc_id": "FT-OPS-001"
+        },
+        {
+          "title": "Incident Response Plan",
+          "src": "atlassian/forge-app/docs/operations/INCIDENT_RESPONSE_PLAN.md",
+          "route": "operations/incident-response-plan.html",
+          "doc_id": "FT-OPS-002"
+        },
+        {
+          "title": "Support Policy",
+          "src": "atlassian/forge-app/docs/operations/SUPPORT_POLICY.md",
+          "route": "operations/support-policy.html",
+          "doc_id": "FT-OPS-003"
+        },
+        {
+          "title": "Business Continuity and Disaster Recovery",
+          "src": "atlassian/forge-app/docs/operations/BCP_DRP.md",
+          "route": "operations/bcp-drp.html",
+          "doc_id": "FT-OPS-004"
+        },
+        {
+          "title": "Secure SDLC Policy",
+          "src": "atlassian/forge-app/docs/operations/SECURE_SDLC_POLICY.md",
+          "route": "operations/secure-sdlc-policy.html",
+          "doc_id": "FT-OPS-005"
+        },
+        {
+          "title": "CI/CD Evidence",
+          "src": "atlassian/forge-app/docs/operations/CI_CD_EVIDENCE.md",
+          "route": "operations/ci-cd-evidence.html",
+          "doc_id": "FT-OPS-006"
+        },
+        {
+          "title": "Access Control Policy",
+          "src": "atlassian/forge-app/docs/operations/ACCESS_CONTROL_POLICY.md",
+          "route": "operations/access-control-policy.html",
+          "doc_id": "FT-OPS-007"
+        },
+        {
+          "title": "Change Management Policy",
+          "src": "atlassian/forge-app/docs/operations/CHANGE_MANAGEMENT_POLICY.md",
+          "route": "operations/change-management-policy.html",
+          "doc_id": "FT-OPS-008"
+        },
+        {
+          "title": "RBAC Matrix",
+          "src": "atlassian/forge-app/docs/operations/RBAC_MATRIX.md",
+          "route": "operations/rbac-matrix.html",
+          "doc_id": "FT-OPS-009"
+        },
+        {
+          "title": "Logging and Monitoring",
+          "src": "atlassian/forge-app/docs/operations/LOGGING_MONITORING.md",
+          "route": "operations/logging-monitoring.html",
+          "doc_id": "FT-OPS-010"
+        },
+        {
+          "title": "Secrets Management",
+          "src": "atlassian/forge-app/docs/operations/SECRETS_MANAGEMENT.md",
+          "route": "operations/secrets-management.html",
+          "doc_id": "FT-OPS-011"
+        }
+      ]
+    },
+    {
+      "group": "Procurement",
+      "items": [
+        {
+          "title": "Enterprise Security Pack Index",
+          "src": "atlassian/forge-app/docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md",
+          "route": "procurement/enterprise-pack-index.html",
+          "doc_id": "FT-PROC-001"
+        },
+        {
+          "title": "Security Questionnaire",
+          "src": "atlassian/forge-app/docs/procurement/SECURITY_QUESTIONNAIRE_MASTER.md",
+          "route": "procurement/security-questionnaire.html",
+          "doc_id": "FT-PROC-002"
+        },
+        {
+          "title": "Control Mapping Matrix",
+          "src": "atlassian/forge-app/docs/procurement/CONTROL_MAPPING_MATRIX.md",
+          "route": "procurement/control-mapping-matrix.html",
+          "doc_id": "FT-PROC-003"
+        }
+      ]
+    },
+    {
+      "group": "Evidence",
+      "items": [
+        {
+          "title": "Retention Policy",
+          "src": "atlassian/forge-app/docs/evidence/RETENTION_POLICY.md",
+          "route": "evidence/retention-policy.html",
+          "doc_id": "FT-EVID-001"
+        }
+      ]
+    }
   ]
 }

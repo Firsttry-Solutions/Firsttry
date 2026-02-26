@@ -12,6 +12,8 @@ on:
       - "atlassian/forge-app/tools/verify_pages_live.sh"
       - "atlassian/forge-app/tools/pages_pack_manifest.json"
       - "atlassian/forge-app/tools/build_pages_site.mjs"
+      - "atlassian/forge-app/tools/build_trust_portal.mjs"
+      - "atlassian/forge-app/tools/vendor/**"
   workflow_dispatch:
 
 concurrency:
