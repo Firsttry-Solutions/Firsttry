@@ -2,6 +2,14 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.2.7 — 2026-02-26 — Move Pages workflow to repo root so Actions actually runs
+
+- CREATED: `.github/workflows/docs.yml` at repo root — GitHub Actions only reads workflows from repo root
+- ADDED: "Smoke proof" step (find + assert 3 required files: SECURITY_OVERVIEW.md, SLA.md, ENTERPRISE_SECURITY_PACK_INDEX.md)
+- DELETED: `atlassian/forge-app/.github/workflows/docs.yml` (was never executed by Actions)
+- Landing page updated to v4.2.7
+- Verification: all 4 gates pass
+
 ## v4.2.6 — 2026-02-26 — Fix GitHub Pages publishing to deploy enterprise pack from forge-app/site
 
 - UPDATED: `docs.yml` — deterministic site/ build: `rm -rf site` first, then selective copy of enterprise pack

@@ -91,7 +91,7 @@ jobs:
 <body>
     <div class="container">
         <h1>FirstTry - Enterprise Security Documentation</h1>
-        <p><strong>Version:</strong> 4.2.6 | <strong>Last Updated:</strong> 2026-02-26 UTC</p>
+        <p><strong>Version:</strong> 4.2.7 | <strong>Last Updated:</strong> 2026-02-26 UTC</p>
         <p>Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews.</p>
         <p><span class="badge">No certifications claimed</span> &nbsp; <span class="badge">Read-only Forge app</span> &nbsp; <span class="badge">Fail-closed validation</span></p>
 
@@ -179,6 +179,32 @@ jobs:
 </body>
 </html>
 HTMLEOF
+
+      - name: Smoke proof - list and assert deployed files
+        run: |
+          set -euo pipefail
+          echo "=== Deployed file listing (site/) ==="
+          find atlassian/forge-app/site -maxdepth 2 -type f | sort | head -200
+
+          echo ""
+          echo "=== Asserting required files exist ==="
+          ERRORS=0
+          for f in \
+            "atlassian/forge-app/site/trust/SECURITY_OVERVIEW.md" \
+            "atlassian/forge-app/site/operations/SLA.md" \
+            "atlassian/forge-app/site/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md"; do
+            if test -f "$f"; then
+              echo "  OK: $f"
+            else
+              echo "  MISSING: $f" >&2
+              ERRORS=1
+            fi
+          done
+          if [ $ERRORS -ne 0 ]; then
+            echo "FAIL: Smoke proof — required files missing from site/" >&2
+            exit 1
+          fi
+          echo "PASS: All 3 smoke-proof files present in site/"
 
       - name: Verify Pages output shape (fail-closed)
         working-directory: atlassian/forge-app
@@ -298,4 +324,3 @@ HTMLEOF
         run: |
           echo "Enterprise Documentation Validation and Publish PASSED"
           echo "Pages URL: https://firsttry-solutions.github.io/Firsttry/"
-          echo "Tag: ${{ github.ref }}"
