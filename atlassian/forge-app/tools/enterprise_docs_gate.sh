@@ -28,6 +28,29 @@ echo ""
 echo "2b. Running Email Integrity Gate..."
 node "$(dirname "$0")/email_integrity_gate.mjs" || exit 1
 
+# Placeholder purge check (fail-closed)
+echo ""
+echo "2c. Checking enterprise docs for forbidden placeholder patterns..."
+
+PLACEHOLDER_SCAN_DIRS=(docs/trust docs/operations docs/procurement)
+PLACEHOLDER_PATTERNS=('\[Your Jurisdiction\]' 'example\.com' '@firsttry\.app' '\bTBD\b' '\bTODO\b')
+PLACEHOLDER_ERRORS=0
+
+for dir in "${PLACEHOLDER_SCAN_DIRS[@]}"; do
+  for pattern in "${PLACEHOLDER_PATTERNS[@]}"; do
+    while IFS= read -r match; do
+      echo "ERROR: Placeholder pattern '${pattern}' found: ${match}" >&2
+      PLACEHOLDER_ERRORS=1
+    done < <(grep -rn -E "$pattern" "$dir" 2>/dev/null | grep -v "CLAIMS_REGISTER" || true)
+  done
+done
+
+if [[ $PLACEHOLDER_ERRORS -ne 0 ]]; then
+  echo "ERROR: Placeholder purge failed — see errors above" >&2
+  exit 1
+fi
+echo "✓ No forbidden placeholder patterns found"
+
 # Required docs existence check
 echo ""
 echo "3. Verifying required docs exist and are non-empty..."

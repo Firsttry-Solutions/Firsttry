@@ -2,7 +2,16 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
-## v4.2.4 — 2026-02-27 — Truth audit hardening + email integrity + Pages output scan
+## v4.2.5 — 2026-02-26 — Pages content alignment + email integrity + placeholder purge
+
+- UPDATED: `docs.yml` — selective site/ build (trust/ operations/ procurement/ evidence/ only)
+- UPDATED: `tools/email_integrity_gate.mjs` — expanded placeholder patterns, narrowed scope, SUBPROCESSORS.md in privacy@ required presence
+- NEW: `enterprise_docs_gate.sh` step 2c — fail-closed placeholder purge scan
+- UPDATED: `docs/trust/SUBPROCESSORS.md` — added privacy@firsttry.run contact section
+- UPDATED: `docs/trust/CLAIMS_REGISTER.md` — added SECURITY_OVERVIEW.md to proof inventory (12 EVIDENCE entries)
+- Verification: all 4 tools pass (md_link_check ✅ truth_claims_gate ✅ email_integrity_gate ✅ enterprise_docs_gate ✅)
+
+
 
 - NEW: `tools/email_allowlist.txt` — 5 approved email addresses (single source of truth)
 - NEW: `tools/email_integrity_gate.mjs` — scans 35 enterprise docs, enforces allowlist + required presences

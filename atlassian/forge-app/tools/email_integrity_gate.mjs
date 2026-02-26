@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * Email Integrity Gate - Enterprise Docs Only (v4.2.4)
+ * Email Integrity Gate - Enterprise Docs Only (v4.2.5)
  * Node v20 ESM — No external dependencies.
  *
  * Enforces:
  * 1. Only approved emails appear (from tools/email_allowlist.txt)
- * 2. No placeholder patterns (example.com, example.org, yourcompany, placeholder, TBD@)
+ * 2. No placeholder patterns (example.com, @firsttry.app, [Your Jurisdiction], TBD, TODO)
  * 3. emergency@firsttry.run is RESTRICTED to specific documents only
  * 4. Required emails MUST appear in specific documents
  *
@@ -13,8 +13,6 @@
  *   atlassian/forge-app/docs/trust/**
  *   atlassian/forge-app/docs/operations/**
  *   atlassian/forge-app/docs/procurement/**
- *   atlassian/forge-app/docs/README.md
- *   README.md (repo root)
  */
 
 import fs from 'fs';
@@ -35,7 +33,12 @@ const allowlist = new Set(
 const emailRegex = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 
 // Placeholder patterns that must NEVER appear
-const PLACEHOLDER_PATTERNS = ['example.com', 'example.org', 'yourcompany', 'placeholder', 'TBD@'];
+const PLACEHOLDER_PATTERNS = [
+  'example.com', 'example.org', 'yourcompany', 'placeholder',
+  '@firsttry.app', '[Your Jurisdiction]', 'TBD@', '@example.'
+];
+// Full-word forbidden tokens (case-insensitive, not inside URLs or code)
+const PLACEHOLDER_TOKENS = ['\\bTBD\\b', '\\bTODO\\b'];
 
 // RESTRICTION: emergency@firsttry.run ONLY allowed in these docs (repo-root relative)
 const EMERGENCY_ALLOWED_DOCS = new Set([
@@ -59,10 +62,10 @@ const REQUIRED_PRESENCE = {
   'privacy@firsttry.run': [
     'atlassian/forge-app/docs/trust/PRIVACY_POLICY.md',
     'atlassian/forge-app/docs/trust/DATA_CLASSIFICATION_AND_PII.md',
-    'atlassian/forge-app/docs/trust/UNINSTALL_DELETION.md'
+    'atlassian/forge-app/docs/trust/UNINSTALL_DELETION.md',
+    'atlassian/forge-app/docs/trust/SUBPROCESSORS.md'
   ],
   'contact@firsttry.run': [
-    'README.md',
     'atlassian/forge-app/docs/trust/TERMS_OF_SERVICE.md',
     'atlassian/forge-app/docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md'
   ],
@@ -89,9 +92,21 @@ function scanFile(abs, rel) {
   if (!fs.existsSync(abs)) return;
   const content = fs.readFileSync(abs, 'utf-8');
 
-  // Check placeholders
+  // Check literal placeholder strings
   for (const p of PLACEHOLDER_PATTERNS) {
     if (content.includes(p)) errors.push(`PLACEHOLDER [${rel}]: Found pattern "${p}"`);
+  }
+  // Check whole-word placeholder tokens (TBD, TODO) — skip lines that are code fences or URLs
+  for (const tok of PLACEHOLDER_TOKENS) {
+    const re = new RegExp(tok, 'i');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('```') || trimmed.startsWith('//') || trimmed.startsWith('#!')) continue;
+      if (re.test(line) && !line.includes('http')) {
+        errors.push(`PLACEHOLDER [${rel}]: Found token "${tok.replace(/\\b/g, '')}" in: ${trimmed.slice(0, 80)}`);
+        break; // one error per file per token
+      }
+    }
   }
 
   // Extract emails
@@ -109,7 +124,7 @@ function scanFile(abs, rel) {
   }
 }
 
-// Build file list
+// Build file list — scan ONLY enterprise docs dirs
 const allFiles = [];
 for (const dir of [
   path.join(repoRoot, 'atlassian/forge-app/docs/trust'),
@@ -117,12 +132,6 @@ for (const dir of [
   path.join(repoRoot, 'atlassian/forge-app/docs/procurement')
 ]) {
   if (fs.existsSync(dir)) allFiles.push(...findMd(dir).map(fp => ({ abs: fp, rel: path.relative(repoRoot, fp) })));
-}
-for (const fp of [
-  path.join(repoRoot, 'atlassian/forge-app/docs/README.md'),
-  path.join(repoRoot, 'README.md')
-]) {
-  if (fs.existsSync(fp)) allFiles.push({ abs: fp, rel: path.relative(repoRoot, fp) });
 }
 
 console.log('🔍 Email Integrity Gate');

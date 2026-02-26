@@ -78,6 +78,7 @@ Any banned phrase found in `docs/**/*.md` must correspond to a registered claim 
 
 | ProofPointer | File Status | Last Verified |
 |--------------|-------------|----------------|
+| docs/trust/SECURITY_OVERVIEW.md | ✅ Present | 2026-02-26 |
 | docs/trust/RESOLVER_INVENTORY.md | ✅ Present | 2026-02-26 |
 | docs/trust/THREAT_MODEL.md | ✅ Present | 2026-02-26 |
 | docs/trust/DATA_CLASSIFICATION_AND_PII.md | ✅ Present | 2026-02-26 |
