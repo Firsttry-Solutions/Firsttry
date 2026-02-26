@@ -2,6 +2,62 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.4.0] - 2026-02-26
+
+### Added — F100 Trust Portal: Automated Audits + Doc IDs + Portal Pack Version
+
+**Goal:** Elevate the Trust Center portal to fully automated, per-page audit coverage.
+Every doc now carries a unique Doc ID, every page embeds its Portal Pack Version string,
+and two new fail-closed audit scripts (source + live) run in CI as artifact-producing steps.
+
+**Doc IDs injected into all 34 markdown source docs** (`inject_doc_ids.mjs`)
+- Each doc in `portal_nav` now has `**Doc ID**: FT-XXX-NNN` after its Review Cycle line
+- Ranges: FT-TRUST-001..019, FT-OPS-001..011, FT-PROC-001..003, FT-EVID-001
+
+**`atlassian/forge-app/tools/audit_trust_portal_source.mjs`** (new)
+- Reads manifest `portal_nav` + `metadata_contract`, audits every markdown source doc
+- Checks: all required metadata keys, Doc ID format, Last Updated date format,
+  forbidden placeholders, ASCII-art table detection, single H1, no broken .html links
+- Outputs JSON + Markdown report to `/tmp/ft_portal_audit_source_<ts>/`
+- Fails closed (exit 1) on any issue
+
+**`atlassian/forge-app/tools/audit_trust_portal_live.mjs`** (new)
+- Fetches every portal_nav HTML route from the live GitHub Pages URL
+- Checks: HTTP 200, `Portal Pack Version: X.Y.Z` in body, doc_id in body,
+  forbidden placeholders, email allowlist, forbidden paths return non-200
+- Outputs JSON + Markdown report to `/tmp/ft_portal_audit_live_<ts>/`
+- Fails closed (exit 1) on any issue
+
+**`atlassian/forge-app/tools/build_trust_portal.mjs`** (updated)
+- Reads new `portal_pack_version` field from manifest (4.4.0)
+- Embeds `Portal Pack Version: 4.4.0` in every page's Document Info panel and footer
+- Both source + live audits can assert this string programmatically
+
+**`atlassian/forge-app/tools/pages_pack_manifest.json`** (updated)
+- Version bumped: 4.3.6 → 4.4.0
+- Added `portal_pack_version: "4.4.0"` (canonical version string for all pages)
+- Added `portal_base_url` for live audit base URL
+- Added `metadata_contract` block: required_keys, doc_id_pattern, last_updated_pattern
+- `required_files` updated from 13 → 38 entries (all 34 HTML routes + 4 assets)
+- `inject_doc_ids.mjs`: one-shot migration script for Doc ID injection (idempotent)
+
+**`.github/workflows/docs.yml`** (updated)
+- Added audit trigger paths: `audit_trust_portal_source.mjs`, `audit_trust_portal_live.mjs`
+- Added `Audit trust portal source` step (post-artifact-verify, fail-closed)
+- Added `Upload source audit report` step (`if: always()`, artifact upload)
+- Added `Audit trust portal live` step (post-live-verify, fail-closed)
+- Added `Upload live audit report` step (`if: always()`, artifact upload)
+
+**All local gates passed (clean run):**
+- `audit_trust_portal_source.mjs`: 34/34 PASS
+- `verify_pages_site_artifact.sh ./site`: PASS (portal v4.4.0, 35 routes, 38 required_files)
+- `md_link_check.mjs`: ✅ All links verified (33 files scanned)
+- `truth_claims_gate.mjs`: ✅ ALL CHECKS PASSED
+- `email_integrity_gate.mjs`: ✅ PASS
+- `enterprise_docs_gate.sh`: ✅ PASS
+
+---
+
 ## [v1.0-enterprise-docs-v4.3.6] - 2026-02-26
 
 ### Added — F100 Trust Center Portal

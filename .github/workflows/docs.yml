@@ -13,6 +13,8 @@ on:
       - "atlassian/forge-app/tools/pages_pack_manifest.json"
       - "atlassian/forge-app/tools/build_pages_site.mjs"
       - "atlassian/forge-app/tools/build_trust_portal.mjs"
+      - "atlassian/forge-app/tools/audit_trust_portal_source.mjs"
+      - "atlassian/forge-app/tools/audit_trust_portal_live.mjs"
       - "atlassian/forge-app/tools/vendor/**"
   workflow_dispatch:
 
@@ -85,6 +87,16 @@ jobs:
       - name: Verify Pages site artifact (fail-closed shape + content policy)
         run: bash atlassian/forge-app/tools/verify_pages_site_artifact.sh ./site
 
+      - name: Audit trust portal source (fail-closed per-doc metadata + quality)
+        run: node atlassian/forge-app/tools/audit_trust_portal_source.mjs
+
+      - name: Upload source audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-source-audit-${{ github.run_number }}
+          path: /tmp/ft_portal_audit_source_*/
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
@@ -118,6 +130,16 @@ jobs:
             echo "Waiting ${SLEEP_SEC}s for GitHub Pages propagation..."
             sleep $SLEEP_SEC
           done
+
+      - name: Audit trust portal live (fail-closed per-page version + doc-id checks)
+        run: node atlassian/forge-app/tools/audit_trust_portal_live.mjs
+
+      - name: Upload live audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-live-audit-${{ github.run_number }}
+          path: /tmp/ft_portal_audit_live_*/
 
       - name: Report success
         if: success()

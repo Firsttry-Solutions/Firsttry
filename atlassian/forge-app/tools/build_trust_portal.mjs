@@ -34,11 +34,12 @@ if (!fs.existsSync(MANIFEST_PATH)) {
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 const {
-  portal_version: VERSION,
-  portal_title:   PORTAL_TITLE,
-  portal_tagline: PORTAL_TAGLINE,
-  publish_root:   PUBLISH_ROOT,
-  portal_nav:     NAV,
+  portal_version:      VERSION,
+  portal_pack_version: PACK_VERSION,
+  portal_title:        PORTAL_TITLE,
+  portal_tagline:      PORTAL_TAGLINE,
+  publish_root:        PUBLISH_ROOT,
+  portal_nav:          NAV,
   publish_dirs,
 } = manifest;
 
@@ -158,6 +159,7 @@ function buildMetaPanel(item, meta, activeRoute) {
   const rawHref  = relPath(activeRoute, rawRoute);
   let html = '<aside id="meta-panel">\n';
   html += '  <h4>Document Info</h4>\n';
+  html += `  <p class="pack-version-label">Portal Pack Version: ${escHtml(PACK_VERSION || VERSION)}</p>\n`;
   html += '  <dl class="meta-dl">\n';
   html += `    <dt>Doc ID</dt><dd><code>${escHtml(item.doc_id)}</code></dd>\n`;
   if (meta.version)      html += `    <dt>Version</dt><dd>${escHtml(meta.version)}</dd>\n`;
@@ -209,7 +211,7 @@ function buildPageHtml(item, mdContent) {
         </article>
       </main>
       <footer id="page-footer">
-        <p>Version: ${escHtml(VERSION)} | ${escHtml(PORTAL_TITLE)} | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+        <p>Portal Pack Version: ${escHtml(PACK_VERSION || VERSION)} | ${escHtml(PORTAL_TITLE)} | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
       </footer>
     </div>
     ${metaPanel}
