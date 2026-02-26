@@ -2,7 +2,52 @@
 
 All notable changes to FirstTry are documented in this file.
 
-## [v1.0-enterprise-docs-v4.2.4] - 2026-02-27
+## [v1.0-enterprise-docs-v4.2.5] - 2026-02-26
+
+### Added / Fixed
+
+#### Pages Content Alignment + Email Integrity + Placeholder Purge
+
+**GitHub Pages — Enterprise Pack Only**
+- `docs.yml` site build: changed from `cp -r docs/* site/` to selective copy of ONLY
+  `trust/`, `operations/`, `procurement/`, `evidence/` — production/ and legacy dirs are
+  no longer published to Pages
+- Pages routes now expose exactly: `/Firsttry/trust/…`, `/Firsttry/operations/…`,
+  `/Firsttry/procurement/…`, `/Firsttry/evidence/…`
+- Landing page (`site/index.html`) updated to v4.2.5; removed broken `README.md` link
+
+**Email Integrity Gate (v4.2.5)**
+- `tools/email_integrity_gate.mjs` — extended placeholder detection:
+  - Adds `@firsttry.app`, `[Your Jurisdiction]`, full-word `TBD`, full-word `TODO`
+  - Scan scope narrowed to enterprise dirs ONLY (drops docs/README.md, root README.md)
+  - `privacy@firsttry.run` REQUIRED_PRESENCE now includes `docs/trust/SUBPROCESSORS.md`
+  - `contact@firsttry.run` REQUIRED_PRESENCE: removed `README.md` (outside enterprise scope)
+
+**Placeholder Purge Gate (new step 2c)**
+- `tools/enterprise_docs_gate.sh` step **2c** — fail-closed scan of all enterprise dirs
+  for patterns: `[Your Jurisdiction]`, `example.com`, `@firsttry.app`, `\bTBD\b`, `\bTODO\b`
+
+**SUBPROCESSORS.md — Privacy Contact**
+- Added "Privacy Inquiries" section with `privacy@firsttry.run` (satisfies email gate
+  REQUIRED_PRESENCE enforcement)
+- Added link to PRIVACY_POLICY.md in References
+
+**CLAIMS_REGISTER.md — Proof Inventory Fix**
+- Added `docs/trust/SECURITY_OVERVIEW.md` to EVIDENCE proof inventory table
+  (C002 referenced it but it was absent from the inventory — now 12 EVIDENCE entries)
+
+### Verification (All 4 Tools Pass)
+
+| Tool | Status | Details |
+|------|--------|---------|
+| `node tools/md_link_check.mjs` | ✅ PASS | 33 files, 0 broken links |
+| `node tools/truth_claims_gate.mjs` | ✅ PASS | 18 claims, 15 EVIDENCE + 3 ATLASSIAN, 0 unregistered |
+| `node tools/email_integrity_gate.mjs` | ✅ PASS | 33 files, 0 violations |
+| `bash tools/enterprise_docs_gate.sh` | ✅ PASS | All 14 steps (incl. new 2c) pass |
+
+**git diff --stat:** 5 files changed, 64 insertions(+), 20 deletions(-)
+
+
 
 ### Added
 

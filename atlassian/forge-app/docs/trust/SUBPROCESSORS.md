@@ -69,8 +69,16 @@ FirstTry has **no control** over data handling by Atlassian subprocessors. Respo
 
 ---
 
+## Privacy Inquiries
+
+For questions about how your data is processed by Atlassian's subprocessors or about
+FirstTry's data handling practices, contact: **privacy@firsttry.run**
+
+---
+
 ## References
 
 - [SECURITY_OVERVIEW.md](SECURITY_OVERVIEW.md): Shared responsibility model
 - [FORGE_PLATFORM_DEPENDENCY.md](FORGE_PLATFORM_DEPENDENCY.md): Platform dependency
 - [Atlassian Subprocessor List](https://www.atlassian.com/legal/subprocessors) (external link)
+- [PRIVACY_POLICY.md](PRIVACY_POLICY.md): FirstTry privacy policy

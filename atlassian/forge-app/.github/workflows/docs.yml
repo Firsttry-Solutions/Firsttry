@@ -57,8 +57,12 @@ jobs:
       - name: Build documentation site
         working-directory: atlassian/forge-app
         run: |
-          mkdir -p site
-          cp -r docs/* site/
+          # Publish ONLY the enterprise documentation pack (no production/ or legacy dirs)
+          mkdir -p site/trust site/operations site/procurement site/evidence
+          cp docs/trust/*.md   site/trust/   2>/dev/null || true
+          cp docs/operations/*.md site/operations/ 2>/dev/null || true
+          cp docs/procurement/*.md site/procurement/ 2>/dev/null || true
+          cp -r docs/evidence/. site/evidence/ 2>/dev/null || true
           cat > site/index.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en">
@@ -80,13 +84,12 @@ jobs:
 <body>
     <div class="container">
         <h1>FirstTry - Enterprise Security Documentation</h1>
-        <p><strong>Version:</strong> 4.2.4 | <strong>Last Updated:</strong> 2026-02-26</p>
+<p><strong>Version:</strong> 4.2.5 | <strong>Last Updated:</strong> 2026-02-26</p>
         <p>Comprehensive documentation for Atlassian Marketplace diligence and enterprise procurement.</p>
-
+        
         <div class="nav-section">
             <h2>Getting Started</h2>
             <ul>
-                <li><a href="README.md">Documentation Index and Navigation</a></li>
                 <li><a href="procurement/ENTERPRISE_SECURITY_PACK_INDEX.md">Enterprise Security Pack Index</a></li>
             </ul>
         </div>
