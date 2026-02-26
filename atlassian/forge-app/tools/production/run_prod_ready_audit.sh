@@ -15,7 +15,7 @@ if [ -z "$E" ] || [ ! -d "$E" ]; then
 fi
 
 # Pre-create all required evidence subdirectories (fail-closed)
-mkdir -p "$E/03_tests" "$E/04_build" "$E/05_ui" "$E/09_release" "$E/13_repo_scans"
+mkdir -p "$E/03_tests" "$E/04_build" "$E/05_ui" "$E/09_release" "$E/13_repo_scans" "$E/14_enterprise_audit"
 
 cd /workspaces/Firsttry/atlassian/forge-app
 
@@ -99,6 +99,10 @@ run_step 6 "Proof discipline verification" \
 # STEP 7: Repo-root E/ references verification
 run_step 7 "No repo-root E refs verification" \
   "FT_PROD_READY_E=\"$E\" bash tools/production/verify_no_repo_root_E_refs.sh"
+
+# STEP 8: Enterprise audit (requestJira + zero egress + scope justification)
+run_step 8 "Enterprise audit verification" \
+  "FT_PROD_READY_E=\"$E\" bash tools/production/run_enterprise_audit.sh"
 
 # ==============================================================================
 # Finalization: Write evidence files and exit with recorded code

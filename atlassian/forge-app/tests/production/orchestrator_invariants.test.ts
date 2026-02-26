@@ -53,10 +53,10 @@ describe('Orchestrator Invariants', () => {
     expect(hasVerdictFile).toBe(true);
   });
 
-  it('should contain exactly 7 run_step calls', () => {
+  it('should contain exactly 8 run_step calls', () => {
     const matches = orchestratorContent.match(/^run_step\s+\d+\s/gm);
     expect(matches).not.toBeNull();
-    expect(matches!.length).toBe(7);
+    expect(matches!.length).toBe(8);
   });
 
   it('should contain step 6 with Proof discipline label', () => {
@@ -67,6 +67,11 @@ describe('Orchestrator Invariants', () => {
   it('should contain step 7 with repo-root verification', () => {
     const hasStep7 = /run_step\s+7\s+"No repo-root/.test(orchestratorContent);
     expect(hasStep7).toBe(true);
+  });
+
+  it('should contain step 8 with enterprise audit label', () => {
+    const hasStep8 = /run_step\s+8\s+"Enterprise audit/.test(orchestratorContent);
+    expect(hasStep8).toBe(true);
   });
 
   it('should NOT contain "set -e" (must be "set -uo pipefail")', () => {
