@@ -9,7 +9,9 @@
 
 ## Primary Contact
 
-**Email**: [security@firsttry.run](mailto:security@firsttry.run)
+**Email**: [security.contact@firsttry.run](mailto:security.contact@firsttry.run)
+
+**Emergency (Critical/P0 incidents only)**: [emergency@firsttry.run](mailto:emergency@firsttry.run)
 
 **Supported channels**:
 - Email (preferred)
@@ -41,7 +43,7 @@
 
 We practice responsible disclosure. Please:
 
-1. **Report privately**: Send vulnerability details to security@firsttry.run (not public channels)
+1. **Report privately**: Send vulnerability details to security.contact@firsttry.run (not public channels)
 2. **Provide details**: Include:
    - Description of the vulnerability
    - Steps to reproduce

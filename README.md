@@ -183,10 +183,11 @@ All FirstTry documentation follows these principles:
 
 ## 📞 Need Help?
 
-- **General Support**: See [SUPPORT_POLICY.md](SUPPORT_POLICY.md)
-- **Security Questions**: [SECURITY.md](SECURITY.md#security-contact)
-- **Privacy/Data Handling**: [PRIVACY.md](PRIVACY.md#contact-us)
-- **Enterprise Procurement**: Contact via [SUPPORT_POLICY.md](SUPPORT_POLICY.md#escalation)
+- **General inquiries**: contact@firsttry.run
+- **Technical support**: support@firsttry.run
+- **Security issues**: security.contact@firsttry.run
+- **Privacy/Data requests**: privacy@firsttry.run
+- **Full Support Policy**: See [atlassian/forge-app/docs/operations/SUPPORT_POLICY.md](atlassian/forge-app/docs/operations/SUPPORT_POLICY.md)
 
 ---
 

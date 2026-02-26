@@ -34,7 +34,7 @@ This plan defines how FirstTry responds to security incidents, vulnerabilities, 
 **Timeline**: Immediate (0–1 hour)
 
 1. **Detection source**:
-   - Vulnerability report (security@firsttry.run)
+   - Vulnerability report (security.contact@firsttry.run)
    - Internal scanning (CI/CD gate, dependency checks)
    - User report (support channels)
    - Forge platform notification (if Forge incident affects FirstTry)
@@ -111,7 +111,8 @@ This plan defines how FirstTry responds to security incidents, vulnerabilities, 
 
 | Role | Responsible For | Contact |
 |------|-----------------|---------|
-| **Security Contact** | Primary incident coordinator | security@firsttry.run |
+| **Security Contact** | Primary incident coordinator | security.contact@firsttry.run |
+| **Emergency Response** | Critical/P0 incidents requiring immediate action | emergency@firsttry.run |
 | **Lead Developer** | Code investigation & patch | (internal team) |
 | **Release Manager** | Deployment & communication | (internal team) |
 | **Product Owner** | Customer communication & impact assessment | (internal team) |
@@ -154,7 +155,7 @@ ACTION: <What customers should do: update, reconfigure, monitor logs, etc.>
 
 We appreciate your patience and will provide updates every 24 hours.
 
-Contact: security@firsttry.run
+Contact: security.contact@firsttry.run
 ```
 
 ### Patch Release Notification

@@ -98,7 +98,7 @@ FirstTry follows the principle of **least privilege**: Users have minimum access
 ## 7. Incident and Breach Response
 
 **If unauthorized access suspected**:
-1. Notify security@firsttry.run immediately
+1. Notify security.contact@firsttry.run immediately
 2. Revoke suspect credentials
 3. Conduct audit log review (GitHub Actions logs, Forge logs)
 4. Reset MFA on affected accounts

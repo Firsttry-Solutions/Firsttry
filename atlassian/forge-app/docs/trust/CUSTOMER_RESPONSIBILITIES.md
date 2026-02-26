@@ -74,7 +74,7 @@ Responsibility is shared between:
 
 **Your responsibility**:
 - Maintain current security contact email in Jira admin settings (if applicable)
-- Ensure security@firsttry.run can reach you for critical security incidents
+- Ensure security.contact@firsttry.run can reach you for critical security incidents
 - Nominate a security officer or point-of-contact for incident notifications
 
 **We provide**: SECURITY_CONTACT.md with response SLAs and severity definitions.
@@ -85,7 +85,7 @@ Responsibility is shared between:
 
 **Your responsibility**:
 - Monitor FirstTry dashboard for exporting errors or audit anomalies
-- Report security concerns or suspected breaches to security@firsttry.run
+- Report security concerns or suspected breaches to security.contact@firsttry.run
 - Cooperate in incident investigation (provide logs, reproduce steps)
 - Communicate findings to your stakeholders and regulators as required
 
@@ -124,7 +124,7 @@ Responsibility is shared between:
 **Your responsibility**:
 - Review SBOM (docs/evidence/*/cyclonedx_sbom.json) for dependency transparency
 - Conduct your own dependency risk assessment if required
-- Report supply chain concerns to security@firsttry.run
+- Report supply chain concerns to security.contact@firsttry.run
 - Include FirstTry in your vendor assessment program if applicable
 
 **We provide**: CycloneDX SBOM, npm audit results, and trivy scan logs in evidence bundles.

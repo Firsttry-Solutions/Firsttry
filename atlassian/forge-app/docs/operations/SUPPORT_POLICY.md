@@ -12,7 +12,7 @@
 | Channel | Use Case | Response Time |
 |---------|----------|----------------|
 | **Email**: support@firsttry.run | Feature requests, bugs, general questions | 2 business days |
-| **Email**: security@firsttry.run | Security vulnerabilities, data concerns | 4 hours (Critical) |
+| **Email**: security.contact@firsttry.run | Security vulnerabilities, data concerns | 4 hours (Critical) |
 | **GitHub Issues** (if repo public) | Feature requests, bug reports | 3 business days |
 | **Atlassian Marketplace** (if available) | Community support, ratings | 5 business days |
 
@@ -83,7 +83,7 @@
 ## 6. Security Support
 
 **For security issues**:
-- Email security@firsttry.run (not general support)
+- Email security.contact@firsttry.run (not general support)
 - Follow VULNERABILITY_DISCLOSURE_POLICY.md
 - Do NOT post security details publicly
 

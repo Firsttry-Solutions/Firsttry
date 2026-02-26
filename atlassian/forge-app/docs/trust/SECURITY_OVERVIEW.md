@@ -112,7 +112,7 @@ The security posture is distributed across three parties:
 ## Evidence Pack Pointer
 
 For detailed procurement documentation and control mapping, refer to:
-- **[docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md](../../procurement/ENTERPRISE_SECURITY_PACK_INDEX.md)**: Master index linking all trust, operations, and procurement docs.
+- **[docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md](../procurement/ENTERPRISE_SECURITY_PACK_INDEX.md)**: Master index linking all trust, operations, and procurement docs.
 
 ---
 

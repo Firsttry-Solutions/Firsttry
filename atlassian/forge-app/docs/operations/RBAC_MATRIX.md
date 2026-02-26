@@ -77,7 +77,7 @@
    ---
    Review Date: 2026-05-26
    Reviewers: Security Lead
-   Changes: Added Developer "alice@example.com"
+   Changes: Added Developer "alice [redacted]"
    Next Review: 2026-08-26
    ```
 

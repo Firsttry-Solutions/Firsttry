@@ -24,7 +24,7 @@ A: FirstTry is an Atlassian Forge application providing Jira governance and comp
 A: FirstTry Solutions.
 
 **Q: What is the current version?**  
-A: 0.4.1 (specified in manifest.yml). See [CHANGELOG.md](../../CHANGELOG.md) for release history.
+A: 0.4.1 (specified in manifest.yml). See [CHANGELOG.md](../CHANGELOG.md) for release history.
 
 **Q: Is FirstTry certified (SOC2, ISO27k, etc.)?**  
 A: **No**. FirstTry is NOT certified. We provide documentation and evidence of security practices. See disclaimer in [ENTERPRISE_SECURITY_PACK_INDEX.md](ENTERPRISE_SECURITY_PACK_INDEX.md).
@@ -114,7 +114,7 @@ A: MFA required for maintainers. Code review enforced on all PRs. See [ACCESS_CO
 A: **NO uptime SLA**. FirstTry depends on Atlassian Forge (typically 99.5%). See [SLA.md](../operations/SLA.md).
 
 **Q: What support channels are available?**  
-A: Email (support@firsttry.run, security@firsttry.run). See [SUPPORT_POLICY.md](../operations/SUPPORT_POLICY.md).
+A: Email (support@firsttry.run, security.contact@firsttry.run). See [SUPPORT_POLICY.md](../operations/SUPPORT_POLICY.md).
 
 **Q: What is the breach notification timeline?**  
 A: 24 hours for critical incidents (best-effort). See [INCIDENT_RESPONSE_PLAN.md](../operations/INCIDENT_RESPONSE_PLAN.md).
@@ -155,4 +155,4 @@ For more details, see [ENTERPRISE_SECURITY_PACK_INDEX.md](ENTERPRISE_SECURITY_PA
 
 ## Contact
 
-Questions? Email legal@firsttry.run or security@firsttry.run.
+Questions? Email contact@firsttry.run or security.contact@firsttry.run.

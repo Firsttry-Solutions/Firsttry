@@ -168,5 +168,5 @@ If deployed version has critical issue:
 ## 10. References
 
 - [docs/evidence/baselines/README.md](../evidence/baselines/README.md): Baseline file policy
-- [CHANGELOG.md](../../CHANGELOG.md): Release history
+- [CHANGELOG.md](../CHANGELOG.md): Release history
 - [tools/generate_enterprise_evidence.sh](../../tools/generate_enterprise_evidence.sh): Evidence generation

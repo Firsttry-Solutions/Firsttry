@@ -2,7 +2,75 @@
 
 All notable changes to FirstTry are documented in this file.
 
-## [v1.0-enterprise-docs-v4.2.3] - 2026-02-26
+## [v1.0-enterprise-docs-v4.2.4] - 2026-02-27
+
+### Added
+
+#### Truth Audit Hardening + Email Integrity + GitHub Pages Output Scan
+
+**Email Integrity Gate** - New tool enforcing real email addresses only
+- `tools/email_allowlist.txt` - Single source of truth for 5 approved email addresses:
+  `contact@firsttry.run`, `emergency@firsttry.run`, `privacy@firsttry.run`,
+  `security.contact@firsttry.run`, `support@firsttry.run`
+- `tools/email_integrity_gate.mjs` - Node.js ESM script (no external dependencies)
+  - Scans 35 enterprise docs (trust, operations, procurement, README)
+  - Detects placeholder patterns: `example.com`, `example.org`, `yourcompany`, `TBD@`
+  - Validates every email against allowlist (fails on any disallowed address)
+  - Enforces `emergency@` routing restriction (only in INCIDENT_RESPONSE_PLAN.md, SECURITY_CONTACT.md, BCP_DRP.md)
+  - Confirms required email presences (each approved email in its expected doc)
+
+**Enterprise Doc Email Fixes** - All placeholder/disallowed emails replaced
+- `security@firsttry.run` → `security.contact@firsttry.run` across all docs
+- `legal@firsttry.run` → `contact@firsttry.run` (TERMS_OF_SERVICE.md, ENTERPRISE_SECURITY_PACK_INDEX.md)
+- `legal@firsttry.run` → `security.contact@firsttry.run` (SECURITY_QUESTIONNAIRE_MASTER.md)
+- `alice@example.com` → `alice [redacted]` in RBAC_MATRIX.md
+- Added `privacy@firsttry.run` to DATA_CLASSIFICATION_AND_PII.md and UNINSTALL_DELETION.md
+- Added `emergency@firsttry.run` to INCIDENT_RESPONSE_PLAN.md, SECURITY_CONTACT.md, BCP_DRP.md
+- Added contact section to docs/README.md; updated root README.md "Need Help?" section
+
+**Truth Audit Scoping** - Enterprise-docs-only scan
+- `tools/truth_claims_gate.mjs` — Narrowed scan scope to enterprise docs only
+  - No longer scans root-level or non-enterprise markdown files
+  - **EXCLUDES** `docs/trust/CLAIMS_REGISTER.md` from banned phrase scan (meta-doc)
+  - Improved `findTableStart()` using `|---` pattern for robust table parsing
+  - Whitespace-normalized matching for reliable banned phrase detection
+
+**GitHub Pages Output Scan** - Zero-placeholder guarantee
+- Updated `.github/workflows/docs.yml`:
+  - All steps run with `working-directory: atlassian/forge-app`
+  - New "Run email integrity gate" step before deploy
+  - New "Scan Pages output for placeholder emails" step after site/ build
+  - Landing page updated to v4.2.4 with all 5 approved contacts
+
+### Fixed
+
+**Enterprise Gate Pattern Fixes**
+- `tools/enterprise_docs_gate.sh` — Header field check: `"Version:"` → `"Version"` (removes colon to correctly match `**Version**: ...` markdown bold format)
+- Step 13 path-prefix stripping: now handles git-root-relative paths (`atlassian/forge-app/...`) as well as gate-relative paths
+
+**Link Fixes** (5 broken relative links corrected)
+- `docs/operations/CHANGE_MANAGEMENT_POLICY.md`: `../../CHANGELOG.md` → `../CHANGELOG.md`
+- `docs/procurement/SECURITY_QUESTIONNAIRE_MASTER.md`: `../../CHANGELOG.md` → `../CHANGELOG.md`
+- `docs/trust/VULNERABILITY_DISCLOSURE_POLICY.md`: `../../CHANGELOG.md` → `../CHANGELOG.md`
+- `docs/trust/RESOLVER_INVENTORY.md`: `../evidence/baselines/` → `../evidence/baselines/README.md`
+- `docs/trust/SECURITY_OVERVIEW.md`: `../../procurement/ENTERPRISE_SECURITY_PACK_INDEX.md` → `../procurement/ENTERPRISE_SECURITY_PACK_INDEX.md`
+
+**SLA.md Uptime Claim Removal**
+- Removed `"99.9% uptime"` example text (gate correctly flagged as forbidden percentage claim)
+- Removed `Typically 99.5%` reference to Atlassian SLA (paraphrased as pointer to Atlassian docs)
+
+### Verification (All 4 Tools Pass)
+
+| Tool | Status | Details |
+|------|--------|---------|
+| `node tools/md_link_check.mjs` | ✅ PASS | 33 files scanned, 0 broken links |
+| `node tools/truth_claims_gate.mjs` | ✅ PASS | 18 claims, 15 EVIDENCE + 3 ATLASSIAN proofs, 0 unregistered banned phrases |
+| `node tools/email_integrity_gate.mjs` | ✅ PASS | 35 files scanned, 0 violations |
+| `bash tools/enterprise_docs_gate.sh` | ✅ PASS | All 14 steps pass |
+
+**git diff --stat summary:** 26 files changed, 410 insertions(+), 386 deletions(-)
+
+
 
 ### Added
 

@@ -34,7 +34,7 @@ FirstTry provides an SLA for **support response times only**. We do NOT guarante
 - See BCP_DRP.md for platform dependencies
 
 ❌ **No uptime percentage threshold**  
-- Statements like "99.9% uptime" are NOT made
+- No uptime percentage claims are made
 - No SLA credit or refund for outages
 - Support response times are "best-effort only"
 
@@ -56,7 +56,7 @@ FirstTry provides an SLA for **support response times only**. We do NOT guarante
 - Updates provided every 5 business days minimum
 
 ✅ **Documented Support Channels**:
-- Email support available (support@firsttry.run, security@firsttry.run)
+- Email support available (support@firsttry.run, security.contact@firsttry.run)
 - Response SLA as stated above
 
 ---
@@ -64,7 +64,7 @@ FirstTry provides an SLA for **support response times only**. We do NOT guarante
 ## 4. Dependency on Atlassian Forge SLA
 
 **Atlassian Forge SLA** (reference only; see Atlassian docs for authoritative details):
-- Platform availability target: Typically 99.5% (varies by region)
+- Platform availability target: Refer to current Atlassian SLA documentation (varies by region)
 - Data replication and backup: Atlassian-managed
 - Incident response: Atlassian SLA applies
 

@@ -20,8 +20,8 @@ This document provides pointers to FirstTry security information in standard for
 ## Security Information Contacts
 
 ```
-Contact: security@firsttry.run
-Contact: legal@firsttry.run
+Contact: security.contact@firsttry.run
+Contact: contact@firsttry.run
 ```
 
 ---

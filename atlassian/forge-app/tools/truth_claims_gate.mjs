@@ -1,23 +1,38 @@
 #!/usr/bin/env node
-
 /**
- * truth_claims_gate.mjs
- * 
+ * truth_claims_gate.mjs (v4.2.4)
  * Truth Audit validation gate for FirstTry documentation.
- * - Parses CLAIMS_REGISTER.md
- * - Validates EVIDENCE proofs exist as files
- * - Validates ATLASSIAN proofs are https://developer.atlassian.com/ links
- * - Scans all docs/[recursively].md for banned phrases
- * - Fails if banned phrase found but not in CLAIMS_REGISTER
- * - Exits non-zero on any error
- * - Deterministic output (sorted errors)
+ * Node v20 ESM — No external dependencies.
+ *
+ * Rules:
+ * - Parses CLAIMS_REGISTER.md (registry source of truth)
+ * - Validates EVIDENCE proofs exist as files (relative to cwd = atlassian/forge-app)
+ * - Validates ATLASSIAN proofs start with https://developer.atlassian.com/
+ * - Scans ONLY enterprise docs (docs/trust, docs/operations, docs/procurement, docs/README.md)
+ * - EXCLUDES docs/trust/CLAIMS_REGISTER.md from banned phrase scanning (meta-doc)
+ * - Banned phrase matching is whitespace-normalized (case-insensitive, collapse whitespace, trim)
+ * - Fails if banned phrase found but NOT in CLAIMS_REGISTER
+ * - Deterministic sorted errors; exit non-zero on any failure
  */
 
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { resolve, join } from 'path';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
+import { resolve, join, relative } from 'path';
 
-// Constants
-const CLAIMS_REGISTER_PATH = './docs/trust/CLAIMS_REGISTER.md';
+// Absolute path of the repo root (atlassian/forge-app is cwd)
+const CWD = process.cwd();
+
+const CLAIMS_REGISTER_PATH = join(CWD, 'docs/trust/CLAIMS_REGISTER.md');
+
+// Enterprise docs scan scope
+const ENTERPRISE_DIRS = [
+  join(CWD, 'docs/trust'),
+  join(CWD, 'docs/operations'),
+  join(CWD, 'docs/procurement')
+];
+const EXTRA_FILES = [join(CWD, 'docs/README.md')];
+
+// Exclude CLAIMS_REGISTER from banned phrase scanning (meta-documentation)
+const EXCLUDE_FROM_SCAN = new Set([CLAIMS_REGISTER_PATH, join(CWD, 'docs/trust/CLAIMS_REGISTER.md')]);
 
 const BANNED_PHRASES = [
   'no pii',
@@ -29,248 +44,183 @@ const BANNED_PHRASES = [
   'cloud fortified'
 ];
 
-// Error tracking
-const errors = [];
-const warnings = [];
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
-/**
- * Recursively find all markdown files in docs/trust, docs/operations, docs/procurement
- */
-function findMarkdownFiles(dirPath = './docs', fileList = []) {
-  // Only check new enterprise docs directories
-  const enterpriseDirs = ['./docs/trust', './docs/operations', './docs/procurement'];
-  
-  for (const dir of enterpriseDirs) {
-    try {
-      const files = readdirSync(dir);
-      
-      for (const file of files) {
-        const fullPath = join(dir, file);
-        const stat = statSync(fullPath);
-        
-        if (stat.isDirectory()) {
-          // Recursively process subdirectories if they exist
-          findMarkdownFiles(fullPath, fileList);
-        } else if (file.endsWith('.md')) {
-          fileList.push(fullPath);
-        }
-      }
-    } catch (err) {
-      // Silently skip directories that can't be read
-    }
-  }
-  
-  return fileList;
+/** Normalize text for matching: lowercase + collapse whitespace + trim */
+function norm(s) {
+  return s.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-/**
- * Parse CLAIMS_REGISTER.md markdown table
- * Returns array of claims with ClaimID, ClaimText, ProofType, ProofPointer
- */
-function parseClaimsRegister(filePath) {
-  const content = readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
-  
-  // Find the table start (line with "|-------|")
-  let tableStart = -1;
+/** Recursively find all .md files in a directory */
+function findMd(dir, results = []) {
+  if (!existsSync(dir)) return results;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const fp = join(dir, entry.name);
+    if (entry.isDirectory()) findMd(fp, results);
+    else if (entry.isFile() && entry.name.endsWith('.md')) results.push(fp);
+  }
+  return results;
+}
+
+/** Locate the header row + separator in a markdown table, return first data row index */
+function findTableStart(lines) {
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes('|---------|')) {
-      tableStart = i + 1;
-      break;
+    if (lines[i].includes('|---')) return i + 1; // row after separator
+  }
+  return -1;
+}
+
+/** Parse a markdown table row into cells */
+function parseCells(line) {
+  return line.split('|').map(c => c.trim()).filter((_, i, arr) => i > 0 && i < arr.length - 1);
+}
+
+// ─── CLAIMS_REGISTER parsing ────────────────────────────────────────────────
+
+const errors = [];
+
+console.log('🔍 Truth Audit Gate');
+console.log('═'.repeat(50));
+
+// 1. Parse CLAIMS_REGISTER.md
+console.log('\n1. Parsing CLAIMS_REGISTER.md...');
+let claims = [];
+try {
+  const content = readFileSync(CLAIMS_REGISTER_PATH, 'utf-8');
+  const lines = content.split('\n');
+
+  const startIdx = findTableStart(lines);
+  if (startIdx === -1) throw new Error('Could not find table separator row containing "|---" in CLAIMS_REGISTER.md');
+
+  // Find header row (one before separator)
+  const headerLine = lines[startIdx - 2] || '';
+  const expectedCols = ['claimid', 'claimtext', 'scope', 'prooftype', 'proofpointer', 'validationrule', 'owner', 'lastreviewed'];
+  const headerCells = parseCells(headerLine).map(h => h.toLowerCase().replace(/\s+/g, ''));
+  for (const col of expectedCols) {
+    if (!headerCells.some(h => h.includes(col.replace(/\s+/g, '')))) {
+      errors.push(`REGISTER_FORMAT: Missing required column "${col}" in CLAIMS_REGISTER.md`);
     }
   }
-  
-  if (tableStart === -1) {
-    console.error('❌ ERROR: Could not find claims table in CLAIMS_REGISTER.md');
-    process.exit(1);
-  }
-  
-  const claims = [];
-  for (let i = tableStart; i < lines.length; i++) {
+
+  // Parse data rows
+  for (let i = startIdx; i < lines.length; i++) {
     const line = lines[i].trim();
-    
-    // Stop at end of table (blank line or heading)
     if (!line.startsWith('|') || line === '') break;
-    
-    // Parse table row: | ClaimID | ClaimText | ... | ProofType | ProofPointer | ... |
-    const cells = line.split('|').map(c => c.trim()).filter(c => c);
-    
+    const cells = parseCells(line);
     if (cells.length < 5) continue;
-    
-    const claim = {
-      claimId: cells[0],
+    claims.push({
+      claimId:   cells[0],
       claimText: cells[1],
-      scope: cells[2],
+      scope:     cells[2],
       proofType: cells[3],
       proofPointer: cells[4],
       validationRule: cells[5] || '',
-      owner: cells[6] || '',
+      owner:     cells[6] || '',
       lastReviewed: cells[7] || ''
-    };
-    
-    claims.push(claim);
-  }
-  
-  return claims;
-}
-
-/**
- * Validate EVIDENCE proofs
- * ProofPointer must be a file path that exists
- */
-function validateEvidenceProofs(claims) {
-  for (const claim of claims) {
-    if (claim.proofType !== 'EVIDENCE') continue;
-    
-    const filePath = claim.proofPointer;
-    const fullPath = resolve(filePath);
-    
-    try {
-      statSync(fullPath);
-    } catch (err) {
-      errors.push(`[${claim.claimId}] EVIDENCE proof not found: ${filePath}`);
-    }
-  }
-}
-
-/**
- * Validate ATLASSIAN proofs
- * ProofPointer must be https://developer.atlassian.com/ URL
- */
-function validateAtlassianProofs(claims) {
-  for (const claim of claims) {
-    if (claim.proofType !== 'ATLASSIAN') continue;
-    
-    const url = claim.proofPointer;
-    if (!url.startsWith('https://developer.atlassian.com/')) {
-      errors.push(`[${claim.claimId}] ATLASSIAN proof must be https://developer.atlassian.com/ URL, got: ${url}`);
-    }
-  }
-}
-
-/**
- * Scan all docs/ files recursively for banned phrases
- * Track which claims correspond to found phrases
- */
-function scanForBannedPhrases(claims) {
-  const claimsByText = {};
-  for (const claim of claims) {
-    const text = claim.claimText.toLowerCase().trim();
-    claimsByText[text] = claim.claimId;
-  }
-  
-  const docFiles = findMarkdownFiles('./docs').filter(f => !f.includes('CLAIMS_REGISTER.md'));
-  const foundPhrases = {};
-  
-  for (const filePath of docFiles) {
-    const content = readFileSync(filePath, 'utf-8').toLowerCase();
-    
-    for (const phrase of BANNED_PHRASES) {
-      if (content.includes(phrase)) {
-        if (!foundPhrases[phrase]) {
-          foundPhrases[phrase] = [];
-        }
-        if (!foundPhrases[phrase].includes(filePath)) {
-          foundPhrases[phrase].push(filePath);
-        }
-      }
-    }
-  }
-  
-  // Check if each found phrase is covered by a claim
-  for (const phrase of Object.keys(foundPhrases)) {
-    // Find a claim that legitimately uses this phrase
-    const phraseNoWhitespace = phrase.replace(/["\s]/g, '').toLowerCase();
-    const relevantClaim = claims.find(c => {
-      const textNoWhitespace = c.claimText.replace(/["\s]/g, '').toLowerCase();
-      return textNoWhitespace.includes(phraseNoWhitespace);
     });
-    
-    if (!relevantClaim) {
-      const files = foundPhrases[phrase];
-      errors.push(`⚠️  Banned phrase found but not in claims register: "${phrase}"\n     Files: ${files.join(', ')}\n     Add a claim to CLAIMS_REGISTER.md to legitimize this phrase.`);
-    }
   }
-  
-  return foundPhrases;
+
+  console.log(`   ✅ Loaded ${claims.length} claims`);
+} catch (err) {
+  console.error(`   ❌ Failed to parse CLAIMS_REGISTER.md: ${err.message}`);
+  process.exit(1);
 }
 
-/**
- * Main validation function
- */
-function validateClaims() {
-  console.log('🔍 Truth Audit Gate');
-  console.log('═════════════════════════════════════════\n');
-  
-  // Parse claims register
-  console.log('1. Parsing CLAIMS_REGISTER.md...');
-  let claims;
-  try {
-    claims = parseClaimsRegister(CLAIMS_REGISTER_PATH);
-    console.log(`   ✅ Loaded ${claims.length} claims\n`);
-  } catch (err) {
-    console.error(`   ❌ Failed to parse CLAIMS_REGISTER.md: ${err.message}`);
-    process.exit(1);
+// 2. Validate EVIDENCE proofs
+console.log('\n2. Validating EVIDENCE proofs (file existence)...');
+const evidenceClaims = claims.filter(c => c.proofType === 'EVIDENCE');
+for (const c of evidenceClaims) {
+  const fp = resolve(CWD, c.proofPointer);
+  if (!existsSync(fp)) {
+    errors.push(`[${c.claimId}] EVIDENCE_MISSING: File not found: ${c.proofPointer}`);
   }
-  
-  // Validate EVIDENCE proofs
-  console.log('2. Validating EVIDENCE proofs (file existence)...');
-  validateEvidenceProofs(claims);
-  if (errors.filter(e => e.includes('EVIDENCE')).length === 0) {
-    const evidenceClaims = claims.filter(c => c.proofType === 'EVIDENCE').length;
-    console.log(`   ✅ All ${evidenceClaims} EVIDENCE proofs verified\n`);
-  } else {
-    console.log(`   ❌ Some EVIDENCE proofs missing\n`);
+}
+const evErrors = errors.filter(e => e.includes('EVIDENCE_MISSING'));
+if (evErrors.length === 0) {
+  console.log(`   ✅ All ${evidenceClaims.length} EVIDENCE proofs verified`);
+} else {
+  console.log(`   ❌ ${evErrors.length} EVIDENCE proof(s) missing`);
+}
+
+// 3. Validate ATLASSIAN proofs
+console.log('\n3. Validating ATLASSIAN proofs (URL format)...');
+const atlassianClaims = claims.filter(c => c.proofType === 'ATLASSIAN');
+for (const c of atlassianClaims) {
+  if (!c.proofPointer.startsWith('https://developer.atlassian.com/')) {
+    errors.push(`[${c.claimId}] ATLASSIAN_INVALID: Must start with https://developer.atlassian.com/, got: ${c.proofPointer}`);
   }
-  
-  // Validate ATLASSIAN proofs
-  console.log('3. Validating ATLASSIAN proofs (URL format)...');
-  validateAtlassianProofs(claims);
-  if (errors.filter(e => e.includes('ATLASSIAN')).length === 0) {
-    const atlassianClaims = claims.filter(c => c.proofType === 'ATLASSIAN').length;
-    console.log(`   ✅ All ${atlassianClaims} ATLASSIAN proofs valid\n`);
-  } else {
-    console.log(`   ❌ Some ATLASSIAN proofs invalid\n`);
-  }
-  
-  // Scan for banned phrases
-  console.log('4. Scanning docs/**/*.md for banned phrases...');
-  const foundPhrases = scanForBannedPhrases(claims);
-  const foundCount = Object.keys(foundPhrases).length;
-  if (foundCount === 0) {
-    console.log('   ✅ No banned phrases found\n');
-  } else {
-    console.log(`   ⚠️  Found ${foundCount} banned phrases (checking if they have claims...)\n`);
-  }
-  
-  // Report results
-  console.log('═════════════════════════════════════════');
-  console.log('Truth Audit Results\n');
-  
-  if (errors.length === 0) {
-    console.log('✅ ALL CHECKS PASSED\n');
-    console.log(`Summary:`);
-    console.log(`  • Claims registered: ${claims.length}`);
-    console.log(`  • EVIDENCE proofs: ${claims.filter(c => c.proofType === 'EVIDENCE').length}`);
-    console.log(`  • ATLASSIAN proofs: ${claims.filter(c => c.proofType === 'ATLASSIAN').length}`);
-    console.log(`  • Banned phrases found: ${foundCount}`);
-    console.log(`  • Unregistered phrases: 0\n`);
-    process.exit(0);
-  } else {
-    console.log('❌ VALIDATION FAILED\n');
-    console.log('Errors (sorted):\n');
-    
-    // Sort and print errors
-    const sortedErrors = errors.sort();
-    for (const error of sortedErrors) {
-      console.log(`  ${error}`);
+}
+const atlErrors = errors.filter(e => e.includes('ATLASSIAN_INVALID'));
+if (atlErrors.length === 0) {
+  console.log(`   ✅ All ${atlassianClaims.length} ATLASSIAN proofs valid`);
+} else {
+  console.log(`   ❌ ${atlErrors.length} ATLASSIAN proof(s) invalid`);
+}
+
+// 4. Scan enterprise docs for banned phrases
+console.log('\n4. Scanning enterprise docs for banned phrases...');
+console.log(`   Scope: docs/trust, docs/operations, docs/procurement, docs/README.md`);
+console.log(`   Excluded from scan: docs/trust/CLAIMS_REGISTER.md (meta-doc)`);
+
+// Collect all enterprise doc files
+const allDocFiles = [];
+for (const dir of ENTERPRISE_DIRS) findMd(dir, allDocFiles);
+for (const fp of EXTRA_FILES) { if (existsSync(fp)) allDocFiles.push(fp); }
+const scanFiles = allDocFiles.filter(fp => !EXCLUDE_FROM_SCAN.has(fp));
+
+console.log(`   Files to scan: ${scanFiles.length}`);
+
+// Build normalized claim texts for matching
+const normalizedClaims = claims.map(c => ({ ...c, normText: norm(c.claimText) }));
+
+const foundPhrases = {};
+for (const fp of scanFiles) {
+  const content = norm(readFileSync(fp, 'utf-8'));
+  const relPath = relative(CWD, fp);
+  for (const phrase of BANNED_PHRASES) {
+    const normPhrase = norm(phrase);
+    if (content.includes(normPhrase)) {
+      if (!foundPhrases[phrase]) foundPhrases[phrase] = [];
+      if (!foundPhrases[phrase].includes(relPath)) foundPhrases[phrase].push(relPath);
     }
-    
-    console.log(`\n(${errors.length} error(s) found)\n`);
-    process.exit(1);
   }
 }
 
-// Run validation
-const cwd = process.cwd();
-validateClaims();
+const foundCount = Object.keys(foundPhrases).length;
+if (foundCount > 0) {
+  console.log(`   ⚠️  Found ${foundCount} banned phrase(s) — checking claims...`);
+}
+
+// For each found phrase, check if a claim covers it
+for (const [phrase, files] of Object.entries(foundPhrases)) {
+  const normPhrase = norm(phrase);
+  const covering = normalizedClaims.find(c => c.normText.includes(normPhrase));
+  if (!covering) {
+    errors.push(
+      `UNREGISTERED_PHRASE: "${phrase}" found in [${files.join(', ')}] but no registered claim covers it. ` +
+      `Add a claim to CLAIMS_REGISTER.md.`
+    );
+  }
+}
+
+// ─── Final Results ────────────────────────────────────────────────────────
+
+console.log('\n' + '═'.repeat(50));
+console.log('Truth Audit Results\n');
+
+if (errors.length === 0) {
+  console.log('✅ ALL CHECKS PASSED\n');
+  console.log('Summary:');
+  console.log(`  • Claims registered: ${claims.length}`);
+  console.log(`  • EVIDENCE proofs verified: ${evidenceClaims.length}`);
+  console.log(`  • ATLASSIAN proofs validated: ${atlassianClaims.length}`);
+  console.log(`  • Banned phrases found: ${foundCount}`);
+  console.log(`  • Unregistered phrases: 0`);
+  process.exit(0);
+} else {
+  console.error('❌ VALIDATION FAILED\n');
+  console.error('Errors (sorted):');
+  errors.sort().forEach(e => console.error(`  ${e}`));
+  console.error(`\nTotal errors: ${errors.length}`);
+  process.exit(1);
+}

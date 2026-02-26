@@ -97,6 +97,12 @@ To trigger deletion of FirstTry data from your Jira Cloud site:
 
 ---
 
+## Privacy Contact
+
+For privacy-related deletion requests or questions: [privacy@firsttry.run](mailto:privacy@firsttry.run)
+
+---
+
 ## References
 
 - [DATA_CLASSIFICATION_AND_PII.md](DATA_CLASSIFICATION_AND_PII.md): PII inventory and handling

@@ -71,3 +71,12 @@ Uninstall steps (summary)
 
 Links
 - Full documentation index: start from this file and follow links above.
+
+---
+
+## Contact
+
+- **General inquiries**: contact@firsttry.run
+- **Technical support**: support@firsttry.run
+- **Security**: security.contact@firsttry.run
+- **Privacy/Data requests**: privacy@firsttry.run

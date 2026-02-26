@@ -132,3 +132,9 @@ When admin exports compliance evidence:
 - [UNINSTALL_DELETION.md](UNINSTALL_DELETION.md): Deletion workflow
 - [PRIVACY_POLICY.md](PRIVACY_POLICY.md): Privacy practices
 - [FORGE_PLATFORM_DEPENDENCY.md](FORGE_PLATFORM_DEPENDENCY.md): Platform responsibilities
+
+---
+
+## Privacy Contact
+
+For PII-related queries or to request data deletion, contact: [privacy@firsttry.run](mailto:privacy@firsttry.run)
