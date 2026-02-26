@@ -301,4 +301,17 @@ describe('Orchestrator Invariants', () => {
     const excludesFullLog = /grep\s+-v.*\^09_release\/run_prod_ready_audit\\.full\\.log\$/.test(orchestratorContent);
     expect(excludesFullLog).toBe(false);
   });
+
+  it('finalization must call generate_proof_pack_binding exactly twice (reseal-once pattern)', () => {
+    // Count actual call sites: lines matching `if ! generate_proof_pack_binding`
+    // (excludes function definition, comments inside the function body, and header comments)
+    const calls = (orchestratorContent.match(/^\s*if ! generate_proof_pack_binding\b/gm) || []).length;
+    expect(calls).toBe(2);
+  });
+
+  it('should write PROOF_PACK_PACKHASH: label to FULL_LOG between pass-1 and reseal', () => {
+    // The PROOF_PACK_PACKHASH: line makes full.log self-contained for offline reviewers.
+    const hasLabel = /PROOF_PACK_PACKHASH:/.test(orchestratorContent);
+    expect(hasLabel).toBe(true);
+  });
 });

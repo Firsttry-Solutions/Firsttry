@@ -34,7 +34,9 @@ echo "0"                > "$PACK/09_release/run_prod_ready_audit.exit_code.txt"
 echo "step output data" > "$PACK/09_release/some_step.txt"
 # full.log is fully written before binding generation (all final writes happen first),
 # so it is included in hash_inputs and gets a stable sha256
-echo "audit log data"   > "$PACK/09_release/run_prod_ready_audit.full.log"
+echo "All verifications passed."     > "$PACK/09_release/run_prod_ready_audit.full.log"
+echo "Evidence directory: $PACK"    >> "$PACK/09_release/run_prod_ready_audit.full.log"
+echo "Exit code: 0"                 >> "$PACK/09_release/run_prod_ready_audit.full.log"
 
 cd "$PACK"
 
@@ -64,12 +66,27 @@ grep -v '^09_release/prod_ready_manifest_sha256\.txt$' 09_release/prod_ready_man
   | grep -v '^09_release/prod_ready_packhash\.txt$' \\
   > 09_release/prod_ready_manifest_hash_inputs.txt
 
-# manifest_sha256: sha256 of each file in hash_inputs (in order)
+# manifest_sha256 pass 1: sha256 of each file in hash_inputs
 while IFS= read -r f; do
   sha256sum "$f"
 done < 09_release/prod_ready_manifest_hash_inputs.txt > 09_release/prod_ready_manifest_sha256.txt
 
-# packhash: sha256 of manifest_sha256.txt
+# packhash pass 1: sha256 of manifest_sha256.txt
+sha256sum 09_release/prod_ready_manifest_sha256.txt | awk '{print $1}' > 09_release/prod_ready_packhash.txt
+
+# Append PROOF_PACK_* summary lines to full.log (mirrors run_prod_ready_audit.sh)
+_ph=$(cat 09_release/prod_ready_packhash.txt)
+echo "" >> 09_release/run_prod_ready_audit.full.log
+echo "PROOF_PACK_DIR: $PACK" >> 09_release/run_prod_ready_audit.full.log
+echo "PROOF_PACK_PACKHASH: $_ph" >> 09_release/run_prod_ready_audit.full.log
+echo "PROOF_PACK_HASH_INPUTS_FILE: 09_release/prod_ready_manifest_hash_inputs.txt" >> 09_release/run_prod_ready_audit.full.log
+echo "PROOF_PACK_EXCLUSIONS_FILE: 09_release/prod_ready_manifest_exclusions.txt" >> 09_release/run_prod_ready_audit.full.log
+echo "PROOF_PACK_VERIFY_CMD: bash tools/production/verify_prod_ready_proof_pack.sh \"$PACK\"" >> 09_release/run_prod_ready_audit.full.log
+
+# Reseal pass 2: recompute binding so PROOF_PACK lines are included in hash
+while IFS= read -r f; do
+  sha256sum "$f"
+done < 09_release/prod_ready_manifest_hash_inputs.txt > 09_release/prod_ready_manifest_sha256.txt
 sha256sum 09_release/prod_ready_manifest_sha256.txt | awk '{print $1}' > 09_release/prod_ready_packhash.txt
 `;
 
@@ -140,6 +157,7 @@ describe('Proof Pack Verifier Invariants', () => {
     '09_release/prod_ready_manifest_exclusions.txt',
     'PROD_READY_VERDICT.txt',
     '09_release/run_prod_ready_audit.exit_code.txt',
+    '09_release/run_prod_ready_audit.full.log',
   ];
 
   for (const missingFile of REQUIRED) {
@@ -203,6 +221,49 @@ describe('Proof Pack Verifier Invariants', () => {
     const r = runVerifier(packDir);
     expect(r.exitCode).toBe(1);
     expect(r.stderr).toContain('FAIL');
+    expect(r.stdout).not.toContain('STATUS      : PASS');
+  });
+
+  // ── Missing PROOF_PACK_PACKHASH label in full.log ────────────────────────────
+  it('should fail (exit 1) when full.log has no PROOF_PACK_PACKHASH: label', () => {
+    // Build a pack whose full.log intentionally has no PROOF_PACK_PACKHASH label.
+    // The binding is still valid for this content (no label = never written by real script).
+    const SCRIPT_NO_LABEL = `#!/bin/bash
+set -euo pipefail
+PACK="$1"
+mkdir -p "$PACK/09_release"
+echo "PASS"             > "$PACK/PROD_READY_VERDICT.txt"
+echo "0"                > "$PACK/09_release/run_prod_ready_audit.exit_code.txt"
+echo "step output data" > "$PACK/09_release/some_step.txt"
+# full.log WITHOUT any PROOF_PACK_PACKHASH line
+echo "All verifications passed." > "$PACK/09_release/run_prod_ready_audit.full.log"
+cd "$PACK"
+: > 09_release/prod_ready_manifest_files.txt
+: > 09_release/prod_ready_manifest_hash_inputs.txt
+: > 09_release/prod_ready_manifest_sha256.txt
+: > 09_release/prod_ready_packhash.txt
+: > 09_release/prod_ready_manifest_exclusions.txt
+printf 'stderr.txt\\nstdout.txt\\n' > 09_release/prod_ready_manifest_exclusions.txt
+export LC_ALL=C
+find . -type f | sed 's|^\\./||' | grep -v '^stdout\\.txt\$' | grep -v '^stderr\\.txt\$' | LC_ALL=C sort > 09_release/prod_ready_manifest_files.txt
+grep -v '^09_release/prod_ready_manifest_sha256\\.txt\$' 09_release/prod_ready_manifest_files.txt \\
+  | grep -v '^09_release/prod_ready_packhash\\.txt\$' \\
+  > 09_release/prod_ready_manifest_hash_inputs.txt
+while IFS= read -r f; do sha256sum "$f"; done < 09_release/prod_ready_manifest_hash_inputs.txt > 09_release/prod_ready_manifest_sha256.txt
+sha256sum 09_release/prod_ready_manifest_sha256.txt | awk '{print $1}' > 09_release/prod_ready_packhash.txt
+`;
+    const scriptPath = path.join(os.tmpdir(), `ft_nolabel_${process.pid}.sh`);
+    fs.writeFileSync(scriptPath, SCRIPT_NO_LABEL, { mode: 0o755 });
+    try {
+      execSync(`bash "${scriptPath}" "${packDir}"`, { stdio: 'pipe' });
+    } finally {
+      try { fs.unlinkSync(scriptPath); } catch {}
+    }
+
+    const r = runVerifier(packDir);
+    expect(r.exitCode).toBe(1);
+    expect(r.stderr).toContain('FAIL');
+    expect(r.stderr).toContain('PROOF_PACK_PACKHASH');
     expect(r.stdout).not.toContain('STATUS      : PASS');
   });
 

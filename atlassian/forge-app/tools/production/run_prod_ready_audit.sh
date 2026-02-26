@@ -197,10 +197,13 @@ generate_proof_pack_binding() {
 }
 
 # ==============================================================================
-# Finalization:
-#   1. Write all final evidence (EXIT_FILE, VERDICT_FILE, FULL_LOG banner) FIRST.
-#   2. Call generate_proof_pack_binding LAST — so full.log is fully written and
-#      can be included in hash_inputs with a stable hash.
+# Finalization (reseal-once pattern):
+#   1. Write EXIT_FILE, VERDICT_FILE, and FULL_LOG final banner FIRST.
+#   2. Call generate_proof_pack_binding (pass 1) — learns the packhash value.
+#   3. Append PROOF_PACK_* summary lines to FULL_LOG (offline-verification aid).
+#   4. Call generate_proof_pack_binding (pass 2 / reseal) — seals the summary lines.
+# This ensures full.log is completely written AND contains verifier metadata,
+# all sealed in the final cryptographic binding.
 # ==============================================================================
 echo "" >> "$STEP_SUMMARY"
 echo "FINAL: exit=$OVERALL_EXIT" >> "$STEP_SUMMARY"
@@ -221,18 +224,36 @@ else
   VERDICT_MSG="One or more verifications failed."
 fi
 
-# *** LAST WRITES TO FULL_LOG — nothing may append to FULL_LOG after this block ***
+# Write verdict/evidence banner to FULL_LOG
 echo "$VERDICT_MSG" >> "$FULL_LOG"
 echo "" >> "$FULL_LOG"
 echo "Evidence directory: $E" >> "$FULL_LOG"
 echo "Exit code: $OVERALL_EXIT" >> "$FULL_LOG"
-# *** END LAST WRITES TO FULL_LOG ***
 
-# Generate tamper-evident proof pack binding (seals full.log — MUST be last)
-# Binding output goes to stdout/stderr (captured in stdout.txt/stderr.txt by caller),
-# NOT appended to FULL_LOG, so full.log hash remains stable.
+# ── PASS 1: generate binding to learn the packhash value ────────────────────────
 if ! generate_proof_pack_binding; then
-  echo "ERROR: failed to generate proof pack binding" >&2
+  echo "ERROR: failed to generate proof pack binding (pass 1)" >&2
+  OVERALL_EXIT=1
+  echo ""
+  echo "========================================="
+  echo "VERDICT: $(cat "$VERDICT_FILE")"
+  echo "========================================="
+  exit "$OVERALL_EXIT"
+fi
+
+# Append PROOF_PACK_* summary lines to FULL_LOG so a reviewer can verify offline
+# without reading script code. These lines are sealed in pass 2 below.
+_PROOF_PACKHASH="$(cat "$E/09_release/prod_ready_packhash.txt")"
+echo "" >> "$FULL_LOG"
+echo "PROOF_PACK_DIR: $E" >> "$FULL_LOG"
+echo "PROOF_PACK_PACKHASH: $_PROOF_PACKHASH" >> "$FULL_LOG"
+echo "PROOF_PACK_HASH_INPUTS_FILE: 09_release/prod_ready_manifest_hash_inputs.txt" >> "$FULL_LOG"
+echo "PROOF_PACK_EXCLUSIONS_FILE: 09_release/prod_ready_manifest_exclusions.txt" >> "$FULL_LOG"
+echo "PROOF_PACK_VERIFY_CMD: bash tools/production/verify_prod_ready_proof_pack.sh \"$E\"" >> "$FULL_LOG"
+
+# ── PASS 2 (RESEAL): reseal so PROOF_PACK_* lines above are included in hash ────
+if ! generate_proof_pack_binding; then
+  echo "ERROR: failed to generate proof pack binding (pass 2 / reseal)" >&2
   OVERALL_EXIT=1
 fi
 
