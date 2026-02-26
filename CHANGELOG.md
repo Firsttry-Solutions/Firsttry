@@ -2,6 +2,30 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [v1.0-enterprise-docs-v4.2.9] - 2026-02-26
+
+### Changed
+
+#### CI isolation for documentation deploy
+
+**`.github/workflows/docs.yml`**
+- Trigger changed from tag-push (`v*`) to `push: branches: [main] + paths:` (scoped to
+  `atlassian/forge-app/docs/**`, `.github/workflows/docs.yml`, `CHANGELOG.md`)
+- Added `concurrency: group: pages-deploy, cancel-in-progress: true` to prevent
+  concurrent Pages deploys
+- Now only fires when enterprise docs, the workflow file, or CHANGELOG changes — not on
+  app code changes
+
+**6 non-doc workflows updated (path-filter isolation)**
+- Added `paths:` filter to `push: branches: [main]` trigger for:
+  `enterprise_repo_gates.yml`, `forge-app-repro-proof.yml`, `gates.yml`,
+  `placeholders-guard.yml`, `reviewer-gates.yml`, `reviewer_gate_ci.yml`
+- Paths: `atlassian/forge-app/src/**`, `manifest.yml`, `package.json`,
+  `package-lock.json`; excludes `atlassian/forge-app/docs/**` and
+  `.github/workflows/docs.yml`
+- Ensures docs-only pushes do NOT trigger runtime CI
+- No logic changes to any test runner
+
 ## [v1.0-enterprise-docs-v4.2.8] - 2026-02-26
 
 ### Added
