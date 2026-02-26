@@ -13,6 +13,8 @@ on:
       - "docs/**"
       - "tools/**"
       - "atlassian/forge-app/**"
+      - "!atlassian/forge-app/docs/**"
+      - "!.github/workflows/docs.yml"
 
 jobs:
   evidence-guard:

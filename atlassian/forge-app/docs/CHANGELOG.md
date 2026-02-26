@@ -2,6 +2,16 @@
 
 All notable changes to documentation and release artifacts are recorded here.
 
+## v4.3.0 — 2026-02-26 — Complete CI isolation + required email placement enforcement
+
+- UPDATED: `ci-core.yml` — added `!atlassian/forge-app/docs/**` and `!.github/workflows/docs.yml` exclusions
+- UPDATED: `evidence-guard.yml` — same exclusions
+- UPDATED: `docs.yml` trigger — added `atlassian/forge-app/docs/CHANGELOG.md` to paths
+- UPDATED: `enterprise_docs_gate.sh` step 2c — added `example.org` to placeholder patterns
+- UPDATED: `email_integrity_gate.mjs` v4.3.0 — fail-closed on missing required docs
+  (was silently skipping; now emits MISSING_REQUIRED_DOC error)
+- Local gates: md_link_check ✅  truth_claims_gate ✅  email_integrity_gate ✅  enterprise_docs_gate ✅
+
 ## v4.2.9 — 2026-02-26 — CI isolation for documentation deploy
 
 - UPDATED: `.github/workflows/docs.yml` trigger: tag-push → branch+paths (docs/**, docs.yml, CHANGELOG.md)

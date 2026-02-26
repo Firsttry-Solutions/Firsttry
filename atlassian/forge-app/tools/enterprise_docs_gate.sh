@@ -33,7 +33,7 @@ echo ""
 echo "2c. Checking enterprise docs for forbidden placeholder patterns..."
 
 PLACEHOLDER_SCAN_DIRS=(docs/trust docs/operations docs/procurement)
-PLACEHOLDER_PATTERNS=('\[Your Jurisdiction\]' 'example\.com' '@firsttry\.app' '\bTBD\b' '\bTODO\b')
+PLACEHOLDER_PATTERNS=('\[Your Jurisdiction\]' 'example\.com' 'example\.org' '@firsttry\.app' '\bTBD\b' '\bTODO\b')
 PLACEHOLDER_ERRORS=0
 
 for dir in "${PLACEHOLDER_SCAN_DIRS[@]}"; do
