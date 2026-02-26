@@ -28,9 +28,9 @@ describe('Audit Pack Runner Invariants', () => {
       }
     });
 
-    it('uses set -euo pipefail for fail-closed semantics', () => {
+    it('uses set +e with explicit error handling (fail-closed)', () => {
       const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
-      expect(content).toContain('set -euo pipefail');
+      expect(content).toMatch(/set \+e/);
     });
   });
 
@@ -161,6 +161,134 @@ describe('Audit Pack Runner Invariants', () => {
         content,
         'Must exclude AUDIT_PACK_VERDICT.txt from manifest'
       ).toContain('! -name "AUDIT_PACK_VERDICT.txt"');
+    });
+  });
+
+  describe('Exit code normalization', () => {
+    it('normalizes raw exit codes to 0 or 1 only', () => {
+      const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
+
+      expect(
+        content,
+        'Must capture raw exit code separately'
+      ).toContain('RAW_EXIT');
+
+      expect(
+        content,
+        'Must normalize PROD_READY exit to 0/1'
+      ).toContain('PROD_READY_EXIT=0');
+
+      expect(
+        content,
+        'Must normalize ENTERPRISE_AUDIT exit to 0/1'
+      ).toContain('ENTERPRISE_AUDIT_EXIT=0');
+    });
+
+    it('sets audit pack exit to 0 only if both audits succeed', () => {
+      const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
+
+      expect(
+        content,
+        'Must initialize AUDIT_PACK_EXIT to 1 (fail-closed)'
+      ).toContain('AUDIT_PACK_EXIT=1');
+
+      expect(
+        content,
+        'Must set exit to 0 only if both audits pass'
+      ).toContain('AUDIT_PACK_EXIT=0');
+    });
+  });
+
+  describe('Offline verifier path resolution', () => {
+    it('verifier locates itself using BASH_SOURCE', () => {
+      const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
+
+      expect(
+        content,
+        'Verifier must use BASH_SOURCE to find its directory'
+      ).toContain('BASH_SOURCE[0]');
+
+      expect(
+        content,
+        'Verifier must compute DIR from script location'
+      ).toContain('DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"');
+    });
+
+    it('verifier uses DIR for manifest and evidence paths', () => {
+      const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
+
+      expect(
+        content,
+        'Verifier must reference manifest via $DIR'
+      ).toContain('$DIR/AUDIT_PACK_MANIFEST.sha256');
+
+      expect(
+        content,
+        'Verifier must reference verdict via $DIR'
+      ).toContain('$DIR/AUDIT_PACK_VERDICT.txt');
+    });
+
+    it('verifier computes absolute paths for verification', () => {
+      const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
+
+      expect(
+        content,
+        'Verifier must construct absolute paths'
+      ).toContain('abs_filepath="$DIR');
+    });
+  });
+
+  describe('Deterministic manifest policy', () => {
+    it('excludes volatile log files from manifest', () => {
+      const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
+
+      expect(
+        content,
+        'Must exclude *full.log files'
+      ).toContain('! -name "*full.log"');
+
+      expect(
+        content,
+        'Must exclude *_list.txt files'
+      ).toContain('! -name "*_list.txt"');
+
+      expect(
+        content,
+        'Must exclude *_all.txt files'
+      ).toContain('! -name "*_all.txt"');
+
+      expect(
+        content,
+        'Must exclude *_locations.txt files'
+      ).toContain('! -name "*_locations.txt"');
+
+      expect(
+        content,
+        'Must exclude rg_outbound* (volatile grep output)'
+      ).toContain('! -name "rg_outbound*"');
+    });
+
+    it('includes deterministic evidence files in manifest', () => {
+      const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
+
+      expect(
+        content,
+        'Manifest generation logic must include deterministic files'
+      ).toContain('find . -type f');
+
+      expect(
+        content,
+        'Must use LC_ALL=C sort for stable ordering'
+      ).toContain('LC_ALL=C sort');
+    });
+
+    it('uses relative paths with ./ prefix in manifest', () => {
+      const content = fs.readFileSync(SCRIPT_PATH, 'utf-8');
+
+      expect(
+        content,
+        'Must prefix paths with ./ for portability'
+      ).toContain('"./$file"');
     });
   });
 
