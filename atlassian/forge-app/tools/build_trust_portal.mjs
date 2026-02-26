@@ -117,6 +117,37 @@ function extractFrontMatter(md) {
   return meta;
 }
 
+// ── 4b. Styled document meta-card ────────────────────────────────────────────
+function buildDocMetaCard(item, meta) {
+  const packVer = PACK_VERSION || VERSION;
+  let html = '<div class="doc-meta-card" role="note" aria-label="Document metadata">';
+  html += `<span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v${escHtml(packVer)}</span>`;
+  if (meta.version) html += `<span class="dmc-badge" title="Document revision">Rev ${escHtml(meta.version)}</span>`;
+  html += '<span class="dmc-sep"></span>';
+  if (meta.owner)        html += `<span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">${escHtml(meta.owner)}</span></span>`;
+  if (meta.last_updated) html += `<span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">${escHtml(meta.last_updated)}</span></span>`;
+  if (meta.review_cycle) html += `<span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">${escHtml(meta.review_cycle)}</span></span>`;
+  html += `<span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>${escHtml(item.doc_id)}</code></span></span>`;
+  html += '</div>';
+  return html;
+}
+
+// ── 4c. Post-process: add anchor links to h2/h3 headings ──────────────────────
+function addHeadingAnchors(html) {
+  return html.replace(/<(h[23])([^>]*)>(.*?)<\/\1>/gi, (m, tag, attrs, inner) => {
+    const text  = inner.replace(/<[^>]+>/g, '');
+    const slug  = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const link  = `<a href="#${slug}" class="anchor-link" aria-label="Link to section: ${text.replace(/"/g,'&quot;')}">&#182;</a>`;
+    return `<${tag}${attrs} id="${slug}">${inner}${link}</${tag}>`;
+  });
+}
+
+// ── 4d. Strip metadata bold-key lines from markdown source ────────────────────
+function stripMetaLines(md) {
+  // Remove **Key**: value lines that are rendered in the doc-meta-card instead
+  return md.replace(/^\*\*(Version|Owner|Last Updated|Review Cycle|Doc ID)\*\*[^\n]*(?:\n|$)/gim, '');
+}
+
 // ── 5. Sidebar nav HTML ────────────────────────────────────────────────────────
 function buildSidebar(activeRoute) {
   const home = relHome(activeRoute);
@@ -179,7 +210,9 @@ function buildMetaPanel(item, meta, activeRoute) {
 function buildPageHtml(item, mdContent) {
   const activeRoute = item.route;
   const meta        = extractFrontMatter(mdContent);
-  const bodyHtml    = marked.parse(mdContent);
+  const cleanedMd   = stripMetaLines(mdContent);
+  const bodyHtml    = addHeadingAnchors(marked.parse(cleanedMd));
+  const metaCard    = buildDocMetaCard(item, meta);
   const sidebar     = buildSidebar(activeRoute);
   const breadcrumbs = buildBreadcrumbs(item, activeRoute);
   const metaPanel   = buildMetaPanel(item, meta, activeRoute);
@@ -207,6 +240,7 @@ function buildPageHtml(item, mdContent) {
       ${breadcrumbs}
       <main id="content">
         <article class="doc-content">
+          ${metaCard}
           ${bodyHtml}
         </article>
       </main>
@@ -437,6 +471,35 @@ a:hover{text-decoration:underline;color:var(--brand-dark)}
 .disclaimer-list{list-style:none;display:flex;flex-direction:column;gap:6px}
 .disclaimer-list li{font-size:.88rem;color:var(--muted);padding-left:14px;position:relative}
 .disclaimer-list li::before{content:"\\2014";position:absolute;left:0;color:var(--muted)}
+
+/* Document meta-card (replaces raw bold metadata lines) */
+.doc-meta-card{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--brand);border-radius:0 0 var(--radius) var(--radius);padding:10px 16px;margin:0 0 20px;font-size:.81rem}
+.dmc-badge{border-radius:20px;padding:3px 10px;font-size:.74rem;font-weight:700;white-space:nowrap}
+.dmc-pack{background:#e3fcef;border:1px solid #79e2b2;color:#006644}
+.dmc-badge:not(.dmc-pack){background:var(--brand-light);border:1px solid #b2d0ff;color:var(--brand-dark)}
+.dmc-sep{width:1px;height:16px;background:var(--border);flex-shrink:0}
+.dmc-field{display:inline-flex;align-items:center;gap:5px}
+.dmc-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.dmc-val{color:var(--text)}
+.dmc-val code{font-size:.79rem}
+
+/* Table hover rows */
+.doc-content tr:hover td{background:var(--brand-light)!important;transition:background var(--transition)}
+
+/* Heading anchor links */
+.doc-content h2,.doc-content h3{position:relative}
+.anchor-link{margin-left:6px;opacity:0;font-size:.75em;color:var(--muted);text-decoration:none;transition:opacity var(--transition)}
+.doc-content h2:hover .anchor-link,.doc-content h3:hover .anchor-link{opacity:1}
+.anchor-link:hover{color:var(--brand);text-decoration:none}
+
+/* Pack version label in meta panel */
+.pack-version-label{font-size:.72rem;font-weight:700;color:var(--brand-dark);background:var(--brand-light);border-radius:var(--radius);padding:3px 8px;margin-bottom:8px;display:inline-block}
+
+/* Download pack CTA on homepage */
+.pack-cta{display:inline-flex;align-items:center;gap:8px;background:var(--brand);color:white;border-radius:var(--radius);padding:10px 20px;font-weight:600;font-size:.9rem;margin:12px 0;text-decoration:none;transition:background var(--transition),box-shadow var(--transition);box-shadow:var(--shadow-sm)}
+.pack-cta:hover{background:var(--brand-dark);text-decoration:none;box-shadow:var(--shadow-md);color:white}
+.pack-cta-outline{background:var(--white);color:var(--brand);border:1px solid var(--brand)}
+.pack-cta-outline:hover{background:var(--brand-light);color:var(--brand-dark)}
 `;
 
 fs.writeFileSync(path.join(SITE, 'assets', 'portal.css'), CSS_CONTENT, 'utf8');
@@ -624,6 +687,10 @@ const INDEX_HTML = `<!DOCTYPE html>
       <span class="badge green">Read-only Forge app</span>
       <span class="badge green">Fail-closed validation</span>
       <span class="badge amber">Portal Pack Version: ${escHtml(PACK_VERSION || VERSION)} | ${escHtml(TODAY)} UTC</span>
+    </div>
+    <div class="badge-row" style="margin-top:8px">
+      <a href="https://github.com/Firsttry-Solutions/Firsttry/tree/main/atlassian/forge-app/docs" class="pack-cta" target="_blank" rel="noopener">&#128196;&nbsp; Browse Raw Docs</a>
+      <a href="procurement/enterprise-pack-index.html" class="pack-cta pack-cta-outline">&#128274;&nbsp; Start Here: Enterprise Pack Index</a>
     </div>
 
     <div class="nav-section">

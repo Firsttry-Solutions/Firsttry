@@ -39,7 +39,7 @@ Baselines are retained indefinitely as part of the repository history. Historica
 
 ---
 
-**Version**: 1.0  
+**Version**: 4.4.2  
 **Owner**: FirstTry Solutions  
 **Last Updated**: 2026-02-26  
 **Review Cycle**: Annual (changes trigger interim updates via change management policy)

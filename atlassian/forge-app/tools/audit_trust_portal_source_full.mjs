@@ -196,6 +196,16 @@ function auditDoc(item) {
     }
   }
 
+  // 2b. Version field must equal portal_pack_version (version governance)
+  if (meta['Version']) {
+    const fileVer = meta['Version'].trim().replace(/\s*\\\s*$/, '');
+    if (fileVer !== PACK_VERSION) {
+      issues.push(`Version mismatch: file has "${fileVer}", portal_pack_version is "${PACK_VERSION}" — run: sed -i 's/^\\*\\*Version\\*\\*: .*/\\*\\*Version\\*\\*: ${PACK_VERSION}/' <file>`);
+    } else {
+      notes.push(`Version ${fileVer} == portal_pack_version ✓`);
+    }
+  }
+
   // 3. Last Updated format
   if (meta['Last Updated']) {
     const date = meta['Last Updated'].split(/\s/)[0];

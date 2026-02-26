@@ -1,6 +1,6 @@
 # RBAC Matrix
 
-**Version**: 1.0  
+**Version**: 4.4.2  
 **Owner**: FirstTry Solutions  
 **Last Updated**: 2026-02-26  
 **Review Cycle**: Quarterly (access review every 90 days)
