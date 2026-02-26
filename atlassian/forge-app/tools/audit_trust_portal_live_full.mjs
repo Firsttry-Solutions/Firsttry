@@ -254,18 +254,13 @@ async function auditDocPage(item) {
     notes.push(`Emails OK`);
   }
 
-  // Pseudo-links: "docs/<section>/" in visible text that are NOT in a full GitHub URL
-  // Check raw body (including hrefs) for these patterns
+  // Pseudo-links: actual <a href="docs/<section>/"> links in the rendered HTML
+  // that are NOT full https://github.com/ URLs (bare text mentions are fine)
   for (const seg of PSEUDO_LINK_SECTIONS) {
-    // Find occurrences not preceded by https://github.com
-    const re = new RegExp(`(?<!https://github\\.com[^\\s"]*?)${seg.replace(/\//g, '\\/')}[a-zA-Z0-9_/\\-\\.]+`, 'g');
-    const matches = body.match(re) || [];
+    const hrefRe = new RegExp(`href=["'](?!https?://)[^"']*${seg.replace(/\//g, '\\/')}[^"']*["']`, 'gi');
+    const matches = body.match(hrefRe) || [];
     if (matches.length > 0) {
-      // Filter: allow if inside an a href pointing to raw/ path (transparency link)
-      const rawLinkRe = new RegExp(`href="[^"]*raw\\/${seg.replace(/docs\//,'').replace(/\//g,'\\/')}[^"]*"`, 'i');
-      if (!rawLinkRe.test(body)) {
-        issues.push(`Pseudo-link found — "${seg}..." appears in rendered page (${matches.length} occurrence(s))`);
-      }
+      issues.push(`Pseudo-link href found — <a href containing "${seg}..."> (${matches.length} link(s)): ${matches.slice(0,2).join(', ')}`);
     }
   }
 

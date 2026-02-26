@@ -141,7 +141,9 @@ function findForbiddenPlaceholders(lines) {
   return found;
 }
 
-/** Find pseudo-links: markdown links with href like docs/<section>/... not full GitHub URLs */
+/** Find pseudo-links: markdown links with href like docs/<section>/... not full GitHub URLs.
+ *  Checks only actual markdown link hrefs — plain text mentions in prose or code blocks are fine.
+ */
 function findPseudoLinks(lines) {
   const found = [];
   let inFence = false;
@@ -149,10 +151,13 @@ function findPseudoLinks(lines) {
     const l = lines[i];
     if (/^```/.test(l)) { inFence = !inFence; continue; }
     if (inFence) continue;
+    // Only match actual markdown link hrefs: [text](docs/<section>/...)
+    // NOT backtick spans, NOT plain text
+    const stripped = l.replace(/`[^`]*`/g, ''); // remove inline code spans first
     let m;
     PSEUDO_LINK_RE.lastIndex = 0;
-    while ((m = PSEUDO_LINK_RE.exec(l)) !== null) {
-      // Allow if href is an absolute GitHub URL (shouldn't match regex, but belt+suspenders)
+    while ((m = PSEUDO_LINK_RE.exec(stripped)) !== null) {
+      // Allow if href is a full GitHub URL (shouldn't match regex, but belt+suspenders)
       if (/^https?:\/\/github\.com\//.test(m[2])) continue;
       found.push({ line: i + 1, text: m[1], href: m[2] });
     }
