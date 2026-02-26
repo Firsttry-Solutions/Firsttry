@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # verify_pages_site_artifact.sh — Fail-closed site artifact shape + content policy
 #
-# Usage:
-#   cd atlassian/forge-app
+# Usage (from repo root):
+#   bash atlassian/forge-app/tools/verify_pages_site_artifact.sh [SITE_DIR]
+#
+# Usage (from atlassian/forge-app/):
 #   bash tools/verify_pages_site_artifact.sh [SITE_DIR]
 #
-# SITE_DIR defaults to "site/" (relative to cwd, i.e. atlassian/forge-app/site/).
+# SITE_DIR defaults to "site/" (relative to cwd).
 #
 # Checks (all must pass):
-#   a) Required files exist
+#   a) Required files exist  — list loaded from pages_pack_manifest.json
 #   b) Forbidden directories absent (production/, dist/, node_modules/)
 #   c) No placeholder tokens: example.com, example.org, @firsttry.app,
 #      [Your Jurisdiction], whole-word TBD, whole-word TODO
@@ -20,6 +22,25 @@ set -euo pipefail
 
 SITE="${1:-site}"
 
+# ── locate manifest (works from repo root or from atlassian/forge-app/) ───────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MANIFEST="$SCRIPT_DIR/pages_pack_manifest.json"
+
+if [ ! -f "$MANIFEST" ]; then
+  echo "ERROR: pages_pack_manifest.json not found at $MANIFEST" >&2
+  exit 1
+fi
+
+# ── load required_files from manifest (node ≥18 always available in CI) ──────
+MANIFEST_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')).version)")
+REQUIRED_FILES_RAW=$(node -e "
+const m = JSON.parse(require('fs').readFileSync('$MANIFEST','utf8'));
+const site = process.argv[1];
+m.required_files.forEach(f => { console.log(f.replace(/^site\\b/, site)); });
+" "$SITE")
+
+mapfile -t REQUIRED_FILES <<< "$REQUIRED_FILES_RAW"
+
 # ── allowlist ─────────────────────────────────────────────────────────────────
 ALLOWLIST=(
   "contact@firsttry.run"
@@ -27,20 +48,6 @@ ALLOWLIST=(
   "security.contact@firsttry.run"
   "privacy@firsttry.run"
   "emergency@firsttry.run"
-)
-
-# ── required files ────────────────────────────────────────────────────────────
-REQUIRED_FILES=(
-  "$SITE/index.html"
-  "$SITE/trust/SECURITY_OVERVIEW.md"
-  "$SITE/trust/RESOLVER_INVENTORY.md"
-  "$SITE/trust/SUBPROCESSORS.md"
-  "$SITE/operations/SLA.md"
-  "$SITE/operations/INCIDENT_RESPONSE_PLAN.md"
-  "$SITE/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md"
-  "$SITE/procurement/SECURITY_QUESTIONNAIRE_MASTER.md"
-  "$SITE/procurement/CONTROL_MAPPING_MATRIX.md"
-  "$SITE/evidence/RETENTION_POLICY.md"
 )
 
 # ── forbidden directories ─────────────────────────────────────────────────────
@@ -81,11 +88,13 @@ in_allowlist() {
 echo "======================================================="
 echo "verify_pages_site_artifact.sh"
 echo "Site directory: $(realpath "$SITE" 2>/dev/null || echo "$SITE")"
+echo "Manifest version: $MANIFEST_VERSION  (pages_pack_manifest.json)"
+echo "Required files:   ${#REQUIRED_FILES[@]} (manifest-driven)"
 echo "======================================================="
 echo ""
 
-# ── (a) Required files ────────────────────────────────────────────────────────
-echo "=== (a) Required files ==="
+# ── (a) Required files — manifest-driven ─────────────────────────────────────
+echo "=== (a) Required files (manifest-driven) ==="
 for f in "${REQUIRED_FILES[@]}"; do
   if [ -f "$f" ]; then
     echo -e "  ${GREEN}OK${NC}: $f"
@@ -186,7 +195,7 @@ if [ ${#ERRORS[@]} -ne 0 ]; then
 fi
 
 echo -e "${GREEN}PASS: All site artifact checks passed${NC}"
-echo "  (a) All required files present"
+echo "  (a) All required files present (manifest-driven: $MANIFEST_VERSION)"
 echo "  (b) No forbidden directories"
 echo "  (c) No placeholder tokens"
 echo "  (d) All emails on approved allowlist"
