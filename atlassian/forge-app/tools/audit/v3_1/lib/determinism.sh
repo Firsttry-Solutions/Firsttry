@@ -154,6 +154,73 @@ run_determinism() {
   echo "  [PASS] correlationId taint scan: no violations detected." \
     | tee -a "${e}/PHASE_06_correlationId_taint_scan.txt"
 
+  # ── randomUUID taint proof (prevents bypass via renaming) ──────────────────
+  echo "[06] Taint scan: randomUUID() must not appear in deterministic paths..." \
+    | tee -a "${e}/PHASE_06_randomUUID_taint_scan.txt"
+
+  # This check prevents bypassing the correlationId gate by renaming or by
+  # directly using randomUUID() in deterministic code paths.
+  
+  local uuid_taint_violations=""
+  local uuid_forbidden_dirs=(
+    "${repo_dir}/src/export"
+    "${repo_dir}/src/evidence"
+    "${repo_dir}/src/zip"
+    "${repo_dir}/src/pack"
+    "${repo_dir}/src/audit"
+    "${repo_dir}/src/phase6"
+  )
+
+  # Scan forbidden directories for randomUUID(
+  for path in "${uuid_forbidden_dirs[@]}"; do
+    if [[ -d "$path" ]]; then
+      local uuid_hits
+      uuid_hits=$(rg -n --glob '!**/*.test.ts' --glob '!**/__tests__/**' \
+        'randomUUID\(' "$path" 2>/dev/null || true)
+      if [[ -n "$uuid_hits" ]]; then
+        echo "  [TAINT VIOLATION] randomUUID() found in ${path}:" \
+          | tee -a "${e}/PHASE_06_randomUUID_taint_scan.txt"
+        echo "$uuid_hits" | tee -a "${e}/PHASE_06_randomUUID_taint_scan.txt"
+        uuid_taint_violations+="$uuid_hits"$'\n'
+      fi
+    fi
+  done
+
+  # Scan for randomUUID in forbidden file patterns anywhere in src/
+  local uuid_forbidden_patterns=(
+    "*canonical*.ts"
+    "*hash*.ts"
+    "*export*.ts"
+  )
+
+  for pattern in "${uuid_forbidden_patterns[@]}"; do
+    local uuid_file_hits
+    uuid_file_hits=$(find "${repo_dir}/src" -type f -name "$pattern" \
+      -not -path "*/node_modules/*" \
+      -not -path "*/__tests__/*" \
+      -not -name "*.test.ts" 2>/dev/null || true)
+    
+    for file in $uuid_file_hits; do
+      local uuid_hits
+      uuid_hits=$(rg -n 'randomUUID\(' "$file" 2>/dev/null || true)
+      if [[ -n "$uuid_hits" ]]; then
+        echo "  [TAINT VIOLATION] randomUUID() found in ${file}:" \
+          | tee -a "${e}/PHASE_06_randomUUID_taint_scan.txt"
+        echo "$uuid_hits" | tee -a "${e}/PHASE_06_randomUUID_taint_scan.txt"
+        uuid_taint_violations+="$uuid_hits"$'\n'
+      fi
+    done
+  done
+
+  if [[ -n "$uuid_taint_violations" ]]; then
+    phase_fail "06" \
+      "randomUUID() taint detected: random UUID generation in deterministic code path. This violates determinism guarantee and cannot be bypassed by renaming." \
+      "${e}/PHASE_06_randomUUID_taint_scan.txt"
+  fi
+
+  echo "  [PASS] randomUUID taint scan: 0 violations detected." \
+    | tee -a "${e}/PHASE_06_randomUUID_taint_scan.txt"
+
   # ── Double-run determinism ─────────────────────────────────────────────────
   echo "[06] Locating export entrypoint test runner..." \
     | tee -a "${e}/PHASE_06_determinism.txt"

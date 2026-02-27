@@ -161,6 +161,15 @@ The `crypto.randomUUID()` function is used exclusively for **non-canonical purpo
 
 All deterministic outputs (snapshot `canonical_hash`, export packs, evidence ledgers) explicitly exclude random UUID fields. See Phase 06 (Determinism Hard Proof) for byte-identical reproduction verification.
 
+### Taint Gates (Phase 06)
+Two hardened gates prevent random UUIDs from leaking into deterministic code paths:
+
+1. **correlationId Scan**: Prevents accidental metadata leakage by blocking `correlationId` usage in export/canonical/hash paths. Fails if found in `src/export`, `src/evidence`, `src/zip`, `src/phase6`, or any `*canonical*.ts`, `*hash*.ts`, `*export*.ts` files.
+
+2. **randomUUID Scan**: Prevents bypass via renaming by directly blocking `randomUUID()` calls in deterministic paths. Fails if found in `src/export`, `src/evidence`, `src/zip`, `src/pack`, `src/audit`, `src/phase6`, or any `*canonical*.ts`, `*hash*.ts`, `*export*.ts` files.
+
+Both gates produce evidence artifacts: `PHASE_06_correlationId_taint_scan.txt` and `PHASE_06_randomUUID_taint_scan.txt`.
+
 ### Source
 Node.js v14.17.0 Release Notes (2021-05-11): Introduction of `crypto.randomUUID()` as per Web Crypto API standard.
 
