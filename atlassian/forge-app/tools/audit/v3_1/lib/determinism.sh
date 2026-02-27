@@ -63,6 +63,97 @@ run_determinism() {
   echo "  [PASS] No entropy violations in export/canonicalization paths." \
     | tee -a "${e}/PHASE_06_determinism.txt"
 
+  # ── correlationId taint proof ──────────────────────────────────────────────
+  echo "[06] Taint scan: correlationId must not leak into deterministic paths..." \
+    | tee -a "${e}/PHASE_06_correlationId_taint_scan.txt"
+
+  # Search for correlationId in deterministic paths
+  local taint_violations=""
+  local forbidden_paths=(
+    "${repo_dir}/src/export"
+    "${repo_dir}/src/evidence"
+    "${repo_dir}/src/milestone1"
+    "${repo_dir}/src/phase6"
+    "${repo_dir}/src/backbone"
+    "${repo_dir}/src/zip"
+  )
+
+  # Also check for files with canonical/hash/export in their name anywhere
+  local forbidden_file_patterns=(
+    "**/canonical*.ts"
+    "**/hash*.ts"
+    "**/export*.ts"
+  )
+
+  local correlation_hits=""
+  
+  # Scan forbidden directories
+  for path in "${forbidden_paths[@]}"; do
+    if [[ -d "$path" ]]; then
+      local hits
+      hits=$(rg -n --glob '!**/*.test.ts' --glob '!**/__tests__/**' \
+        'correlationId' "$path" 2>/dev/null || true)
+      if [[ -n "$hits" ]]; then
+        echo "  [TAINT VIOLATION] correlationId found in ${path}:" \
+          | tee -a "${e}/PHASE_06_correlationId_taint_scan.txt"
+        echo "$hits" | tee -a "${e}/PHASE_06_correlationId_taint_scan.txt"
+        taint_violations+="$hits"$'\n'
+      fi
+    fi
+  done
+
+  # Scan for forbidden file patterns anywhere in src/
+  for pattern in "${forbidden_file_patterns[@]}"; do
+    local file_hits
+    file_hits=$(find "${repo_dir}/src" -type f -name "${pattern#**/}" \
+      -not -path "*/node_modules/*" \
+      -not -path "*/__tests__/*" \
+      -not -name "*.test.ts" 2>/dev/null || true)
+    
+    for file in $file_hits; do
+      local hits
+      hits=$(rg -n 'correlationId' "$file" 2>/dev/null || true)
+      if [[ -n "$hits" ]]; then
+        echo "  [TAINT VIOLATION] correlationId found in ${file}:" \
+          | tee -a "${e}/PHASE_06_correlationId_taint_scan.txt"
+        echo "$hits" | tee -a "${e}/PHASE_06_correlationId_taint_scan.txt"
+        taint_violations+="$hits"$'\n'
+      fi
+    done
+  done
+
+  # Check for correlationId passed to forbidden functions
+  local forbidden_functions=(
+    "computeCanonicalHash"
+    "computePackHash"
+    "buildExport"
+    "writeEvidence"
+    "canonicalJsonString"
+    "hashDriftEvent"
+  )
+
+  for func in "${forbidden_functions[@]}"; do
+    local func_calls
+    # Search for function calls with correlationId as argument
+    func_calls=$(rg -n --glob '!**/*.test.ts' --glob '!**/__tests__/**' \
+      "${func}\([^)]*correlationId" "${repo_dir}/src" 2>/dev/null || true)
+    if [[ -n "$func_calls" ]]; then
+      echo "  [TAINT VIOLATION] correlationId passed to ${func}:" \
+        | tee -a "${e}/PHASE_06_correlationId_taint_scan.txt"
+      echo "$func_calls" | tee -a "${e}/PHASE_06_correlationId_taint_scan.txt"
+      taint_violations+="$func_calls"$'\n'
+    fi
+  done
+
+  if [[ -n "$taint_violations" ]]; then
+    phase_fail "06" \
+      "correlationId taint detected: random UUID used in deterministic code path (export/canonical/hash). This violates determinism guarantee." \
+      "${e}/PHASE_06_correlationId_taint_scan.txt"
+  fi
+
+  echo "  [PASS] correlationId taint scan: no violations detected." \
+    | tee -a "${e}/PHASE_06_correlationId_taint_scan.txt"
+
   # ── Double-run determinism ─────────────────────────────────────────────────
   echo "[06] Locating export entrypoint test runner..." \
     | tee -a "${e}/PHASE_06_determinism.txt"

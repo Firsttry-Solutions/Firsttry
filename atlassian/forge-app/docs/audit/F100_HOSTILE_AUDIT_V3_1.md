@@ -144,6 +144,28 @@ Duplicate detection is **lockfile-based** (`package-lock.json` "packages" object
 
 ---
 
+## Runtime UUID Support
+
+This application uses Node.js built-in `crypto.randomUUID()` for generating unique identifiers (e.g., `drift_event_id`, `correlationId`). This approach eliminates the need for the `uuid` npm package as a direct dependency, reducing the supply-chain attack surface.
+
+### Compatibility
+- **Forge Runtime**: `nodejs20.x` (as declared in `manifest.yml`)
+- **Minimum Requirement**: Node.js v14.17.0 (when `crypto.randomUUID()` was introduced)
+- **Current Target**: Node.js 20.20.0 (declared in `package.json` engines)
+- **Compatibility Margin**: 6+ major versions above minimum requirement
+
+### Determinism Guarantee
+The `crypto.randomUUID()` function is used exclusively for **non-canonical purposes**:
+- **drift_event_id**: Primary key for storage/retrieval (excluded from `canonical_hash`)
+- **correlationId**: Request tracing/logging only (not part of export packs)
+
+All deterministic outputs (snapshot `canonical_hash`, export packs, evidence ledgers) explicitly exclude random UUID fields. See Phase 06 (Determinism Hard Proof) for byte-identical reproduction verification.
+
+### Source
+Node.js v14.17.0 Release Notes (2021-05-11): Introduction of `crypto.randomUUID()` as per Web Crypto API standard.
+
+---
+
 ## Running the Audit
 
 ```bash
