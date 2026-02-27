@@ -220,6 +220,94 @@ run_determinism() {
   echo "  [PASS] randomUUID taint scan: 0 violations detected." \
     | tee -a "${e}/PHASE_06_randomUUID_taint_scan.txt"
 
+  # ── Export Artifact Contamination Scan ────────────────────────────────────
+  echo "[06] Export artifact contamination scan (correlationId/UUID leakage)..." \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  local artifact_dir="${e}/export_artifacts"
+  mkdir -p "$artifact_dir"
+
+  # Generate export pack artifacts to disk
+  echo "  Generating export artifacts..." | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  (
+    cd "${repo_dir}"
+    FT_EXPORT_ARTIFACT_DIR="$artifact_dir" npm test -- tests/determinism/exportArtifactGenerator.ts \
+      >> "${e}/PHASE_06_export_artifact_contamination_scan.txt" 2>&1 || {
+        echo "  [ERROR] Failed to generate export artifacts" \
+          | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+        phase_fail "06" "Export artifact generation failed" \
+          "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+      }
+  )
+
+  # Verify artifacts were created
+  local artifact_count
+  artifact_count=$(find "$artifact_dir" -type f 2>/dev/null | wc -l)
+  if [[ "$artifact_count" -eq 0 ]]; then
+    echo "  [ERROR] No artifacts found in $artifact_dir" \
+      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    phase_fail "06" "Export artifact generation produced no files" \
+      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  fi
+
+  echo "  Generated $artifact_count artifact files" \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  find "$artifact_dir" -type f -exec basename {} \; \
+    | sort | sed 's/^/    /' | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  # Scan for correlationId contamination
+  echo "  Scanning for correlationId..." | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  local correlation_contamination=""
+  correlation_contamination=$(rg -n '\bcorrelationId\b' "$artifact_dir" 2>/dev/null || true)
+  
+  if [[ -n "$correlation_contamination" ]]; then
+    echo "  [CONTAMINATION DETECTED] correlationId found in export artifacts:" \
+      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    echo "$correlation_contamination" | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    phase_fail "06" \
+      "Export artifacts contain 'correlationId' — random UUID leaked into deterministic output. This violates determinism guarantee." \
+      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  fi
+  echo "    0 correlationId matches (clean)" \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  # Scan for UUID patterns (standard UUID v4 format)
+  echo "  Scanning for UUID patterns..." | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  local uuid_pattern='[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
+  local uuid_contamination=""
+  uuid_contamination=$(rg -n "$uuid_pattern" "$artifact_dir" 2>/dev/null || true)
+  
+  if [[ -n "$uuid_contamination" ]]; then
+    echo "  [CONTAMINATION DETECTED] UUID patterns found in export artifacts:" \
+      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    echo "$uuid_contamination" | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    phase_fail "06" \
+      "Export artifacts contain UUID patterns — random identifiers leaked into deterministic output. This violates determinism guarantee." \
+      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  fi
+  echo "    0 UUID pattern matches (clean)" \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  # Also scan for dash-* patterns (like dash-abc123)
+  echo "  Scanning for dash-* identifier patterns..." | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  local dash_pattern='dash-[0-9a-f]{8}\b'
+  local dash_contamination=""
+  dash_contamination=$(rg -n "$dash_pattern" "$artifact_dir" 2>/dev/null || true)
+  
+  if [[ -n "$dash_contamination" ]]; then
+    echo "  [CONTAMINATION DETECTED] dash-* patterns found in export artifacts:" \
+      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    echo "$dash_contamination" | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    phase_fail "06" \
+      "Export artifacts contain dash-* identifier patterns — random identifiers leaked into deterministic output." \
+      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  fi
+  echo "    0 dash-* pattern matches (clean)" \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  echo "  [PASS] Export artifact contamination scan: 0 violations detected." \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
   # ── Double-run determinism ─────────────────────────────────────────────────
   echo "[06] Locating export entrypoint test runner..." \
     | tee -a "${e}/PHASE_06_determinism.txt"

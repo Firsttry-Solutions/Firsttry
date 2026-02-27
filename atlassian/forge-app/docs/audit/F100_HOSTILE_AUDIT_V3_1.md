@@ -170,6 +170,23 @@ Two hardened gates prevent random UUIDs from leaking into deterministic code pat
 
 Both gates produce evidence artifacts: `PHASE_06_correlationId_taint_scan.txt` and `PHASE_06_randomUUID_taint_scan.txt`.
 
+### Artifact-Level Contamination Scan (Phase 06)
+Beyond code-level taint gates, Phase 06 performs **artifact-level contamination scanning** to detect UUID/correlationId leakage in actual export outputs:
+
+1. **Export Artifact Generation**: Runs `tests/determinism/exportArtifactGenerator.ts` to generate deterministic export pack files (review-manifest.json, review-summary.json, access-review.csv, etc.) and writes them to `$E/export_artifacts/`.
+
+2. **Content Scanning**: Scans all artifact file contents for:
+   - `correlationId` identifier (word boundary match)
+   - UUID v4 patterns: `[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}`
+   - `dash-*` identifier patterns: `dash-[0-9a-f]{8}`
+
+3. **Fail-Closed**: If ANY match is found in export artifacts, Phase 06 **FAILS** with exact match locations in evidence artifact `PHASE_06_export_artifact_contamination_scan.txt`.
+
+This scan provides stronger guarantees than code-level gates:
+- **Detects runtime leakage**: Catches UUIDs that slip through via indirect paths (serialization, template strings, etc.)
+- **Verifies actual output**: No assumptions about code flow — directly inspects what gets exported
+- **Closes audit event loophole**: Since `src/audit` is excluded from code scans (legitimate event ID usage), artifact scan proves audit events cannot leak into exports
+
 ### Source
 Node.js v14.17.0 Release Notes (2021-05-11): Introduction of `crypto.randomUUID()` as per Web Crypto API standard.
 
