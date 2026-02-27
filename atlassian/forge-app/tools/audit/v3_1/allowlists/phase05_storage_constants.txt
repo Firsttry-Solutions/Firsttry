@@ -42,3 +42,4 @@ src/jobs/v565/jobStatus.ts:JOB_HISTORY_PREFIX
 src/jobs/v565/jobStatus.ts:JOB_LOCK_KEY
 src/jobs/v565/jobStatus.ts:ACTIVE_JOBS_LIST
 src/jobs/v565/jobStatus.ts:COMPLETED_JOBS_COUNT
+src/continuous-drift/scheduled.ts:"phase2.config.webhooks"
