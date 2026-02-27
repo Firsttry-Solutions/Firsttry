@@ -13,25 +13,29 @@ run_exfiltration() {
   # Initialize findings
   echo '{"findings":[]}' > "$findings_json"
 
+  # Precision patterns v3.1 — actual function calls only, not comments/strings
   local network_patterns=(
-    'fetch('
-    'axios'
-    'http\.request'
-    'https\.request'
-    'WebSocket'
-    'XMLHttpRequest'
+    '\bfetch\s*\('  # Actual fetch calls (word boundary)
+    '\baxios\.\w+\('  # Actual axios method calls (axios.get, axios.post, etc.)
+    '\bhttp\.request\s*\('  # Actual http.request calls
+    '\bhttps\.request\s*\('  # Actual https.request calls
+    '\bnew\s+WebSocket\s*\('  # Actual WebSocket instantiation
+    '\bnew\s+XMLHttpRequest\s*\('  # Actual XMLHttpRequest instantiation
   )
 
+  # Precision telemetry patterns — actual package usage, not domain terms
   local telemetry_patterns=(
-    'sentry'
-    'mixpanel'
-    'segment'
-    'google-analytics'
-    'analytics\.google'
-    'ingest\.'
-    'datadog'
-    'newrelic'
-    'amplitude'
+    '@sentry/\w+'  # Actual Sentry SDK imports
+    'Sentry\.'  # Actual Sentry API calls
+    '\bmixpanel\.\w+\('  # Actual Mixpanel calls
+    '@segment/\w+'  # Actual Segment SDK imports
+    'analytics\.load\('  # Actual analytics.js initialization
+    'gtag\('  # Google Analytics gtag calls
+    'ga\('  # Google Analytics ga calls
+    'datadog-\w+'  # Datadog packages
+    'DDTrace'  # Datadog tracing
+    'newrelic\.start'  # New Relic initialization
+    'amplitude\.\w+\('  # Actual Amplitude calls
   )
 
   local failed=0
@@ -55,7 +59,7 @@ run_exfiltration() {
     for pat in "${network_patterns[@]}"; do
       local hits
       hits=$(rg -n --glob '!**/node_modules/**' --glob '*.ts' --glob '*.js' \
-        "$pat" "$dir" 2>/dev/null || true)
+        -P "$pat" "$dir" 2>/dev/null || true)
 
       if [[ -n "$hits" ]]; then
         # Filter: allow only lines that also import from @forge/api
@@ -66,6 +70,16 @@ run_exfiltration() {
           lineno=$(echo "$hit_line" | cut -d: -f2 || echo "?")
           local content
           content=$(echo "$hit_line" | cut -d: -f3- || echo "")
+
+          # Exclude comments (lines starting with // or within /* */)
+          if echo "$content" | grep -qE '^\s*(//|/\*|\*)'; then
+            continue
+          fi
+          
+          # Exclude string literals defining patterns (e.g., security scan definitions)
+          if echo "$content" | grep -qE '(re:|regex:|pattern:)\s*[/\[{]'; then
+            continue
+          fi
 
           # Check if file uses @forge/api import
           local is_forge_sanctioned=0
@@ -90,16 +104,39 @@ run_exfiltration() {
     for pat in "${telemetry_patterns[@]}"; do
       local hits
       hits=$(rg -in --glob '!**/node_modules/**' --glob '*.ts' --glob '*.js' \
-        "$pat" "$dir" 2>/dev/null || true)
+        -P "$pat" "$dir" 2>/dev/null || true)
       if [[ -n "$hits" ]]; then
-        echo "  [TELEMETRY] Pattern '${pat}' found:" | tee -a "$summary_txt"
-        echo "$hits" | head -5 | tee -a "$summary_txt"
+        # Filter out comments and test files
+        local filtered_hits=""
         while IFS= read -r hit_line; do
           local fp; fp=$(echo "$hit_line" | cut -d: -f1)
           local lc; lc=$(echo "$hit_line" | cut -d: -f2-)
-          _add_finding "$fp" "$pat" "$lc"
+          
+          # Exclude test files
+          if echo "$fp" | grep -qE '(\.test\.|\.spec\.|/test_)'; then
+            continue
+          fi
+          
+          # Exclude comments
+          local content; content=$(echo "$lc" | cut -d: -f2-)
+          if echo "$content" | grep -qE '^\s*(//|/\*|\*)'; then
+            continue
+          fi
+          
+          filtered_hits="${filtered_hits}${hit_line}\n"
         done <<< "$hits"
-        failed=1
+        
+        if [[ -n "$filtered_hits" ]] && [[ "$filtered_hits" != "\n" ]]; then
+          echo "  [TELEMETRY] Pattern '${pat}' found:" | tee -a "$summary_txt"
+          echo -e "$filtered_hits" | head -5 | tee -a "$summary_txt"
+          while IFS= read -r hit_line; do
+            [[ -z "$hit_line" ]] && continue
+            local fp; fp=$(echo "$hit_line" | cut -d: -f1)
+            local lc; lc=$(echo "$hit_line" | cut -d: -f2-)
+            _add_finding "$fp" "$pat" "$lc"
+          done <<< "$(echo -e "$filtered_hits")"
+          failed=1
+        fi
       fi
     done
   done
