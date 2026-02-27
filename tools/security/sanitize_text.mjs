@@ -29,7 +29,27 @@ let output = input;
 let redactionCount = 0;
 const patternsDetected = new Set();
 
-// Pattern 1: Exact JWT header substring
+// Pattern 1: Bearer JWT tokens (process FIRST to catch full tokens)
+const bearerJwtRegex = /\bBearer\s+[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\b/g;
+const bearerMatches = output.match(bearerJwtRegex);
+if (bearerMatches) {
+  output = output.replace(bearerJwtRegex, 'Bearer REDACTED_JWT');
+  redactionCount += bearerMatches.length;
+  patternsDetected.add('bearer_jwt');
+}
+
+// Pattern 2: Standalone JWT-like tokens (not after "Bearer ")
+// Use negative lookbehind to avoid matching tokens that were already caught by Bearer pattern
+const standaloneJwtRegex = /(?<!Bearer\s)\b[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\b/g;
+const standaloneMatches = output.match(standaloneJwtRegex);
+if (standaloneMatches) {
+  output = output.replace(standaloneJwtRegex, 'REDACTED_JWT');
+  redactionCount += standaloneMatches.length;
+  patternsDetected.add('jwt_token');
+}
+
+// Pattern 3: Exact JWT header substring (catch-all for remaining fragments)
+// Process LAST to avoid breaking full token patterns above
 const jwtHeaderPattern = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
 if (output.includes(jwtHeaderPattern)) {
   const beforeLen = output.length;
@@ -39,25 +59,6 @@ if (output.includes(jwtHeaderPattern)) {
     redactionCount++;
     patternsDetected.add('jwt_header');
   }
-}
-
-// Pattern 2: Bearer JWT tokens
-const bearerJwtRegex = /\bBearer\s+[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\b/g;
-const bearerMatches = output.match(bearerJwtRegex);
-if (bearerMatches) {
-  output = output.replace(bearerJwtRegex, 'Bearer REDACTED_JWT');
-  redactionCount += bearerMatches.length;
-  patternsDetected.add('bearer_jwt');
-}
-
-// Pattern 3: Standalone JWT-like tokens (not after "Bearer ")
-// Use negative lookbehind to avoid matching tokens that were already caught by Bearer pattern
-const standaloneJwtRegex = /(?<!Bearer\s)\b[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\b/g;
-const standaloneMatches = output.match(standaloneJwtRegex);
-if (standaloneMatches) {
-  output = output.replace(standaloneJwtRegex, 'REDACTED_JWT');
-  redactionCount += standaloneMatches.length;
-  patternsDetected.add('jwt_token');
 }
 
 // Compute SHA256 after redaction

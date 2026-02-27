@@ -109,8 +109,8 @@ describe('Phase 06: Determinism Hard Proof', () => {
 
   describe('Deterministic Governance Actions', () => {
     it('should produce identical hashes with fixed clock', async () => {
-      const action = EclAction.VIEW_GOVERNANCE;
-      const role = EclRole.VIEWER;
+      const action = EclAction.VIEW_DASHBOARD;
+      const role = EclRole.Viewer;
       const metadata = { target: 'test-target' };
 
       // Log twice with fixed clock
@@ -131,8 +131,8 @@ describe('Phase 06: Determinism Hard Proof', () => {
     });
 
     it('should produce DIFFERENT timestamps with SystemClock (negative test)', async () => {
-      const action = EclAction.VIEW_GOVERNANCE;
-      const role = EclRole.VIEWER;
+      const action = EclAction.VIEW_DASHBOARD;
+      const role = EclRole.Viewer;
 
       const record1 = await logGovernanceAction(action, role, {}, SystemClock);
       await new Promise(resolve => setTimeout(resolve, 50)); // Wait 50ms

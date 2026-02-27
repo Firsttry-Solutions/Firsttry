@@ -203,6 +203,39 @@ try {
 }
 
 // ============================================================================
+// BACKEND LAYER 0b: Generate buildIdentityBackend.gen.ts (Contract File)
+// ============================================================================
+// File: src/build/buildIdentityBackend.gen.ts
+// This file provides the full git SHA (40 hex) and short SHA (7 hex) along
+// with build time and app version for gadget-resolver.ts and other runtime code.
+
+const buildIdentityBackendPath = path.join(__dirname, '..', 'src', 'build', 'buildIdentityBackend.gen.ts');
+const sha7 = meta.FT_BUILD_SHA.substring(0, 7);
+const buildIdentityBackendContent = `/**
+ * BACKEND BUILD IDENTITY — Generated File
+ * 
+ * Generated at build time by tools/build_meta.mjs
+ * DO NOT EDIT MANUALLY — This file is regenerated on every build.
+ * 
+ * Provides:
+ * - BACKEND_GIT_SHA: Full 40-character git commit SHA
+ * - BACKEND_GIT_SHA_SHORT: Short 7-character git commit SHA
+ * - BACKEND_BUILD_TIME_UTC: ISO 8601 build timestamp
+ * - BACKEND_APP_VERSION: Application version from package.json
+ */
+
+export const BACKEND_GIT_SHA = '${meta.UI_GIT_SHA}';
+export const BACKEND_GIT_SHA_SHORT = '${sha7}';
+export const BACKEND_BUILD_TIME_UTC = '${meta.FT_BUILD_TIME_UTC}';
+export const BACKEND_APP_VERSION = '${meta.FT_APP_VERSION}';
+
+// [FT_PROOF_BACKEND_BUILD] marker for contract tests
+`;
+
+fs.writeFileSync(buildIdentityBackendPath, buildIdentityBackendContent);
+console.log(`✅ Wrote buildIdentityBackend.gen.ts with BACKEND_GIT_SHA="${meta.UI_GIT_SHA}"`);
+
+// ============================================================================
 // UI LAYER 0: Write ui_build_meta.json with build metadata for Vite
 // ============================================================================
 // File: src/gadget-ui/src/build/ui_build_meta.json
