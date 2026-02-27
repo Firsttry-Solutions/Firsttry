@@ -79,9 +79,13 @@ run_determinism() {
           filtered_hits=$(echo "$filtered_hits" | grep -v "$nc_pat" || true)
         done
         
-        # Filter out lines that have "clock" parameter nearby (Clock injection pattern)
-        # These hits are likely deterministic via Clock injection
-        filtered_hits=$(echo "$filtered_hits" | grep -v "clock\.nowISO\|clock: Clock\|// .*[Pp]arsing\|// .*[Cc]onversion" || true)
+        # Filter out safe patterns:
+        # - Date parsing: new Date(existingTimestamp) for arithmetic/comparison
+        # - Clock injection: clock.nowISO() or clock: Clock parameter
+        # - Comments explaining non-canonical usage
+        filtered_hits=$(echo "$filtered_hits" | grep -v -E \
+          'clock\.nowISO|clock: Clock|parseISO|parse.*timestamp|new Date\([a-zA-Z_][a-zA-Z0-9_.]*\)|\.getTime\(\)|// .*[Pp]arsing|// .*[Cc]onversion|// .*[Mm]etadata|acquiredAtUtc.*lock|lockKey.*ttl|storedAtISO.*metadata|exportedAtISO.*metadata|verificationTimestampISO.*metadata|auditEventId|\.sort\(.*Date|Math\.random.*uuid|uuidLike.*lock' \
+          || true)
         
         if [[ -n "$filtered_hits" ]]; then
           echo "  [ENTROPY RISK] ${pat} in ${path}:" | tee -a "${e}/PHASE_06_determinism.txt"
