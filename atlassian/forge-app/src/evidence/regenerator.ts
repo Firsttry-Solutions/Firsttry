@@ -265,7 +265,7 @@ export function createVerificationResult(
     originalHash,
     regeneratedHash,
     matchesStored: verified,
-    verificationTimestampISO: new Date().toISOString(),
+    verificationTimestampISO: new Date().toISOString(), // Metadata timestamp (non-canonical)
     mismatchDetails: !verified
       ? {
           originalTruthReasons: original.reasons || [],

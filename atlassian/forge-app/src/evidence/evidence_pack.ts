@@ -65,7 +65,7 @@ export async function generateEvidencePack(
         originalHash: evidenceHash,
         regeneratedHash: evidenceHash, // Cannot recompute if verification failed
         matchesStored: false,
-        verificationTimestampISO: new Date().toISOString(),
+        verificationTimestampISO: new Date().toISOString(), // Metadata timestamp (non-canonical)
         invariantViolation: error.reason,
         mismatchDetails: {
           originalTruthReasons: bundle.outputTruthMetadata.reasons || [],
@@ -89,7 +89,7 @@ export async function generateEvidencePack(
     evidenceHash,
     regenerationVerification: verification,
     missingDataList: bundle.missingData,
-    exportedAtISO: new Date().toISOString(),
+    exportedAtISO: new Date().toISOString(), // Metadata timestamp (non-canonical)
     schemaVersion: EVIDENCE_SCHEMA_VERSION,
     requiresAcknowledgment,
     acknowledgmentReason,

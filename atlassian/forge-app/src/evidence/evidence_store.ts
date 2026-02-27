@@ -77,11 +77,11 @@ export class EvidenceStore {
     const stored: StoredEvidence = {
       bundle,
       hash,
-      storedAtISO: new Date().toISOString(),
+      storedAtISO: new Date().toISOString(), // Metadata timestamp (non-canonical)
       retention: {
         maxAgeSeconds: retentionSeconds,
         willBeDeletedAtISO: retentionSeconds
-          ? new Date(Date.now() + retentionSeconds * 1000).toISOString()
+          ? new Date(Date.now() + retentionSeconds * 1000).toISOString() // Metadata calculation (non-canonical)
           : undefined,
       },
     };
