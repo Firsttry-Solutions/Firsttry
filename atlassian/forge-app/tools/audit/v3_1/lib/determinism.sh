@@ -220,92 +220,160 @@ run_determinism() {
   echo "  [PASS] randomUUID taint scan: 0 violations detected." \
     | tee -a "${e}/PHASE_06_randomUUID_taint_scan.txt"
 
-  # ── Export Artifact Contamination Scan ────────────────────────────────────
+  # ── Export Artifact Contamination Scan (3 Layers) ─────────────────────────
   echo "[06] Export artifact contamination scan (correlationId/UUID leakage)..." \
     | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
 
   local artifact_dir="${e}/export_artifacts"
   mkdir -p "$artifact_dir"
 
-  # Generate export pack artifacts to disk
-  echo "  Generating export artifacts..." | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  # Generate LAYER C: Pack file artifacts (individual files)
+  echo "  [LAYER C] Generating pack file artifacts..." \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
   (
     cd "${repo_dir}"
     FT_EXPORT_ARTIFACT_DIR="$artifact_dir" npm test -- tests/determinism/exportArtifactGenerator.ts \
       >> "${e}/PHASE_06_export_artifact_contamination_scan.txt" 2>&1 || {
-        echo "  [ERROR] Failed to generate export artifacts" \
+        echo "  [ERROR] Failed to generate pack file artifacts" \
           | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-        phase_fail "06" "Export artifact generation failed" \
+        phase_fail "06" "Pack file artifact generation failed" \
           "${e}/PHASE_06_export_artifact_contamination_scan.txt"
       }
   )
 
-  # Verify artifacts were created
-  local artifact_count
-  artifact_count=$(find "$artifact_dir" -type f 2>/dev/null | wc -l)
-  if [[ "$artifact_count" -eq 0 ]]; then
-    echo "  [ERROR] No artifacts found in $artifact_dir" \
+  # Generate LAYER A/B: Customer-delivered ZIP artifact (final output)
+  echo "  [LAYER A/B] Generating customer ZIP artifact..." \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  (
+    cd "${repo_dir}"
+    FT_EXPORT_ARTIFACT_DIR="$artifact_dir" npm test -- tests/determinism/exportZipArtifactGenerator.test.ts \
+      >> "${e}/PHASE_06_export_artifact_contamination_scan.txt" 2>&1 || {
+        echo "  [ERROR] Failed to generate ZIP artifact" \
+          | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+        phase_fail "06" "ZIP artifact generation failed" \
+          "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+      }
+  )
+
+  # Verify ZIP was created
+  local zip_path="${artifact_dir}/export_pack.zip"
+  if [[ ! -f "$zip_path" ]]; then
+    echo "  [ERROR] ZIP artifact not found: $zip_path" \
       | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-    phase_fail "06" "Export artifact generation produced no files" \
+    phase_fail "06" "ZIP artifact generation produced no file" \
       "${e}/PHASE_06_export_artifact_contamination_scan.txt"
   fi
 
-  echo "  Generated $artifact_count artifact files" \
-    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-  find "$artifact_dir" -type f -exec basename {} \; \
-    | sort | sed 's/^/    /' | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  local zip_size
+  zip_size=$(stat -f%z "$zip_path" 2>/dev/null || stat -c%s "$zip_path" 2>/dev/null || echo "0")
+  if [[ "$zip_size" -eq 0 ]]; then
+    echo "  [ERROR] ZIP artifact is empty" \
+      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    phase_fail "06" "ZIP artifact is 0 bytes" \
+      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  fi
 
-  # Scan for correlationId contamination
-  echo "  Scanning for correlationId..." | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-  local correlation_contamination=""
-  correlation_contamination=$(rg -n '\bcorrelationId\b' "$artifact_dir" 2>/dev/null || true)
+  echo "  Generated ZIP: $zip_size bytes" \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
   
-  if [[ -n "$correlation_contamination" ]]; then
-    echo "  [CONTAMINATION DETECTED] correlationId found in export artifacts:" \
-      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-    echo "$correlation_contamination" | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-    phase_fail "06" \
-      "Export artifacts contain 'correlationId' — random UUID leaked into deterministic output. This violates determinism guarantee." \
-      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-  fi
-  echo "    0 correlationId matches (clean)" \
+  local zip_sha
+  zip_sha=$(sha256sum "$zip_path" 2>/dev/null | awk '{print $1}' || echo "sha256_unavailable")
+  echo "  ZIP SHA-256: $zip_sha" \
     | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
 
-  # Scan for UUID patterns (standard UUID v4 format)
-  echo "  Scanning for UUID patterns..." | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-  local uuid_pattern='[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
-  local uuid_contamination=""
-  uuid_contamination=$(rg -n "$uuid_pattern" "$artifact_dir" 2>/dev/null || true)
+  # Define contamination patterns
+  local contamination_pattern='\bcorrelationId\b|dash-[0-9a-f]{8}\b|[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
+
+  # ── LAYER A: Scan raw ZIP bytes ───────────────────────────────────────────
+  echo "  [LAYER A] Scanning raw ZIP bytes with strings..." \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
   
-  if [[ -n "$uuid_contamination" ]]; then
-    echo "  [CONTAMINATION DETECTED] UUID patterns found in export artifacts:" \
-      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-    echo "$uuid_contamination" | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-    phase_fail "06" \
-      "Export artifacts contain UUID patterns — random identifiers leaked into deterministic output. This violates determinism guarantee." \
-      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-  fi
-  echo "    0 UUID pattern matches (clean)" \
-    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-
-  # Also scan for dash-* patterns (like dash-abc123)
-  echo "  Scanning for dash-* identifier patterns..." | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-  local dash_pattern='dash-[0-9a-f]{8}\b'
-  local dash_contamination=""
-  dash_contamination=$(rg -n "$dash_pattern" "$artifact_dir" 2>/dev/null || true)
+  local layer_a_contamination=""
+  layer_a_contamination=$(strings "$zip_path" | rg "$contamination_pattern" 2>/dev/null || true)
   
-  if [[ -n "$dash_contamination" ]]; then
-    echo "  [CONTAMINATION DETECTED] dash-* patterns found in export artifacts:" \
+  if [[ -n "$layer_a_contamination" ]]; then
+    echo "  [CONTAMINATION DETECTED - LAYER A] Raw ZIP bytes contain forbidden patterns:" \
       | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
-    echo "$dash_contamination" | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    echo "$layer_a_contamination" | head -20 | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
     phase_fail "06" \
-      "Export artifacts contain dash-* identifier patterns — random identifiers leaked into deterministic output." \
+      "LAYER A FAIL: Raw ZIP bytes contain correlationId/UUID/dash-* patterns — contamination in customer-delivered artifact." \
       "${e}/PHASE_06_export_artifact_contamination_scan.txt"
   fi
-  echo "    0 dash-* pattern matches (clean)" \
+  echo "    LAYER A: 0 matches in raw ZIP bytes (clean)" \
     | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
 
-  echo "  [PASS] Export artifact contamination scan: 0 violations detected." \
+  # ── LAYER B: Scan extracted ZIP contents ──────────────────────────────────
+  echo "  [LAYER B] Extracting and scanning ZIP contents..." \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  
+  # Check for unzip availability (fail-closed requirement)
+  if ! command -v unzip >/dev/null 2>&1; then
+    echo "  [ERROR] unzip not available — cannot verify extracted ZIP contents" \
+      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    phase_fail "06" \
+      "unzip not available in environment — cannot perform LAYER B scan. Cleanroom must have unzip." \
+      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  fi
+  echo "    unzip: $(command -v unzip)" \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  local unzipped_dir="${artifact_dir}/unzipped"
+  mkdir -p "$unzipped_dir"
+  
+  unzip -q -o "$zip_path" -d "$unzipped_dir" 2>&1 \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt" || {
+      echo "  [ERROR] Failed to extract ZIP" \
+        | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+      phase_fail "06" "ZIP extraction failed" \
+        "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    }
+
+  # Fix permissions on extracted files (deterministic ZIP may have zero perms)
+  chmod -R +r "$unzipped_dir" 2>/dev/null || true
+
+  echo "    Extracted files:" | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  ls "$unzipped_dir" | sed 's/^/      /' \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  local layer_b_contamination=""
+  layer_b_contamination=$(rg -n "$contamination_pattern" "$unzipped_dir" 2>/dev/null || true)
+  
+  if [[ -n "$layer_b_contamination" ]]; then
+    echo "  [CONTAMINATION DETECTED - LAYER B] Extracted ZIP contents contain forbidden patterns:" \
+      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    echo "$layer_b_contamination" | head -20 | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    phase_fail "06" \
+      "LAYER B FAIL: Extracted ZIP files contain correlationId/UUID/dash-* patterns." \
+      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  fi
+  echo "    LAYER B: 0 matches in extracted files (clean)" \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  # ── LAYER C: Scan pack file directory ─────────────────────────────────────
+  echo "  [LAYER C] Scanning pack file artifacts..." \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  
+  echo "    Pack files:" | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  find "$artifact_dir" -maxdepth 1 -type f ! -name "*.zip" -exec basename {} \; \
+    | sort | sed 's/^/      /' | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  local layer_c_contamination=""
+  # Only scan non-zip files in artifact_dir root
+  layer_c_contamination=$(find "$artifact_dir" -maxdepth 1 -type f ! -name "*.zip" \
+    -exec rg -n "$contamination_pattern" {} + 2>/dev/null || true)
+  
+  if [[ -n "$layer_c_contamination" ]]; then
+    echo "  [CONTAMINATION DETECTED - LAYER C] Pack files contain forbidden patterns:" \
+      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    echo "$layer_c_contamination" | head -20 | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    phase_fail "06" \
+      "LAYER C FAIL: Pack file artifacts contain correlationId/UUID/dash-* patterns." \
+      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  fi
+  echo "    LAYER C: 0 matches in pack files (clean)" \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
+  echo "  [PASS] 3-layer contamination scan: 0 violations detected." \
     | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
 
   # ── Double-run determinism ─────────────────────────────────────────────────
