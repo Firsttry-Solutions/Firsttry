@@ -1,0 +1,10 @@
+{
+  "name": "ft-audit-quota-mock",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Isolated mock harness for F100 quota simulation",
+  "dependencies": {
+    "nock": "^14.0.11",
+    "sinon": "^21.0.1"
+  }
+}
