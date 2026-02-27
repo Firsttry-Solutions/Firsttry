@@ -141,25 +141,25 @@ print(round(e,4))
   local scan_exit=0
   local scan_timed_out=0
   
-  # Combined pattern scan (all patterns in one pass for efficiency)
-  local combined_pattern=""
-  for pat in "${patterns[@]}"; do
-    [[ -z "$combined_pattern" ]] && combined_pattern="$pat" || combined_pattern="${combined_pattern}|${pat}"
-  done
+  # Write patterns to temp file to avoid shell escaping issues
+  local pattern_file="${e}/PHASE_02_patterns.txt"
+  printf '%s\n' "${patterns[@]}" > "$pattern_file"
   
-  # Execute with timeout
+  # Execute with timeout - scan each pattern separately for reliability
   (
     timeout "${phase2_timeout}s" bash -c '
-      repo_dir="'"${repo_dir}"'"
-      scan_limit="'"${scan_limit}"'"
-      combined_pattern="'"${combined_pattern}"'"
-      hist_out="'"${hist_out}"'"
+      repo_dir="$1"
+      scan_limit="$2"
+      pattern_file="$3"
+      hist_out="$4"
       
-      git -C "${repo_dir}" rev-list --all 2>/dev/null | head -n "${scan_limit}" | \
-        xargs -P4 -n1 -I{} sh -c \
-          "git -C \"${repo_dir}\" show {} --no-color 2>/dev/null | grep -P \"${combined_pattern}\" 2>/dev/null || true" \
-        >> "${hist_out}" 2>/dev/null || true
-    '
+      while IFS= read -r pat; do
+        git -C "${repo_dir}" rev-list --all 2>/dev/null | head -n "${scan_limit}" | \
+          xargs -P4 -n1 -I{} sh -c \
+            "git -C \"${repo_dir}\" show {} --no-color 2>/dev/null | grep -P \"${pat}\" 2>/dev/null || true" \
+          >> "${hist_out}" 2>/dev/null || true
+      done < "$pattern_file"
+    ' -- "${repo_dir}" "${scan_limit}" "${pattern_file}" "${hist_out}"
   ) || scan_exit=$?
   
   # Check if timeout occurred (exit code 124 from timeout command)
@@ -186,15 +186,17 @@ print(round(e,4))
   local tag_scan_exit=0
   (
     timeout 60s bash -c '
-      repo_dir="'"${repo_dir}"'"
-      combined_pattern="'"${combined_pattern}"'"
-      hist_out="'"${hist_out}"'"
+      repo_dir="$1"
+      pattern_file="$2"
+      hist_out="$3"
       
-      git -C "${repo_dir}" show-ref --tags -d 2>/dev/null | awk "{print \$1}" | \
-        xargs -P4 -n1 -I{} sh -c \
-          "git -C \"${repo_dir}\" show {} --no-color 2>/dev/null | grep -P \"${combined_pattern}\" 2>/dev/null || true" \
-        >> "${hist_out}.tags" 2>/dev/null || true
-    '
+      while IFS= read -r pat; do
+        git -C "${repo_dir}" show-ref --tags -d 2>/dev/null | awk "{print \$1}" | \
+          xargs -P4 -n1 -I{} sh -c \
+            "git -C \"${repo_dir}\" show {} --no-color 2>/dev/null | grep -P \"${pat}\" 2>/dev/null || true" \
+          >> "${hist_out}.tags" 2>/dev/null || true
+      done < "$pattern_file"
+    ' -- "${repo_dir}" "${pattern_file}" "${hist_out}"
   ) || tag_scan_exit=$?
   
   if [[ "$tag_scan_exit" -eq 124 ]]; then
