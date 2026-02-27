@@ -26,14 +26,14 @@ run_exfiltration() {
   # Precision telemetry patterns — actual package usage, not domain terms
   local telemetry_patterns=(
     '@sentry/\w+'  # Actual Sentry SDK imports
-    'Sentry\.'  # Actual Sentry API calls
+    'Sentry\.\w+\('  # Actual Sentry API calls (not just Sentry.)
     '\bmixpanel\.\w+\('  # Actual Mixpanel calls
     '@segment/\w+'  # Actual Segment SDK imports
     'analytics\.load\('  # Actual analytics.js initialization
     'gtag\('  # Google Analytics gtag calls
-    'ga\('  # Google Analytics ga calls
+    '\bga\('  # Google Analytics ga calls (not random ga( in words)
     'datadog-\w+'  # Datadog packages
-    'DDTrace'  # Datadog tracing
+    '\bDDTrace\.\w+'  # Datadog tracing API (not just "Trace")
     'newrelic\.start'  # New Relic initialization
     'amplitude\.\w+\('  # Actual Amplitude calls
   )
@@ -78,6 +78,11 @@ run_exfiltration() {
           
           # Exclude string literals defining patterns (e.g., security scan definitions)
           if echo "$content" | grep -qE '(re:|regex:|pattern:)\s*[/\[{]'; then
+            continue
+          fi
+          
+          # Exclude same-origin fetch calls (window.location.href)
+          if echo "$content" | grep -qE 'fetch\s*\(\s*window\.location'; then
             continue
           fi
 
