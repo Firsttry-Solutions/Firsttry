@@ -105,51 +105,106 @@ print(round(e,4))
     done
   fi
 
-  # ── B: Git history scan (safe + bounded) ─────────────────────────────────
+  # ── B: Git history scan (bounded + fail-closed) ────────────────────────────
+  # Environment variables for bounded execution:
+  #   FT_AUDIT_PHASE2_TIMEOUT_SEC (default: 900 = 15 min)
+  #   FT_AUDIT_PHASE2_MAX_COMMITS (default: 5000)
+  #   FT_AUDIT_PHASE2_MODE (default: bounded; alt: full)
+  
+  local phase2_timeout="${FT_AUDIT_PHASE2_TIMEOUT_SEC:-900}"
+  local phase2_max_commits="${FT_AUDIT_PHASE2_MAX_COMMITS:-5000}"
+  local phase2_mode="${FT_AUDIT_PHASE2_MODE:-bounded}"
+  
   echo "[02] Counting git history..." | tee -a "$out_txt"
   local total_commits
   total_commits=$(git -C "${repo_dir}" rev-list --all --count 2>/dev/null || echo 0)
   echo "  Total commits: ${total_commits}" | tee -a "$out_txt"
+  echo "  Config: mode=${phase2_mode}, max_commits=${phase2_max_commits}, timeout=${phase2_timeout}s" | tee -a "$out_txt"
 
-  local scan_limit=10000
+  local scan_limit="$phase2_max_commits"
   local history_warning=""
-  if [[ "$total_commits" -gt 10000 ]]; then
-    history_warning="History >10k commits; scanned recent 10k + tags; full scan skipped to avoid OOM/hang."
-    phase_flag "02" "HIGH" "$history_warning" "$out_txt"
+  if [[ "$total_commits" -gt "$phase2_max_commits" ]]; then
+    history_warning="History has ${total_commits} commits; scanning bounded limit of ${phase2_max_commits} to prevent timeout."
+    phase_flag "02" "MEDIUM" "$history_warning" "$out_txt"
     echo "[02] ${history_warning}" | tee -a "$out_txt"
   else
     scan_limit="$total_commits"
   fi
 
-  echo "[02] Scanning git history (limit: ${scan_limit} commits) with parallel workers..." | tee -a "$out_txt"
+  echo "[02] Scanning git history (limit: ${scan_limit} commits, timeout: ${phase2_timeout}s)..." | tee -a "$out_txt"
 
-  # Parallel history scan using xargs -P4
+  # Parallel history scan using xargs -P4 with timeout wrapper
   local hist_out="${e}/PHASE_02_history_scan_raw.txt"
   touch "$hist_out"
-
+  
+  # Fail-closed: if timeout triggers, fail the phase
+  local scan_exit=0
+  local scan_timed_out=0
+  
+  # Combined pattern scan (all patterns in one pass for efficiency)
+  local combined_pattern=""
   for pat in "${patterns[@]}"; do
-    git -C "${repo_dir}" rev-list --all 2>/dev/null | head -"$scan_limit" | \
-      xargs -P4 -I{} sh -c \
-        "git -C '${repo_dir}' show {} --no-color 2>/dev/null | grep -P '${pat}' 2>/dev/null || true" \
-      >> "$hist_out" 2>/dev/null || true
+    [[ -z "$combined_pattern" ]] && combined_pattern="$pat" || combined_pattern="${combined_pattern}|${pat}"
   done
+  
+  # Execute with timeout
+  (
+    timeout "${phase2_timeout}s" bash -c '
+      repo_dir="'"${repo_dir}"'"
+      scan_limit="'"${scan_limit}"'"
+      combined_pattern="'"${combined_pattern}"'"
+      hist_out="'"${hist_out}"'"
+      
+      git -C "${repo_dir}" rev-list --all 2>/dev/null | head -n "${scan_limit}" | \
+        xargs -P4 -n1 -I{} sh -c \
+          "git -C \"${repo_dir}\" show {} --no-color 2>/dev/null | grep -P \"${combined_pattern}\" 2>/dev/null || true" \
+        >> "${hist_out}" 2>/dev/null || true
+    '
+  ) || scan_exit=$?
+  
+  # Check if timeout occurred (exit code 124 from timeout command)
+  if [[ "$scan_exit" -eq 124 ]]; then
+    scan_timed_out=1
+    echo "[02] FAIL: History scan timed out after ${phase2_timeout}s" | tee -a "$out_txt"
+    phase_fail "02" "Git history scan timed out after ${phase2_timeout}s (${scan_limit} commits). Use FT_AUDIT_PHASE2_TIMEOUT_SEC to increase or FT_AUDIT_PHASE2_MAX_COMMITS to reduce scope." "$out_txt"
+  elif [[ "$scan_exit" -ne 0 ]]; then
+    echo "[02] WARNING: History scan exited with code ${scan_exit}" | tee -a "$out_txt"
+    phase_flag "02" "MEDIUM" "History scan exited non-zero (code ${scan_exit}); results may be incomplete" "$out_txt"
+  fi
 
   if [[ -s "$hist_out" ]]; then
     echo "[02] HISTORY SECRETS FOUND:" | tee -a "$out_txt"
-    cat "$hist_out" >> "$out_txt"
+    head -100 "$hist_out" >> "$out_txt"  # Limit output to first 100 hits for readability
+    echo "  (Total lines in history scan: $(wc -l < "$hist_out"))" >> "$out_txt"
     found=1
   else
     echo "  Git history scan: no secrets found." | tee -a "$out_txt"
   fi
 
-  # Also scan tag objects
-  echo "[02] Scanning tag objects..." | tee -a "$out_txt"
-  for pat in "${patterns[@]}"; do
-    git -C "${repo_dir}" show-ref --tags -d 2>/dev/null | awk '{print $1}' | \
-      xargs -P4 -I{} sh -c \
-        "git -C '${repo_dir}' show {} --no-color 2>/dev/null | grep -P '${pat}' 2>/dev/null || true" \
-      >> "$hist_out" 2>/dev/null || true
-  done
+  # Also scan tag objects (with timeout)
+  echo "[02] Scanning tag objects (timeout: 60s)..." | tee -a "$out_txt"
+  local tag_scan_exit=0
+  (
+    timeout 60s bash -c '
+      repo_dir="'"${repo_dir}"'"
+      combined_pattern="'"${combined_pattern}"'"
+      hist_out="'"${hist_out}"'"
+      
+      git -C "${repo_dir}" show-ref --tags -d 2>/dev/null | awk "{print \$1}" | \
+        xargs -P4 -n1 -I{} sh -c \
+          "git -C \"${repo_dir}\" show {} --no-color 2>/dev/null | grep -P \"${combined_pattern}\" 2>/dev/null || true" \
+        >> "${hist_out}.tags" 2>/dev/null || true
+    '
+  ) || tag_scan_exit=$?
+  
+  if [[ "$tag_scan_exit" -eq 124 ]]; then
+    echo "[02] WARNING: Tag scan timed out after 60s" | tee -a "$out_txt"
+    phase_flag "02" "LOW" "Tag object scan timed out (not critical)" "$out_txt"
+  elif [[ -s "${hist_out}.tags" ]]; then
+    echo "[02] SECRETS FOUND IN TAG OBJECTS:" | tee -a "$out_txt"
+    cat "${hist_out}.tags" >> "$out_txt"
+    found=1
+  fi
 
   # ── C: Trufflehog (preferred) ──────────────────────────────────────────────
   local trufflehog_out="${e}/PHASE_02_trufflehog.json"

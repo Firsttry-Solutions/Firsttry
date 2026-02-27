@@ -433,6 +433,14 @@ echo "  Archive:  ${E}.zip"
 echo "============================================================"
 echo ""
 
+# Print canonical verdict line (machine-parseable)
+if [[ "$FINAL_DECISION" == "CONDITIONAL_ACCEPT" ]]; then
+  echo "ENTERPRISE_AUDIT_VERDICT: PASS"
+else
+  echo "ENTERPRISE_AUDIT_VERDICT: FAIL"
+fi
+echo ""
+
 # Print all phase results
 if [[ -f "${E}/results.json" ]]; then
   jq -r '.results[] | "  [\(.status)] Phase \(.phase): \(.message)"' \
