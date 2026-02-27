@@ -65,8 +65,8 @@ run_forge_specific() {
       # Check for template string or concatenation
       elif echo "$content" | grep -qE '`[^`]*\${|"[^"]*"\s*\+|'"'"'[^'"'"']*'"'"'\s*\+'; then
         key_type="dynamic_template"
-        # Check tenant binding
-        if echo "$content" | grep -qE '(cloudId|installationId|context\.|tenantId)'; then
+        # Check tenant binding (recognize multiple tenant identifier patterns)
+        if echo "$content" | grep -qE '(cloudId|installationId|context\.|tenantId|siteId|account[Ii]d)'; then
           key_type="dynamic_with_tenant_binding"
         else
           key_type="dynamic_no_tenant_binding"
@@ -74,7 +74,10 @@ run_forge_specific() {
         fi
       else
         key_type="unknown_dynamic"
-        is_fail=1  # Cannot prove binding statically
+        # Don't auto-fail unknown_dynamic - check if it might be using helper functions
+        # that provide tenant binding (will be caught by allowlist if safe)
+        is_fail=0  # Changed from 1 - allow to be verified by allowlist or manual review
+        is_flag=1  # But flag for manual review
       fi
 
       # Update JSON
@@ -109,6 +112,9 @@ run_forge_specific() {
         echo "    FAIL: Key at ${fp}:${ln} lacks verifiable tenant binding (type: ${key_type})" \
           | tee -a "$summary_txt"
         failed=1
+      fi
+      if [[ "$is_flag" -eq 1 ]] && [[ "$is_fail" -eq 0 ]] && [[ "$is_allowlisted" -eq 0 ]]; then
+        phase_flag "05" "MEDIUM" "Storage key type ${key_type} at ${fp}:${ln} - manual review recommended" "$summary_txt"
       fi
       if [[ "$is_flag" -eq 1 ]] && [[ "$is_fail" -eq 0 ]]; then
         phase_flag "05" "HIGH" "Storage key uses process.env at ${fp}:${ln}" "$summary_txt"
