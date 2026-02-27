@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-/**
- * Pack Artifact Self-Check Script
- * 
- * Validates that pack file generation succeeded and produced required files.
- * Used by: tools/audit/v3_1/lib/determinism.sh (Phase 06 Layer C)
- * 
- * Usage: bash selfcheck_pack.sh <pack_dir>
- * 
- * Checks:
- * 1. Pack directory exists and is not empty
- * 2. Required pack files are present
- * 3. Pack files are not empty
- * 4. Pack files contain expected structure (JSON valid, CSV has headers)
- * 
- * Exit codes:
- * 0 - All checks passed
- * 1 - One or more checks failed (prints detailed error)
- */
+#
+# Pack Artifact Self-Check Script
+# 
+# Validates that pack file generation succeeded and produced required files.
+# Used by: tools/audit/v3_1/lib/determinism.sh (Phase 06 Layer C)
+# 
+# Usage: bash selfcheck_pack.sh <pack_dir>
+# 
+# Checks:
+# 1. Pack directory exists and is not empty
+# 2. Required pack files are present
+# 3. Pack files are not empty
+# 4. Pack files contain expected structure (JSON valid, CSV has headers)
+# 
+# Exit codes:
+# 0 - All checks passed
+# 1 - One or more checks failed (prints detailed error)
+#
 
 set -euo pipefail
 
