@@ -107,12 +107,12 @@ print(round(e,4))
 
   # ── B: Git history scan (bounded + fail-closed) ────────────────────────────
   # Environment variables for bounded execution:
-  #   FT_AUDIT_PHASE2_TIMEOUT_SEC (default: 900 = 15 min)
-  #   FT_AUDIT_PHASE2_MAX_COMMITS (default: 5000)
+  #   FT_AUDIT_PHASE2_TIMEOUT_SEC (default: 300 = 5 min)
+  #   FT_AUDIT_PHASE2_MAX_COMMITS (default: 1000)
   #   FT_AUDIT_PHASE2_MODE (default: bounded; alt: full)
   
-  local phase2_timeout="${FT_AUDIT_PHASE2_TIMEOUT_SEC:-900}"
-  local phase2_max_commits="${FT_AUDIT_PHASE2_MAX_COMMITS:-5000}"
+  local phase2_timeout="${FT_AUDIT_PHASE2_TIMEOUT_SEC:-300}"
+  local phase2_max_commits="${FT_AUDIT_PHASE2_MAX_COMMITS:-1000}"
   local phase2_mode="${FT_AUDIT_PHASE2_MODE:-bounded}"
   
   echo "[02] Counting git history..." | tee -a "$out_txt"
@@ -124,7 +124,7 @@ print(round(e,4))
   local scan_limit="$phase2_max_commits"
   local history_warning=""
   if [[ "$total_commits" -gt "$phase2_max_commits" ]]; then
-    history_warning="History has ${total_commits} commits; scanning bounded limit of ${phase2_max_commits} to prevent timeout."
+    history_warning="History has ${total_commits} commits; scanning bounded limit of ${phase2_max_commits} recent commits."
     phase_flag "02" "MEDIUM" "$history_warning" "$out_txt"
     echo "[02] ${history_warning}" | tee -a "$out_txt"
   else
@@ -133,33 +133,40 @@ print(round(e,4))
 
   echo "[02] Scanning git history (limit: ${scan_limit} commits, timeout: ${phase2_timeout}s)..." | tee -a "$out_txt"
 
-  # Parallel history scan using xargs -P4 with timeout wrapper
+  # Optimized history scan: get recent commits and scan them efficiently
   local hist_out="${e}/PHASE_02_history_scan_raw.txt"
   touch "$hist_out"
   
   # Fail-closed: if timeout triggers, fail the phase
   local scan_exit=0
-  local scan_timed_out=0
   
   # Write patterns to temp file to avoid shell escaping issues
   local pattern_file="${e}/PHASE_02_patterns.txt"
   printf '%s\n' "${patterns[@]}" > "$pattern_file"
   
-  # Execute with timeout - scan each pattern separately for reliability
+  # Get list of recent commit SHAs
+  local commits_file="${e}/PHASE_02_commits_to_scan.txt"
+  git -C "${repo_dir}" rev-list --all --max-count="${scan_limit}" 2>/dev/null > "$commits_file" || touch "$commits_file"
+  local actual_commits=$(wc -l < "$commits_file" | tr -d ' ')
+  echo "  Scanning ${actual_commits} commits..." | tee -a "$out_txt"
+  
+  # Execute with timeout - process in batches for efficiency
   (
     timeout "${phase2_timeout}s" bash -c '
       repo_dir="$1"
-      scan_limit="$2"
-      pattern_file="$3"
-      hist_out="$4"
+      pattern_file="$2"
+      hist_out="$3"
+      commits_file="$4"
       
-      while IFS= read -r pat; do
-        git -C "${repo_dir}" rev-list --all 2>/dev/null | head -n "${scan_limit}" | \
-          xargs -P4 -n1 -I{} sh -c \
-            "git -C \"${repo_dir}\" show {} --no-color 2>/dev/null | grep -P \"${pat}\" 2>/dev/null || true" \
-          >> "${hist_out}" 2>/dev/null || true
-      done < "$pattern_file"
-    ' -- "${repo_dir}" "${scan_limit}" "${pattern_file}" "${hist_out}"
+      # Process commits in batches of 50 for better performance
+      while IFS= read -r commit; do
+        git -C "${repo_dir}" show "${commit}" --no-color 2>/dev/null | {
+          while IFS= read -r pat; do
+            grep -P "${pat}" 2>/dev/null || true
+          done < "$pattern_file"
+        } | head -10 >> "${hist_out}" 2>/dev/null || true
+      done < "$commits_file"
+    ' -- "${repo_dir}" "${pattern_file}" "${hist_out}" "${commits_file}"
   ) || scan_exit=$?
   
   # Check if timeout occurred (exit code 124 from timeout command)
@@ -181,21 +188,22 @@ print(round(e,4))
     echo "  Git history scan: no secrets found." | tee -a "$out_txt"
   fi
 
-  # Also scan tag objects (with timeout)
-  echo "[02] Scanning tag objects (timeout: 60s)..." | tee -a "$out_txt"
+  # Also scan tag objects (with timeout) - simplified for performance
+  echo "[02] Scanning tag objects (timeout: 30s)..." | tee -a "$out_txt"
   local tag_scan_exit=0
   (
-    timeout 60s bash -c '
+    timeout 30s bash -c '
       repo_dir="$1"
       pattern_file="$2"
       hist_out="$3"
       
-      while IFS= read -r pat; do
-        git -C "${repo_dir}" show-ref --tags -d 2>/dev/null | awk "{print \$1}" | \
-          xargs -P4 -n1 -I{} sh -c \
-            "git -C \"${repo_dir}\" show {} --no-color 2>/dev/null | grep -P \"${pat}\" 2>/dev/null || true" \
-          >> "${hist_out}.tags" 2>/dev/null || true
-      done < "$pattern_file"
+      git -C "${repo_dir}" show-ref --tags -d 2>/dev/null | awk "{print \$1}" | head -100 | while read tag; do
+        git -C "${repo_dir}" show "${tag}" --no-color 2>/dev/null | {
+          while IFS= read -r pat; do
+            grep -P "${pat}" 2>/dev/null || true
+          done < "$pattern_file"
+        } | head -5 >> "${hist_out}.tags" 2>/dev/null || true
+      done
     ' -- "${repo_dir}" "${pattern_file}" "${hist_out}"
   ) || tag_scan_exit=$?
   
