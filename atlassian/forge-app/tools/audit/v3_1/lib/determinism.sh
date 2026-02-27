@@ -281,6 +281,19 @@ run_determinism() {
       }
   )
 
+  # Self-check: Validate pack artifact structure
+  echo "  [LAYER C] Validating pack artifact structure..." \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  if ! bash "${repo_dir}/tools/audit/v3_1/selfcheck_pack.sh" "$artifact_dir" \
+      >> "${e}/PHASE_06_export_artifact_contamination_scan.txt" 2>&1; then
+    echo "  [ERROR] Pack artifact validation failed" \
+      | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+    phase_fail "06" "Pack artifact structure invalid (selfcheck failed)" \
+      "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+  fi
+  echo "  [PASS] Pack artifact structure valid" \
+    | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"
+
   # Generate LAYER A/B: Customer-delivered ZIP artifact (final output)
   echo "  [LAYER A/B] Generating customer ZIP artifact..." \
     | tee -a "${e}/PHASE_06_export_artifact_contamination_scan.txt"

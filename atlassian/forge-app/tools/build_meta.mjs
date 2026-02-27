@@ -163,6 +163,13 @@ try {
 }
 `;
 
+// FAIL-CLOSED: Ensure parent directory exists before writing
+const backendBuildDir = path.dirname(backendBuildPath);
+if (!fs.existsSync(backendBuildDir)) {
+  fs.mkdirSync(backendBuildDir, { recursive: true });
+  console.log(`✅ Created directory: ${backendBuildDir}`);
+}
+
 fs.writeFileSync(backendBuildPath, backendBuildContent);
 
 // VERIFICATION STEP: Read back and verify injection succeeded
