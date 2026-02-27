@@ -99,24 +99,78 @@ echo '{"results":[]}' > "${E}/results.json"
 # Touch flag accumulator files
 touch "${E}/.all_flags" "${E}/.all_fails" 2>/dev/null || true
 
-# ── GATE: Clean git tree (zero-trust) ───────────────────────────────────────
-# Checks for tracked modifications and staged changes only.
-# Untracked files (??) are excluded because pre-existing workspace artifacts
-# (e.g. site/, build outputs) must not block the cleanroom gate.
-echo "[GATE] Enforcing clean git tree (tracked changes only)..."
-DIRTY=$(git -C "${REPO_DIR}" status --porcelain 2>/dev/null | grep -vE '^(\?\?|!!)' || echo "")
-if [[ -n "$DIRTY" ]]; then
-  echo "FAIL: git tree dirty:"
-  echo "$DIRTY"
-  _write_final_report "REJECT" "FAIL: git working tree is dirty. Clean the tree before auditing."
-  echo '{"results":[{"phase":"GATE","status":"FAIL","message":"git tree dirty","severity":"CRITICAL","evidence":"","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}]}' > "${E}/results.json"
-  echo "{}" > "${E}/00_sbom.json"
+# ── GATE: Clean git tree (zero-trust, hardened) ─────────────────────────────
+# Checks for:
+#   1. Any tracked file modification / staged change under REPO_DIR → FAIL
+#   2. Any untracked file under REPO_DIR outside the explicit allowlist → FAIL
+# Allowlist (untracked OK): site/**  .next/**  dist/**  build/**
+# Paths are always resolved relative to REPO_DIR (scoped; workspace siblings ignored).
+# Evidence written to: $E/00_tracked_dirty_files.txt  $E/00_untracked_files.txt
+echo "[GATE] Enforcing clean git tree (zero-trust hardened)..."
 
-  echo "FAIL: git tree dirty" >&2
+# Determine how git presents REPO_DIR paths (may be a repo subdirectory)
+GIT_TOP=$(git -C "${REPO_DIR}" rev-parse --show-toplevel 2>/dev/null || echo "${REPO_DIR}")
+# Relative path of REPO_DIR from git top-level (empty string if they're the same root)
+if [[ "${REPO_DIR}" == "${GIT_TOP}" ]]; then
+  REPO_GIT_PREFIX=""
+else
+  REPO_GIT_PREFIX="${REPO_DIR#${GIT_TOP}/}/"   # e.g. "atlassian/forge-app/"
+fi
+
+# Collect all porcelain lines from git, scoped to REPO_DIR
+ALL_STATUS=$(git -C "${GIT_TOP}" status --porcelain 2>/dev/null || true)
+
+# Tracked dirty lines: not ?? and not !! and path starts with REPO_GIT_PREFIX
+if [[ -n "$REPO_GIT_PREFIX" ]]; then
+  TRACKED_DIRTY=$(echo "$ALL_STATUS" | grep -vE '^(\?\?|!!)' | awk -v p="${REPO_GIT_PREFIX}" '$2 ~ "^"p || $3 ~ "^"p' || true)
+  UNTRACKED_ALL=$(echo "$ALL_STATUS" | grep '^?? ' | sed 's/^?? //' | grep "^${REPO_GIT_PREFIX}" | sed "s|^${REPO_GIT_PREFIX}||" || true)
+else
+  TRACKED_DIRTY=$(echo "$ALL_STATUS" | grep -vE '^(\?\?|!!)' || true)
+  UNTRACKED_ALL=$(echo "$ALL_STATUS" | grep '^?? ' | sed 's/^?? //' || true)
+fi
+
+# Write evidence files unconditionally (empty is fine)
+printf '%s\n' "$TRACKED_DIRTY" > "${E}/00_tracked_dirty_files.txt"
+printf '%s\n' "$UNTRACKED_ALL"  > "${E}/00_untracked_files.txt"
+
+# Filter out allowlisted untracked paths (repo-relative)
+# Allowlist: site/  .next/  dist/  build/
+UNTRACKED_BLOCKED=""
+while IFS= read -r uf; do
+  [[ -z "$uf" ]] && continue
+  uf_clean="${uf%/}"   # strip trailing slash git adds for dirs
+  case "$uf_clean" in
+    site|site/*|.next|.next/*|dist|dist/*|build|build/*)
+      : ;; # allowlisted – skip
+    *)
+      UNTRACKED_BLOCKED="${UNTRACKED_BLOCKED}${uf_clean}"$'\n'
+      ;;
+  esac
+done <<< "$UNTRACKED_ALL"
+
+GATE_FAIL=0
+GATE_MSG=""
+if [[ -n "$TRACKED_DIRTY" ]]; then
+  GATE_FAIL=1
+  GATE_MSG="Tracked modifications found in REPO_DIR"
+fi
+if [[ -n "$UNTRACKED_BLOCKED" ]]; then
+  GATE_FAIL=1
+  GATE_MSG="${GATE_MSG:+$GATE_MSG | }Untracked files outside allowlist: $(echo "$UNTRACKED_BLOCKED" | tr '\n' ' ')"
+fi
+
+if [[ "$GATE_FAIL" -eq 1 ]]; then
+  echo "FAIL: git tree not clean:"
+  [[ -n "$TRACKED_DIRTY"     ]] && { echo "  tracked dirty:"; echo "$TRACKED_DIRTY"; }
+  [[ -n "$UNTRACKED_BLOCKED" ]] && { echo "  untracked (blocked):"; echo "$UNTRACKED_BLOCKED"; }
+  _write_final_report "REJECT" "FAIL: git working tree is not clean. ${GATE_MSG}"
+  echo '{"results":[{"phase":"GATE","status":"FAIL","message":"git tree not clean","severity":"CRITICAL","evidence":"'"${E}/00_tracked_dirty_files.txt"'","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}]}' > "${E}/results.json"
+  echo "{}" > "${E}/00_sbom.json"
+  echo "FAIL: git tree not clean" >&2
   exit 2
 fi
-echo "  [PASS] git tree is clean."
-write_json_result "GATE" "PASS" "git tree is clean" "" ""
+echo "  [PASS] git tree is clean (untracked: allowlisted only)."
+write_json_result "GATE" "PASS" "git tree is clean (hardened gate, REPO_DIR-scoped)" "" ""
 
 # ── PHASE 0: Cleanroom baseline ─────────────────────────────────────────────
 phase_start "00" "Cleanroom Baseline"
