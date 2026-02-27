@@ -14,13 +14,13 @@
  * - Detect if SystemClock is used in canonical paths (should fail)
  */
 
-import { describe, it, expect } from '@jest/globals';
-import { FixedClock, SystemClock } from '../shared/clock';
-import { appendLedgerBlock_v1, LedgerAppendInput } from '../backbone/ledger';
-import { generateTrustSnapshot } from '../core/audit_snapshot/generateTrustSnapshot';
-import { computeCanonicalHash } from '../phase6/canonicalization';
-import { logGovernanceAction } from '../governance/actionLog';
-import { EclAction, EclRole } from '../governance/rbac';
+import { describe, it, expect } from 'vitest';
+import { FixedClock, SystemClock } from '../../src/shared/clock';
+import { appendLedgerBlock_v1, LedgerAppendInput } from '../../src/backbone/ledger';
+import { generateTrustSnapshot } from '../../src/core/audit_snapshot/generateTrustSnapshot';
+import { computeCanonicalHash } from '../../src/phase6/canonicalization';
+import { logGovernanceAction } from '../../src/governance/actionLog';
+import { EclAction, EclRole } from '../../src/governance/rbac';
 
 describe('Phase 06: Determinism Hard Proof', () => {
   const FIXED_TIME = '2026-01-01T00:00:00.000Z';
