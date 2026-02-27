@@ -43,7 +43,7 @@ tools/audit/v3_1/
 |-------|------|-----------|
 | GATE  | Clean Git Tree | Hard FAIL if dirty |
 | 00    | Cleanroom Baseline | Hard FAIL if npm ci fails |
-| 01    | Supply Chain Enforcement | Hard FAIL: non-exact versions, vulns, dupes |
+| 01    | Supply Chain Enforcement | Hard FAIL: non-exact versions, vulns, critical-pkg dupes |
 | 02    | Secrets Forensics v3.1 | Hard FAIL if any secret found |
 | 03    | Manifest ↔ Entrypoint Binding | Hard FAIL: write scopes, any egress |
 | 04    | Outbound Network / Telemetry | Hard FAIL: any non-Forge-sanctioned call |
@@ -103,6 +103,44 @@ Decisions:
 - **Docs only under `docs/audit/**`**.
 - **No commits of `/tmp` artifacts**.
 - Do **not** modify `package.json`, `package-lock.json`, or `manifest.yml`.
+
+---
+
+## Duplicate Dependency Policy (Enterprise-Grade Rationale)
+
+### Problem
+The npm ecosystem commonly produces dependency trees with multiple versions of the same package (e.g., `lodash@4.17.23` and `lodash@3.10.1` coexisting as transitive deps). A blanket FAIL on all duplicates creates false-positive REJECTs for standard npm behavior.
+
+### Policy
+**Phase 01 Supply Chain Enforcement** implements a **critical-list-based duplicate gate**:
+
+1. **FAIL trigger**: If ANY package in the **critical list** has >1 distinct version installed.
+2. **HIGH FLAG**: If non-critical packages have duplicates (visibility for supply-chain review).
+
+### Critical Package List (25 packages)
+Duplicates of these packages trigger hard FAIL:
+
+```
+minimatch       glob            semver          tar             ws              
+undici          node-fetch      axios           got             follow-redirects
+qs              jsonwebtoken    jose            yaml            lodash          
+handlebars      ejs             mustache        tough-cookie    tough-cookie-file-store
+ip              crypto-js       uuid            request         @forge/api      
+```
+
+**Rationale**: These packages have high blast radius for:
+- **Security vulnerabilities** (history of CVEs: `minimatch`, `lodash`, `qs`, `axios`, `jsonwebtoken`)
+- **Cryptographic operations** (`crypto-js`, `jose`, `jsonwebtoken`)
+- **Filesystem/archive handling** (`tar`, `glob`)
+- **Network/HTTP libraries** (`undici`, `axios`, `node-fetch`, `got`, `follow-redirects`)
+- **Forge runtime surface** (`@forge/api`)
+
+### Evidence
+- **JSON**: `PHASE_01_duplicate_versions.json` — structured duplicate map
+- **Human**: `PHASE_01_dupes.txt` — summary + critical-list + top-20 duplicates
+
+### Determinism
+Duplicate detection is **lockfile-based** (`package-lock.json` "packages" object). It does NOT depend on `npm ls` runtime output, ensuring reproducibility across CI environments.
 
 ---
 
