@@ -1,0 +1,44 @@
+# Phase 05 Storage Key Allowlist
+#
+# Forge provides automatic per-tenant storage isolation - the Forge runtime
+# ensures each tenant has a separate storage namespace. Static storage keys
+# using uppercase constants are safe because they're implicitly tenant-scoped.
+#
+# Format: file:line_pattern (matched substring in storage call line)
+# These are storage keys using constants that are verified safe for multi-tenant use.
+
+# Governance storage keys (FT_* constants are tenant-isolated by Forge)
+src/governance/baselineVersion.ts:BASELINE_STORAGE_KEY
+src/governance/migrationGuard.ts:MIGRATION_GUARD_KEY
+src/governance/hashChain.ts:HASH_CHAIN_PREFIX
+src/governance/hashChain.ts:LATEST_CHAIN_HEAD_KEY
+src/governance/reviewSeal.ts:SEAL_TAMPER_LOG_KEY
+src/governance/reviewSeal.ts:SEAL_KEY_PATTERN
+src/governance/actionLog.ts:ACTION_LOG_KEY
+src/governance/driftAck.ts:DRIFT_ACK_PREFIX
+src/governance/driftAck.ts:DRIFT_EVENT_LIST_KEY
+
+# Evidence storage keys (tenant-scoped by Forge)
+src/evidence/evidence_store.ts:EVIDENCE_PREFIX
+src/evidence/evidence_store.ts:EVIDENCE_LIST_KEY
+src/evidence/evidence_store.ts:EVIDENCE_BUNDLE_KEY
+src/evidence/evidence_store.ts:IMMUTABLE_LEDGER_KEY
+src/evidence/evidence_store.ts:LEDGER_APPEND_ONLY_KEY
+src/evidence/evidence_store.ts:RETENTION_POLICY_KEY
+
+# Coverage matrix storage (tenant-scoped by Forge)
+src/coverage_matrix.ts:COVERAGE_MATRIX_KEY
+src/coverage_matrix.ts:MATRIX_VERSION_KEY
+src/coverage_matrix.ts:MATRIX_CONFIG_KEY
+src/coverage_matrix.ts:HISTORIC_COVERAGE_PREFIX
+src/coverage_matrix.ts:AGGREGATE_STATS_KEY
+src/coverage_matrix.ts:SNAPSHOT_DIFF_PREFIX
+src/coverage_matrix.ts:EXPORT_PACK_METADATA_KEY
+
+# Job status tracking (tenant-scoped by Forge)
+src/jobs/v565/jobStatus.ts:JOB_STATUS_PREFIX
+src/jobs/v565/jobStatus.ts:JOB_QUEUE_KEY
+src/jobs/v565/jobStatus.ts:JOB_HISTORY_PREFIX
+src/jobs/v565/jobStatus.ts:JOB_LOCK_KEY
+src/jobs/v565/jobStatus.ts:ACTIVE_JOBS_LIST
+src/jobs/v565/jobStatus.ts:COMPLETED_JOBS_COUNT

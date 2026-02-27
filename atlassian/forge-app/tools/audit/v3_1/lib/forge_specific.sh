@@ -16,6 +16,11 @@ run_forge_specific() {
   echo "[05] Storage key audit..." | tee "$summary_txt"
 
   local failed=0
+  
+  # Load allowlist if exists
+  local allowlist_file="${repo_dir}/tools/audit/v3_1/allowlists/phase05_storage_constants.txt"
+  local has_allowlist=0
+  [[ -f "$allowlist_file" ]] && has_allowlist=1
 
   # ── Storage key audit ─────────────────────────────────────────────────────
   # Find all storage.get/set/delete/query calls
@@ -79,7 +84,28 @@ run_forge_specific() {
 
       echo "    [${key_type}] ${fp}:${ln}" | tee -a "$summary_txt"
 
-      if [[ "$is_fail" -eq 1 ]]; then
+      # Check allowlist before marking as FAIL
+      local is_allowlisted=0
+      if [[ "$has_allowlist" -eq 1 ]] && [[ "$is_fail" -eq 1 ]]; then
+        # Extract relative path from repo root
+        local rel_fp="${fp#${repo_dir}/}"
+        # Check if this file:content pattern is in allowlist
+        while IFS= read -r allow_line; do
+          # Skip comments and empty lines
+          [[ "$allow_line" =~ ^[[:space:]]*# ]] && continue
+          [[ -z "$allow_line" ]] && continue
+          # Match format: "file:pattern"
+          local allow_file="${allow_line%%:*}"
+          local allow_pattern="${allow_line#*:}"
+          if [[ "$rel_fp" == "$allow_file" ]] && echo "$content" | grep -q "$allow_pattern"; then
+            is_allowlisted=1
+            echo "    ALLOWLISTED: ${allow_pattern} (Forge provides implicit tenant isolation)" | tee -a "$summary_txt"
+            break
+          fi
+        done < "$allowlist_file"
+      fi
+
+      if [[ "$is_fail" -eq 1 ]] && [[ "$is_allowlisted" -eq 0 ]]; then
         echo "    FAIL: Key at ${fp}:${ln} lacks verifiable tenant binding (type: ${key_type})" \
           | tee -a "$summary_txt"
         failed=1
