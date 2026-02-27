@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ledger Crypto Spec | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="./security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="./security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="./vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="./privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="./subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="./terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="./threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="./resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="./data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="./data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="./architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="./forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="./customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="./claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="./uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="./export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="ledger crypto spec">
+          <a href="./ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="./serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="./security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="../operations/sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="../operations/incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="../operations/support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="../operations/bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="../operations/secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="../operations/ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="../operations/access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="../operations/change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="../operations/rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="../operations/logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="../operations/secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Trust Center</span> <span>/</span> <span class="bc-current">Ledger Crypto Spec</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-TRUST-017</code></span></span></div>
+          <h1>Ledger Cryptographic Specification</h1>
+<hr>
+<h2 id="ledger-hash-chain-formula">Ledger Hash Chain Formula<a href="#ledger-hash-chain-formula" class="anchor-link" aria-label="Link to section: Ledger Hash Chain Formula">&#182;</a></h2>
+<p>The immutable audit ledger uses a cryptographic hash chain to detect tampering.</p>
+<p><strong>Exact formula</strong>:</p>
+<pre><code>H_n = SHA256(H_{n-1} || canonical_record_n || nonce_n || timestamp_n)
+</code></pre>
+<p>Where:</p>
+<ul>
+<li><strong>H_n</strong> = Hash of record n</li>
+<li><strong>H_{n-1}</strong> = Hash of previous record (H_0 = SHA256(&quot;&quot;) for genesis block)</li>
+<li><strong>||</strong> = Byte concatenation (no separators)</li>
+<li><strong>canonical_record_n</strong> = JSON record n serialized per SERIALIZATION_SCHEMA.md</li>
+<li><strong>nonce_n</strong> = Cryptographically random 32 bytes (base64 encoded in storage)</li>
+<li><strong>timestamp_n</strong> = UTC ISO8601 timestamp of record creation</li>
+</ul>
+<hr>
+<h2 id="canonical-json-rules">Canonical JSON Rules<a href="#canonical-json-rules" class="anchor-link" aria-label="Link to section: Canonical JSON Rules">&#182;</a></h2>
+<p>Records MUST be serialized deterministically for hash stability:</p>
+<ol>
+<li><strong>Field ordering</strong>: Alphabetical order by key name (ascending)</li>
+<li><strong>No whitespace</strong>: No spaces, tabs, or line breaks (compact JSON)</li>
+<li><strong>No null coercion</strong>: Omit fields with null values; do not include &quot;null&quot;</li>
+<li><strong>String encoding</strong>: UTF-8; escape Unicode as \uXXXX where necessary</li>
+<li><strong>Number precision</strong>: 64-bit float (14 significant digits); no exponential notation unless |n| &lt; 0.0001</li>
+<li><strong>Boolean encoding</strong>: Lowercase &quot;true&quot; or &quot;false&quot;</li>
+<li><strong>Array ordering</strong>: Preserve input order; no sorting unless specified in schema</li>
+<li><strong>Object nesting</strong>: Apply rules recursively</li>
+</ol>
+<p><strong>Example canonical record</strong>:</p>
+<pre><code class="language-json">{&quot;action&quot;:&quot;snapshot&quot;,&quot;hash&quot;:&quot;abc123&quot;,&quot;timestamp&quot;:&quot;2026-02-26T10:30:45Z&quot;,&quot;user&quot;:&quot;user123&quot;}
+</code></pre>
+<p><strong>NOT canonical</strong> (extra whitespace):</p>
+<pre><code class="language-json">{
+  &quot;action&quot;: &quot;snapshot&quot;,
+  &quot;hash&quot;: &quot;abc123&quot;
+}
+</code></pre>
+<hr>
+<h2 id="nonce-definition">Nonce Definition<a href="#nonce-definition" class="anchor-link" aria-label="Link to section: Nonce Definition">&#182;</a></h2>
+<p><strong>Nonce</strong> = Per-record random value to:</p>
+<ul>
+<li>Prevent hash collision attacks if two records have identical content</li>
+<li>Add entropy to consecutive records with same timestamp</li>
+<li>Enable replay resistance</li>
+</ul>
+<p><strong>Generation</strong>:</p>
+<ul>
+<li>Cryptographically secure random 32 bytes (256 bits)</li>
+<li>Generated at record creation time by Node.js <code>crypto.randomBytes(32)</code></li>
+<li>Stored base64-encoded in record JSON</li>
+<li>Field name: <code>&quot;nonce&quot;</code></li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-json">{
+  &quot;action&quot;: &quot;export&quot;,
+  &quot;nonce&quot;: &quot;mK3j2xzA+b4Z8y=&quot;,
+  &quot;timestamp&quot;: &quot;2026-02-26T10:30:45Z&quot;
+}
+</code></pre>
+<hr>
+<h2 id="timestamp-definition">Timestamp Definition<a href="#timestamp-definition" class="anchor-link" aria-label="Link to section: Timestamp Definition">&#182;</a></h2>
+<p><strong>Timestamp</strong>:</p>
+<ul>
+<li><strong>Format</strong>: UTC ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)</li>
+<li><strong>Timezone</strong>: Always UTC (Z suffix mandatory)</li>
+<li><strong>Precision</strong>: Seconds (no milliseconds unless provided by runtime; milliseconds allowed for monotonicity)</li>
+<li><strong>Source</strong>: <code>new Date().toISOString()</code> in Node.js (UTC guaranteed)</li>
+<li><strong>Field name</strong>: <code>&quot;timestamp&quot;</code></li>
+</ul>
+<p><strong>Example</strong>: <code>&quot;2026-02-26T10:30:45.123Z&quot;</code></p>
+<hr>
+<h2 id="replay-resistance">Replay Resistance<a href="#replay-resistance" class="anchor-link" aria-label="Link to section: Replay Resistance">&#182;</a></h2>
+<p>The hash chain prevents replay attacks because:</p>
+<ol>
+<li><strong>Immutability</strong>: H_{n-1} is included in H_n; changing any prior record breaks all subsequent hashes</li>
+<li><strong>Nonce uniqueness</strong>: Replaying a record verbatim (including nonce) is cryptographically unlikely (2^256 entropy)</li>
+<li><strong>Timestamp sequencing</strong>: Ledger reader can verify timestamps are monotonically increasing</li>
+<li><strong>Order dependency</strong>: Records must be played in sequence; reordering breaks hashes</li>
+</ol>
+<p><strong>Verification algorithm</strong> (pseudocode):</p>
+<pre><code>function verify_ledger(records):
+  H_prev = SHA256(&quot;&quot;)
+  for each record in records:
+    timestamp_current = record.timestamp
+    if timestamp_current &lt; timestamp_prev:
+      FAIL &quot;Timestamp violation&quot;
+    
+    H_computed = SHA256(H_prev || canonical(record without &quot;hash&quot; field) || record.nonce || record.timestamp)
+    if H_computed != record.hash:
+      FAIL &quot;Hash mismatch at record &quot; + record.index
+    
+    H_prev = H_computed
+    timestamp_prev = timestamp_current
+  
+  SUCCESS
+</code></pre>
+<hr>
+<h2 id="tamper-detection-pseudocode">Tamper Detection Pseudocode<a href="#tamper-detection-pseudocode" class="anchor-link" aria-label="Link to section: Tamper Detection Pseudocode">&#182;</a></h2>
+<pre><code>function detect_tampering(stored_ledger, expected_root_hash):
+  &quot;&quot;&quot;
+  Detect if ledger has been modified since root anchor was set.
+  &quot;&quot;&quot;
+  computed_hash = NULL
+  
+  for record in stored_ledger:
+    if computed_hash is NULL:
+      # Genesis block
+      computed_hash = SHA256(SHA256(&quot;&quot;) || canonical(record) || record.nonce || record.timestamp)
+    else:
+      computed_hash = SHA256(computed_hash || canonical(record) || record.nonce || record.timestamp)
+  
+  if computed_hash != expected_root_hash:
+    return TAMPERED
+  else:
+    return INTEGRITY_VERIFIED
+  
+  exception if ANY RECORD MISSING or RECORDS REORDERED:
+    return TAMPERED
+</code></pre>
+<hr>
+<h2 id="root-anchor-definition">Root Anchor Definition<a href="#root-anchor-definition" class="anchor-link" aria-label="Link to section: Root Anchor Definition">&#182;</a></h2>
+<p>A root anchor is a cryptographic anchor (hash snapshot) taken at a known point in time to verify no ledger modification occurred subsequently.</p>
+<p><strong>Root anchor components</strong>:</p>
+<ul>
+<li><strong>Anchor hash</strong>: H_n of the latest record at anchor time</li>
+<li><strong>Anchor timestamp</strong>: ISO8601 timestamp of anchor generation</li>
+<li><strong>Anchor context</strong>: Build identity (git SHA, UI bundle hash, version)</li>
+</ul>
+<p><strong>Use case</strong>: Offline verification</p>
+<ul>
+<li>Customer downloads export ZIP (contains ledger + root anchor inside)</li>
+<li>Offline verification tool (tools/verify_ecl_state.mjs) recomputes ledger hash chain</li>
+<li>If computed hash matches anchor hash, ledger is unmodified</li>
+</ul>
+<p><strong>Export signature</strong> (in manifest file inside ZIP):</p>
+<pre><code class="language-json">{
+  &quot;audit_root_hash&quot;: &quot;abc123def456...&quot;,
+  &quot;audit_root_timestamp&quot;: &quot;2026-02-26T10:30:45Z&quot;,
+  &quot;build_git_sha&quot;: &quot;aabbccdd1122...&quot;,
+  &quot;build_ui_bundle_hash&quot;: &quot;xyz789&quot;,
+  &quot;export_timestamp&quot;: &quot;2026-02-26T11:00:00Z&quot;
+}
+</code></pre>
+<hr>
+<h2 id="implementation-notes">Implementation Notes<a href="#implementation-notes" class="anchor-link" aria-label="Link to section: Implementation Notes">&#182;</a></h2>
+<p><strong>Hash function</strong>: SHA256 (FIPS 180-4 standard)</p>
+<ul>
+<li><strong>Algorithm</strong>: Secure Hash Algorithm 2 (256-bit variant)</li>
+<li><strong>Library</strong>: Node.js <code>crypto.createHash(&#39;sha256&#39;)</code></li>
+<li><strong>Output</strong>: 64 hexadecimal characters (256 bits)</li>
+</ul>
+<p><strong>Canonical record</strong>: MUST exclude the ledger entry&#39;s own hash field when computing the next hash</p>
+<pre><code class="language-json">// Record stored in ledger
+{
+  &quot;hash&quot;: &quot;abc123...&quot;,     ← This field excluded when computing next H_n
+  &quot;action&quot;: &quot;export&quot;,
+  &quot;nonce&quot;: &quot;xyz...&quot;,
+  &quot;timestamp&quot;: &quot;2026-02-26T10:30:45Z&quot;
+}
+</code></pre>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="EXPORT_SPEC.md">EXPORT_SPEC.md</a>: Export archive format and manifest</li>
+<li><a href="SERIALIZATION_SCHEMA.md">SERIALIZATION_SCHEMA.md</a>: JSON serialization rules</li>
+<li><a href="DATA_FLOW.md">DATA_FLOW.md</a>: Ledger storage and access</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-TRUST-017</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/trust/LEDGER_CRYPTO_SPEC.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

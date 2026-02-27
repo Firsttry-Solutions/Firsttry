@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CI/CD Evidence | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="../trust/security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="../trust/security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="../trust/vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="../trust/privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="../trust/subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="../trust/terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="../trust/threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="../trust/resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="../trust/data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="../trust/data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="../trust/architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="../trust/forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="../trust/customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="../trust/claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="../trust/uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="../trust/export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="../trust/ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="../trust/serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="../trust/security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="./sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="./incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="./support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="./bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="./secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="ci/cd evidence">
+          <a href="./ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="./access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="./change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="./rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="./logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="./secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Operations</span> <span>/</span> <span class="bc-current">CI/CD Evidence</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual (updated when CI/CD pipeline changes)</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-OPS-006</code></span></span></div>
+          <h1>CI/CD Evidence</h1>
+<hr>
+<h2 id="1-ci-cd-pipeline-overview">1. CI/CD Pipeline Overview<a href="#1-ci-cd-pipeline-overview" class="anchor-link" aria-label="Link to section: 1. CI/CD Pipeline Overview">&#182;</a></h2>
+<p>FirstTry uses GitHub Actions to automate:</p>
+<ul>
+<li>Linting and type checking</li>
+<li>Dependency vulnerability scanning</li>
+<li>Enterprise documentation validation</li>
+<li>Evidence artifact generation</li>
+<li>Release tagging</li>
+</ul>
+<hr>
+<h2 id="2-tools-and-commands-in-evidence-bundle">2. Tools and Commands in Evidence Bundle<a href="#2-tools-and-commands-in-evidence-bundle" class="anchor-link" aria-label="Link to section: 2. Tools and Commands in Evidence Bundle">&#182;</a></h2>
+<p>All commands executed during evidence generation:</p>
+<h3 id="linting">Linting<a href="#linting" class="anchor-link" aria-label="Link to section: Linting">&#182;</a></h3>
+<pre><code class="language-bash">forge lint --strict
+</code></pre>
+<ul>
+<li>Validates Forge manifest.yml</li>
+<li>Checks for API usage consistency</li>
+<li>Fails on malformed configuration</li>
+</ul>
+<h3 id="dependency-audit">Dependency Audit<a href="#dependency-audit" class="anchor-link" aria-label="Link to section: Dependency Audit">&#182;</a></h3>
+<pre><code class="language-bash">npm audit --audit-level=high
+</code></pre>
+<ul>
+<li>Scans dependencies for known CVEs</li>
+<li>Fails if high-severity vulnerability detected</li>
+<li>Output: npm_audit_high.txt</li>
+</ul>
+<h3 id="dependency-tree">Dependency Tree<a href="#dependency-tree" class="anchor-link" aria-label="Link to section: Dependency Tree">&#182;</a></h3>
+<pre><code class="language-bash">npm ls --json
+</code></pre>
+<ul>
+<li>Lists all installed dependencies</li>
+<li>Output: dependency_tree.json</li>
+<li>Used for SBOM generation and audit trail</li>
+</ul>
+<h3 id="sbom-generation-cyclonedx">SBOM Generation (CycloneDX)<a href="#sbom-generation-cyclonedx" class="anchor-link" aria-label="Link to section: SBOM Generation (CycloneDX)">&#182;</a></h3>
+<pre><code class="language-bash">npx @cyclonedx/bom -o docs/evidence/{date}_release/cyclonedx_sbom.json
+</code></pre>
+<ul>
+<li>Generates Software Bill of Materials</li>
+<li>Format: CycloneDX XML/JSON (industry standard)</li>
+<li>Used for supply chain transparency</li>
+<li>If fails and FT_ALLOW_FALLBACK_SBOM=1: falls back to npm ls --json</li>
+</ul>
+<h3 id="vulnerability-scanning">Vulnerability Scanning<a href="#vulnerability-scanning" class="anchor-link" aria-label="Link to section: Vulnerability Scanning">&#182;</a></h3>
+<pre><code class="language-bash">trivy fs .
+</code></pre>
+<ul>
+<li>Filesystem/code scanning</li>
+<li>Detects secrets, misconfigurations, vulnerabilities</li>
+<li>Output: trivy_scan.txt</li>
+<li>Fails if critical issues detected</li>
+</ul>
+<h3 id="resolver-scan-mutation-detection">Resolver Scan (Mutation Detection)<a href="#resolver-scan-mutation-detection" class="anchor-link" aria-label="Link to section: Resolver Scan (Mutation Detection)">&#182;</a></h3>
+<p>Custom script detects:</p>
+<ul>
+<li>All fetch(), axios, node-fetch calls</li>
+<li>All POST/PUT/DELETE usage</li>
+<li>Output: resolver_scan.txt</li>
+</ul>
+<p><strong>Commands</strong>:</p>
+<pre><code class="language-bash">grep -rn &quot;POST\|PUT\|DELETE&quot; src/
+grep -rn &quot;fetch(\|axios\|node-fetch&quot; src/
+</code></pre>
+<hr>
+<h2 id="3-evidence-artifacts-generated">3. Evidence Artifacts Generated<a href="#3-evidence-artifacts-generated" class="anchor-link" aria-label="Link to section: 3. Evidence Artifacts Generated">&#182;</a></h2>
+<p>Location: <code>docs/evidence/{YYYY-MM-DD}_release/</code></p>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>forge_lint_strict.txt</td>
+<td>forge lint --strict</td>
+<td>Manifest validation</td>
+</tr>
+<tr>
+<td>npm_audit_high.txt</td>
+<td>npm audit --audit-level=high</td>
+<td>Dependency vulnerabilities</td>
+</tr>
+<tr>
+<td>dependency_tree.json</td>
+<td>npm ls --json</td>
+<td>Dependency inventory</td>
+</tr>
+<tr>
+<td>cyclonedx_sbom.json</td>
+<td>npx @cyclonedx/bom</td>
+<td>Software Bill of Materials</td>
+</tr>
+<tr>
+<td>fallback_sbom_dependency_tree.json</td>
+<td>npm ls --json (if CycloneDX fails)</td>
+<td>SBOM fallback (if allowed)</td>
+</tr>
+<tr>
+<td>sbom_status.txt</td>
+<td>echo &quot;SBOM=FALLBACK_DEP_TREE&quot;</td>
+<td>Fallback indicator</td>
+</tr>
+<tr>
+<td>trivy_scan.txt</td>
+<td>trivy fs .</td>
+<td>Code/filesystem scanning</td>
+</tr>
+<tr>
+<td>manifest_scopes_snapshot.txt</td>
+<td>grep -A N &quot;scopes:&quot; manifest.yml</td>
+<td>Scope snapshot</td>
+</tr>
+<tr>
+<td>resolver_scan.txt</td>
+<td>Custom mutation detection</td>
+<td>POST/PUT/DELETE detection</td>
+</tr>
+<tr>
+<td>package-lock.sha256</td>
+<td>sha256sum package-lock.json</td>
+<td>Dependency lock hash</td>
+</tr>
+<tr>
+<td>manifest.sha256</td>
+<td>sha256sum manifest.yml</td>
+<td>Manifest hash</td>
+</tr>
+<tr>
+<td>evidence_hashes.txt</td>
+<td>sha256sum *</td>
+<td>Hash manifest of all evidence</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-sbom-fallback-policy">4. SBOM Fallback Policy<a href="#4-sbom-fallback-policy" class="anchor-link" aria-label="Link to section: 4. SBOM Fallback Policy">&#182;</a></h2>
+<p><strong>Default behavior</strong>: Requires CycloneDX SBOM</p>
+<pre><code class="language-bash">npx @cyclonedx/bom -o docs/evidence/{date}_release/cyclonedx_sbom.json
+</code></pre>
+<p><strong>If CycloneDX fails</strong>:</p>
+<ul>
+<li>Check environment variable: <code>FT_ALLOW_FALLBACK_SBOM</code></li>
+<li>If not set or <code>FT_ALLOW_FALLBACK_SBOM=0</code>:<ul>
+<li>Print error: &quot;ERROR: CycloneDX SBOM generation failed. Set FT_ALLOW_FALLBACK_SBOM=1 to allow fallback...&quot;</li>
+<li>Exit code 2 (fail-closed)</li>
+</ul>
+</li>
+<li>If <code>FT_ALLOW_FALLBACK_SBOM=1</code>:<ul>
+<li>Generate fallback from <code>npm ls --json</code></li>
+<li>Save as: <code>docs/evidence/{date}_release/fallback_sbom_dependency_tree.json</code></li>
+<li>Write marker file: <code>docs/evidence/{date}_release/sbom_status.txt</code> with content: <code>SBOM=FALLBACK_DEP_TREE</code></li>
+<li>Continue (allow build to proceed)</li>
+</ul>
+</li>
+</ul>
+<p><strong>Caveat</strong>: Fallback SBOM is less granular than CycloneDX; not recommended for production unless necessary.</p>
+<hr>
+<h2 id="5-failure-conditions">5. Failure Conditions<a href="#5-failure-conditions" class="anchor-link" aria-label="Link to section: 5. Failure Conditions">&#182;</a></h2>
+<p>CI/CD build fails (exit code ≠ 0) if:</p>
+<ul>
+<li>✅ forge lint --strict reports errors</li>
+<li>✅ npm audit detects high-severity vulnerability</li>
+<li>✅ trivy fs detects critical issue</li>
+<li>✅ resolver_scan.txt contains POST/PUT/DELETE in production code</li>
+<li>✅ manifest_scopes_snapshot.txt cannot be generated</li>
+<li>✅ CycloneDX fails AND FT_ALLOW_FALLBACK_SBOM != 1</li>
+<li>✅ Evidence hashes cannot be computed</li>
+<li>✅ Package-lock or manifest hash doesn&#39;t match expected baseline</li>
+</ul>
+<p><strong>No soft failures</strong>: All errors are hard failures (exit non-zero).</p>
+<hr>
+<h2 id="6-github-actions-workflow">6. GitHub Actions Workflow<a href="#6-github-actions-workflow" class="anchor-link" aria-label="Link to section: 6. GitHub Actions Workflow">&#182;</a></h2>
+<p><strong>File</strong>: <code>.github/workflows/docs.yml</code></p>
+<p><strong>Triggers</strong>: </p>
+<ul>
+<li>Push with git tag matching <code>v*</code> (e.g., v0.4.2)</li>
+<li>Manual trigger (if needed)</li>
+</ul>
+<p><strong>Steps</strong>:</p>
+<ol>
+<li>Checkout code</li>
+<li>Setup Node.js v20</li>
+<li>npm ci (clean install)</li>
+<li>bash tools/check_tooling_prereqs.sh (verify node, npm, forge, trivy)</li>
+<li>node tools/md_link_check.mjs (check doc links)</li>
+<li>bash tools/enterprise_docs_gate.sh (validate all controls)</li>
+<li>Status: Pass/Fail reported in workflow UI</li>
+</ol>
+<p><strong>Node version</strong>: Pinned to v20 (exact requirement)</p>
+<hr>
+<h2 id="7-manual-evidence-generation">7. Manual Evidence Generation<a href="#7-manual-evidence-generation" class="anchor-link" aria-label="Link to section: 7. Manual Evidence Generation">&#182;</a></h2>
+<p>For local testing or offline generation:</p>
+<pre><code class="language-bash"># Generate evidence for today
+bash tools/generate_enterprise_evidence.sh
+
+# OR specify date
+bash tools/generate_enterprise_evidence.sh 2026-02-26
+
+# Check output
+ls -la docs/evidence/2026-02-26_release/
+</code></pre>
+<p><strong>Requirements</strong>:</p>
+<ul>
+<li>bash 4+ (macOS/Linux)</li>
+<li>node 20, npm, forge CLI, trivy installed</li>
+<li>Current directory = app root</li>
+</ul>
+<hr>
+<h2 id="8-evidence-retention">8. Evidence Retention<a href="#8-evidence-retention" class="anchor-link" aria-label="Link to section: 8. Evidence Retention">&#182;</a></h2>
+<p><strong>Retention period</strong>: Minimum 12 months</p>
+<p><strong>Storage</strong>:</p>
+<ul>
+<li>Committed to git (docs/evidence/)</li>
+<li>Immutable history via git</li>
+<li>Can be recovered: <code>git log --all -- docs/evidence/</code></li>
+</ul>
+<p><strong>Deletion</strong>: </p>
+<ul>
+<li>After 12 months, old evidence bundles may be archived</li>
+<li>Requires change management approval (CHANGE_MANAGEMENT_POLICY.md)</li>
+<li>Document deletion in CHANGELOG.md</li>
+</ul>
+<hr>
+<h2 id="9-evidence-transparency">9. Evidence Transparency<a href="#9-evidence-transparency" class="anchor-link" aria-label="Link to section: 9. Evidence Transparency">&#182;</a></h2>
+<p>All evidence artifacts are:</p>
+<ul>
+<li>✅ Deterministic (same input → same output)</li>
+<li>✅ Testable (reproduce locally with same tools)</li>
+<li>✅ Human-readable (JSON, plaintext, no binaries)</li>
+<li>✅ Committed to git (version-controlled)</li>
+<li>✅ Immutable (content hash anchors in baselines)</li>
+</ul>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="../../tools/generate_enterprise_evidence.sh">tools/generate_enterprise_evidence.sh</a>: Script source</li>
+<li><a href="../../tools/enterprise_docs_gate.sh">tools/enterprise_docs_gate.sh</a>: Gate validation script</li>
+<li><a href="CHANGE_MANAGEMENT_POLICY.md">CHANGE_MANAGEMENT_POLICY.md</a>: Evidence regeneration triggers</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-OPS-006</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual (updated when CI/CD pipeline changes)</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/operations/CI_CD_EVIDENCE.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

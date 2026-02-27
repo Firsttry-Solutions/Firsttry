@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serialization Schema | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="./security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="./security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="./vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="./privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="./subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="./terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="./threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="./resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="./data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="./data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="./architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="./forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="./customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="./claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="./uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="./export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="./ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="serialization schema">
+          <a href="./serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="./security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="../operations/sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="../operations/incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="../operations/support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="../operations/bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="../operations/secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="../operations/ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="../operations/access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="../operations/change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="../operations/rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="../operations/logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="../operations/secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Trust Center</span> <span>/</span> <span class="bc-current">Serialization Schema</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-TRUST-018</code></span></span></div>
+          <h1>Serialization Schema</h1>
+<hr>
+<h2 id="overview">Overview<a href="#overview" class="anchor-link" aria-label="Link to section: Overview">&#182;</a></h2>
+<p>This document specifies how FirstTry serializes objects to JSON for deterministic hashing and reproducible exports.</p>
+<hr>
+<h2 id="canonical-json-encoding">Canonical JSON Encoding<a href="#canonical-json-encoding" class="anchor-link" aria-label="Link to section: Canonical JSON Encoding">&#182;</a></h2>
+<p>All JSON serialization follows these strict rules to ensure determinism:</p>
+<h3 id="1-encoding">1. Encoding<a href="#1-encoding" class="anchor-link" aria-label="Link to section: 1. Encoding">&#182;</a></h3>
+<ul>
+<li><strong>Character set</strong>: UTF-8</li>
+<li><strong>Unicode escaping</strong>: Non-ASCII characters MUST be escaped as \uXXXX (uppercase hex)</li>
+<li><strong>String quoting</strong>: Double quotes only; no single quotes</li>
+<li><strong>Whitespace</strong>: None (except within quoted strings)</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-json">{&quot;name&quot;:&quot;Jörg Müller&quot;}  ❌ Invalid (Unicode unescaped)
+{&quot;name&quot;:&quot;J\u00f6rg M\u00fcller&quot;}  ✅ Valid (Unicode escaped)
+</code></pre>
+<h3 id="2-ordering">2. Ordering<a href="#2-ordering" class="anchor-link" aria-label="Link to section: 2. Ordering">&#182;</a></h3>
+<ul>
+<li><strong>Fields</strong>: Sorted alphabetically by key name (ascending, case-sensitive)</li>
+<li><strong>Arrays</strong>: Preserve input order unless schema specifies sorting</li>
+<li><strong>Objects</strong>: Apply sorting recursively</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-json">✅ {&quot;a&quot;:&quot;x&quot;,&quot;b&quot;:&quot;y&quot;,&quot;c&quot;:&quot;z&quot;}
+❌ {&quot;b&quot;:&quot;y&quot;,&quot;a&quot;:&quot;x&quot;,&quot;c&quot;:&quot;z&quot;}  (not sorted)
+</code></pre>
+<h3 id="3-number-representation">3. Number Representation<a href="#3-number-representation" class="anchor-link" aria-label="Link to section: 3. Number Representation">&#182;</a></h3>
+<ul>
+<li><strong>Integers</strong>: No decimal point (e.g., 42, not 42.0)</li>
+<li><strong>Floats</strong>: Decimal point with up to 14 significant digits</li>
+<li><strong>Precision</strong>: No exponential notation unless value &lt; 0.0001 or &gt; 10^14</li>
+<li><strong>NaN/Infinity</strong>: Not permitted; use explicit string or null</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-json">{&quot;count&quot;:42,&quot;ratio&quot;:0.5,&quot;small&quot;:0.00001,&quot;large&quot;:123456789012345}
+</code></pre>
+<h3 id="4-null-handling">4. Null Handling<a href="#4-null-handling" class="anchor-link" aria-label="Link to section: 4. Null Handling">&#182;</a></h3>
+<ul>
+<li><strong>Explicit null</strong>: Include only if schema requires it</li>
+<li><strong>Omit or null</strong>: Prefer omission for brevity; null ONLY for explicit empty values</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-json">✅ {&quot;name&quot;:&quot;Alice&quot;,&quot;email&quot;:null,&quot;phone&quot;:null}  (explicit nulls for fields present but empty)
+✅ {&quot;name&quot;:&quot;Alice&quot;}  (omit absent fields)
+❌ {&quot;name&quot;:&quot;Alice&quot;,&quot;email&quot;:null,&quot;phone&quot;:&quot;&quot;}  (inconsistent: null vs empty string)
+</code></pre>
+<h3 id="5-boolean-representation">5. Boolean Representation<a href="#5-boolean-representation" class="anchor-link" aria-label="Link to section: 5. Boolean Representation">&#182;</a></h3>
+<ul>
+<li>Lowercase: <code>true</code> or <code>false</code></li>
+<li>Never: <code>True</code>, <code>False</code>, <code>TRUE</code>, <code>FALSE</code>, <code>1</code>, <code>0</code></li>
+</ul>
+<hr>
+<h2 id="first-class-schemas">First-Class Schemas<a href="#first-class-schemas" class="anchor-link" aria-label="Link to section: First-Class Schemas">&#182;</a></h2>
+<h3 id="snapshot-schema">Snapshot Schema<a href="#snapshot-schema" class="anchor-link" aria-label="Link to section: Snapshot Schema">&#182;</a></h3>
+<pre><code>{
+  &quot;snapshot_id&quot;: integer,
+  &quot;timestamp&quot;: ISO8601_UTC_string,
+  &quot;projects&quot;: [Project],
+  &quot;permissions&quot;: [Permission]
+}
+</code></pre>
+<h3 id="project-schema">Project Schema<a href="#project-schema" class="anchor-link" aria-label="Link to section: Project Schema">&#182;</a></h3>
+<pre><code>{
+  &quot;id&quot;: string,
+  &quot;key&quot;: string,
+  &quot;name&quot;: string,
+  &quot;lead&quot;: string (user ID)
+}
+</code></pre>
+<h3 id="permission-schema">Permission Schema<a href="#permission-schema" class="anchor-link" aria-label="Link to section: Permission Schema">&#182;</a></h3>
+<pre><code>{
+  &quot;permission&quot;: string (permission name),
+  &quot;resource&quot;: string (project key or issue key),
+  &quot;subject&quot;: string (user ID or group name)
+}
+</code></pre>
+<h3 id="ledger-entry-schema">Ledger Entry Schema<a href="#ledger-entry-schema" class="anchor-link" aria-label="Link to section: Ledger Entry Schema">&#182;</a></h3>
+<pre><code>{
+  &quot;action&quot;: string,
+  &quot;hash&quot;: string (SHA256 hex, 64 chars),
+  &quot;nonce&quot;: string (base64),
+  &quot;timestamp&quot;: ISO8601_UTC_string
+}
+</code></pre>
+<h3 id="manifest-schema-in-export">Manifest Schema (in Export)<a href="#manifest-schema-in-export" class="anchor-link" aria-label="Link to section: Manifest Schema (in Export)">&#182;</a></h3>
+<pre><code>{
+  &quot;app_version&quot;: string,
+  &quot;audit_record_count&quot;: integer,
+  &quot;audit_root_hash&quot;: string,
+  &quot;build_git_sha&quot;: string,
+  &quot;build_ui_bundle_hash&quot;: string,
+  &quot;customer_jira_site&quot;: string,
+  &quot;deterministic_zip_hash&quot;: string,
+  &quot;export_scope&quot;: string,
+  &quot;export_timestamp&quot;: ISO8601_UTC_string,
+  &quot;export_version&quot;: string,
+  &quot;integrity_status&quot;: string,
+  &quot;snapshot_count&quot;: integer
+}
+</code></pre>
+<hr>
+<h2 id="type-primitives">Type Primitives<a href="#type-primitives" class="anchor-link" aria-label="Link to section: Type Primitives">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>ISO8601_UTC_string</strong></td>
+<td>Timestamp in UTC ISO format</td>
+<td>&quot;2026-02-26T11:00:00Z&quot; or &quot;2026-02-26T11:00:00.123Z&quot;</td>
+</tr>
+<tr>
+<td><strong>string</strong></td>
+<td>UTF-8 text, Unicode escaped, double-quoted</td>
+<td>&quot;hello&quot;</td>
+</tr>
+<tr>
+<td><strong>integer</strong></td>
+<td>Whole number, no decimal point</td>
+<td>42</td>
+</tr>
+<tr>
+<td><strong>float</strong></td>
+<td>Decimal number</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td><strong>boolean</strong></td>
+<td>true or false (lowercase)</td>
+<td>true</td>
+</tr>
+<tr>
+<td><strong>hex_string</strong></td>
+<td>Hexadecimal string (lowercase)</td>
+<td>&quot;abc123def456&quot;</td>
+</tr>
+<tr>
+<td><strong>base64_string</strong></td>
+<td>Base64-encoded bytes (RFC 4648)</td>
+<td>&quot;mK3j2xzA+b4Z8y=&quot;</td>
+</tr>
+<tr>
+<td><strong>array</strong></td>
+<td>JSON array, preserve order</td>
+<td>[item1, item2]</td>
+</tr>
+<tr>
+<td><strong>object</strong></td>
+<td>JSON object, fields sorted</td>
+<td>{&quot;a&quot;:&quot;x&quot;,&quot;b&quot;:&quot;y&quot;}</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="timestamp-specifics">Timestamp Specifics<a href="#timestamp-specifics" class="anchor-link" aria-label="Link to section: Timestamp Specifics">&#182;</a></h2>
+<h3 id="utc-mandate">UTC Mandate<a href="#utc-mandate" class="anchor-link" aria-label="Link to section: UTC Mandate">&#182;</a></h3>
+<ul>
+<li><strong>Timezone</strong>: Always Z suffix (UTC)</li>
+<li><strong>Format</strong>: YYYY-MM-DDTHH:MM:SS[.mmm]Z</li>
+<li><strong>Milliseconds</strong>: Optional; include if available from runtime</li>
+<li><strong>Leap seconds</strong>: Not supported; use UTC time</li>
+</ul>
+<p><strong>Valid</strong>:</p>
+<ul>
+<li><code>&quot;2026-02-26T11:00:00Z&quot;</code></li>
+<li><code>&quot;2026-02-26T11:00:00.123Z&quot;</code></li>
+</ul>
+<p><strong>Invalid</strong>:</p>
+<ul>
+<li><code>&quot;2026-02-26T11:00:00+00:00&quot;</code> (use Z, not +00:00)</li>
+<li><code>&quot;2026-02-26 11:00:00&quot;</code> (use T separator and Z suffix)</li>
+</ul>
+<h3 id="monotonicity-in-ledger">Monotonicity in Ledger<a href="#monotonicity-in-ledger" class="anchor-link" aria-label="Link to section: Monotonicity in Ledger">&#182;</a></h3>
+<p>Each successive timestamp in an audit ledger MUST be &gt;= the previous timestamp.</p>
+<pre><code class="language-json">{&quot;timestamp&quot;:&quot;2026-02-26T11:00:00Z&quot;, ...}   Entry 1
+{&quot;timestamp&quot;:&quot;2026-02-26T11:00:01Z&quot;, ...}   Entry 2  ✅ Later
+{&quot;timestamp&quot;:&quot;2026-02-26T11:00:01Z&quot;, ...}   Entry 3  ✅ Same (OK)
+{&quot;timestamp&quot;:&quot;2026-02-26T11:00:00Z&quot;, ...}   Entry 4  ❌ Earlier (FAIL)
+</code></pre>
+<hr>
+<h2 id="hash-representation">Hash Representation<a href="#hash-representation" class="anchor-link" aria-label="Link to section: Hash Representation">&#182;</a></h2>
+<h3 id="sha256-hash">SHA256 Hash<a href="#sha256-hash" class="anchor-link" aria-label="Link to section: SHA256 Hash">&#182;</a></h3>
+<ul>
+<li><strong>Length</strong>: 64 hexadecimal characters</li>
+<li><strong>Case</strong>: Lowercase</li>
+<li><strong>Format</strong>: Unquoted in binary context; quoted in JSON</li>
+</ul>
+<p><strong>Valid</strong>:</p>
+<pre><code class="language-json">{&quot;hash&quot;: &quot;7a3b9c2d1e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9&quot;}
+</code></pre>
+<hr>
+<h2 id="determinism-verification">Determinism Verification<a href="#determinism-verification" class="anchor-link" aria-label="Link to section: Determinism Verification">&#182;</a></h2>
+<p>To verify JSON encoding is deterministic:</p>
+<pre><code class="language-bash"># Step 1: Create object twice in code
+obj = {&quot;z&quot;:&quot;last&quot;, &quot;a&quot;:&quot;first&quot;, &quot;m&quot;:&quot;middle&quot;}
+
+# Step 2: Serialize both canonically
+json1 = canonicalize(obj)   # {&quot;a&quot;:&quot;first&quot;,&quot;m&quot;:&quot;middle&quot;,&quot;z&quot;:&quot;last&quot;}
+json2 = canonicalize(obj)   # {&quot;a&quot;:&quot;first&quot;,&quot;m&quot;:&quot;middle&quot;,&quot;z&quot;:&quot;last&quot;}
+
+# Step 3: Hash both
+hash1 = sha256(json1)
+hash2 = sha256(json2)
+
+# Step 4: Verify hashes match
+assert hash1 == hash2  # Both are same
+</code></pre>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="LEDGER_CRYPTO_SPEC.md">LEDGER_CRYPTO_SPEC.md</a>: Ledger hash chain (uses this schema)</li>
+<li><a href="EXPORT_SPEC.md">EXPORT_SPEC.md</a>: Export archive (uses this schema)</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-TRUST-018</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/trust/SERIALIZATION_SCHEMA.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

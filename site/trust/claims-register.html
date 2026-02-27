@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claims Register (Truth Audit) | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="./security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="./security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="./vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="./privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="./subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="./terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="./threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="./resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="./data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="./data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="./architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="./forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="./customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="claims register (truth audit)">
+          <a href="./claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="./uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="./export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="./ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="./serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="./security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="../operations/sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="../operations/incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="../operations/support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="../operations/bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="../operations/secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="../operations/ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="../operations/access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="../operations/change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="../operations/rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="../operations/logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="../operations/secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Trust Center</span> <span>/</span> <span class="bc-current">Claims Register (Truth Audit)</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Security Team</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Quarterly (Q2 2026)</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-TRUST-014</code></span></span></div>
+          <h1>Claims Register - Truth Audit System</h1>
+<hr>
+<h2 id="overview">Overview<a href="#overview" class="anchor-link" aria-label="Link to section: Overview">&#182;</a></h2>
+<p>The Claims Register is a strict audit trail mapping every material security, privacy, and operational claim made in FirstTry documentation to:</p>
+<ol>
+<li><strong>Proof Type</strong>: EVIDENCE (file in repo) or ATLASSIAN (Atlassian docs reference)</li>
+<li><strong>Proof Pointer</strong>: Exact file path or URL where proof exists</li>
+<li><strong>Validation Rule</strong>: How the claim is verified (deterministic, fail-closed)</li>
+<li><strong>Owner</strong>: Team responsible for claim accuracy</li>
+</ol>
+<p>All claims not in this register that use absolute language (&quot;no&quot;, &quot;guaranteed&quot;, &quot;always&quot;, &quot;never&quot;, &quot;certified&quot;, etc.) will fail automated Truth Audit validation.</p>
+<hr>
+<h2 id="claims-register-table">Claims Register Table<a href="#claims-register-table" class="anchor-link" aria-label="Link to section: Claims Register Table">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ClaimID</th>
+<th>ClaimText</th>
+<th>Scope</th>
+<th>ProofType</th>
+<th>ProofPointer</th>
+<th>ValidationRule</th>
+<th>Owner</th>
+<th>LastReviewed</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>C001</td>
+<td>All API calls are read-only (0 POST/PUT/DELETE)</td>
+<td>Mutations</td>
+<td>EVIDENCE</td>
+<td>docs/trust/RESOLVER_INVENTORY.md</td>
+<td>Grep resolver_scan.txt for POST/PUT/DELETE; fail if any found</td>
+<td>Security</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C002</td>
+<td>No external network egress (zero outbound HTTPS)</td>
+<td>Networking</td>
+<td>EVIDENCE</td>
+<td>docs/trust/SECURITY_OVERVIEW.md</td>
+<td>Enterprise audit: zero_egress_summary.txt must show 0 external URLs</td>
+<td>Security</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C003</td>
+<td>Data deletion workflow SLA is 30 days (Forge platform dependent)</td>
+<td>Retention</td>
+<td>EVIDENCE</td>
+<td>docs/trust/UNINSTALL_DELETION.md</td>
+<td>Explicit statement: &quot;30-day SLA applies to Atlassian Forge Storage; FirstTry has no independent hosting&quot;</td>
+<td>Operations</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C004</td>
+<td>Personal data is minimized but Jira may contain PII</td>
+<td>PII Handling</td>
+<td>EVIDENCE</td>
+<td>docs/trust/DATA_CLASSIFICATION_AND_PII.md</td>
+<td>Use exact language: &quot;We minimize personal data; Jira may contain personal data; we avoid issue content storage; what is stored is schema-defined&quot;</td>
+<td>Privacy</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C005</td>
+<td>FirstTry has no independent subprocessors</td>
+<td>Subprocessors</td>
+<td>ATLASSIAN</td>
+<td><a href="https://developer.atlassian.com/platform/forge/policies-and-limits/#forge-app-policies">https://developer.atlassian.com/platform/forge/policies-and-limits/#forge-app-policies</a></td>
+<td>Use exact language: &quot;FirstTry has no independent subprocessors; processing occurs on Atlassian Forge platform&quot;</td>
+<td>Operations</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C006</td>
+<td>All data persists in Atlassian Forge Storage (AES-256 at rest)</td>
+<td>Encryption</td>
+<td>ATLASSIAN</td>
+<td><a href="https://developer.atlassian.com/platform/forge/storage/">https://developer.atlassian.com/platform/forge/storage/</a></td>
+<td>Reference Forge Storage as platform-provided encryption; do not claim FirstTry owns encryption</td>
+<td>Operations</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C007</td>
+<td>Threat Model covers 18 threat scenarios with STRIDE taxonomy</td>
+<td>Security Design</td>
+<td>EVIDENCE</td>
+<td>docs/trust/THREAT_MODEL.md</td>
+<td>File must contain STRIDE table with exact 4 columns: Threat | STRIDE | Mitigation | Residual Risk</td>
+<td>Security</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C008</td>
+<td>Incident Response SLA: 4h-24h per severity tier (best-effort only)</td>
+<td>Operations</td>
+<td>EVIDENCE</td>
+<td>docs/operations/INCIDENT_RESPONSE_PLAN.md</td>
+<td>Exact table format and CRITICAL caveat: &quot;best-effort and subject to Forge availability&quot;</td>
+<td>Operations</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C009</td>
+<td>NO uptime SLA guaranteed; only support response times</td>
+<td>Service Level</td>
+<td>EVIDENCE</td>
+<td>docs/operations/SLA.md</td>
+<td>Must include sections: &quot;What We DONT Guarantee&quot; (no uptime %) and &quot;NO SLA CREDITS&quot; rationale</td>
+<td>Operations</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C010</td>
+<td>Scope enforcement via manifest.yml allowlist with CI/CD gate</td>
+<td>Scope Control</td>
+<td>EVIDENCE</td>
+<td>docs/operations/CI_CD_EVIDENCE.md</td>
+<td>Must document forge lint --strict and scope guard in CI pipeline</td>
+<td>Engineering</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C011</td>
+<td>Build determinism enforced: identical inputs = identical outputs</td>
+<td>Build Integrity</td>
+<td>EVIDENCE</td>
+<td>docs/evidence/RETENTION_POLICY.md</td>
+<td>Document SHA256 baseline anchors and deterministic build process</td>
+<td>Engineering</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C012</td>
+<td>Read-only verification: RESOLVER_INVENTORY.md shows 0 mutations</td>
+<td>API Safety</td>
+<td>EVIDENCE</td>
+<td>docs/trust/RESOLVER_INVENTORY.md</td>
+<td>File must list all API endpoints; grep shows GET-only, 0 POST/PUT/DELETE</td>
+<td>Security</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C013</td>
+<td>Platform dependency: Forge handles tenant isolation, data residency, uptime</td>
+<td>Platform Dependency</td>
+<td>ATLASSIAN</td>
+<td><a href="https://developer.atlassian.com/platform/forge/security/">https://developer.atlassian.com/platform/forge/security/</a></td>
+<td>Must explicitly state: &quot;Tenant isolation, encryption, uptime SLA provided by Atlassian Forge&quot;</td>
+<td>Operations</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C014</td>
+<td>Customer responsibility: RBAC hygiene, export cadence, uninstall</td>
+<td>Shared Responsibility</td>
+<td>EVIDENCE</td>
+<td>docs/trust/CUSTOMER_RESPONSIBILITIES.md</td>
+<td>Document 12 responsibility areas; recommend monthly export cadence</td>
+<td>Operations</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C015</td>
+<td>Control mapping to SOC2, ISO27k, CAIQ without certification claim</td>
+<td>Compliance</td>
+<td>EVIDENCE</td>
+<td>docs/procurement/CONTROL_MAPPING_MATRIX.md</td>
+<td>RED DISCLAIMER: &quot;Mapped only; no certification claimed&quot; on every page</td>
+<td>Compliance</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C016</td>
+<td>We are not certified - not SOC2 compliant, not cloud fortified</td>
+<td>Compliance</td>
+<td>EVIDENCE</td>
+<td>docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md</td>
+<td>Explicit text: &quot;NOT certified, NOT SOC2 compliant, NOT cloud fortified&quot;</td>
+<td>Compliance</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C017</td>
+<td>Uninstall: Data retention governed by Forge storage (not automatically deleted)</td>
+<td>Retention</td>
+<td>EVIDENCE</td>
+<td>docs/trust/UNINSTALL_DELETION.md</td>
+<td>Explain that deletion is Forge-dependent, not automatic</td>
+<td>Operations</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>C018</td>
+<td>No PII claim is false - Jira and FirstTry may contain personal data</td>
+<td>PII</td>
+<td>EVIDENCE</td>
+<td>docs/trust/DATA_CLASSIFICATION_AND_PII.md</td>
+<td>State that no pii claim is inaccurate; we do store some personal data</td>
+<td>Privacy</td>
+<td>2026-02-26</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="banned-absolute-phrases">Banned Absolute Phrases<a href="#banned-absolute-phrases" class="anchor-link" aria-label="Link to section: Banned Absolute Phrases">&#182;</a></h2>
+<p>The following phrases are forbidden unless the exact claim is registered above:</p>
+<ul>
+<li>&quot;<strong>no pii</strong>&quot; (use: &quot;minimize PII; Jira may contain PII&quot;)</li>
+<li>&quot;<strong>automatically deleted</strong>&quot; (use: &quot;deletion workflow; 30-day SLA; Forge platform dependent&quot;)</li>
+<li>&quot;<strong>no subprocessors</strong>&quot; (use: &quot;no independent subprocessors; Atlassian Forge is the processor&quot;)</li>
+<li>&quot;<strong>guaranteed</strong>&quot; (use: &quot;best-effort&quot;, &quot;SLA&quot;, &quot;support response times&quot;)</li>
+<li>&quot;<strong>certified</strong>&quot; (use: &quot;control mapping&quot;, &quot;claims register&quot;, &quot;evidence documentation&quot;)</li>
+<li>&quot;<strong>compliant</strong>&quot; (use: &quot;aligned with&quot;, &quot;control mapping&quot;)</li>
+<li>&quot;<strong>cloud fortified</strong>&quot; (banned term; do not use)</li>
+</ul>
+<p>Any banned phrase found in <code>docs/**/*.md</code> must correspond to a registered claim in this table, or Truth Audit will fail.</p>
+<hr>
+<h2 id="truth-audit-procedure">Truth Audit Procedure<a href="#truth-audit-procedure" class="anchor-link" aria-label="Link to section: Truth Audit Procedure">&#182;</a></h2>
+<ol>
+<li><strong>Parse</strong>: truth_claims_gate.mjs reads this table</li>
+<li><strong>Validate EVIDENCE proofs</strong>: File must exist at ProofPointer and contain keyword validations</li>
+<li><strong>Validate ATLASSIAN proofs</strong>: ProofPointer must be <a href="https://developer.atlassian.com/">https://developer.atlassian.com/</a> URL</li>
+<li><strong>Scan docs</strong>: Search all <code>docs/**/*.md</code> for banned phrases</li>
+<li><strong>Cross-reference</strong>: Every banned phrase must map to a registered claim</li>
+<li><strong>Fail-closed</strong>: Non-zero exit if any error; detailed error messages logged</li>
+<li><strong>Deterministic</strong>: Same input always yields same output</li>
+</ol>
+<hr>
+<h2 id="proof-inventory">Proof Inventory<a href="#proof-inventory" class="anchor-link" aria-label="Link to section: Proof Inventory">&#182;</a></h2>
+<h3 id="evidence-proofs-must-exist-in-repo">EVIDENCE Proofs (Must Exist in Repo)<a href="#evidence-proofs-must-exist-in-repo" class="anchor-link" aria-label="Link to section: EVIDENCE Proofs (Must Exist in Repo)">&#182;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ProofPointer</th>
+<th>File Status</th>
+<th>Last Verified</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>docs/trust/SECURITY_OVERVIEW.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/trust/RESOLVER_INVENTORY.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/trust/THREAT_MODEL.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/trust/DATA_CLASSIFICATION_AND_PII.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/trust/UNINSTALL_DELETION.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/operations/INCIDENT_RESPONSE_PLAN.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/operations/SLA.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/operations/CI_CD_EVIDENCE.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/trust/CUSTOMER_RESPONSIBILITIES.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/procurement/CONTROL_MAPPING_MATRIX.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/evidence/RETENTION_POLICY.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>docs/procurement/ENTERPRISE_SECURITY_PACK_INDEX.md</td>
+<td>✅ Present</td>
+<td>2026-02-26</td>
+</tr>
+</tbody></table>
+<h3 id="atlassian-proofs-external-references">ATLASSIAN Proofs (External References)<a href="#atlassian-proofs-external-references" class="anchor-link" aria-label="Link to section: ATLASSIAN Proofs (External References)">&#182;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ProofPointer</th>
+<th>Status</th>
+<th>Last Checked</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://developer.atlassian.com/platform/forge/policies-and-limits/#forge-app-policies">https://developer.atlassian.com/platform/forge/policies-and-limits/#forge-app-policies</a></td>
+<td>✅ Valid</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td><a href="https://developer.atlassian.com/platform/forge/storage/">https://developer.atlassian.com/platform/forge/storage/</a></td>
+<td>✅ Valid</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td><a href="https://developer.atlassian.com/platform/forge/security/">https://developer.atlassian.com/platform/forge/security/</a></td>
+<td>✅ Valid</td>
+<td>2026-02-26</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="claim-review-schedule">Claim Review Schedule<a href="#claim-review-schedule" class="anchor-link" aria-label="Link to section: Claim Review Schedule">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Review Quarter</th>
+<th>Owner</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Q1 2026</td>
+<td>Security</td>
+<td>Initial audit (this file)</td>
+</tr>
+<tr>
+<td>Q2 2026 (due 2026-05-26)</td>
+<td>Security + Operations</td>
+<td>Scheduled</td>
+</tr>
+<tr>
+<td>Q3 2026</td>
+<td>Privacy + Compliance</td>
+<td>Scheduled</td>
+</tr>
+<tr>
+<td>Q4 2026</td>
+<td>Engineering</td>
+<td>Scheduled</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="version-history">Version History<a href="#version-history" class="anchor-link" aria-label="Link to section: Version History">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Changes</th>
+<th>Reviewed By</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1.0</td>
+<td>2026-02-26</td>
+<td>Initial Claims Register with 15 claims and banned phrases</td>
+<td>Security Team</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="amendment-procedure">Amendment Procedure<a href="#amendment-procedure" class="anchor-link" aria-label="Link to section: Amendment Procedure">&#182;</a></h2>
+<p>To add a new claim:</p>
+<ol>
+<li>Gather evidence (file path or Atlassian docs URL)</li>
+<li>Define ValidationRule (what determines if claim is true)</li>
+<li>Add row to Claims Register Table</li>
+<li>Run truth_claims_gate.mjs to validate</li>
+<li>Commit with message: &quot;Truth Audit: add claim CXxx - [description]&quot;</li>
+</ol>
+<p>To modify existing claim:</p>
+<ol>
+<li>Update ClaimText, ProofPointer, or ValidationRule</li>
+<li>Re-run truth_claims_gate.mjs</li>
+<li>Update LastReviewed with today&#39;s date</li>
+<li>Commit with message: &quot;Truth Audit: update claim CXxx - [reason]&quot;</li>
+</ol>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-TRUST-014</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Security Team</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Quarterly (Q2 2026)</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/trust/CLAIMS_REGISTER.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

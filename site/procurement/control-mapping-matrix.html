@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control Mapping Matrix | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="./enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="../trust/security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="../trust/security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="../trust/vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="../trust/privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="../trust/subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="../trust/terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="../trust/threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="../trust/resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="../trust/data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="../trust/data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="../trust/architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="../trust/forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="../trust/customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="../trust/claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="../trust/uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="../trust/export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="../trust/ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="../trust/serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="../trust/security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="../operations/sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="../operations/incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="../operations/support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="../operations/bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="../operations/secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="../operations/ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="../operations/access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="../operations/change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="../operations/rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="../operations/logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="../operations/secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="./enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="./security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="control mapping matrix">
+          <a href="./control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Procurement</span> <span>/</span> <span class="bc-current">Control Mapping Matrix</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-PROC-003</code></span></span></div>
+          <h1>Control Mapping Matrix</h1>
+<hr>
+<h2 id="critical-disclaimer">🔴 CRITICAL DISCLAIMER<a href="#critical-disclaimer" class="anchor-link" aria-label="Link to section: 🔴 CRITICAL DISCLAIMER">&#182;</a></h2>
+<p><strong>NO CERTIFICATIONS CLAIMED</strong>: FirstTry is NOT certified for SOC2, ISO27k, CAIQ, or any other framework. This mapping is <strong>informational only</strong> to help customers understand how FirstTry addresses common control frameworks.</p>
+<p>Do NOT use this mapping as proof of compliance with any standard. This is a <strong>self-assessment</strong> without third-party audit or certification.</p>
+<hr>
+<h2 id="soc2-trust-service-criteria-cc-mapping">SOC2 Trust Service Criteria (CC) Mapping<a href="#soc2-trust-service-criteria-cc-mapping" class="anchor-link" aria-label="Link to section: SOC2 Trust Service Criteria (CC) Mapping">&#182;</a></h2>
+<p>| CC ID | Control | FirstTry Implementation | Evidence |
+|-------|---------|------------------------|---------| | CC6.1 | Logical access controls | RBAC, MFA, branch protection | ACCESS_CONTROL_POLICY.md |
+| CC6.2 | Session management | Jira OAuth2 (Forge-provided) | FORGE_PLATFORM_DEPENDENCY.md |
+| CC7.1 | Identifies, evaluates, and manages compliance requirements | Roadmap, change management | CHANGE_MANAGEMENT_POLICY.md |
+| CC9.1 | Logical access restrictions | Code review required, no direct deploy | SECURE_SDLC_POLICY.md |
+| CC9.2 | Removal/deprovisioning of access | Offboarding via GitHub team removal | ACCESS_CONTROL_POLICY.md |
+| A1.1 | Prevents, detects, corrects unauthorized internal access | AppScan via npm audit, trivy | CI_CD_EVIDENCE.md |
+| A1.2 | Monitoring for software vulnerabilities | npm audit + trivy in CI/CD | CI_CD_EVIDENCE.md |
+| C1.1 | Encryption of data in transit | TLS 1.3 (Forge-provided) | FORGE_PLATFORM_DEPENDENCY.md |
+| C1.2 | Encryption of data at rest | Forge Storage AES-256 (Atlassian-managed) | FORGE_PLATFORM_DEPENDENCY.md |</p>
+<hr>
+<h2 id="iso-27001-annex-a-mapping">ISO 27001 Annex A Mapping<a href="#iso-27001-annex-a-mapping" class="anchor-link" aria-label="Link to section: ISO 27001 Annex A Mapping">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Section</th>
+<th>FirstTry Approach</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Access Control</strong></td>
+<td>A.6</td>
+<td>Least privilege, MFA, quarterly review</td>
+<td>ACCESS_CONTROL_POLICY.md, RBAC_MATRIX.md</td>
+</tr>
+<tr>
+<td><strong>Supplier Relationships</strong></td>
+<td>A.8</td>
+<td>Single Forge platform vendor managed by Atlassian</td>
+<td>SUBPROCESSORS.md, FORGE_PLATFORM_DEPENDENCY.md</td>
+</tr>
+<tr>
+<td><strong>Cryptography</strong></td>
+<td>A.10</td>
+<td>TLS 1.3, SHA256 ledger hashing, platform encryption</td>
+<td>LEDGER_CRYPTO_SPEC.md, FORGE_PLATFORM_DEPENDENCY.md</td>
+</tr>
+<tr>
+<td><strong>Data Security</strong></td>
+<td>A.10.7</td>
+<td>Immutable ledger, deterministic exports</td>
+<td>LEDGER_CRYPTO_SPEC.md, EXPORT_SPEC.md</td>
+</tr>
+<tr>
+<td><strong>Incident Management</strong></td>
+<td>A.16</td>
+<td>Severity classification, response SLA, escalation</td>
+<td>INCIDENT_RESPONSE_PLAN.md</td>
+</tr>
+<tr>
+<td><strong>Information Transfer</strong></td>
+<td>A.13.1</td>
+<td>OAuth2 API only (no external egress)</td>
+<td>SECURITY_OVERVIEW.md, RESOLVER_INVENTORY.md</td>
+</tr>
+<tr>
+<td><strong>Monitoring</strong></td>
+<td>A.12.4</td>
+<td>Winston logs, audit trail, Forge logs</td>
+<td>LOGGING_MONITORING.md</td>
+</tr>
+<tr>
+<td><strong>Discontinuation</strong></td>
+<td>A.15</td>
+<td>Data deletion on uninstall (30 days)</td>
+<td>UNINSTALL_DELETION.md</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="caiq-v4-mapping-cloud-security-alliance">CAIQ v4 Mapping (Cloud Security Alliance)<a href="#caiq-v4-mapping-cloud-security-alliance" class="anchor-link" aria-label="Link to section: CAIQ v4 Mapping (Cloud Security Alliance)">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>CAIQ Section</th>
+<th>Topic</th>
+<th>FirstTry Control</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>APP</strong> Application &amp; Interface Security</td>
+<td>API usage</td>
+<td>GET only; no POST/PUT/DELETE</td>
+<td>RESOLVER_INVENTORY.md</td>
+</tr>
+<tr>
+<td><strong>APP-01</strong> Encryption</td>
+<td>Data protection</td>
+<td>TLS 1.3 in transit, AES-256 at rest</td>
+<td>FORGE_PLATFORM_DEPENDENCY.md</td>
+</tr>
+<tr>
+<td><strong>APP-02</strong> Logging &amp; Monitoring</td>
+<td>Audit trail</td>
+<td>Winston + immutable ledger</td>
+<td>LOGGING_MONITORING.md</td>
+</tr>
+<tr>
+<td><strong>APP-03</strong> Authentication</td>
+<td>Identity verification</td>
+<td>Jira OAuth2 (Forge-managed)</td>
+<td>FORGE_PLATFORM_DEPENDENCY.md</td>
+</tr>
+<tr>
+<td><strong>APP-04</strong> Access Control</td>
+<td>Authorization</td>
+<td>Scope allowlist + read-only scopes</td>
+<td>RESOLVER_INVENTORY.md</td>
+</tr>
+<tr>
+<td><strong>AUD</strong> Auditing</td>
+<td>Compliance</td>
+<td>Evidence bundle regeneration, change mgt</td>
+<td>CI_CD_EVIDENCE.md, CHANGE_MANAGEMENT_POLICY.md</td>
+</tr>
+<tr>
+<td><strong>IVS</strong> Infrastructure</td>
+<td>Availability</td>
+<td>Forge SLA dependent (99.5% typical)</td>
+<td>FORGE_PLATFORM_DEPENDENCY.md, SLA.md</td>
+</tr>
+<tr>
+<td><strong>GRM</strong> Governance &amp; Risk</td>
+<td>Risk mgmt</td>
+<td>Threat model, STRIDE analysis</td>
+<td>THREAT_MODEL.md</td>
+</tr>
+<tr>
+<td><strong>BCR</strong> Business Continuity &amp; DR</td>
+<td>Disaster recovery</td>
+<td>Forge-dependent; customer export strategy</td>
+<td>BCP_DRP.md</td>
+</tr>
+<tr>
+<td><strong>OPS</strong> Operations</td>
+<td>Incident response</td>
+<td>Severity tiers, SLA, communication</td>
+<td>INCIDENT_RESPONSE_PLAN.md</td>
+</tr>
+<tr>
+<td><strong>SEC</strong> Security</td>
+<td>Vulnerability management</td>
+<td>Disclosure policy, patching</td>
+<td>VULNERABILITY_DISCLOSURE_POLICY.md</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="gdpr-alignment">GDPR Alignment<a href="#gdpr-alignment" class="anchor-link" aria-label="Link to section: GDPR Alignment">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>GDPR Article</th>
+<th>Obligation</th>
+<th>FirstTry Approach</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>5</strong> Data minimization</td>
+<td>Read-only access; no unnecessary data collection</td>
+<td>DATA_FLOW.md</td>
+</tr>
+<tr>
+<td><strong>13</strong> Transparency</td>
+<td>Privacy policy, data handling documented</td>
+<td>PRIVACY_POLICY.md</td>
+</tr>
+<tr>
+<td><strong>32</strong> Security measures</td>
+<td>Encryption, access control, incident response</td>
+<td>SECURITY_OVERVIEW.md + all security policies</td>
+</tr>
+<tr>
+<td><strong>33</strong> Breach notification</td>
+<td>24-hour notification for critical incidents</td>
+<td>INCIDENT_RESPONSE_PLAN.md</td>
+</tr>
+<tr>
+<td><strong>17</strong> Right to erasure</td>
+<td>Data deletion via uninstall workflow</td>
+<td>UNINSTALL_DELETION.md</td>
+</tr>
+<tr>
+<td><strong>20</strong> Data portability</td>
+<td>Export ZIP archives (machine-readable format)</td>
+<td>EXPORT_SPEC.md</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="nist-cybersecurity-framework-mapping">NIST Cybersecurity Framework Mapping<a href="#nist-cybersecurity-framework-mapping" class="anchor-link" aria-label="Link to section: NIST Cybersecurity Framework Mapping">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>NIST Function</th>
+<th>Processes</th>
+<th>FirstTry Implementation</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Identify</strong></td>
+<td>Asset management, risk assessment</td>
+<td>Threat model, dependency inventory</td>
+<td>THREAT_MODEL.md, CI_CD_EVIDENCE.md</td>
+</tr>
+<tr>
+<td><strong>Protect</strong></td>
+<td>Access control, encryption</td>
+<td>Scope allowlist, TLS, at-rest encryption</td>
+<td>RESOLVER_INVENTORY.md, FORGE_PLATFORM_DEPENDENCY.md</td>
+</tr>
+<tr>
+<td><strong>Detect</strong></td>
+<td>Monitoring, anomaly detection</td>
+<td>Logs, audit trail, scanner alerts</td>
+<td>LOGGING_MONITORING.md</td>
+</tr>
+<tr>
+<td><strong>Respond</strong></td>
+<td>Incident response</td>
+<td>Severity tiers, SLA, escalation</td>
+<td>INCIDENT_RESPONSE_PLAN.md</td>
+</tr>
+<tr>
+<td><strong>Recover</strong></td>
+<td>Restoration, backups</td>
+<td>Forge platform recovery; customer exports</td>
+<td>BCP_DRP.md</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="attestation-of-mapping-accuracy">Attestation of Mapping Accuracy<a href="#attestation-of-mapping-accuracy" class="anchor-link" aria-label="Link to section: Attestation of Mapping Accuracy">&#182;</a></h2>
+<p><strong>Prepared by</strong>: FirstTry Security Team<br><strong>Date</strong>: 2026-02-26<br><strong>Status</strong>: Self-assessment (not third-party audited)</p>
+<p><strong>Confirmation</strong>: Mapping reflects current FirstTry implementation and documented controls. No claims of certification or compliance are made. This mapping is provided as-is without warranty.</p>
+<hr>
+<h2 id="how-to-use-this-matrix">How to Use This Matrix<a href="#how-to-use-this-matrix" class="anchor-link" aria-label="Link to section: How to Use This Matrix">&#182;</a></h2>
+<ol>
+<li><strong>For procurement</strong>: Reference relevant framework rows when responding to RFP questions</li>
+<li><strong>For compliance</strong>: Map your requirements to FirstTry controls</li>
+<li><strong>For audit prep</strong>: Use as audit evidence index (link to detailed docs)</li>
+<li><strong>Limitations</strong>: This is informational; not a certification. Verify with FirstTry docs directly.</li>
+</ol>
+<hr>
+<h2 id="disclaimer-reiteration">Disclaimer Reiteration<a href="#disclaimer-reiteration" class="anchor-link" aria-label="Link to section: Disclaimer Reiteration">&#182;</a></h2>
+<p>This matrix is a <strong>self-assessment</strong> and does <strong>NOT</strong> constitute:</p>
+<ul>
+<li>❌ Compliance certification (SOC2, ISO27k, etc.)</li>
+<li>❌ Third-party audit evidence</li>
+<li>❌ Guarantee of control effectiveness</li>
+<li>❌ Warranty of regulatory compliance</li>
+</ul>
+<p>FirstTry provides documentation and evidence. <strong>Your organization is responsible for assessing if FirstTry meets your compliance requirements.</strong></p>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<p>For detailed control documentation, see <a href="ENTERPRISE_SECURITY_PACK_INDEX.md">ENTERPRISE_SECURITY_PACK_INDEX.md</a>.</p>
+<hr>
+<h2 id="version-history">Version History<a href="#version-history" class="anchor-link" aria-label="Link to section: Version History">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Version</th>
+<th>Changes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2026-02-26</td>
+<td>1.0</td>
+<td>Initial release</td>
+</tr>
+</tbody></table>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-PROC-003</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/procurement/CONTROL_MAPPING_MATRIX.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

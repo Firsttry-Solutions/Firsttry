@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Flow | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="./security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="./security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="./vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="./privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="./subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="./terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="./threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="./resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="data flow">
+          <a href="./data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="./data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="./architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="./forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="./customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="./claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="./uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="./export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="./ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="./serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="./security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="../operations/sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="../operations/incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="../operations/support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="../operations/bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="../operations/secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="../operations/ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="../operations/access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="../operations/change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="../operations/rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="../operations/logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="../operations/secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Trust Center</span> <span>/</span> <span class="bc-current">Data Flow</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-TRUST-009</code></span></span></div>
+          <h1>Data Flow</h1>
+<hr>
+<h2 id="what-jira-data-is-read">What Jira Data is Read<a href="#what-jira-data-is-read" class="anchor-link" aria-label="Link to section: What Jira Data is Read">&#182;</a></h2>
+<p>The application reads the following data from Jira Cloud API:</p>
+<table>
+<thead>
+<tr>
+<th>Data Category</th>
+<th>Source</th>
+<th>API Endpoint</th>
+<th>Frequency</th>
+<th>Retention</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Current user context</td>
+<td>Jira API</td>
+<td>GET /rest/api/3/myself</td>
+<td>On-demand (gadget load)</td>
+<td>Session (in memory)</td>
+</tr>
+<tr>
+<td>Project metadata</td>
+<td>Jira API</td>
+<td>GET /rest/api/3/projects</td>
+<td>On-demand or scheduled snapshot</td>
+<td>Forge Storage (90 days by default)</td>
+</tr>
+<tr>
+<td>Permission matrix</td>
+<td>Jira API</td>
+<td>GET /rest/api/3/permissions</td>
+<td>On-demand or scheduled snapshot</td>
+<td>Forge Storage (90 days by default)</td>
+</tr>
+<tr>
+<td>Field configuration</td>
+<td>Jira API</td>
+<td>GET /rest/api/3/fieldconfiguration</td>
+<td>On-demand or scheduled snapshot</td>
+<td>Forge Storage (90 days by default)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="what-is-stored">What is Stored<a href="#what-is-stored" class="anchor-link" aria-label="Link to section: What is Stored">&#182;</a></h2>
+<p><strong>Forge Storage persistence layer</strong>:</p>
+<h3 id="snapshots">Snapshots<a href="#snapshots" class="anchor-link" aria-label="Link to section: Snapshots">&#182;</a></h3>
+<ul>
+<li>JSON structure containing project list, permission matrix, timestamp</li>
+<li>One file per snapshot</li>
+<li>Stored in key: <code>snapshot:${timestamp}</code></li>
+<li>Encrypted at rest by Atlassian</li>
+</ul>
+<h3 id="audit-ledger">Audit Ledger<a href="#audit-ledger" class="anchor-link" aria-label="Link to section: Audit Ledger">&#182;</a></h3>
+<ul>
+<li>Append-only JSON lines log</li>
+<li>Each record: event type, timestamp, user ID, operation, hash</li>
+<li>Stored in key: <code>ledger</code></li>
+<li>Immutability enforced by application (read, verify hash, append, write)</li>
+<li>Encrypted at rest by Atlassian</li>
+</ul>
+<h3 id="export-archives">Export Archives<a href="#export-archives" class="anchor-link" aria-label="Link to section: Export Archives">&#182;</a></h3>
+<ul>
+<li>ZIP format containing snapshots + ledger + manifest + signature</li>
+<li>One ZIP per export request</li>
+<li>Stored in key: <code>export:${timestamp}</code></li>
+<li>Deterministic content and ordering</li>
+</ul>
+<hr>
+<h2 id="what-is-not-stored">What is NOT Stored<a href="#what-is-not-stored" class="anchor-link" aria-label="Link to section: What is NOT Stored">&#182;</a></h2>
+<p><strong>The following data is NOT persisted by the application</strong>:</p>
+<ul>
+<li>Raw API response bodies (parsed and filtered before storage)</li>
+<li>User credentials or authentication tokens</li>
+<li>Jira Cloud JWT or OAuth2 secrets (Forge manages these)</li>
+<li>API rate limit headers or metadata</li>
+<li>Intermediate computation state (unless explicitly saved to snapshot)</li>
+<li>External service credentials (application does not have any)</li>
+<li>Unencrypted PII (see DATA_CLASSIFICATION_AND_PII.md)</li>
+</ul>
+<hr>
+<h2 id="cross-tenant-data-isolation">Cross-Tenant Data Isolation<a href="#cross-tenant-data-isolation" class="anchor-link" aria-label="Link to section: Cross-Tenant Data Isolation">&#182;</a></h2>
+<p><strong>Guarantee</strong>: FirstTry respects Atlassian Forge per-tenant isolation.</p>
+<p><strong>Detail</strong>:</p>
+<ul>
+<li>Each Forge app instance is tenant-isolated by Atlassian</li>
+<li>Jira site A cannot access Jira site B&#39;s Forge Storage</li>
+<li>When app is uninstalled from Site A, Forge Storage for Site A is deleted</li>
+<li>No shared storage between tenants exists at application level</li>
+</ul>
+<p><strong>Caveat</strong>: This isolation is <strong>guaranteed by Atlassian Forge platform</strong>, not independently implemented by FirstTry. See FORGE_PLATFORM_DEPENDENCY.md.</p>
+<hr>
+<h2 id="export-data-handling">Export Data Handling<a href="#export-data-handling" class="anchor-link" aria-label="Link to section: Export Data Handling">&#182;</a></h2>
+<p>When admin exports compliance evidence:</p>
+<ol>
+<li><strong>Export initiation</strong>: Admin clicks &quot;Export&quot; in gadget UI</li>
+<li><strong>Data collection</strong>: App reads current snapshots from Forge Storage</li>
+<li><strong>ZIP creation</strong>: App packages snapshots + ledger + manifest</li>
+<li><strong>Hash computation</strong>: SHA256 hash computed over deterministic ZIP content</li>
+<li><strong>Build identity</strong>: Git commit SHA + UI bundle hash embedded in manifest</li>
+<li><strong>Download</strong>: ZIP provided to admin via Jira download mechanism</li>
+<li><strong>Out of scope</strong>: Admin downloads and stores ZIP on their own infrastructure</li>
+</ol>
+<p><strong>No external transmission</strong>: App does not send ZIP to external services or FirstTry servers.</p>
+<hr>
+<h2 id="data-deletion">Data Deletion<a href="#data-deletion" class="anchor-link" aria-label="Link to section: Data Deletion">&#182;</a></h2>
+<h3 id="on-uninstall">On Uninstall<a href="#on-uninstall" class="anchor-link" aria-label="Link to section: On Uninstall">&#182;</a></h3>
+<ul>
+<li>Customer (Jira admin) uninstalls app via Jira administration console</li>
+<li>Forge platform triggers delete event</li>
+<li>App cleanup handler executes (clears Forge Storage for tenant)</li>
+<li>Within 30 days: Atlassian deletes underlying data from backups</li>
+</ul>
+<p><strong>Verification</strong>: Customer cannot verify deletion independently; must trust Atlassian SLA.</p>
+<h3 id="manual-deletion">Manual Deletion<a href="#manual-deletion" class="anchor-link" aria-label="Link to section: Manual Deletion">&#182;</a></h3>
+<ul>
+<li>No in-app delete mechanism for stored snapshots</li>
+<li>Workaround: Uninstall app (triggers full delete) or use Forge CLI (app-specific, requires CLI access to tenant)</li>
+</ul>
+<hr>
+<h2 id="data-minimization">Data Minimization<a href="#data-minimization" class="anchor-link" aria-label="Link to section: Data Minimization">&#182;</a></h2>
+<p><strong>Data minimization principle</strong>: FirstTry reads only data necessary for compliance reporting.</p>
+<p><strong>Applied</strong>:</p>
+<ul>
+<li>Only GET endpoints called (no WRITE operations)</li>
+<li>Only permission and project metadata requested (no user personal data beyond role context)</li>
+<li>No call to user profile endpoint (only /myself for current user context)</li>
+<li>No integration with Jira issues, comments, or attachments</li>
+</ul>
+<p><strong>Not applied</strong>:</p>
+<ul>
+<li>App does not filter out personally identifiable information (PII) at collection time</li>
+<li>Names, emails, and user IDs are present in snapshots (necessary for compliance reporting)</li>
+<li>See DATA_CLASSIFICATION_AND_PII.md for PII handling details</li>
+</ul>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="ARCHITECTURE.md">ARCHITECTURE.md</a>: System component diagram</li>
+<li><a href="DATA_CLASSIFICATION_AND_PII.md">DATA_CLASSIFICATION_AND_PII.md</a>: PII inventory and handling</li>
+<li><a href="UNINSTALL_DELETION.md">UNINSTALL_DELETION.md</a>: Deletion workflow and SLA</li>
+<li><a href="FORGE_PLATFORM_DEPENDENCY.md">FORGE_PLATFORM_DEPENDENCY.md</a>: Platform isolation guarantees</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-TRUST-009</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/trust/DATA_FLOW.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

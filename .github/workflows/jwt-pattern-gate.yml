@@ -1,0 +1,166 @@
+name: JWT Pattern Gate (Non-Bypassable)
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "release/**"
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  jwt-pattern-scan:
+    name: JWT Pattern Detection (Fail-Closed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for commit scanning
+
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ripgrep
+
+      - name: Scan working tree for JWT patterns
+        id: worktree-scan
+        run: |
+          set -euo pipefail
+          echo "=== Scanning working tree for JWT patterns ==="
+          
+          # Pattern 1: Exact JWT header
+          echo "Pattern 1: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+          if rg -n "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" . \
+            --glob '!tools/security/**' \
+            --glob '!**/tests/security/**' \
+            --glob '!.github/workflows/jwt-pattern-gate.yml' \
+            2>/dev/null; then
+            echo "❌ FAIL: JWT header pattern found in working tree"
+            exit 1
+          fi
+          
+          # Pattern 2: Bearer JWT
+          echo "Pattern 2: Bearer JWT (Bearer + base64.base64.base64)"
+          if rg -n "\bBearer\s+[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}" . \
+            --glob '!tools/security/**' \
+            --glob '!**/tests/security/**' \
+            --glob '!.github/workflows/jwt-pattern-gate.yml' \
+            2>/dev/null; then
+            echo "❌ FAIL: Bearer JWT pattern found in working tree"
+            exit 1
+          fi
+          
+          # Pattern 3: Standalone JWT-like tokens
+          echo "Pattern 3: Standalone JWT tokens (base64.base64.base64, 20+ chars each)"
+          if rg -n "\b[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\b" . \
+            --glob '!tools/security/**' \
+            --glob '!**/tests/security/**' \
+            --glob '!.github/workflows/jwt-pattern-gate.yml' \
+            2>/dev/null; then
+            echo "⚠️  WARNING: JWT-like patterns found, manual review required"
+            # Don't fail here - could be false positives from version strings, etc.
+            # But log them for review
+          fi
+          
+          echo "✅ Working tree scan passed"
+
+      - name: Scan recent commits for JWT patterns (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          echo "=== Scanning PR commits for JWT patterns ==="
+          
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          
+          echo "Scanning commits from $BASE_SHA to $HEAD_SHA"
+          
+          # Get diff of all changes in PR
+          git diff "$BASE_SHA..$HEAD_SHA" > /tmp/pr_diff.txt
+          
+          # Scan diff for JWT patterns
+          echo "Pattern 1: JWT header"
+          if grep -n "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" /tmp/pr_diff.txt 2>/dev/null; then
+            echo "❌ FAIL: JWT header pattern found in PR diff"
+            exit 1
+          fi
+          
+          echo "Pattern 2: Bearer JWT"
+          if grep -E -n "\bBearer\s+[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}\.[A-Za-z0-9\-_=]{20,}" /tmp/pr_diff.txt 2>/dev/null; then
+            echo "❌ FAIL: Bearer JWT pattern found in PR diff"
+            exit 1
+          fi
+          
+          echo "✅ PR commit scan passed"
+
+      - name: Verify sanitizer exists
+        run: |
+          set -euo pipefail
+          echo "=== Verifying JWT sanitizer exists ==="
+          
+          if [ ! -f tools/security/sanitize_text.mjs ]; then
+            echo "❌ FAIL: JWT sanitizer missing at tools/security/sanitize_text.mjs"
+            exit 1
+          fi
+          
+          if [ ! -x tools/security/sanitize_text.mjs ]; then
+            echo "❌ FAIL: JWT sanitizer is not executable"
+            exit 1
+          fi
+          
+          echo "✅ JWT sanitizer verified"
+
+      - name: Test sanitizer functionality
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          echo "=== Testing JWT sanitizer ==="
+          
+          # Test 1: Clean text should pass
+          echo "Test 1: Clean text"
+          echo "Normal text with no secrets" | node ../../tools/security/sanitize_text.mjs > /dev/null
+          if [ $? -ne 0 ]; then
+            echo "❌ FAIL: Sanitizer failed on clean text"
+            exit 1
+          fi
+          
+          # Test 2: JWT should be redacted and return exit 1
+          echo "Test 2: JWT redaction"
+          echo "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ" | \
+            node ../../tools/security/sanitize_text.mjs > /tmp/sanitized.txt
+          if [ $? -eq 0 ]; then
+            echo "❌ FAIL: Sanitizer should exit non-zero when redactions occur"
+            exit 1
+          fi
+          
+          # Verify redaction occurred
+          if grep -q "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" /tmp/sanitized.txt; then
+            echo "❌ FAIL: JWT pattern not redacted"
+            exit 1
+          fi
+          
+          if ! grep -q "REDACTED" /tmp/sanitized.txt; then
+            echo "❌ FAIL: No REDACTED marker found"
+            exit 1
+          fi
+          
+          echo "✅ Sanitizer tests passed"
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "✅ JWT Pattern Gate: PASSED"
+          echo ""
+          echo "All checks completed successfully:"
+          echo "  ✓ Working tree clean of JWT patterns"
+          echo "  ✓ PR commits clean (if applicable)"
+          echo "  ✓ Sanitizer present and functional"
+          echo ""
+          echo "This gate ensures no JWT tokens leak into the repository."

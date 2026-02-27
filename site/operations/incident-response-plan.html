@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Incident Response Plan | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="../trust/security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="../trust/security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="../trust/vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="../trust/privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="../trust/subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="../trust/terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="../trust/threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="../trust/resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="../trust/data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="../trust/data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="../trust/architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="../trust/forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="../trust/customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="../trust/claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="../trust/uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="../trust/export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="../trust/ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="../trust/serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="../trust/security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="./sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="incident response plan">
+          <a href="./incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="./support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="./bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="./secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="./ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="./access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="./change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="./rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="./logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="./secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Operations</span> <span>/</span> <span class="bc-current">Incident Response Plan</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-OPS-002</code></span></span></div>
+          <h1>Incident Response Plan</h1>
+<hr>
+<h2 id="1-overview">1. Overview<a href="#1-overview" class="anchor-link" aria-label="Link to section: 1. Overview">&#182;</a></h2>
+<p>This plan defines how FirstTry responds to security incidents, vulnerabilities, and operational events.</p>
+<hr>
+<h2 id="2-incident-severity-classification">2. Incident Severity Classification<a href="#2-incident-severity-classification" class="anchor-link" aria-label="Link to section: 2. Incident Severity Classification">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>CVSS</th>
+<th>Example</th>
+<th>Notify SLA</th>
+<th>Ack SLA</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Critical</strong></td>
+<td>≥9.0</td>
+<td>Active exploit, data breach, scope escalation detected, unpatched critical CVE</td>
+<td>24 hours</td>
+<td>4 hours</td>
+</tr>
+<tr>
+<td><strong>High</strong></td>
+<td>7.0–8.9</td>
+<td>Privilege escalation vulnerability, POST/PUT/DELETE discovered in code, dependency with high CVE</td>
+<td>48 hours</td>
+<td>8 hours</td>
+</tr>
+<tr>
+<td><strong>Medium</strong></td>
+<td>4.0–6.9</td>
+<td>Minor vulnerability, missing input validation, low-impact cryptography issue</td>
+<td>5 days</td>
+<td>24 hours</td>
+</tr>
+<tr>
+<td><strong>Low</strong></td>
+<td>&lt;4.0</td>
+<td>Informational findings, documentation gaps, development practices note</td>
+<td>14 days</td>
+<td>5 days</td>
+</tr>
+</tbody></table>
+<p><strong>IMPORTANT CAVEAT</strong>:</p>
+<blockquote>
+<p>Notification timelines are best-effort and subject to Atlassian Forge platform availability and customer contact availability. FirstTry will make reasonable efforts to notify reported contacts within stated SLAs, but external factors may impact delivery.</p>
+</blockquote>
+<hr>
+<h2 id="3-incident-response-workflow">3. Incident Response Workflow<a href="#3-incident-response-workflow" class="anchor-link" aria-label="Link to section: 3. Incident Response Workflow">&#182;</a></h2>
+<h3 id="phase-1-detection-amp-initial-response">Phase 1: Detection &amp; Initial Response<a href="#phase-1-detection-amp-initial-response" class="anchor-link" aria-label="Link to section: Phase 1: Detection &amp; Initial Response">&#182;</a></h3>
+<p><strong>Timeline</strong>: Immediate (0–1 hour)</p>
+<ol>
+<li><p><strong>Detection source</strong>:</p>
+<ul>
+<li>Vulnerability report (<a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a>)</li>
+<li>Internal scanning (CI/CD gate, dependency checks)</li>
+<li>User report (support channels)</li>
+<li>Forge platform notification (if Forge incident affects FirstTry)</li>
+</ul>
+</li>
+<li><p><strong>Initial assessment</strong>:</p>
+<ul>
+<li>Reproduce issue (if applicable)</li>
+<li>Assign severity level</li>
+<li>Determine if code patch needed or mitigation sufficient</li>
+</ul>
+</li>
+<li><p><strong>Notification rules</strong>:</p>
+<ul>
+<li>Critical: Contact security.firsttry.run within 4 hours</li>
+<li>High: Contact security.firsttry.run within 8 hours</li>
+<li>Medium/Low: Email to registered contacts within timeframe</li>
+</ul>
+</li>
+</ol>
+<h3 id="phase-2-investigation-amp-development">Phase 2: Investigation &amp; Development<a href="#phase-2-investigation-amp-development" class="anchor-link" aria-label="Link to section: Phase 2: Investigation &amp; Development">&#182;</a></h3>
+<p><strong>Timeline</strong>: 1–30 days (depends on severity)</p>
+<ol>
+<li><p><strong>Investigation</strong>:</p>
+<ul>
+<li>Root cause analysis</li>
+<li>Impact assessment (affected versions, customers, data)</li>
+<li>Determine if issue is FirstTry-owned or platform-owned</li>
+</ul>
+</li>
+<li><p><strong>Development</strong>:</p>
+<ul>
+<li>Create fix or mitigation</li>
+<li>Develop test cases</li>
+<li>Code review by another team member</li>
+</ul>
+</li>
+<li><p><strong>Release planning</strong>:</p>
+<ul>
+<li>Determine rollout strategy (immediate, next release, staged)</li>
+<li>Prepare customer notification (email, CHANGELOG.md)</li>
+<li>Consider backward compatibility</li>
+</ul>
+</li>
+</ol>
+<h3 id="phase-3-patch-release-amp-communication">Phase 3: Patch Release &amp; Communication<a href="#phase-3-patch-release-amp-communication" class="anchor-link" aria-label="Link to section: Phase 3: Patch Release &amp; Communication">&#182;</a></h3>
+<p><strong>Timeline</strong>: As soon as patch is ready (typically 7–30 days)</p>
+<ol>
+<li><p><strong>Release</strong>:</p>
+<ul>
+<li>Tag release with version (e.g., v0.4.2-patch1)</li>
+<li>Publish to Atlassian Marketplace (if applicable)</li>
+<li>Push to production via forge deploy</li>
+</ul>
+</li>
+<li><p><strong>Communication</strong>:</p>
+<ul>
+<li>Update CHANGELOG.md with security notice</li>
+<li>Email registered security contacts</li>
+<li>Post advisory (if public repo used)</li>
+</ul>
+</li>
+<li><p><strong>Verification</strong>:</p>
+<ul>
+<li>Confirm patch deployed in production</li>
+<li>Monitor for deployment issues</li>
+</ul>
+</li>
+</ol>
+<h3 id="phase-4-post-incident-review">Phase 4: Post-Incident Review<a href="#phase-4-post-incident-review" class="anchor-link" aria-label="Link to section: Phase 4: Post-Incident Review">&#182;</a></h3>
+<p><strong>Timeline</strong>: 1 week after resolution</p>
+<ol>
+<li><p><strong>Conduct retrospective</strong>:</p>
+<ul>
+<li>What was the root cause?</li>
+<li>Could this have been prevented?</li>
+<li>What process improvements apply?</li>
+</ul>
+</li>
+<li><p><strong>Update documentation</strong>:</p>
+<ul>
+<li>Update threat model if new threat discovered</li>
+<li>Update security policies if process gaps identified</li>
+<li>Regenerate evidence artifacts</li>
+</ul>
+</li>
+<li><p><strong>Lessons learned</strong>:</p>
+<ul>
+<li>Share findings with team</li>
+<li>Update CI/CD gates if applicable</li>
+<li>Retrain on secure coding practices if needed</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="4-incident-response-roles">4. Incident Response Roles<a href="#4-incident-response-roles" class="anchor-link" aria-label="Link to section: 4. Incident Response Roles">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Responsible For</th>
+<th>Contact</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Security Contact</strong></td>
+<td>Primary incident coordinator</td>
+<td><a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></td>
+</tr>
+<tr>
+<td><strong>Emergency Response</strong></td>
+<td>Critical/P0 incidents requiring immediate action</td>
+<td><a href="mailto:emergency@firsttry.run">emergency@firsttry.run</a></td>
+</tr>
+<tr>
+<td><strong>Lead Developer</strong></td>
+<td>Code investigation &amp; patch</td>
+<td>(internal team)</td>
+</tr>
+<tr>
+<td><strong>Release Manager</strong></td>
+<td>Deployment &amp; communication</td>
+<td>(internal team)</td>
+</tr>
+<tr>
+<td><strong>Product Owner</strong></td>
+<td>Customer communication &amp; impact assessment</td>
+<td>(internal team)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-escalation-paths">5. Escalation Paths<a href="#5-escalation-paths" class="anchor-link" aria-label="Link to section: 5. Escalation Paths">&#182;</a></h2>
+<h3 id="level-1-firsttry-team">Level 1: FirstTry Team<a href="#level-1-firsttry-team" class="anchor-link" aria-label="Link to section: Level 1: FirstTry Team">&#182;</a></h3>
+<ul>
+<li>Assess severity</li>
+<li>Develop initial mitigation plan</li>
+<li>Notify customers if needed</li>
+</ul>
+<h3 id="level-2-atlassian-escalation-if-applicable">Level 2: Atlassian Escalation (if applicable)<a href="#level-2-atlassian-escalation-if-applicable" class="anchor-link" aria-label="Link to section: Level 2: Atlassian Escalation (if applicable)">&#182;</a></h3>
+<ul>
+<li>If issue is in Forge platform or Jira API</li>
+<li>Contact Atlassian support with details</li>
+<li>Reference incident tracking system</li>
+</ul>
+<h3 id="level-3-customer-escalation">Level 3: Customer Escalation<a href="#level-3-customer-escalation" class="anchor-link" aria-label="Link to section: Level 3: Customer Escalation">&#182;</a></h3>
+<ul>
+<li>If incident affects specific customer data</li>
+<li>Contact customer&#39;s nominated security officer</li>
+<li>Provide incident details and remediation steps</li>
+</ul>
+<hr>
+<h2 id="6-communication-templates">6. Communication Templates<a href="#6-communication-templates" class="anchor-link" aria-label="Link to section: 6. Communication Templates">&#182;</a></h2>
+<h3 id="critical-high-severity-notification">Critical/High Severity Notification<a href="#critical-high-severity-notification" class="anchor-link" aria-label="Link to section: Critical/High Severity Notification">&#182;</a></h3>
+<p><strong>Subject</strong>: [SECURITY INCIDENT] FirstTry – <Issue Title></p>
+<p><strong>Body</strong>:</p>
+<pre><code>We are aware of a security issue in FirstTry (# CVE-XXXX-XXXXX or Issue #XXX).
+
+SEVERITY: &lt;High | Critical&gt;
+IMPACT: &lt;Who is affected and how&gt;
+TIMELINE: &lt;When patch will be available&gt;
+ACTION: &lt;What customers should do: update, reconfigure, monitor logs, etc.&gt;
+
+We appreciate your patience and will provide updates every 24 hours.
+
+Contact: security.contact@firsttry.run
+</code></pre>
+<h3 id="patch-release-notification">Patch Release Notification<a href="#patch-release-notification" class="anchor-link" aria-label="Link to section: Patch Release Notification">&#182;</a></h3>
+<p><strong>Subject</strong>: [SECURITY PATCH] FirstTry v0.4.2 – Update Available</p>
+<p><strong>Body</strong>:</p>
+<pre><code>A security patch is now available for FirstTry v0.4.2.
+
+ISSUE: &lt;Description&gt;
+SEVERITY: &lt;Level&gt;
+PATCH NOTES: See CHANGELOG.md for details
+
+Please update at your earliest convenience.
+
+Update procedure:
+1. Jira Settings → Apps
+2. FirstTry → Update
+3. Confirm installation
+
+If you have questions, contact: support@firsttry.run
+</code></pre>
+<hr>
+<h2 id="7-incident-tracking">7. Incident Tracking<a href="#7-incident-tracking" class="anchor-link" aria-label="Link to section: 7. Incident Tracking">&#182;</a></h2>
+<p><strong>All incidents logged in</strong>:</p>
+<ul>
+<li>GitHub Issues (private repo) with severity label</li>
+<li>CHANGELOG.md (after resolution)</li>
+<li>Annual security report (if applicable)</li>
+</ul>
+<p><strong>Retention</strong>: Posts-incident records retained for 2 years (per legal/compliance requirements).</p>
+<hr>
+<h2 id="8-third-party-incident-dependencies">8. Third-Party Incident Dependencies<a href="#8-third-party-incident-dependencies" class="anchor-link" aria-label="Link to section: 8. Third-Party Incident Dependencies">&#182;</a></h2>
+<p><strong>If incident is in Atlassian Forge or Jira Cloud</strong>:</p>
+<ul>
+<li>FirstTry cannot independently patch platform issues</li>
+<li>Will coordinate with Atlassian on remediation timeline</li>
+<li>Will notify customers of Atlassian&#39;s guidance and ETA</li>
+</ul>
+<hr>
+<h2 id="9-testing-and-exercises">9. Testing and Exercises<a href="#9-testing-and-exercises" class="anchor-link" aria-label="Link to section: 9. Testing and Exercises">&#182;</a></h2>
+<p><strong>Annual incident response drill</strong>:</p>
+<ul>
+<li>Simulate security incident</li>
+<li>Walk through workflow</li>
+<li>Validate contact information</li>
+<li>Test notification systems</li>
+</ul>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="../trust/SECURITY_CONTACT.md">SECURITY_CONTACT.md</a>: Contact information</li>
+<li><a href="../trust/VULNERABILITY_DISCLOSURE_POLICY.md">VULNERABILITY_DISCLOSURE_POLICY.md</a>: Reporting process</li>
+<li><a href="../trust/THREAT_MODEL.md">THREAT_MODEL.md</a>: Known threat scenarios</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-OPS-002</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/operations/INCIDENT_RESPONSE_PLAN.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RBAC Matrix | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="../trust/security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="../trust/security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="../trust/vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="../trust/privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="../trust/subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="../trust/terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="../trust/threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="../trust/resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="../trust/data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="../trust/data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="../trust/architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="../trust/forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="../trust/customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="../trust/claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="../trust/uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="../trust/export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="../trust/ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="../trust/serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="../trust/security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="./sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="./incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="./support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="./bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="./secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="./ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="./access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="./change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="rbac matrix">
+          <a href="./rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="./logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="./secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Operations</span> <span>/</span> <span class="bc-current">RBAC Matrix</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Quarterly (access review every 90 days)</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-OPS-009</code></span></span></div>
+          <h1>RBAC Matrix</h1>
+<hr>
+<h2 id="current-access-matrix">Current Access Matrix<a href="#current-access-matrix" class="anchor-link" aria-label="Link to section: Current Access Matrix">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>User/Team</th>
+<th>GitHub Repo</th>
+<th>Code Review</th>
+<th>Merge</th>
+<th>Deploy</th>
+<th>Vulnerability Triage</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Public</strong></td>
+<td>Read (if public)</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Developers</strong></td>
+<td>Read/Write</td>
+<td>✅ (PR required)</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Maintainers</strong></td>
+<td>Read/Write admin</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>⚠️ (under supervision)</td>
+</tr>
+<tr>
+<td><strong>Security Lead</strong></td>
+<td>Read/Write admin</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="role-descriptions">Role Descriptions<a href="#role-descriptions" class="anchor-link" aria-label="Link to section: Role Descriptions">&#182;</a></h2>
+<h3 id="developer">Developer<a href="#developer" class="anchor-link" aria-label="Link to section: Developer">&#182;</a></h3>
+<ul>
+<li>Creates branches, commits code, opens pull requests</li>
+<li>Code reviewed by maintainer before merge</li>
+<li>No direct deploy access</li>
+<li>Limited to feature branches (not main)</li>
+</ul>
+<h3 id="maintainer">Maintainer<a href="#maintainer" class="anchor-link" aria-label="Link to section: Maintainer">&#182;</a></h3>
+<ul>
+<li>Merges PRs after code review</li>
+<li>Deploys releases via forge deploy</li>
+<li>Manages CI/CD workflows</li>
+<li>Can trigger evidence regeneration</li>
+<li>Responds to non-critical security issues</li>
+</ul>
+<h3 id="security-lead">Security Lead<a href="#security-lead" class="anchor-link" aria-label="Link to section: Security Lead">&#182;</a></h3>
+<ul>
+<li>All maintainer permissions</li>
+<li>Reviews and triages security vulnerabilities</li>
+<li>Approves security patches</li>
+<li>Conducts threat model updates</li>
+<li>Decides incident severity and response</li>
+</ul>
+<hr>
+<h2 id="mfa-requirement">MFA Requirement<a href="#mfa-requirement" class="anchor-link" aria-label="Link to section: MFA Requirement">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>MFA Required</th>
+<th>Enforcement</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Developer</td>
+<td>⚠️ Recommended</td>
+<td>Branch protection (soft-enforced)</td>
+</tr>
+<tr>
+<td>Maintainer</td>
+<td>✅ Mandatory</td>
+<td>Branch protection (hard-enforced)</td>
+</tr>
+<tr>
+<td>Security Lead</td>
+<td>✅ Mandatory</td>
+<td>Branch protection (hard-enforced)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="quarterly-access-review-steps">Quarterly Access Review Steps<a href="#quarterly-access-review-steps" class="anchor-link" aria-label="Link to section: Quarterly Access Review Steps">&#182;</a></h2>
+<ol>
+<li><p><strong>Run audit</strong>:</p>
+<pre><code class="language-bash"># List GitHub team members
+gh team list-members --org Firsttry-Solutions --team-slug firsttry-dev
+</code></pre>
+</li>
+<li><p><strong>Validate each user</strong>:</p>
+<ul>
+<li>Still active in organization?</li>
+<li>Still requires this access level?</li>
+<li>MFA still enabled?</li>
+</ul>
+</li>
+<li><p><strong>Update this matrix</strong> if changes detected</p>
+</li>
+<li><p><strong>Document findings</strong>:</p>
+<ul>
+<li>Date of review</li>
+<li>Changes made (if any)</li>
+<li>Next review date</li>
+</ul>
+</li>
+<li><h2><strong>Example review record</strong>:
+```</h2>
+<p>Review Date: 2026-05-26
+Reviewers: Security Lead
+Changes: Added Developer &quot;alice [redacted]&quot;
+Next Review: 2026-08-26</p>
+<pre><code>
+</code></pre>
+</li>
+</ol>
+<hr>
+<h2 id="current-team-members">Current Team Members<a href="#current-team-members" class="anchor-link" aria-label="Link to section: Current Team Members">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>GitHub</th>
+<th>Role</th>
+<th>MFA Status</th>
+<th>Last Updated</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>(Example)</td>
+<td>@dev1</td>
+<td>Developer</td>
+<td>✅</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>(Example)</td>
+<td>@maintainer1</td>
+<td>Maintainer</td>
+<td>✅</td>
+<td>2026-02-26</td>
+</tr>
+<tr>
+<td>(Example)</td>
+<td>@security-lead</td>
+<td>Security Lead</td>
+<td>✅</td>
+<td>2026-02-26</td>
+</tr>
+</tbody></table>
+<p><strong>Note</strong>: Maintain names and GitHub handles for audit trail.</p>
+<hr>
+<h2 id="access-termination">Access Termination<a href="#access-termination" class="anchor-link" aria-label="Link to section: Access Termination">&#182;</a></h2>
+<p>When user leaves project or organization:</p>
+<ol>
+<li><p><strong>Immediate</strong>:</p>
+<ul>
+<li>Disable GitHub account (remove from teams)</li>
+<li>Revoke Forge CLI credentials</li>
+<li>Revoke GitHub personal access tokens (if any)</li>
+</ul>
+</li>
+<li><p><strong>Next business day</strong>:</p>
+<ul>
+<li>Audit commit log (check for any unauthorized commits)</li>
+<li>Review merged PRs</li>
+<li>Check for any remaining access</li>
+</ul>
+</li>
+<li><p><strong>Document</strong>:</p>
+<ul>
+<li>Date of termination</li>
+<li>Reason for access revocation</li>
+<li>Final access audit results</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="ACCESS_CONTROL_POLICY.md">ACCESS_CONTROL_POLICY.md</a>: Access control principles</li>
+<li><a href="INCIDENT_RESPONSE_PLAN.md">INCIDENT_RESPONSE_PLAN.md</a>: Breach response</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-OPS-009</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Quarterly (access review every 90 days)</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/operations/RBAC_MATRIX.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

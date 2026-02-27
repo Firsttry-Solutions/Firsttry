@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Export Spec | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="./security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="./security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="./vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="./privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="./subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="./terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="./threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="./resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="./data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="./data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="./architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="./forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="./customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="./claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="./uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="export spec">
+          <a href="./export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="./ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="./serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="./security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="../operations/sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="../operations/incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="../operations/support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="../operations/bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="../operations/secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="../operations/ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="../operations/access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="../operations/change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="../operations/rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="../operations/logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="../operations/secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Trust Center</span> <span>/</span> <span class="bc-current">Export Spec</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-TRUST-016</code></span></span></div>
+          <h1>Export Specification</h1>
+<hr>
+<h2 id="export-archive-format">Export Archive Format<a href="#export-archive-format" class="anchor-link" aria-label="Link to section: Export Archive Format">&#182;</a></h2>
+<p>FirstTry compliance exports are distributed as ZIP archives containing governance snapshots, audit ledger, and proof markers.</p>
+<h3 id="archive-structure">Archive Structure<a href="#archive-structure" class="anchor-link" aria-label="Link to section: Archive Structure">&#182;</a></h3>
+<pre><code>export_firsttry_2026-02-26.zip
+├── manifest.json              # Export metadata + proof markers
+├── ledger.jsonl               # Audit trail (JSON lines)
+├── snapshots/
+│   ├── snapshot_1_2026-02-21.json   # Governance state snapshot
+│   ├── snapshot_2_2026-02-23.json
+│   └── snapshot_3_2026-02-26.json
+├── hashes.txt                 # SHA256 manifest (for offline verification)
+└── README.txt                 # Human-readable export guide
+</code></pre>
+<h3 id="manifest-structure-manifest-json">Manifest Structure (manifest.json)<a href="#manifest-structure-manifest-json" class="anchor-link" aria-label="Link to section: Manifest Structure (manifest.json)">&#182;</a></h3>
+<pre><code class="language-json">{
+  &quot;export_timestamp&quot;: &quot;2026-02-26T11:00:00Z&quot;,
+  &quot;export_version&quot;: &quot;1.0&quot;,
+  &quot;app_version&quot;: &quot;0.4.1&quot;,
+  &quot;audit_root_hash&quot;: &quot;7a3b9c2d1e4f...&quot;,
+  &quot;audit_record_count&quot;: 147,
+  &quot;snapshot_count&quot;: 3,
+  &quot;build_git_sha&quot;: &quot;abc123def456...&quot;,
+  &quot;build_ui_bundle_hash&quot;: &quot;xyz789&quot;,
+  &quot;deterministic_zip_hash&quot;: &quot;sha256_of_entire_zip&quot;,
+  &quot;customer_jira_site&quot;: &quot;https://customer.atlassian.net&quot;,
+  &quot;export_scope&quot;: &quot;complete&quot;,
+  &quot;integrity_status&quot;: &quot;verified&quot;
+}
+</code></pre>
+<h3 id="snapshots-snapshot-n-json">Snapshots (snapshot_N.json)<a href="#snapshots-snapshot-n-json" class="anchor-link" aria-label="Link to section: Snapshots (snapshot_N.json)">&#182;</a></h3>
+<p>Each snapshot contains a point-in-time governance state:</p>
+<pre><code class="language-json">{
+  &quot;snapshot_id&quot;: 1,
+  &quot;timestamp&quot;: &quot;2026-02-21T14:30:00Z&quot;,
+  &quot;projects&quot;: [
+    {
+      &quot;id&quot;: &quot;PROJ1&quot;,
+      &quot;name&quot;: &quot;Project One&quot;,
+      &quot;lead&quot;: &quot;user123&quot;
+    }
+  ],
+  &quot;permissions&quot;: [
+    {
+      &quot;subject&quot;: &quot;user456&quot;,
+      &quot;permission&quot;: &quot;ADMINISTER_PROJECTS&quot;,
+      &quot;resource&quot;: &quot;PROJ1&quot;
+    }
+  ]
+}
+</code></pre>
+<h3 id="ledger-ledger-jsonl">Ledger (ledger.jsonl)<a href="#ledger-ledger-jsonl" class="anchor-link" aria-label="Link to section: Ledger (ledger.jsonl)">&#182;</a></h3>
+<p>Append-only audit trail, one JSON object per line:</p>
+<pre><code class="language-json">{&quot;action&quot;:&quot;snapshot&quot;,&quot;snapshot_id&quot;:1,&quot;hash&quot;:&quot;abc123&quot;,&quot;nonce&quot;:&quot;xyz&quot;,&quot;timestamp&quot;:&quot;2026-02-21T14:30:00Z&quot;}
+{&quot;action&quot;:&quot;export&quot;,&quot;export_id&quot;:&quot;exp_1&quot;,&quot;hash&quot;:&quot;def456&quot;,&quot;nonce&quot;:&quot;uvw&quot;,&quot;timestamp&quot;:&quot;2026-02-26T11:00:00Z&quot;}
+</code></pre>
+<h3 id="hash-manifest-hashes-txt">Hash Manifest (hashes.txt)<a href="#hash-manifest-hashes-txt" class="anchor-link" aria-label="Link to section: Hash Manifest (hashes.txt)">&#182;</a></h3>
+<p>SHA256 checksums for offline verification:</p>
+<pre><code>7a3b9c2d1e4f5a6b7c8d9e0f1a2b3c4d  manifest.json
+8b4d0a2e1f6c7a9b3d1e5f2c0a7b4d8e  ledger.jsonl
+a1c3e5f0b8d2a7c5e9f1b3d7a2c6e0f4  snapshots/snapshot_1_2026-02-21.json
+...
+</code></pre>
+<hr>
+<h2 id="deterministic-zip-ordering-rules">Deterministic ZIP Ordering Rules<a href="#deterministic-zip-ordering-rules" class="anchor-link" aria-label="Link to section: Deterministic ZIP Ordering Rules">&#182;</a></h2>
+<p>ZIP archives must be created with deterministic ordering to ensure reproducible hashes. Rules:</p>
+<ol>
+<li><strong>File order</strong>: Files listed in alphabetical order within the ZIP</li>
+<li><strong>Compression</strong>: All files compressed with DEFLATE (if used); no compression variation</li>
+<li><strong>Timestamps</strong>: All file timestamps set to fixed reference (e.g., 1980-01-01T00:00:00Z)</li>
+<li><strong>Permissions</strong>: All file permissions set to 0644 (standard read)</li>
+<li><strong>No extra headers</strong>: No ZIP comment, no metadata beyond standard ZIP format</li>
+<li><strong>No hidden files</strong>: No dot-files or temporary files</li>
+</ol>
+<p><strong>Determinism check</strong>:</p>
+<pre><code class="language-bash"># Create export twice; hashes must match
+sha256sum export_firsttry_2026-02-26_attempt1.zip
+sha256sum export_firsttry_2026-02-26_attempt2.zip
+# Both SHA256 values must be identical
+</code></pre>
+<hr>
+<h2 id="verification-steps">Verification Steps<a href="#verification-steps" class="anchor-link" aria-label="Link to section: Verification Steps">&#182;</a></h2>
+<h3 id="step-1-download-and-extract">Step 1: Download and Extract<a href="#step-1-download-and-extract" class="anchor-link" aria-label="Link to section: Step 1: Download and Extract">&#182;</a></h3>
+<pre><code class="language-bash">unzip export_firsttry_2026-02-26.zip
+cd export_firsttry_2026-02-26
+</code></pre>
+<h3 id="step-2-verify-hashes-offline">Step 2: Verify Hashes (Offline)<a href="#step-2-verify-hashes-offline" class="anchor-link" aria-label="Link to section: Step 2: Verify Hashes (Offline)">&#182;</a></h3>
+<pre><code class="language-bash">sha256sum -c hashes.txt
+# Output: manifest.json: OK
+#         ledger.jsonl: OK
+#         ...
+</code></pre>
+<h3 id="step-3-extract-root-hash">Step 3: Extract Root Hash<a href="#step-3-extract-root-hash" class="anchor-link" aria-label="Link to section: Step 3: Extract Root Hash">&#182;</a></h3>
+<pre><code class="language-bash">grep &quot;audit_root_hash&quot; manifest.json
+# Output: &quot;audit_root_hash&quot;: &quot;7a3b9c2d1e4f...&quot;
+</code></pre>
+<h3 id="step-4-verify-ledger-chain">Step 4: Verify Ledger Chain<a href="#step-4-verify-ledger-chain" class="anchor-link" aria-label="Link to section: Step 4: Verify Ledger Chain">&#182;</a></h3>
+<p>Use FirstTry offline verification tool (if available):</p>
+<pre><code class="language-bash">node tools/verify_ecl_state.mjs --export-dir ./export_firsttry_2026-02-26 \
+  --expected-root-hash 7a3b9c2d1e4f...
+# Output: LEDGER_INTEGRITY_VERIFIED
+</code></pre>
+<h3 id="step-5-manual-spot-check-readable">Step 5: Manual Spot-Check (Readable)<a href="#step-5-manual-spot-check-readable" class="anchor-link" aria-label="Link to section: Step 5: Manual Spot-Check (Readable)">&#182;</a></h3>
+<pre><code class="language-bash">head -5 ledger.jsonl  # Verify first 5 ledger entries are readable JSON
+tail -5 ledger.jsonl  # Verify last 5 entries are present
+cat snapshots/snapshot_1*.json | jq .timestamp  # Verify snapshot timestamps
+</code></pre>
+<hr>
+<h2 id="build-identity-and-reproducibility">Build Identity and Reproducibility<a href="#build-identity-and-reproducibility" class="anchor-link" aria-label="Link to section: Build Identity and Reproducibility">&#182;</a></h2>
+<p><strong>Build markers enable reproducibility checks</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Marker</th>
+<th>Source</th>
+<th>Field</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Git SHA</strong></td>
+<td>build system</td>
+<td>build_git_sha</td>
+<td>Reproducible source version</td>
+</tr>
+<tr>
+<td><strong>UI Bundle Hash</strong></td>
+<td>build system</td>
+<td>build_ui_bundle_hash</td>
+<td>Reproducible gadget build</td>
+</tr>
+<tr>
+<td><strong>App Version</strong></td>
+<td>manifest.yml</td>
+<td>app_version</td>
+<td>Release version lock</td>
+</tr>
+<tr>
+<td><strong>ZIP Hash</strong></td>
+<td>deterministic build</td>
+<td>deterministic_zip_hash</td>
+<td>Export artifact fingerprint</td>
+</tr>
+</tbody></table>
+<p><strong>Reproducibility</strong>: Given the same git SHA + app version, running <code>forge deploy</code> and exporting should produce an identical ZIP hash.</p>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="LEDGER_CRYPTO_SPEC.md">LEDGER_CRYPTO_SPEC.md</a>: Ledger hash chain formula</li>
+<li><a href="SERIALIZATION_SCHEMA.md">SERIALIZATION_SCHEMA.md</a>: JSON serialization rules</li>
+<li><a href="ARCHITECTURE.md">ARCHITECTURE.md</a>: Export component details</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-TRUST-016</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/trust/EXPORT_SPEC.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Access Control Policy | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="../trust/security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="../trust/security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="../trust/vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="../trust/privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="../trust/subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="../trust/terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="../trust/threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="../trust/resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="../trust/data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="../trust/data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="../trust/architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="../trust/forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="../trust/customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="../trust/claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="../trust/uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="../trust/export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="../trust/ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="../trust/serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="../trust/security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="./sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="./incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="./support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="./bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="./secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="./ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="access control policy">
+          <a href="./access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="./change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="./rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="./logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="./secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Operations</span> <span>/</span> <span class="bc-current">Access Control Policy</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual (Quarterly access review recommended)</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-OPS-007</code></span></span></div>
+          <h1>Access Control Policy</h1>
+<hr>
+<h2 id="1-principle">1. Principle<a href="#1-principle" class="anchor-link" aria-label="Link to section: 1. Principle">&#182;</a></h2>
+<p>FirstTry follows the principle of <strong>least privilege</strong>: Users have minimum access required for their role.</p>
+<hr>
+<h2 id="2-access-tiers">2. Access Tiers<a href="#2-access-tiers" class="anchor-link" aria-label="Link to section: 2. Access Tiers">&#182;</a></h2>
+<h3 id="tier-1-public-no-authentication-required">Tier 1: Public (No Authentication Required)<a href="#tier-1-public-no-authentication-required" class="anchor-link" aria-label="Link to section: Tier 1: Public (No Authentication Required)">&#182;</a></h3>
+<ul>
+<li>Documentation (docs/)</li>
+<li>Public GitHub repository (if applicable)</li>
+</ul>
+<h3 id="tier-2-developer-atlassian-oauth2">Tier 2: Developer (Atlassian OAuth2)<a href="#tier-2-developer-atlassian-oauth2" class="anchor-link" aria-label="Link to section: Tier 2: Developer (Atlassian OAuth2)">&#182;</a></h3>
+<ul>
+<li>Source code repository access (GitHub)</li>
+<li>Development environment</li>
+<li>Requires: GitHub pull request review</li>
+</ul>
+<h3 id="tier-3-maintainer-admin">Tier 3: Maintainer (Admin)<a href="#tier-3-maintainer-admin" class="anchor-link" aria-label="Link to section: Tier 3: Maintainer (Admin)">&#182;</a></h3>
+<ul>
+<li>Merge permissions on main branch</li>
+<li>Release and deployment authority</li>
+<li>Requires: Multi-factor authentication (MFA) on GitHub</li>
+<li>Requires: Security training (annual)</li>
+</ul>
+<h3 id="tier-4-security-lead-full-admin">Tier 4: Security Lead (Full Admin)<a href="#tier-4-security-lead-full-admin" class="anchor-link" aria-label="Link to section: Tier 4: Security Lead (Full Admin)">&#182;</a></h3>
+<ul>
+<li>All above</li>
+<li>Plus: vulnerability triage, incident response decisions</li>
+<li>Requires: MFA (mandatory)</li>
+<li>Requires: Security clearance or vetting</li>
+</ul>
+<hr>
+<h2 id="3-multi-factor-authentication-mfa">3. Multi-Factor Authentication (MFA)<a href="#3-multi-factor-authentication-mfa" class="anchor-link" aria-label="Link to section: 3. Multi-Factor Authentication (MFA)">&#182;</a></h2>
+<p><strong>Mandatory for</strong>:</p>
+<ul>
+<li>All GitHub accounts with repo push access</li>
+<li>Atlassian Forge deployment accounts</li>
+<li>Jira Cloud admin site (if test site exists)</li>
+</ul>
+<p><strong>Method</strong>: GitHub&#39;s built-in authentication (TOTP or security keys)</p>
+<p><strong>Enforcement</strong>: GitHub branch protection rules block commits from non-MFA accounts.</p>
+<hr>
+<h2 id="4-onboarding">4. Onboarding<a href="#4-onboarding" class="anchor-link" aria-label="Link to section: 4. Onboarding">&#182;</a></h2>
+<p><strong>New team member process</strong>:</p>
+<ol>
+<li>Assign to GitHub team (with least privilege role)</li>
+<li>Enable MFA on GitHub account</li>
+<li>Provision Forge CLI credentials (if deploying)</li>
+<li>Grant Jira Cloud test site access (if applicable)</li>
+<li>Conduct security training (docs/trust/SECURITY_OVERVIEW.md)</li>
+</ol>
+<p><strong>Offboarding</strong>:</p>
+<ol>
+<li>Disable GitHub access (remove from team)</li>
+<li>Revoke Forge credentials</li>
+<li>Remove from Jira Cloud site</li>
+<li>Audit for any lingering access</li>
+</ol>
+<hr>
+<h2 id="5-access-review">5. Access Review<a href="#5-access-review" class="anchor-link" aria-label="Link to section: 5. Access Review">&#182;</a></h2>
+<p><strong>Quarterly</strong> (every 3 months):</p>
+<ol>
+<li>List all users with repo access</li>
+<li>Confirm each user still requires access</li>
+<li>Revoke access for users who have changed roles</li>
+<li>Update RBAC_MATRIX.md with current state</li>
+<li>Document findings in changelog or access log</li>
+</ol>
+<hr>
+<h2 id="6-credential-management">6. Credential Management<a href="#6-credential-management" class="anchor-link" aria-label="Link to section: 6. Credential Management">&#182;</a></h2>
+<p><strong>Forge CLI credentials</strong>:</p>
+<ul>
+<li>Store in <code>~/.forge/cli.conf</code> (local machine; never commit)</li>
+<li>Rotate annually or on role change</li>
+<li>Revoke on offboarding</li>
+<li>Never share credentials (one per person)</li>
+</ul>
+<p><strong>GitHub tokens</strong> (if used for automation):</p>
+<ul>
+<li>Store in GitHub Secrets (if CI/CD uses PATs)</li>
+<li>Rotate every 90 days</li>
+<li>Limit scope to minimum required</li>
+<li>Audit token usage logs</li>
+</ul>
+<hr>
+<h2 id="7-incident-and-breach-response">7. Incident and Breach Response<a href="#7-incident-and-breach-response" class="anchor-link" aria-label="Link to section: 7. Incident and Breach Response">&#182;</a></h2>
+<p><strong>If unauthorized access suspected</strong>:</p>
+<ol>
+<li>Notify <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a> immediately</li>
+<li>Revoke suspect credentials</li>
+<li>Conduct audit log review (GitHub Actions logs, Forge logs)</li>
+<li>Reset MFA on affected accounts</li>
+<li>Follow INCIDENT_RESPONSE_PLAN.md</li>
+</ol>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="RBAC_MATRIX.md">RBAC_MATRIX.md</a>: Current access matrix</li>
+<li><a href="INCIDENT_RESPONSE_PLAN.md">INCIDENT_RESPONSE_PLAN.md</a>: Breach response procedures</li>
+<li><a href="../trust/SECURITY_OVERVIEW.md">docs/trust/SECURITY_OVERVIEW.md</a>: Security principles</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-OPS-007</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual (Quarterly access review recommended)</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/operations/ACCESS_CONTROL_POLICY.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

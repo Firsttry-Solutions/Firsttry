@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Continuity and Disaster Recovery | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="../trust/security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="../trust/security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="../trust/vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="../trust/privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="../trust/subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="../trust/terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="../trust/threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="../trust/resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="../trust/data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="../trust/data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="../trust/architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="../trust/forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="../trust/customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="../trust/claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="../trust/uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="../trust/export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="../trust/ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="../trust/serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="../trust/security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="./sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="./incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="./support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="business continuity and disaster recovery">
+          <a href="./bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="./secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="./ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="./access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="./change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="./rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="./logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="./secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Operations</span> <span>/</span> <span class="bc-current">Business Continuity and Disaster Recovery</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-OPS-004</code></span></span></div>
+          <h1>Business Continuity and Disaster Recovery</h1>
+<hr>
+<h2 id="1-overview">1. Overview<a href="#1-overview" class="anchor-link" aria-label="Link to section: 1. Overview">&#182;</a></h2>
+<p>FirstTry&#39;s disaster recovery posture is dependent on Atlassian Forge platform availability. There is no independent FirstTry infrastructure to recover.</p>
+<hr>
+<h2 id="2-failure-scenarios-and-recovery">2. Failure Scenarios and Recovery<a href="#2-failure-scenarios-and-recovery" class="anchor-link" aria-label="Link to section: 2. Failure Scenarios and Recovery">&#182;</a></h2>
+<h3 id="scenario-1-firsttry-app-crashes">Scenario 1: FirstTry App Crashes<a href="#scenario-1-firsttry-app-crashes" class="anchor-link" aria-label="Link to section: Scenario 1: FirstTry App Crashes">&#182;</a></h3>
+<ul>
+<li><strong>Cause</strong>: Unhandled exception, out-of-memory, logic error</li>
+<li><strong>Recovery</strong>: Automatic restart by Forge platform (transparent)</li>
+<li><strong>RTO</strong>: &lt;5 minutes (Atlassian SLA)</li>
+<li><strong>RPO</strong>: No data loss (Forge Storage is replicated)</li>
+<li><strong>Action</strong>: Monitor Forge logs; engineer investigates</li>
+</ul>
+<h3 id="scenario-2-forge-storage-unavailable">Scenario 2: Forge Storage Unavailable<a href="#scenario-2-forge-storage-unavailable" class="anchor-link" aria-label="Link to section: Scenario 2: Forge Storage Unavailable">&#182;</a></h3>
+<ul>
+<li><strong>Cause</strong>: Atlassian infrastructure failure, regional outage</li>
+<li><strong>Recovery</strong>: Forge platform restores from replicated backups</li>
+<li><strong>RTO</strong>: 1–4 hours (depends on Atlassian&#39;s incident)</li>
+<li><strong>RPO</strong>: &lt;1 hour (typical replication lag)</li>
+<li><strong>Action</strong>: Await Atlassian incident resolution; customer can retry exports</li>
+</ul>
+<h3 id="scenario-3-jira-cloud-api-degraded">Scenario 3: Jira Cloud API Degraded<a href="#scenario-3-jira-cloud-api-degraded" class="anchor-link" aria-label="Link to section: Scenario 3: Jira Cloud API Degraded">&#182;</a></h3>
+<ul>
+<li><strong>Cause</strong>: Jira Cloud infrastructure incident</li>
+<li><strong>Recovery</strong>: Atlassian infrastructure team responds</li>
+<li><strong>Impact</strong>: FirstTry cannot read Jira data; dashboard shows error</li>
+<li><strong>Action</strong>: Retry automatically; exponential backoff; customer exported data remains accessible</li>
+</ul>
+<h3 id="scenario-4-firsttry-code-vulnerability-found">Scenario 4: FirstTry Code Vulnerability Found<a href="#scenario-4-firsttry-code-vulnerability-found" class="anchor-link" aria-label="Link to section: Scenario 4: FirstTry Code Vulnerability Found">&#182;</a></h3>
+<ul>
+<li><strong>Cause</strong>: Security issue in app code</li>
+<li><strong>Recovery</strong>: Patch released, redeployed via forge deploy</li>
+<li><strong>RTO</strong>: 24–48 hours (depends on severity)</li>
+<li><strong>RPO</strong>: N/A (code vulnerability, not data loss)</li>
+<li><strong>Action</strong>: Follow INCIDENT_RESPONSE_PLAN.md</li>
+</ul>
+<hr>
+<h2 id="3-customer-responsibilities-for-bcp">3. Customer Responsibilities for BCP<a href="#3-customer-responsibilities-for-bcp" class="anchor-link" aria-label="Link to section: 3. Customer Responsibilities for BCP">&#182;</a></h2>
+<p><strong>Export and backup</strong>:</p>
+<ul>
+<li>Export compliance evidence regularly (recommended: monthly)</li>
+<li>Store exports in your own secure storage (encrypted, replicated)</li>
+<li>Don&#39;t rely solely on FirstTry for compliance record retention</li>
+</ul>
+<p><strong>Uninstall and deletion</strong>:</p>
+<ul>
+<li>If FirstTry is no longer needed, uninstall to trigger cleanup</li>
+<li>All data deleted within 30 days (Atlassian SLA)</li>
+</ul>
+<p><strong>Contact updates</strong>:</p>
+<ul>
+<li>Maintain security contact email in Jira admin settings</li>
+<li>Ensure we can reach you in case of incident</li>
+</ul>
+<hr>
+<h2 id="4-no-disaster-recovery-sla">4. No Disaster Recovery SLA<a href="#4-no-disaster-recovery-sla" class="anchor-link" aria-label="Link to section: 4. No Disaster Recovery SLA">&#182;</a></h2>
+<p><strong>FirstTry does NOT provide</strong>:</p>
+<ul>
+<li>❌ Independent uptime guarantee beyond Forge platform SLA</li>
+<li>❌ Data backup outside Forge Storage</li>
+<li>❌ RTO or RPO guarantees independent of Atlassian&#39;s SLA</li>
+<li>❌ Disaster recovery drills or tabletop exercises</li>
+</ul>
+<p><strong>Customers MUST</strong>:</p>
+<ul>
+<li>✅ Plan for Atlassian Forge platform availability (99.5% SLA typical)</li>
+<li>✅ Export data regularly for redundancy</li>
+<li>✅ Maintain security contacts for incident notification</li>
+</ul>
+<hr>
+<h2 id="5-platform-dependency-statement">5. Platform Dependency Statement<a href="#5-platform-dependency-statement" class="anchor-link" aria-label="Link to section: 5. Platform Dependency Statement">&#182;</a></h2>
+<blockquote>
+<p>FirstTry&#39;s availability, recoverability, and data retention are entirely dependent on Atlassian Forge platform. All disaster recovery and business continuity guarantees flow from Atlassian&#39;s published SLA and terms of service. See FORGE_PLATFORM_DEPENDENCY.md.</p>
+</blockquote>
+<hr>
+<h2 id="6-testing-and-drills">6. Testing and Drills<a href="#6-testing-and-drills" class="anchor-link" aria-label="Link to section: 6. Testing and Drills">&#182;</a></h2>
+<p><strong>Annual test procedure</strong>:</p>
+<ol>
+<li>Simulate Forge Storage unavailability locally</li>
+<li>Verify error handling (app returns clear error messages)</li>
+<li>Confirm customer can still access previously exported archives</li>
+<li>Document results</li>
+</ol>
+<hr>
+<h2 id="7-emergency-contact">7. Emergency Contact<a href="#7-emergency-contact" class="anchor-link" aria-label="Link to section: 7. Emergency Contact">&#182;</a></h2>
+<p>For business-impacting incidents requiring immediate escalation:</p>
+<p><strong>Emergency</strong>: <a href="mailto:emergency@firsttry.run">emergency@firsttry.run</a>
+<strong>Security</strong>: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="../trust/FORGE_PLATFORM_DEPENDENCY.md">FORGE_PLATFORM_DEPENDENCY.md</a>: Platform SLA details</li>
+<li><a href="../trust/UNINSTALL_DELETION.md">docs/trust/UNINSTALL_DELETION.md</a>: Data deletion SLA</li>
+<li><a href="INCIDENT_RESPONSE_PLAN.md">INCIDENT_RESPONSE_PLAN.md</a>: Incident handling</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-OPS-004</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/operations/BCP_DRP.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

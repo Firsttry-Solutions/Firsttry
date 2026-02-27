@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure SDLC Policy | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="../trust/security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="../trust/security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="../trust/vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="../trust/privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="../trust/subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="../trust/terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="../trust/threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="../trust/resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="../trust/data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="../trust/data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="../trust/architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="../trust/forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="../trust/customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="../trust/claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="../trust/uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="../trust/export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="../trust/ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="../trust/serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="../trust/security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="./sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="./incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="./support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="./bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="secure sdlc policy">
+          <a href="./secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="./ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="./access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="./change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="./rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="./logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="./secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Operations</span> <span>/</span> <span class="bc-current">Secure SDLC Policy</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-OPS-005</code></span></span></div>
+          <h1>Secure SDLC Policy</h1>
+<hr>
+<h2 id="1-secure-development-practices">1. Secure Development Practices<a href="#1-secure-development-practices" class="anchor-link" aria-label="Link to section: 1. Secure Development Practices">&#182;</a></h2>
+<h3 id="code-review">Code Review<a href="#code-review" class="anchor-link" aria-label="Link to section: Code Review">&#182;</a></h3>
+<ul>
+<li>✅ All PRs require at least one review</li>
+<li>✅ Security-critical changes require security lead review</li>
+<li>✅ Reviewers check for: hardcoding secrets, dangerous API calls, scope escalation</li>
+</ul>
+<h3 id="static-analysis">Static Analysis<a href="#static-analysis" class="anchor-link" aria-label="Link to section: Static Analysis">&#182;</a></h3>
+<ul>
+<li>✅ GitHub Actions runs linters (eslint)</li>
+<li>✅ TypeScript strict mode enforced</li>
+<li>✅ Dependency scanning via npm audit (high severity must be resolved)</li>
+</ul>
+<h3 id="testing">Testing<a href="#testing" class="anchor-link" aria-label="Link to section: Testing">&#182;</a></h3>
+<ul>
+<li>✅ Unit tests required for features</li>
+<li>✅ Integration tests for API calls (use mocks; no real Jira API calls)</li>
+<li>✅ Security-specific tests:<ul>
+<li>Scope allowlist enforcement</li>
+<li>Tenant isolation</li>
+<li>No external egress</li>
+<li>Export determinism</li>
+</ul>
+</li>
+</ul>
+<h3 id="dependency-management">Dependency Management<a href="#dependency-management" class="anchor-link" aria-label="Link to section: Dependency Management">&#182;</a></h3>
+<ul>
+<li>✅ package-lock.json locked (reproducible builds)</li>
+<li>✅ Minimal dependencies (prefer Node stdlib where possible)</li>
+<li>✅ npm audit run on each build (fail on high-severity)</li>
+<li>✅ Annual dependency review for deprecated packages</li>
+</ul>
+<hr>
+<h2 id="2-threat-modeling">2. Threat Modeling<a href="#2-threat-modeling" class="anchor-link" aria-label="Link to section: 2. Threat Modeling">&#182;</a></h2>
+<p><strong>On code changes that affect</strong>:</p>
+<ul>
+<li>Scope declarations (manifest.yml)</li>
+<li>API call methods or endpoints</li>
+<li>Data storage or export format</li>
+<li>Authentication or authorization logic</li>
+</ul>
+<p><strong>Process</strong>:</p>
+<ol>
+<li>Developer updates threat model (docs/trust/THREAT_MODEL.md)</li>
+<li>Reviewer confirms threat assessment reasonable</li>
+<li>Test cases added to cover new threats</li>
+<li>Evidence regenerated (scope changes always require evidence)</li>
+</ol>
+<hr>
+<h2 id="3-security-testing">3. Security Testing<a href="#3-security-testing" class="anchor-link" aria-label="Link to section: 3. Security Testing">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Test Type</th>
+<th>Frequency</th>
+<th>Owner</th>
+<th>Tools</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Dependency scan</td>
+<td>Every commit</td>
+<td>CI/CD</td>
+<td>npm audit, trivy</td>
+</tr>
+<tr>
+<td>Lint check</td>
+<td>Every commit</td>
+<td>CI/CD</td>
+<td>eslint, TypeScript</td>
+</tr>
+<tr>
+<td>Scope validation</td>
+<td>Every release</td>
+<td>Manual</td>
+<td>tools/enterprise_docs_gate.sh</td>
+</tr>
+<tr>
+<td>Mutation detection</td>
+<td>Every release</td>
+<td>Manual</td>
+<td>resolver_scan.txt check</td>
+</tr>
+<tr>
+<td>Export determinism</td>
+<td>Every release</td>
+<td>CI/CD</td>
+<td>hash comparison tests</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-secret-management">4. Secret Management<a href="#4-secret-management" class="anchor-link" aria-label="Link to section: 4. Secret Management">&#182;</a></h2>
+<p><strong>Development</strong>:</p>
+<ul>
+<li>❌ Never commit secrets (API keys, tokens, credentials)</li>
+<li>✅ Use GitHub Secrets for CI/CD authentication</li>
+<li>✅ Use environment variables (.env files, not committed)</li>
+<li>✅ Rotate Forge CLI credentials annually</li>
+</ul>
+<p><strong>Pre-commit hooks</strong> (recommended):</p>
+<ul>
+<li>Install: <code>npm install --save-dev husky lint-staged</code></li>
+<li>Scan for AWS keys, GitHub tokens, etc.</li>
+</ul>
+<p><strong>Audit</strong>:</p>
+<ul>
+<li>Scan git history for secrets: <code>git log --all --full-history --source -S &#39;-----BEGIN RSA PRIVATE KEY-----&#39;</code></li>
+<li>Revoke if found and change immediately</li>
+</ul>
+<hr>
+<h2 id="5-vulnerability-management">5. Vulnerability Management<a href="#5-vulnerability-management" class="anchor-link" aria-label="Link to section: 5. Vulnerability Management">&#182;</a></h2>
+<h3 id="disclosure">Disclosure<a href="#disclosure" class="anchor-link" aria-label="Link to section: Disclosure">&#182;</a></h3>
+<ul>
+<li>Report to <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a> (never public channels)</li>
+<li>See <a href="../trust/VULNERABILITY_DISCLOSURE_POLICY.md">VULNERABILITY_DISCLOSURE_POLICY.md</a></li>
+</ul>
+<h3 id="patch-timeline">Patch Timeline<a href="#patch-timeline" class="anchor-link" aria-label="Link to section: Patch Timeline">&#182;</a></h3>
+<ul>
+<li>Critical: 7 days</li>
+<li>High: 14 days</li>
+<li>Medium: 30 days</li>
+<li>Low: Next regular release</li>
+</ul>
+<h3 id="communication">Communication<a href="#communication" class="anchor-link" aria-label="Link to section: Communication">&#182;</a></h3>
+<ul>
+<li>Notify customers via email</li>
+<li>Update CHANGELOG.md with CVE references (if applicable)</li>
+<li>Publish advisory (for public projects)</li>
+</ul>
+<hr>
+<h2 id="6-build-and-release-security">6. Build and Release Security<a href="#6-build-and-release-security" class="anchor-link" aria-label="Link to section: 6. Build and Release Security">&#182;</a></h2>
+<p><strong>Build integrity</strong>:</p>
+<ul>
+<li>✅ Deterministic build (same code → same hash)</li>
+<li>✅ Build ID markers (git SHA + UI bundle hash) embedded in exports</li>
+<li>✅ Evidence bundle signed (hash chain via LEDGER_CRYPTO_SPEC.md)</li>
+</ul>
+<p><strong>Release verification</strong>:</p>
+<ul>
+<li>✅ enforce evidence gate before tag (tools/enterprise_docs_gate.sh)</li>
+<li>✅ Tag release with git tag (immutable)</li>
+<li>✅ Deploy via Forge CLI (auditable)</li>
+</ul>
+<hr>
+<h2 id="7-training-and-awareness">7. Training and Awareness<a href="#7-training-and-awareness" class="anchor-link" aria-label="Link to section: 7. Training and Awareness">&#182;</a></h2>
+<p><strong>Annual security training</strong> for all maintainers:</p>
+<ul>
+<li>OWASP Top 10 (Web app security)</li>
+<li>Secure coding practices</li>
+<li>Threat modeling and STRIDE</li>
+<li>Incident response procedures</li>
+<li>FirstTry&#39;s specific threat model and mitigations</li>
+</ul>
+<p><strong>Documentation</strong>: SECURITY_OVERVIEW.md, THREAT_MODEL.md</p>
+<hr>
+<h2 id="8-third-party-code-and-dependencies">8. Third-Party Code and Dependencies<a href="#8-third-party-code-and-dependencies" class="anchor-link" aria-label="Link to section: 8. Third-Party Code and Dependencies">&#182;</a></h2>
+<p><strong>Before adding new dependency</strong>:</p>
+<ol>
+<li>Review GitHub stars (active maintainance indicator)</li>
+<li>Check npm audit status (no high-severity vulnerabilities)</li>
+<li>Verify license compatibility (MIT, Apache 2.0 preferred)</li>
+<li>Limit to what&#39;s needed (avoid pulling entire ecosystem)</li>
+<li>Document why (add comment in package.json)</li>
+</ol>
+<p><strong>Deprecated dependencies</strong>:</p>
+<ul>
+<li>Annual review (npm outdated)</li>
+<li>Remove or upgrade within 30 days of security patch</li>
+<li>Policy: No unpatched high-severity CVEs in production</li>
+</ul>
+<hr>
+<h2 id="9-deployment-security">9. Deployment Security<a href="#9-deployment-security" class="anchor-link" aria-label="Link to section: 9. Deployment Security">&#182;</a></h2>
+<p><strong>Pre-deployment checklist</strong>:</p>
+<ul>
+<li>✅ All tests passing (CI/CD green)</li>
+<li>✅ Evidence gate passing (tools/enterprise_docs_gate.sh)</li>
+<li>✅ CHANGELOG.md updated</li>
+<li>✅ Git tag created</li>
+<li>✅ No uncommitted changes</li>
+</ul>
+<p><strong>After deployment</strong>:</p>
+<ul>
+<li>✅ Monitor Forge logs for errors (forge logs)</li>
+<li>✅ Spot-check gadget functionality</li>
+<li>✅ Confirm baseline hashes unchanged (unless intentional)</li>
+</ul>
+<hr>
+<h2 id="10-references">10. References<a href="#10-references" class="anchor-link" aria-label="Link to section: 10. References">&#182;</a></h2>
+<ul>
+<li><a href="../trust/THREAT_MODEL.md">THREAT_MODEL.md</a>: Security threat inventory</li>
+<li><a href="CI_CD_EVIDENCE.md">CI_CD_EVIDENCE.md</a>: CI/CD tooling and evidence</li>
+<li><a href="CHANGE_MANAGEMENT_POLICY.md">CHANGE_MANAGEMENT_POLICY.md</a>: Release process</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-OPS-005</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/operations/SECURE_SDLC_POLICY.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

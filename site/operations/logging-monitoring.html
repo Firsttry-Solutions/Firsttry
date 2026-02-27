@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logging and Monitoring | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="../trust/security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="../trust/security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="../trust/vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="../trust/privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="../trust/subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="../trust/terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item" data-search-title="threat model (stride)">
+          <a href="../trust/threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="../trust/resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="../trust/data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="../trust/data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="../trust/architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="../trust/forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="../trust/customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="../trust/claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="../trust/uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="../trust/export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="../trust/ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="../trust/serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="../trust/security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="./sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="./incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="./support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="./bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="./secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="./ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="./access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="./change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="./rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="logging and monitoring">
+          <a href="./logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="./secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Operations</span> <span>/</span> <span class="bc-current">Logging and Monitoring</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-OPS-010</code></span></span></div>
+          <h1>Logging and Monitoring</h1>
+<hr>
+<h2 id="1-application-logging">1. Application Logging<a href="#1-application-logging" class="anchor-link" aria-label="Link to section: 1. Application Logging">&#182;</a></h2>
+<p><strong>Logger</strong>: Winston (Node.js logging library)</p>
+<p><strong>Log levels</strong>:</p>
+<ul>
+<li>ERROR: App failures, unhandled exceptions</li>
+<li>WARN: Recoverable issues, deprecated API usage</li>
+<li>INFO: State changes, API calls, exports</li>
+<li>DEBUG: Detailed execution flow (development only)</li>
+</ul>
+<p><strong>Log output</strong>:</p>
+<ul>
+<li>Console (development)</li>
+<li>Forge Storage (production; audit trail)</li>
+<li>Forge logs (accessible via <code>forge logs</code>)</li>
+</ul>
+<p><strong>PII handling</strong>:</p>
+<ul>
+<li>Redact user emails from logs (log user IDs only)</li>
+<li>Never log request/response bodies containing sensitive data</li>
+<li>Exclude API keys and credentials</li>
+</ul>
+<hr>
+<h2 id="2-audit-trail-ledger">2. Audit Trail (Ledger)<a href="#2-audit-trail-ledger" class="anchor-link" aria-label="Link to section: 2. Audit Trail (Ledger)">&#182;</a></h2>
+<p><strong>What is logged</strong>:</p>
+<ul>
+<li>API calls to Jira (method, endpoint, timestamp)</li>
+<li>Snapshot creation (ID, record count, timestamp)</li>
+<li>Export requests (timestamp, file hash)</li>
+<li>Error events (action, error message, tenant ID)</li>
+</ul>
+<p><strong>Immutability</strong>:</p>
+<ul>
+<li>Stored in append-only ledger (Forge Storage)</li>
+<li>Hash chain prevents tampering</li>
+<li>Customer can verify offline via export archives</li>
+</ul>
+<hr>
+<h2 id="3-metrics-and-observability">3. Metrics and Observability<a href="#3-metrics-and-observability" class="anchor-link" aria-label="Link to section: 3. Metrics and Observability">&#182;</a></h2>
+<p><strong>Metrics exported</strong>:</p>
+<ul>
+<li>Request count (per endpoint)</li>
+<li>Latency percentiles (p50, p95, p99)</li>
+<li>Error rate (failures / total requests)</li>
+<li>Snapshot size (bytes stored)</li>
+<li>Ledger record count</li>
+</ul>
+<p><strong>Access</strong>:</p>
+<ul>
+<li>Dashboard gadget (real-time Jira admin view)</li>
+<li>Export manifest (historical snapshots)</li>
+<li>Forge platform metrics (via forge logs)</li>
+</ul>
+<hr>
+<h2 id="4-error-handling-and-alerting">4. Error Handling and Alerting<a href="#4-error-handling-and-alerting" class="anchor-link" aria-label="Link to section: 4. Error Handling and Alerting">&#182;</a></h2>
+<p><strong>Errors are fail-closed</strong>:</p>
+<ul>
+<li>If API call fails: Return error to user (no silent failures)</li>
+<li>If export fails: Report reason code and stop (don&#39;t corrupt ZIP)</li>
+<li>If ledger verification fails: Abort export</li>
+</ul>
+<p><strong>Example error messages</strong>:</p>
+<pre><code>&quot;ERROR: Jira API returned 429 (rate limit). Retry in 5 minutes.&quot;
+&quot;ERROR: Export validation failed: ledger hash mismatch.&quot;
+&quot;ERROR: Insufficient Forge Storage quota. Uninstall old snapshots.&quot;
+</code></pre>
+<p><strong>Alerting</strong> (if connected to monitoring):</p>
+<ul>
+<li>Slack notification on critical errors (optional)</li>
+<li>Email alerts for repeated failures</li>
+<li>Manual threshold: &gt;5% error rate triggers review</li>
+</ul>
+<hr>
+<h2 id="5-logging-for-forensics">5. Logging for Forensics<a href="#5-logging-for-forensics" class="anchor-link" aria-label="Link to section: 5. Logging for Forensics">&#182;</a></h2>
+<p><strong>When investigating incidents</strong>:</p>
+<ol>
+<li><p><strong>Access Forge logs</strong>:</p>
+<pre><code class="language-bash">forge logs [--tail | --follow]
+</code></pre>
+</li>
+<li><p><strong>Retrieve ledger from Forge Storage</strong>:</p>
+<ul>
+<li>Admin exports compliance evidence</li>
+<li>Ledger is included in ZIP archive</li>
+</ul>
+</li>
+<li><p><strong>Search logs for</strong>:</p>
+<ul>
+<li>Specific error messages</li>
+<li>API call patterns</li>
+<li>Timestamp bounds around incident</li>
+<li>Tenant/user context</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="6-retention-and-deletion">6. Retention and Deletion<a href="#6-retention-and-deletion" class="anchor-link" aria-label="Link to section: 6. Retention and Deletion">&#182;</a></h2>
+<p><strong>Log retention</strong>:</p>
+<ul>
+<li>Forge logs: 14 days (Atlassian platform default)</li>
+<li>Audit ledger: 90 days (configurable per snapshot policy)</li>
+<li>After 90 days: Auto-cleanup via cron (scheduled job)</li>
+</ul>
+<p><strong>Customer export logs</strong>:</p>
+<ul>
+<li>Retained on customer&#39;s infrastructure</li>
+<li>FirstTry does not retain downloads</li>
+</ul>
+<hr>
+<h2 id="7-monitoring-plan">7. Monitoring Plan<a href="#7-monitoring-plan" class="anchor-link" aria-label="Link to section: 7. Monitoring Plan">&#182;</a></h2>
+<p><strong>What to monitor</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Threshold</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Error rate</td>
+<td>&gt;5%</td>
+<td>Investigate root cause</td>
+</tr>
+<tr>
+<td>API latency</td>
+<td>p99 &gt; 5s</td>
+<td>Check Jira Cloud health</td>
+</tr>
+<tr>
+<td>Ledger size</td>
+<td>&gt;1GB</td>
+<td>Warn customer; recommend export</td>
+</tr>
+<tr>
+<td>Export failure rate</td>
+<td>&gt;1%</td>
+<td>Escalate to engineering</td>
+</tr>
+</tbody></table>
+<p><strong>Review frequency</strong>: Weekly (automated), Manual monthly</p>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="INCIDENT_RESPONSE_PLAN.md">INCIDENT_RESPONSE_PLAN.md</a>: Error handling procedures</li>
+<li><a href="../trust/LEDGER_CRYPTO_SPEC.md">docs/trust/LEDGER_CRYPTO_SPEC.md</a>: Audit trail format</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-OPS-010</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/operations/LOGGING_MONITORING.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>

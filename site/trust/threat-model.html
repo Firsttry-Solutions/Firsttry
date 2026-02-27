@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Threat Model (STRIDE) | FirstTry Trust Center</title>
+  <meta name="description" content="Enterprise security and compliance documentation for Atlassian Marketplace diligence and procurement reviews." />
+  <link rel="stylesheet" href="../assets/portal.css" />
+</head>
+<body class="doc-page">
+  <div id="layout">
+    <nav id="sidebar-nav">
+  <div class="sidebar-header"><a href="../index.html" class="portal-home-link">FirstTry Trust Center</a></div>
+  <div class="sidebar-search"><input type="text" id="sidebar-search-input" placeholder="Search docs…" aria-label="Search documentation" autocomplete="off" /></div>
+  <ul class="sidebar-groups">
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Overview</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Trust Center</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="security overview">
+          <a href="./security-overview.html">Security Overview</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security contact">
+          <a href="./security-contact.html">Security Contact</a>
+        </li>
+        <li class="sidebar-item" data-search-title="vulnerability disclosure policy">
+          <a href="./vulnerability-disclosure-policy.html">Vulnerability Disclosure Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="privacy policy">
+          <a href="./privacy-policy.html">Privacy Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="subprocessors">
+          <a href="./subprocessors.html">Subprocessors</a>
+        </li>
+        <li class="sidebar-item" data-search-title="terms of service">
+          <a href="./terms-of-service.html">Terms of Service</a>
+        </li>
+        <li class="sidebar-item active" data-search-title="threat model (stride)">
+          <a href="./threat-model.html">Threat Model (STRIDE)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="resolver inventory (0 mutations)">
+          <a href="./resolver-inventory.html">Resolver Inventory (0 mutations)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data flow">
+          <a href="./data-flow.html">Data Flow</a>
+        </li>
+        <li class="sidebar-item" data-search-title="data classification and pii">
+          <a href="./data-classification-pii.html">Data Classification and PII</a>
+        </li>
+        <li class="sidebar-item" data-search-title="architecture">
+          <a href="./architecture.html">Architecture</a>
+        </li>
+        <li class="sidebar-item" data-search-title="forge platform dependency">
+          <a href="./forge-platform-dependency.html">Forge Platform Dependency</a>
+        </li>
+        <li class="sidebar-item" data-search-title="customer responsibilities">
+          <a href="./customer-responsibilities.html">Customer Responsibilities</a>
+        </li>
+        <li class="sidebar-item" data-search-title="claims register (truth audit)">
+          <a href="./claims-register.html">Claims Register (Truth Audit)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="uninstall and deletion">
+          <a href="./uninstall-deletion.html">Uninstall and Deletion</a>
+        </li>
+        <li class="sidebar-item" data-search-title="export spec">
+          <a href="./export-spec.html">Export Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ledger crypto spec">
+          <a href="./ledger-crypto-spec.html">Ledger Crypto Spec</a>
+        </li>
+        <li class="sidebar-item" data-search-title="serialization schema">
+          <a href="./serialization-schema.html">Serialization Schema</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security txt">
+          <a href="./security-txt.html">Security TXT</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Operations</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="sla (support response times only)">
+          <a href="../operations/sla.html">SLA (support response times only)</a>
+        </li>
+        <li class="sidebar-item" data-search-title="incident response plan">
+          <a href="../operations/incident-response-plan.html">Incident Response Plan</a>
+        </li>
+        <li class="sidebar-item" data-search-title="support policy">
+          <a href="../operations/support-policy.html">Support Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="business continuity and disaster recovery">
+          <a href="../operations/bcp-drp.html">Business Continuity and Disaster Recovery</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secure sdlc policy">
+          <a href="../operations/secure-sdlc-policy.html">Secure SDLC Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="ci/cd evidence">
+          <a href="../operations/ci-cd-evidence.html">CI/CD Evidence</a>
+        </li>
+        <li class="sidebar-item" data-search-title="access control policy">
+          <a href="../operations/access-control-policy.html">Access Control Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="change management policy">
+          <a href="../operations/change-management-policy.html">Change Management Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="rbac matrix">
+          <a href="../operations/rbac-matrix.html">RBAC Matrix</a>
+        </li>
+        <li class="sidebar-item" data-search-title="logging and monitoring">
+          <a href="../operations/logging-monitoring.html">Logging and Monitoring</a>
+        </li>
+        <li class="sidebar-item" data-search-title="secrets management">
+          <a href="../operations/secrets-management.html">Secrets Management</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Procurement</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="enterprise security pack index">
+          <a href="../procurement/enterprise-pack-index.html">Enterprise Security Pack Index</a>
+        </li>
+        <li class="sidebar-item" data-search-title="security questionnaire">
+          <a href="../procurement/security-questionnaire.html">Security Questionnaire</a>
+        </li>
+        <li class="sidebar-item" data-search-title="control mapping matrix">
+          <a href="../procurement/control-mapping-matrix.html">Control Mapping Matrix</a>
+        </li>
+      </ul>
+    </li>
+    <li class="sidebar-group">
+      <span class="sidebar-group-label">Evidence</span>
+      <ul class="sidebar-items">
+        <li class="sidebar-item" data-search-title="retention policy">
+          <a href="../evidence/retention-policy.html">Retention Policy</a>
+        </li>
+        <li class="sidebar-item" data-search-title="evidence index">
+          <a href="../evidence/evidence-index.html">Evidence Index</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+    <div id="main-wrapper">
+      <header id="top-bar">
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+        <span class="portal-title-bar">FirstTry Trust Center</span>
+        <span class="version-badge">v4.4.2</span>
+      </header>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span>/</span> <span class="bc-group">Trust Center</span> <span>/</span> <span class="bc-current">Threat Model (STRIDE)</span></nav>
+      <main id="content">
+        <article class="doc-content">
+          <div class="doc-meta-card" role="note" aria-label="Document metadata"><span class="dmc-badge dmc-pack" title="Portal Pack Version">Pack v4.4.2</span><span class="dmc-badge" title="Document revision">Rev 4.4.2</span><span class="dmc-sep"></span><span class="dmc-field"><span class="dmc-label">Owner</span><span class="dmc-val">FirstTry Solutions</span></span><span class="dmc-field"><span class="dmc-label">Last Updated</span><span class="dmc-val">2026-02-26</span></span><span class="dmc-field"><span class="dmc-label">Review</span><span class="dmc-val">Annual</span></span><span class="dmc-field"><span class="dmc-label">Doc ID</span><span class="dmc-val"><code>FT-TRUST-007</code></span></span></div>
+          <h1>Threat Model</h1>
+<hr>
+<h2 id="overview">Overview<a href="#overview" class="anchor-link" aria-label="Link to section: Overview">&#182;</a></h2>
+<p>FirstTry threat model uses STRIDE framework to identify, categorize, and assess threats to the application and platform integration.</p>
+<hr>
+<h2 id="stride-analysis">STRIDE Analysis<a href="#stride-analysis" class="anchor-link" aria-label="Link to section: STRIDE Analysis">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Threat</th>
+<th>STRIDE</th>
+<th>Mitigation</th>
+<th>Residual Risk</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Scope Escalation</strong></td>
+<td>Elevation of Privilege</td>
+<td>Manifest.yml declares read-only scopes only; Forge enforces scope validation on requestJira() calls; CI gate blocks scope mutations</td>
+<td>Low (platform-enforced)</td>
+</tr>
+<tr>
+<td><strong>API Mutation (POST/PUT/DELETE)</strong></td>
+<td>Tampering</td>
+<td>Source code scans (resolver_scan.txt) verify no POST/PUT/DELETE used; CI gate blocks mutations</td>
+<td>Low (code-verified, testable)</td>
+</tr>
+<tr>
+<td><strong>Data Tampering in Storage</strong></td>
+<td>Tampering</td>
+<td>Ledger uses SHA256 hash chain; export archives signed with build identity; offline verification tools available</td>
+<td>Low (cryptographically detected)</td>
+</tr>
+<tr>
+<td><strong>Unauthorized Data Access</strong></td>
+<td>Information Disclosure</td>
+<td>Forge per-tenant isolation enforced by platform; no cross-tenant data access possible in scope</td>
+<td>Low (platform-enforced)</td>
+</tr>
+<tr>
+<td><strong>Data Exfiltration to External Service</strong></td>
+<td>Information Disclosure</td>
+<td>Zero egress audit (resolver_scan.txt); no external HTTP clients in production code</td>
+<td>Low (code-verified)</td>
+</tr>
+<tr>
+<td><strong>Export Archive Forgery</strong></td>
+<td>Tampering</td>
+<td>Deterministic ZIP build; git SHA + UI bundle hash embedded in manifest; signature verification available</td>
+<td>Low (cryptographically detectable)</td>
+</tr>
+<tr>
+<td><strong>Ledger Replay Attack</strong></td>
+<td>Information Disclosure / Replay</td>
+<td>Nonce + timestamp + hash chain prevent replay; monotonic timestamp enforcement</td>
+<td>Low (cryptographically protected)</td>
+</tr>
+<tr>
+<td><strong>Compromise of Development Infrastructure</strong></td>
+<td>Tampering / Elevation</td>
+<td>Git commit history immutable; signed tags recommended; 2FA on github.com/Firsttry-Solutions</td>
+<td>Medium (depends on GitHub security)</td>
+</tr>
+<tr>
+<td><strong>Dependency Vulnerability</strong></td>
+<td>Tampering / Information Disclosure</td>
+<td>npm audit enforced in CI; trivy scan in evidence; SBOM generated; SCA tools enabled</td>
+<td>Low (monitored, tested)</td>
+</tr>
+<tr>
+<td><strong>Forge Platform Outage</strong></td>
+<td>Denial of Service</td>
+<td>No mitigation available; FirstTry depends on Forge SLA; customers should export regularly</td>
+<td>High (platform dependency)</td>
+</tr>
+<tr>
+<td><strong>Jira API Rate Limiting</strong></td>
+<td>Denial of Service</td>
+<td>Forge handles rate-limit enforcement; app implements exponential backoff; optional retry logic</td>
+<td>Medium (platform-dependent)</td>
+</tr>
+<tr>
+<td><strong>Unauthorized Repository Access</strong></td>
+<td>Tampering / Information Disclosure</td>
+<td>GitHub repo is private; branch protection on main; code review required; audit logs available</td>
+<td>Low (GitHub-enforced)</td>
+</tr>
+<tr>
+<td><strong>Audit Ledger Deletion</strong></td>
+<td>Repudiation</td>
+<td>Forge Storage immutability at platform level; ledger is append-only; deletion requires uninstall</td>
+<td>Low (platform-enforced)</td>
+</tr>
+<tr>
+<td><strong>Tenant Isolation Bypass</strong></td>
+<td>Information Disclosure</td>
+<td>Forge platform guarantees per-tenant isolation; no application-level tenant confusion possible</td>
+<td>Low (platform-enforced)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="threat-severity-rating">Threat Severity Rating<a href="#threat-severity-rating" class="anchor-link" aria-label="Link to section: Threat Severity Rating">&#182;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Rating</th>
+<th>Criteria</th>
+<th>CVSS</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Critical</strong></td>
+<td>Unmitigated, exploitable, disastrous impact</td>
+<td>≥9.0</td>
+<td>Immediate patch; escalate to Atlassian if platform issue</td>
+</tr>
+<tr>
+<td><strong>High</strong></td>
+<td>Significant impact; requires effort to exploit</td>
+<td>7.0–8.9</td>
+<td>Patch within 7 days; security advisory</td>
+</tr>
+<tr>
+<td><strong>Medium</strong></td>
+<td>Moderate impact; mitigations available</td>
+<td>4.0–6.9</td>
+<td>Patch within 30 days; document in release notes</td>
+</tr>
+<tr>
+<td><strong>Low</strong></td>
+<td>Minimal impact; unlikely to exploit</td>
+<td>&lt;4.0</td>
+<td>Patch in next regular release</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="threat-elimination-rationale">Threat Elimination Rationale<a href="#threat-elimination-rationale" class="anchor-link" aria-label="Link to section: Threat Elimination Rationale">&#182;</a></h2>
+<h3 id="why-these-threats-are-acceptable">Why these threats are acceptable<a href="#why-these-threats-are-acceptable" class="anchor-link" aria-label="Link to section: Why these threats are acceptable">&#182;</a></h3>
+<ol>
+<li><p><strong>Forge Dependency (Unavailable)</strong>: FirstTry does not own or operate hosting infrastructure. Acceptance: Platform SLA is known; customers can select alternative tools if risk-intolerant. Mitigation: Regular exports.</p>
+</li>
+<li><p><strong>Development Infrastructure</strong>: GitHub account security is shared responsibility with GitHub&#39;s security controls. Acceptance: GitHub SOC2 Type II certified; code review mitigates. Mitigation: Signed commits; branch protection.</p>
+</li>
+<li><p><strong>Dependency Vulnerabilities (Ongoing)</strong>: Dependencies update continuously; zero-day vulnerabilities may exist. Acceptance: Industry-standard SCA tools (npm audit, trivy) employed. Mitigation: CI gates fail on high-severity findings.</p>
+</li>
+</ol>
+<hr>
+<h2 id="mitigations-by-category">Mitigations by Category<a href="#mitigations-by-category" class="anchor-link" aria-label="Link to section: Mitigations by Category">&#182;</a></h2>
+<h3 id="platform-enforced-firsttry-cannot-influence">Platform-Enforced (FirstTry cannot influence)<a href="#platform-enforced-firsttry-cannot-influence" class="anchor-link" aria-label="Link to section: Platform-Enforced (FirstTry cannot influence)">&#182;</a></h3>
+<ul>
+<li>Scope validation (Forge requestJira API)</li>
+<li>Per-tenant storage isolation (Forge Storage)</li>
+<li>Encryption at rest (Forge Storage AES-256)</li>
+<li>TLS in transit (Forge platform)</li>
+<li>Rate limiting and DDoS protection (Atlassian infrastructure)</li>
+</ul>
+<h3 id="code-verified-evidence-artifacts">Code-Verified (evidence artifacts)<a href="#code-verified-evidence-artifacts" class="anchor-link" aria-label="Link to section: Code-Verified (evidence artifacts)">&#182;</a></h3>
+<ul>
+<li>No external HTTP clients (resolver_scan.txt)</li>
+<li>No POST/PUT/DELETE mutations (resolver_scan.txt)</li>
+<li>Deterministic exports (export tests)</li>
+<li>Immutable ledger (hash chain formula)</li>
+<li>No scope escalation (manifest.yml lock + CI gate)</li>
+</ul>
+<h3 id="customer-controlled">Customer-Controlled<a href="#customer-controlled" class="anchor-link" aria-label="Link to section: Customer-Controlled">&#182;</a></h3>
+<ul>
+<li>Selecting region (Atlassian site setup)</li>
+<li>Setting Jira permissions (RBAC)</li>
+<li>Exporting compliance evidence (regular schedules)</li>
+<li>Uninstalling app (data deletion trigger)</li>
+</ul>
+<hr>
+<h2 id="threat-monitoring">Threat Monitoring<a href="#threat-monitoring" class="anchor-link" aria-label="Link to section: Threat Monitoring">&#182;</a></h2>
+<p><strong>Ongoing</strong> (per CI/CD pipeline):</p>
+<ul>
+<li>Dependency scanning: npm audit run on each build</li>
+<li>Image scanning: trivy fs . (filesystem scan)</li>
+<li>SBOM generation: CycloneDX SBOM for transparency</li>
+<li>Code mutation detection: resolver_scan.txt verifies no POST/PUT/DELETE added</li>
+<li>Scope drift detection: manifest.yml immutability enforced</li>
+</ul>
+<p><strong>Periodic</strong> (annual review):</p>
+<ul>
+<li>Architectural review: Check for new threat vectors</li>
+<li>Control assessment: Verify mitigations still effective</li>
+<li>Dependency audit: npm ls for known CVEs</li>
+<li>Forge platform updates: Review for new Forge capabilities or risks</li>
+</ul>
+<hr>
+<h2 id="references">References<a href="#references" class="anchor-link" aria-label="Link to section: References">&#182;</a></h2>
+<ul>
+<li><a href="ARCHITECTURE.md">ARCHITECTURE.md</a>: System design and trust boundaries</li>
+<li><a href="SECURITY_OVERVIEW.md">SECURITY_OVERVIEW.md</a>: Shared responsibility model</li>
+<li><a href="VULNERABILITY_DISCLOSURE_POLICY.md">VULNERABILITY_DISCLOSURE_POLICY.md</a>: Incident reporting</li>
+<li><a href="../operations/INCIDENT_RESPONSE_PLAN.md">docs/operations/INCIDENT_RESPONSE_PLAN.md</a>: Response procedures</li>
+</ul>
+
+        </article>
+      </main>
+      <footer id="page-footer">
+        <p>Portal Pack Version: 4.4.2 | FirstTry Trust Center | Contact: <a href="mailto:security.contact@firsttry.run">security.contact@firsttry.run</a></p>
+      </footer>
+    </div>
+    <aside id="meta-panel">
+  <h4>Document Info</h4>
+  <p class="pack-version-label">Portal Pack Version: 4.4.2</p>
+  <dl class="meta-dl">
+    <dt>Doc ID</dt><dd><code>FT-TRUST-007</code></dd>
+    <dt>Version</dt><dd>4.4.2</dd>
+    <dt>Owner</dt><dd>FirstTry Solutions</dd>
+    <dt>Last Updated</dt><dd>2026-02-26</dd>
+    <dt>Review Cycle</dt><dd>Annual</dd>
+  </dl>
+  <div class="meta-actions">
+    <a href="../raw/trust/THREAT_MODEL.md" class="btn-raw" target="_blank">&#128196; View raw markdown</a>
+    <button onclick="window.print()" class="btn-print">&#128424; Print page</button>
+  </div>
+</aside>
+
+  </div>
+  <script src="../assets/portal.js"></script>
+</body>
+</html>
