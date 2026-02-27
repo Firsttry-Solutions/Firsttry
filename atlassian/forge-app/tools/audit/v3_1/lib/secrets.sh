@@ -14,17 +14,36 @@ run_secrets() {
   # Initialize JSON output
   echo '{"working_tree":[],"history":[],"trufflehog":[]}' > "$out_json"
 
-  # ── Patterns ────────────────────────────────────────────────────────────────
-  local patterns=(
-    'ATBB[0-9A-Za-z_\-]{10,}'            # Atlassian bearer tokens
-    'Bearer [A-Za-z0-9_.+/\-]{20,}'      # Bearer auth headers
-    'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+' # JWT
-    'AKIA[0-9A-Z]{16}'                    # AWS Access Key
-    '(?i)(api_key|apikey|api-key)\s*[=:]\s*["\047]?[A-Za-z0-9_\-]{8,}' # api_key=
-    '(?i)secret\s*[=:]\s*["\047]?[A-Za-z0-9_\-]{8,}'  # secret=
-    '(?i)password\s*[=:]\s*["\047]?[A-Za-z0-9_\-!@#$%]{6,}'  # password=
-    '(?i)token\s*[=:]\s*["\047]?[A-Za-z0-9_\-]{8,}'   # token=
+  # ── Patterns (v3.1 precision: literal-only, no variable names) ──────────────
+  # Tier A: High-precision known secret formats (flag on match)
+  local patterns_tier_a=(
+    '\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b'  # JWT tokens
+    '\bBearer\s+eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b'  # Bearer JWT
+    '-----BEGIN( [A-Z]+)? PRIVATE KEY-----'  # PEM private keys
+    '\b(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,}\b'  # GitHub tokens
+    '\bgithub_pat_[A-Za-z0-9_]{20,}\b'  # GitHub PAT
+    '\bxox[baprs]-[A-Za-z0-9-]{10,}\b'  # Slack tokens
+    '\bsk_live_[A-Za-z0-9]{20,}\b'  # Stripe live secret
+    '\brk_live_[A-Za-z0-9]{20,}\b'  # Stripe live restricted
+    '\b(AKIA|ASIA)[0-9A-Z]{16}\b'  # AWS access key ID
+    'ATBB[0-9A-Za-z_\-]{10,}'  # Atlassian bearer tokens
   )
+  
+  # Tier B: Generic secret assignments — ONLY when value is a QUOTED LITERAL string >=20 chars
+  # Matches: password = "actual_secret_here" but NOT: password = someVariable
+  local patterns_tier_b=(
+    '(?i)\b(password|passwd|pwd)\b\s*[:=]\s*["\047][^"\047]{20,}["\047]'  # password="..."
+    '(?i)\b(secret|client[_-]?secret|api[_-]?secret)\b\s*[:=]\s*["\047][^"\047]{20,}["\047]'  # secret="..."
+    '(?i)\b(api[_-]?key|apikey)\b\s*[:=]\s*["\047][^"\047]{20,}["\047]'  # api_key="..."
+    '(?i)\b(private[_-]?key|privatekey)\b\s*[:=]\s*["\047][^"\047]{20,}["\047]'  # private_key="..."
+    '(?i)\b(bearer[_-]?token|bearer)\b\s*[:=]\s*["\047][^"\047]{20,}["\047]'  # bearer="..."
+  )
+  
+  # Placeholder patterns to exclude (post-filter)
+  local placeholder_patterns='REDACTED|DUMMY|TEST|EXAMPLE|CHANGEME|<.*?>|your_|replace_me|TODO|FIXME|xxx+|000+|111+|aaaaa+|placeholder'
+  
+  # Combine patterns for scanning
+  local patterns=("${patterns_tier_a[@]}" "${patterns_tier_b[@]}")
 
   _shannon_entropy() {
     # Compute Shannon entropy of a string (printed line)
@@ -45,50 +64,32 @@ print(round(e,4))
     local source_label="$2"
     local findings=()
 
-    # Pattern scan
+    # Pattern scan with placeholder filtering
     for pat in "${patterns[@]}"; do
       local hits
       hits=$(eval "$content_cmd" | rg -P "$pat" --no-filename 2>/dev/null || true)
       if [[ -n "$hits" ]]; then
-        echo "[SECRET PATTERN] ${source_label}: ${pat}" >> "$out_txt"
-        echo "$hits" | head -5 >> "$out_txt"
-        findings+=("$pat")
-        found=1
+        # Filter out placeholders
+        local filtered_hits
+        filtered_hits=$(echo "$hits" | rg -P -v -i "$placeholder_patterns" 2>/dev/null || echo "$hits")
+        if [[ -n "$filtered_hits" ]]; then
+          echo "[SECRET PATTERN] ${source_label}: ${pat}" >> "$out_txt"
+          echo "$filtered_hits" | head -5 >> "$out_txt"
+          findings+=("$pat")
+          found=1
+        fi
       fi
     done
 
-    # Base64/high-entropy heuristic
-    local b64_hits
-    b64_hits=$(eval "$content_cmd" | \
-      rg -P '[A-Za-z0-9+/=]{40,}' --no-filename 2>/dev/null | head -50 || true)
-    if [[ -n "$b64_hits" ]]; then
-      while IFS= read -r line; do
-        local ent
-        ent=$(_shannon_entropy "$line")
-        local ent_int
-        ent_int=$(echo "$ent" | awk '{printf "%d", $1*100}')
-        if [[ "$ent_int" -ge 380 ]]; then
-          # Check if near token keywords
-          local is_near_kw=0
-          echo "$line" | rg -qi '(api|key|secret|token|pass|auth|bearer)' && is_near_kw=1 || true
-          if [[ "$is_near_kw" -eq 1 ]]; then
-            echo "[HIGH ENTROPY+KEYWORD] ${source_label}: entropy=${ent}" >> "$out_txt"
-            echo "$line" | head -c 80 >> "$out_txt"
-            echo "" >> "$out_txt"
-            found=1
-          else
-            phase_flag "02" "MEDIUM" "High entropy base64-like string in ${source_label} (entropy=${ent})" "$out_txt"
-          fi
-        fi
-      done <<< "$b64_hits"
-    fi
+    # Base64/high-entropy heuristic (disabled for precision - too many false positives on hashes/UUIDs)
+    # Keeping placeholder for future enhancement with trufflehog
   }
 
-  # ── A: Working tree scan ───────────────────────────────────────────────────
+  # ── A: Working tree scan (precision: literal-only) ─────────────────────────
   echo "[02] Scanning working tree for secrets..." | tee -a "$out_txt"
-  # Scan all non-binary files, skip node_modules
+  # Scan all non-binary files, skip node_modules and build outputs
   local wt_files
-  wt_files=$(find "${repo_dir}/src" -type f -not -path "*/node_modules/*" \
+  wt_files=$(find "${repo_dir}/src" -type f -not -path "*/node_modules/*" -not -path "*/dist/*" -not -path "*/build/*" \
     \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.yml" -o -name "*.yaml" -o -name "*.env" \) 2>/dev/null || true)
 
   if [[ -n "$wt_files" ]]; then
@@ -97,9 +98,14 @@ print(round(e,4))
         local hits
         hits=$(rg -P "$pat" --no-filename "$f" 2>/dev/null || true)
         if [[ -n "$hits" ]]; then
-          echo "[WT SECRET] ${f}: ${pat}" >> "$out_txt"
-          echo "$hits" | head -3 >> "$out_txt"
-          found=1
+          # Filter out placeholders
+          local filtered_hits
+          filtered_hits=$(echo "$hits" | rg -P -v -i "$placeholder_patterns" 2>/dev/null || echo "$hits")
+          if [[ -n "$filtered_hits" ]]; then
+            echo "[WT SECRET] ${f}: ${pat}" >> "$out_txt"
+            echo "$filtered_hits" | head -3 >> "$out_txt"
+            found=1
+          fi
         fi
       done
     done
@@ -180,10 +186,18 @@ print(round(e,4))
   fi
 
   if [[ -s "$hist_out" ]]; then
-    echo "[02] HISTORY SECRETS FOUND:" | tee -a "$out_txt"
-    head -100 "$hist_out" >> "$out_txt"  # Limit output to first 100 hits for readability
-    echo "  (Total lines in history scan: $(wc -l < "$hist_out"))" >> "$out_txt"
-    found=1
+    # Apply placeholder filtering to history scan results
+    local filtered_hist="${e}/PHASE_02_history_scan_filtered.txt"
+    rg -P -v -i "$placeholder_patterns" "$hist_out" 2>/dev/null > "$filtered_hist" || cp "$hist_out" "$filtered_hist"
+    
+    if [[ -s "$filtered_hist" ]] && [[ "$(wc -l < "$filtered_hist" | tr -d ' ')" -gt 0 ]]; then
+      echo "[02] HISTORY SECRETS FOUND:" | tee -a "$out_txt"
+      head -100 "$filtered_hist" >> "$out_txt"  # Limit output to first 100 hits for readability
+      echo "  (Total lines in history scan after filtering: $(wc -l < "$filtered_hist"))" >> "$out_txt"
+      found=1
+    else
+      echo "  Git history scan: no secrets found (after placeholder filtering)." | tee -a "$out_txt"
+    fi
   else
     echo "  Git history scan: no secrets found." | tee -a "$out_txt"
   fi
@@ -208,12 +222,18 @@ print(round(e,4))
   ) || tag_scan_exit=$?
   
   if [[ "$tag_scan_exit" -eq 124 ]]; then
-    echo "[02] WARNING: Tag scan timed out after 60s" | tee -a "$out_txt"
+    echo "[02] WARNING: Tag scan timed out after 30s" | tee -a "$out_txt"
     phase_flag "02" "LOW" "Tag object scan timed out (not critical)" "$out_txt"
   elif [[ -s "${hist_out}.tags" ]]; then
-    echo "[02] SECRETS FOUND IN TAG OBJECTS:" | tee -a "$out_txt"
-    cat "${hist_out}.tags" >> "$out_txt"
-    found=1
+    # Apply placeholder filtering to tag scan results
+    local filtered_tags="${e}/PHASE_02_tags_filtered.txt"
+    rg -P -v -i "$placeholder_patterns" "${hist_out}.tags" 2>/dev/null > "$filtered_tags" || cp "${hist_out}.tags" "$filtered_tags"
+    
+    if [[ -s "$filtered_tags" ]] && [[ "$(wc -l < "$filtered_tags" | tr -d ' ')" -gt 0 ]]; then
+      echo "[02] SECRETS FOUND IN TAG OBJECTS:" | tee -a "$out_txt"
+      cat "$filtered_tags" >> "$out_txt"
+      found=1
+    fi
   fi
 
   # ── C: Trufflehog (preferred) ──────────────────────────────────────────────
