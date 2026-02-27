@@ -1,0 +1,153 @@
+rules:
+  # ── Rule 1: Unsanctioned fetch (not from @forge/api) ─────────────────────
+  - id: forge-unsanctioned-fetch
+    patterns:
+      - pattern: fetch(...)
+      - pattern-not-inside: |
+          import { ..., $FUNC, ... } from '@forge/api'
+          ...
+          $FUNC(...)
+    message: |
+      Direct `fetch()` call detected that is not imported from `@forge/api`.
+      All network calls in Forge apps must use `requestJira`, `requestConfluence`,
+      or other sanctioned methods exported from `@forge/api`.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-918: Server-Side Request Forgery (SSRF)"
+      forge_policy: "Only @forge/api HTTP methods are permitted"
+
+  # ── Rule 2: eval() usage ──────────────────────────────────────────────────
+  - id: forge-no-eval
+    pattern: eval(...)
+    message: |
+      `eval()` is forbidden. It enables arbitrary code execution which is
+      a critical security risk in Forge applications with tenant data access.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code"
+
+  # ── Rule 3: new Function() ────────────────────────────────────────────────
+  - id: forge-no-new-function
+    pattern: new Function(...)
+    message: |
+      `new Function()` is equivalent to `eval()` and is forbidden.
+      It can be used to execute arbitrary code at runtime.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-95"
+
+  # ── Rule 4: child_process import ─────────────────────────────────────────
+  - id: forge-no-child-process
+    patterns:
+      - pattern: require('child_process')
+      - pattern: require("child_process")
+      - pattern: import $X from 'child_process'
+      - pattern: import $X from "child_process"
+      - pattern: import * as $X from 'child_process'
+    message: |
+      `child_process` module is forbidden in Forge apps. Forge runs in a
+      sandboxed environment; spawning child processes is a security violation.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+
+  # ── Rule 5: SSRF via URL construction from user-controlled data ──────────
+  - id: forge-ssrf-url-construction
+    patterns:
+      - pattern: |
+          fetch($URL + $USER_INPUT)
+      - pattern: |
+          fetch(`${$URL}${$USER_INPUT}`)
+      - pattern: |
+          new URL($USER_INPUT)
+    message: |
+      Potential SSRF: URL construction from potentially user-controlled data.
+      Ensure all outbound URLs are validated against an allowlist before use.
+      In Forge, use only `requestJira`/`requestConfluence` which are URL-locked.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-918: Server-Side Request Forgery (SSRF)"
+
+  # ── Rule 6: process.env in export/canonical paths ────────────────────────
+  - id: forge-process-env-in-canonical
+    patterns:
+      - pattern: process.env.$VAR
+    paths:
+      include:
+        - "**/export/**"
+        - "**/canonicalize*"
+        - "**/canonical*"
+        - "**/hash*"
+        - "**/ledger*"
+    message: |
+      `process.env` usage detected in canonicalization/export path.
+      Environment variables introduce non-determinism into the export pipeline.
+      Use compile-time constants or injected configuration instead.
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      category: correctness
+      forge_policy: "Export/canonical paths must be deterministic"
+
+  # ── Rule 7: console.log in production code ────────────────────────────────
+  - id: forge-no-console-log-in-prod
+    patterns:
+      - pattern: console.log(...)
+    paths:
+      include:
+        - "src/**"
+      exclude:
+        - "**/*.test.ts"
+        - "**/__tests__/**"
+        - "**/test*"
+    message: |
+      `console.log()` in production code may leak tenant data or PII into
+      Atlassian's log infrastructure. Use a structured safe logger instead.
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-532: Insertion of Sensitive Information into Log File"
+
+  # ── Rule 8: Hardcoded credential patterns ────────────────────────────────
+  - id: forge-hardcoded-credentials
+    patterns:
+      - pattern: |
+          const $X = "$TOKEN"
+      - metavariable-regex:
+          metavariable: $TOKEN
+          regex: '^(ATBB|eyJ)[A-Za-z0-9_\-./+]{20,}'
+    message: |
+      Potential hardcoded credential or token detected. Never commit
+      tokens, API keys, or bearer tokens in source code.
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+
+  # ── Rule 9: Direct Storage without tenant key ─────────────────────────────
+  - id: forge-storage-static-key-no-tenant
+    patterns:
+      - pattern: storage.get("$KEY")
+      - pattern: storage.set("$KEY", ...)
+      - pattern: storage.delete("$KEY")
+    message: |
+      Static storage key `$KEY` detected. Without tenant context binding
+      (e.g., cloudId, installationId), all tenants share the same storage slot.
+      This is a critical data isolation violation.
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      category: security
+      forge_policy: "Storage keys must be tenant-scoped"
