@@ -12,6 +12,7 @@
  */
 
 import { storage } from '@forge/api';
+import { failClosed } from '../shared/failClosed';
 import type {
   Snapshot,
   AccessReport,
@@ -54,8 +55,7 @@ export async function getSnapshot(snapshotId: string): Promise<Snapshot | null> 
     const data = await storage.get(key);
     return (data as Snapshot) || null;
   } catch (error) {
-    console.error(`[Storage] Error retrieving snapshot ${snapshotId}:`, error);
-    return null;
+    throw failClosed('FT_STORAGE_READ_FAILED', `Cannot retrieve snapshot ${snapshotId}`, error);
   }
 }
 
@@ -90,8 +90,7 @@ export async function getAccessReport(snapshotId: string): Promise<AccessReport 
     const data = await storage.get(key);
     return (data as AccessReport) || null;
   } catch (error) {
-    console.error(`[Storage] Error retrieving access report for ${snapshotId}:`, error);
-    return null;
+    throw failClosed('FT_STORAGE_READ_FAILED', `Cannot retrieve access report for snapshot ${snapshotId}`, error);
   }
 }
 
@@ -126,8 +125,7 @@ export async function getConfigInventory(snapshotId: string): Promise<ConfigInve
     const data = await storage.get(key);
     return (data as ConfigInventory) || null;
   } catch (error) {
-    console.error(`[Storage] Error retrieving inventory for ${snapshotId}:`, error);
-    return null;
+    throw failClosed('FT_STORAGE_READ_FAILED', `Cannot retrieve config inventory for snapshot ${snapshotId}`, error);
   }
 }
 
@@ -162,8 +160,7 @@ export async function getDependencyGraph(snapshotId: string): Promise<Dependency
     const data = await storage.get(key);
     return (data as DependencyGraph) || null;
   } catch (error) {
-    console.error(`[Storage] Error retrieving dependency graph for ${snapshotId}:`, error);
-    return null;
+    throw failClosed('FT_STORAGE_READ_FAILED', `Cannot retrieve dependency graph for snapshot ${snapshotId}`, error);
   }
 }
 
@@ -178,7 +175,7 @@ export async function cacheAuditCoverage(
   try {
     await storage.set(key, coverage);
   } catch (error) {
-    console.error(`[Storage] Error caching audit coverage for ${snapshotId}:`, error);
+    throw failClosed('FT_STORAGE_WRITE_FAILED', `Cannot cache audit coverage for snapshot ${snapshotId}`, error);
   }
 }
 
@@ -188,8 +185,7 @@ export async function getCachedAuditCoverage(snapshotId: string): Promise<AuditC
     const data = await storage.get(key);
     return (data as AuditCoverage) || null;
   } catch (error) {
-    console.error(`[Storage] Error retrieving cached audit coverage for ${snapshotId}:`, error);
-    return null;
+    throw failClosed('FT_STORAGE_READ_FAILED', `Cannot retrieve cached audit coverage for snapshot ${snapshotId}`, error);
   }
 }
 
@@ -204,7 +200,7 @@ export async function cachePrivilegeBoundary(
   try {
     await storage.set(key, boundary);
   } catch (error) {
-    console.error(`[Storage] Error caching privilege boundary for ${snapshotId}:`, error);
+    throw failClosed('FT_STORAGE_WRITE_FAILED', `Cannot cache privilege boundary for snapshot ${snapshotId}`, error);
   }
 }
 
@@ -214,8 +210,7 @@ export async function getCachedPrivilegeBoundary(snapshotId: string): Promise<Pr
     const data = await storage.get(key);
     return (data as PrivilegeBoundary) || null;
   } catch (error) {
-    console.error(`[Storage] Error retrieving cached privilege boundary for ${snapshotId}:`, error);
-    return null;
+    throw failClosed('FT_STORAGE_READ_FAILED', `Cannot retrieve cached privilege boundary for snapshot ${snapshotId}`, error);
   }
 }
 

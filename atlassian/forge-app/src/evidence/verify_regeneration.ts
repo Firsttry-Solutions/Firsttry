@@ -18,6 +18,7 @@ import { EvidenceStore, getEvidenceStore } from './evidence_store';
 import { regenerateOutputTruth, verifyRegeneratedTruth, createVerificationResult } from './regenerator';
 import { computeEvidenceHash } from './canonicalize';
 import { getAuditEventStore } from '../audit/audit_events';
+import { failClosed } from '../shared/failClosed';
 
 /**
  * Invariant error type
@@ -69,7 +70,7 @@ export async function verifyRegeneration(
         { evidenceId, reason: 'MISSING_EVIDENCE' }
       );
     } catch (auditError) {
-      console.error('[VerifyRegeneration] Failed to record audit event:', auditError);
+      throw failClosed('FT_AUDIT_LOG_FAILED', 'Cannot record audit event for missing evidence', auditError);
     }
 
     throw error;
@@ -93,7 +94,7 @@ export async function verifyRegeneration(
         { evidenceId, schemaVersion: bundle.schemaVersion }
       );
     } catch (auditError) {
-      console.error('[VerifyRegeneration] Failed to record audit event:', auditError);
+      throw failClosed('FT_AUDIT_LOG_FAILED', 'Cannot record audit event for unsupported schema', auditError);
     }
 
     throw error;
@@ -139,7 +140,7 @@ export async function verifyRegeneration(
       );
       result.auditEventId = auditEventId;
     } catch (auditError) {
-      console.error('[VerifyRegeneration] Failed to record audit event:', auditError);
+      throw failClosed('FT_AUDIT_LOG_FAILED', 'Cannot record audit event for hash mismatch', auditError);
     }
 
     throw error;
@@ -154,8 +155,7 @@ export async function verifyRegeneration(
       { evidenceId, hash: originalHash }
     );
   } catch (auditError) {
-    console.error('[VerifyRegeneration] Failed to record audit event:', auditError);
-    // Non-blocking - verification succeeded even if audit write failed
+    throw failClosed('FT_AUDIT_LOG_FAILED', 'Cannot record audit event for successful verification', auditError);
   }
 
   return result;
@@ -229,7 +229,7 @@ export async function markOutputInvalidIfEvidenceInvalid(
           { evidenceId, outputId, invariantReason: error.reason }
         );
       } catch (auditError) {
-        console.error('[MarkOutputInvalid] Failed to record audit event:', auditError);
+        throw failClosed('FT_AUDIT_LOG_FAILED', 'Cannot record audit event for invalid output', auditError);
       }
 
       return {

@@ -15,6 +15,7 @@
  */
 
 import { ReviewConfig } from "./types";
+import { failClosed } from '../shared/failClosed';
 
 /**
  * Result of reviewer resolution attempt
@@ -51,8 +52,7 @@ export class ReviewerResolver {
       const config = await storage.get("access-review:config");
       return config || null;
     } catch (err) {
-      console.error(`[FT_REVIEWER_CONFIG_LOAD_ERROR] ${err}`);
-      return null;
+      throw failClosed('FT_REVIEWER_CONFIG_LOAD_ERROR', 'Cannot load reviewer config from storage', err);
     }
   }
 
