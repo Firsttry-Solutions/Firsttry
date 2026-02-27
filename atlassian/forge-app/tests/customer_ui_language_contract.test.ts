@@ -13,7 +13,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { glob } from 'glob';
 
 // ── Forbidden patterns in rendered text ─────────────────────────────────────
 
@@ -54,26 +53,19 @@ function isConsoleLine(line: string): boolean {
 describe('Customer UI Language Contract', () => {
   const gadgetUiSrc = path.join(__dirname, '../src/gadget-ui/src');
 
-  let tsFiles: string[] = [];
-
-  try {
-    // Synchronous glob scan
-    tsFiles = glob.sync('**/*.ts', { cwd: gadgetUiSrc, absolute: true });
-  } catch {
-    // Fallback: recursive read
-    function walkTs(dir: string): string[] {
-      const results: string[] = [];
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) { results.push(...walkTs(full)); }
-        else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) {
-          results.push(full);
-        }
+  // Recursive file traversal using Node.js built-ins
+  function walkTs(dir: string): string[] {
+    const results: string[] = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { results.push(...walkTs(full)); }
+      else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) {
+        results.push(full);
       }
-      return results;
     }
-    tsFiles = walkTs(gadgetUiSrc);
+    return results;
   }
+  const tsFiles: string[] = walkTs(gadgetUiSrc);
 
   it('at least one gadget-ui TS file is found', () => {
     expect(tsFiles.length).toBeGreaterThan(0);

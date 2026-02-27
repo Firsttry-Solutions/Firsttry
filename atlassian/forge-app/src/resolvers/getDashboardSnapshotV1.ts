@@ -25,7 +25,7 @@ import {
 } from '../shared/DashboardSnapshotV1';
 import { BACKEND_GIT_SHA, BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC, BACKEND_APP_VERSION } from '../build/buildIdentityBackend.gen';
 import { UI_GIT_SHA, UI_GIT_SHA_SHORT, UI_BUILD_TIME_UTC } from '../gadget-ui/src/build/buildIdentity.gen';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 /**
  * Main resolver function
@@ -39,7 +39,7 @@ import { v4 as uuidv4 } from 'uuid';
 export async function getDashboardSnapshotV1_resolver(
   request: any
 ): Promise<DashboardSnapshotV1> {
-  const correlationId = `dash-${uuidv4().slice(0, 8)}`;
+  const correlationId = `dash-${randomUUID().slice(0, 8)}`;
   const startTime = Date.now();
 
   console.log('[getDashboardSnapshotV1] START', {

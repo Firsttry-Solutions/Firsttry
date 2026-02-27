@@ -11,8 +11,7 @@
  * - Tenant-isolated (all operations scoped to tenant_id)
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import {
   DriftEvent,
   ChangeType,
@@ -306,7 +305,7 @@ function computeObjectDiffs(
     const event: DriftEvent = {
       tenant_id: tenantId,
       cloud_id: cloudId,
-      drift_event_id: uuidv4(),
+      drift_event_id: randomUUID(),
       from_snapshot_id: snapshotA.snapshot_id,
       to_snapshot_id: snapshotB.snapshot_id,
       time_window: {
@@ -369,7 +368,7 @@ function detectScopeChanges(
       const event: DriftEvent = {
         tenant_id: tenantId,
         cloud_id: cloudId,
-        drift_event_id: uuidv4(),
+        drift_event_id: randomUUID(),
         from_snapshot_id: snapshotA.snapshot_id,
         to_snapshot_id: snapshotB.snapshot_id,
         time_window: {
@@ -403,7 +402,7 @@ function detectScopeChanges(
       const event: DriftEvent = {
         tenant_id: tenantId,
         cloud_id: cloudId,
-        drift_event_id: uuidv4(),
+        drift_event_id: randomUUID(),
         from_snapshot_id: snapshotA.snapshot_id,
         to_snapshot_id: snapshotB.snapshot_id,
         time_window: {

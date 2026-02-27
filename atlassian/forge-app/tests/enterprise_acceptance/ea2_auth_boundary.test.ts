@@ -10,7 +10,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { glob } from 'glob';
 
 const MODE = process.env.ENTERPRISE_MODE || 'SIMULATION';
 const EVIDENCE_DIR = path.join(__dirname, 'evidence');
@@ -34,11 +33,22 @@ describe('EA2: Auth Boundary Sanity', () => {
       limitations: []
     };
     
-    // Find all TypeScript source files (exclude node_modules, dist, and type definitions)
-    sourceFiles = await glob('src/**/*.ts', {
-      cwd: path.join(__dirname, '../..'),
-      ignore: ['**/node_modules/**', '**/dist/**', '**/*.d.ts']
-    });
+    // Find all TypeScript source files using Node.js built-ins
+    function walkTs(dir: string, basePath: string): string[] {
+      const results: string[] = [];
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        const rel = path.relative(basePath, full);
+        if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== 'dist') {
+          results.push(...walkTs(full, basePath));
+        } else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) {
+          results.push(rel);
+        }
+      }
+      return results;
+    }
+    const srcDir = path.join(__dirname, '../..', 'src');
+    sourceFiles = walkTs(srcDir, path.join(__dirname, '../..'));
     evidence.details.files_scanned = sourceFiles.length;
     
     if (!fs.existsSync(EVIDENCE_DIR)) {

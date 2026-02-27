@@ -97,11 +97,9 @@
     "@types/pdfkit": "0.17.4",
     "@types/react": "18.3.27",
     "@vitest/ui": "4.0.17",
-    "glob": "13.0.0",
     "http-server": "14.1.1",
     "playwright": "1.58.2",
     "typescript": "5.9.3",
-    "uuid": "13.0.0",
     "vitest": "4.0.17",
     "yaml": "2.8.2"
   },
@@ -118,8 +116,6 @@
     "ajv": "8.18.0",
     "markdown-it": "14.1.1",
     "minimatch": "10.2.4",
-    "rollup": "4.59.0",
-    "glob": "13.0.0",
-    "uuid": "13.0.0"
+    "rollup": "4.59.0"
   }
 }
