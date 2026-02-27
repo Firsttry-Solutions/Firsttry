@@ -67,8 +67,7 @@ async function getJiraSiteId(): Promise<string> {
     // For now, return a placeholder
     return myself.accountId || 'unknown-site';
   } catch (error) {
-    console.error('[Orchestrator] Could not get site ID:', error);
-    return 'unknown-site';
+    throw failClosed('FT_ORCHESTRATOR_SITE_ID_FAILED', 'Cannot get Jira site ID', error);
   }
 }
 
@@ -87,12 +86,7 @@ async function determinePrivilegeContext(): Promise<Snapshot['privilegeContext']
       availableScopes: ['read:jira-work', 'storage:app'],
     };
   } catch (error) {
-    console.error('[Orchestrator] Could not determine privilege context:', error);
-    return {
-      jiraAdmin: false,
-      orgAdmin: false,
-      availableScopes: ['read:jira-work', 'storage:app'],
-    };
+    throw failClosed('FT_ORCHESTRATOR_PRIVILEGE_CONTEXT_FAILED', 'Cannot determine privilege context', error);
   }
 }
 
@@ -240,9 +234,6 @@ export async function buildCompleteSnapshot(snapshotId?: string, clock: Clock = 
       errors: errors.length > 0 ? errors : undefined,
     };
   } catch (error) {
-    return {
-      success: false,
-      errors: [String(error)],
-    };
+    throw failClosed('FT_ORCHESTRATOR_SNAPSHOT_BUILD_FAILED', 'Cannot build complete snapshot', error);
   }
 }

@@ -31,6 +31,7 @@ import api from '@forge/api';
 const { route } = require('@forge/api') as typeof import('@forge/api');
 import type { ConfigInventory } from '../models';
 import { canonicalizeValue } from '../canonicalize';
+import { failClosed } from '../shared/failClosed';
 
 interface GlobalPermission {
   id: string;
@@ -87,7 +88,7 @@ export async function buildConfigInventory(
         }
       }
     } catch (err) {
-      console.warn('[InventoryEngine] Could not fetch global permissions:', err);
+      throw failClosed('FT_INVENTORY_PERMISSIONS_FETCH_FAILED', 'Cannot fetch global permissions for config inventory', err);
     }
 
     // Fetch permission schemes
@@ -106,7 +107,7 @@ export async function buildConfigInventory(
         }
       }
     } catch (err) {
-      console.warn('[InventoryEngine] Could not fetch permission schemes:', err);
+      throw failClosed('FT_INVENTORY_SCHEMES_FETCH_FAILED', 'Cannot fetch permission schemes for config inventory', err);
     }
 
     // Fetch projects
@@ -127,7 +128,7 @@ export async function buildConfigInventory(
         }
       }
     } catch (err) {
-      console.warn('[InventoryEngine] Could not fetch projects:', err);
+      throw failClosed('FT_INVENTORY_PROJECTS_FETCH_FAILED', 'Cannot fetch projects for config inventory', err);
     }
 
     // Sort all arrays deterministically by id/key/name

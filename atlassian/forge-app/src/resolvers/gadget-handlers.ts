@@ -31,6 +31,7 @@ import { exportTrustSnapshot as exportTrustSnapshot_resolver } from "./audit_sna
 import { getSnapshotVariant_resolver } from "./getSnapshotVariant";
 import { ft_getDashboardState_v1, ft_contractProof_dashEnvelope_v1 } from "../gadget-resolver";
 import { BACKEND_BUILD_SHA } from "../build/backend_build";
+import { failClosed } from '../shared/failClosed';
 // ENTERPRISE REQUIREMENTS: Phase 6 governance snapshot operations
 import { createGovernanceSnapshotNow_resolver } from "./createGovernanceSnapshotNow";
 import { exportGovernanceSnapshotById_resolver } from "./exportGovernanceSnapshotById";
@@ -342,50 +343,8 @@ export async function handler(req: any) {
 
     return normalized;
   } catch (err) {
-    // Resolver threw an exception
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    const errorStack = err instanceof Error ? err.stack : '';
-
-    const errorResponse = {
-      ok: false,
-      error: {
-        code: "RESOLVER_UNHANDLED_EXCEPTION",
-        message: errorMsg
-      }
-    };
-
-    // Normalize (enforces trace_id_stable)
-    const normalized = ensureTraceOnError(errorResponse, resolverName, ui_req_id);
-
-    // Log error marker with all details
-    console.log(
-      JSON.stringify({
-        marker: "RESOLVER_ERR",
-        resolver: resolverName,
-        ui_req_id,
-        correlationId,
-        backend_build_sha: BACKEND_BUILD_SHA,
-        error_code: normalized.error.code,
-        message: normalized.error.message.substring(0, 200),  // Truncate for safety
-        trace_id_stable: normalized.error.trace_id_stable,
-        ts: new Date().toISOString()
-      })
-    );
-
-    // Log stack trace as separate line (max 20 lines)
-    if (errorStack) {
-      const stackLines = errorStack.split('\n').slice(0, 20);
-      console.log(
-        JSON.stringify({
-          marker: "STACK",
-          resolver: resolverName,
-          trace_id_stable: normalized.error.trace_id_stable,
-          stack: stackLines.join(' | ')
-        })
-      );
-    }
-
-    return normalized;
+    // Resolver threw an unhandled exception - fail closed
+    throw failClosed('FT_RESOLVER_UNHANDLED_EXCEPTION', `Resolver ${resolverName} threw unhandled exception`, err);
   }
 }
 
@@ -396,15 +355,7 @@ export async function getStatusSnapshot(req: any) {
   try {
     return await getStatusSnapshot_resolver(req);
   } catch (err) {
-    console.error("[gadget-handlers.getStatusSnapshot] Unexpected error:", err);
-    return {
-      workspaceKey: "UNKNOWN",
-      health: "ERROR",
-      degradedReason: `Handler error: ${err instanceof Error ? err.message : String(err)}`,
-      generatedAt: new Date().toISOString(),
-      counts: { total: 0, issues: 0, repos: 0, orgs: 0 },
-      evidence: [],
-    };
+    throw failClosed('FT_HANDLER_WRAPPER_FAILED', 'getStatusSnapshot wrapper encountered error', err);
   }
 }
 
@@ -412,22 +363,7 @@ export async function getBuildInfo(req: any) {
   try {
     return await getBuildInfo_resolver(req);
   } catch (err) {
-    console.error("[gadget-handlers.getBuildInfo] Unexpected error:", err);
-    const uiReqId = req?.payload?.uiReqId || req?.uiReqId || "(none)";
-    return {
-      ok: false,
-      FT_BUILD_SHA: "ERROR_EXCEPTION",
-      FT_BUILD_TIME_UTC: "ERROR_EXCEPTION",
-      backendEnv: process.env.FORGE_ENV || "unknown",
-      nodeEnv: process.env.NODE_ENV || "unknown",
-      resolvedAt: new Date().toISOString(),
-      uiReqIdEcho: uiReqId,
-      tenantPresent: false,
-      error: { 
-        name: err instanceof Error ? err.name : "UnknownError",
-        message: err instanceof Error ? err.message : String(err)
-      }
-    };
+    throw failClosed('FT_HANDLER_WRAPPER_FAILED', 'getBuildInfo wrapper encountered error', err);
   }
 }
 

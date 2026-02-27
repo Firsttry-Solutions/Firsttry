@@ -6,6 +6,7 @@ import { nowUtcIso } from "./time";
 import { sha256Hex } from "./crypto";
 import { storageSetJson } from "./storage";
 import { FT_SNAPSHOT_LAST_KEY } from "./keys";
+import { failClosed } from '../shared/failClosed';
 
 function shortMsg(e: unknown): string {
   const s = e instanceof Error ? e.message : String(e ?? "");
@@ -20,36 +21,19 @@ export async function runScheduledCycle(params: { invocationId: string; requestI
     try {
       await loadOrInitLedger(buildShaBackend);
     } catch (e) {
-      console.error("runScheduledCycle: loadOrInitLedger failed:", e);
-      return;
+      throw failClosed('FT_SCHEDULER_LEDGER_INIT_FAILED', 'Scheduler cannot initialize ledger', e);
     }
 
     try {
       await verifyStorageSentinel();
     } catch (e) {
-      try {
-        await updateLedger((l) => ({
-          ...l,
-          scheduler_last_attempt_at_utc: now,
-          scheduler_consecutive_failures: l.scheduler_consecutive_failures + 1,
-          scheduler_last_error: {
-            code: FtErrorCode.STORAGE_WRITE_FAILED,
-            step: "sentinel",
-            message_short: shortMsg(e),
-            request_id: requestId,
-            at_utc: now,
-          },
-        }));
-      } catch (e2) {
-        console.error("runScheduledCycle: failed to persist sentinel error:", e2);
-      }
-      return;
+      throw failClosed('FT_SCHEDULER_SENTINEL_FAILED', 'Scheduler cannot verify storage sentinel', e);
     }
 
     try {
       await updateLedger((l) => ({ ...l, scheduler_last_attempt_at_utc: now }));
     } catch (e) {
-      console.error("runScheduledCycle: failed to persist attempt:", e);
+      throw failClosed('FT_SCHEDULER_LEDGER_UPDATE_FAILED', 'Scheduler cannot persist attempt to ledger', e);
     }
 
     const locked = await withSchedulerLock(invocationId, async () => {
@@ -62,22 +46,7 @@ export async function runScheduledCycle(params: { invocationId: string; requestI
       try {
         await storageSetJson(FT_SNAPSHOT_LAST_KEY, { snapshot_id, at_utc: at, build_sha_backend: buildShaBackend, snapshot_hash, payload });
       } catch (e) {
-        try {
-          await updateLedger((l) => ({
-            ...l,
-            scheduler_consecutive_failures: l.scheduler_consecutive_failures + 1,
-            scheduler_last_error: {
-              code: FtErrorCode.SNAPSHOT_WRITE_FAILED,
-              step: "snapshot_write",
-              message_short: shortMsg(e),
-              request_id: requestId,
-              at_utc: at,
-            },
-          }));
-        } catch (e2) {
-          console.error("runScheduledCycle: failed to persist snapshot error:", e2);
-        }
-        return;
+        throw failClosed('FT_SCHEDULER_SNAPSHOT_WRITE_FAILED', 'Scheduler cannot write snapshot to storage', e);
       }
 
       try {
@@ -90,7 +59,7 @@ export async function runScheduledCycle(params: { invocationId: string; requestI
           snapshot_last_hash: snapshot_hash,
         }));
       } catch (e) {
-        console.error("runScheduledCycle: failed to persist snapshot success:", e);
+        throw failClosed('FT_SCHEDULER_LEDGER_UPDATE_FAILED', 'Scheduler cannot persist snapshot success to ledger', e);
       }
     });
 
@@ -107,7 +76,7 @@ export async function runScheduledCycle(params: { invocationId: string; requestI
           },
         }));
       } catch (e) {
-        console.error("runScheduledCycle: failed to persist lock busy:", e);
+        throw failClosed('FT_SCHEDULER_LEDGER_UPDATE_FAILED', 'Scheduler cannot persist lock busy state to ledger', e);
       }
       return;
     }
@@ -120,10 +89,9 @@ export async function runScheduledCycle(params: { invocationId: string; requestI
         scheduler_last_error: null,
       }));
     } catch (e) {
-      console.error("runScheduledCycle: failed to persist final success:", e);
+      throw failClosed('FT_SCHEDULER_LEDGER_UPDATE_FAILED', 'Scheduler cannot persist final success to ledger', e);
     }
   } catch (fatal) {
-    console.error("runScheduledCycle: fatal uncaught swallowed:", fatal);
-    return;
+    throw failClosed('FT_SCHEDULER_FATAL_ERROR', 'Scheduler encountered fatal uncaught error', fatal);
   }
 }

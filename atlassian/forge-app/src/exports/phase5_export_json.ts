@@ -13,6 +13,8 @@
  */
 
 import { Phase5Report } from '../phase5_report_contract';
+import { failClosed } from '../shared/failClosed';
+import { failClosed } from '../shared/failClosed';
 
 /**
  * Export Phase5Report as canonical JSON.
@@ -98,8 +100,7 @@ export function validateJSONExportEqualsReport(report: Phase5Report, jsonString:
     // Deep equality check (simple implementation for testing)
     return JSON.stringify(parsed) === JSON.stringify(report);
   } catch (error) {
-    console.error('[ExportJSON] Validation error:', error);
-    return false;
+    throw failClosed('FT_JSON_PARSE_FAILED', 'Cannot parse JSON string for validation', error);
   }
 }
 
@@ -130,8 +131,7 @@ export function validateJSONHasNoExtraKeys(
 
     return true;
   } catch (error) {
-    console.error('[ExportJSON] Validation error:', error);
-    return false;
+    throw failClosed('FT_JSON_PARSE_FAILED', 'Cannot parse JSON string for key validation', error);
   }
 }
 
@@ -216,7 +216,6 @@ export function validateDisclosureTextPreserved(
 
     return true;
   } catch (error) {
-    console.error('[ExportJSON] Validation error:', error);
-    return false;
+    throw failClosed('FT_JSON_PARSE_FAILED', 'Cannot parse JSON string for disclosure validation', error);
   }
 }
