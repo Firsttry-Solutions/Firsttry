@@ -100,6 +100,10 @@ run_runtime() {
         "${e}/PHASE_07_forge_deploy_dry.txt" 2>/dev/null; then
       phase_flag "07" "MEDIUM" "forge deploy --dry-run requires auth; cannot run in cleanroom. Manual verification required." \
         "${e}/PHASE_07_forge_deploy_dry.txt"
+    elif grep -q "unknown option.*--dry-run\|--dry-run.*not.*support" \
+        "${e}/PHASE_07_forge_deploy_dry.txt" 2>/dev/null; then
+      phase_flag "07" "MEDIUM" "forge deploy --dry-run not supported by this CLI version; skipping deploy validation." \
+        "${e}/PHASE_07_forge_deploy_dry.txt"
     else
       phase_fail "07" "forge deploy --dry-run --verbose failed (exit ${fd_exit})." \
         "${e}/PHASE_07_forge_deploy_dry.txt"
