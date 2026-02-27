@@ -56,11 +56,12 @@ run_forge_specific() {
         # Check if static key includes any tenant context
         local static_key
         static_key=$(echo "$content" | grep -oP "(?<=storage\.(get|set|delete|query)\()['\"][^'\"]+['\"]" | tr -d "'\"" || echo "")
-        if echo "$static_key" | grep -qE '(cloud|tenant|install|org)'; then
+        if echo "$static_key" | grep -qE '(cloud|tenant|install|org|site)'; then
           key_type="static_with_tenant_hint"
         else
           key_type="static_no_tenant_binding"
-          is_fail=1  # Static key without tenant binding = FAIL
+          # Forge provides automatic tenant isolation - FLAG for review but don't FAIL 
+          is_flag=1  # Changed from is_fail=1
         fi
       # Check for template string or concatenation
       elif echo "$content" | grep -qE '`[^`]*\${|"[^"]*"\s*\+|'"'"'[^'"'"']*'"'"'\s*\+'; then
@@ -70,7 +71,8 @@ run_forge_specific() {
           key_type="dynamic_with_tenant_binding"
         else
           key_type="dynamic_no_tenant_binding"
-          is_fail=1
+          # Forge provides automatic tenant isolation - FLAG for review but don't FAIL
+          is_flag=1  # Changed from is_fail=1
         fi
       else
         key_type="unknown_dynamic"
