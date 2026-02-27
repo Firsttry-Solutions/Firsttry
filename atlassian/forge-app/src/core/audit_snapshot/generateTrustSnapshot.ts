@@ -12,6 +12,7 @@ import { storage } from '@forge/api';
 import { TrustSnapshot } from './types';
 import { APP_VERSION, APP_ENVIRONMENT } from '../constants';
 import { getTimeline } from '../../phase4/timeline';
+import { Clock, SystemClock } from '../../shared/clock';
 
 interface Phase1Snapshot {
   lastSuccessAt?: string;
@@ -29,7 +30,12 @@ interface Phase3Snapshot {
   [key: string]: any;
 }
 
-export async function generateTrustSnapshot(cloudId: string): Promise<TrustSnapshot> {
+/**
+ * Generate trust snapshot with deterministic time injection.
+ * @param cloudId - Tenant cloud ID
+ * @param clock - Clock for timestamps (use FixedClock for deterministic builds)
+ */
+export async function generateTrustSnapshot(cloudId: string, clock: Clock = SystemClock): Promise<TrustSnapshot> {
   const issues: { source: string; reason: string; errorCode: string }[] = [];
   
   try {
@@ -103,7 +109,7 @@ export async function generateTrustSnapshot(cloudId: string): Promise<TrustSnaps
       lastSuccessfulRunAtISO = phase1Snapshot.lastSuccessAt;
       // Calculate consecutive days (simple heuristic: assume running if not degraded)
       const successDate = new Date(phase1Snapshot.lastSuccessAt);
-      const nowDate = new Date();
+      const nowDate = new Date(clock.nowISO());
       const daysDiff = Math.floor((nowDate.getTime() - successDate.getTime()) / (1000 * 60 * 60 * 24));
       consecutiveDaysOperational = Math.max(0, daysDiff);
     }
@@ -129,9 +135,9 @@ export async function generateTrustSnapshot(cloudId: string): Promise<TrustSnaps
     }
 
     // Build snapshot
-    const now = new Date();
+    const nowISO = clock.nowISO();
     const snapshot: TrustSnapshot = {
-      generatedAtISO: now.toISOString(),
+      generatedAtISO: nowISO,
       window: 'point-in-time',
 
       operationalState: {
@@ -179,9 +185,9 @@ export async function generateTrustSnapshot(cloudId: string): Promise<TrustSnaps
     return snapshot;
   } catch (error) {
     // If any error in generation, return EMPTY snapshot with issue
-    const now = new Date();
+    const nowISO = clock.nowISO();
     return {
-      generatedAtISO: now.toISOString(),
+      generatedAtISO: nowISO,
       window: 'point-in-time',
       operationalState: {
         status: 'NOT_RUNNING',

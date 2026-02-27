@@ -18,6 +18,7 @@ import api from '@forge/api';
 // @ts-ignore route() is exported from @forge/api but TS definitions may lag
 const { route } = require('@forge/api') as typeof import('@forge/api');
 import type { Snapshot, AccessReport, ConfigInventory } from './models';
+import { Clock, SystemClock } from '../shared/clock';
 import { computeCanonicalHash, canonicalJsonString } from './canonicalize';
 import { BACKEND_BUILD_SHA } from '../build/backend_build';
 import { BACKEND_BUILD_TIME_UTC } from '../build/buildIdentityBackend.gen';
@@ -42,13 +43,13 @@ import { buildPlatformFeaturesReport, extractPlatformFeatureFlags, validatePlatf
  * 
  * These are injected at build time or fetched from app metadata
  */
-function getBuildMetadata(): {
+function getBuildMetadata(clock: Clock): {
   buildShaShort: string;
   buildUtc: string;
 } {
   // Use the injected build SHA from backend_build.ts (populated by build system)
   const buildShaShort = BACKEND_BUILD_SHA.substring(0, 12) || 'dev00000';
-  const buildUtc = BACKEND_BUILD_TIME_UTC || new Date().toISOString();
+  const buildUtc = BACKEND_BUILD_TIME_UTC || clock.nowISO();
 
   return { buildShaShort, buildUtc };
 }
@@ -99,8 +100,10 @@ async function determinePrivilegeContext(): Promise<Snapshot['privilegeContext']
  * Build complete snapshot with all derived objects
  * 
  * Returns { success: boolean, snapshotId?: string, errors?: string[] }
+ * @param snapshotId - Optional snapshot ID (defaults to deterministic hash-based ID)
+ * @param clock - Clock for timestamps (use FixedClock for deterministic builds)
  */
-export async function buildCompleteSnapshot(snapshotId?: string): Promise<{
+export async function buildCompleteSnapshot(snapshotId?: string, clock: Clock = SystemClock): Promise<{
   success: boolean;
   snapshotId?: string;
   completeness?: any;
@@ -109,12 +112,14 @@ export async function buildCompleteSnapshot(snapshotId?: string): Promise<{
   const errors: string[] = [];
 
   try {
-    // Generate snapshot ID if not provided
-    const finalSnapshotId = snapshotId || `snapshot-${Date.now()}`;
+    // Generate snapshot ID deterministically if not provided (use hash of timestamp + siteId)
+    // For now, use timestamp-based ID but make it deterministic via injected clock
+    const nowISO = clock.nowISO();
+    const finalSnapshotId = snapshotId || `snapshot-${nowISO.replace(/[-:.TZ]/g, '')}`;
 
     // Create snapshot with timestamp (set once, reused)
-    const createdAtUtc = new Date().toISOString();
-    const { buildShaShort, buildUtc } = getBuildMetadata();
+    const createdAtUtc = nowISO;
+    const { buildShaShort, buildUtc } = getBuildMetadata(clock);
     const siteId = await getJiraSiteId();
     const privilegeContext = await determinePrivilegeContext();
 

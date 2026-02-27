@@ -32,6 +32,7 @@ import { computeRiskPosture, RiskPostureResult } from '../governance/riskPosture
 import { buildExportPayload, ExportPayload } from '../governance/exportPipeline';
 import { BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC } from '../build/buildIdentityBackend.gen';
 import { SNAPSHOT_SCHEMA_VERSION, RULESET_VERSION } from '../governance/snapshotSchema';
+import { Clock, SystemClock } from '../shared/clock';
 
 /** Resolved governance state returned to UI */
 export interface EnterpriseGovernanceState {
@@ -90,8 +91,8 @@ export interface EnterpriseGovernanceState {
  * @returns EnterpriseGovernanceState — complete governance state for UI rendering
  * @throws {Error} if any engine fails (UI must render fail-closed)
  */
-export async function aggregateGovernanceState(): Promise<EnterpriseGovernanceState> {
-  const resolvedUtc = new Date().toISOString();
+export async function aggregateGovernanceState(clock: Clock = SystemClock): Promise<EnterpriseGovernanceState> {
+  const resolvedUtc = clock.nowISO();
 
   // Step 1: Migration guard — halt if legacy keys detected
   await runMigrationGuard();

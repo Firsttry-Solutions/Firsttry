@@ -18,6 +18,7 @@ import { storage } from "@forge/api";
 import { sha256Hex, canonicalJsonString } from "../milestone1/canonicalize";
 import { EclRole, EclAction, hasPermission } from "./rbac";
 import { BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC } from "../build/buildIdentityBackend.gen";
+import { Clock, SystemClock } from "../shared/clock";
 
 /**
  * Drift acknowledgement reason codes (hardcoded)
@@ -104,7 +105,8 @@ export async function acknowledgeDrift(
   driftId: string,
   ticketId: string | null,
   reasonCode: EclDriftAckReasonCode,
-  actorRole: EclRole
+  actorRole: EclRole,
+  clock: Clock = SystemClock
 ): Promise<DriftAckRecord> {
   // Validate driftId (fail-closed)
   assertNonEmptyString(driftId, "driftId");
@@ -127,7 +129,7 @@ export async function acknowledgeDrift(
   }
 
   // Get current timestamp
-  const ackTimestampUtc = new Date().toISOString();
+  const ackTimestampUtc = clock.nowISO();
 
   // Build identity from same source as governance action log
   const buildShaShort = BACKEND_GIT_SHA_SHORT;

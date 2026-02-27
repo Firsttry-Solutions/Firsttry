@@ -18,6 +18,7 @@
 import { storage } from "@forge/api";
 import { sha256Hex, canonicalJsonString } from "../milestone1/canonicalize";
 import { EclRole, EclAction, hasPermission } from "./rbac";
+import { Clock, SystemClock } from "../shared/clock";
 import { BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC } from "../build/buildIdentityBackend.gen";
 import { ReviewWorkflowState } from "../access-review/types";
 
@@ -110,7 +111,8 @@ export async function sealReview(reviewId: string, actorRole: EclRole, siteId: s
 export async function sealReview(
   reviewId: string,
   actorRole: EclRole,
-  siteId?: string
+  siteId?: string,
+  clock: Clock = SystemClock
 ): Promise<ReviewWorkflowState> {
   // FAIL-CLOSED: siteId is required (must be provided by resolver or internal caller)
   if (!siteId || typeof siteId !== "string" || siteId.trim() === "") {
@@ -151,7 +153,7 @@ export async function sealReview(
   }
 
   // Create canonical seal object
-  const sealedTimestampUtc = new Date().toISOString();
+  const sealedTimestampUtc = clock.nowISO();
   const sealObject = createCanonicalSealObject(
     review,
     sealedTimestampUtc,

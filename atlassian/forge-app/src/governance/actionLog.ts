@@ -15,6 +15,7 @@ import { storage } from "@forge/api";
 import { sha256Hex, canonicalJsonString } from "../milestone1/canonicalize";
 import { EclAction, EclRole } from "./rbac";
 import { BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC } from "../build/buildIdentityBackend.gen";
+import { Clock, SystemClock } from "../shared/clock";
 
 /**
  * Assert non-empty string value (fail-closed)
@@ -67,7 +68,8 @@ const ACTION_LOG_SCHEMA_VERSION = "ecl.audit@1";
 export async function logGovernanceAction(
   actionType: EclAction,
   actorRole: EclRole,
-  metadata?: Record<string, any>
+  metadata?: Record<string, any>,
+  clock: Clock = SystemClock
 ): Promise<GovernanceActionRecord> {
   // Validate inputs (fail closed)
   if (!actionType || typeof actionType !== "string") {
@@ -78,7 +80,7 @@ export async function logGovernanceAction(
   }
 
   // Record creation timestamp
-  const timestampUtc = new Date().toISOString();
+  const timestampUtc = clock.nowISO();
 
   // Build build identity from generated constants
   const buildShaShort = BACKEND_GIT_SHA_SHORT;

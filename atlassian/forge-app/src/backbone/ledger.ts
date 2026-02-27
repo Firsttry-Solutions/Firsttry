@@ -6,6 +6,7 @@ import { storageGetJson, storageSetJson } from "./storage";
 import { storage } from "@forge/api";
 import { createHash } from "crypto";
 import { sanitizeKey } from "../utils/sanitizeKey";
+import { Clock, SystemClock } from "../shared/clock";
 
 export async function loadOrInitLedger(buildShaBackend: string | null): Promise<{ ledger: FtLedgerV1; storage_state: FtStorageState }> {
   const got = await storageGetJson<FtLedgerV1>(FT_LEDGER_KEY);
@@ -153,13 +154,15 @@ async function acquireLedgerLock(tenantKey: string): Promise<() => Promise<void>
  * Main ledger append function
  * FT_PROOF_LEDGER_IDEMPOTENT_APPEND_v1
  * FT_PROOF_LEDGER_WRITE_ORDER_v1
+ * @param input - Snapshot/certification input
+ * @param clock - Clock for canonical timestamps (use FixedClock for determinism)
  */
-export async function appendLedgerBlock_v1(input: LedgerAppendInput): Promise<{ head: any; meta: any }> {
+export async function appendLedgerBlock_v1(input: LedgerAppendInput, clock: Clock = SystemClock): Promise<{ head: any; meta: any }> {
   const tenantKey = getTenantKeyFromSnapshot(input.snapshot);
   const releaseLock = await acquireLedgerLock(tenantKey);
 
   try {
-    const now = new Date().toISOString(); // FT_PROOF_TIME_ONLY_AT_APPEND_v1
+    const now = clock.nowISO(); // FT_PROOF_TIME_ONLY_AT_APPEND_v1 (deterministic via injected clock)
     const headKey = `ft:ledger:v1:${sanitizeKey(tenantKey)}:head`;
     const metaKey = `ft:ledger:v1:${sanitizeKey(tenantKey)}:meta`;
 
