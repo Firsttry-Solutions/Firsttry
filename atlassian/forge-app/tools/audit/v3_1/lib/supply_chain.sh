@@ -53,21 +53,35 @@ run_supply_chain() {
 
   # ── 1c: Duplicate version gate ─────────────────────────────────────────────
   echo "[01] Checking for duplicate package versions..." | tee "${out_prefix}_dupes.txt"
-  local ls_json="${out_prefix}_npm_ls.json"
-  npm ls --all --json > "$ls_json" 2>/dev/null || true
 
-  # Extract all packages and their versions, find names with >1 distinct version
-  local dupes
-  dupes=$(jq -r '
-    [.. | objects | select(has("version")) | {name: .name?, version: .version?}]
-    | group_by(.name)
-    | map(select(. | map(.version) | unique | length > 1))
-    | map("\(.[0].name): \(map(.version) | unique | join(", "))")[]
-  ' "$ls_json" 2>/dev/null || echo "")
+  # Use package-lock.json (packages map) for reliable duplicate detection.
+  # npm ls --all --json omits .name on nested objects in npm v7+ flat output.
+  local lock_json="${REPO_DIR}/package-lock.json"
+  local dupes=""
+  if [[ -f "$lock_json" ]]; then
+    dupes=$(jq -r '
+      .packages
+      | to_entries[]
+      | select(.key | startswith("node_modules/"))
+      | {
+          name: (.key | gsub("^.*node_modules/"; "")),
+          version: .value.version
+        }
+    ' "$lock_json" 2>/dev/null \
+      | jq -rs '
+        group_by(.name)
+        | map(select(map(.version) | unique | length > 1))
+        | map("\(.[0].name): \(map(.version) | unique | join(", "))")[]
+      ' 2>/dev/null || echo "")
+  fi
 
   if [[ -n "$dupes" ]]; then
     echo "$dupes" >> "${out_prefix}_dupes.txt"
-    phase_fail "01" "Duplicate package versions detected. Remediation: resolve version conflicts." \
+    # Duplicate versions are a supply-chain visibility concern but are normal in the
+    # npm ecosystem (different major versions coexisting for transitive deps).
+    # Report as HIGH flag rather than hard FAIL to avoid false-positive REJECTs.
+    phase_flag "01" "HIGH" \
+      "Duplicate package versions detected (see ${out_prefix}_dupes.txt). Review for security-sensitive packages." \
       "${out_prefix}_dupes.txt"
   fi
   echo "  No duplicate package versions." | tee -a "${out_prefix}_dupes.txt"
