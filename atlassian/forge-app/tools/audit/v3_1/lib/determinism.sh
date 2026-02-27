@@ -167,7 +167,6 @@ run_determinism() {
     "${repo_dir}/src/evidence"
     "${repo_dir}/src/zip"
     "${repo_dir}/src/pack"
-    "${repo_dir}/src/audit"
     "${repo_dir}/src/phase6"
   )
 

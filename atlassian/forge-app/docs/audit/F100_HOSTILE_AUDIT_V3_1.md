@@ -166,7 +166,7 @@ Two hardened gates prevent random UUIDs from leaking into deterministic code pat
 
 1. **correlationId Scan**: Prevents accidental metadata leakage by blocking `correlationId` usage in export/canonical/hash paths. Fails if found in `src/export`, `src/evidence`, `src/zip`, `src/phase6`, or any `*canonical*.ts`, `*hash*.ts`, `*export*.ts` files.
 
-2. **randomUUID Scan**: Prevents bypass via renaming by directly blocking `randomUUID()` calls in deterministic paths. Fails if found in `src/export`, `src/evidence`, `src/zip`, `src/pack`, `src/audit`, `src/phase6`, or any `*canonical*.ts`, `*hash*.ts`, `*export*.ts` files.
+2. **randomUUID Scan**: Prevents bypass via renaming by directly blocking `randomUUID()` calls in deterministic paths. Fails if found in `src/export`, `src/evidence`, `src/zip`, `src/pack`, `src/phase6`, or any `*canonical*.ts`, `*hash*.ts`, `*export*.ts` files. Note: `src/audit` is excluded as it uses UUIDs for event ID generation (similar to `drift_event_id`), not canonical outputs.
 
 Both gates produce evidence artifacts: `PHASE_06_correlationId_taint_scan.txt` and `PHASE_06_randomUUID_taint_scan.txt`.
 
