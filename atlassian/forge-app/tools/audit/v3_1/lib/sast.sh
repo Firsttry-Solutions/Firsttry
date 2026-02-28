@@ -61,21 +61,29 @@ run_sast() {
   local warning_count=0
   local info_count=0
 
-  if [[ -f "$semgrep_json" ]] && jq . "$semgrep_json" > /dev/null 2>&1; then
-    error_count=$(jq '[.results[]? | select(.extra.severity == "ERROR")] | length' "$semgrep_json" 2>/dev/null || echo 0)
-    warning_count=$(jq '[.results[]? | select(.extra.severity == "WARNING")] | length' "$semgrep_json" 2>/dev/null || echo 0)
-    info_count=$(jq '[.results[]? | select(.extra.severity == "INFO")] | length' "$semgrep_json" 2>/dev/null || echo 0)
-
-    echo "  Semgrep results: ERROR=${error_count} WARNING=${warning_count} INFO=${info_count}" \
-      | tee -a "$semgrep_txt"
-
-    # Top findings summary
-    jq -r '.results[]? | "\(.extra.severity // "?")\t\(.path)\t[\(.start.line)] \(.extra.message // .check_id)"' \
-      "$semgrep_json" 2>/dev/null | head -30 | tee -a "$semgrep_txt" || true
-  else
-    echo "  Could not parse semgrep JSON output." | tee -a "$semgrep_txt"
-    error_count=0
+  # Fail-closed: JSON must be valid and parseable
+  if [[ ! -f "$semgrep_json" ]]; then
+    phase_fail "08" "semgrep JSON output file not found at ${semgrep_json}" "$semgrep_txt"
   fi
+
+  if ! jq . "$semgrep_json" > /dev/null 2>&1; then
+    echo "  Could not parse semgrep JSON output." | tee -a "$semgrep_txt"
+    phase_fail "08" \
+      "semgrep JSON output could not be parsed. This audit cannot proceed with unparseable SAST output." \
+      "$semgrep_json"
+  fi
+
+  # JSON is valid - extract findings
+  error_count=$(jq '[.results[]? | select(.extra.severity == "ERROR")] | length' "$semgrep_json" 2>/dev/null || echo 0)
+  warning_count=$(jq '[.results[]? | select(.extra.severity == "WARNING")] | length' "$semgrep_json" 2>/dev/null || echo 0)
+  info_count=$(jq '[.results[]? | select(.extra.severity == "INFO")] | length' "$semgrep_json" 2>/dev/null || echo 0)
+
+  echo "  Semgrep results: ERROR=${error_count} WARNING=${warning_count} INFO=${info_count}" \
+    | tee -a "$semgrep_txt"
+
+  # Top findings summary
+  jq -r '.results[]? | "\(.extra.severity // "?")\t\(.path)\t[\(.start.line)] \(.extra.message // .check_id)"' \
+    "$semgrep_json" 2>/dev/null | head -30 | tee -a "$semgrep_txt" || true
 
   # ── Apply fail rules ───────────────────────────────────────────────────────
   if [[ "$error_count" -gt 0 ]]; then
