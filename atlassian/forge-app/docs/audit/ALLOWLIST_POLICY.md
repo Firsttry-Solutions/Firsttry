@@ -59,7 +59,7 @@ Every allowlist entry MUST match ONE of these patterns:
 Every allowlist entry MUST include all fields in the comment:
 
 ```
-<PATTERN>  # OWNER=<team/person> EXPIRY=BATCH<N> EVIDENCE=<file:line or marker> JUSTIFICATION=<reason> REVIEWED-BY=<name or TBD>
+<PATTERN>  # OWNER=<team/person> EXPIRY=BATCH<N> EVIDENCE=<file:line> EVIDENCE-MARKER=<ID> JUSTIFICATION=<reason> REVIEWED-BY=<name>
 ```
 
 ### Field Definitions:
@@ -73,18 +73,30 @@ Every allowlist entry MUST include all fields in the comment:
 - Entries with expired batches fail the audit
 
 **EVIDENCE:** Code location proving the invariant
-- Format: `file:line` (exact location of key construction) or `AUDIT-MARKER-<ID>` (code comment reference)
+- Format: `file:line` (exact location of key construction)
 - Must be verifiable by inspecting the source
+- Validator checks that file exists under `src/`
+
+**EVIDENCE-MARKER:** Unique marker ID linking allowlist entry to code comment
+- Format: `FT-ALW-<shortid>` (e.g., `FT-ALW-abc123`, `FT-ALW-001`)
+- **MUST appear in source code** at EVIDENCE location as:
+  ```typescript
+  // AUDIT-ALLOWLIST FT-ALW-abc123
+  ```
+- Validator fails if marker not found in EVIDENCE file
+- Purpose: Prevents stale allowlist entries (if code changes, marker disappears → audit fails)
+- Use `UNASSIGNED` for work-in-progress entries (will fail validation)
 
 **JUSTIFICATION:** Human-readable explanation of why pattern is safe
 - Must explain: (1) why static analysis fails, (2) what manual review proved
 - Example: "Helper function buildReviewKey() uses makeStorageKey(siteId,...) but audit sees variable usage at call site"
 
 **REVIEWED-BY:** Second reviewer who validated the entry
-- Format: `FirstName-LastName` or `team-lead`
-- **REQUIRED for committed code:** Human name only (NOT: UNREVIEWED, TBD, or containing "Automation")
+- Format: `Arnab-Poddar` (currently the only accepted value)
+- **REQUIRED for committed code:** Specific human reviewer name (NOT: UNREVIEWED, TBD, or containing "Automation")
 - Validator rejects entries with placeholder review status
-- Work-in-progress entries may temporarily use `REVIEWED-BY=UNREVIEWED` for local testing, but **MUST be reviewed before commit**
+- Work-in-progress entries may use `REVIEWED-BY=UNREVIEWED` for local testing, but **MUST be reviewed before commit**
+- Future: Additional reviewer names can be added to validator whitelist
 
 ---
 
