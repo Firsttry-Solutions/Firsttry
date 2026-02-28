@@ -23,6 +23,7 @@ import {
 import {
   getSnapshotRunKey,
   getSnapshotKey,
+  getSnapshotKeyPrefix,
   getRetentionPolicyKey,
   getSnapshotIndexKey,
   DEFAULT_RETENTION_POLICY,
@@ -267,7 +268,7 @@ export class SnapshotStorage {
     pageSize: number = 20,
   ): Promise<SnapshotPageResult<Snapshot>> {
     try {
-      const prefix = getSnapshotKey(this.tenantId, '');
+      const prefix = getSnapshotKeyPrefix(this.tenantId);
       const kvResults = await storageListByPrefix(prefix);
       
       let snapshots: Snapshot[] = [];

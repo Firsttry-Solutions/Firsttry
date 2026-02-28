@@ -8,9 +8,11 @@
  * - Records status + missed-run signals
  * - Delegates to enqueueSnapshotMaster adapter (wired to Phase 6 SnapshotCapturer)
  * - Never throws (scheduled triggers must not crash)
+ * AUDIT: Phase05 remediation - keys must be deterministic
  */
 import * as crypto from "crypto";
 import { storage } from "@forge/api";
+import { makeGlobalStorageKey } from "../../shared/storageKey";
 import {
   SCHEDULE_ENABLED_KEY,
   SCHEDULE_STATUS_KEY,
@@ -34,6 +36,11 @@ function isoWeekKey(d: Date): string {
   return `${d.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
 }
 
+// AUDIT: Phase05 remediation - Helper for lock key (global, no tenant data)
+function getScheduleLockKey(weekKey: string): string {
+  return makeGlobalStorageKey("ft_v565_schedule_lock", weekKey);
+}
+
 type LockRecord = {
   schemaVersion: string;
   acquiredAtUtc: string;
@@ -54,7 +61,7 @@ type ScheduleStatusRecord = {
 export const run = async (event?: any): Promise<void> => {
   const now = new Date();
   const weekKey = isoWeekKey(now);
-  const lockKey = SCHEDULE_LOCK_PREFIX + weekKey;
+  const lockKey = getScheduleLockKey(weekKey);
   const jobId = crypto.randomUUID();
 
   console.log(`FT_PROOF_SCHEDULE_TRIGGER_ENTRY_v1 weekKey=${weekKey} jobId=${jobId}`);

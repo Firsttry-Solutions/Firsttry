@@ -9,19 +9,22 @@
  * - rawshard/{org_key}/{yyyy-mm-dd}/{shard_id}/count → events in shard
  *
  * Shard rollover happens when count reaches 200 events.
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 
 import api from '@forge/api';
 import { storage } from '@forge/api';
+import { makeStorageKey } from './shared/storageKey';
 
 const SHARD_SIZE_LIMIT = 200;
 
 /**
  * Check if event has already been seen (idempotency)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function isEventSeen(orgKey: string, repoKey: string, eventId: string): Promise<boolean> {
   try {
-    const storageKey = `seen/${orgKey}/${repoKey}/${eventId}`;
+    const storageKey = makeStorageKey(orgKey, "seen", repoKey, eventId);
     const result = await storage.get(storageKey);
     return result !== undefined;
   } catch (error) {
@@ -32,10 +35,11 @@ export async function isEventSeen(orgKey: string, repoKey: string, eventId: stri
 
 /**
  * Mark event as seen (idempotency)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function markEventSeen(orgKey: string, repoKey: string, eventId: string): Promise<void> {
   try {
-    const storageKey = `seen/${orgKey}/${repoKey}/${eventId}`;
+    const storageKey = makeStorageKey(orgKey, "seen", repoKey, eventId);
     // Store with 90-day TTL (in seconds)
     await storage.set(storageKey, true, { ttl: 7776000 });
   } catch (error) {
@@ -46,15 +50,16 @@ export async function markEventSeen(orgKey: string, repoKey: string, eventId: st
 
 /**
  * Get current shard ID for today's date (with automatic rollover)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function getCurrentShardId(orgKey: string, dateStr: string): Promise<string> {
   try {
-    const counterKey = `rawshard/${orgKey}/${dateStr}/current`;
+    const counterKey = makeStorageKey(orgKey, "rawshard", dateStr, "current");
     
     let currentShardId: string = await storage.get(counterKey) || '0';
     
     // Check if current shard is full
-    const shardCountKey = `rawshard/${orgKey}/${dateStr}/${currentShardId}/count`;
+    const shardCountKey = makeStorageKey(orgKey, "rawshard", dateStr, currentShardId, "count");
     const shardCount = (await storage.get(shardCountKey) || 0) as number;
     
     // If shard is full, increment to next shard
@@ -73,6 +78,7 @@ export async function getCurrentShardId(orgKey: string, dateStr: string): Promis
 
 /**
  * Store raw event and increment shard counter
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function storeRawEvent(
   orgKey: string,
@@ -85,7 +91,7 @@ export async function storeRawEvent(
     const shardId = await getCurrentShardId(orgKey, dateStr);
     
     // Store raw event
-    const storageKey = `raw/${orgKey}/${dateStr}/${shardId}`;
+    const storageKey = makeStorageKey(orgKey, "raw", dateStr, shardId);
     const existingEvents = (await storage.get(storageKey) || []) as Record<string, unknown>[];
     existingEvents.push({
       ...event,
@@ -96,7 +102,7 @@ export async function storeRawEvent(
     await storage.set(storageKey, existingEvents, { ttl: 7776000 });
     
     // Increment shard count
-    const countKey = `rawshard/${orgKey}/${dateStr}/${shardId}/count`;
+    const countKey = makeStorageKey(orgKey, "rawshard", dateStr, shardId, "count");
     const currentCount = (await storage.get(countKey) || 0) as number;
     await storage.set(countKey, currentCount + 1);
     
@@ -109,10 +115,11 @@ export async function storeRawEvent(
 
 /**
  * Get all events in a shard (for testing/inspection)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function getShardEvents(orgKey: string, dateStr: string, shardId: string): Promise<Record<string, unknown>[]> {
   try {
-    const storageKey = `raw/${orgKey}/${dateStr}/${shardId}`;
+    const storageKey = makeStorageKey(orgKey, "raw", dateStr, shardId);
     const events = await storage.get(storageKey);
     return (events as Record<string, unknown>[]) || [];
   } catch (error) {
@@ -123,10 +130,11 @@ export async function getShardEvents(orgKey: string, dateStr: string, shardId: s
 
 /**
  * Get shard count (for testing)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function getShardCount(orgKey: string, dateStr: string, shardId: string): Promise<number> {
   try {
-    const countKey = `rawshard/${orgKey}/${dateStr}/${shardId}/count`;
+    const countKey = makeStorageKey(orgKey, "rawshard", dateStr, shardId, "count");
     return (await storage.get(countKey)) as number || 0;
   } catch (error) {
     console.error('[Storage] Error getting shard count:', error);

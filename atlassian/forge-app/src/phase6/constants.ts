@@ -9,7 +9,10 @@
  * - Explicit missing-data disclosure
  * - Tenant isolation (all keys prefixed by tenant_id)
  * - READ-ONLY Jira access (no write endpoints)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+
+import { makeStorageKey } from '../shared/storageKey';
 
 /**
  * Snapshot run error codes
@@ -144,31 +147,44 @@ export function getIdempotencyKey(
 
 /**
  * Storage key for snapshot run
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function getSnapshotRunKey(tenantId: string, runId: string): string {
-  return `${STORAGE_PREFIXES.snapshot_run}:${tenantId}:${runId}`;
+  return makeStorageKey(tenantId, "phase6_snapshot_run", runId);
 }
 
 /**
  * Storage key for snapshot
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function getSnapshotKey(tenantId: string, snapshotId: string): string {
-  return `${STORAGE_PREFIXES.snapshot}:${tenantId}:${snapshotId}`;
+  return makeStorageKey(tenantId, "phase6_snapshot", snapshotId);
+}
+
+/**
+ * Storage key prefix for listing snapshots
+ * AUDIT: Phase05 remediation - prefix for storage.list() operations
+ */
+export function getSnapshotKeyPrefix(tenantId: string): string {
+  // For listing, we want: tenantId:phase6_snapshot:
+  return `${tenantId}:phase6_snapshot:`;
 }
 
 /**
  * Storage key for retention policy
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function getRetentionPolicyKey(tenantId: string): string {
-  return `${STORAGE_PREFIXES.retention_policy}:${tenantId}`;
+  return makeStorageKey(tenantId, "phase6_retention_policy");
 }
 
 /**
  * Storage key for snapshot index (for pagination)
- * Format: {prefix}:{tenantId}:{type}:{page}
+ * Format: {tenantId}:phase6_snapshot_index:{type}:{page}
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function getSnapshotIndexKey(tenantId: string, snapshotType: SnapshotType, page: number = 0): string {
-  return `${STORAGE_PREFIXES.snapshot_index}:${tenantId}:${snapshotType}:${page}`;
+  return makeStorageKey(tenantId, "phase6_snapshot_index", snapshotType, String(page));
 }
 
 /**

@@ -1,24 +1,28 @@
 import * as crypto from "crypto";
+import { makeGlobalStorageKey } from "../shared/storageKey";
 
 export const V565_SCHEMA_VERSION = "5.6.5";
 
 export const MAX_REASON_CHARS = 220;
 export const HMAC_BYTES = 32;
 
-// Tenant secret
-export const TENANT_SECRET_ID_KEY = "ft:v565:tenantSecretId";
-export const TENANT_SECRET_PREFIX = "ft:v565:tenantSecret:";
-export const TENANT_SECRET_META_KEY = "ft:v565:tenantSecretMeta";
+// AUDIT: Phase05 remediation - Global keys for tenant secrets (no tenant data, just metadata)
+// Tenant secret - These keys store tenant secret metadata and references, not the secrets themselves
+export const TENANT_SECRET_ID_KEY = makeGlobalStorageKey("ft_v565_tenantSecretId");
+export const TENANT_SECRET_PREFIX = "ft:v565:tenantSecret:"; // Used as prefix only
+export const TENANT_SECRET_META_KEY = makeGlobalStorageKey("ft_v565_tenantSecretMeta");
 
-// Scheduling
-export const SCHEDULE_ENABLED_KEY = "ft:v565:schedule:enabled";
-export const SCHEDULE_STATUS_KEY = "ft:v565:schedule:lastStatus";
-export const SCHEDULE_LOCK_PREFIX = "ft:v565:schedule:lock:"; // + YYYY-WW
-export const DEPLOY_OBSERVED_AT_KEY = "ft:v565:deploy:observedAtUtc";
+// AUDIT: Phase05 remediation - Global keys for schedule control (affects all tenants, no tenant-specific data)
+// Scheduling - These keys control global scheduled job behavior (weekly trigger scheduling)
+export const SCHEDULE_ENABLED_KEY = makeGlobalStorageKey("ft_v565_schedule_enabled");
+export const SCHEDULE_STATUS_KEY = makeGlobalStorageKey("ft_v565_schedule_lastStatus");
+export const SCHEDULE_LOCK_PREFIX = "ft:v565:schedule:lock:"; // + YYYY-WW (lock is global per week)
+export const DEPLOY_OBSERVED_AT_KEY = makeGlobalStorageKey("ft_v565_deploy_observedAtUtc");
 
 // LOCK TTL (8 days) — plus stale lock deletion if lock object is missing expiry
 export const SCHEDULE_LOCK_TTL_MS = 8 * 24 * 60 * 60 * 1000;
 
+// AUDIT: Phase05 remediation - Job status keys use prefix pattern, will be fixed with helper function
 // Job status keys (EXPLICIT)
 export const JOB_STATUS_PREFIX = "ft:v565:job:status:";                // + jobId
 export const JOB_FAILURE_EXPORT_PREFIX = "ft:v565:job:failureExport:"; // + jobId

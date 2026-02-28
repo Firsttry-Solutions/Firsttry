@@ -9,10 +9,12 @@
  * - dependency:{snapshotId}
  * 
  * Write behavior: 409 Conflict if key already exists
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 
 import { storage } from '@forge/api';
 import { failClosed } from '../shared/failClosed';
+import { makeStorageKey } from '../shared/storageKey';
 import type {
   Snapshot,
   AccessReport,
@@ -27,9 +29,10 @@ import type {
 /**
  * Store snapshot (no overwrite)
  * Returns 409 if already exists
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function storeSnapshot(snapshot: Snapshot): Promise<{ success: boolean; error?: string }> {
-  const key = `snapshot:${snapshot.id}`;
+  const key = makeStorageKey(snapshot.siteId, "milestone1_snapshot", snapshot.id);
   
   try {
     // Check if exists
@@ -48,9 +51,10 @@ export async function storeSnapshot(snapshot: Snapshot): Promise<{ success: bool
 
 /**
  * Retrieve snapshot
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
-export async function getSnapshot(snapshotId: string): Promise<Snapshot | null> {
-  const key = `snapshot:${snapshotId}`;
+export async function getSnapshot(siteId: string, snapshotId: string): Promise<Snapshot | null> {
+  const key = makeStorageKey(siteId, "milestone1_snapshot", snapshotId);
   try {
     const data = await storage.get(key);
     return (data as Snapshot) || null;
@@ -61,12 +65,14 @@ export async function getSnapshot(snapshotId: string): Promise<Snapshot | null> 
 
 /**
  * Store access report (no overwrite)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function storeAccessReport(
+  siteId: string,
   snapshotId: string,
   report: AccessReport
 ): Promise<{ success: boolean; error?: string }> {
-  const key = `access:${snapshotId}`;
+  const key = makeStorageKey(siteId, "milestone1_access", snapshotId);
   
   try {
     const existing = await storage.get(key);
@@ -83,9 +89,10 @@ export async function storeAccessReport(
 
 /**
  * Retrieve access report
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
-export async function getAccessReport(snapshotId: string): Promise<AccessReport | null> {
-  const key = `access:${snapshotId}`;
+export async function getAccessReport(siteId: string, snapshotId: string): Promise<AccessReport | null> {
+  const key = makeStorageKey(siteId, "milestone1_access", snapshotId);
   try {
     const data = await storage.get(key);
     return (data as AccessReport) || null;
@@ -96,12 +103,14 @@ export async function getAccessReport(snapshotId: string): Promise<AccessReport 
 
 /**
  * Store configuration inventory (no overwrite)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function storeConfigInventory(
+  siteId: string,
   snapshotId: string,
   inventory: ConfigInventory
 ): Promise<{ success: boolean; error?: string }> {
-  const key = `inventory:${snapshotId}`;
+  const key = makeStorageKey(siteId, "milestone1_inventory", snapshotId);
   
   try {
     const existing = await storage.get(key);
@@ -118,9 +127,10 @@ export async function storeConfigInventory(
 
 /**
  * Retrieve configuration inventory
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
-export async function getConfigInventory(snapshotId: string): Promise<ConfigInventory | null> {
-  const key = `inventory:${snapshotId}`;
+export async function getConfigInventory(siteId: string, snapshotId: string): Promise<ConfigInventory | null> {
+  const key = makeStorageKey(siteId, "milestone1_inventory", snapshotId);
   try {
     const data = await storage.get(key);
     return (data as ConfigInventory) || null;
@@ -131,12 +141,14 @@ export async function getConfigInventory(snapshotId: string): Promise<ConfigInve
 
 /**
  * Store dependency graph (no overwrite)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function storeDependencyGraph(
+  siteId: string,
   snapshotId: string,
   graph: DependencyGraph
 ): Promise<{ success: boolean; error?: string }> {
-  const key = `dependency:${snapshotId}`;
+  const key = makeStorageKey(siteId, "milestone1_dependency", snapshotId);
   
   try {
     const existing = await storage.get(key);
@@ -153,9 +165,10 @@ export async function storeDependencyGraph(
 
 /**
  * Retrieve dependency graph
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
-export async function getDependencyGraph(snapshotId: string): Promise<DependencyGraph | null> {
-  const key = `dependency:${snapshotId}`;
+export async function getDependencyGraph(siteId: string, snapshotId: string): Promise<DependencyGraph | null> {
+  const key = makeStorageKey(siteId, "milestone1_dependency", snapshotId);
   try {
     const data = await storage.get(key);
     return (data as DependencyGraph) || null;
@@ -166,12 +179,14 @@ export async function getDependencyGraph(snapshotId: string): Promise<Dependency
 
 /**
  * Cache audit coverage (optional, can be derived)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function cacheAuditCoverage(
+  siteId: string,
   snapshotId: string,
   coverage: AuditCoverage
 ): Promise<void> {
-  const key = `coverage:${snapshotId}`;
+  const key = makeStorageKey(siteId, "milestone1_coverage", snapshotId);
   try {
     await storage.set(key, coverage);
   } catch (error) {
@@ -179,8 +194,8 @@ export async function cacheAuditCoverage(
   }
 }
 
-export async function getCachedAuditCoverage(snapshotId: string): Promise<AuditCoverage | null> {
-  const key = `coverage:${snapshotId}`;
+export async function getCachedAuditCoverage(siteId: string, snapshotId: string): Promise<AuditCoverage | null> {
+  const key = makeStorageKey(siteId, "milestone1_coverage", snapshotId);
   try {
     const data = await storage.get(key);
     return (data as AuditCoverage) || null;
@@ -191,12 +206,14 @@ export async function getCachedAuditCoverage(snapshotId: string): Promise<AuditC
 
 /**
  * Cache privilege boundary (optional, can be derived)
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export async function cachePrivilegeBoundary(
+  siteId: string,
   snapshotId: string,
   boundary: PrivilegeBoundary
 ): Promise<void> {
-  const key = `privilege:${snapshotId}`;
+  const key = makeStorageKey(siteId, "milestone1_privilege", snapshotId);
   try {
     await storage.set(key, boundary);
   } catch (error) {
@@ -204,8 +221,8 @@ export async function cachePrivilegeBoundary(
   }
 }
 
-export async function getCachedPrivilegeBoundary(snapshotId: string): Promise<PrivilegeBoundary | null> {
-  const key = `privilege:${snapshotId}`;
+export async function getCachedPrivilegeBoundary(siteId: string, snapshotId: string): Promise<PrivilegeBoundary | null> {
+  const key = makeStorageKey(siteId, "milestone1_privilege", snapshotId);
   try {
     const data = await storage.get(key);
     return (data as PrivilegeBoundary) || null;
@@ -216,13 +233,14 @@ export async function getCachedPrivilegeBoundary(snapshotId: string): Promise<Pr
 
 /**
  * Check snapshot completeness
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
-export async function checkSnapshotCompleteness(snapshotId: string): Promise<SnapshotCompleteness> {
+export async function checkSnapshotCompleteness(siteId: string, snapshotId: string): Promise<SnapshotCompleteness> {
   const [snapshot, access, inventory, dependency] = await Promise.all([
-    getSnapshot(snapshotId),
-    getAccessReport(snapshotId),
-    getConfigInventory(snapshotId),
-    getDependencyGraph(snapshotId),
+    getSnapshot(siteId, snapshotId),
+    getAccessReport(siteId, snapshotId),
+    getConfigInventory(siteId, snapshotId),
+    getDependencyGraph(siteId, snapshotId),
   ]);
 
   const isComplete =

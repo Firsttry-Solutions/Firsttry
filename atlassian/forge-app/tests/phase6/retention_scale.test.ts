@@ -95,7 +95,7 @@ describe('Retention Enforcement at Scale', () => {
         payload: { data: `item-${i}` },
       }));
 
-      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-daily-${i}`);
+      const keys = snapshots.map((_, i) => `${tenantId}:phase6_snapshot:snap-daily-${i}`);
 
       // Mock storage operations for bulk snapshots
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
@@ -143,7 +143,7 @@ describe('Retention Enforcement at Scale', () => {
         payload: { data: `week-${i}` },
       }));
 
-      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-weekly-${i}`);
+      const keys = snapshots.map((_, i) => `${tenantId}:phase6_snapshot:snap-weekly-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
       storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
@@ -182,7 +182,7 @@ describe('Retention Enforcement at Scale', () => {
         payload: {},
       }));
 
-      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      const keys = snapshots.map((_, i) => `${tenantId}:phase6_snapshot:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
       storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
@@ -244,7 +244,7 @@ describe('Retention Enforcement at Scale', () => {
         };
       });
 
-      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      const keys = snapshots.map((_, i) => `${tenantId}:phase6_snapshot:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
       storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
@@ -288,7 +288,7 @@ describe('Retention Enforcement at Scale', () => {
         payload: {},
       }));
 
-      const keys = largeSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      const keys = largeSnapshots.map((_, i) => `${tenantId}:phase6_snapshot:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
       storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
@@ -334,7 +334,7 @@ describe('Retention Enforcement at Scale', () => {
         payload: {},
       }));
 
-      const keys = recentSnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      const keys = recentSnapshots.map((_, i) => `${tenantId}:phase6_snapshot:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
       storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
@@ -407,7 +407,7 @@ describe('Retention Enforcement at Scale', () => {
       // Store original hashes
       const originalHashes = snapshots.map(s => s.canonical_hash);
 
-      const keys = snapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-${i}`);
+      const keys = snapshots.map((_, i) => `${tenantId}:phase6_snapshot:snap-${i}`);
       mockStorage.query().where().getKeys.mockResolvedValue(keys);
       storageGetManyMockResults = keys.map(key => ({ key, value: null }));
 
@@ -475,8 +475,8 @@ describe('Retention Enforcement at Scale', () => {
       }));
 
       mockStorage.query().where().getKeys
-        .mockResolvedValueOnce(dailySnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-daily-${i}`))
-        .mockResolvedValueOnce(weeklySnapshots.map((_, i) => `phase6:snapshot:${tenantId}:snap-weekly-${i}`));
+        .mockResolvedValueOnce(dailySnapshots.map((_, i) => `${tenantId}:phase6_snapshot:snap-daily-${i}`))
+        .mockResolvedValueOnce(weeklySnapshots.map((_, i) => `${tenantId}:phase6_snapshot:snap-weekly-${i}`));
 
       mockStorage.get.mockImplementation((key) => {
         if (key.includes('daily')) {

@@ -4,6 +4,8 @@
  * All keys follow deterministic, sharded patterns
  */
 
+import { makeStorageKey } from '../shared/storageKey';
+
 // ============================================================================
 // KEY PREFIXES (LOCKED)
 // ============================================================================
@@ -30,37 +32,41 @@ export const WRITE_BUDGET_SECONDS = 10;
 /**
  * Review state storage key
  * Pattern: ar.v1:state:<siteId>:<reviewId>
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function buildReviewKey(siteId: string, reviewId: string): string {
   if (!siteId || !reviewId) throw new Error("siteId and reviewId required");
-  return `${KEY_PREFIX_REVIEW}:${siteId}:${reviewId}`;
+  return makeStorageKey(siteId, "ar_v1_state", reviewId);
 }
 
 /**
  * Review ledger storage key (references review state + export hashes)
  * Pattern: ar.v1:ledger:<siteId>:<reviewId>
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function buildLedgerKey(siteId: string, reviewId: string): string {
   if (!siteId || !reviewId) throw new Error("siteId and reviewId required");
-  return `${KEY_PREFIX_LEDGER}:${siteId}:${reviewId}`;
+  return makeStorageKey(siteId, "ar_v1_ledger", reviewId);
 }
 
 /**
  * Index key for shard lookup (points to ledger entries)
  * Pattern: ar.v1:idx:<siteId>:<year>:<shard>
  * Max 400 reviewIds per shard
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function buildIndexKey(siteId: string, year: number, shard: number): string {
   if (!siteId || !year || shard === undefined) {
     throw new Error("siteId, year, and shard required");
   }
-  return `${KEY_PREFIX_INDEX}:${siteId}:${year}:${shard}`;
+  return makeStorageKey(siteId, "ar_v1_idx", String(year), String(shard));
 }
 
 /**
  * Audit log storage key (append-only events)
  * Pattern: ar.v1:audit:<siteId>:<reviewId>:<shard>
  * Max 500 entries per shard
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function buildAuditLogKey(
   siteId: string,
@@ -70,17 +76,18 @@ export function buildAuditLogKey(
   if (!siteId || !reviewId || shard === undefined) {
     throw new Error("siteId, reviewId, and shard required");
   }
-  return `${KEY_PREFIX_AUDIT}:${siteId}:${reviewId}:${shard}`;
+  return makeStorageKey(siteId, "ar_v1_audit", reviewId, String(shard));
 }
 
 /**
  * Lock key for quarterly review operations
  * Pattern: ar.v1:lock:<siteId>:<quarter>
  * TTL: 330 seconds
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function buildLockKey(siteId: string, quarter: string): string {
   if (!siteId || !quarter) throw new Error("siteId and quarter required");
-  return `${KEY_PREFIX_LOCK}:${siteId}:${quarter}`;
+  return makeStorageKey(siteId, "ar_v1_lock", quarter);
 }
 
 // ============================================================================
@@ -196,10 +203,11 @@ export function isLockValid(expiresUtc: string, nowUtc: string): boolean {
 /**
  * Build canonical review key for identity computation
  * Pattern: ${siteId}:${quarter}:ar.v1:phase3.v1
+ * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
 export function buildReviewKeyForIdentity(siteId: string, quarter: string): string {
   if (!siteId || !quarter) throw new Error("siteId and quarter required");
-  return `${siteId}:${quarter}:ar.v1:phase3.v1`;
+  return makeStorageKey(siteId, quarter, "ar_v1_phase3_v1");
 }
 
 // ============================================================================

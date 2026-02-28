@@ -49,14 +49,14 @@ describe('Phase 6 Constants', () => {
       const key = getSnapshotRunKey('tenant1', 'run-123');
       expect(key).toContain('tenant1');
       expect(key).toContain('run-123');
-      expect(key).toContain(STORAGE_PREFIXES.snapshot_run);
+      expect(key).toContain('phase6_snapshot_run');
     });
 
     it('should include tenant_id in snapshot key', () => {
       const key = getSnapshotKey('tenant1', 'snap-456');
       expect(key).toContain('tenant1');
       expect(key).toContain('snap-456');
-      expect(key).toContain(STORAGE_PREFIXES.snapshot);
+      expect(key).toContain('phase6_snapshot');
     });
 
     it('should isolate keys by tenant', () => {
@@ -82,9 +82,9 @@ describe('Phase 6 Constants', () => {
       expect(uniquePrefixes.size).toBe(prefixes.length);
     });
 
-    it('should all start with phase6:', () => {
+    it('should all contain phase6 namespace', () => {
       Object.values(STORAGE_PREFIXES).forEach(prefix => {
-        expect(prefix).toMatch(/^phase6:/);
+        expect(prefix).toMatch(/^phase6/);
       });
     });
   });

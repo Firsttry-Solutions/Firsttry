@@ -119,7 +119,7 @@ run_forge_specific() {
         phase_flag "05" "MEDIUM" "Storage key type ${key_type} at ${fp}:${ln} - manual review recommended" "$summary_txt"
       fi
       if [[ "$is_flag" -eq 1 ]] && [[ "$is_fail" -eq 0 ]]; then
-        phase_flag "05" "HIGH" "Storage key uses process.env at ${fp}:${ln}" "$summary_txt"
+        phase_flag "05" "HIGH" "Storage key classification ${key_type} - cannot prove tenant binding/determinism statically at ${fp}:${ln}" "$summary_txt"
       fi
     done <<< "$storage_hits"
   fi
