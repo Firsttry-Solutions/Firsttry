@@ -76,7 +76,7 @@ run_runtime() {
 
   if [[ "$fl_exit" -ne 0 ]]; then
     # Check if it's a non-auth error (forge lint requires auth in some versions)
-    if grep -q "You must be logged in\|credentials\|authenticate\|ENOTFOUND" \
+    if grep -qiE "not logged in|you must be logged in|credentials|authenticate|unauthorized|api token|ENOTFOUND" \
         "${e}/PHASE_07_forge_lint.txt" 2>/dev/null; then
       phase_flag "07" "MEDIUM" "forge lint requires authentication; cannot run in cleanroom. Manual verification required." \
         "${e}/PHASE_07_forge_lint.txt"
