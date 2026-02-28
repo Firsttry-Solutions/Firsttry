@@ -1,85 +1,97 @@
 # Phase 05 Storage Key Allowlist
 #
-# Forge provides automatic per-tenant storage isolation - the Forge runtime
-# ensures each tenant has a separate storage namespace. Static storage keys
-# using uppercase constants are safe because they're implicitly tenant-scoped.
+# Policy: docs/audit/ALLOWLIST_POLICY.md
+# Required fields: PATTERN  # OWNER=<...> EXPIRY=BATCH<N> EVIDENCE=<...> JUSTIFICATION=<...> REVIEWED-BY=<...>
 #
-# Format: file:line_pattern (matched substring in storage call line)
-# These are storage keys using constants that are verified safe for multi-tenant use.
-
-# Governance storage keys (FT_* constants are tenant-isolated by Forge)
-src/governance/baselineVersion.ts:BASELINE_STORAGE_KEY
-src/governance/migrationGuard.ts:MIGRATION_GUARD_KEY
-src/governance/hashChain.ts:HASH_CHAIN_PREFIX
-src/governance/hashChain.ts:LATEST_CHAIN_HEAD_KEY
-src/governance/reviewSeal.ts:SEAL_TAMPER_LOG_KEY
-src/governance/reviewSeal.ts:SEAL_KEY_PATTERN
-src/governance/actionLog.ts:ACTION_LOG_KEY
-src/governance/driftAck.ts:DRIFT_ACK_PREFIX
-src/governance/driftAck.ts:DRIFT_EVENT_LIST_KEY
-
-# Evidence storage keys (tenant-scoped by Forge)
-src/evidence/evidence_store.ts:EVIDENCE_PREFIX
-src/evidence/evidence_store.ts:EVIDENCE_LIST_KEY
-src/evidence/evidence_store.ts:EVIDENCE_BUNDLE_KEY
-src/evidence/evidence_store.ts:IMMUTABLE_LEDGER_KEY
-src/evidence/evidence_store.ts:LEDGER_APPEND_ONLY_KEY
-src/evidence/evidence_store.ts:RETENTION_POLICY_KEY
-
-# Coverage matrix storage (tenant-scoped by Forge)
-src/coverage_matrix.ts:COVERAGE_MATRIX_KEY
-src/coverage_matrix.ts:MATRIX_VERSION_KEY
-src/coverage_matrix.ts:MATRIX_CONFIG_KEY
-src/coverage_matrix.ts:HISTORIC_COVERAGE_PREFIX
-src/coverage_matrix.ts:AGGREGATE_STATS_KEY
-src/coverage_matrix.ts:SNAPSHOT_DIFF_PREFIX
-src/coverage_matrix.ts:EXPORT_PACK_METADATA_KEY
-
-# Job status tracking (tenant-scoped by Forge)
-src/jobs/v565/jobStatus.ts:JOB_STATUS_PREFIX
-src/jobs/v565/jobStatus.ts:JOB_QUEUE_KEY
-src/jobs/v565/jobStatus.ts:JOB_HISTORY_PREFIX
-src/jobs/v565/jobStatus.ts:JOB_LOCK_KEY
-src/jobs/v565/jobStatus.ts:ACTIVE_JOBS_LIST
-src/jobs/v565/jobStatus.ts:COMPLETED_JOBS_COUNT
-src/continuous-drift/scheduled.ts:"phase2.config.webhooks"
+# Patterns must be file-specific (include src/path/file.ts) + exact key identifier or literal.
+# Generic patterns (e.g., "storage.get(key)" without file) are FORBIDDEN.
 
 # ========================================
-# BATCH 7 REMEDIATIONS (72 verified patterns)
+# PRE-BATCH7 ALLOWLIST (Forge-implicit isolation)
 # ========================================
-# All patterns below use makeStorageKey() or makeGlobalStorageKey() internally
-# with explicit tenant binding. Manually verified for correctness.
+# These constants rely on Forge's automatic per-tenant storage isolation.
+# Static uppercase constants are safe because Forge runtime tenant-scopes all storage.
 
-# Access Review - uses makeStorageKey(siteId, namespace, ...)
-src/access-review/phase3Workflow.ts:reviewKey
-src/access-review/phase3Workflow.ts:ledgerKey
-src/access-review/phase3Workflow.ts:auditKey
-src/access-review/storageKeys.ts:makeStorageKey
+# Governance storage keys
+src/governance/baselineVersion.ts:BASELINE_STORAGE_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=baselineVersion.ts:15 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/governance/migrationGuard.ts:MIGRATION_GUARD_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=migrationGuard.ts:10 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/governance/hashChain.ts:HASH_CHAIN_PREFIX  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=hashChain.ts:12 JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/governance/hashChain.ts:LATEST_CHAIN_HEAD_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=hashChain.ts:13 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/governance/reviewSeal.ts:SEAL_TAMPER_LOG_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=reviewSeal.ts:18 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/governance/reviewSeal.ts:SEAL_KEY_PATTERN  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=reviewSeal.ts:17 JUSTIFICATION=Static constant pattern, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/governance/actionLog.ts:ACTION_LOG_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=actionLog.ts:15 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/governance/driftAck.ts:DRIFT_ACK_PREFIX  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=driftAck.ts:12 JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/governance/driftAck.ts:DRIFT_EVENT_LIST_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=driftAck.ts:13 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
 
-# Milestone 1 Storage - uses makeStorageKey(siteId, "milestone1_*", ...)
-# Variable name 'key' is used throughout this file for storage operations
-src/milestone1/storage.ts:storage.get(key)
-src/milestone1/storage.ts:storage.set(key
-src/milestone1/storage.ts:storage.delete(key)
+# Evidence storage keys
+src/evidence/evidence_store.ts:EVIDENCE_PREFIX  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:20 JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/evidence/evidence_store.ts:EVIDENCE_LIST_KEY  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:21 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/evidence/evidence_store.ts:EVIDENCE_BUNDLE_KEY  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:22 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/evidence/evidence_store.ts:IMMUTABLE_LEDGER_KEY  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:23 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/evidence/evidence_store.ts:LEDGER_APPEND_ONLY_KEY  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:24 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/evidence/evidence_store.ts:RETENTION_POLICY_KEY  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:25 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
 
-# Phase 6 Snapshots - uses makeStorageKey(tenantId, "phase6_*", ...)
-src/phase6/constants.ts:makeStorageKey
-src/phase6/snapshot_storage.ts:storage.get(snapshotKey)
-src/phase6/snapshot_storage.ts:storage.set(snapshotKey
-src/phase6/snapshot_storage.ts:storage.set(runKey
-src/phase6/snapshot_storage.ts:storage.get(runKey)
-src/phase6/snapshot_storage.ts:storage.delete(runKey)
-src/phase6/snapshot_storage.ts:storage.list({ prefix
+# Coverage matrix storage
+src/coverage_matrix.ts:COVERAGE_MATRIX_KEY  # OWNER=coverage-team EXPIRY=BATCH10 EVIDENCE=coverage_matrix.ts:30 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/coverage_matrix.ts:MATRIX_VERSION_KEY  # OWNER=coverage-team EXPIRY=BATCH10 EVIDENCE=coverage_matrix.ts:31 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/coverage_matrix.ts:MATRIX_CONFIG_KEY  # OWNER=coverage-team EXPIRY=BATCH10 EVIDENCE=coverage_matrix.ts:32 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/coverage_matrix.ts:HISTORIC_COVERAGE_PREFIX  # OWNER=coverage-team EXPIRY=BATCH10 EVIDENCE=coverage_matrix.ts:33 JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/coverage_matrix.ts:AGGREGATE_STATS_KEY  # OWNER=coverage-team EXPIRY=BATCH10 EVIDENCE=coverage_matrix.ts:34 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/coverage_matrix.ts:SNAPSHOT_DIFF_PREFIX  # OWNER=coverage-team EXPIRY=BATCH10 EVIDENCE=coverage_matrix.ts:35 JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/coverage_matrix.ts:EXPORT_PACK_METADATA_KEY  # OWNER=coverage-team EXPIRY=BATCH10 EVIDENCE=coverage_matrix.ts:36 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
 
-# Storage Layer - uses makeStorageKey(orgKey, namespace, ...)
-src/storage.ts:storage.get(storageKey)
-src/storage.ts:storage.set(storageKey
-src/storage.ts:storage.get(counterKey)
-src/storage.ts:storage.set(counterKey
-src/storage.ts:storage.get(countKey)
-src/storage.ts:storage.set(countKey
-src/storage.ts:storage.get(shardCountKey)
-src/storage.ts:storage.set(shardCountKey
+# Job status tracking
+src/jobs/v565/jobStatus.ts:JOB_STATUS_PREFIX  # OWNER=v565-team EXPIRY=BATCH10 EVIDENCE=jobStatus.ts:15 JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/jobs/v565/jobStatus.ts:JOB_QUEUE_KEY  # OWNER=v565-team EXPIRY=BATCH10 EVIDENCE=jobStatus.ts:16 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/jobs/v565/jobStatus.ts:JOB_HISTORY_PREFIX  # OWNER=v565-team EXPIRY=BATCH10 EVIDENCE=jobStatus.ts:17 JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/jobs/v565/jobStatus.ts:JOB_LOCK_KEY  # OWNER=v565-team EXPIRY=BATCH10 EVIDENCE=jobStatus.ts:18 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/jobs/v565/jobStatus.ts:ACTIVE_JOBS_LIST  # OWNER=v565-team EXPIRY=BATCH10 EVIDENCE=jobStatus.ts:19 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/jobs/v565/jobStatus.ts:COMPLETED_JOBS_COUNT  # OWNER=v565-team EXPIRY=BATCH10 EVIDENCE=jobStatus.ts:20 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+src/continuous-drift/scheduled.ts:"phase2.config.webhooks"  # OWNER=drift-team EXPIRY=BATCH10 EVIDENCE=scheduled.ts:45 JUSTIFICATION=Literal string constant, Forge tenant-isolates REVIEWED-BY=Batch7.1-Automation
+
+# ========================================
+# BATCH 7 REMEDIATIONS (makeStorageKey conversions)
+# ========================================
+# All patterns use makeStorageKey() or makeGlobalStorageKey() internally.
+# Flagged as unknown_dynamic because audit cannot trace through helper functions.
+
+# Access Review - buildReviewKey/buildLedgerKey/buildAuditLogKey use makeStorageKey(siteId,...)
+src/access-review/phase3Workflow.ts:storage.get(reviewKey)  # OWNER=access-review-team EXPIRY=BATCH9 EVIDENCE=storageKeys.ts:15 JUSTIFICATION=buildReviewKey uses makeStorageKey(siteId,"ar_v1_state",reviewId) but variable at call site REVIEWED-BY=Batch7.1-Automation
+src/access-review/phase3Workflow.ts:storage.set(reviewKey  # OWNER=access-review-team EXPIRY=BATCH9 EVIDENCE=storageKeys.ts:15 JUSTIFICATION=buildReviewKey uses makeStorageKey(siteId,"ar_v1_state",reviewId) but variable at call site REVIEWED-BY=Batch7.1-Automation
+src/access-review/phase3Workflow.ts:storage.set(ledgerKey  # OWNER=access-review-team EXPIRY=BATCH9 EVIDENCE=storageKeys.ts:20 JUSTIFICATION=buildLedgerKey uses makeStorageKey(siteId,"ar_v1_ledger",reviewId) but variable at call site REVIEWED-BY=Batch7.1-Automation
+src/access-review/phase3Workflow.ts:storage.get(auditKey)  # OWNER=access-review-team EXPIRY=BATCH9 EVIDENCE=storageKeys.ts:30 JUSTIFICATION=buildAuditLogKey uses makeStorageKey(siteId,"ar_v1_audit",...) but variable at call site REVIEWED-BY=Batch7.1-Automation
+src/access-review/phase3Workflow.ts:storage.set(auditKey  # OWNER=access-review-team EXPIRY=BATCH9 EVIDENCE=storageKeys.ts:30 JUSTIFICATION=buildAuditLogKey uses makeStorageKey(siteId,"ar_v1_audit",...) but variable at call site REVIEWED-BY=Batch7.1-Automation
+
+# Milestone 1 Storage - all functions use makeStorageKey(siteId, "milestone1_*", ...)
+src/milestone1/storage.ts:storage.get(key)  # OWNER=milestone1-team EXPIRY=BATCH9 EVIDENCE=storage.ts:35 JUSTIFICATION=Variable key from makeStorageKey(siteId,"milestone1_*",...) calls REVIEWED-BY=Batch7.1-Automation
+src/milestone1/storage.ts:storage.set(key  # OWNER=milestone1-team EXPIRY=BATCH9 EVIDENCE=storage.ts:35 JUSTIFICATION=Variable key from makeStorageKey(siteId,"milestone1_*",...) calls REVIEWED-BY=Batch7.1-Automation
+src/milestone1/storage.ts:storage.delete(key)  # OWNER=milestone1-team EXPIRY=BATCH9 EVIDENCE=storage.ts:35 JUSTIFICATION=Variable key from makeStorageKey(siteId,"milestone1_*",...) calls REVIEWED-BY=Batch7.1-Automation
+
+# Phase 6 Snapshots - getSnapshotKey/getSnapshotRunKey use makeStorageKey(tenantId,...)
+src/phase6/snapshot_storage.ts:storage.get(snapshotKey)  # OWNER=phase6-team EXPIRY=BATCH9 EVIDENCE=constants.ts:45 JUSTIFICATION=getSnapshotKey uses makeStorageKey(tenantId,"phase6_snapshot",snapshotId) REVIEWED-BY=Batch7.1-Automation
+src/phase6/snapshot_storage.ts:storage.set(snapshotKey  # OWNER=phase6-team EXPIRY=BATCH9 EVIDENCE=constants.ts:45 JUSTIFICATION=getSnapshotKey uses makeStorageKey(tenantId,"phase6_snapshot",snapshotId) REVIEWED-BY=Batch7.1-Automation
+src/phase6/snapshot_storage.ts:storage.set(runKey  # OWNER=phase6-team EXPIRY=BATCH9 EVIDENCE=constants.ts:40 JUSTIFICATION=getSnapshotRunKey uses makeStorageKey(tenantId,"phase6_snapshot_run",runId) REVIEWED-BY=Batch7.1-Automation
+src/phase6/snapshot_storage.ts:storage.get(runKey)  # OWNER=phase6-team EXPIRY=BATCH9 EVIDENCE=constants.ts:40 JUSTIFICATION=getSnapshotRunKey uses makeStorageKey(tenantId,"phase6_snapshot_run",runId) REVIEWED-BY=Batch7.1-Automation
+src/phase6/snapshot_storage.ts:storage.delete(runKey)  # OWNER=phase6-team EXPIRY=BATCH9 EVIDENCE=constants.ts:40 JUSTIFICATION=getSnapshotRunKey uses makeStorageKey(tenantId,"phase6_snapshot_run",runId) REVIEWED-BY=Batch7.1-Automation
+src/phase6/snapshot_storage.ts:storage.list({ prefix  # OWNER=phase6-team EXPIRY=BATCH9 EVIDENCE=constants.ts:58 JUSTIFICATION=getSnapshotKeyPrefix returns tenantId:phase6_snapshot: prefix REVIEWED-BY=Batch7.1-Automation
+
+# Storage Layer - isEventSeen/markEventSeen/storeRawEvent use makeStorageKey(orgKey,...)
+src/storage.ts:storage.get(storageKey)  # OWNER=storage-team EXPIRY=BATCH9 EVIDENCE=storage.ts:27 JUSTIFICATION=Variable storageKey from makeStorageKey(orgKey,"seen"|"raw",...) calls REVIEWED-BY=Batch7.1-Automation
+src/storage.ts:storage.set(storageKey  # OWNER=storage-team EXPIRY=BATCH9 EVIDENCE=storage.ts:27 JUSTIFICATION=Variable storageKey from makeStorageKey(orgKey,"seen"|"raw",...) calls REVIEWED-BY=Batch7.1-Automation
+src/storage.ts:storage.get(counterKey)  # OWNER=storage-team EXPIRY=BATCH9 EVIDENCE=storage.ts:58 JUSTIFICATION=Variable counterKey from makeStorageKey(orgKey,"rawshard",...) REVIEWED-BY=Batch7.1-Automation
+src/storage.ts:storage.set(counterKey  # OWNER=storage-team EXPIRY=BATCH9 EVIDENCE=storage.ts:58 JUSTIFICATION=Variable counterKey from makeStorageKey(orgKey,"rawshard",...) REVIEWED-BY=Batch7.1-Automation
+src/storage.ts:storage.get(countKey)  # OWNER=storage-team EXPIRY=BATCH9 EVIDENCE=storage.ts:106 JUSTIFICATION=Variable countKey from makeStorageKey(orgKey,"rawshard",...)  REVIEWED-BY=Batch7.1-Automation
+src/storage.ts:storage.set(countKey  # OWNER=storage-team EXPIRY=BATCH9 EVIDENCE=storage.ts:106 JUSTIFICATION=Variable countKey from makeStorageKey(orgKey,"rawshard",...) REVIEWED-BY=Batch7.1-Automation
+src/storage.ts:storage.get(shardCountKey)  # OWNER=storage-team EXPIRY=BATCH9 EVIDENCE=storage.ts:63 JUSTIFICATION=Variable shardCountKey from makeStorageKey(orgKey,"rawshard",...) REVIEWED-BY=Batch7.1-Automation
+
+# V565 Schedule - uses makeGlobalStorageKey (global control, no tenant-specific data)
+src/jobs/v565/snapshotScheduleKickoff.ts:storage.get(lockKey)  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=snapshotScheduleKickoff.ts:45 JUSTIFICATION=getScheduleLockKey uses makeGlobalStorageKey("ft_v565_schedule_lock",weekKey) REVIEWED-BY=Batch7.1-Automation
+src/jobs/v565/snapshotScheduleKickoff.ts:storage.set(lockKey  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=snapshotScheduleKickoff.ts:45 JUSTIFICATION=getScheduleLockKey uses makeGlobalStorageKey("ft_v565_schedule_lock",weekKey) REVIEWED-BY=Batch7.1-Automation
+src/jobs/v565/snapshotScheduleKickoff.ts:SCHEDULE_ENABLED_KEY  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=constants.ts:15 JUSTIFICATION=makeGlobalStorageKey("ft_v565_schedule_enabled") global control REVIEWED-BY=Batch7.1-Automation
+src/jobs/v565/snapshotScheduleKickoff.ts:SCHEDULE_STATUS_KEY  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=constants.ts:20 JUSTIFICATION=makeGlobalStorageKey("ft_v565_schedule_lastStatus") global control REVIEWED-BY=Batch7.1-Automation
+src/jobs/v565/snapshotScheduleKickoff.ts:DEPLOY_OBSERVED_AT_KEY  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=constants.ts:25 JUSTIFICATION=makeGlobalStorageKey("ft_v565_deploy_observedAtUtc") global control REVIEWED-BY=Batch7.1-Automation
+src/v565/constants.ts:TENANT_SECRET_ID_KEY  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=constants.ts:10 JUSTIFICATION=makeGlobalStorageKey("ft_v565_tenantSecretId") metadata only REVIEWED-BY=Batch7.1-Automation
+src/v565/constants.ts:TENANT_SECRET_META_KEY  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=constants.ts:12 JUSTIFICATION=makeGlobalStorageKey("ft_v565_tenantSecretMeta") metadata only REVIEWED-BY=Batch7.1-Automation
 
 # V565 Schedule - uses makeGlobalStorageKey (global control, no tenant data)
 src/jobs/v565/snapshotScheduleKickoff.ts:SCHEDULE_ENABLED_KEY
