@@ -13,18 +13,18 @@
 # Static uppercase constants are safe because Forge runtime tenant-scopes all storage.
 
 # Governance storage keys
-src/governance/baselineVersion.ts:BASELINE_STORAGE_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=baselineVersion.ts:15 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
-src/governance/migrationGuard.ts:MIGRATION_GUARD_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=migrationGuard.ts:10 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
-src/governance/hashChain.ts:HASH_CHAIN_PREFIX  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=hashChain.ts:12 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
-src/governance/hashChain.ts:LATEST_CHAIN_HEAD_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=hashChain.ts:13 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
-src/governance/reviewSeal.ts:SEAL_TAMPER_LOG_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=reviewSeal.ts:18 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
-src/governance/reviewSeal.ts:SEAL_KEY_PATTERN  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=reviewSeal.ts:17 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant pattern, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
-src/governance/actionLog.ts:ACTION_LOG_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=actionLog.ts:15 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
-src/governance/driftAck.ts:DRIFT_ACK_PREFIX  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=driftAck.ts:12 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
-src/governance/driftAck.ts:DRIFT_EVENT_LIST_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=driftAck.ts:13 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
+src/governance/baselineVersion.ts:BASELINE_STORAGE_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=governance/baselineVersion.ts:23 EVIDENCE-MARKER=FT-ALW-05-016 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
+src/governance/migrationGuard.ts:MIGRATION_REQUIRED_MARKER  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=governance/migrationGuard.ts:20 EVIDENCE-MARKER=FT-ALW-05-017 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
+src/governance/hashChain.ts:HASH_CHAIN_STORAGE_KEY  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=governance/hashChain.ts:31 EVIDENCE-MARKER=FT-ALW-05-018 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
+src/governance/hashChain.ts:GENESIS_HASH  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=governance/hashChain.ts:34 EVIDENCE-MARKER=FT-ALW-05-019 JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
+src/governance/reviewSeal.ts:ar.v1:review:  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=governance/reviewSeal.ts:135 EVIDENCE-MARKER=FT-ALW-05-020 JUSTIFICATION=Dynamic key pattern (siteId+reviewId namespaced), Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
+src/governance/reviewSeal.ts:ar.v1:review:  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=governance/reviewSeal.ts:135 EVIDENCE-MARKER=FT-ALW-05-021 JUSTIFICATION=Dynamic key pattern (siteId+reviewId namespaced), Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
+src/governance/actionLog.ts:ecl.audit.actions.  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=governance/actionLog.ts:121 EVIDENCE-MARKER=FT-ALW-05-022 JUSTIFICATION=Dynamic key pattern (timestampUtc+hash namespaced), Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
+src/governance/driftAck.ts:ecl.drift.ack.  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=governance/driftAck.ts:82 EVIDENCE-MARKER=FT-ALW-05-023 JUSTIFICATION=Dynamic key pattern (driftId namespaced), Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
+src/governance/driftAck.ts:ecl.drift.ack.  # OWNER=governance-team EXPIRY=BATCH10 EVIDENCE=governance/driftAck.ts:82 EVIDENCE-MARKER=FT-ALW-05-024 JUSTIFICATION=Dynamic key pattern (driftId namespaced), Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
 
 # Evidence storage keys
-src/evidence/evidence_store.ts:EVIDENCE_PREFIX  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:20 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant prefix, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
+src/evidence/evidence_store.ts:p4:evidence:  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence/evidence_store.ts:27 EVIDENCE-MARKER=FT-ALW-05-027 JUSTIFICATION=Dynamic key pattern (tenantKey+evidenceId namespaced), Forge tenant-isolates REVIEWED-BY=Arnab-Poddar
 src/evidence/evidence_store.ts:EVIDENCE_LIST_KEY  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:21 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
 src/evidence/evidence_store.ts:EVIDENCE_BUNDLE_KEY  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:22 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=UNREVIEWED
 src/evidence/evidence_store.ts:IMMUTABLE_LEDGER_KEY  # OWNER=evidence-team EXPIRY=BATCH10 EVIDENCE=evidence_store.ts:23 EVIDENCE-MARKER=UNASSIGNED JUSTIFICATION=Static constant, Forge tenant-isolates REVIEWED-BY=UNREVIEWED

@@ -132,6 +132,8 @@ export async function sealReview(
 
   // Retrieve current review state from storage
   // Key pattern matches access-review storageKeys
+  // AUDIT-ALLOWLIST FT-ALW-05-020
+  // AUDIT-ALLOWLIST FT-ALW-05-021
   const reviewKey = `ar.v1:review:${siteId}:${reviewId}`;
   let review: ReviewWorkflowState;
 

@@ -118,6 +118,7 @@ export async function logGovernanceAction(
   };
 
   // Store under prefixed key for querying
+  // AUDIT-ALLOWLIST FT-ALW-05-022
   const storageKey = `ecl.audit.actions.${timestampUtc}.${recordSha256}`;
 
   try {

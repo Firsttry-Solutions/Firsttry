@@ -79,6 +79,8 @@ function assertNonEmptyString(value: any, label: string): asserts value is strin
  * @param driftId The drift identifier
  * @returns Storage key string
  */
+// AUDIT-ALLOWLIST FT-ALW-05-023
+// AUDIT-ALLOWLIST FT-ALW-05-024
 export function getAckKey(driftId: string): string {
   return `ecl.drift.ack.${driftId}`;
 }

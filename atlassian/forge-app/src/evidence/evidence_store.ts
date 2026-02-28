@@ -24,6 +24,7 @@ import { computeEvidenceHash, verifyEvidenceHash } from './canonicalize';
 /**
  * Key patterns for evidence storage
  */
+// AUDIT-ALLOWLIST FT-ALW-05-027
 function getEvidenceKey(tenantKey: string, evidenceId: string): string {
   return `p4:evidence:${tenantKey}:${evidenceId}`;
 }

@@ -17,6 +17,7 @@ import { storage } from '@forge/api';
 /**
  * Migration guard marker emitted before halting.
  */
+// AUDIT-ALLOWLIST FT-ALW-05-017
 export const MIGRATION_REQUIRED_MARKER = 'FT_ECL_MIGRATION_REQUIRED' as const;
 
 /**

@@ -28,9 +28,11 @@ import { canonicalStringify } from '../utils/canonicalJson';
 import { SnapshotPayload, validateSnapshotPayload } from './snapshotSchema';
 
 /** Forge storage key for the hash chain */
+// AUDIT-ALLOWLIST FT-ALW-05-018
 export const HASH_CHAIN_STORAGE_KEY = 'FT_SNAPSHOT_CHAIN_V1' as const;
 
 /** Genesis hash sentinel — used as previousHash for the very first entry */
+// AUDIT-ALLOWLIST FT-ALW-05-019
 export const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000' as const;
 
 /**

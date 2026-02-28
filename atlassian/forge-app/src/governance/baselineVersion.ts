@@ -20,6 +20,7 @@
 import { storage } from '@forge/api';
 
 /** Forge storage key for the baseline */
+// AUDIT-ALLOWLIST FT-ALW-05-016
 export const BASELINE_STORAGE_KEY = 'FT_BASELINE_V1' as const;
 
 /**
