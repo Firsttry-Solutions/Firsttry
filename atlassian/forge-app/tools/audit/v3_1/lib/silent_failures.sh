@@ -42,42 +42,58 @@ run_silent_failures() {
 
     # ── Pattern 1: catch block without rethrow ─────────────────────────────
     # Look for catch blocks that don't contain throw or return (with error propagation)
+    # Allowlist patterns:
+    #   - "throw" or "rethrow" anywhere in catch block
+    #   - "process.exit(" anywhere in catch block
+    #   - Comment containing "AUDIT-ALLOW:" or "safe to" or "Ignore" before/in block
     local catch_files
     catch_files=$(rg -l --glob '!**/node_modules/**' --glob '*.ts' \
       'catch\s*\(' "$scan_path" 2>/dev/null || true)
 
     for cf in $catch_files; do
-      # Extract catch blocks and check for missing throw/reject
-      # Simple heuristic: look for catch blocks that have only console.log/return null/return []
-      local silent_catches
-      silent_catches=$(rg -n --multiline '(?s)catch\s*\([^)]+\)\s*\{[^}]*?(console|return\s+null|return\s+\[\s*\])[^}]*?\}' \
-        "$cf" 2>/dev/null || true)
-      if [[ -n "$silent_catches" ]]; then
-        while IFS= read -r line; do
-          [[ -z "$line" ]] && continue
-          local ln_num; ln_num=$(echo "$line" | cut -d: -f1)
-          local content; content=$(echo "$line" | cut -d: -f2-)
-          _add_sf_finding "catch_no_rethrow" "$cf" "$ln_num" "$content"
-        done <<< "$(echo "$silent_catches" | head -10)"
-      fi
-
-      # Also: catch with only assignment or swallow
-      local swallowed
-      swallowed=$(rg -n '} catch\s*\(' "$cf" 2>/dev/null | head -5 || true)
-      # Check following lines for no rethrow
-      if [[ -n "$swallowed" ]]; then
-        while IFS= read -r sline; do
-          local sln; sln=$(echo "$sline" | cut -d: -f1)
-          # Read 5 lines after catch
-          local after_catch
-          after_catch=$(sed -n "$((sln+1)),$((sln+8))p" "$cf" 2>/dev/null || true)
-          if ! echo "$after_catch" | grep -qE 'throw\s|reject\(|Promise\.reject|rethrow'; then
-            if echo "$after_catch" | grep -qE 'return\s+null|return\s+\[\]|return\s+\{\}|console\.(log|warn|error)'; then
-              _add_sf_finding "catch_swallows_error" "$cf" "$sln" "$(echo "$after_catch" | head -3 | tr '\n' '|')"
-            fi
+      # Find all catch block line numbers
+      local catch_lines
+      catch_lines=$(rg -n 'catch\s*\(' "$cf" 2>/dev/null || true)
+      
+      while IFS= read -r catch_line; do
+        [[ -z "$catch_line" ]] && continue
+        local ln; ln=$(echo "$catch_line" | cut -d: -f1)
+        
+        # Extract ~15 lines after catch to get the full block
+        local block; block=$(sed -n "${ln},$((ln+15))p" "$cf" 2>/dev/null || true)
+        
+        # Check for allowlist patterns in the block
+        local is_allowed=0
+        
+        # Allow if block contains throw/rethrow
+        if echo "$block" | grep -qE 'throw\s|rethrow'; then
+          is_allowed=1
+        fi
+        
+        # Allow if block contains process.exit
+        if echo "$block" | grep -qE 'process\.exit\('; then
+          is_allowed=1
+        fi
+        
+        # Allow if block has explicit audit allowlist comment
+        if echo "$block" | grep -qiE '//.*AUDIT-ALLOW:|//.*safe to|//.*Ignore'; then
+          is_allowed=1
+        fi
+        
+        # Allow if block returns an error object (not null/[])
+        if echo "$block" | grep -qE 'return\s+\{.*error|return\s+\{.*ok:\s*false'; then
+          is_allowed=1
+        fi
+        
+        # If not allowed, check if it's actually a problem (has console but no rethrow)
+        if [[ "$is_allowed" -eq 0 ]]; then
+          # Flag only if it has console/return but no proper error propagation
+          if echo "$block" | grep -qE 'console\.|return\s+(null|undefined|\[\]|\{\})'; then
+            local snippet; snippet=$(echo "$block" | head -5 | tr '\n' '|')
+            _add_sf_finding "catch_silent_failure" "$cf" "$ln" "$snippet"
           fi
-        done <<< "$swallowed"
-      fi
+        fi
+      done <<< "$catch_lines"
     done
 
     # ── Pattern 2: return null / return [] on error path ──────────────────
