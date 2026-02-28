@@ -156,10 +156,10 @@ Evidence: /tmp/ft_f100_hostile_audit_v3_1_<timestamp>/PHASE_08_semgrep.json
 3. Replaced `jq` JSON validation with Node.js (more robust)
 
 **Validation:**
-- Manual Phase 08 execution: PASS ✅
-- Full audit execution: Phase 08 PASS ✅
-- Semgrep mode: LOCAL rules only (offline verified) ✅
-- Findings: 0 ERROR, 0 WARNING, 0 INFO ✅
+- Manual Phase 08 execution: PASS (0 ERROR findings)
+- Full audit execution: Phase 08 PASS (0 ERROR findings)
+- Semgrep mode: LOCAL rules only (offline verified)
+- Findings: 0 ERROR, 0 WARNING, 0 INFO
 
 **Evidence:**
 ```
