@@ -1,23 +1,7 @@
 name: Documentation Gate
 
 on:
-  pull_request:
-    paths:
-      - 'docs/**'
-      - 'tools/validate_docs.sh'
-      - 'tools/validate_docs_strict.sh'
-      - '.github/workflows/docs-gate.yml'
-      - '**/manifest.yml'
-      - '**/manifest.yaml'
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - 'tools/validate_docs.sh'
-      - 'tools/validate_docs_strict.sh'
-      - '**/manifest.yml'
-      - '**/manifest.yaml'
+  workflow_dispatch:
 
 permissions:
   contents: read

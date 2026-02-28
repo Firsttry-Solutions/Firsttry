@@ -1,23 +1,6 @@
 name: Enterprise Documentation Validation & Publish
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - "atlassian/forge-app/docs/**"
-      - ".github/workflows/docs.yml"
-      - "CHANGELOG.md"
-      - "atlassian/forge-app/docs/CHANGELOG.md"
-      - "atlassian/forge-app/tools/verify_pages_site_artifact.sh"
-      - "atlassian/forge-app/tools/verify_pages_live.sh"
-      - "atlassian/forge-app/tools/pages_pack_manifest.json"
-      - "atlassian/forge-app/tools/build_pages_site.mjs"
-      - "atlassian/forge-app/tools/build_trust_portal.mjs"
-      - "atlassian/forge-app/tools/audit_trust_portal_source.mjs"
-      - "atlassian/forge-app/tools/audit_trust_portal_live.mjs"
-      - "atlassian/forge-app/tools/audit_trust_portal_source_full.mjs"
-      - "atlassian/forge-app/tools/audit_trust_portal_live_full.mjs"
-      - "atlassian/forge-app/tools/vendor/**"
   workflow_dispatch:
 
 concurrency:

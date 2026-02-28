@@ -1,17 +1,6 @@
 name: Forge App Repro Proof
 
 on:
-  pull_request:
-    branches: [main, develop]
-  push:
-    branches: [main, develop]
-    paths:
-      - "atlassian/forge-app/src/**"
-      - "atlassian/forge-app/manifest.yml"
-      - "atlassian/forge-app/package.json"
-      - "atlassian/forge-app/package-lock.json"
-      - "!atlassian/forge-app/docs/**"
-      - "!.github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:

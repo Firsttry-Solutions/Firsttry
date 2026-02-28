@@ -1,13 +1,7 @@
 name: JWT Pattern Gate (Non-Bypassable)
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-      - "release/**"
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 permissions:
   contents: read

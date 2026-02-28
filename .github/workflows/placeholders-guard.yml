@@ -1,18 +1,6 @@
 name: Placeholder Guard
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  push:
-    branches:
-      - main
-    paths:
-      - "atlassian/forge-app/src/**"
-      - "atlassian/forge-app/manifest.yml"
-      - "atlassian/forge-app/package.json"
-      - "atlassian/forge-app/package-lock.json"
-      - "!atlassian/forge-app/docs/**"
-      - "!.github/workflows/docs.yml"
   workflow_dispatch:
 
 jobs:
