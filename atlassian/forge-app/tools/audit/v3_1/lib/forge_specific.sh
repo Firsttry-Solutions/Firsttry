@@ -89,9 +89,9 @@ run_forge_specific() {
 
       echo "    [${key_type}] ${fp}:${ln}" | tee -a "$summary_txt"
 
-      # Check allowlist before marking as FAIL
+      # Check allowlist before marking as FAIL or FLAG
       local is_allowlisted=0
-      if [[ "$has_allowlist" -eq 1 ]] && [[ "$is_fail" -eq 1 ]]; then
+      if [[ "$has_allowlist" -eq 1 ]] && { [[ "$is_fail" -eq 1 ]] || [[ "$is_flag" -eq 1 ]]; }; then
         # Extract relative path from repo root
         local rel_fp="${fp#${repo_dir}/}"
         # Check if this file:content pattern is in allowlist
