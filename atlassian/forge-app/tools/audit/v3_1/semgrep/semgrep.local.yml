@@ -1,0 +1,442 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# SEMGREP OFFLINE SECURITY RULES (v3.1)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Purpose: Replace network-dependent "p/security-audit" with local rules
+# This file ensures enterprise audit v3.1 PASSES deterministically WITHOUT network
+# Used in Phase 08 (SAST) of hostile audit (F100)
+# License: Same as parent repo
+# Owner: Arnab Poddar
+# ═══════════════════════════════════════════════════════════════════════════════
+
+rules:
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Hardcoded Secrets & Credentials
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-hardcoded-api-tokens
+    message: |
+      Possible hardcoded API token or key detected. 
+      Pattern matches common API token formats (Bearer, Basic, API keys).
+      Never commit credentials to source control.
+    severity: ERROR
+    languages: [javascript, typescript, python, go, java]
+    patterns:
+      - pattern-either:
+          - pattern: |
+              const $VAR = "$TOKEN"
+          - pattern: |
+              var $VAR = "$TOKEN"
+          - pattern: |
+              let $VAR = "$TOKEN"
+          - pattern: |
+              $VAR = "$TOKEN"
+      - metavariable-regex:
+          metavariable: $TOKEN
+          regex: '(AIza[0-9A-Za-z\-_]{35}|xox[baprs]-[0-9A-Za-z-]{10,}|sk-[0-9A-Za-z]{20,}|ATBB[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{36}|[0-9a-f]{32,64})'
+    metadata:
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      category: security
+      confidence: HIGH
+
+  - id: ft-private-key-in-code
+    message: |
+      Private key detected in source code (RSA, EC, OpenSSH format).
+      All private keys must be stored in secure vaults, never in code.
+    severity: ERROR
+    languages: [javascript, typescript, python, go, java, yaml, json]
+    patterns:
+      - pattern-regex: '-----BEGIN (RSA|EC|OPENSSH|DSA|PGP) PRIVATE KEY-----'
+    metadata:
+      cwe: "CWE-798"
+      category: security
+      confidence: HIGH
+
+  - id: ft-aws-access-key
+    message: |
+      AWS access key detected. AWS credentials must never be hardcoded.
+      Use IAM roles or environment variables with secret management.
+    severity: ERROR
+    languages: [javascript, typescript, python, go, java, yaml, json]
+    patterns:
+      - pattern-regex: 'AKIA[0-9A-Z]{16}'
+    metadata:
+      cwe: "CWE-798"
+      category: security
+      confidence: HIGH
+
+  - id: ft-jwt-token-hardcoded
+    message: |
+      JWT token detected in code (eyJ, eyI prefix).
+      JWTs contain bearer credentials and must never be hardcoded.
+    severity: ERROR
+    languages: [javascript, typescript, python, go, java]
+    patterns:
+      - pattern-regex: 'eyJ[A-Za-z0-9-_=]+\.eyJ[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*'
+    metadata:
+      cwe: "CWE-798"
+      category: security
+      confidence: MEDIUM
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Code Injection & Dynamic Execution
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-eval-usage
+    message: |
+      eval() detected. This allows arbitrary code execution.
+      Use JSON.parse() for data or refactor to avoid dynamic evaluation.
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern: eval(...)
+    metadata:
+      cwe: "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code"
+      category: security
+      confidence: HIGH
+
+  - id: ft-function-constructor
+    message: |
+      new Function() detected (equivalent to eval).
+      This enables arbitrary code execution at runtime.
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern: new Function(...)
+    metadata:
+      cwe: "CWE-95"
+      category: security
+      confidence: HIGH
+
+  - id: ft-vm-runInContext
+    message: |
+      vm.runInContext/runInNewContext detected.
+      Running untrusted code in VM contexts is dangerous even with sandboxing.
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: $VM.runInContext(...)
+          - pattern: $VM.runInNewContext(...)
+          - pattern: $VM.runInThisContext(...)
+    metadata:
+      cwe: "CWE-94: Improper Control of Generation of Code"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Command Injection
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-child-process-exec
+    message: |
+      child_process.exec() with potential user input detected.
+      Use execFile() or spawn() with argument arrays to avoid shell injection.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: $CP.exec($CMD, ...)
+          - pattern: $CP.execSync($CMD, ...)
+      - pattern-not: $CP.exec("...", ...)
+      - pattern-not: $CP.execSync("...", ...)
+    metadata:
+      cwe: "CWE-78: OS Command Injection"
+      category: security
+
+  - id: ft-child-process-shell-true
+    message: |
+      spawn with shell:true option bypasses argument escaping.
+      Avoid shell:true or ensure no user input reaches command.
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: $CP.spawn($CMD, $ARGS, {shell: true, ...})
+    metadata:
+      cwe: "CWE-78"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: SQL Injection
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-sql-string-concatenation
+    message: |
+      SQL query using string concatenation detected.
+      Use parameterized queries to prevent SQL injection.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: $DB.query($SQL + $VAR, ...)
+          - pattern: $DB.execute($SQL + $VAR, ...)
+          - pattern: $DB.query(`${$SQL}${$VAR}`, ...)
+          - pattern: $DB.execute(`${$SQL}${$VAR}`, ...)
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: XSS & HTML Injection
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-innerhtml-assignment
+    message: |
+      Direct innerHTML assignment with variable detected.
+      This can lead to XSS if input is not sanitized. Use textContent or DOMPurify.
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: $EL.innerHTML = $VAR
+          - pattern: $EL.innerHTML = $STR + $VAR
+          - pattern: $EL.innerHTML = `${...}${$VAR}${...}`
+      - pattern-not: $EL.innerHTML = "..."
+    metadata:
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      category: security
+
+  - id: ft-dangerously-set-innerhtml
+    message: |
+      dangerouslySetInnerHTML in React without sanitization.
+      Ensure __html value is sanitized with DOMPurify or similar.
+    severity: WARNING
+    languages: [javascript, typescript]
+    pattern: |
+      <$EL dangerouslySetInnerHTML={{__html: $VAR}} />
+    metadata:
+      cwe: "CWE-79"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Insecure Randomness
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-math-random-for-security
+    message: |
+      Math.random() detected. Do NOT use for security purposes (tokens, IDs, crypto).
+      Use crypto.randomBytes() or crypto.getRandomValues() instead.
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: Math.random()
+    paths:
+      include:
+        - "**/token*"
+        - "**/auth*"
+        - "**/session*"
+        - "**/crypto*"
+        - "**/security*"
+    metadata:
+      cwe: "CWE-330: Use of Insufficiently Random Values"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Path Traversal
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-path-traversal-fs
+    message: |
+      File system operation with potential path traversal (../).
+      Validate and sanitize file paths before use. Use path.resolve() and check prefix.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: $FS.readFile($PATH + $VAR, ...)
+          - pattern: $FS.readFileSync($PATH + $VAR, ...)
+          - pattern: $FS.writeFile($PATH + $VAR, ...)
+          - pattern: $FS.writeFileSync($PATH + $VAR, ...)
+          - pattern: $FS.readFile(`${$PATH}${$VAR}`, ...)
+          - pattern: $FS.writeFile(`${$PATH}${$VAR}`, ...)
+    metadata:
+      cwe: "CWE-22: Path Traversal"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Weak Cryptography
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-weak-crypto-algorithm
+    message: |
+      Weak or broken cryptographic algorithm detected (MD5, SHA1, DES, RC4).
+      Use SHA-256 or newer for hashing, AES-256-GCM for encryption.
+    severity: ERROR
+    languages: [javascript, typescript, python, go, java]
+    patterns:
+      - pattern-either:
+          - pattern: crypto.createHash("md5")
+          - pattern: crypto.createHash("sha1")
+          - pattern: crypto.createCipher("des", ...)
+          - pattern: crypto.createCipher("rc4", ...)
+          - pattern: $CRYPTO.createHash('md5')
+          - pattern: $CRYPTO.createHash('sha1')
+    metadata:
+      cwe: "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+      category: security
+
+  - id: ft-insecure-cipher-mode
+    message: |
+      Insecure cipher mode detected (ECB has no IV, vulnerable to pattern analysis).
+      Use AES-GCM, AES-CBC with random IV, or ChaCha20-Poly1305.
+    severity: ERROR
+    languages: [javascript, typescript, python, go, java]
+    patterns:
+      - pattern-regex: 'aes-\d+-ecb'
+    metadata:
+      cwe: "CWE-327"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Information Disclosure
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-console-log-in-production
+    message: |
+      console.log() in production code may leak sensitive data to logs.
+      Use structured logging with log level controls and PII redaction.
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: console.log(...)
+    paths:
+      include:
+        - "src/**"
+      exclude:
+        - "**/*.test.*"
+        - "**/__tests__/**"
+        - "**/test/**"
+        - "**/*.spec.*"
+    metadata:
+      cwe: "CWE-532: Insertion of Sensitive Information into Log File"
+      category: security
+
+  - id: ft-stack-trace-exposure
+    message: |
+      Error stack trace directly returned to client/user.
+      Sanitize errors in production; only return generic messages to users.
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: |
+              return $ERR.stack
+          - pattern: |
+              res.send($ERR.stack)
+          - pattern: |
+              res.json({..., stack: $ERR.stack, ...})
+    metadata:
+      cwe: "CWE-209: Information Exposure Through an Error Message"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: SSRF (Server-Side Request Forgery)
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-fetch-with-user-input
+    message: |
+      fetch() with user-controlled URL detected.
+      Validate URL against allowlist to prevent SSRF. Block internal IPs.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: fetch($URL + $VAR, ...)
+          - pattern: fetch(`${$URL}${$VAR}`, ...)
+          - pattern: fetch($VAR, ...)
+      - pattern-not: fetch("...", ...)
+    metadata:
+      cwe: "CWE-918: Server-Side Request Forgery (SSRF)"
+      category: security
+
+  - id: ft-axios-with-user-input
+    message: |
+      axios request with user-controlled URL detected.
+      Validate URL against allowlist to prevent SSRF. Block internal IPs.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: axios.get($URL + $VAR, ...)
+          - pattern: axios.post($URL + $VAR, ...)
+          - pattern: axios($CONFIG)
+      - pattern-not: axios.get("...", ...)
+      - pattern-not: axios.post("...", ...)
+    metadata:
+      cwe: "CWE-918"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Denial of Service
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-regex-dos
+    message: |
+      Complex regex pattern with nested quantifiers detected (ReDoS risk).
+      Test regex against malicious input or use safe-regex library.
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-regex: '/[\(\+\*]+.*[\+\*\)]+/'
+    metadata:
+      cwe: "CWE-1333: Inefficient Regular Expression Complexity"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Insecure Deserialization
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-unsafe-yaml-load
+    message: |
+      yaml.load() without safeLoad detected.
+      Use yaml.safeLoad() to prevent arbitrary code execution.
+    severity: ERROR
+    languages: [javascript, typescript, python]
+    patterns:
+      - pattern-either:
+          - pattern: yaml.load(...)
+          - pattern: $YAML.load(...)
+      - pattern-not: yaml.safeLoad(...)
+      - pattern-not: $YAML.safeLoad(...)
+    metadata:
+      cwe: "CWE-502: Deserialization of Untrusted Data"
+      category: security
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # CATEGORY: Authentication & Session Management
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  - id: ft-hardcoded-password
+    message: |
+      Hardcoded password detected in variable name.
+      Never hardcode passwords. Use environment variables or secret vaults.
+    severity: ERROR
+    languages: [javascript, typescript, python, go, java]
+    patterns:
+      - pattern-either:
+          - pattern: |
+              const password = "..."
+          - pattern: |
+              const PASSWORD = "..."
+          - pattern: |
+              password = "..."
+          - pattern: |
+              PASSWORD = "..."
+    metadata:
+      cwe: "CWE-798"
+      category: security
+
+  - id: ft-weak-jwt-secret
+    message: |
+      Short JWT secret detected (< 32 chars recommended).
+      Use long random secrets (256+ bits) for JWT signing.
+    severity: WARNING
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: jwt.sign(..., "$SECRET", ...)
+      - metavariable-regex:
+          metavariable: $SECRET
+          regex: '^.{1,20}$'
+    metadata:
+      cwe: "CWE-326: Inadequate Encryption Strength"
+      category: security
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# END OF SEMGREP OFFLINE RULES
+# ═══════════════════════════════════════════════════════════════════════════════

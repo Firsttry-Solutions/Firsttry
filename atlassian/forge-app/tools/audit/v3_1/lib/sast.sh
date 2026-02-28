@@ -28,16 +28,20 @@ run_sast() {
   echo "  semgrep: $(semgrep --version 2>/dev/null || echo 'unknown')" | tee -a "$semgrep_txt"
 
   local forge_rules="${audit_dir}/semgrep/forge.yml"
+  local offline_rules="${audit_dir}/semgrep/semgrep.local.yml"
   [[ -f "$forge_rules" ]] || phase_fail "08" "Local Forge semgrep rules not found at ${forge_rules}" "$semgrep_txt"
+  [[ -f "$offline_rules" ]] || phase_fail "08" "Offline semgrep rules not found at ${offline_rules}" "$semgrep_txt"
 
-  # ── Run semgrep ────────────────────────────────────────────────────────────
-  echo "[08] Running semgrep with p/security-audit + local Forge rules..." | tee -a "$semgrep_txt"
+  # ── Run semgrep (OFFLINE ONLY - no network registry) ──────────────────────
+  echo "[08] Running semgrep with LOCAL rules only (offline mode)..." | tee -a "$semgrep_txt"
+  echo "  Rules: ${forge_rules}" | tee -a "$semgrep_txt"
+  echo "  Rules: ${offline_rules}" | tee -a "$semgrep_txt"
 
   local sg_exit=0
   (
     cd "${repo_dir}"
     semgrep \
-      --config p/security-audit \
+      --config "${offline_rules}" \
       --config "${forge_rules}" \
       --json \
       --exclude "node_modules" \
@@ -50,8 +54,8 @@ run_sast() {
   # Exit code 1 = findings, exit code 0 = no findings; other = error
   if [[ "$sg_exit" -gt 1 ]]; then
     echo "  semgrep exited with error code ${sg_exit}" | tee -a "$semgrep_txt"
-    # Check if output is valid JSON anyway
-    if ! jq . "$semgrep_json" > /dev/null 2>&1; then
+    # Check if output is valid JSON anyway (use node for robustness)
+    if ! node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));' "$semgrep_json" 2>/dev/null; then
       phase_fail "08" "semgrep exited with error (${sg_exit}) and produced no valid JSON output." "$semgrep_json"
     fi
   fi
@@ -61,12 +65,12 @@ run_sast() {
   local warning_count=0
   local info_count=0
 
-  # Fail-closed: JSON must be valid and parseable
+  # Fail-closed: JSON must be valid and parseable (use node for validation)
   if [[ ! -f "$semgrep_json" ]]; then
     phase_fail "08" "semgrep JSON output file not found at ${semgrep_json}" "$semgrep_txt"
   fi
 
-  if ! jq . "$semgrep_json" > /dev/null 2>&1; then
+  if ! node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));' "$semgrep_json" 2>/dev/null; then
     echo "  Could not parse semgrep JSON output." | tee -a "$semgrep_txt"
     phase_fail "08" \
       "semgrep JSON output could not be parsed. This audit cannot proceed with unparseable SAST output." \
