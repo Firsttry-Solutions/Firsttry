@@ -20,6 +20,7 @@ import api from '@forge/api';
 const { route } = require('@forge/api') as typeof import('@forge/api');
 import type { Snapshot, PrivilegeBoundary } from '../models';
 import { canonicalizeValue } from '../canonicalize';
+import { failClosed } from '../../shared/failClosed';
 
 /**
  * Build privilege boundary from snapshot and runtime context
@@ -47,7 +48,7 @@ export async function buildPrivilegeBoundaryDeclaration(
         jiraAdmin = meRes.isAdmin === true;
       }
     } catch (err) {
-      console.warn('[PrivilegeEngine] Could not check Jira admin status:', err);
+      throw failClosed('FT_PRIVILEGE_JIRA_ADMIN_CHECK_FAILED', 'Cannot check Jira admin status from Jira API', err);
     }
 
     // Determine available scopes

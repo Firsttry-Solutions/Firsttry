@@ -25,6 +25,7 @@ import api from '@forge/api';
 const { route } = require('@forge/api') as typeof import('@forge/api');
 import type { AccessReport } from '../models';
 import { canonicalizeValue, sha256Hex } from '../canonicalize';
+import { failClosed } from '../../shared/failClosed';
 
 interface PermissionSource {
   viaGroup: string;
@@ -69,8 +70,7 @@ export async function buildAccessReport(
         .asUser()
         .requestJira(route`/rest/api/3/permissions`);
     } catch (err) {
-      console.warn('[AccessEngine] Could not fetch global permissions:', err);
-      globalPermsRes = null;
+      throw failClosed('FT_ACCESS_GLOBAL_PERMISSIONS_FAILED', 'Cannot fetch global permissions from Jira API', err);
     }
 
     // For now, create a minimal access report

@@ -20,6 +20,7 @@ import api from '@forge/api';
 const { route } = require('@forge/api') as typeof import('@forge/api');
 import type { DependencyGraph } from '../models';
 import { canonicalizeValue } from '../canonicalize';
+import { failClosed } from '../../shared/failClosed';
 
 interface Node {
   type: string;
@@ -60,8 +61,7 @@ export async function buildDependencyGraph(
         .asUser()
         .requestJira(route`/rest/api/3/project`);
     } catch (err) {
-      console.warn('[DependencyEngine] Could not fetch projects:', err);
-      projectsRes = [];
+      throw failClosed('FT_DEPENDENCY_FETCH_PROJECTS_FAILED', 'Cannot fetch projects from Jira API', err);
     }
 
     if (Array.isArray(projectsRes)) {

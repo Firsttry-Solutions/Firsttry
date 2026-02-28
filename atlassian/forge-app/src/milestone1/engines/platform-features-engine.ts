@@ -20,6 +20,7 @@ import api from '@forge/api';
 const { route } = require('@forge/api') as typeof import('@forge/api');
 import type { PlatformFeatures, Snapshot } from '../models';
 import { canonicalizeValue } from '../canonicalize';
+import { failClosed } from '../../shared/failClosed';
 
 type FieldSchemeModel = 'LEGACY' | 'NEW';
 
@@ -50,9 +51,7 @@ async function detectFieldSchemeModel(): Promise<FieldSchemeModel> {
     
     return 'LEGACY';
   } catch (err) {
-    console.warn('[PlatformFeatureEngine] Could not detect field scheme model:', err);
-    // Default to LEGACY if we can't detect
-    return 'LEGACY';
+    throw failClosed('FT_PLATFORM_FEATURE_DETECTION_FAILED', 'Cannot detect field scheme model from Jira API', err);
   }
 }
 
