@@ -229,6 +229,15 @@ run_supply_chain   # Phase 1
 run_secrets        # Phase 2
 run_manifest       # Phase 3
 run_exfiltration   # Phase 4
+
+# ── Validate Phase 05 allowlist metadata (fail-closed) ──────────────────────
+echo "[PRE-05] Validating Phase 05 allowlist metadata..."
+if ! bash "${LIB}/validate_phase05_allowlist.sh" 2>&1 | tee "${E}/PHASE_05_allowlist_validation.txt"; then
+  phase_fail "05" "Phase 05 allowlist validation failed: entries must be human-reviewed (not UNREVIEWED/TBD/Automation) and not expired" \
+    "${E}/PHASE_05_allowlist_validation.txt"
+fi
+echo "  [PASS] Phase 05 allowlist metadata validated."
+
 run_forge_specific # Phase 5
 run_determinism    # Phase 6
 run_runtime        # Phase 7

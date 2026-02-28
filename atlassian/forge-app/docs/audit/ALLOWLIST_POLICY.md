@@ -81,8 +81,10 @@ Every allowlist entry MUST include all fields in the comment:
 - Example: "Helper function buildReviewKey() uses makeStorageKey(siteId,...) but audit sees variable usage at call site"
 
 **REVIEWED-BY:** Second reviewer who validated the entry
-- Format: `FirstName-LastName` or `TBD` if pending
-- Required for all new entries (cannot merge with REVIEWED-BY=TBD)
+- Format: `FirstName-LastName` or `team-lead`
+- **REQUIRED for committed code:** Human name only (NOT: UNREVIEWED, TBD, or containing "Automation")
+- Validator rejects entries with placeholder review status
+- Work-in-progress entries may temporarily use `REVIEWED-BY=UNREVIEWED` for local testing, but **MUST be reviewed before commit**
 
 ---
 
@@ -108,22 +110,42 @@ When batch number reaches EXPIRY:
 
 ## Enforcement Mechanisms
 
-### Audit-Time Validation
+### Pre-Phase 05 Validation (Fail-Closed)
 
-The audit script (`forge_specific.sh`) validates:
-1. ✅ Every allowlist entry matches required format
-2. ✅ PATTERN is file-specific (contains `src/` or exact key literal)
-3. ✅ All required fields present (OWNER, EXPIRY, EVIDENCE, JUSTIFICATION, REVIEWED-BY)
-4. ✅ REVIEWED-BY is not `TBD` (must be reviewed before commit)
-5. ✅ EXPIRY batch number ≥ current batch (no expired entries)
+A dedicated validator script (`lib/validate_phase05_allowlist.sh`) runs **before Phase 05** and performs:
 
-**FAIL conditions:**
-- Missing required field → audit FAILS
-- Generic pattern (no file path) → audit FAILS
-- REVIEWED-BY=TBD → audit FAILS
-- Expired entry → audit FAILS
+1. ✅ **Format Check:** Every non-comment, non-blank line must contain all required fields
+2. ✅ **Field Validation:**
+   - `OWNER=` present
+   - `EXPIRY=BATCH<N>` present and N ≥ 9 (current batch floor)
+   - `EVIDENCE=` present
+   - `JUSTIFICATION=` present
+   - `REVIEWED-BY=` present
+3. ✅ **Review Status Check:** REVIEWED-BY value must be:
+   - A human name (e.g., `FirstName-LastName`, `team-lead`)
+   - NOT: `UNREVIEWED`, `TBD`, or containing `Automation`
+4. ✅ **Expiry Check:** EXPIRY batch number must be ≥ current batch floor (no expired entries)
 
-### Code Evidence Markers
+**FAIL Behavior:**
+- If ANY entry fails validation → validator prints line number + content and **exits 1**
+- Audit runner catches validation failure → **entire audit FAILS immediately** (Phase 05 does not run)
+- Exit code 1 (not 0) → CI pipeline rejects the build
+
+**Evidence:** `/tmp/ft_f100_hostile_audit_v3_1_*/PHASE_05_allowlist_validation.txt`
+
+### In-Phase Pattern Matching (forge_specific.sh)
+
+After validation passes, Phase 05 runs:
+1. Loads allowlist patterns
+2. For each Phase 05 HIGH flag, checks if pattern matches
+3. If match found → suppresses flag (marks as ALLOWLISTED in summary)
+4. Pattern matching is substring-based: `echo "$line" | grep -qF "$pattern"`
+
+**Important:** Validation ensures metadata quality; pattern matching determines which flags are suppressed.
+
+### Code Evidence Markers (Optional)
+
+For complex patterns, add comment near key construction:
 
 For complex patterns, add comment near key construction:
 
@@ -146,23 +168,31 @@ src/phase6/snapshot.ts:storage.get(key)  # OWNER=phase6-team EXPIRY=BATCH9 EVIDE
 
 ### Adding New Entry
 
-1. **Author:**
+1. **Author (Work-in-Progress):**
    - Identify flagged line in audit output
    - Verify code uses `makeStorageKey()` or `makeGlobalStorageKey()`
-   - Add specific pattern with all required fields (REVIEWED-BY=TBD)
+   - Add specific pattern with all required fields (temporarily use `REVIEWED-BY=UNREVIEWED` for local testing only)
    - Add AUDIT-ALLOWLIST marker in code if needed
-   - Create PR
+   - **DO NOT COMMIT with REVIEWED-BY=UNREVIEWED/TBD/Automation**
 
-2. **Reviewer:**
+2. **Second Reviewer (Required Before Commit):**
    - Check EVIDENCE location in source code
    - Confirm key construction is tenant-bound and deterministic
    - Verify PATTERN is specific enough (won't match unrelated code)
-   - Update REVIEWED-BY field
-   - Approve PR
+   - Update REVIEWED-BY field to human name (e.g., `Jane-Smith`)
+   - Approve entry
 
-3. **Audit:**
-   - Validates format and field completeness
-   - Rejects if REVIEWED-BY=TBD
+3. **Pre-Commit Gate:**
+   - Entry MUST have human reviewer name in REVIEWED-BY field
+   - Validator rejects: UNREVIEWED, TBD, or any "Automation" value
+   - Audit fails if any entry lacks valid REVIEWED-BY
+
+4. **Audit Validation:**
+   - Fails entire audit if REVIEWED-BY is invalid
+   - Fails if EXPIRY < current batch floor
+   - Fails if any required field missing
+
+**Key Rule:** Every allowlist entry in committed code MUST have been reviewed by a second human. Automation is not a valid reviewer.
 
 ### Updating Expired Entry
 
@@ -287,13 +317,22 @@ Review board audits allowlist every quarter:
 3. Re-review patterns with EXPIRY within 2 batches
 
 ### Automated Checks
-CI pipeline enforces:
-- No REVIEWED-BY=TBD in main branch
-- No expired entries (EXPIRY < current batch)
-- Pattern format validation
+
+**Pre-Phase 05 Validator (Enforced Now - Batch 7.1.1):**
+- ✅ **IMPLEMENTED:** Fail-closed validator (`lib/validate_phase05_allowlist.sh`)
+- ✅ **ENFORCED:** No REVIEWED-BY=UNREVIEWED/TBD/Automation in any entry
+- ✅ **ENFORCED:** No expired entries (EXPIRY < current batch floor)
+- ✅ **ENFORCED:** All required fields present
+- ✅ **ENFORCED:** EXPIRY format validation (BATCH<integer>)
+- **Result:** Audit fails immediately if any validation fails
+
+**Future CI Enhancements (Planned):**
+- Pre-commit hook validation (reject commits with UNREVIEWED)
+- PR checks for allowlist changes (require security team review)
+- Pattern granularity validator (enforce file-path requirement)
 
 ---
 
 **Policy Owner:** FirstTry Security Team  
-**Last Updated:** 2026-02-28 (Batch 7.1)  
+**Last Updated:** 2026-02-28 (Batch 7.1.1 - Fail-Closed Enforcement)  
 **Next Review:** 2026-05-28 or BATCH10, whichever is sooner
