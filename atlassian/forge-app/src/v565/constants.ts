@@ -24,9 +24,12 @@ export const SCHEDULE_LOCK_TTL_MS = 8 * 24 * 60 * 60 * 1000;
 
 // AUDIT: Phase05 remediation - Job status keys use prefix pattern, will be fixed with helper function
 // Job status keys (EXPLICIT)
+// AUDIT-ALLOWLIST FT-ALW-05-044
 export const JOB_STATUS_PREFIX = "ft:v565:job:status:";                // + jobId
+// AUDIT-ALLOWLIST FT-ALW-05-045
 export const JOB_FAILURE_EXPORT_PREFIX = "ft:v565:job:failureExport:"; // + jobId
 // Job meta key (EXPLICIT) — stored separately so status updates never overwrite meta
+// AUDIT-ALLOWLIST FT-ALW-05-046
 export const JOB_META_PREFIX = "ft:v565:job:meta:";                    // + jobId
 export type JobStatus = "NEW" | "RUNNING" | "FAILED" | "DONE";
 

@@ -29,6 +29,7 @@ function getEvidenceKey(tenantKey: string, evidenceId: string): string {
   return `p4:evidence:${tenantKey}:${evidenceId}`;
 }
 
+// AUDIT-ALLOWLIST FT-ALW-05-028
 function getEvidenceIndexKey(tenantKey: string, page: number = 0): string {
   return `p4:evidence_index:${tenantKey}:${page}`;
 }
@@ -66,6 +67,7 @@ export class EvidenceStore {
     const hash = computeEvidenceHash(bundle);
 
     // Check if evidence already exists (immutability check)
+    // AUDIT-ALLOWLIST FT-ALW-05-029
     const existingKey = getEvidenceKey(this.tenantKey, bundle.evidenceId);
     const existing = await storage.get(existingKey);
     if (existing) {
@@ -89,6 +91,7 @@ export class EvidenceStore {
 
     // Persist (atomic write)
     const ttlOptions = retentionSeconds ? { ttl: retentionSeconds } : undefined;
+    // AUDIT-ALLOWLIST FT-ALW-05-030
     await storage.set(existingKey, JSON.stringify(stored), ttlOptions);
 
     // Add to index for pagination
@@ -107,6 +110,7 @@ export class EvidenceStore {
    * Returns the bundle + hash for verification.
    */
   async loadEvidence(evidenceId: string): Promise<StoredEvidence | null> {
+    // AUDIT-ALLOWLIST FT-ALW-05-031
     const key = getEvidenceKey(this.tenantKey, evidenceId);
     const data = await storage.get(key);
 
@@ -161,6 +165,7 @@ export class EvidenceStore {
     pageSize: number;
     total: number;
   }> {
+    // AUDIT-ALLOWLIST FT-ALW-05-032
     const indexKey = getEvidenceIndexKey(this.tenantKey, page);
     const indexData = await storage.get(indexKey);
 

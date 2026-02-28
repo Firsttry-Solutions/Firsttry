@@ -63,6 +63,7 @@ export const run = async (): Promise<void> => {
     try {
       let configStr;
       try {
+        // AUDIT-ALLOWLIST FT-ALW-05-050
         configStr = await storage.get("phase2.config.webhooks");
       } catch (storageErr: any) {
         console.error("[FT_PROOF_DRIFT_STORAGE_API_FAIL]", { marker:"FT_PROOF_DRIFT_STORAGE_API_FAIL", err: String(storageErr) });

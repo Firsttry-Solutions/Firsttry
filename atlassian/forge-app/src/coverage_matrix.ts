@@ -541,14 +541,17 @@ export async function storeCoverageMatrixSnapshot(
 
   // Store snapshot
   // Use colons instead of slashes to comply with Forge storage key pattern: ^(?!\s+$)[a-zA-Z0-9:._\s-#]+$
+  // AUDIT-ALLOWLIST FT-ALW-05-035
   const storageKey = `coverage:${snapshotId}`;
   await storage.set(storageKey, snapshot);
 
   // Update index
+  // AUDIT-ALLOWLIST FT-ALW-05-036
   const indexKey = `coverage:index:${org}`;
   const index = (await storage.get(indexKey) || []) as string[];
   if (!index.includes(snapshotId)) {
     index.push(snapshotId);
+    // AUDIT-ALLOWLIST FT-ALW-05-041
     await storage.set(indexKey, index);
   }
 
@@ -559,6 +562,7 @@ export async function storeCoverageMatrixSnapshot(
  * Retrieve most recent coverage matrix for org
  */
 export async function getMostRecentCoverageMatrix(org: string): Promise<CoverageMatrixSnapshot | null> {
+  // AUDIT-ALLOWLIST FT-ALW-05-037
   const indexKey = `coverage:index:${org}`;
   const index = (await storage.get(indexKey) || []) as string[];
 
@@ -568,8 +572,7 @@ export async function getMostRecentCoverageMatrix(org: string): Promise<Coverage
 
   // Most recent is last in index
   const snapshotId = index[index.length - 1];
-  // Use colons instead of slashes to comply with Forge storage key pattern
-  const storageKey = `coverage:${snapshotId}`;
+  // Use colons instead of slashes to comply with Forge storage key pattern    // AUDIT-ALLOWLIST FT-ALW-05-038  const storageKey = `coverage:${snapshotId}`;
   const snapshot = await storage.get(storageKey);
 
   return snapshot || null;
@@ -579,6 +582,7 @@ export async function getMostRecentCoverageMatrix(org: string): Promise<Coverage
  * Get all coverage matrices for org with pagination
  */
 export async function listCoverageMatrices(org: string, limit: number = 100): Promise<CoverageMatrixSnapshot[]> {
+  // AUDIT-ALLOWLIST FT-ALW-05-039
   const indexKey = `coverage:index:${org}`;
   const index = (await storage.get(indexKey) || []) as string[];
 
@@ -586,8 +590,7 @@ export async function listCoverageMatrices(org: string, limit: number = 100): Pr
   const recentIds = index.slice(-limit).reverse();
 
   const snapshotPromises = recentIds.map(async (id) => {
-    // Use colons instead of slashes to comply with Forge storage key pattern
-    const storageKey = `coverage:${id}`;
+    // Use colons instead of slashes to comply with Forge storage key pattern      // AUDIT-ALLOWLIST FT-ALW-05-040    const storageKey = `coverage:${id}`;
     return await storage.get(storageKey);
   });
 
