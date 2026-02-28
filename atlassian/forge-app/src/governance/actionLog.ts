@@ -16,6 +16,7 @@ import { sha256Hex, canonicalJsonString } from "../milestone1/canonicalize";
 import { EclAction, EclRole } from "./rbac";
 import { BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC } from "../build/buildIdentityBackend.gen";
 import { Clock, SystemClock } from "../shared/clock";
+import { failClosed } from "../shared/failClosed";
 
 /**
  * Assert non-empty string value (fail-closed)
@@ -322,8 +323,7 @@ export function verifyGovernanceActionHash(record: GovernanceActionRecord): bool
     // Compare
     return recomputedHash === record.recordSha256;
   } catch (err) {
-    console.error(`[ECL-2 ACTION_LOG] Hash verification failed: ${err}`);
-    return false;
+    throw failClosed('FT_ECL_ACTIONLOG_HASH_VERIFY_FAILED', 'Cannot verify governance action record hash', err);
   }
 }
 

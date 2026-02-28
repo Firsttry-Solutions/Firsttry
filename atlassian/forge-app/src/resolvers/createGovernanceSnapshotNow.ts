@@ -13,6 +13,7 @@
 import { SnapshotCapturer } from '../phase6/snapshot_capture';
 import { SnapshotStorage, SnapshotRunStorage } from '../phase6/snapshot_storage';
 import { resolveTenantIdentity } from '../core/tenant_identity';
+import { failClosed } from '../shared/failClosed';
 import {
   generateTraceIdStable,
   generateTraceIdInstance,
@@ -173,13 +174,6 @@ export async function createGovernanceSnapshotNow_resolver(
       })
     );
 
-    return {
-      ok: false,
-      error: {
-        code: errorCode,
-        message: errorMsg,
-        trace_id_stable: traceIdStable
-      }
-    };
+    throw failClosed('FT_RESOLVER_SNAPSHOT_CREATE_FAILED', `Create governance snapshot failed: ${errorMsg}`, err);
   }
 }

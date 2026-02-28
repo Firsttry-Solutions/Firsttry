@@ -11,6 +11,7 @@
 import { storage } from "@forge/api";
 import { sanitizeKey } from "../utils/sanitizeKey";
 import { getVerifyAudit } from "../enterprise/verifyAudit";
+import { failClosed } from "../shared/failClosed";
 
 export interface DiagnosticBundle {
   schemaVersion: "ft-diagnostic@1";
@@ -49,49 +50,45 @@ export async function buildDiagnosticBundle(tenantKey: string): Promise<Diagnost
   let meta: any = null;
   const blocks: any[] = [];
 
-  try {
-    // Read head and meta
-    const headData = await storage.get(headKey);
-    if (headData) {
-      head = typeof headData === "string" ? JSON.parse(headData) : headData;
-    }
+  // Read head and meta
+  const headData = await storage.get(headKey);
+  if (headData) {
+    head = typeof headData === "string" ? JSON.parse(headData) : headData;
+  }
 
-    const metaData = await storage.get(metaKey);
-    if (metaData) {
-      meta = typeof metaData === "string" ? JSON.parse(metaData) : metaData;
-    }
+  const metaData = await storage.get(metaKey);
+  if (metaData) {
+    meta = typeof metaData === "string" ? JSON.parse(metaData) : metaData;
+  }
 
-    // Collect last 200 blocks
-    let current = head;
-    let collected = 0;
+  // Collect last 200 blocks
+  let current = head;
+  let collected = 0;
 
-    while (current && collected < 200) {
-      // Sanitize: remove tenantKey and accountIds
-      const sanitized = { ...current };
-      delete sanitized.tenantKey;
-      delete sanitized.accountIds;
-      delete sanitized.userId;
+  while (current && collected < 200) {
+    // Sanitize: remove tenantKey and accountIds
+    const sanitized = { ...current };
+    delete sanitized.tenantKey;
+    delete sanitized.accountIds;
+    delete sanitized.userId;
 
-      blocks.push(sanitized);
+    blocks.push(sanitized);
 
-      if (current.previousBlockKey) {
-        try {
-          const parentData = await storage.get(current.previousBlockKey);
-          if (parentData) {
-            current = typeof parentData === "string" ? JSON.parse(parentData) : parentData;
-            collected++;
-          } else {
-            break;
-          }
-        } catch (err) {
+    if (current.previousBlockKey) {
+      try {
+        const parentData = await storage.get(current.previousBlockKey);
+        if (parentData) {
+          current = typeof parentData === "string" ? JSON.parse(parentData) : parentData;
+          collected++;
+        } else {
           break;
         }
-      } else {
-        break;
+      } catch (err) {
+        throw failClosed('FT_DIAG_BUNDLE_PARENT_BLOCK_FETCH_FAILED', 'Cannot fetch parent block for diagnostic bundle', err);
       }
+    } else {
+      break;
     }
-  } catch (err) {
-    console.error(`[diagnosticBundle] Error collecting blocks: ${err}`);
   }
 
   // Placeholder for mismatch details and recomputed hashes

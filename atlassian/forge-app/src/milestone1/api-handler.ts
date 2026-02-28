@@ -28,6 +28,7 @@ import {
 import { buildAuditCoverageReport } from './engines/audit-coverage-engine';
 import { buildPrivilegeBoundaryDeclaration } from './engines/privilege-engine';
 import { exportGovernancePack } from './engines/export-engine';
+import { failClosed } from '../shared/failClosed';
 import { canonicalJsonString } from './canonicalize';
 
 /**
@@ -245,7 +246,7 @@ export const snapshotHandler: any = async (req: any) => {
     return createResponse(404, null, 'Endpoint not found');
   } catch (error) {
     console.error('[SnapshotHandler] Error:', error);
-    return createResponse(500, null, String(error));
+    throw failClosed('FT_API_HANDLER_FAILED', 'Snapshot API handler failed', error);
   }
 };
 

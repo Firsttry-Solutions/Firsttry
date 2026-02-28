@@ -190,14 +190,7 @@ export class ReviewerResolver {
         marker: "[FT_REVIEWER_FALLBACK_RESOLVED]",
       };
     } catch (err) {
-      console.error(`[FT_REVIEWER_RESOLVE_FAILED] ${err}`);
-      return {
-        reviewerIds: [],
-        success: false,
-        error: String(err),
-        source: "none",
-        marker: "[FT_REVIEW_NO_REVIEWERS]",
-      };
+      throw failClosed('FT_REVIEWER_RESOLVE_FAILED', 'Cannot resolve reviewers from fallback group', err);
     }
   }
 

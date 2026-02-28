@@ -13,6 +13,7 @@
 
 import * as crypto from "crypto";
 import { ReviewError, ReviewErrorCode } from "./types";
+import { failClosed } from "../shared/failClosed";
 
 // ============================================================================
 // Error Handling
@@ -206,8 +207,7 @@ export class MigrationEngine {
         `[FT_MIGRATION_APPLIED] ${migration.id} completed (${recordsAffected} records)`
       );
     } catch (err: any) {
-      error = err.message;
-      console.error(`[FT_MIGRATION_ERROR] ${migration.id}: ${error}`);
+      throw failClosed('FT_MIGRATION_FAILED', `Migration ${migration.id} failed`, err);
     }
 
     const duration = Date.now() - startTime;

@@ -19,6 +19,7 @@
 import { SnapshotStorage } from '../phase6/snapshot_storage';
 import { Snapshot } from '../phase6/snapshot_model';
 import { resolveTenantIdentity } from '../core/tenant_identity';
+import { failClosed } from '../shared/failClosed';
 import {
   generateTraceIdStable,
   generateTraceIdInstance,
@@ -273,13 +274,6 @@ export async function exportGovernanceSnapshotById_resolver(
       })
     );
 
-    return {
-      ok: false,
-      error: {
-        code: errorCode,
-        message: errorMsg,
-        trace_id_stable: traceIdStable
-      }
-    };
+    throw failClosed('FT_RESOLVER_EXPORT_GOVERNANCE_FAILED', `Export governance snapshot failed: ${errorMsg}`, err);
   }
 }

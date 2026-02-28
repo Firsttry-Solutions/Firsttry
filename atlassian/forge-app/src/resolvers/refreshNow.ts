@@ -8,6 +8,7 @@
  */
 
 import { collectSnapshotCore, CollectedSnapshot } from "../status/collectSnapshotCore";
+import { failClosed } from '../shared/failClosed';
 import {
   generateTraceIdStable,
   generateTraceIdInstance,
@@ -93,11 +94,6 @@ export async function refreshNow_resolver(req: any): Promise<RefreshNowResult> {
       })
     );
 
-    return {
-      ok: false,
-      errorCode,
-      errorMessage: errorMsg,
-      errorStage: "collection"
-    };
+    throw failClosed('FT_RESOLVER_REFRESH_FAILED', `Refresh now failed: ${errorMsg}`, err);
   }
 }

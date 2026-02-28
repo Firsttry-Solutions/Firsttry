@@ -179,15 +179,12 @@ describe("ReviewerResolver — Fail-Closed Tests", () => {
 
     mockStorage.get.mockResolvedValue(null);
 
-    const result = await ReviewerResolver.resolveReviewers(
-      mockStorage,
-      mockJiraClient
-    );
-
-    expect(result.success).toBe(false);
-    expect(result.reviewerIds).toEqual([]);
-    expect(result.error).toContain("HTTP 403");
-    expect(result.marker).toContain("FT_REVIEW_NO_REVIEWERS");
+    await expect(
+      ReviewerResolver.resolveReviewers(
+        mockStorage,
+        mockJiraClient
+      )
+    ).rejects.toThrow('FT_REVIEWER_RESOLVE_FAILED');
   });
 
   /**
@@ -204,14 +201,12 @@ describe("ReviewerResolver — Fail-Closed Tests", () => {
 
     mockStorage.get.mockResolvedValue(null);
 
-    const result = await ReviewerResolver.resolveReviewers(
-      mockStorage,
-      mockJiraClient
-    );
-
-    expect(result.success).toBe(false);
-    expect(result.reviewerIds).toEqual([]);
-    expect(result.marker).toContain("FT_REVIEW_NO_REVIEWERS");
+    await expect(
+      ReviewerResolver.resolveReviewers(
+        mockStorage,
+        mockJiraClient
+      )
+    ).rejects.toThrow('FT_REVIEWER_RESOLVE_FAILED');
   });
 
   /**
@@ -228,14 +223,12 @@ describe("ReviewerResolver — Fail-Closed Tests", () => {
 
     mockStorage.get.mockResolvedValue(null);
 
-    const result = await ReviewerResolver.resolveReviewers(
-      mockStorage,
-      mockJiraClient
-    );
-
-    expect(result.success).toBe(false);
-    expect(result.reviewerIds).toEqual([]);
-    expect(result.marker).toContain("FT_REVIEW_NO_REVIEWERS");
+    await expect(
+      ReviewerResolver.resolveReviewers(
+        mockStorage,
+        mockJiraClient
+      )
+    ).rejects.toThrow('FT_REVIEWER_RESOLVE_FAILED');
   });
 
   /**

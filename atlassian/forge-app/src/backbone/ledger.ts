@@ -7,6 +7,7 @@ import { storage } from "@forge/api";
 import { createHash } from "crypto";
 import { sanitizeKey } from "../utils/sanitizeKey";
 import { Clock, SystemClock } from "../shared/clock";
+import { failClosed } from "../shared/failClosed";
 
 export async function loadOrInitLedger(buildShaBackend: string | null): Promise<{ ledger: FtLedgerV1; storage_state: FtStorageState }> {
   const got = await storageGetJson<FtLedgerV1>(FT_LEDGER_KEY);
@@ -145,7 +146,7 @@ async function acquireLedgerLock(tenantKey: string): Promise<() => Promise<void>
     try {
       await storage.delete(lockKey);
     } catch (err) {
-      console.error(`[ledger] Lock release failed: ${err}`);
+      throw failClosed('FT_LEDGER_LOCK_RELEASE_FAILED', 'Cannot release ledger lock', err);
     }
   };
 }
@@ -174,21 +175,19 @@ export async function appendLedgerBlock_v1(input: LedgerAppendInput, clock: Cloc
       const headData = await storage.get(headKey);
       head = headData ? JSON.parse(headData as string) : null;
     } catch (err) {
-      console.warn(`[ledger] Head read error: ${err}`);
-      head = null;
+      throw failClosed('FT_LEDGER_HEAD_READ_FAILED', 'Cannot read ledger head from storage', err);
     }
 
     try {
       const metaData = await storage.get(metaKey);
       meta = metaData ? JSON.parse(metaData as string) : null;
     } catch (err) {
-      console.warn(`[ledger] Meta read error: ${err}`);
-      meta = null;
+      throw failClosed('FT_LEDGER_META_READ_FAILED', 'Cannot read ledger meta from storage', err);
     }
 
     // IDEMPOTENT: if this snapshot hash already stored, return existing state
     if (input.blockType === "SNAPSHOT" && meta?.lastSnapshotHash === input.snapshotHash) {
-      return { head: head || {}, meta: meta || {} };
+      return { head, meta };
     }
 
     // Build payload

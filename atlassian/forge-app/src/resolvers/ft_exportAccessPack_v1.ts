@@ -22,6 +22,7 @@ import api from '@forge/api';
 import { storage } from '@forge/api';
 import { computeExportEligibilityGate } from '../utils/exportEligibilityGate'; // v7.50: shared gate
 import { makeDeterministicZip, ZipInputFile } from '../zip/deterministicZip'; // v7.55: real PK-header ZIP
+import { failClosed } from '../shared/failClosed';
 
 // ============================================================================
 // v7.49: Phase1 stats validation — pure, exported for testing
@@ -238,11 +239,7 @@ export const handler = async (request: any): Promise<any> => {
       error: errorMsg,
       stack: error?.stack,
     }));
-    return {
-      ok: false,
-      status: 'FAILED',
-      reason: `Export failed: ${errorMsg}`,
-    };
+    throw failClosed('FT_RESOLVER_EXPORT_ACCESSPACK_FAILED', `Access pack export failed: ${errorMsg}`, error);
   }
 };
 

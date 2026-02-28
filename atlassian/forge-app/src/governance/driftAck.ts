@@ -18,6 +18,7 @@ import { storage } from "@forge/api";
 import { sha256Hex, canonicalJsonString } from "../milestone1/canonicalize";
 import { EclRole, EclAction, hasPermission } from "./rbac";
 import { BACKEND_GIT_SHA_SHORT, BACKEND_BUILD_TIME_UTC } from "../build/buildIdentityBackend.gen";
+import { failClosed } from "../shared/failClosed";
 import { Clock, SystemClock } from "../shared/clock";
 
 /**
@@ -275,7 +276,6 @@ export function verifyDriftAckHash(record: DriftAckRecord): boolean {
 
     return recomputedHash === record.ackHash;
   } catch (err) {
-    console.error(`[ECL-3 DRIFT_ACK] Hash verification failed: ${err}`);
-    return false;
+    throw failClosed('FT_ECL_DRIFTACK_HASH_VERIFY_FAILED', 'Cannot verify drift acknowledgement record hash', err);
   }
 }
