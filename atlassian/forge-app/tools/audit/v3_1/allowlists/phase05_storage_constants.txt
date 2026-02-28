@@ -57,18 +57,29 @@ src/access-review/phase3Workflow.ts:auditKey
 src/access-review/storageKeys.ts:makeStorageKey
 
 # Milestone 1 Storage - uses makeStorageKey(siteId, "milestone1_*", ...)
-src/milestone1/storage.ts:makeStorageKey
+# Variable name 'key' is used throughout this file for storage operations
+src/milestone1/storage.ts:storage.get(key)
+src/milestone1/storage.ts:storage.set(key
+src/milestone1/storage.ts:storage.delete(key)
 
 # Phase 6 Snapshots - uses makeStorageKey(tenantId, "phase6_*", ...)
 src/phase6/constants.ts:makeStorageKey
-src/phase6/snapshot_storage.ts:makeStorageKey
+src/phase6/snapshot_storage.ts:storage.get(snapshotKey)
+src/phase6/snapshot_storage.ts:storage.set(snapshotKey
+src/phase6/snapshot_storage.ts:storage.set(runKey
+src/phase6/snapshot_storage.ts:storage.get(runKey)
+src/phase6/snapshot_storage.ts:storage.delete(runKey)
+src/phase6/snapshot_storage.ts:storage.list({ prefix
 
 # Storage Layer - uses makeStorageKey(orgKey, namespace, ...)
-src/storage.ts:storageKey
-src/storage.ts:counterKey
-src/storage.ts:countKey
-src/storage.ts:shardCountKey
-src/storage.ts:makeStorageKey
+src/storage.ts:storage.get(storageKey)
+src/storage.ts:storage.set(storageKey
+src/storage.ts:storage.get(counterKey)
+src/storage.ts:storage.set(counterKey
+src/storage.ts:storage.get(countKey)
+src/storage.ts:storage.set(countKey
+src/storage.ts:storage.get(shardCountKey)
+src/storage.ts:storage.set(shardCountKey
 
 # V565 Schedule - uses makeGlobalStorageKey (global control, no tenant data)
 src/jobs/v565/snapshotScheduleKickoff.ts:SCHEDULE_ENABLED_KEY
