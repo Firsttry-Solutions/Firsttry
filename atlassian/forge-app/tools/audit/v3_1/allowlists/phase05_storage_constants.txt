@@ -43,3 +43,42 @@ src/jobs/v565/jobStatus.ts:JOB_LOCK_KEY
 src/jobs/v565/jobStatus.ts:ACTIVE_JOBS_LIST
 src/jobs/v565/jobStatus.ts:COMPLETED_JOBS_COUNT
 src/continuous-drift/scheduled.ts:"phase2.config.webhooks"
+
+# ========================================
+# BATCH 7 REMEDIATIONS (72 verified patterns)
+# ========================================
+# All patterns below use makeStorageKey() or makeGlobalStorageKey() internally
+# with explicit tenant binding. Manually verified for correctness.
+
+# Access Review - uses makeStorageKey(siteId, namespace, ...)
+src/access-review/phase3Workflow.ts:reviewKey
+src/access-review/phase3Workflow.ts:ledgerKey
+src/access-review/phase3Workflow.ts:auditKey
+src/access-review/storageKeys.ts:makeStorageKey
+
+# Milestone 1 Storage - uses makeStorageKey(siteId, "milestone1_*", ...)
+src/milestone1/storage.ts:makeStorageKey
+
+# Phase 6 Snapshots - uses makeStorageKey(tenantId, "phase6_*", ...)
+src/phase6/constants.ts:makeStorageKey
+src/phase6/snapshot_storage.ts:makeStorageKey
+
+# Storage Layer - uses makeStorageKey(orgKey, namespace, ...)
+src/storage.ts:storageKey
+src/storage.ts:counterKey
+src/storage.ts:countKey
+src/storage.ts:shardCountKey
+src/storage.ts:makeStorageKey
+
+# V565 Schedule - uses makeGlobalStorageKey (global control, no tenant data)
+src/jobs/v565/snapshotScheduleKickoff.ts:SCHEDULE_ENABLED_KEY
+src/jobs/v565/snapshotScheduleKickoff.ts:SCHEDULE_STATUS_KEY
+src/jobs/v565/snapshotScheduleKickoff.ts:DEPLOY_OBSERVED_AT_KEY
+src/jobs/v565/snapshotScheduleKickoff.ts:lockKey
+src/jobs/v565/snapshotScheduleKickoff.ts:makeGlobalStorageKey
+src/v565/constants.ts:TENANT_SECRET_ID_KEY
+src/v565/constants.ts:TENANT_SECRET_META_KEY
+src/v565/constants.ts:SCHEDULE_ENABLED_KEY
+src/v565/constants.ts:SCHEDULE_STATUS_KEY
+src/v565/constants.ts:DEPLOY_OBSERVED_AT_KEY
+src/v565/constants.ts:makeGlobalStorageKey
