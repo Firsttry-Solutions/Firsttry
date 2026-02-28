@@ -38,9 +38,9 @@ phase_pass() {
 }
 
 phase_flag() {
-  local phase="$1" severity="$2" msg="$3" evidence="${4:-}"
+  local phase="$1" severity="$2" msg="$3" evidence="${4:-}" allowlisted="${5:-false}"
   echo -e "  ${YLW}FLAG${RST}  [${phase}] (${severity}) ${msg}"
-  write_json_result "$phase" "FLAG" "$msg" "$severity" "$evidence"
+  write_json_result "$phase" "FLAG" "$msg" "$severity" "$evidence" "$allowlisted"
   # Accumulate flag into scoring state
   echo "${severity}" >> "${E}/.flags_${phase}" 2>/dev/null || true
   echo "${severity}" >> "${E}/.all_flags" 2>/dev/null || true
@@ -58,7 +58,7 @@ phase_fail() {
 # ── JSON result writer ──────────────────────────────────────────────────────
 # Merges one phase result into $E/results.json
 write_json_result() {
-  local phase="$1" status="$2" msg="$3" severity="${4:-}" evidence="${5:-}"
+  local phase="$1" status="$2" msg="$3" severity="${4:-}" evidence="${5:-}" allowlisted="${6:-false}"
   local ts
   ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
@@ -70,8 +70,9 @@ write_json_result() {
     --arg msg    "$msg" \
     --arg sev    "$severity" \
     --arg ev     "$evidence" \
+    --argjson allow "$allowlisted" \
     --arg ts     "$ts" \
-    '{phase:$phase, status:$status, message:$msg, severity:$sev, evidence:$ev, timestamp:$ts}')
+    '{phase:$phase, status:$status, message:$msg, severity:$sev, evidence:$ev, allowlisted:$allow, timestamp:$ts}')
 
   # Merge into results.json
   local rj="${E}/results.json"

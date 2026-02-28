@@ -115,8 +115,14 @@ run_forge_specific() {
           | tee -a "$summary_txt"
         failed=1
       fi
-      if [[ "$is_flag" -eq 1 ]] && [[ "$is_fail" -eq 0 ]] && [[ "$is_allowlisted" -eq 0 ]]; then
-        phase_flag "05" "HIGH" "Storage key classification ${key_type} - cannot prove tenant binding/determinism statically at ${fp}:${ln}" "$summary_txt"
+      if [[ "$is_flag" -eq 1 ]] && [[ "$is_fail" -eq 0 ]]; then
+        if [[ "$is_allowlisted" -eq 1 ]]; then
+          # Generate allowlisted HIGH flag (tracked but doesn't block)
+          phase_flag "05" "HIGH" "Storage key classification ${key_type} - reviewed/allowlisted (Forge tenant isolation) at ${fp}:${ln}" "$summary_txt" "true"
+        else
+          # Generate blocking HIGH flag
+          phase_flag "05" "HIGH" "Storage key classification ${key_type} - cannot prove tenant binding/determinism statically at ${fp}:${ln}" "$summary_txt" "false"
+        fi
       fi
     done <<< "$storage_hits"
   fi

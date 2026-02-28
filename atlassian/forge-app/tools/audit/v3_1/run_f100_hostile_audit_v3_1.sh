@@ -9,6 +9,17 @@
 
 set -euo pipefail
 
+# ── Environment standardization (eliminate randomness) ──────────────────────
+export LC_ALL=C
+export LANG=C
+export TZ=UTC
+umask 022
+
+# ── Semgrep determinism (no version checks, no metrics) ────────────────────
+export SEMGREP_ENABLE_VERSION_CHECK=0
+export SEMGREP_SEND_METRICS=off
+export SEMGREP_TIMEOUT=0
+
 # ── Locate audit dir ────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
@@ -16,8 +27,8 @@ export REPO_DIR
 
 cd "${REPO_DIR}"
 
-# ── Evidence dir ────────────────────────────────────────────────────────────
-E="/tmp/ft_f100_hostile_audit_v3_1_$(date -u +%Y%m%dT%H%M%SZ)"
+# ── Evidence dir (with uniqueness guarantee) ──────────────────────────────
+E="/tmp/ft_f100_hostile_audit_v3_1_$(date -u +%Y%m%dT%H%M%SZ)_$$"
 export E
 mkdir -p "$E"
 
@@ -28,6 +39,66 @@ echo "  Repo dir:     ${REPO_DIR}"
 echo "  Timestamp:    $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo "============================================================"
 echo ""
+
+# ── Trap handler for fail-safe canonical artifacts ─────────────────────────
+# Ensures results.json, FINAL_REPORT.md, and 99_FINAL_DECISION.txt always exist
+_ensure_canonical_artifacts() {
+  local exit_code=$?
+  
+  # Ensure results.json exists and is valid
+  if [[ ! -f "${E}/results.json" ]]; then
+    echo '{"results":[{"phase":"FATAL","status":"FAIL","message":"Audit terminated before completion","severity":"CRITICAL","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}]}' > "${E}/results.json"
+  fi
+  
+  # Validate results.json is parseable
+  if ! jq empty "${E}/results.json" 2>/dev/null; then
+    echo '{"results":[{"phase":"FATAL","status":"FAIL","message":"results.json corrupted","severity":"CRITICAL","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}]}' > "${E}/results.json"
+  fi
+  
+  # Ensure FINAL_REPORT.md exists
+  if [[ ! -f "${E}/FINAL_REPORT.md" ]]; then
+    cat > "${E}/FINAL_REPORT.md" << 'EOFREPORT'
+# F100 Hostile Audit v3.1 — FINAL REPORT
+
+**Decision:** REJECT
+**Summary:** Audit terminated before normal completion (trap handler)
+
+## Results
+See results.json for captured phase results.
+
+_Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)_
+EOFREPORT
+  fi
+  
+  # Ensure 99_FINAL_DECISION.txt exists
+  if [[ ! -f "${E}/99_FINAL_DECISION.txt" ]]; then
+    echo "REJECT" > "${E}/99_FINAL_DECISION.txt"
+  fi
+  
+  # Create CANONICAL_ARTIFACTS.txt
+  cat > "${E}/CANONICAL_ARTIFACTS.txt" << 'EOFCANON'
+results.json
+FINAL_REPORT.md
+99_FINAL_DECISION.txt
+SCORING_SUMMARY.json
+EOFCANON
+  
+  # Verify canonical artifacts exist
+  local missing_artifacts=0
+  while IFS= read -r artifact; do
+    [[ -z "$artifact" ]] && continue
+    if [[ ! -f "${E}/${artifact}" ]]; then
+      echo "[TRAP] Missing canonical artifact: ${artifact}" >&2
+      missing_artifacts=1
+    fi
+  done < "${E}/CANONICAL_ARTIFACTS.txt"
+  
+  if [[ $missing_artifacts -eq 1 ]]; then
+    echo "[TRAP] Some canonical artifacts missing after trap handler" >&2
+  fi
+}
+
+trap '_ensure_canonical_artifacts' EXIT INT TERM
 
 # ── Load libraries ──────────────────────────────────────────────────────────
 LIB="${SCRIPT_DIR}/lib"
@@ -304,10 +375,12 @@ HAS_FAIL=$(echo "$SCORE_RESULT" | cut -d'|' -f3)
 HIGH_FLAGS=$(echo "$SCORE_RESULT" | cut -d'|' -f4)
 MED_FLAGS=$(echo "$SCORE_RESULT" | cut -d'|' -f5)
 LOW_FLAGS=$(echo "$SCORE_RESULT" | cut -d'|' -f6)
+HIGH_FLAGS_BLOCKING=$(echo "$SCORE_RESULT" | cut -d'|' -f7)
+HIGH_FLAGS_ALLOWLISTED=$(( HIGH_FLAGS - HIGH_FLAGS_BLOCKING ))
 
 echo "  Score: ${FINAL_SCORE}"
 echo "  Decision: ${FINAL_DECISION}"
-echo "  High FLAGS: ${HIGH_FLAGS} | Medium FLAGS: ${MED_FLAGS} | Low FLAGS: ${LOW_FLAGS}"
+echo "  High FLAGS: ${HIGH_FLAGS} (${HIGH_FLAGS_BLOCKING} blocking, ${HIGH_FLAGS_ALLOWLISTED} allowlisted) | Medium FLAGS: ${MED_FLAGS} | Low FLAGS: ${LOW_FLAGS}"
 
 # Write FINAL_REPORT.md
 {
@@ -326,9 +399,15 @@ echo "  High FLAGS: ${HIGH_FLAGS} | Medium FLAGS: ${MED_FLAGS} | Low FLAGS: ${LO
   echo "| **Final Score** | ${FINAL_SCORE}/100 |"
   echo "| **Decision** | **${FINAL_DECISION}** |"
   echo "| Has FAIL | ${HAS_FAIL} |"
-  echo "| HIGH Flags | ${HIGH_FLAGS} |"
+  echo "| HIGH Flags (Total) | ${HIGH_FLAGS} |"
+  echo "| HIGH Flags (Blocking) | ${HIGH_FLAGS_BLOCKING} |"
+  echo "| HIGH Flags (Allowlisted) | ${HIGH_FLAGS_ALLOWLISTED} |"
   echo "| MEDIUM Flags | ${MED_FLAGS} |"
   echo "| LOW Flags | ${LOW_FLAGS} |"
+  echo ""
+  echo "> **Note on Allowlisted HIGH Flags:** Phase 05 storage key classifications marked as allowlisted"
+  echo "> represent reviewed patterns that rely on Forge's implicit tenant isolation mechanism."
+  echo "> These are tracked for visibility but do not trigger rejection in scoring."
   echo ""
   echo "---"
   echo ""
@@ -421,6 +500,22 @@ if [[ -f "$SANITIZER" && -f "${E}/results.json" ]]; then
     fi
   fi
 fi
+
+# Write 99_FINAL_DECISION.txt (canonical decision file)
+echo "[13] Writing 99_FINAL_DECISION.txt..."
+{
+  echo "${FINAL_DECISION}"
+  echo ""
+  echo "Score: ${FINAL_SCORE}/100"
+  echo "FAIL phases: ${HAS_FAIL}"
+  echo "HIGH flags (total): ${HIGH_FLAGS}"
+  echo "HIGH flags (blocking): ${HIGH_FLAGS_BLOCKING}"
+  echo "HIGH flags (allowlisted): ${HIGH_FLAGS_ALLOWLISTED}"
+  echo "MEDIUM flags: ${MED_FLAGS}"
+  echo "LOW flags: ${LOW_FLAGS}"
+  echo ""
+  echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} > "${E}/99_FINAL_DECISION.txt"
 
 # Evidence manifest (SHA256 of all files)
 echo "[13] Generating evidence manifest..."
