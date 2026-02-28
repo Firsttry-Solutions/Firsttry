@@ -76,6 +76,7 @@ export async function debugSnapshotState_resolver(): Promise<{
 
     return result;
   } catch (err) {
+    // AUDIT-ALLOW: Returns structured error response with valid=false
     const errorMsg = err instanceof Error ? err.message : String(err);
     
     console.error("[FT_DEBUG_SNAPSHOT_STATE] Error:", errorMsg);

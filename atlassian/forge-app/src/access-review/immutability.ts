@@ -239,6 +239,7 @@ export function verifyLedgerImmutability(
   try {
     validateChainTrail(trail);
   } catch (err: any) {
+    // AUDIT-ALLOW: Collect violations in report, don't fail-fast (returns chainValid=false in report)
     const tampered = findTamperingAttempts(trail);
     tampering.push(...tampered);
     inconsistencies.push(err.message);
