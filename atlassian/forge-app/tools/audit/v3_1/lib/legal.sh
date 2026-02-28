@@ -51,63 +51,72 @@ run_legal() {
   fi
 
   # ── External link validation ───────────────────────────────────────────────
-  echo "[11] Extracting external links from README/docs..." | tee -a "$links_txt"
-
-  local readme_files
-  readme_files=$(find "${repo_dir}" -maxdepth 3 -type f \( -iname "README*" -o -iname "*.md" \) \
-    -not -path "*/node_modules/*" 2>/dev/null | head -20 || true)
-
-  local all_urls
-  all_urls=$(echo "$readme_files" | xargs grep -hoE 'https?://[^)>" ]+' 2>/dev/null | \
-    grep -v 'localhost\|127\.0\.0\|example\.com\|placeholder' | sort -u | head -30 || true)
-
-  if [[ -z "$all_urls" ]]; then
-    echo "  No external URLs found in README/docs." | tee -a "$links_txt"
-  fi
-
-  # Check if curl available
-  if ! command -v curl &>/dev/null; then
-    phase_flag "11" "HIGH" "curl not available; cannot validate external documentation links." "$links_txt"
+  # Skip if FT_SKIP_EXTERNAL_LINKS=1 (deterministic mode)
+  if [[ "${FT_SKIP_EXTERNAL_LINKS:-0}" == "1" ]]; then
+    echo "[11] External link validation skipped (FT_SKIP_EXTERNAL_LINKS=1)" | tee -a "$links_txt"
+    phase_flag "11" "LOW" "External link validation skipped (deterministic mode)" "$links_txt"
   else
-    # Try a quick network check
-    local net_available=1
-    curl -fLsS --max-time 5 "https://www.atlassian.com" -o /dev/null 2>/dev/null || net_available=0
+    echo "[11] Extracting external links from README/docs..." | tee -a "$links_txt"
 
-    if [[ "$net_available" -eq 0 ]]; then
-      phase_flag "11" "HIGH" \
-        "Cleanroom network blocked; cannot validate external docs. External link validation skipped." \
-        "$links_txt"
+    local readme_files
+    readme_files=$(find "${repo_dir}" -maxdepth 3 -type f \( -iname "README*" -o -iname "*.md" \) \
+      -not -path "*/node_modules/*" 2>/dev/null | head -20 || true)
+
+    local all_urls
+    all_urls=$(echo "$readme_files" | xargs grep -hoE 'https?://[^)>" ]+' 2>/dev/null | \
+      grep -v 'localhost\|127\.0\.0\|example\.com\|placeholder' | sort -u | head -30 || true)
+
+    # Filter out malformed URLs (must have valid domain)
+    all_urls=$(echo "$all_urls" | grep -E '^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' || true)
+
+    if [[ -z "$all_urls" ]]; then
+      echo "  No external URLs found in README/docs." | tee -a "$links_txt"
+    fi
+
+    # Check if curl available
+    if ! command -v curl &>/dev/null; then
+      phase_flag "11" "HIGH" "curl not available; cannot validate external documentation links." "$links_txt"
     else
-      local gdpr_ok=0
-      local retention_ok=0
+      # Try a quick network check (with aggressive timeout)
+      local net_available=1
+      timeout 3 curl -fLsS --max-time 2 "https://www.atlassian.com" -o /dev/null 2>/dev/null || net_available=0
 
-      while IFS= read -r url; do
-        [[ -z "$url" ]] && continue
-        echo "  Checking: ${url}" | tee -a "$links_txt"
-        local http_body
-        http_body=$(curl -fLsS --max-time 10 "$url" 2>/dev/null || echo "CURL_FAIL")
-        if [[ "$http_body" == "CURL_FAIL" ]]; then
-          echo "    [FAIL] Could not reach ${url}" | tee -a "$links_txt"
-          phase_flag "11" "LOW" "External link unreachable: ${url}" "$links_txt"
-          continue
-        fi
-        # Check for GDPR/data protection
-        if echo "$http_body" | grep -qi 'gdpr\|data protection\|GDPR'; then
-          gdpr_ok=1
-          echo "    [PASS] GDPR/data protection language found at ${url}" | tee -a "$links_txt"
-        fi
-        # Check for retention
-        if echo "$http_body" | grep -qi 'retention\|data retention'; then
-          retention_ok=1
-          echo "    [PASS] Retention language found at ${url}" | tee -a "$links_txt"
-        fi
-      done <<< "$all_urls"
+      if [[ "$net_available" -eq 0 ]]; then
+        phase_flag "11" "HIGH" \
+          "Cleanroom network blocked; cannot validate external docs. External link validation skipped." \
+          "$links_txt"
+      else
+        local gdpr_ok=0
+        local retention_ok=0
 
-      if [[ "$gdpr_ok" -eq 0 ]]; then
-        phase_flag "11" "MEDIUM" "No GDPR/data-protection language found in any linked external docs." "$links_txt"
-      fi
-      if [[ "$retention_ok" -eq 0 ]]; then
-        phase_flag "11" "MEDIUM" "No data retention language found in any linked external docs." "$links_txt"
+        while IFS= read -r url; do
+          [[ -z "$url" ]] && continue
+          echo "  Checking: ${url}" | tee -a "$links_txt"
+          local http_body
+          http_body=$(timeout 8 curl -fLsS --max-time 7 "$url" 2>/dev/null || echo "CURL_FAIL")
+          if [[ "$http_body" == "CURL_FAIL" ]]; then
+            echo "    [FAIL] Could not reach ${url}" | tee -a "$links_txt"
+            phase_flag "11" "LOW" "External link unreachable: ${url}" "$links_txt"
+            continue
+          fi
+          # Check for GDPR/data protection
+          if echo "$http_body" | grep -qi 'gdpr\|data protection\|GDPR'; then
+            gdpr_ok=1
+            echo "    [PASS] GDPR/data protection language found at ${url}" | tee -a "$links_txt"
+          fi
+          # Check for retention
+          if echo "$http_body" | grep -qi 'retention\|data retention'; then
+            retention_ok=1
+            echo "    [PASS] Retention language found at ${url}" | tee -a "$links_txt"
+          fi
+        done <<< "$all_urls"
+
+        if [[ "$gdpr_ok" -eq 0 ]]; then
+          phase_flag "11" "MEDIUM" "No GDPR/data-protection language found in any linked external docs." "$links_txt"
+        fi
+        if [[ "$retention_ok" -eq 0 ]]; then
+          phase_flag "11" "MEDIUM" "No data retention language found in any linked external docs." "$links_txt"
+        fi
       fi
     fi
   fi
