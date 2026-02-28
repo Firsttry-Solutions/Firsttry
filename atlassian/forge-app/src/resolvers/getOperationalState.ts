@@ -286,7 +286,8 @@ export async function getOperationalState_resolver(
       latestId,
       latestAtUtc,
       lastSuccessUtc,
-      lastError
+      lastError,
+      metadataReadError
     },
     export: {
       enabled: exportEnabled,

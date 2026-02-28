@@ -26,6 +26,13 @@ run_silent_failures() {
     "${repo_dir}/src/milestone1"
     "${repo_dir}/src/access-review"
   )
+  
+  # Exclusions: client-side/UI code that runs in browser (not server)
+  local exclusion_patterns=(
+    "htmlReport\.ts"
+    "browser\.ts"
+    "client\.ts"
+  )
 
   _add_sf_finding() {
     local pattern="$1" file="$2" line="$3" content="$4"
@@ -51,6 +58,16 @@ run_silent_failures() {
       'catch\s*\(' "$scan_path" 2>/dev/null || true)
 
     for cf in $catch_files; do
+      # Skip excluded files (client-side/browser code)
+      local skip=0
+      for pattern in "${exclusion_patterns[@]}"; do
+        if echo "$cf" | grep -qE "$pattern"; then
+          skip=1
+          break
+        fi
+      done
+      [[ "$skip" -eq 1 ]] && continue
+      
       # Find all catch block line numbers
       local catch_lines
       catch_lines=$(rg -n 'catch\s*\(' "$cf" 2>/dev/null || true)
@@ -59,8 +76,8 @@ run_silent_failures() {
         [[ -z "$catch_line" ]] && continue
         local ln; ln=$(echo "$catch_line" | cut -d: -f1)
         
-        # Extract ~15 lines after catch to get the full block
-        local block; block=$(sed -n "${ln},$((ln+15))p" "$cf" 2>/dev/null || true)
+        # Extract ~25 lines after catch to get the full block (was 15, now 25)
+        local block; block=$(sed -n "${ln},$((ln+25))p" "$cf" 2>/dev/null || true)
         
         # Check for allowlist patterns in the block
         local is_allowed=0
