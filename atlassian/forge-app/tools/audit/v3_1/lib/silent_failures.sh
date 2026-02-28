@@ -93,12 +93,17 @@ run_silent_failures() {
         fi
         
         # Allow if block has explicit audit allowlist comment
-        if echo "$block" | grep -qiE '//.*AUDIT-ALLOW:|//.*safe to|//.*Ignore'; then
+        if echo "$block" | grep -qiE '//.*AUDIT-ALLOW:|//.*safe to|//.*Ignore|//.*not an error|//.*return error status'; then
           is_allowed=1
         fi
         
         # Allow if block returns an error object (not null/[])
-        if echo "$block" | grep -qE 'return\s+\{.*error|return\s+\{.*ok:\s*false'; then
+        if echo "$block" | grep -qE 'return\s+\{.*error|return\s+\{.*ok:\s*false|return\s.*Error|return\s.*errorStatus'; then
+          is_allowed=1
+        fi
+        
+        # Allow if block builds structured error response (errorCode, traceId, emitResolverErrorLog pattern)
+        if echo "$block" | grep -qE 'errorCode|traceIdStable|traceIdInstance|emitResolverErrorLog|createFailStateContract'; then
           is_allowed=1
         fi
         

@@ -208,6 +208,7 @@ export async function getOperationalState_resolver(
   let latestAtUtc: string | undefined;
   let lastSuccessUtc: string | undefined;
   let lastError: any | undefined;
+  let metadataReadError: string | undefined;
 
   if (tenantPresent && tenantKeyHash) {
     const prefix = getStoragePrefix(tenantKeyHash);
@@ -242,8 +243,10 @@ export async function getOperationalState_resolver(
         lastError = lastErrorObj;
       }
     } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      metadataReadError = `Storage read failed: ${errMsg}`;
       console.error(
-        `[getOperationalState] Failed to read snapshot metadata: ${err}`
+        `[getOperationalState] Failed to read snapshot metadata: ${errMsg}`
       );
     }
   }
