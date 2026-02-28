@@ -71,8 +71,8 @@ describe('Phase-1 canonicalHash full SHA-256 (static)', () => {
 
   it('Phase-1 handler must fail-closed on chain append failure', () => {
     const content = fs.readFileSync(resolverPath, 'utf-8');
-    expect(content).toContain('HASH_CHAIN_APPEND_FAILED');
-    expect(content).toContain('[FT_PROOF_PHASE1_CHAIN_APPEND_FAIL]');
+    expect(content).toContain('FT_PROOF_PHASE1_CHAIN_APPEND_FAILED');
+    expect(content).toContain('failClosed');
     console.log('[FT_TEST_PASS_PHASE1_CHAIN_REGRESSION] chain-fail-closed PASS');
   });
 });

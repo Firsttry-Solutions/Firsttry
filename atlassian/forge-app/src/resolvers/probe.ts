@@ -39,6 +39,7 @@ import { traceOk, traceFail } from "../security/stepTrace";
 import { checkStorageProof } from "../security/storageProof";
 import { makeErrorEnvelope } from "../security/errorEnvelope";
 import type { ErrorEnvelopeV1 } from "../shared/invocationEnvelope";
+import { failClosed } from '../shared/failClosed';
 
 // ============================================================================
 // HELPERS
@@ -50,9 +51,8 @@ import type { ErrorEnvelopeV1 } from "../shared/invocationEnvelope";
 function randomHex(bytes: number): string {
   try {
     return crypto.randomBytes(bytes).toString('hex');
-  } catch {
-    // Fallback if crypto unavailable
-    return Math.random().toString(16).substring(2, 2 + bytes * 2);
+  } catch (err) {
+    throw failClosed('FT_PROBE_CRYPTO_FAILED', 'Cannot generate random bytes', err);
   }
 }
 
@@ -62,9 +62,8 @@ function randomHex(bytes: number): string {
 function hashShort(s: string): string {
   try {
     return crypto.createHash('sha256').update(s).digest('hex').substring(0, 12);
-  } catch {
-    // Fallback
-    return 'hash_err_' + Math.random().toString(36).substring(2, 10);
+  } catch (err) {
+    throw failClosed('FT_PROBE_HASH_FAILED', 'Cannot compute SHA256 hash', err);
   }
 }
 
@@ -329,51 +328,7 @@ export async function probe(
     const normalized = normalizeUndefinedToNull(successTruthEnvelope);
     return normalized;
   } catch (err) {
-    // STEP 4: Error handling
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    const errorCode = (err as any)?.code || "PROBE_FAILED";
-
-    console.log(
-      JSON.stringify({
-        marker: "FT_PROBE_ERR",
-        trace_id_stable: traceIdStable,
-        ui_req_id: uiReqId,
-        error_code: errorCode,
-        error_message: errorMsg,
-        timestamp_iso: nowIso,
-      })
-    );
-
-    // Create error trace
-    const errorTrace = [
-      traceFail("probe", "execution", errorCode as any, errorMsg)
-    ];
-
-    const errorEnvelopeV1 = makeErrorEnvelope({
-      resolverName: "probe",
-      stepId: "execution",
-      errorCode: errorCode as any,
-      message: errorMsg,
-      meta,
-      trace: errorTrace,
-    }) as ErrorEnvelopeV1;
-
-    const errorTruthEnvelope = createErrorEnvelope<ProbeData>(
-      "probe",
-      uiReqId,
-      probeNonce,
-      errorCode,
-      errorMsg,
-      backendBuildSha,
-      null,
-      traceIdStable
-    );
-
-    // Attach error envelope for UI parsing
-    (errorTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
-
-    const normalized = normalizeUndefinedToNull(errorTruthEnvelope);
-    return normalized;
+    throw failClosed('FT_PROBE_FAILED', 'Forensic probe execution failed', err);
   }
 }
 /**

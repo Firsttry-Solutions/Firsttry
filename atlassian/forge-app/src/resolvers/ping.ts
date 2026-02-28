@@ -28,6 +28,7 @@ import { traceOk, traceFail } from "../security/stepTrace";
 import { checkStorageProof } from "../security/storageProof";
 import { makeErrorEnvelope } from "../security/errorEnvelope";
 import type { ErrorEnvelopeV1 } from "../shared/invocationEnvelope";
+import { failClosed } from '../shared/failClosed';
 
 /**
  * Ping resolver: Health check with MANDATORY correlation
@@ -193,61 +194,6 @@ export async function ping(
     const normalized = normalizeUndefinedToNull(successTruthEnvelope);
     return normalized;
   } catch (err) {
-    // STEP 5: Error handling
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    const errorCode = classifyError(err, "internal");
-
-    console.log(
-      JSON.stringify({
-        marker: "FT_PING_ERR",
-        trace_id_stable: traceIdStable,
-        ui_req_id: uiReqId,
-        resolver_name: resolverName,
-        error_code: errorCode,
-        error_message: errorMsg,
-        timestamp_iso: nowIso,
-      })
-    );
-
-    emitResolverErrorLog(
-      traceIdStable,
-      traceIdInstance,
-      errorCode,
-      errorMsg,
-      backendBuildSha,
-      uiReqId,
-      resolverName
-    );
-
-    // Create error trace
-    const errorTrace = [
-      traceFail(resolverName, "execution", errorCode as any, errorMsg)
-    ];
-
-    const errorEnvelopeV1 = makeErrorEnvelope({
-      resolverName,
-      stepId: "execution",
-      errorCode: errorCode as any,
-      message: errorMsg,
-      meta,
-      trace: errorTrace,
-    }) as ErrorEnvelopeV1;
-
-    const errorTruthEnvelope = createErrorEnvelope<PingData>(
-      "ping",
-      uiReqId,
-      null,
-      errorCode,
-      errorMsg,
-      backendBuildSha,
-      null,
-      traceIdStable
-    );
-
-    // Attach error envelope for UI parsing
-    (errorTruthEnvelope as any)._errorEnvelopeV1 = errorEnvelopeV1;
-
-    const normalized = normalizeUndefinedToNull(errorTruthEnvelope);
-    return normalized;
+    throw failClosed('FT_PING_FAILED', 'Ping health check failed', err);
   }
 }

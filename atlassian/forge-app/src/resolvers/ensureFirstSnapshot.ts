@@ -19,6 +19,7 @@ import { traceOk, traceFail } from "../security/stepTrace";
 import { checkStorageProof } from "../security/storageProof";
 import { makeErrorEnvelope } from "../security/errorEnvelope";
 import type { ErrorEnvelopeV1 } from "../shared/invocationEnvelope";
+import { failClosed } from '../shared/failClosed';
 
 export interface EnsureFirstSnapshotResponse {
   ok: boolean;
@@ -47,8 +48,7 @@ async function resolveTenantKey(): Promise<string | null> {
     
     return null;
   } catch (err) {
-    console.error('[ensureFirstSnapshot] Failed to resolve tenant key:', err);
-    return null;
+    throw failClosed('FT_ENSURE_SNAPSHOT_TENANT_KEY_FAILED', 'Cannot resolve tenant key from context', err);
   }
 }
 
@@ -77,8 +77,7 @@ async function readSnapshotStatus(tenantKey: string): Promise<{
     
     return { exists: false, count: 0 };
   } catch (err) {
-    console.error('[ensureFirstSnapshot] Failed to read snapshot status:', err);
-    throw err;
+    throw failClosed('FT_ENSURE_SNAPSHOT_READ_STATUS_FAILED', 'Cannot read snapshot status from storage', err);
   }
 }
 
@@ -126,8 +125,7 @@ async function writeFirstSnapshot(tenantKey: string): Promise<{
       lastSnapshotAtISO: nowISO
     };
   } catch (err) {
-    console.error('[ensureFirstSnapshot] Failed to write snapshot:', err);
-    throw err;
+    throw failClosed('FT_ENSURE_SNAPSHOT_WRITE_FAILED', 'Cannot write first snapshot to storage', err);
   }
 }
 

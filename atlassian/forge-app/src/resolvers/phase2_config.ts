@@ -32,6 +32,7 @@
  */
 
 import api, { storage } from '@forge/api';
+import { failClosed } from '../shared/failClosed';
 
 const STORAGE_KEY = 'phase2.config.webhooks';
 
@@ -121,8 +122,8 @@ function getOriginFromUrl(urlStr: string): string | null {
   try {
     const url = new URL(urlStr);
     return `${url.protocol}//${url.host}`;
-  } catch {
-    return null;
+  } catch (err) {
+    throw failClosed('FT_PHASE2_URL_PARSE_FAILED', `Cannot parse URL origin: ${urlStr}`, err);
   }
 }
 
@@ -156,14 +157,7 @@ export async function getMonitoringConfig(): Promise<MonitoringConfig> {
     
     return JSON.parse(stored);
   } catch (err) {
-    console.error('[FT_PHASE2_CONFIG_LOAD_FAILED]', err);
-    return {
-      allowedDomains: [],
-      webhooks: {
-        slackWebhookUrl: '',
-        genericWebhookUrl: '',
-      },
-    };
+    throw failClosed('FT_PHASE2_CONFIG_LOAD_FAILED', 'Cannot load monitoring configuration from storage', err);
   }
 }
 

@@ -24,6 +24,7 @@ const { route } = require('@forge/api') as typeof import('@forge/api');
 import { appendToChain } from '../governance/hashChain';
 import { SNAPSHOT_SCHEMA_VERSION, RULESET_VERSION } from '../governance/snapshotSchema';
 import * as crypto from 'crypto';
+import { failClosed } from '../shared/failClosed';
 
 /**
  * Validate that a value is a full 64-character lowercase hex SHA-256.
@@ -236,19 +237,7 @@ export const handler = async (request: any): Promise<any> => {
         snapshotHash: chainEntry.snapshotHash.slice(0, 12),
       }));
     } catch (chainErr: any) {
-      const chainErrMsg = chainErr instanceof Error ? chainErr.message : String(chainErr);
-      console.error(JSON.stringify({
-        marker: '[FT_PROOF_PHASE1_CHAIN_APPEND_FAIL]',
-        error: chainErrMsg,
-      }));
-      return {
-        ok: false,
-        status: 'FAILED',
-        reason: 'HASH_CHAIN_APPEND_FAILED',
-        reasonCode: 'HASH_CHAIN_APPEND_FAILED',
-        traceId: correlationId,
-        detail: chainErrMsg,
-      };
+      throw failClosed('FT_PROOF_PHASE1_CHAIN_APPEND_FAILED', 'Cannot append snapshot to hash chain', chainErr);
     }
 
     // Determine risk tier
@@ -279,17 +268,7 @@ export const handler = async (request: any): Promise<any> => {
       },
     };
   } catch (error: any) {
-    const errorMsg = error?.message || String(error);
-    console.error(JSON.stringify({
-      marker: '[FT_ACCESS_SCAN_ERROR]',
-      error: errorMsg,
-      stack: error?.stack,
-    }));
-    return {
-      ok: false,
-      status: 'FAILED',
-      reason: `Scan failed: ${errorMsg}`,
-    };
+    throw failClosed('FT_ACCESS_SCAN_ERROR', 'Access intelligence scan failed', error);
   }
 };
 
@@ -370,8 +349,7 @@ async function detectGlobalAdminsReadOnly(users: any[]): Promise<string[]> {
         globalAdmins.push(user.accountId || user.name);
       }
     } catch (error) {
-      // Silently skip if group check fails for individual user
-      console.debug(`[FT_ACCESS_DEBUG] Could not check groups for user ${user.name}: ${error}`);
+      throw failClosed('FT_ACCESS_GLOBAL_ADMIN_CHECK_FAILED', `Cannot check groups for user ${user.name}`, error);
     }
   }
 
