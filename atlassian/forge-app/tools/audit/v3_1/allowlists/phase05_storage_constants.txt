@@ -92,16 +92,3 @@ src/jobs/v565/snapshotScheduleKickoff.ts:SCHEDULE_STATUS_KEY  # OWNER=v565-team 
 src/jobs/v565/snapshotScheduleKickoff.ts:DEPLOY_OBSERVED_AT_KEY  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=constants.ts:25 JUSTIFICATION=makeGlobalStorageKey("ft_v565_deploy_observedAtUtc") global control REVIEWED-BY=UNREVIEWED
 src/v565/constants.ts:TENANT_SECRET_ID_KEY  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=constants.ts:10 JUSTIFICATION=makeGlobalStorageKey("ft_v565_tenantSecretId") metadata only REVIEWED-BY=UNREVIEWED
 src/v565/constants.ts:TENANT_SECRET_META_KEY  # OWNER=v565-team EXPIRY=BATCH9 EVIDENCE=constants.ts:12 JUSTIFICATION=makeGlobalStorageKey("ft_v565_tenantSecretMeta") metadata only REVIEWED-BY=UNREVIEWED
-
-# V565 Schedule - uses makeGlobalStorageKey (global control, no tenant data)
-src/jobs/v565/snapshotScheduleKickoff.ts:SCHEDULE_ENABLED_KEY
-src/jobs/v565/snapshotScheduleKickoff.ts:SCHEDULE_STATUS_KEY
-src/jobs/v565/snapshotScheduleKickoff.ts:DEPLOY_OBSERVED_AT_KEY
-src/jobs/v565/snapshotScheduleKickoff.ts:lockKey
-src/jobs/v565/snapshotScheduleKickoff.ts:makeGlobalStorageKey
-src/v565/constants.ts:TENANT_SECRET_ID_KEY
-src/v565/constants.ts:TENANT_SECRET_META_KEY
-src/v565/constants.ts:SCHEDULE_ENABLED_KEY
-src/v565/constants.ts:SCHEDULE_STATUS_KEY
-src/v565/constants.ts:DEPLOY_OBSERVED_AT_KEY
-src/v565/constants.ts:makeGlobalStorageKey
