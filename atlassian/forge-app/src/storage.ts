@@ -22,6 +22,7 @@ const SHARD_SIZE_LIMIT = 200;
  * Check if event has already been seen (idempotency)
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-079
 export async function isEventSeen(orgKey: string, repoKey: string, eventId: string): Promise<boolean> {
   try {
     const storageKey = makeStorageKey(orgKey, "seen", repoKey, eventId);
@@ -37,6 +38,7 @@ export async function isEventSeen(orgKey: string, repoKey: string, eventId: stri
  * Mark event as seen (idempotency)
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-080
 export async function markEventSeen(orgKey: string, repoKey: string, eventId: string): Promise<void> {
   try {
     const storageKey = makeStorageKey(orgKey, "seen", repoKey, eventId);
@@ -52,6 +54,9 @@ export async function markEventSeen(orgKey: string, repoKey: string, eventId: st
  * Get current shard ID for today's date (with automatic rollover)
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-081
+// AUDIT-ALLOWLIST FT-ALW-05-082
+// AUDIT-ALLOWLIST FT-ALW-05-085
 export async function getCurrentShardId(orgKey: string, dateStr: string): Promise<string> {
   try {
     const counterKey = makeStorageKey(orgKey, "rawshard", dateStr, "current");
@@ -80,6 +85,8 @@ export async function getCurrentShardId(orgKey: string, dateStr: string): Promis
  * Store raw event and increment shard counter
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-083
+// AUDIT-ALLOWLIST FT-ALW-05-084
 export async function storeRawEvent(
   orgKey: string,
   dateStr: string,

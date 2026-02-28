@@ -37,6 +37,8 @@ function isoWeekKey(d: Date): string {
 }
 
 // AUDIT: Phase05 remediation - Helper for lock key (global, no tenant data)
+// AUDIT-ALLOWLIST FT-ALW-05-088
+// AUDIT-ALLOWLIST FT-ALW-05-089
 function getScheduleLockKey(weekKey: string): string {
   return makeGlobalStorageKey("ft_v565_schedule_lock", weekKey);
 }

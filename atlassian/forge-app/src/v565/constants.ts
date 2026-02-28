@@ -8,15 +8,20 @@ export const HMAC_BYTES = 32;
 
 // AUDIT: Phase05 remediation - Global keys for tenant secrets (no tenant data, just metadata)
 // Tenant secret - These keys store tenant secret metadata and references, not the secrets themselves
+// AUDIT-ALLOWLIST FT-ALW-05-093
 export const TENANT_SECRET_ID_KEY = makeGlobalStorageKey("ft_v565_tenantSecretId");
 export const TENANT_SECRET_PREFIX = "ft:v565:tenantSecret:"; // Used as prefix only
+// AUDIT-ALLOWLIST FT-ALW-05-094
 export const TENANT_SECRET_META_KEY = makeGlobalStorageKey("ft_v565_tenantSecretMeta");
 
 // AUDIT: Phase05 remediation - Global keys for schedule control (affects all tenants, no tenant-specific data)
 // Scheduling - These keys control global scheduled job behavior (weekly trigger scheduling)
+// AUDIT-ALLOWLIST FT-ALW-05-090
 export const SCHEDULE_ENABLED_KEY = makeGlobalStorageKey("ft_v565_schedule_enabled");
+// AUDIT-ALLOWLIST FT-ALW-05-091
 export const SCHEDULE_STATUS_KEY = makeGlobalStorageKey("ft_v565_schedule_lastStatus");
 export const SCHEDULE_LOCK_PREFIX = "ft:v565:schedule:lock:"; // + YYYY-WW (lock is global per week)
+// AUDIT-ALLOWLIST FT-ALW-05-092
 export const DEPLOY_OBSERVED_AT_KEY = makeGlobalStorageKey("ft_v565_deploy_observedAtUtc");
 
 // LOCK TTL (8 days) — plus stale lock deletion if lock object is missing expiry

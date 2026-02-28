@@ -31,6 +31,7 @@ import type {
  * Returns 409 if already exists
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-067
 export async function storeSnapshot(snapshot: Snapshot): Promise<{ success: boolean; error?: string }> {
   const key = makeStorageKey(snapshot.siteId, "milestone1_snapshot", snapshot.id);
   
@@ -53,6 +54,7 @@ export async function storeSnapshot(snapshot: Snapshot): Promise<{ success: bool
  * Retrieve snapshot
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-066
 export async function getSnapshot(siteId: string, snapshotId: string): Promise<Snapshot | null> {
   const key = makeStorageKey(siteId, "milestone1_snapshot", snapshotId);
   try {

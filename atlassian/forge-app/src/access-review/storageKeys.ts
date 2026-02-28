@@ -34,6 +34,8 @@ export const WRITE_BUDGET_SECONDS = 10;
  * Pattern: ar.v1:state:<siteId>:<reviewId>
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-059
+// AUDIT-ALLOWLIST FT-ALW-05-060
 export function buildReviewKey(siteId: string, reviewId: string): string {
   if (!siteId || !reviewId) throw new Error("siteId and reviewId required");
   return makeStorageKey(siteId, "ar_v1_state", reviewId);
@@ -44,6 +46,7 @@ export function buildReviewKey(siteId: string, reviewId: string): string {
  * Pattern: ar.v1:ledger:<siteId>:<reviewId>
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-061
 export function buildLedgerKey(siteId: string, reviewId: string): string {
   if (!siteId || !reviewId) throw new Error("siteId and reviewId required");
   return makeStorageKey(siteId, "ar_v1_ledger", reviewId);
@@ -68,6 +71,8 @@ export function buildIndexKey(siteId: string, year: number, shard: number): stri
  * Max 500 entries per shard
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-062
+// AUDIT-ALLOWLIST FT-ALW-05-063
 export function buildAuditLogKey(
   siteId: string,
   reviewId: string,

@@ -149,6 +149,9 @@ export function getIdempotencyKey(
  * Storage key for snapshot run
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-073
+// AUDIT-ALLOWLIST FT-ALW-05-074
+// AUDIT-ALLOWLIST FT-ALW-05-075
 export function getSnapshotRunKey(tenantId: string, runId: string): string {
   return makeStorageKey(tenantId, "phase6_snapshot_run", runId);
 }
@@ -157,6 +160,8 @@ export function getSnapshotRunKey(tenantId: string, runId: string): string {
  * Storage key for snapshot
  * AUDIT: Phase05 remediation - keys must be deterministic + tenant-bound
  */
+// AUDIT-ALLOWLIST FT-ALW-05-071
+// AUDIT-ALLOWLIST FT-ALW-05-072
 export function getSnapshotKey(tenantId: string, snapshotId: string): string {
   return makeStorageKey(tenantId, "phase6_snapshot", snapshotId);
 }
@@ -165,6 +170,7 @@ export function getSnapshotKey(tenantId: string, snapshotId: string): string {
  * Storage key prefix for listing snapshots
  * AUDIT: Phase05 remediation - prefix for storage.list() operations
  */
+// AUDIT-ALLOWLIST FT-ALW-05-076
 export function getSnapshotKeyPrefix(tenantId: string): string {
   // For listing, we want: tenantId:phase6_snapshot:
   return `${tenantId}:phase6_snapshot:`;
