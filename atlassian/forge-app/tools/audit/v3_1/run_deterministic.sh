@@ -60,7 +60,7 @@ if [[ "${FT_REALWORLD_GATES:-0}" == "1" ]]; then
   echo "============================================================"
   echo ""
   
-  REALWORLD_SCRIPT="${SCRIPT_DIR}/../realworld/run_realworld_gates.sh"
+  REALWORLD_SCRIPT="${SCRIPT_DIR}/../../realworld/run_realworld_gates.sh"
   
   if [[ ! -f "$REALWORLD_SCRIPT" ]]; then
     echo "[ERROR] Real-world gates script not found: $REALWORLD_SCRIPT"
