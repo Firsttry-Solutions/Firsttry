@@ -21,6 +21,8 @@ export SEMGREP_SEND_METRICS=off
 export SEMGREP_TIMEOUT=0
 # ── Skip external network dependencies (deterministic mode) ────────────────────────────────
 export FT_SKIP_EXTERNAL_LINKS=1
+# ── Skip test re-run (tests already verified in CI before audit) ───────────────────────────
+export FT_SKIP_TESTS_IN_AUDIT=1
 # ── Locate audit dir ────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"

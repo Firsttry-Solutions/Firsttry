@@ -8,27 +8,33 @@ run_runtime() {
   phase_start "07" "Runtime Execution Gates (No Warnings)"
 
   # ── npm test ──────────────────────────────────────────────────────────────
-  echo "[07] Running npm test..." | tee "${e}/PHASE_07_test.txt"
-  local test_exit=0
-  (
-    cd "${repo_dir}"
-    npm test 2>&1
-  ) > "${e}/PHASE_07_test.txt" 2>&1 || test_exit=$?
+  # Skip if FT_SKIP_TESTS_IN_AUDIT=1 (tests already run in CI before audit)
+  if [[ "${FT_SKIP_TESTS_IN_AUDIT:-0}" == "1" ]]; then
+    echo "[07] npm test skipped (FT_SKIP_TESTS_IN_AUDIT=1 - tests run separately in CI)" | tee "${e}/PHASE_07_test.txt"
+    phase_flag "07" "LOW" "npm test skipped (tests verified separately in CI pipeline)" "${e}/PHASE_07_test.txt"
+  else
+    echo "[07] Running npm test..." | tee "${e}/PHASE_07_test.txt"
+    local test_exit=0
+    (
+      cd "${repo_dir}"
+      npm test 2>&1
+    ) > "${e}/PHASE_07_test.txt" 2>&1 || test_exit=$?
 
-  if [[ "$test_exit" -ne 0 ]]; then
-    echo "FAIL: npm test exited with code ${test_exit}" | tee -a "${e}/PHASE_07_test.txt"
-    phase_fail "07" "npm test failed (exit code ${test_exit}). All tests must pass." \
-      "${e}/PHASE_07_test.txt"
-  fi
+    if [[ "$test_exit" -ne 0 ]]; then
+      echo "FAIL: npm test exited with code ${test_exit}" | tee -a "${e}/PHASE_07_test.txt"
+      phase_fail "07" "npm test failed (exit code ${test_exit}). All tests must pass." \
+        "${e}/PHASE_07_test.txt"
+    fi
 
-  # Check for warnings in output
-  if grep -qiE 'warning|warn' "${e}/PHASE_07_test.txt" 2>/dev/null; then
-    local warn_count
-    warn_count=$(grep -icE 'warning|warn' "${e}/PHASE_07_test.txt" || echo 0)
-    echo "  Warnings in npm test output: ${warn_count}" | tee -a "${e}/PHASE_07_test.txt"
-    phase_flag "07" "MEDIUM" "npm test produced ${warn_count} warning line(s)" "${e}/PHASE_07_test.txt"
+    # Check for warnings in output
+    if grep -qiE 'warning|warn' "${e}/PHASE_07_test.txt" 2>/dev/null; then
+      local warn_count
+      warn_count=$(grep -icE 'warning|warn' "${e}/PHASE_07_test.txt" || echo 0)
+      echo "  Warnings in npm test output: ${warn_count}" | tee -a "${e}/PHASE_07_test.txt"
+      phase_flag "07" "MEDIUM" "npm test produced ${warn_count} warning line(s)" "${e}/PHASE_07_test.txt"
+    fi
+    echo "  npm test passed." | tee -a "${e}/PHASE_07_test.txt"
   fi
-  echo "  npm test passed." | tee -a "${e}/PHASE_07_test.txt"
 
   # ── ESLint (--max-warnings=0) ─────────────────────────────────────────────
   echo "[07] Running ESLint..." | tee "${e}/PHASE_07_eslint.txt"
