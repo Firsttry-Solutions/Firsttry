@@ -107,7 +107,7 @@ echo "[DETERMINISTIC] Recording command invocation..."
 
 # ── Capture list of evidence dirs BEFORE audit run ──────────────────────────
 echo "[DETERMINISTIC] Capturing pre-audit evidence directory list..."
-ls -1d /tmp/ft_f100_hostile_audit_v3_1_* 2>/dev/null | sort > "$EROOT/evidence_dirs_before.txt" || touch "$EROOT/evidence_dirs_before.txt"
+find /tmp -maxdepth 1 -type d -name "ft_f100_hostile_audit_v3_1_*" 2>/dev/null | sort > "$EROOT/evidence_dirs_before.txt" || touch "$EROOT/evidence_dirs_before.txt"
 
 # ── Run underlying audit (capture stdout/stderr) ─────────────────────────────
 echo "[DETERMINISTIC] Running F100 Hostile Audit v3.1..."
@@ -127,7 +127,7 @@ echo "[DETERMINISTIC] Audit completed with exit code: $AUDIT_EXIT"
 
 # ── Capture list of evidence dirs AFTER audit run ───────────────────────────
 echo "[DETERMINISTIC] Capturing post-audit evidence directory list..."
-ls -1d /tmp/ft_f100_hostile_audit_v3_1_* 2>/dev/null | sort > "$EROOT/evidence_dirs_after.txt" || touch "$EROOT/evidence_dirs_after.txt"
+find /tmp -maxdepth 1 -type d -name "ft_f100_hostile_audit_v3_1_*" 2>/dev/null | sort > "$EROOT/evidence_dirs_after.txt" || touch "$EROOT/evidence_dirs_after.txt"
 
 # ── Determine created evidence directory (deterministic) ─────────────────────
 echo "[DETERMINISTIC] Identifying created evidence directory..."
