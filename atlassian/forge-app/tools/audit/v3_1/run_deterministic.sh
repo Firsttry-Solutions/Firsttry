@@ -114,6 +114,7 @@ EOF
   
   # Copy realworld summary into artifacts
   if [[ -f "/tmp/ft_realworld_latest/artifacts/REALWORLD_SUMMARY.json" ]]; then
+    mkdir -p "$EROOT/artifacts"
     cp "/tmp/ft_realworld_latest/artifacts/REALWORLD_SUMMARY.json" "$EROOT/artifacts/"
     echo "[DETERMINISTIC] Real-world gates: PASS"
     echo "[DETERMINISTIC] Copied: REALWORLD_SUMMARY.json"
