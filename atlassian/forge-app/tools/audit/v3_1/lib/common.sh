@@ -62,6 +62,14 @@ write_json_result() {
   local ts
   ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
+  # Convert string "true"/"false" to JSON boolean
+  local allow_json
+  if [[ "$allowlisted" == "true" ]]; then
+    allow_json="true"
+  else
+    allow_json="false"
+  fi
+
   # Build entry
   local entry
   entry=$(jq -n \
@@ -70,7 +78,7 @@ write_json_result() {
     --arg msg    "$msg" \
     --arg sev    "$severity" \
     --arg ev     "$evidence" \
-    --argjson allow "$allowlisted" \
+    --argjson allow "$allow_json" \
     --arg ts     "$ts" \
     '{phase:$phase, status:$status, message:$msg, severity:$sev, evidence:$ev, allowlisted:$allow, timestamp:$ts}')
 
