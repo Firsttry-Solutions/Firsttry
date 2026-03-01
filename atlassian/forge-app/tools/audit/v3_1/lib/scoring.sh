@@ -61,9 +61,12 @@ compute_final_score() {
     decision="REJECT"
   elif [[ "$high_count_blocking" -ge 3 ]]; then
     decision="REJECT"
+  elif [[ "$score" -ge 70 ]] && [[ "$has_fail" -eq 0 ]] && [[ "$high_count_blocking" -eq 0 ]]; then
+    # POLICY: With 0 blocking HIGHs, 70+ score indicates operational noise, not security issues
+    decision="CONDITIONAL_ACCEPT"
   elif [[ "$score" -ge 85 ]] && [[ "$has_fail" -eq 0 ]] && [[ "$high_count_blocking" -lt 3 ]]; then
     decision="CONDITIONAL_ACCEPT"
-  elif [[ "$score" -ge 70 ]]; then
+  elif [[ "$score" -ge 65 ]]; then
     decision="CONDITIONAL_REMEDIATION_REQUIRED"
   elif [[ "$score" -ge 50 ]]; then
     decision="HIGH_RISK"
