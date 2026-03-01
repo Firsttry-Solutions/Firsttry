@@ -444,6 +444,48 @@ cat "$stabdir/SUCCESS.txt"
 - Phase 01 outdated packages (managed by Dependabot)
 - Phase 02 trufflehog unavailable (regex/entropy fallback sufficient)
 
+#### Phase Statuses
+
+**PASS:**
+- Phase completed with no issues
+- All checks executed and passed
+- No flags or failures
+
+**PASS_WITH_SKIPS:**
+- Phase completed successfully, but some checks were skipped
+- Skipped checks are flagged (LOW/MEDIUM severity)
+- Common in **Phase 07 (Runtime Execution Gates)** when:
+  - `npm test` skipped (FT_SKIP_TESTS_IN_AUDIT=1 — tests run separately in CI)
+  - `forge lint` skipped (requires Forge authentication, not available in cleanroom)
+  - `forge deploy --dry-run` skipped (requires auth or CLI doesn't support --dry-run)
+- **Action:** Review `PHASE_07_ran.txt` and `PHASE_07_skipped.txt` to verify skip reasons acceptable for your environment. Skipped checks do NOT trigger REJECT but should be manually verified if critical.
+
+**FLAG:**
+- Phase detected an issue but did not fail
+- Severity: LOW, MEDIUM, or HIGH
+- High-severity flags may trigger REJECT if 3+ are blocking
+
+**FAIL:**
+- Phase detected a critical issue
+- Audit immediately REJECTs
+- Must be remediated before deployment
+
+**Query phase statuses:**
+```bash
+evdir=$(ls -td /tmp/ft_f100_hostile_audit_v3_1_* | head -1)
+
+# List all PASS phases
+jq -r '.results[] | select(.status=="PASS") | "[\(.phase)] \(.message)"' \
+  "$evdir/results.json"
+
+# List PASS_WITH_SKIPS phases
+jq -r '.results[] | select(.status=="PASS_WITH_SKIPS") | "[\(.phase)] \(.message)"' \
+  "$evdir/results.json"
+
+# View skipped checks in Phase 07
+cat "$evdir/PHASE_07_skipped.txt"
+```
+
 ### Step 6: Parse Results Programmatically
 
 **Count blocking HIGHs:**
