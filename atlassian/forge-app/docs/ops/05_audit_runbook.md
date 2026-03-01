@@ -458,7 +458,7 @@ cat "$stabdir/SUCCESS.txt"
   - `npm test` skipped (FT_SKIP_TESTS_IN_AUDIT=1 — tests run separately in CI)
   - `forge lint` skipped (requires Forge authentication, not available in cleanroom)
   - `forge deploy --dry-run` skipped (requires auth or CLI doesn't support --dry-run)
-- **Action:** Review `PHASE_07_ran.txt` and `PHASE_07_skipped.txt` to verify skip reasons acceptable for your environment. Skipped checks do NOT trigger REJECT but should be manually verified if critical.
+- **Action:** Review `artifacts/PHASE_07_ran.txt` and `artifacts/PHASE_07_skipped.txt` to verify skip reasons acceptable for your environment. Skipped checks do NOT trigger REJECT but should be manually verified if critical.
 
 **FLAG:**
 - Phase detected an issue but did not fail
@@ -476,14 +476,17 @@ evdir=$(ls -td /tmp/ft_f100_hostile_audit_v3_1_* | head -1)
 
 # List all PASS phases
 jq -r '.results[] | select(.status=="PASS") | "[\(.phase)] \(.message)"' \
-  "$evdir/results.json"
+  "$evdir/artifacts/results.json"
 
 # List PASS_WITH_SKIPS phases
 jq -r '.results[] | select(.status=="PASS_WITH_SKIPS") | "[\(.phase)] \(.message)"' \
-  "$evdir/results.json"
+  "$evdir/artifacts/results.json"
 
 # View skipped checks in Phase 07
-cat "$evdir/PHASE_07_skipped.txt"
+cat "$evdir/artifacts/PHASE_07_skipped.txt" 2>/dev/null || echo "No skips"
+
+# View which checks ran in Phase 07  
+cat "$evdir/artifacts/PHASE_07_ran.txt" 2>/dev/null || echo "No checks ran"
 ```
 
 ### Step 6: Parse Results Programmatically
