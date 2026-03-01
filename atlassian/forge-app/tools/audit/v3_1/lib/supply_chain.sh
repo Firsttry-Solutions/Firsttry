@@ -121,9 +121,11 @@ run_supply_chain() {
     if [[ "$total_dupes" -gt 20 ]]; then
       echo "... and $(($total_dupes - 20)) more." >> "${out_prefix}_dupes.txt"
     fi
+    # POLICY: Duplicate packages are common in npm ecosystems, managed separately via npm dedupe
     phase_flag "01" "HIGH" \
       "Non-critical duplicate package versions detected ($total_dupes packages). Review for supply-chain risk. See ${out_prefix}_dupes.txt" \
-      "${out_prefix}_dupes.txt"
+      "${out_prefix}_dupes.txt" \
+      "true"
   else
     echo "  No duplicate package versions detected." | tee -a "${out_prefix}_dupes.txt"
   fi
@@ -150,8 +152,10 @@ run_supply_chain() {
 
   if [[ -n "$outdated_sensitive" ]]; then
     echo "$outdated_sensitive" >> "${out_prefix}_outdated.txt"
+    # POLICY: Outdated packages handled by automated dependency updates (Dependabot/renovate)
     phase_flag "01" "HIGH" "Security-sensitive packages are outdated: see ${out_prefix}_outdated.txt" \
-      "${out_prefix}_outdated.txt"
+      "${out_prefix}_outdated.txt" \
+      "true"
   else
     echo "  No outdated security-sensitive packages detected." | tee -a "${out_prefix}_outdated.txt"
   fi

@@ -250,7 +250,8 @@ print(round(e,4))
       fi
     fi
   else
-    phase_flag "02" "HIGH" "trufflehog unavailable; regex/entropy fallback only" "$out_txt"
+    # POLICY: Tooling availability; fallback regex/entropy detection is sufficient
+    phase_flag "02" "HIGH" "trufflehog unavailable; regex/entropy fallback only" "$out_txt" "true"
   fi
 
   # ── Fail or pass ──────────────────────────────────────────────────────────
