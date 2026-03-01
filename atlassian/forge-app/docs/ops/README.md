@@ -60,28 +60,39 @@ npm ci
 # Run clean install proof (validates reproducible build)
 bash tools/prove_clean_install.sh
 
-# Run enterprise audit 5 times (all must exit 0)
-bash tools/audit/v3_1/run_stability_5x.sh
+# ★ RECOMMENDED: Run deterministic audit (single canonical command)
+bash tools/audit/v3_1/run_deterministic.sh
 
-# Check exit code (0 = pass)
+# Check exit code (0 = pass, 1 = fail)
 echo $?
 
-# View latest audit evidence
-ls -td /tmp/ft_audit_stability_5x_* | head -1
+# View latest audit evidence (stable symlink)
+ls -ld /tmp/ft_audit_deterministic_latest
+readlink /tmp/ft_audit_deterministic_latest  # Actual directory path
+
+# ALTERNATIVE: Run 5x stability harness (for CI/release gates)
+bash tools/audit/v3_1/run_stability_5x.sh
 ```
 
-**Expected output:**
+**Expected output (deterministic runner):**
+- Preflight checks all pass
+- Audit completes with `Decision: CONDITIONAL_ACCEPT`
+- Exit code: `0`
+- Evidence directory: `/tmp/ft_audit_deterministic_TIMESTAMP_RANDOM`
+- Stable symlink: `/tmp/ft_audit_deterministic_latest`
+
+**Expected output (5x stability harness):**
 - `prove_clean_install.sh` completes with no errors
-- `run_stability_5x.sh` exits 0
+- `run_stability_5x.sh` exits 0 (all 5 runs PASS)
 - Evidence directory created in `/tmp/ft_audit_stability_5x_*` with `SUCCESS.txt`
 
 ## Most Common Mistakes (12 Items)
 
-1. **Running audit without `npm ci` first** — Fix: Always run `npm ci` in `atlassian/forge-app` before audit
+1. **Running audit without clean git tree** — Fix: `git status --porcelain` must be empty before audit
 2. **Using `npm install` instead of `npm ci`** — Fix: Use `npm ci` for deterministic installs
-3. **Running audit with dirty worktree** — Fix: `git status` must show clean before audit
+3. **Wrapping audit with external timeout** — Fix: Do NOT use `timeout`. Run directly: `bash tools/audit/v3_1/run_deterministic.sh`
 4. **Modifying evidence directories** — Fix: NEVER edit contents of `/tmp/ft_*` directories
-5. **Running audit with custom timeout** — Fix: Use default script, do not add timeout wrappers
+5. **Running audit from wrong directory** — Fix: Must run from `atlassian/forge-app`, not repo root
 6. **Deleting package-lock.json** — Fix: Lockfile is required; restore from git if deleted
 7. **Running in non-production Atlassian site** — Fix: Production proofs require `firsttry.atlassian.net`
 8. **Ignoring audit exit code** — Fix: Exit 0 = pass, exit 1 = reject; do not override
@@ -92,16 +103,16 @@ ls -td /tmp/ft_audit_stability_5x_* | head -1
 
 ## Do Not Do This (10 Forbidden Actions)
 
-1. **Do not run audit with timeout <180s** — Audit needs 2-3 minutes; premature kill corrupts evidence
-2. **Do not modify evidence dirs** — Evidence must remain immutable for audit trail
-3. **Do not skip npm ci** — Dependencies must be installed via lockfile for determinism
-4. **Do not disable CI checks** — Required checks enforce security and reproducibility
-5. **Do not run in Forge tunnel mode during audit** — Audit must run in offline mode
-6. **Do not use `npm update`** — Lockfile must not drift; use Dependabot/renovate for updates
-7. **Do not deploy to production without audit pass** — Exit 0 required before production deployment
-8. **Do not modify manifest.yml during CI** — Manifest is source of truth; changes require full audit
-9. **Do not use forge CLI <13.0** — Older CLI versions have known compatibility issues
-10. **Do not run audit in parallel** — Stability harness is sequential by design
+1. **Do not wrap audit with external timeout** — Deterministic runner has internal time budget
+2. **Do not run audit from wrong directory** — Must be in `atlassian/forge-app`, not repo root
+3. **Do not run audit with dirty git tree** — Preflight check will fail; commit or stash first
+4. **Do not modify evidence dirs** — Evidence must remain immutable for audit trail
+5. **Do not skip npm ci** — Dependencies must be installed via lockfile for determinism
+6. **Do not disable CI checks** — Required checks enforce security and reproducibility
+7. **Do not run in Forge tunnel mode during audit** — Audit must run in offline mode
+8. **Do not use `npm update`** — Lockfile must not drift; use Dependabot/renovate for updates
+9. **Do not deploy to production without audit pass** — Exit 0 required before production deployment
+10. **Do not run audits in parallel** — Non-deterministic; run sequentially
 
 ## When to Escalate
 

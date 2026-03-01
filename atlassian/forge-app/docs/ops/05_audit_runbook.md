@@ -30,55 +30,244 @@ Operators, reviewers, and auditors running and interpreting the FirstTry enterpr
 ```bash
 # Working directory: /path/to/Firsttry/atlassian/forge-app
 
-# Single audit run
-bash tools/audit/v3_1/run_f100_hostile_audit_v3_1.sh
-
-# 5x stability harness (required for production proof)
-bash tools/audit/v3_1/run_stability_5x.sh
+# ★ RECOMMENDED: Deterministic audit runner (single canonical command)
+bash tools/audit/v3_1/run_deterministic.sh
 
 # Check exit code
-echo $?  # 0 = pass, 1 = reject
+echo $?  # 0 = CONDITIONAL_ACCEPT, 1 = REJECT or preflight failure
 
-# Find latest evidence directory
-ls -td /tmp/ft_audit_stability_5x_* | head -1
+# Find latest evidence directory (deterministic runner)
+ls -ld /tmp/ft_audit_deterministic_latest  # Stable symlink
+readlink /tmp/ft_audit_deterministic_latest  # Actual path
+
+# Alternative: 5x stability harness (for CI/release gates)
+bash tools/audit/v3_1/run_stability_5x.sh
 ```
+
+### FORBIDDEN: Do NOT Do These
+
+1. **Do NOT wrap audit with timeout command**  
+   ❌ `timeout 300 bash tools/audit/v3_1/run_deterministic.sh`  
+   ✅ `bash tools/audit/v3_1/run_deterministic.sh` (internal time budget)
+
+2. **Do NOT run from wrong directory**  
+   ❌ `cd /tmp && bash ~/Firsttry/atlassian/forge-app/tools/audit/v3_1/run_deterministic.sh`  
+   ✅ `cd atlassian/forge-app && bash tools/audit/v3_1/run_deterministic.sh`
+
+3. **Do NOT run with dirty git tree**  
+   ❌ `# uncommitted changes in working tree`  
+   ✅ `git status --porcelain` (should be empty)
+
+4. **Do NOT modify evidence directories during audit**  
+   ❌ `rm -rf /tmp/ft_audit_*`  
+   ✅ Archive evidence after audit completes
 
 ## Procedure
 
-### Step 1: Verify Prerequisites
+### Step 1: Run Deterministic Audit (Recommended)
+
+**This is the ONLY recommended command for operator use.**
 
 ```bash
 # Working directory: /path/to/Firsttry/atlassian/forge-app
+cd atlassian/forge-app
 
-# Verify clean worktree
-git status
-
-# Verify dependencies installed
-ls node_modules/ | wc -l  # Should show hundreds of packages
-
-# Verify required tools
-jq --version
-rg --version
-python3 --version
+# Run deterministic audit with automatic preflight checks
+bash tools/audit/v3_1/run_deterministic.sh
 ```
 
-**Expected:** All commands succeed, worktree clean.
+**What happens:**
 
-### Step 2: Run Single Audit (Test)
+1. **Preflight checks (automatic):**
+   - Working directory validation (must be `atlassian/forge-app`)
+   - Git clean tree check (fails if dirty)
+   - Node version check (enforces major version match)
+   - Dependency state (requires `package-lock.json`, runs `npm ci` if needed)
+   - Semgrep version check (fails if version mismatch)
+   - Network mode configuration
+   - Locale/timezone standardization (LC_ALL=C, TZ=UTC)
+   - Timeout discipline check (fails if wrapped with external `timeout`)
+
+2. **Environment snapshot capture:**
+   - Tool versions (node, npm, semgrep, jq, git)
+   - Environment variables (FT_* flags)
+   - Git state (commit hash, status, last commit)
+   - Command invocation record
+
+3. **Audit execution:**
+   - Runs underlying F100 Hostile Audit v3.1 (12 phases)
+   - Captures stdout/stderr to `EROOT/full.log`
+
+4. **Evidence directory tracking:**
+   - Identifies created audit directory deterministically
+   - Fails if 0 or >1 directories created (non-determinism)
+   - Creates stable symlinks:
+     - `/tmp/ft_audit_deterministic_latest` → EROOT
+     - `/tmp/ft_f100_hostile_audit_v3_1_latest` → underlying audit dir
+
+5. **Artifact validation:**
+   - Validates `results.json` exists and is valid JSON
+   - Creates synthetic results.json on failure with ERROR decision
+   - Copies key artifacts to `EROOT/artifacts/`
+
+6. **Final summary:**
+   - Prints decision, score, exit code
+   - Prints phase result counts (FAIL/FLAG/PASS)
+   - Prints HIGH flag breakdown (blocking vs allowlisted)
+   - Prints reject reason if applicable
+   - Prints evidence paths
+
+**Runtime:** 2-3 minutes (including preflight checks).
+
+**Expected output (PASS):**
+```
+═══════════════════════════════════════════════════════
+  PREFLIGHT CONTRACT — F100 Audit v3.1
+═══════════════════════════════════════════════════════
+
+[PREFLIGHT OK] Working directory: /workspaces/Firsttry/atlassian/forge-app
+[PREFLIGHT OK] Git: Clean working tree
+[PREFLIGHT OK] Node: v18.20.0 (major: 18)
+[PREFLIGHT OK] Lockfile: package-lock.json present
+[PREFLIGHT OK] Dependencies: node_modules present
+[PREFLIGHT OK] Semgrep: 1.45.0
+[PREFLIGHT OK] Network: Standard mode (external links allowed)
+[PREFLIGHT OK] Locale: LC_ALL=C, LANG=C, TZ=UTC
+[PREFLIGHT OK] Timeout: No external timeout wrapper detected
+
+[PREFLIGHT] All checks passed. Proceeding with audit...
+
+============================================================
+  DETERMINISTIC AUDIT RUNNER — F100 v3.1
+  Evidence: /tmp/ft_audit_deterministic_20260301T120000Z_12345
+  Symlink:  /tmp/ft_audit_deterministic_latest
+  Started:  2026-03-01T12:00:00Z
+============================================================
+
+[... audit phases 00-12 ...]
+
+============================================================
+  DETERMINISTIC AUDIT — FINAL SUMMARY
+============================================================
+
+Decision:           CONDITIONAL_ACCEPT
+Score:              72/100
+Exit code:          0
+
+Phase Results:
+  FAIL:             0
+  FLAG:             425
+  PASS:             12
+
+HIGH Flags:
+  Blocking:         0
+  Allowlisted:      382
+
+Evidence:
+  EROOT:            /tmp/ft_audit_deterministic_20260301T120000Z_12345
+  Audit dir:        /tmp/ft_f100_hostile_audit_v3_1_20260301T120000Z_12345
+  Symlink:          /tmp/ft_audit_deterministic_latest
+  Symlink (audit):  /tmp/ft_f100_hostile_audit_v3_1_latest
+
+Key Artifacts:
+  results.json:     /tmp/ft_audit_deterministic_20260301T120000Z_12345/artifacts/results.json
+  FINAL_REPORT.md:  /tmp/ft_audit_deterministic_20260301T120000Z_12345/artifacts/FINAL_REPORT.md
+  Decision file:    /tmp/ft_audit_deterministic_20260301T120000Z_12345/artifacts/99_FINAL_DECISION.txt
+
+Full log:           /tmp/ft_audit_deterministic_20260301T120000Z_12345/full.log
+
+[DETERMINISTIC] EXIT 0 — PASS (CONDITIONAL_ACCEPT)
+```
+
+**Exit codes:**
+- `0` = CONDITIONAL_ACCEPT (passes scoring policy)
+- `1` = REJECT, preflight failure, or non-deterministic execution
+
+### Step 2: Inspect Results (If Audit Fails)
+
+**If audit exits 1, determine the root cause:**
 
 ```bash
-# Working directory: /path/to/Firsttry/atlassian/forge-app
-bash tools/audit/v3_1/run_f100_hostile_audit_v3_1.sh
+# Read evidence directory path
+EROOT=$(readlink /tmp/ft_audit_deterministic_latest)
+echo "Evidence: $EROOT"
+
+# Read final decision
+jq -r '.final_decision' "$EROOT/artifacts/results.json"
+
+# Read reject reason
+jq -r '.reject_reason' "$EROOT/artifacts/results.json"
+
+# List FAIL phases
+jq -r '.results[] | select(.status=="FAIL") | "[\(.phase)] \(.message)"' \
+  "$EROOT/artifacts/results.json"
+
+# Count blocking HIGHs
+jq -r '.blocking_high_count' "$EROOT/artifacts/results.json"
+
+# Full log
+less "$EROOT/full.log"
 ```
 
-**What happens (12 phases):**
-1. **Phase 00:** Dependency install, lockfile verification
-2. **Phase 01:** Supply chain (duplicates, outdated, npm audit)
-3. **Phase 02:** Secret detection (regex, entropy, trufflehog)
-4. **Phase 03:** Entrypoint binding (manifest resolvers)
-5. **Phase 04:** Exfiltration risk (network calls, telemetry)
-6. **Phase 05:** Forge-specific (storage isolation, rate limits)
-7. **Phase 06:** Manifest validation (scopes, modules)
+### If It Fails, What Now?
+
+| Failure Type | Symptoms | Root Cause | Fix |
+|--------------|----------|------------|-----|
+| **Preflight failure** | `[PREFLIGHT FAIL]` message, exits before audit runs | Environment not deterministic | See preflight fix table below |
+| **No evidence directory created** | `[ERROR] No new evidence directory created` | Audit terminated before creating temp dir | Check full.log for early failure (missing tool, permission denied) |
+| **Multiple evidence directories** | `[ERROR] Multiple evidence directories created` | Non-deterministic audit execution (race condition or parallel run) | Do NOT run multiple audits in parallel. Run sequentially. |
+| **results.json missing** | `[ERROR] results.json missing from audit output` | Audit failed before phase 13 (Evidence Packaging) | Check full.log for FAIL phase. Fix underlying issue and rerun. |
+| **results.json corrupted** | `[ERROR] results.json is not valid JSON` | Truncated write or process killed mid-write | Do NOT kill audit mid-run. Let it complete or fail naturally. |
+| **REJECT decision** | `Decision: REJECT`, exit 1 | One or more phases returned FAIL status, or score < 50, or blocking HIGHs >= 3 | See reject_reason field. Fix FAIL phases or allowlist known issues. |
+| **HIGH_RISK decision** | `Decision: HIGH_RISK`, exit 1 | Score 50-64, some blocking issues | Review FAIL phases and HIGH flags. Remediate or request policy exception. |
+| **CONDITIONAL_REMEDIATION_REQUIRED** | `Decision: CONDITIONAL_REMEDIATION_REQUIRED`, exit 1 | Score 65-84, manageable risk | Review MEDIUM/HIGH flags. Document mitigations. May proceed with sign-off. |
+
+### Preflight Failure Fixes
+
+| Preflight Check | Failure Symptom | Fix |
+|-----------------|-----------------|-----|
+| Working directory | `package.json not found` | `cd atlassian/forge-app` before running audit |
+| Git clean tree | `Git working tree is dirty` | `git status --porcelain`, commit or stash changes |
+| Node version | `Node version mismatch: found v20.x, expected v18.x` | Install Node 18: `nvm install 18` or `fnm use 18` |
+| Lockfile missing | `package-lock.json missing` | `npm install` (generates lockfile) |
+| node_modules missing | `node_modules missing and FT_AUDIT_NO_INSTALL=1` | `npm ci` then retry audit |
+| Semgrep missing | `semgrep not found and FT_AUDIT_NO_INSTALL=1` | `pip3 install semgrep==1.45.0` |
+| Semgrep version mismatch | `semgrep version mismatch: found 1.50.0, expected 1.45.0` | `pip3 install semgrep==1.45.0 --force-reinstall` |
+| Timeout wrapper | `Audit wrapped with timeout command` | Do NOT use `timeout`. Run directly: `bash tools/audit/v3_1/run_deterministic.sh` |
+
+### Step 3: Parse Results.json Fields
+
+**Deterministic runner ensures results.json always has these fields:**
+
+```bash
+EROOT=$(readlink /tmp/ft_audit_deterministic_latest)
+RJ="$EROOT/artifacts/results.json"
+
+# Final decision (CONDITIONAL_ACCEPT, REJECT, etc.)
+jq -r '.final_decision' "$RJ"
+
+# Score (0-100)
+jq -r '.score' "$RJ"
+
+# Phase result counts
+jq -r '.fail_count' "$RJ"  # Number of FAIL phases
+jq -r '[.results[] | select(.status=="FLAG")] | length' "$RJ"  # Total FLAGS
+jq -r '[.results[] | select(.status=="PASS")] | length' "$RJ"  # Total PASS
+
+# HIGH flag breakdown
+jq -r '.blocking_high_count' "$RJ"      # HIGHs that trigger reject
+jq -r '.allowlisted_high_count' "$RJ"   # HIGHs that are reviewed/accepted
+
+# Reject reason (if decision != CONDITIONAL_ACCEPT)
+jq -r '.reject_reason' "$RJ"
+
+# Metadata
+jq -r '.meta.version' "$RJ"      # Audit version (3.1)
+jq -r '.meta.timestamp' "$RJ"    # Completion timestamp
+jq -r '.meta.runner' "$RJ"       # Runner script name
+```
+
+### Step 4: Run 5x Stability Harness (For CI/Release Gates)
 8. **Phase 07:** Runtime checks (lint, test, build)
 9. **Phase 08:** Data flow (PII, tenant isolation)
 10. **Phase 09:** Observability (logging, secrets exposure)

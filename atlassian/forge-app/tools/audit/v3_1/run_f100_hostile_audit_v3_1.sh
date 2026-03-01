@@ -385,6 +385,49 @@ echo "  Score: ${FINAL_SCORE}"
 echo "  Decision: ${FINAL_DECISION}"
 echo "  High FLAGS: ${HIGH_FLAGS} (${HIGH_FLAGS_BLOCKING} blocking, ${HIGH_FLAGS_ALLOWLISTED} allowlisted) | Medium FLAGS: ${MED_FLAGS} | Low FLAGS: ${LOW_FLAGS}"
 
+# Enrich results.json with final score and decision metadata
+echo "[13] Enriching results.json with final metadata..."
+REJECT_REASON=""
+if [[ "$FINAL_DECISION" != "CONDITIONAL_ACCEPT" ]]; then
+  if [[ "$HAS_FAIL" -eq 1 ]]; then
+    REJECT_REASON="One or more phases returned FAIL status"
+  elif [[ "$HIGH_FLAGS_BLOCKING" -ge 3 ]]; then
+    REJECT_REASON="Three or more blocking HIGH severity flags detected"
+  elif [[ "$FINAL_SCORE" -lt 50 ]]; then
+    REJECT_REASON="Score below minimum threshold of 50"
+  else
+    REJECT_REASON="Policy requirements not met for acceptance"
+  fi
+fi
+
+jq --arg decision "$FINAL_DECISION" \
+   --argjson score "$FINAL_SCORE" \
+   --argjson fail_count "$HAS_FAIL" \
+   --argjson high_count "$HIGH_FLAGS" \
+   --argjson blocking_high_count "$HIGH_FLAGS_BLOCKING" \
+   --argjson allowlisted_high_count "$HIGH_FLAGS_ALLOWLISTED" \
+   --argjson medium_count "$MED_FLAGS" \
+   --argjson low_count "$LOW_FLAGS" \
+   --arg reject_reason "$REJECT_REASON" \
+   --arg version "3.1" \
+   --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+   '. + {
+     final_decision: $decision,
+     score: $score,
+     fail_count: $fail_count,
+     high_count: $high_count,
+     blocking_high_count: $blocking_high_count,
+     allowlisted_high_count: $allowlisted_high_count,
+     medium_count: $medium_count,
+     low_count: $low_count,
+     reject_reason: $reject_reason,
+     meta: {
+       version: $version,
+       timestamp: $timestamp,
+       runner: "run_f100_hostile_audit_v3_1.sh"
+     }
+   }' "${E}/results.json" > "${E}/results.json.tmp" && mv "${E}/results.json.tmp" "${E}/results.json"
+
 # Write FINAL_REPORT.md
 {
   echo "# F100 Hostile Audit v3.1 — FINAL REPORT"
