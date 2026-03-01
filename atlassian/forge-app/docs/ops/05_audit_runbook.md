@@ -526,6 +526,192 @@ cat SCORING_SUMMARY.json
 
 The audit is designed for deterministic, repeatable results:
 
+## Optional: Real-World Capability Gates (Scale/Concurrency/License)
+
+### Overview
+
+Real-world capability gates validate that FirstTry can handle production-scale workloads and paid feature gating. These tests are **optional** and add ~30-60 seconds to audit runtime.
+
+**What is tested:**
+1. **Scale Test**: Generate and process 5000-object evidence snapshots (HTML reports, diagnostic bundles)
+2. **Concurrency Stress**: Run 100/500/1000 parallel operations to verify thread safety
+3. **License State Tests**: Verify paid feature gating works correctly (baseline/pro/enterprise plans)
+
+**When to run:**
+- Before marketplace submissions
+- Before major releases
+- When validating performance regression fixes
+- When testing on new infrastructure
+
+### Running Real-World Gates
+
+**Standalone execution:**
+```bash
+# Working directory: /path/to/Firsttry/atlassian/forge-app
+bash tools/realworld/run_realworld_gates.sh
+```
+
+**Integrated with audit:**
+```bash
+# Set environment variable (no value assignment, just presence check)
+FT_REALWORLD_GATES=1 bash tools/audit/v3_1/run_deterministic.sh
+```
+
+**Verification:**
+```bash
+# Check exit code
+echo $?  # 0 = PASS, 1 = FAIL
+
+# Find latest evidence
+ls -ld /tmp/ft_realworld_latest  # Stable symlink
+readlink /tmp/ft_realworld_latest  # Actual path
+
+# View summary
+cat /tmp/ft_realworld_latest/artifacts/REALWORLD_SUMMARY.json | jq .
+```
+
+### Understanding Results
+
+**REALWORLD_SUMMARY.json structure:**
+```json
+{
+  "version": "1.0",
+  "timestamp_utc": "2026-03-01T12:34:56Z",
+  "git_sha": "abc123...",
+  "scale": {
+    "status": "PASS|FAIL",
+    "n": 5000,
+    "duration_ms": 12345,
+    "peak_rss_bytes": 987654321,
+    "output_bytes": 5432109,
+    "determinism": "PASS|FAIL"
+  },
+  "concurrency": {
+    "status": "PASS|FAIL",
+    "levels": [100, 500, 1000],
+    "failures": { "100": 0, "500": 0, "1000": 0 },
+    "duration_ms": { "100": 234, "500": 567, "1000": 890 }
+  },
+  "license": {
+    "status": "PASS|FAIL",
+    "cases": 5,
+    "total": 5,
+    "notes": ["Uses src/entitlements/ system", ...]
+  },
+  "final": {
+    "status": "PASS|FAIL",
+    "exit_code": 0,
+    "fail_reasons": []
+  }
+}
+```
+
+**Interpreting statuses:**
+
+| Field | PASS Criteria | FAIL Causes |
+|-------|---------------|-------------|
+| **scale.status** | 5000 objects processed, output generated, deterministic | Crash, out-of-memory, non-deterministic hashes |
+| **scale.determinism** | Run A hash == Run B hash (byte-identical) | Hashes differ (non-deterministic serialization) |
+| **concurrency.status** | All levels complete with 0 failures | Any level has failures or crashes |
+| **license.status** | All test cases pass | Feature gating not working, blocking mechanism missing |
+| **final.status** | All phases PASS | Any phase FAIL |
+
+**Performance baselines (reference only):**
+- Scale test: < 30 seconds
+- Concurrency 1000: < 5 seconds
+- License tests: < 1 second
+- Total runtime: < 60 seconds
+
+### Evidence Artifacts
+
+**Directory structure:**
+```
+/tmp/ft_realworld_TIMESTAMP_PID/
+├── 00_env/
+│   ├── env.txt          # Environment variables
+│   ├── git.txt          # Git SHA and status
+│   ├── node.txt         # Node/npm versions
+│   └── command.txt      # Invocation command
+├── 01_scale/
+│   ├── run.log          # Scale test execution log
+│   ├── metrics.json     # Duration, memory, output size
+│   ├── output_hashes.json  # Run A/B hashes for determinism check
+│   └── html_snippet.txt    # First 50KB of generated HTML
+├── 02_concurrency/
+│   ├── run.log          # Concurrency test execution log
+│   └── results.json     # Per-level success/failure/duration
+├── 03_license/
+│   ├── run.log          # License test execution log
+│   └── results.json     # Per-case pass/fail/error_code
+└── artifacts/
+    └── REALWORLD_SUMMARY.json  # Final summary (canonical)
+```
+
+**Query examples:**
+```bash
+RWORLD=$(readlink /tmp/ft_realworld_latest)
+
+# Overall status
+jq -r '.final.status' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
+
+# Scale test determinism
+jq -r '.scale.determinism' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
+
+# Concurrency failures
+jq -r '.concurrency.failures' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
+
+# License test details
+jq -r '.license | {status, cases, total}' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
+
+# Fail reasons (if any)
+jq -r '.final.fail_reasons[]' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
+```
+
+### Troubleshooting
+
+**Issue: Scale test non-deterministic (hash mismatch)**
+
+**Cause:** Randomness in serialization (timestamps, random IDs, unordered maps).
+
+**Fix:** Review `01_scale/output_hashes.json`. If hashes differ across runs, this indicates non-deterministic code. Escalate to maintainers with evidence.
+
+**Issue: Concurrency test failures at level 1000**
+
+**Cause:** Race conditions, shared mutable state, insufficient memory.
+
+**Fix:** Review `02_concurrency/results.json` for `first_error` field. If race condition, escalate. If memory, increase Node heap: `NODE_OPTIONS="--max-old-space-size=4096"`.
+
+**Issue: License test failure**
+
+**Cause:** Entitlement system not configured correctly, export blocking not working.
+
+**Fix:** Review `03_license/results.json` for failing test cases. Check `error_code` field. If `BLOCKING_MECHANISM_MISSING`, escalate to maintainers.
+
+**Issue: Real-world gates fail but audit passes**
+
+**Explanation:** This is expected. Real-world gates are **optional** and test performance/scale, not correctness. Audit tests correctness (security, compliance). You can deploy if audit passes, but investigate scale failures before production load.
+
+### Design Principles
+
+**No network dependencies:**
+- All tests run locally
+- No Forge auth required
+- No external API calls
+
+**Synthetic data only:**
+- Scale test uses deterministic synthetic evidence (5000 user accounts with stable IDs)
+- No real PII or production data
+
+**Deterministic outputs:**
+- Same inputs → identical hashes (excluding timestamp_utc field only)
+- Run twice and compare: hashes must match
+
+**Fail-closed:**
+- Any unhandled exception → exit 1
+- Missing required fields → fail (not silently default)
+
+## Determinism Requirements
+
 ### Environment Standardization
 
 Set automatically by audit scripts:

@@ -52,6 +52,78 @@ fi
 source "$PREFLIGHT"
 run_preflight_checks
 
+# ── Optional: Run Real-World Capability Gates ───────────────────────────────
+if [[ "${FT_REALWORLD_GATES:-0}" == "1" ]]; then
+  echo ""
+  echo "============================================================"
+  echo "  OPTIONAL GATE: Real-World Capability Tests"
+  echo "============================================================"
+  echo ""
+  
+  REALWORLD_SCRIPT="${SCRIPT_DIR}/../realworld/run_realworld_gates.sh"
+  
+  if [[ ! -f "$REALWORLD_SCRIPT" ]]; then
+    echo "[ERROR] Real-world gates script not found: $REALWORLD_SCRIPT"
+    echo "[ERROR] Set FT_REALWORLD_GATES=1 but gates not available"
+    exit 1
+  fi
+  
+  REALWORLD_EXIT=0
+  if ! bash "$REALWORLD_SCRIPT" 2>&1 | tee "$EROOT/realworld_gates.log"; then
+    REALWORLD_EXIT=$?
+  fi
+  
+  if [[ $REALWORLD_EXIT -ne 0 ]]; then
+    echo ""
+    echo "[ERROR] Real-world gates FAILED (exit $REALWORLD_EXIT)"
+    echo "[ERROR] Evidence: /tmp/ft_realworld_latest"
+    echo "[ERROR] Cannot proceed with audit"
+    
+    # Create minimal results.json for failure
+    mkdir -p "$EROOT/artifacts"
+    cat > "$EROOT/artifacts/results.json" << EOF
+{
+  "final_decision": "ERROR",
+  "score": 0,
+  "fail_count": 1,
+  "high_count": 0,
+  "blocking_high_count": 0,
+  "allowlisted_high_count": 0,
+  "medium_count": 0,
+  "low_count": 0,
+  "reject_reason": "Real-world capability gates failed; see /tmp/ft_realworld_latest",
+  "results": [
+    {
+      "phase": "00",
+      "status": "FAIL",
+      "message": "Real-world gates failed (scale/concurrency/license)",
+      "severity": "CRITICAL",
+      "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    }
+  ],
+  "meta": {
+    "version": "3.1",
+    "runner": "run_deterministic.sh",
+    "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+    "realworld_gates": true
+  }
+}
+EOF
+    exit 1
+  fi
+  
+  # Copy realworld summary into artifacts
+  if [[ -f "/tmp/ft_realworld_latest/artifacts/REALWORLD_SUMMARY.json" ]]; then
+    cp "/tmp/ft_realworld_latest/artifacts/REALWORLD_SUMMARY.json" "$EROOT/artifacts/"
+    echo "[DETERMINISTIC] Real-world gates: PASS"
+    echo "[DETERMINISTIC] Copied: REALWORLD_SUMMARY.json"
+  fi
+  
+  echo ""
+  echo "============================================================"
+  echo ""
+fi
+
 # ── Capture environment snapshot ─────────────────────────────────────────────
 echo "[DETERMINISTIC] Capturing environment snapshot..."
 {
