@@ -21,6 +21,7 @@
   "publish_dirs": [
     "atlassian/forge-app/docs/trust",
     "atlassian/forge-app/docs/operations",
+    "atlassian/forge-app/docs/ops",
     "atlassian/forge-app/docs/procurement",
     "atlassian/forge-app/docs/evidence"
   ],
@@ -264,6 +265,77 @@
           "src": "atlassian/forge-app/docs/operations/SECRETS_MANAGEMENT.md",
           "route": "operations/secrets-management.html",
           "doc_id": "FT-OPS-011"
+        }
+      ]
+    },
+    {
+      "group": "Operator Runbooks",
+      "items": [
+        {
+          "title": "Start Here (Entry Page)",
+          "src": "atlassian/forge-app/docs/ops/README.md",
+          "route": "ops/README.html",
+          "doc_id": "FT-OPS-000"
+        },
+        {
+          "title": "Prerequisites",
+          "src": "atlassian/forge-app/docs/ops/01_prereqs.md",
+          "route": "ops/01_prereqs.html",
+          "doc_id": "FT-OPS-001"
+        },
+        {
+          "title": "Local Setup",
+          "src": "atlassian/forge-app/docs/ops/02_local_setup.md",
+          "route": "ops/02_local_setup.html",
+          "doc_id": "FT-OPS-002"
+        },
+        {
+          "title": "Forge Setup",
+          "src": "atlassian/forge-app/docs/ops/03_forge_setup.md",
+          "route": "ops/03_forge_setup.html",
+          "doc_id": "FT-OPS-003"
+        },
+        {
+          "title": "Deploy and Run",
+          "src": "atlassian/forge-app/docs/ops/04_deploy_run.md",
+          "route": "ops/04_deploy_run.html",
+          "doc_id": "FT-OPS-004"
+        },
+        {
+          "title": "Audit Runbook",
+          "src": "atlassian/forge-app/docs/ops/05_audit_runbook.md",
+          "route": "ops/05_audit_runbook.html",
+          "doc_id": "FT-OPS-005"
+        },
+        {
+          "title": "CI and Artifacts",
+          "src": "atlassian/forge-app/docs/ops/06_ci_and_artifacts.md",
+          "route": "ops/06_ci_and_artifacts.html",
+          "doc_id": "FT-OPS-006"
+        },
+        {
+          "title": "Troubleshooting",
+          "src": "atlassian/forge-app/docs/ops/07_troubleshooting.md",
+          "route": "ops/07_troubleshooting.html",
+          "doc_id": "FT-OPS-007"
+        },
+        {
+          "title": "Release Procedure",
+          "src": "atlassian/forge-app/docs/ops/08_release_procedure.md",
+          "route": "ops/08_release_procedure.html",
+          "doc_id": "FT-OPS-008"
+        },
+        {
+          "title": "Incident Response",
+          "src": "atlassian/forge-app/docs/ops/09_incident_response.md",
+          "route": "ops/09_incident_response.html",
+          "doc_id": "FT-OPS-009"
+        },
+        {
+          "title": "Known Limits",
+          "src": "atlassian/forge-app/docs/ops/10_known_limits.md",
+          "route": "ops/10_known_limits.html",
+          "doc_id": "FT-OPS-010"
         }
       ]
     },
