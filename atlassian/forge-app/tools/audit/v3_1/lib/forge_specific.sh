@@ -162,7 +162,7 @@ run_forge_specific() {
   echo "[05] Checking pagination handling..." | tee -a "$summary_txt"
   local pag_hits
   pag_hits=$(rg -l --glob '!**/node_modules/**' --glob '*.ts' \
-    'startAt\|maxResults\|nextPage\|cursor\|pagination\|paginate\|isLast' \
+    'startAt|maxResults|nextPage|cursor|pagination|paginate|isLast' \
     "${repo_dir}/src" 2>/dev/null || true)
   if [[ -z "$pag_hits" ]]; then
     phase_flag "05" "HIGH" "No pagination handling found in src/**. Jira API pagination may be ignored." "$summary_txt"
@@ -176,14 +176,14 @@ run_forge_specific() {
   echo "[05] Checking 429/rate-limit handling..." | tee -a "$summary_txt"
   local rl_hits
   rl_hits=$(rg -l --glob '!**/node_modules/**' --glob '*.ts' \
-    '429\|TooManyRequests\|rate.?limit\|Retry-After\|retry\|backoff' \
+    '429|TooManyRequests|rate.?limit|Retry-After|retry|backoff' \
     "${repo_dir}/src" 2>/dev/null || true)
   if [[ -z "$rl_hits" ]]; then
     phase_flag "05" "HIGH" "No 429/rate-limit handling found in src/**. DoS risk." "$summary_txt"
     jq '.rate_limit_ok = false' "$audit_json" > "${audit_json}.tmp" && mv "${audit_json}.tmp" "$audit_json"
   else
     echo "  Rate limit evidence found in: $(echo "$rl_hits" | head -3)" | tee -a "$summary_txt"
-    jq '.rate_limit_ok = true' "$audit_json" > "${audit_json}.tmp" && mv "${audit_json}.tmp" "$audit_json"
+    jq '.rate_limit_ok = true' "$audit_json" > "${audit_json}.tmp" "$audit_json"
   fi
 
   if [[ "$failed" -eq 1 ]]; then
