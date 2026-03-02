@@ -12,10 +12,11 @@
 # REQUIRED ENVIRONMENT VARIABLES (fail-closed):
 # - FORGE_EMAIL: Forge account email
 # - FORGE_API_TOKEN: Forge API token
-# - STORAGE_STATE: Path to Playwright auth storageState file (default: ../../e2e/.auth/storageState.persistent.json)
+# - DISPLAY: X server display (required for headed Playwright + auth capture)
 #
 # OPTIONAL:
 # - JIRA_SITE: Target site (default: firsttry.atlassian.net)
+# - JIRA_DASHBOARD_URL: Dashboard URL (default: https://firsttry.atlassian.net/jira/dashboards/10102)
 # - ENVIRONMENT: Forge environment (default: production)
 
 set -euo pipefail
@@ -36,7 +37,7 @@ log_phase() { echo -e "${BLUE}════════════════�
 # PHASE 0 — EVIDENCE + REPO CLEANLINESS (HARD GATE)
 # ============================================================================
 
-log_phase "PHASE 0: Evidence Directory + Repo Cleanliness Check"
+log_phase "PHASE 0: Evidence Directory + Environment Prerequisites"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
@@ -47,25 +48,122 @@ log_info "FORGE_APP_ROOT: $FORGE_APP_ROOT"
 
 cd "$REPO_ROOT"
 
-# Check repo cleanliness
-log_info "Checking repository cleanliness..."
-DIRTY=$(git status --porcelain)
-if [ -n "$DIRTY" ]; then
-  log_error "Repository has uncommitted changes:"
-  echo "$DIRTY"
-  log_error "Commit or stash changes before running release."
-  exit 1
-fi
-log_success "Repository is clean"
-
-# Create evidence directory
+# Create evidence directory FIRST (before any checks)
 TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
 E="/tmp/ft_marketplace_release_${TIMESTAMP}_$$"
-mkdir -p "$E"/{00_env,01_ci,02_merge,03_build,04_deploy,05_upgrade,06_e2e,07_audit,99_verdict}
+mkdir -p "$E"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e,99_verdict}
 ln -sfn "$E" /tmp/ft_marketplace_release_latest
 echo "$E" > /tmp/ft_marketplace_release_dir.txt
 
 log_success "Evidence directory: $E"
+
+# Trap for failure handling (write final report on any exit)
+write_final_report_and_verdict() {
+  local exit_code=$1
+  
+  cd "$REPO_ROOT"
+  
+  local GIT_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+  local GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+  local SITE="${JIRA_SITE:-firsttry.atlassian.net}"
+  local ENVIRONMENT="${ENVIRONMENT:-production}"
+  
+  if [ "$exit_code" -eq 0 ]; then
+    # Success case - detailed report already written by Phase 7
+    if [ ! -f "$E/99_verdict/FINAL_REPORT.md" ]; then
+      echo "# Marketplace Release - Final Report" > "$E/99_verdict/FINAL_REPORT.md"
+      echo "" >> "$E/99_verdict/FINAL_REPORT.md"
+      echo "**Status:** ✅ PASS" >> "$E/99_verdict/FINAL_REPORT.md"
+      echo "" >> "$E/99_verdict/FINAL_REPORT.md"
+      echo "Evidence: $E" >> "$E/99_verdict/FINAL_REPORT.md"
+    fi
+    
+    if [ ! -f "$E/99_verdict/FINAL_VERDICT.txt" ]; then
+      echo "PASS (evidence: $E)" > "$E/99_verdict/FINAL_VERDICT.txt"
+    fi
+  else
+    # Failure case - determine which phase failed
+    local FAILED_PHASE="Unknown"
+    
+    if [ -f "$E/99_verdict/FAIL_REASON.txt" ]; then
+      FAILED_PHASE=$(cat "$E/99_verdict/FAIL_REASON.txt")
+    elif [ ! -f "$E/00_env/env.txt" ]; then
+      FAILED_PHASE="Phase 0: Environment setup"
+    elif [ -d "$E/01_gates" ] && [ "$(ls -A "$E/01_gates" 2>/dev/null)" ]; then
+      FAILED_PHASE="Phase 1: Verification gates"
+    elif [ -d "$E/02_merge" ] && [ "$(ls -A "$E/02_merge" 2>/dev/null)" ]; then
+      FAILED_PHASE="Phase 2: Branch sync"
+    elif [ -d "$E/03_build" ] && [ "$(ls -A "$E/03_build" 2>/dev/null)" ]; then
+      FAILED_PHASE="Phase 3: Build sanity"
+    elif [ -d "$E/04_deploy" ] && [ "$(ls -A "$E/04_deploy" 2>/dev/null)" ]; then
+      FAILED_PHASE="Phase 4: Deploy"
+    elif [ -d "$E/05_upgrade" ] && [ "$(ls -A "$E/05_upgrade" 2>/dev/null)" ]; then
+      FAILED_PHASE="Phase 5: Install/Upgrade"
+    elif [ -d "$E/06_e2e" ] && [ "$(ls -A "$E/06_e2e" 2>/dev/null)" ]; then
+      FAILED_PHASE="Phase 6: End-to-End"
+    fi
+    
+    # Write failure report
+    {
+      echo "# Marketplace Release - Final Report"
+      echo ""
+      echo "**Generated:** $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      echo "**Git SHA:** $GIT_SHA"
+      echo "**Git Branch:** $GIT_BRANCH"
+      echo "**Target Site:** $SITE"
+      echo "**Environment:** $ENVIRONMENT"
+      echo ""
+      echo "## Final Verdict"
+      echo ""
+      echo "**Status:** ❌ FAIL"
+      echo "**Failed at:** $FAILED_PHASE"
+      echo "**Exit code:** $exit_code"
+      echo ""
+      echo "## Evidence Location"
+      echo ""
+      echo "- Evidence directory: \`$E\`"
+      echo "- Stable symlink: \`/tmp/ft_marketplace_release_latest\`"
+      echo ""
+      echo "## Logs"
+      echo ""
+      echo "Check the following directories for detailed logs:"
+      echo "- \`$E/00_env/\` - Environment capture"
+      echo "- \`$E/01_gates/\` - Verification gate logs"
+      echo "- \`$E/02_merge/\` - Branch sync logs"
+      echo "- \`$E/03_build/\` - Build logs"
+      echo "- \`$E/04_deploy/\` - Deployment logs"
+      echo "- \`$E/05_upgrade/\` - Install/upgrade logs"
+      echo "- \`$E/06_e2e/\` - E2E test logs and artifacts"
+      echo ""
+      if [ -f "$E/99_verdict/FAIL_REASON.txt" ]; then
+        echo "## Failure Reason"
+        echo ""
+        echo "\`\`\`"
+        cat "$E/99_verdict/FAIL_REASON.txt"
+        echo "\`\`\`"
+        echo ""
+      fi
+    } > "$E/99_verdict/FINAL_REPORT.md"
+    
+    echo "FAIL (exit_code=$exit_code, phase=$FAILED_PHASE, evidence=$E)" > "$E/99_verdict/FINAL_VERDICT.txt"
+    
+    log_error "════════════════════════════════════════════════════════════"
+    log_error "FINAL VERDICT: FAIL"
+    log_error "════════════════════════════════════════════════════════════"
+    log_error ""
+    log_error "Failed at: $FAILED_PHASE"
+    log_error "Exit code: $exit_code"
+    log_error "Evidence: $E"
+    log_error ""
+    if [ -f "$E/99_verdict/FAIL_REASON.txt" ]; then
+      log_error "Reason:"
+      cat "$E/99_verdict/FAIL_REASON.txt" >&2
+    fi
+  fi
+}
+
+# Set trap to ensure final report is always written
+trap 'write_final_report_and_verdict $?' EXIT
 
 # Capture environment
 {
@@ -78,9 +176,60 @@ log_success "Evidence directory: $E"
   echo "JQ: $(jq --version 2>&1 || echo 'NOT FOUND')"
   echo "Forge: $(forge --version 2>&1 || echo 'NOT FOUND')"
   echo "Playwright: $(npx playwright --version 2>&1 || echo 'NOT FOUND')"
+  echo "DISPLAY: ${DISPLAY:-NOT SET}"
 } > "$E/00_env/env.txt"
 
 log_info "Environment captured"
+
+# Check DISPLAY environment variable (required for headed Playwright)
+log_info "Checking DISPLAY environment variable..."
+if [ -z "${DISPLAY:-}" ]; then
+  log_error "DISPLAY environment variable not set"
+  log_error "Remediation: export DISPLAY=:0 (or appropriate X display)"
+  log_error "This is required for headed Playwright and auth capture"
+  echo "FAIL: DISPLAY not set" > "$E/99_verdict/FAIL_REASON.txt"
+  exit 1
+fi
+log_success "DISPLAY set: $DISPLAY"
+
+# Verify X server is available
+log_info "Verifying X server availability..."
+if ! command -v xdpyinfo >/dev/null 2>&1; then
+  log_error "xdpyinfo command not found (cannot verify X server)"
+  log_error "Remediation: apt-get install x11-utils or similar"
+  echo "FAIL: xdpyinfo not found" > "$E/99_verdict/FAIL_REASON.txt"
+  exit 1
+fi
+
+if ! xdpyinfo >/dev/null 2>&1; then
+  log_error "X server not available at DISPLAY=$DISPLAY"
+  log_error "Remediation:"
+  log_error "  1. Ensure NoVNC or X server is running"
+  log_error "  2. Check DISPLAY value is correct"
+  log_error "  3. Try: echo \$DISPLAY"
+  echo "FAIL: X server not available" > "$E/99_verdict/FAIL_REASON.txt"
+  exit 1
+fi
+log_success "X server available"
+
+# Set defaults for Jira URLs
+export JIRA_SITE="${JIRA_SITE:-firsttry.atlassian.net}"
+export JIRA_DASHBOARD_URL="${JIRA_DASHBOARD_URL:-https://firsttry.atlassian.net/jira/dashboards/10102}"
+
+log_info "Target site: $JIRA_SITE"
+log_info "Dashboard URL: $JIRA_DASHBOARD_URL"
+
+# Check repo cleanliness
+log_info "Checking repository cleanliness..."
+DIRTY=$(git status --porcelain)
+if [ -n "$DIRTY" ]; then
+  log_error "Repository has uncommitted changes:"
+  echo "$DIRTY"
+  log_error "Commit or stash changes before running release."
+  echo "FAIL: Repository has uncommitted changes" > "$E/99_verdict/FAIL_REASON.txt"
+  exit 1
+fi
+log_success "Repository is clean"
 
 # Hard requirements check
 log_info "Verifying required tools..."
@@ -114,7 +263,7 @@ log_info "Working directory: $(pwd)"
 
 # 1.1 - Realworld gates
 log_info "[1/6] Running Realworld gates..."
-if ! bash tools/realworld/run_realworld_gates.sh 2>&1 | tee "$E/01_ci/realworld.log"; then
+if ! bash tools/realworld/run_realworld_gates.sh 2>&1 | tee "$E/01_gates/realworld.log"; then
   log_error "Realworld gates failed"
   echo "FAIL: Realworld gates" > "$E/99_verdict/FINAL_VERDICT.txt"
   exit 1
@@ -127,9 +276,9 @@ if [ ! -f "$REALWORLD_SUMMARY" ]; then
   exit 1
 fi
 
-cp "$REALWORLD_SUMMARY" "$E/01_ci/REALWORLD_SUMMARY.json"
+cp "$REALWORLD_SUMMARY" "$E/01_gates/REALWORLD_SUMMARY.json"
 
-REALWORLD_STATUS=$(jq -r '.final.status // "UNKNOWN"' "$E/01_ci/REALWORLD_SUMMARY.json")
+REALWORLD_STATUS=$(jq -r '.final.status // "UNKNOWN"' "$E/01_gates/REALWORLD_SUMMARY.json")
 if [ "$REALWORLD_STATUS" != "PASS" ]; then
   log_error "Realworld gates status: $REALWORLD_STATUS (expected PASS)"
   echo "FAIL: Realworld gates status=$REALWORLD_STATUS" > "$E/99_verdict/FINAL_VERDICT.txt"
@@ -139,7 +288,7 @@ log_success "Realworld gates: PASS"
 
 # 1.2 - Deterministic audit
 log_info "[2/6] Running deterministic audit..."
-if ! FT_REALWORLD_GATES=1 bash tools/audit/v3_1/run_deterministic.sh 2>&1 | tee "$E/01_ci/audit.log"; then
+if ! FT_REALWORLD_GATES=1 bash tools/audit/v3_1/run_deterministic.sh 2>&1 | tee "$E/01_gates/audit.log"; then
   log_error "Audit failed"
   echo "FAIL: Audit" > "$E/99_verdict/FINAL_VERDICT.txt"
   exit 1
@@ -152,10 +301,10 @@ if [ -z "$AUDIT_DIR" ] || [ ! -f "$AUDIT_DIR/artifacts/results.json" ]; then
   exit 1
 fi
 
-cp "$AUDIT_DIR/artifacts/results.json" "$E/01_ci/results.json"
+cp "$AUDIT_DIR/artifacts/results.json" "$E/01_gates/results.json"
 
-FAIL_COUNT=$(jq -r '.fail_count // 999' "$E/01_ci/results.json")
-BLOCKING_HIGH=$(jq -r '.blocking_high_count // 999' "$E/01_ci/results.json")
+FAIL_COUNT=$(jq -r '.fail_count // 999' "$E/01_gates/results.json")
+BLOCKING_HIGH=$(jq -r '.blocking_high_count // 999' "$E/01_gates/results.json")
 
 if [ "$FAIL_COUNT" != "0" ] || [ "$BLOCKING_HIGH" != "0" ]; then
   log_error "Audit failed: fail_count=$FAIL_COUNT, blocking_high_count=$BLOCKING_HIGH"
@@ -166,7 +315,7 @@ log_success "Audit: PASS (fail_count=0, blocking_high=0)"
 
 # 1.3 - Marketplace pack verifier
 log_info "[3/6] Running marketplace pack verifier..."
-if ! bash tools/marketplace/verify_privacy_security_pack.sh 2>&1 | tee "$E/01_ci/marketplace_pack.log"; then
+if ! bash tools/marketplace/verify_privacy_security_pack.sh 2>&1 | tee "$E/01_gates/marketplace_pack.log"; then
   log_error "Marketplace pack verification failed"
   echo "FAIL: Marketplace pack" > "$E/99_verdict/FINAL_VERDICT.txt"
   exit 1
@@ -179,9 +328,9 @@ if [ -z "$PACK_DIR" ] || [ ! -f "$PACK_DIR/05_verdict/VERDICT.txt" ]; then
   exit 1
 fi
 
-cp "$PACK_DIR/05_verdict/VERDICT.txt" "$E/01_ci/MARKETPLACE_PACK_VERDICT.txt"
+cp "$PACK_DIR/05_verdict/VERDICT.txt" "$E/01_gates/MARKETPLACE_PACK_VERDICT.txt"
 
-if ! grep -q "PASS" "$E/01_ci/MARKETPLACE_PACK_VERDICT.txt"; then
+if ! grep -q "PASS" "$E/01_gates/MARKETPLACE_PACK_VERDICT.txt"; then
   log_error "Marketplace pack verdict is not PASS"
   echo "FAIL: Marketplace pack verdict != PASS" > "$E/99_verdict/FINAL_VERDICT.txt"
   exit 1
@@ -194,7 +343,7 @@ log_info "[4/6] Running claims consistency check..."
 TF_DIR=$(readlink -f /tmp/ft_marketplace_trustfacts_latest 2>/dev/null || echo "")
 if [ -z "$TF_DIR" ] || [ ! -d "$TF_DIR" ]; then
   log_info "Trust facts not found, regenerating..."
-  if ! bash tools/marketplace/regenerate_trust_facts.sh 2>&1 | tee "$E/01_ci/trustfacts_regen.log"; then
+  if ! bash tools/marketplace/regenerate_trust_facts.sh 2>&1 | tee "$E/01_gates/trustfacts_regen.log"; then
     log_error "Trust facts regeneration failed"
     echo "FAIL: Trust facts regeneration" > "$E/99_verdict/FINAL_VERDICT.txt"
     exit 1
@@ -204,13 +353,13 @@ fi
 
 V="$TF_DIR/verifiers"
 
-if ! bash tools/marketplace/extract_trust_doc_claims.sh "$V" 2>&1 | tee "$E/01_ci/claims_extract.log"; then
+if ! bash tools/marketplace/extract_trust_doc_claims.sh "$V" 2>&1 | tee "$E/01_gates/claims_extract.log"; then
   log_error "Claims extraction failed"
   echo "FAIL: Claims extraction" > "$E/99_verdict/FINAL_VERDICT.txt"
   exit 1
 fi
 
-if ! bash tools/marketplace/verify_claims_consistency.sh "$V" 2>&1 | tee "$E/01_ci/claims_verify.log"; then
+if ! bash tools/marketplace/verify_claims_consistency.sh "$V" 2>&1 | tee "$E/01_gates/claims_verify.log"; then
   log_error "Claims consistency check failed"
   echo "FAIL: Claims consistency" > "$E/99_verdict/FINAL_VERDICT.txt"
   exit 1
@@ -222,9 +371,9 @@ if [ ! -f "$V/02_claims/VERDICT.txt" ]; then
   exit 1
 fi
 
-cp "$V/02_claims/VERDICT.txt" "$E/01_ci/CLAIMS_VERDICT.txt"
+cp "$V/02_claims/VERDICT.txt" "$E/01_gates/CLAIMS_VERDICT.txt"
 
-if ! grep -q "PASS" "$E/01_ci/CLAIMS_VERDICT.txt"; then
+if ! grep -q "PASS" "$E/01_gates/CLAIMS_VERDICT.txt"; then
   log_error "Claims consistency verdict is not PASS"
   echo "FAIL: Claims consistency != PASS" > "$E/99_verdict/FINAL_VERDICT.txt"
   exit 1
@@ -233,7 +382,7 @@ log_success "Claims consistency: PASS"
 
 # 1.5 - Offline docs linkability
 log_info "[5/6] Running offline docs linkability check..."
-if ! bash tools/marketplace/build_docs_site_offline.sh "$E" 2>&1 | tee "$E/01_ci/docs_offline.log"; then
+if ! bash tools/marketplace/build_docs_site_offline.sh "$E" 2>&1 | tee "$E/01_gates/docs_offline.log"; then
   log_error "Offline docs linkability check failed"
   echo "FAIL: Offline docs linkability" > "$E/99_verdict/FINAL_VERDICT.txt"
   exit 1
@@ -242,7 +391,7 @@ fi
 # Note: build_docs_site_offline.sh may fail on workspace-level docs (non-trust docs)
 # We only care about trust docs linkability for marketplace
 if [ -f "$E/05_links/VERDICT.txt" ]; then
-  cp "$E/05_links/VERDICT.txt" "$E/01_ci/DOCS_LINKABILITY_VERDICT.txt"
+  cp "$E/05_links/VERDICT.txt" "$E/01_gates/DOCS_LINKABILITY_VERDICT.txt"
   # Allow FAIL if only workspace-level links are broken (trust docs should be fine)
   log_info "Docs linkability check completed (see verdict for details)"
 else
@@ -672,7 +821,7 @@ GIT_BRANCH=$(git branch --show-current)
   echo "- Deterministic audit: ✅ PASS (fail_count=$FAIL_COUNT, blocking_high=$BLOCKING_HIGH)"
   echo "- Marketplace pack: ✅ PASS"
   echo "- Claims consistency: ✅ PASS"
-  echo "- Docs linkability: ✅ $([ -f "$E/01_ci/DOCS_LINKABILITY_VERDICT.txt" ] && cat "$E/01_ci/DOCS_LINKABILITY_VERDICT.txt" || echo "Checked")"
+  echo "- Docs linkability: ✅ $([ -f "$E/01_gates/DOCS_LINKABILITY_VERDICT.txt" ] && cat "$E/01_gates/DOCS_LINKABILITY_VERDICT.txt" || echo "Checked")"
   echo ""
   echo "### Phase 2: Branch Sync"
   echo "- Main branch: ✅ PASS (synced with origin/main)"
@@ -706,10 +855,10 @@ GIT_BRANCH=$(git branch --show-current)
   echo "- Stable symlink: \`/tmp/ft_marketplace_release_latest\`"
   echo ""
   echo "### Key Files"
-  echo "- Realworld summary: \`$E/01_ci/REALWORLD_SUMMARY.json\`"
-  echo "- Audit results: \`$E/01_ci/results.json\`"
-  echo "- Marketplace pack verdict: \`$E/01_ci/MARKETPLACE_PACK_VERDICT.txt\`"
-  echo "- Claims verdict: \`$E/01_ci/CLAIMS_VERDICT.txt\`"
+  echo "- Realworld summary: \`$E/01_gates/REALWORLD_SUMMARY.json\`"
+  echo "- Audit results: \`$E/01_gates/results.json\`"
+  echo "- Marketplace pack verdict: \`$E/01_gates/MARKETPLACE_PACK_VERDICT.txt\`"
+  echo "- Claims verdict: \`$E/01_gates/CLAIMS_VERDICT.txt\`"
   echo "- Deploy log: \`$E/04_deploy/deploy.log\`"
   echo "- E2E test log: \`$E/06_e2e/test_run.log\`"
   echo "- E2E artifacts: \`$E/06_e2e/artifacts/\`"
