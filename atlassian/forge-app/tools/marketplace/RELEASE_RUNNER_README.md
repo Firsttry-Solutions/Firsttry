@@ -188,13 +188,16 @@ Evidence validation is fail-closed and working correctly.
 - Validates log file is created with diagnostic output
 - Ensures fail-closed behavior without downloading browsers
 
-**Subtest 7: Phase 2 Out-of-Sync Failure Evidence**
-- Simulates Phase 2 (branch sync) out-of-sync failure scenario
-- Verifies `02_merge/VERDICT.txt` exists and contains "FAIL: out of sync"
-- Validates `02_merge/merge.log` exists and is non-empty
-- Validates `02_merge/fetch.log` exists and is non-empty
-- Validates `02_merge/rev.txt` contains both LOCAL= and REMOTE= lines
-- Ensures complete failure diagnostics on sync check failure
+**Subtest 7: Phase 2 Out-of-Sync Failure Evidence (Real Git Test)**
+- Creates temporary bare git origin repo and working clone
+- Sets up scenario where clone is 1 commit behind origin/main
+- Calls `phase2_verify_branch_sync()` function directly on the out-of-sync clone
+- Verifies function returns non-zero exit code (failure as expected)
+- Validates `VERDICT.txt` exists and contains "FAIL: out of sync"
+- Validates `merge.log`, `fetch.log`, `rev.txt`, and `branch.txt` exist and are non-empty
+- Confirms LOCAL and REMOTE SHAs in `rev.txt` are different (proving out-of-sync detection)
+- Ensures evidence directory is isolated (not under `/tmp/ft_marketplace_release_*`)
+- Tests the ACTUAL Phase 2 logic with REAL git operations (no simulation)
 
 **Subtest 8: Exit Code Invariant**
 - Creates complete evidence with all PASS verdicts
@@ -252,6 +255,17 @@ Add selftest to CI workflow to validate the validation logic:
 ## Phase 2 Sync Evidence
 
 Phase 2 (Branch Sync Verification) ensures that your local `main` branch is synchronized with `origin/main` before allowing the release to proceed. This is a **hard gate** - if out of sync, the runner fails immediately with complete diagnostic evidence.
+
+### Implementation
+
+Phase 2 is implemented as a **reusable function** `phase2_verify_branch_sync(repo_root, evidence_dir)` that can be called with any repository path. This makes it testable in isolation using real git operations.
+
+**Phase tracking infrastructure:**
+- `phase_enter(phase_dir, phase_name)`: Sets global `CURRENT_PHASE_DIR` and `CURRENT_PHASE_NAME`
+- Phase-aware `die()`: If called unexpectedly during a phase, writes VERDICT.txt and ensures log exists
+- `CURRENT_PHASE_DIR=""` after phase completion: Clears phase context
+
+This ensures that even if `die()` is called unexpectedly (e.g., disk full, command not found), evidence is always written to the correct phase directory.
 
 ### Success Evidence (In Sync)
 

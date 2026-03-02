@@ -41,8 +41,20 @@ log_phase() { echo -e "${BLUE}════════════════�
 # Fail-closed helper functions
 now_utc() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
+# Global phase tracking for die() safety
+CURRENT_PHASE_DIR=""
+CURRENT_PHASE_NAME=""
+
 die() {
-  log_error "$*"
+  local msg="$*"
+  log_error "$msg"
+  
+  # Phase-aware die: if we're in a phase, write evidence before exit
+  if [ -n "$CURRENT_PHASE_DIR" ] && [ -d "$CURRENT_PHASE_DIR" ]; then
+    write_verdict "$CURRENT_PHASE_DIR" "FAIL: $msg"
+    ensure_nonempty_log "$CURRENT_PHASE_DIR/phase.log" "DIE: $msg ($(now_utc))"
+  fi
+  
   exit 1
 }
 
@@ -57,10 +69,25 @@ ensure_nonempty_log() {
   local log_path="$1"
   local fallback_message="${2:-No output captured}"
   
-  # If log doesn't exist or is empty, write fallback
+  # If log doesn't exist or is empty, write fallback with timestamp
   if [ ! -f "$log_path" ] || [ ! -s "$log_path" ]; then
-    echo "$fallback_message" > "$log_path"
+    echo "[$(now_utc)] $fallback_message" > "$log_path"
   fi
+}
+
+# Enter a phase - sets global context and creates phase.log
+phase_enter() {
+  local phase_dir="$1"
+  local phase_name="$2"
+  
+  CURRENT_PHASE_DIR="$phase_dir"
+  CURRENT_PHASE_NAME="$phase_name"
+  
+  # Ensure phase directory exists
+  mkdir -p "$phase_dir"
+  
+  # Create non-empty phase.log
+  echo "[$(now_utc)] ENTER: $phase_name" > "$phase_dir/phase.log"
 }
 
 # Mark a phase as failed and exit immediately with proper evidence
@@ -89,6 +116,140 @@ mark_phase_fail_and_exit() {
   
   # Exit with specified code (finalize will be called by trap)
   exit "$exit_code"
+}
+
+# Phase 2: Branch Sync Verification (Standalone function for testing)
+# Can be called with arbitrary repo path for selftest
+phase2_verify_branch_sync() {
+  local repo_root="$1"
+  local evidence_dir="$2"
+  
+  # Ensure evidence directory exists
+  mkdir -p "$evidence_dir"
+  
+  cd "$repo_root"
+  
+  # Determine current branch
+  local current_branch
+  current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+  echo "$current_branch" > "$evidence_dir/branch.txt"
+  
+  # Write fetch.log header BEFORE fetch (ensures non-empty even if fetch is silent)
+  {
+    echo "════════════════════════════════════════════════════════════"
+    echo "Git Fetch: origin/main"
+    echo "════════════════════════════════════════════════════════════"
+    echo "Timestamp: $(now_utc)"
+    echo ""
+  } > "$evidence_dir/fetch.log"
+  
+  # Run git fetch and append to log
+  git fetch origin >> "$evidence_dir/fetch.log" 2>&1 || true
+  
+  # Append footer to fetch.log
+  {
+    echo ""
+    echo "Fetch completed at: $(now_utc)"
+  } >> "$evidence_dir/fetch.log"
+  
+  # Compute LOCAL and REMOTE SHAs
+  local local_sha
+  local remote_sha
+  local_sha=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+  remote_sha=$(git rev-parse origin/main 2>/dev/null || echo "unknown")
+  
+  # Write rev.txt (non-empty)
+  {
+    echo "LOCAL=$local_sha"
+    echo "REMOTE=$remote_sha"
+  } > "$evidence_dir/rev.txt"
+  
+  # Check if on main branch
+  if [ "$current_branch" != "main" ]; then
+    # Write detailed merge.log
+    {
+      echo "════════════════════════════════════════════════════════════"
+      echo "PHASE 2 FAILURE: Not on main branch"
+      echo "════════════════════════════════════════════════════════════"
+      echo ""
+      echo "Timestamp: $(now_utc)"
+      echo ""
+      echo "Branch Status:"
+      echo "  Current branch: $current_branch"
+      echo "  Expected:       main"
+      echo ""
+      echo "The release runner must be executed from the main branch."
+      echo ""
+      echo "Remediation Steps:"
+      echo "  1. git checkout main"
+      echo "  2. git pull origin main"
+      echo "  3. Re-run the release runner"
+      echo ""
+    } > "$evidence_dir/merge.log"
+    
+    write_verdict "$evidence_dir" "FAIL: not on main branch (current: $current_branch)"
+    return 1
+  fi
+  
+  # Check if local and remote are in sync
+  if [ "$local_sha" != "$remote_sha" ]; then
+    # Write detailed merge.log
+    {
+      echo "════════════════════════════════════════════════════════════"
+      echo "PHASE 2 FAILURE: Out of sync with origin/main"
+      echo "════════════════════════════════════════════════════════════"
+      echo ""
+      echo "Timestamp: $(now_utc)"
+      echo ""
+      echo "Branch Status:"
+      echo "  Current branch: $current_branch"
+      echo "  Local HEAD:     $local_sha"
+      echo "  Remote HEAD:    $remote_sha"
+      echo ""
+      echo "The local main branch is not synchronized with origin/main."
+      echo "This typically means:"
+      echo "  - Someone pushed changes to origin/main after you last pulled"
+      echo "  - Your local branch is behind or has diverged"
+      echo ""
+      echo "Remediation Steps:"
+      echo "  1. git pull origin main"
+      echo "  2. Resolve any merge conflicts if present"
+      echo "  3. Ensure all tests pass locally"
+      echo "  4. Re-run the release runner"
+      echo ""
+      echo "Evidence files:"
+      echo "  - $evidence_dir/rev.txt (contains LOCAL and REMOTE SHAs)"
+      echo "  - $evidence_dir/fetch.log (git fetch output)"
+      echo "  - $evidence_dir/branch.txt (current branch name)"
+      echo ""
+    } > "$evidence_dir/merge.log"
+    
+    write_verdict "$evidence_dir" "FAIL: out of sync with origin/main"
+    return 1
+  fi
+  
+  # Success path - write evidence
+  {
+    echo "════════════════════════════════════════════════════════════"
+    echo "Phase 2: Branch Sync Check - PASS"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Timestamp: $(now_utc)"
+    echo ""
+    echo "Branch Status:"
+    echo "  Current branch: $current_branch"
+    echo "  Local HEAD:     $local_sha"
+    echo "  Remote HEAD:    $remote_sha"
+    echo ""
+    echo "✓ Local main is in sync with origin/main"
+    echo "✓ SHA match confirmed: $local_sha"
+    echo ""
+    echo "The repository is ready for release deployment."
+    echo ""
+  } > "$evidence_dir/merge.log"
+  
+  write_verdict "$evidence_dir" "PASS"
+  return 0
 }
 
 # Strict artifact validation - enforces PASS cannot be generated without complete evidence
@@ -862,61 +1023,70 @@ run_selftest() {
   echo ""
   
   # -------------------------------------------------------------------------
-  # SUBTEST 7: Phase 2 out-of-sync failure evidence
+  # SUBTEST 7: Phase 2 out-of-sync failure evidence (REAL git test)
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 7/8] Phase 2 out-of-sync: Complete failure evidence"
+  log_info "[SUBTEST 7/8] Phase 2 out-of-sync: Real git test with complete failure evidence"
   
-  local phase2_test_dir="$selftest_dir/phase2_out_of_sync"
-  mkdir -p "$phase2_test_dir"/{00_env,01_gates,02_merge,99_verdict}
+  # Create temporary git repos for testing
+  local git_test_root="$selftest_dir/git_test"
+  local origin_repo="$git_test_root/origin.git"
+  local working_repo="$git_test_root/working"
+  local clone_repo="$git_test_root/clone"
+  local phase2_evidence="$git_test_root/evidence"
   
-  # Simulate Phase 2 failure by creating evidence as if mark_phase_fail_and_exit was called
-  # This tests that Phase 2 produces all required files on out-of-sync failure
+  mkdir -p "$git_test_root" "$phase2_evidence"
   
-  # Create merge.log with detailed failure info
-  {
-    echo "════════════════════════════════════════════════════════════"
-    echo "PHASE 2 FAILURE: Out of sync with origin/main"
-    echo "════════════════════════════════════════════════════════════"
-    echo ""
-    echo "Timestamp: 2026-03-02T14:00:00Z"
-    echo ""
-    echo "Branch Status:"
-    echo "  Current branch: main"
-    echo "  Local HEAD:     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    echo "  Remote HEAD:    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-    echo ""
-    echo "The local main branch is not synchronized with origin/main."
-  } > "$phase2_test_dir/02_merge/merge.log"
+  # Create bare origin repo
+  git init --bare "$origin_repo" >/dev/null 2>&1
   
-  # Create fetch.log (non-empty)
-  {
-    echo "════════════════════════════════════════════════════════════"
-    echo "Git Fetch: origin/main"
-    echo "════════════════════════════════════════════════════════════"
-    echo "Timestamp: 2026-03-02T14:00:00Z"
-    echo ""
-    echo "From github.com:example/repo"
-    echo " * branch            main       -> FETCH_HEAD"
-  } > "$phase2_test_dir/02_merge/fetch.log"
+  # Create working repo and make initial commit
+  git init "$working_repo" >/dev/null 2>&1
+  cd "$working_repo"
+  git config user.email "test@example.com"
+  git config user.name "Test User"
   
-  # Create rev.txt with LOCAL and REMOTE
-  {
-    echo "LOCAL=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    echo "REMOTE=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-  } > "$phase2_test_dir/02_merge/rev.txt"
+  # Create initial commit on main
+  echo "initial" > README.md
+  git add README.md
+  git commit -m "Initial commit" >/dev/null 2>&1
+  git branch -M main
+  git remote add origin "$origin_repo"
+  git push -u origin main >/dev/null 2>&1
   
-  # Create VERDICT.txt
-  echo "FAIL: out of sync with origin/main" > "$phase2_test_dir/02_merge/VERDICT.txt"
+  # Clone the repo (this will be at the same commit as origin)
+  git clone "$origin_repo" "$clone_repo" >/dev/null 2>&1
+  cd "$clone_repo"
+  git config user.email "test@example.com"
+  git config user.name "Test User"
   
-  # Create branch.txt
-  echo "main" > "$phase2_test_dir/02_merge/branch.txt"
+  # Now make a new commit in working repo and push (clone will be behind)
+  cd "$working_repo"
+  echo "new change" >> README.md
+  git add README.md
+  git commit -m "Second commit" >/dev/null 2>&1
+  git push origin main >/dev/null 2>&1
+  
+  # Now clone_repo is 1 commit behind origin/main
+  # Run phase2_verify_branch_sync on clone (should fail)
+  cd "$clone_repo"
+  
+  local phase2_result=0
+  phase2_verify_branch_sync "$clone_repo" "$phase2_evidence" || phase2_result=$?
+  
+  # Verify Phase 2 failed (should return non-zero)
+  if [ $phase2_result -ne 0 ]; then
+    log_success "✓ Phase 2 test: phase2_verify_branch_sync returned non-zero ($phase2_result)"
+  else
+    log_error "✗ Phase 2 test: phase2_verify_branch_sync should have failed (clone is behind)"
+    test_failed=1
+  fi
   
   # Verify all required files exist and are non-empty
   local phase2_checks_passed=true
   
   # Check VERDICT.txt
-  if [ -f "$phase2_test_dir/02_merge/VERDICT.txt" ]; then
-    if grep -q "^FAIL: out of sync" "$phase2_test_dir/02_merge/VERDICT.txt"; then
+  if [ -f "$phase2_evidence/VERDICT.txt" ]; then
+    if grep -q "^FAIL: out of sync" "$phase2_evidence/VERDICT.txt"; then
       log_success "✓ Phase 2 test: VERDICT.txt exists and contains 'FAIL: out of sync'"
     else
       log_error "✗ Phase 2 test: VERDICT.txt should contain 'FAIL: out of sync'"
@@ -928,7 +1098,7 @@ run_selftest() {
   fi
   
   # Check merge.log
-  if [ -f "$phase2_test_dir/02_merge/merge.log" ] && [ -s "$phase2_test_dir/02_merge/merge.log" ]; then
+  if [ -f "$phase2_evidence/merge.log" ] && [ -s "$phase2_evidence/merge.log" ]; then
     log_success "✓ Phase 2 test: merge.log exists and is non-empty"
   else
     log_error "✗ Phase 2 test: merge.log missing or empty"
@@ -936,7 +1106,7 @@ run_selftest() {
   fi
   
   # Check fetch.log
-  if [ -f "$phase2_test_dir/02_merge/fetch.log" ] && [ -s "$phase2_test_dir/02_merge/fetch.log" ]; then
+  if [ -f "$phase2_evidence/fetch.log" ] && [ -s "$phase2_evidence/fetch.log" ]; then
     log_success "✓ Phase 2 test: fetch.log exists and is non-empty"
   else
     log_error "✗ Phase 2 test: fetch.log missing or empty"
@@ -944,10 +1114,23 @@ run_selftest() {
   fi
   
   # Check rev.txt for LOCAL and REMOTE
-  if [ -f "$phase2_test_dir/02_merge/rev.txt" ]; then
-    if grep -q "^LOCAL=" "$phase2_test_dir/02_merge/rev.txt" && \
-       grep -q "^REMOTE=" "$phase2_test_dir/02_merge/rev.txt"; then
+  if [ -f "$phase2_evidence/rev.txt" ]; then
+    if grep -q "^LOCAL=" "$phase2_evidence/rev.txt" && \
+       grep -q "^REMOTE=" "$phase2_evidence/rev.txt"; then
       log_success "✓ Phase 2 test: rev.txt contains LOCAL= and REMOTE="
+      
+      # Verify LOCAL and REMOTE are different (proving out-of-sync)
+      local local_sha
+      local remote_sha
+      local_sha=$(grep "^LOCAL=" "$phase2_evidence/rev.txt" | cut -d= -f2)
+      remote_sha=$(grep "^REMOTE=" "$phase2_evidence/rev.txt" | cut -d= -f2)
+      
+      if [ "$local_sha" != "$remote_sha" ]; then
+        log_success "✓ Phase 2 test: LOCAL and REMOTE SHAs differ (confirmed out-of-sync)"
+      else
+        log_error "✗ Phase 2 test: LOCAL and REMOTE should differ in out-of-sync scenario"
+        phase2_checks_passed=false
+      fi
     else
       log_error "✗ Phase 2 test: rev.txt should contain LOCAL= and REMOTE="
       phase2_checks_passed=false
@@ -957,9 +1140,36 @@ run_selftest() {
     phase2_checks_passed=false
   fi
   
+  # Check branch.txt
+  if [ -f "$phase2_evidence/branch.txt" ]; then
+    if grep -q "^main$" "$phase2_evidence/branch.txt"; then
+      log_success "✓ Phase 2 test: branch.txt exists and contains 'main'"
+    else
+      log_error "✗ Phase 2 test: branch.txt should contain 'main'"
+      phase2_checks_passed=false
+    fi
+  else
+    log_error "✗ Phase 2 test: branch.txt not created"
+    phase2_checks_passed=false
+  fi
+  
+  # CRITICAL: Verify evidence directory is NOT under /tmp/ft_marketplace_release_*
+  # This proves selftest doesn't pollute production evidence directories
+  if echo "$phase2_evidence" | grep -q "/tmp/ft_marketplace_release_"; then
+    log_error "✗ Phase 2 test: Evidence directory is under /tmp/ft_marketplace_release_* (pollution)"
+    phase2_checks_passed=false
+  else
+    log_success "✓ Phase 2 test: Evidence directory is isolated (no production pollution)"
+  fi
+  
   if [ "$phase2_checks_passed" = false ]; then
     test_failed=1
   fi
+  
+  # Clean up git test repos
+  cd "$selftest_dir"
+  rm -rf "$git_test_root"
+  
   echo ""
   
   # -------------------------------------------------------------------------
@@ -1445,124 +1655,24 @@ log_success "Phase 1: PASS"
 
 log_phase "PHASE 2: Branch Sync Verification"
 
-cd "$REPO_ROOT"
+# Enter phase (sets CURRENT_PHASE_DIR for die() safety)
+phase_enter "$E/02_merge" "PHASE 2: Branch Sync Verification"
 
-CURRENT_BRANCH=$(git branch --show-current)
-echo "$CURRENT_BRANCH" > "$E/02_merge/branch.txt"
-
-log_info "Current branch: $CURRENT_BRANCH"
-
-# Check if on main branch
-if [ "$CURRENT_BRANCH" != "main" ]; then
-  log_error "Not on main branch (current: $CURRENT_BRANCH)"
-  log_error "Checkout main and ensure PR is merged before running release"
-  
-  # Write failure evidence
-  mark_phase_fail_and_exit "$E/02_merge" \
-    "not on main branch (current: $CURRENT_BRANCH)" \
-    "$E/02_merge/merge.log" \
-    1
-fi
-
-# Fetch origin/main (ensure log is non-empty with headers)
-log_info "Fetching origin/main..."
-{
-  echo "════════════════════════════════════════════════════════════"
-  echo "Git Fetch: origin/main"
-  echo "════════════════════════════════════════════════════════════"
-  echo "Timestamp: $(now_utc)"
-  echo ""
-  git fetch origin 2>&1
-  echo ""
-  echo "Fetch completed at: $(now_utc)"
-} | tee "$E/02_merge/fetch.log"
-
-# Ensure fetch.log is non-empty even if fetch was silent
-ensure_nonempty_log "$E/02_merge/fetch.log" "Git fetch completed (no output)"
-
-# Get local and remote SHA
-LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/main)
-
-echo "LOCAL=$LOCAL" > "$E/02_merge/rev.txt"
-echo "REMOTE=$REMOTE" >> "$E/02_merge/rev.txt"
-
-log_info "Local HEAD:  $LOCAL"
-log_info "Remote HEAD: $REMOTE"
-
-# Check sync status
-if [ "$LOCAL" != "$REMOTE" ]; then
-  log_error "Local main is out of sync with origin/main"
-  log_error "Local:  $LOCAL"
-  log_error "Remote: $REMOTE"
-  log_error ""
-  log_error "Remediation:"
-  log_error "  1. git pull origin main"
-  log_error "  2. Resolve any conflicts"
-  log_error "  3. Re-run release runner"
-  
-  # Write detailed failure evidence to merge.log
-  {
-    echo "════════════════════════════════════════════════════════════"
-    echo "PHASE 2 FAILURE: Out of sync with origin/main"
-    echo "════════════════════════════════════════════════════════════"
-    echo ""
-    echo "Timestamp: $(now_utc)"
-    echo ""
-    echo "Branch Status:"
-    echo "  Current branch: $CURRENT_BRANCH"
-    echo "  Local HEAD:     $LOCAL"
-    echo "  Remote HEAD:    $REMOTE"
-    echo ""
-    echo "The local main branch is not synchronized with origin/main."
-    echo "This typically means:"
-    echo "  - Someone pushed changes to origin/main after you last pulled"
-    echo "  - Your local branch is behind or has diverged"
-    echo ""
-    echo "Remediation Steps:"
-    echo "  1. git pull origin main"
-    echo "  2. Resolve any merge conflicts if present"
-    echo "  3. Ensure all tests pass locally"
-    echo "  4. Re-run the release runner"
-    echo ""
-    echo "Evidence files:"
-    echo "  - $E/02_merge/rev.txt (contains LOCAL and REMOTE SHAs)"
-    echo "  - $E/02_merge/fetch.log (git fetch output)"
-    echo "  - $E/02_merge/branch.txt (current branch name)"
-    echo ""
-  } > "$E/02_merge/merge.log"
-  
-  # Write FAIL verdict and exit
-  write_verdict "$E/02_merge" "FAIL: out of sync with origin/main"
-  log_error "Phase 2: FAIL (out of sync)"
+# Run Phase 2 logic
+if ! phase2_verify_branch_sync "$REPO_ROOT" "$E/02_merge"; then
+  log_error "Phase 2: FAIL (branch sync check)"
   exit 1
 fi
 
-# Success path - write evidence
-{
-  echo "════════════════════════════════════════════════════════════"
-  echo "Phase 2: Branch Sync Check - PASS"
-  echo "════════════════════════════════════════════════════════════"
-  echo ""
-  echo "Timestamp: $(now_utc)"
-  echo ""
-  echo "Branch Status:"
-  echo "  Current branch: $CURRENT_BRANCH"
-  echo "  Local HEAD:     $LOCAL"
-  echo "  Remote HEAD:    $REMOTE"
-  echo ""
-  echo "✓ Local main is in sync with origin/main"
-  echo "✓ SHA match confirmed: $LOCAL"
-  echo ""
-  echo "The repository is ready for release deployment."
-  echo ""
-} > "$E/02_merge/merge.log"
-
+# Phase 2 PASS - write additional metadata
 echo "OK: main in sync with origin/main" > "$E/02_merge/MERGE_STATUS.txt"
-write_verdict "$E/02_merge" "PASS"
 
 log_success "Branch sync: OK"
 log_success "Phase 2: PASS"
+
+# Clear phase context
+CURRENT_PHASE_DIR=""
+CURRENT_PHASE_NAME=""
 
 # ============================================================================
 # PHASE 3 — BUILD/PACKAGE SANITY (HARD GATE)
