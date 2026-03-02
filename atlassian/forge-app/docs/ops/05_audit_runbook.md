@@ -526,20 +526,33 @@ cat SCORING_SUMMARY.json
 
 The audit is designed for deterministic, repeatable results:
 
-## Optional: Real-World Capability Gates (Scale/Concurrency/License)
+## Optional: Real-World Capability Gates v2 (50k Scale + Storage I/O + Multi-Tenant Isolation)
 
 ### Overview
 
-Real-world capability gates validate that FirstTry can handle production-scale workloads and paid feature gating. These tests are **optional** and add ~30-60 seconds to audit runtime.
+Real-world capability gates v2 validate that FirstTry can handle production-scale workloads, maintain multi-tenant isolation, and enforce paid feature gating. These tests are **optional** and add ~60-120 seconds to audit runtime.
+
+**CRITICAL CLARIFICATION: "Entities" vs. "Tenants"**
+
+These tests generate **synthetic data entities** (user accounts, projects, diff records), NOT real tenants or real Jira instances. We CANNOT simulate 5000 tenants offline without Forge auth. Instead:
+- **50,000 entities**: 10k admins + 10k shadow admins + 10k projects + 20k diff items
+- **5 simulated tenants**: Used for multi-tenant isolation testing (t1..t5 with deterministic keys)
+
+This validates performance at realistic enterprise scale within a single test environment.
 
 **What is tested:**
-1. **Scale Test**: Generate and process 5000-object evidence snapshots (HTML reports, diagnostic bundles)
-2. **Concurrency Stress**: Run 100/500/1000 parallel operations to verify thread safety
-3. **License State Tests**: Verify paid feature gating works correctly (baseline/pro/enterprise plans)
+
+1. **Multi-Tenant Isolation (100k keys)**: Verify key builder prevents collisions across 5 tenants
+2. **Storage I/O Stress (50k keys)**: Test storage layer with 5 tenants × 10k keys, realistic JSON blobs
+3. **Scale Test 5k entities**: Original baseline test (HTML generation for 5000 entities)
+4. **Scale Test 50k entities**: Extended scale test (HTML generation for 50,000 entities)
+5. **Concurrency Stress (1000 parallel ops)**: Verify thread safety under concurrent load
+6. **License State Tests**: Verify paid feature gating (baseline/pro/enterprise plans)
 
 **When to run:**
 - Before marketplace submissions
 - Before major releases
+- When validating multi-tenant isolation fixes
 - When validating performance regression fixes
 - When testing on new infrastructure
 
@@ -572,31 +585,49 @@ cat /tmp/ft_realworld_latest/artifacts/REALWORLD_SUMMARY.json | jq .
 
 ### Understanding Results
 
-**REALWORLD_SUMMARY.json structure:**
+**REALWORLD_SUMMARY.json structure (v2.0):**
 ```json
 {
-  "version": "1.0",
+  "version": "2.0",
   "timestamp_utc": "2026-03-01T12:34:56Z",
   "git_sha": "abc123...",
-  "scale": {
+  "multitenant_isolation": {
     "status": "PASS|FAIL",
-    "n": 5000,
-    "duration_ms": 12345,
-    "peak_rss_bytes": 987654321,
-    "output_bytes": 5432109,
+    "key_count": 100000,
+    "tenant_count": 5,
+    "notes": ["Verifies key builder prevents collisions", ...]
+  },
+  "storage_io": {
+    "status": "PASS|FAIL",
+    "duration_ms": 5000,
+    "tenant_count": 5,
+    "keys_per_tenant": 10000,
+    "total_keys": 50000
+  },
+  "scale_5k": {
+    "status": "PASS|FAIL",
+    "entity_count": 5000,
+    "duration_ms": 150,
+    "output_bytes": 1673380,
+    "determinism": "PASS|FAIL"
+  },
+  "scale_50k": {
+    "status": "PASS|FAIL",
+    "entity_count": 50000,
+    "duration_ms": 3000,
+    "output_bytes": 15000000,
+    "heap_used_bytes": 250000000,
     "determinism": "PASS|FAIL"
   },
   "concurrency": {
     "status": "PASS|FAIL",
     "levels": [100, 500, 1000],
-    "failures": { "100": 0, "500": 0, "1000": 0 },
-    "duration_ms": { "100": 234, "500": 567, "1000": 890 }
+    "failures": { "100": 0, "500": 0, "1000": 0 }
   },
   "license": {
     "status": "PASS|FAIL",
     "cases": 5,
-    "total": 5,
-    "notes": ["Uses src/entitlements/ system", ...]
+    "total": 5
   },
   "final": {
     "status": "PASS|FAIL",
@@ -610,41 +641,57 @@ cat /tmp/ft_realworld_latest/artifacts/REALWORLD_SUMMARY.json | jq .
 
 | Field | PASS Criteria | FAIL Causes |
 |-------|---------------|-------------|
-| **scale.status** | 5000 objects processed, output generated, deterministic | Crash, out-of-memory, non-deterministic hashes |
-| **scale.determinism** | Run A hash == Run B hash (byte-identical) | Hashes differ (non-deterministic serialization) |
+| **multitenant_isolation.status** | 100k keys, no collisions, all keys tenant-prefixed | Collisions detected, invalid key format, static keys |
+| **storage_io.status** | 50k keys written/read/deleted, no cross-tenant reads | Cross-tenant contamination, count mismatch, storage limits exceeded |
+| **scale_5k.status** | 5000 entities processed, output generated, deterministic | Crash, out-of-memory, non-deterministic hashes |
+| **scale_50k.status** | 50k entities processed, output generated, deterministic | Crash, out-of-memory, non-deterministic hashes, excessive heap |
 | **concurrency.status** | All levels complete with 0 failures | Any level has failures or crashes |
 | **license.status** | All test cases pass | Feature gating not working, blocking mechanism missing |
 | **final.status** | All phases PASS | Any phase FAIL |
 
 **Performance baselines (reference only):**
-- Scale test: < 30 seconds
+- Multi-tenant isolation: < 10 seconds
+- Storage I/O: < 20 seconds
+- Scale 5k: < 5 seconds
+- Scale 50k: < 60 seconds
 - Concurrency 1000: < 5 seconds
 - License tests: < 1 second
-- Total runtime: < 60 seconds
+- **Total runtime: < 120 seconds**
 
 ### Evidence Artifacts
 
-**Directory structure:**
+**Directory structure (v2):**
 ```
 /tmp/ft_realworld_TIMESTAMP_PID/
 ├── 00_env/
-│   ├── env.txt          # Environment variables
-│   ├── git.txt          # Git SHA and status
-│   ├── node.txt         # Node/npm versions
-│   └── command.txt      # Invocation command
+│   └── (environment capture files)
+├── 00_multitenant/
+│   ├── run.log
+│   ├── key_collision_report.json
+│   ├── key_format_samples.json (first 50 keys)
+│   └── static_key_report.json
 ├── 01_scale/
-│   ├── run.log          # Scale test execution log
-│   ├── metrics.json     # Duration, memory, output size
-│   ├── output_hashes.json  # Run A/B hashes for determinism check
-│   └── html_snippet.txt    # First 50KB of generated HTML
+│   ├── run.log          # 5k scale test log
+│   ├── metrics.json
+│   ├── output_hashes.json
+│   └── html_snippet.txt
+├── 01b_scale_50k/
+│   ├── run.log          # 50k scale test log
+│   ├── metrics.json
+│   ├── output_hashes.json
+│   └── html_snippet.txt (first 2KB)
 ├── 02_concurrency/
-│   ├── run.log          # Concurrency test execution log
-│   └── results.json     # Per-level success/failure/duration
+│   ├── run.log
+│   └── results.json
+├── 02b_storage_io/
+│   ├── run.log
+│   ├── storage_metrics.json
+│   └── storage_invariants.json
 ├── 03_license/
-│   ├── run.log          # License test execution log
-│   └── results.json     # Per-case pass/fail/error_code
+│   ├── run.log
+│   └── results.json
 └── artifacts/
-    └── REALWORLD_SUMMARY.json  # Final summary (canonical)
+    └── REALWORLD_SUMMARY.json  # Final summary (v2.0)
 ```
 
 **Query examples:**
@@ -654,14 +701,17 @@ RWORLD=$(readlink /tmp/ft_realworld_latest)
 # Overall status
 jq -r '.final.status' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
 
-# Scale test determinism
-jq -r '.scale.determinism' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
+# Multi-tenant isolation
+jq -r '.multitenant_isolation.status' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
 
-# Concurrency failures
-jq -r '.concurrency.failures' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
+# Storage I/O status
+jq -r '.storage_io.status' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
 
-# License test details
-jq -r '.license | {status, cases, total}' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
+# Scale tests (both)
+jq -r '{scale_5k: .scale_5k.status, scale_50k: .scale_50k.status}' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
+
+# All gate statuses
+jq -r '{multitenant: .multitenant_isolation.status, storage_io: .storage_io.status, scale_5k: .scale_5k.status, scale_50k: .scale_50k.status, concurrency: .concurrency.status, license: .license.status, final: .final.status}' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
 
 # Fail reasons (if any)
 jq -r '.final.fail_reasons[]' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
@@ -669,11 +719,35 @@ jq -r '.final.fail_reasons[]' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
 
 ### Troubleshooting
 
-**Issue: Scale test non-deterministic (hash mismatch)**
+**Issue: Multi-tenant isolation failure (collision detected)**
 
-**Cause:** Randomness in serialization (timestamps, random IDs, unordered maps).
+**Cause:** Key builder not properly prefixing tenant keys, or collision in key generation logic.
 
-**Fix:** Review `01_scale/output_hashes.json`. If hashes differ across runs, this indicates non-deterministic code. Escalate to maintainers with evidence.
+**Fix:** Review `00_multitenant/key_collision_report.json` for collision details. Check key format in `key_format_samples.json`. Escalate with evidence.
+
+**Issue: Storage I/O failure (cross-tenant reads)**
+
+**Cause:** Tenant isolation broken in storage layer, keys not properly scoped.
+
+**Fix:** Review `02b_storage_io/storage_invariants.json` for failed checks. If `no_cross_tenant_reads: FAIL`, escalate immediately (security issue).
+
+**Issue: Storage limit exceeded (FT_REALWORLD_STORAGE_LIMIT)**
+
+**Cause:** Test attempted to write value > 240KB, or key > 200 chars, or > 50k keys per tenant.
+
+**Fix:** This is a LIMIT ENFORCEMENT test. If legitimate app code triggers this, app may need refactoring to respect storage limits. Review `02b_storage_io/run.log` for error details.
+
+**Issue: Scale 50k test non-deterministic**
+
+**Cause:** Same as Scale 5k - randomness in serialization.
+
+**Fix:** Review `01b_scale_50k/output_hashes.json`. Compare with `01_scale/output_hashes.json` to see if determinism issue is scale-dependent or universal. Escalate with both evidence directories.
+
+**Issue: Scale 50k excessive heap usage**
+
+**Cause:** Memory leak or inefficient data structures at scale.
+
+**Fix:** Review `01b_scale_50k/metrics.json` heap_used_bytes. Compare with scale_5k. If heap grows non-linearly (e.g., 50MB for 5k but 500MB for 50k), investigate memory leak.
 
 **Issue: Concurrency test failures at level 1000**
 
@@ -681,15 +755,9 @@ jq -r '.final.fail_reasons[]' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
 
 **Fix:** Review `02_concurrency/results.json` for `first_error` field. If race condition, escalate. If memory, increase Node heap: `NODE_OPTIONS="--max-old-space-size=4096"`.
 
-**Issue: License test failure**
-
-**Cause:** Entitlement system not configured correctly, export blocking not working.
-
-**Fix:** Review `03_license/results.json` for failing test cases. Check `error_code` field. If `BLOCKING_MECHANISM_MISSING`, escalate to maintainers.
-
 **Issue: Real-world gates fail but audit passes**
 
-**Explanation:** This is expected. Real-world gates are **optional** and test performance/scale, not correctness. Audit tests correctness (security, compliance). You can deploy if audit passes, but investigate scale failures before production load.
+**Explanation:** This is expected. Real-world gates are **optional** and test performance/scale/isolation, not correctness. Audit tests correctness (security, compliance). You can deploy if audit passes, but investigate gate failures before production load.
 
 ### Design Principles
 
@@ -697,6 +765,24 @@ jq -r '.final.fail_reasons[]' "$RWORLD/artifacts/REALWORLD_SUMMARY.json"
 - All tests run locally
 - No Forge auth required
 - No external API calls
+
+**Synthetic data only:**
+- Scale tests use deterministic synthetic entities (admins/projects/etc) with fixed timestamps
+- Storage tests use simulated tenants (t1..t5) with deterministic key patterns
+- NO claim of "5000 real tenants" or "50k real users" - these are synthetic data entities
+
+**Bounded resources:**
+- Storage uses in-memory fake_storage.ts with hard limits (240KB values, 50k keys/tenant, 200 char keys)
+- Any limit violation => fail-closed with FT_REALWORLD_STORAGE_LIMIT error
+
+**Deterministic outputs:**
+- Same inputs → identical hashes (excluding timing/memory fields)
+- All PRNGs use fixed seeds
+- All timestamps are fixed (2026-03-01T00:00:00Z)
+
+**Fail-closed:**
+- Any unhandled exception → exit 1
+- Any invariant violation → FAIL status + clear remediation guidance
 
 **Synthetic data only:**
 - Scale test uses deterministic synthetic evidence (5000 user accounts with stable IDs)
