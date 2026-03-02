@@ -236,7 +236,7 @@ FirstTry appears in Jira Cloud as:
 🔒 **Do NOT** open a public GitHub issue for security vulnerabilities.
 
 **Report Security Issues**:
-1. Email: (check [SECURITY.md](../../SECURITY.md) for contact)
+1. Email: (check [SECURITY.md](trust/generated/repo_refs.md) for contact)
 2. Or: Direct message to repo maintainers on GitHub
 
 ---
@@ -287,5 +287,5 @@ A: No. FirstTry requires active internet and Jira Cloud access.
 
 - [DATA_HANDLING.md](DATA_HANDLING.md) — Data privacy, retention, deletion policy
 - [SUPPORT.md](SUPPORT.md) — Support channels and response times
-- [SECURITY.md](../SECURITY.md) — Security model and threat boundaries
+- [SECURITY.md](trust/generated/security_overview_mirror.md) — Security model and threat boundaries
 - [RELEASE_GATE_RUNBOOK.md](RELEASE_GATE_RUNBOOK.md) — How we validate marketplace readiness

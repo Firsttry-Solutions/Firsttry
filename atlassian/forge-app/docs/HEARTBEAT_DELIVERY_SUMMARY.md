@@ -9,20 +9,20 @@ The FirstTry Heartbeat Trust Dashboard has been created as a **read-only, transp
 ## 📦 Deliverables
 
 ### 1. Gadget UI Components
-- **[src/gadget-ui/index.html](src/gadget-ui/index.html)** – HTML wrapper with inline React (vanilla JS)
-- **[src/gadget-ui/heartbeat.tsx](src/gadget-ui/heartbeat.tsx)** – React TypeScript component (alternative/reference)
+- **[src/gadget-ui/index.html](trust/generated/code_refs_inventory.md#index-html)** – HTML wrapper with inline React (vanilla JS)
+- **[src/gadget-ui/heartbeat.tsx](trust/generated/code_refs_inventory.md#heartbeat-tsx)** – React TypeScript component (alternative/reference)
 
 ### 2. Storage API
-- **[src/ops/heartbeat_recorder.ts](src/ops/heartbeat_recorder.ts)** – Heartbeat recording and retrieval functions
+- **[src/ops/heartbeat_recorder.ts](trust/generated/code_refs_inventory.md#heartbeat_recorder-ts)** – Heartbeat recording and retrieval functions
   - `recordHeartbeatCheck(cloudId, result)` – Records check execution
   - `recordSnapshot(cloudId)` – Records snapshot creation
   - `getHeartbeat(cloudId)` – Reads heartbeat record
 
 ### 3. Documentation
-- **[docs/HEARTBEAT_TRUST_DASHBOARD.md](docs/HEARTBEAT_TRUST_DASHBOARD.md)** – Complete user/reviewer documentation
-- **[docs/HEARTBEAT_INTEGRATION.md](docs/HEARTBEAT_INTEGRATION.md)** – Developer integration guide with examples
-- **[docs/HEARTBEAT_QUICK_REF.md](docs/HEARTBEAT_QUICK_REF.md)** – Operator quick reference
-- **[docs/HEARTBEAT_VERIFICATION.md](docs/HEARTBEAT_VERIFICATION.md)** – Completion verification checklist
+- **[docs/HEARTBEAT_TRUST_DASHBOARD.md](HEARTBEAT_TRUST_DASHBOARD.md)** – Complete user/reviewer documentation
+- **[docs/HEARTBEAT_INTEGRATION.md](HEARTBEAT_INTEGRATION.md)** – Developer integration guide with examples
+- **[docs/HEARTBEAT_QUICK_REF.md](HEARTBEAT_QUICK_REF.md)** – Operator quick reference
+- **[docs/HEARTBEAT_VERIFICATION.md](HEARTBEAT_VERIFICATION.md)** – Completion verification checklist
 
 ---
 
@@ -241,7 +241,7 @@ import { recordSnapshot } from '../ops/heartbeat_recorder';
 await recordSnapshot(cloudId);
 ```
 
-**Integration guide:** See [HEARTBEAT_INTEGRATION.md](docs/HEARTBEAT_INTEGRATION.md)
+**Integration guide:** See [HEARTBEAT_INTEGRATION.md](HEARTBEAT_INTEGRATION.md)
 
 ---
 
@@ -311,23 +311,23 @@ All requirements met:
 - [x] Error sanitization prevents secret leakage
 - [x] All unknowns disclosed
 
-See [HEARTBEAT_VERIFICATION.md](docs/HEARTBEAT_VERIFICATION.md) for detailed checklist.
+See [HEARTBEAT_VERIFICATION.md](HEARTBEAT_VERIFICATION.md) for detailed checklist.
 
 ---
 
 ## 📚 Documentation
 
 ### For Reviewers
-- [HEARTBEAT_TRUST_DASHBOARD.md](docs/HEARTBEAT_TRUST_DASHBOARD.md) – Complete reference
+- [HEARTBEAT_TRUST_DASHBOARD.md](HEARTBEAT_TRUST_DASHBOARD.md) – Complete reference
 
 ### For Operators
-- [HEARTBEAT_QUICK_REF.md](docs/HEARTBEAT_QUICK_REF.md) – Quick reference guide
+- [HEARTBEAT_QUICK_REF.md](HEARTBEAT_QUICK_REF.md) – Quick reference guide
 
 ### For Developers
-- [HEARTBEAT_INTEGRATION.md](docs/HEARTBEAT_INTEGRATION.md) – Integration guide with examples
+- [HEARTBEAT_INTEGRATION.md](HEARTBEAT_INTEGRATION.md) – Integration guide with examples
 
 ### For Verification
-- [HEARTBEAT_VERIFICATION.md](docs/HEARTBEAT_VERIFICATION.md) – Completion checklist
+- [HEARTBEAT_VERIFICATION.md](HEARTBEAT_VERIFICATION.md) – Completion checklist
 
 ---
 
@@ -393,8 +393,8 @@ The gadget is successful when:
 
 Questions about the gadget? Check:
 
-1. [HEARTBEAT_QUICK_REF.md](docs/HEARTBEAT_QUICK_REF.md) – FAQ section
-2. [HEARTBEAT_TRUST_DASHBOARD.md](docs/HEARTBEAT_TRUST_DASHBOARD.md) – Full reference
+1. [HEARTBEAT_QUICK_REF.md](HEARTBEAT_QUICK_REF.md) – FAQ section
+2. [HEARTBEAT_TRUST_DASHBOARD.md](HEARTBEAT_TRUST_DASHBOARD.md) – Full reference
 3. Code comments in `src/ops/heartbeat_recorder.ts` and `src/gadget-ui/index.html`
 
 ---

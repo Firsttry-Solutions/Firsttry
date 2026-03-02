@@ -14,7 +14,7 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 ### CR1: Full Test Run Completes (exit code 0)
 
 **Status**: ✅ **PASS**  
-**Evidence**: [$E/03_tests/npm_test_exit_code.txt](../../tmp/ft_prod_ready_20260224T125001Z/03_tests/npm_test_exit_code.txt) = **0**  
+**Evidence**: [$E/03_tests/npm_test_exit_code.txt](../trust/generated/repo_refs.md) = **0**  
 **Description**: npm test completed with exit code 0, full log at $E/03_tests/npm_test_full.log  
 **Fix Applied**: None  
 **Test Results**: 2728/2753 tests passed, 260/262 test files passed. All GAPS A-F enforcement verified (46/46 tests sealing all gaps)
@@ -26,7 +26,7 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 **Status**: ✅ **PASS**  
 **Evidence**: $E/04_build/verify_dist_invoke_allowlist.exit_code.txt = 0; $E/04_build/verify_dist_invoke_allowlist.run.log shows successful completion  
 **Description**: npm run build command executes deterministic build chain with 30+ verification gates. Build output and metadata injection verified working. Final verification gate (verify:dist:invoke-allowlist) now completes deterministically without timeout.  
-**Fix Applied**: [tools/verify_dist_invoke_allowlist.sh](../../../tools/verify_dist_invoke_allowlist.sh) - Replaced bash pipeline processing with single-pass Python3 analysis to eliminate timeout risk and ensure deterministic termination (exit 0, 4 invokes detected, marker verified, PASS).  
+**Fix Applied**: [tools/verify_dist_invoke_allowlist.sh](../trust/generated/repo_refs.md) - Replaced bash pipeline processing with single-pass Python3 analysis to eliminate timeout risk and ensure deterministic termination (exit 0, 4 invokes detected, marker verified, PASS).  
 **Notes**: Build succeeds with deterministic output (UI bundle 175.57 KB, build identity anchored). Verification gate now completes efficiently without hanging.
 
 ---
@@ -75,7 +75,7 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 **Status**: ✅ **PASS**  
 **Evidence**: 
 - No forbidden files modified: package.json, package-lock.json, manifest.yml, src/gadget-ui/dist/* all untouched ✅
-- Canonical dirty-tree gate: [tools/production/verify_clean_tree_allowlist.sh](../../../tools/production/verify_clean_tree_allowlist.sh) ✅
+- Canonical dirty-tree gate: [tools/production/verify_clean_tree_allowlist.sh](../trust/generated/repo_refs.md) ✅
 - Orchestrator passes dirty-tree gate: $E/09_release/run_prod_ready_audit.exit_code.txt shows gate PASS ✅
 
 **Description**: 
@@ -114,7 +114,7 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 
 **Status**: ✅ **PASS** (Phase 2 Hardened)  
 **Evidence**: 
-- **Outbound Isolation (Deterministic)**: [$E/13_repo_scans/verify_no_outbound_runtime.exit_code.txt]($E/13_repo_scans/verify_no_outbound_runtime.exit_code.txt) = **0** ✅
+- **Outbound Isolation (Deterministic)**: [$E/13_repo_scans/verify_no_outbound_runtime.exit_code.txt](../trust/generated/repo_refs.md#evidence-artifacts " Evidence artifact: 13_repo_scans/verify_no_outbound_runtime.exit_code.txt) = **0** ✅
   - Gate: tools/production/verify_no_outbound_runtime.sh
   - Method: Automated scan + Python classification (no `|| true`, no timeouts)
   - Result: Zero forbidden HTTP primitives in src/ (axios, fetch, node-fetch, direct Request calls all absent)
@@ -137,7 +137,7 @@ All criteria must show **PASS** for production-ready verdict. Initial status: al
 
 **Status**: ✅ **PASS** (Phase 2 Hardened)  
 **Evidence**: 
-- **Scopes Justification (Deterministic)**: [$E/13_repo_scans/scopes_verdict.txt]($E/13_repo_scans/scopes_verdict.txt) = **PASS** ✅
+- **Scopes Justification (Deterministic)**: [$E/13_repo_scans/scopes_verdict.txt](../trust/generated/repo_refs.md#evidence-artifacts " Evidence artifact: 13_repo_scans/scopes_verdict.txt) = **PASS** ✅
   - Gate: tools/production/verify_scopes_justified.mjs (Node.js)
   - Declared Scopes ($E/13_repo_scans/scopes_declared.txt):
     - read:jira-user (5 usage hits) ✅

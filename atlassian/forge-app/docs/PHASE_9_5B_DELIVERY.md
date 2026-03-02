@@ -11,7 +11,7 @@
 
 ### 1. Core Implementation
 
-**File:** [src/phase9_5b/blind_spot_map.ts](src/phase9_5b/blind_spot_map.ts)
+**File:** [src/phase9_5b/blind_spot_map.ts](trust/generated/code_refs_inventory.md#blind_spot_map-ts)
 
 **Purpose:** Automatic derivation of historical blind spots from snapshot history
 
@@ -63,7 +63,7 @@ function renderBlindSpotTimeline(map: BlindSpotMap): string
 
 ### 2. Test Suite
 
-**File:** [tests/phase9_5b/blind_spot_map.test.ts](tests/phase9_5b/blind_spot_map.test.ts)
+**File:** [tests/phase9_5b/blind_spot_map.test.ts](trust/generated/code_refs_inventory.md#blind_spot_map-test-ts)
 
 **Purpose:** Comprehensive test coverage for blind-spot derivation
 
@@ -116,7 +116,7 @@ Failure Details:
 
 ### 3. Admin UI Component
 
-**File:** [src/admin/blind_spot_page.tsx](src/admin/blind_spot_page.tsx)
+**File:** [src/admin/blind_spot_page.tsx](trust/generated/code_refs_inventory.md#blind_spot_page-tsx)
 
 **Purpose:** React component for admin visualization of blind spots
 
@@ -544,8 +544,8 @@ import BlindSpotAdminPage from '@forge/admin/blind_spot_page';
 
 - [PHASE_9_5C_SPEC.md](PHASE_9_5C_SPEC.md) - Snapshot Reliability SLA
 - [PHASE_9_5C_DELIVERY.md](PHASE_9_5C_DELIVERY.md) - Snapshot reliability implementation
-- [PHASE_9_5A_SPEC.md](PHASE_9_5A_SPEC.md) - Counterfactual Proof Ledger
-- [docs/](../docs/) - All documentation
+- [PHASE_9_5A_SPEC.md](trust/stubs/PHASE_9_5A_SPEC.md) - Counterfactual Proof Ledger
+- [docs/](trust/generated/repo_refs.md) - All documentation
 
 ---
 

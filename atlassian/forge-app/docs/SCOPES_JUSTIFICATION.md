@@ -41,8 +41,8 @@ FirstTry requests exactly TWO scopes: `storage:app` and `read:jira-work`. These 
 
 ## References
 
-- [FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md#2-scopes-in-manifest-authoritative) — SSOT for scope facts
+- [FACTS_AND_NONCLAIMS.md](trust/stubs/FACTS_AND_NONCLAIMS.md#2-scopes-in-manifest-authoritative) — SSOT for scope facts
 - [EXTERNAL_APIS.md](EXTERNAL_APIS.md) — Outbound network policy
 - [SECURITY.md](SECURITY.md) — Security model and trust boundaries
 - [DATA_RETENTION.md](DATA_RETENTION.md) — What data is stored/not stored
-- [manifest.yml](../manifest.yml) — Source of truth for scope declarations
+- [Manifest Scopes](trust/generated/manifest_scopes.md) — Source of truth for scope declarations

@@ -219,7 +219,7 @@ This app:
 **Tabletop Exercises**: NONE  
 **Penetration Testing**: NONE  
 
-**Security Testing**: See [tests/credibility/](../tests/credibility/) for automated tests
+**Security Testing**: See [tests/credibility/](trust/generated/code_refs_inventory.md#credibility) for automated tests
 
 ---
 

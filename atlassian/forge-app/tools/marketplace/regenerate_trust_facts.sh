@@ -255,6 +255,378 @@ $RETENTION_NOTES
 insert_generated_block "docs/trust/data-retention-deletion.md" "$RETENTION_BLOCK"
 
 # ============================================================
+# PHASE 3G: Generate standalone reference files
+# ============================================================
+echo ""
+echo "  [3G] Generating standalone reference files..."
+
+GENERATED_DIR="docs/trust/generated"
+mkdir -p "$GENERATED_DIR"
+
+# 3G-1: manifest_scopes.md
+MANIFEST_SCOPES_MD="$GENERATED_DIR/manifest_scopes.md"
+
+# Extract scopes to a variable first (avoid subshell in output redirection)
+SCOPES_TABLE=""
+if [[ -f "manifest.yml" ]]; then
+  if grep -q "^permissions:" manifest.yml; then
+    # Extract scopes using grep and sed
+    while IFS= read -r scope; do
+      if [[ -n "$scope" ]]; then
+        # Determine purpose based on scope name
+        case "$scope" in
+          *read:jira-user*)
+            SCOPES_TABLE+="| \`$scope\` | Read user profile information from Jira |"$'\n'
+            ;;
+          *read:jira-work*)
+            SCOPES_TABLE+="| \`$scope\` | Read issue, project, and work data from Jira |"$'\n'
+            ;;
+          *storage:app*)
+            SCOPES_TABLE+="| \`$scope\` | Store app configuration and audit trail in Forge storage |"$'\n'
+            ;;
+          *:write*)
+            SCOPES_TABLE+="| \`$scope\` | Write access (review carefully for security implications) |"$'\n'
+            ;;
+          *)
+            SCOPES_TABLE+="| \`$scope\` | See [access-scope-and-permissions.md](../access-scope-and-permissions.md) for details |"$'\n'
+            ;;
+        esac
+      fi
+    done < <(grep -A 50 "^permissions:" manifest.yml | grep -A 50 "^  scopes:" | grep "^    -" | sed 's/^    - //')
+    
+    # If no scopes found, show message
+    if [[ -z "$SCOPES_TABLE" ]]; then
+      SCOPES_TABLE="| *(none)* | No scopes declared in manifest |"
+    fi
+  else
+    SCOPES_TABLE="| *(none)* | No permissions section in manifest |"
+  fi
+else
+  SCOPES_TABLE="| *(error)* | manifest.yml not found |"
+fi
+
+# Now write the file
+{
+  echo "# Manifest Scopes Reference"
+  echo ""
+  echo "**Auto-generated from:** \`manifest.yml\`"
+  echo "**Generated at:** $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "**Git SHA:** $(git rev-parse HEAD 2>/dev/null || echo 'unknown')"
+  echo ""
+  echo "<!-- BEGIN: GENERATED -->"
+  echo ""
+  echo "This file documents the Forge permission scopes declared in the app manifest."
+  echo ""
+  echo "## Declared Scopes"
+  echo ""
+  echo "| Scope | Purpose |"
+  echo "|-------|---------|"
+  echo "$SCOPES_TABLE"
+  echo ""
+  echo "## Notes"
+  echo ""
+  echo "- Scopes are extracted directly from \`manifest.yml\` \`permissions.scopes\` section"
+  echo "- Purpose descriptions are heuristic; see [access-scope-and-permissions.md](../access-scope-and-permissions.md) for detailed justification"
+  echo "- This file is regenerated via \`tools/marketplace/regenerate_trust_facts.sh\`"
+  echo ""
+  echo "<!-- END: GENERATED -->"
+} > "$MANIFEST_SCOPES_MD"
+echo "  Generated: $MANIFEST_SCOPES_MD"
+
+# 3G-2: external_urls_inventory.md
+EXTERNAL_URLS_MD="$GENERATED_DIR/external_urls_inventory.md"
+
+# Extract URLs to a variable first
+URLS_LIST=""
+if [[ "$RUNTIME_URL_COUNT" -gt 0 ]]; then
+  while IFS= read -r url; do
+    if [[ -n "$url" ]]; then
+      URLS_LIST+="- \`$url\`"$'\n'
+    fi
+  done < <(jq -r '.runtime_src[]' "$TRUST_FACTS" 2>/dev/null)
+fi
+
+# Now write the file
+{
+  echo "# External URLs Inventory"
+  echo ""
+  echo "**Auto-generated from:** Source code scan via \`tools/marketplace/inventory_external_urls.sh\`"
+  echo "**Generated at:** $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "**Git SHA:** $(git rev-parse HEAD 2>/dev/null || echo 'unknown')"
+  echo ""
+  echo "<!-- BEGIN: GENERATED -->"
+  echo ""
+  echo "This file documents external URLs detected in the codebase."
+  echo ""
+  echo "## Runtime External URLs"
+  echo ""
+  echo "**Count:** $RUNTIME_URL_COUNT"
+  echo ""
+  
+  if [[ "$RUNTIME_URL_COUNT" -gt 0 ]]; then
+    echo "URLs detected in \`src/**\`:"
+    echo ""
+    echo "$URLS_LIST"
+    echo ""
+    echo "**Note:** These are literal strings in source code. They may be:"
+    echo "- Input validation patterns (e.g., allowed webhook origins)"
+    echo "- Documentation/comment references"
+    echo "- Configuration templates"
+    echo ""
+    echo "Actual runtime egress, if any, is configured per-deployment and not hardcoded."
+  else
+    echo "No runtime external URL literals detected in \`src/**\`."
+  fi
+  
+  echo ""
+  echo "## Non-Runtime External URLs"
+  echo ""
+  echo "**Count:** $(jq -r '.non_runtime_external_url_count' "$TRUST_FACTS")"
+  echo ""
+  echo "URLs in documentation, tests, or build scripts (not runtime-loaded)."
+  echo ""
+  echo "<!-- END: GENERATED -->"
+} > "$EXTERNAL_URLS_MD"
+echo "  Generated: $EXTERNAL_URLS_MD"
+
+# 3G-3: storage_usage_inventory.md
+STORAGE_USAGE_MD="$GENERATED_DIR/storage_usage_inventory.md"
+{
+  echo "# Storage Usage Inventory"
+  echo ""
+  echo "**Auto-generated from:** Product facts extraction"
+  echo "**Generated at:** $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "**Git SHA:** $(git rev-parse HEAD 2>/dev/null || echo 'unknown')"
+  echo ""
+  echo "<!-- BEGIN: GENERATED -->"
+  echo ""
+  echo "This file documents Forge storage API usage detected in the codebase."
+  echo ""
+  echo "## Storage API Calls"
+  echo ""
+  echo "**Detected storage API calls in \`src/**\`:** $STORAGE_CALLS"
+  echo ""
+  
+  if [[ "$STORAGE_CALLS" -gt 0 ]]; then
+    echo "The app uses Forge's built-in storage API (\`storage.set()\`, \`storage.get()\`) for:"
+    echo ""
+    echo "- App configuration persistence"
+    echo "- Audit trail / activity log"
+    echo "- User preferences (if applicable)"
+    echo ""
+    echo "**Isolation:** Forge storage is app-scoped and isolated per installation."
+    echo "**Encryption:** Managed by Atlassian Forge platform (encryption at rest)."
+    echo "**Retention:** See [data-retention-deletion.md](../data-retention-deletion.md)"
+  else
+    echo "No Forge storage API calls detected in \`src/**\`."
+    echo ""
+    echo "The app may be stateless or use alternative persistence mechanisms."
+  fi
+  echo ""
+  echo "<!-- END: GENERATED -->"
+} > "$STORAGE_USAGE_MD"
+echo "  Generated: $STORAGE_USAGE_MD"
+
+# ============================================================
+# [3H] Generate Pages-safe mirror docs (for offline linkability)
+# ============================================================
+echo ""
+echo "[3H] Generating Pages-safe mirror docs..."
+
+MIRROR_DIR="$REPO_ROOT/docs/trust/generated"
+mkdir -p "$MIRROR_DIR"
+
+# [3H-1] security_overview_mirror.md
+SECURITY_MIRROR="$MIRROR_DIR/security_overview_mirror.md"
+{
+  echo "# Security Overview (Mirror)"
+  echo ""
+  echo "<!-- BEGIN: GENERATED -->"
+  echo "**Purpose**: This file mirrors security information from the repository root for GitHub Pages linkability."
+  echo ""
+  echo "**Policy**: GitHub Pages sites serve only from \`docs/\` tree. Links to \`../SECURITY.md\` escape the docs directory and break offline."
+  echo ""
+  echo "---"
+  echo ""
+  if [[ -f "$REPO_ROOT/SECURITY.md" ]]; then
+    echo "## Repository Security Policy"
+    echo ""
+    # Extract key sections (first 100 lines as sample)
+    head -100 "$REPO_ROOT/SECURITY.md" | sed 's/^/> /'
+    echo ""
+    echo "_(Excerpt from repository SECURITY.md)_"
+  else
+    echo "**Note**: No SECURITY.md found at repository root."
+  fi
+  echo ""
+  echo "For detailed security architecture within the application, see:"
+  echo "- [Security Overview](../SECURITY_OVERVIEW.md)"
+  echo "- [Threat Model](../THREAT_MODEL.md)"
+  echo "- [Access Scope & Permissions](../access-scope-and-permissions.md)"
+  echo ""
+  echo "<!-- END: GENERATED -->"
+} > "$SECURITY_MIRROR"
+echo "  Generated: $SECURITY_MIRROR"
+
+# [3H-2] privacy_policy_mirror.md
+PRIVACY_MIRROR="$MIRROR_DIR/privacy_policy_mirror.md"
+{
+  echo "# Privacy Policy (Mirror)"
+  echo ""
+  echo "<!-- BEGIN: GENERATED -->"
+  echo "**Purpose**: This file provides privacy policy references for GitHub Pages linkability."
+  echo ""
+  if [[ -f "$REPO_ROOT/docs/trust/privacy-policy.md" ]]; then
+    echo "## Privacy Policy"
+    echo ""
+    echo "See the canonical privacy policy:"
+    echo "- [Privacy Policy](../privacy-policy.md)"
+    echo ""
+  fi
+  if [[ -f "$REPO_ROOT/docs/trust/PRIVACY_POLICY.md" ]]; then
+    echo "Additional privacy documentation:"
+    echo "- [Privacy Policy (Detailed)](../PRIVACY_POLICY.md)"
+    echo ""
+  fi
+  echo "**Data Handling**:"
+  echo "- [Data Processing](../data-processing.md)"
+  echo "- [Data Retention & Deletion](../data-retention-deletion.md)"
+  echo "- [Data Classification & PII](../DATA_CLASSIFICATION_AND_PII.md)"
+  echo ""
+  echo "<!-- END: GENERATED -->"
+} > "$PRIVACY_MIRROR"
+echo "  Generated: $PRIVACY_MIRROR"
+
+# [3H-3] legal_mirror.md
+LEGAL_MIRROR="$MIRROR_DIR/legal_mirror.md"
+{
+  echo "# Legal Documents (Mirror)"
+  echo ""
+  echo "<!-- BEGIN: GENERATED -->"
+  echo "**Purpose**: This file provides links to legal documentation within the docs tree."
+  echo ""
+  echo "## Available Legal Documents"
+  echo ""
+  echo "All legal documents are maintained within the trust documentation:"
+  echo ""
+  echo "- [Terms of Service](../TERMS_OF_SERVICE.md)"
+  echo "- [Vulnerability Disclosure Policy](../VULNERABILITY_DISCLOSURE_POLICY.md)"
+  echo "- [Subprocessors](../SUBPROCESSORS.md)"
+  echo "- [Customer Responsibilities](../CUSTOMER_RESPONSIBILITIES.md)"
+  echo ""
+  echo "**Note**: Links to \`../legal/\` directory are not available in Pages deployment."
+  echo ""
+  echo "<!-- END: GENERATED -->"
+} > "$LEGAL_MIRROR"
+echo "  Generated: $LEGAL_MIRROR"
+
+# [3H-4] code_refs_inventory.md
+CODE_REFS="$MIRROR_DIR/code_refs_inventory.md"
+{
+  echo "# Code References Inventory"
+  echo ""
+  echo "<!-- BEGIN: GENERATED -->"
+  echo "**Purpose**: This file provides stable anchors for code file references that cannot be linked directly from GitHub Pages."
+  echo ""
+  echo "**Policy**: Pages sites cannot link to \`src/\`, \`tests/\`, or \`tools/\` directories. This inventory provides"
+  echo "markdown anchors for documentation purposes only (not full source reproduction)."
+  echo ""
+  echo "---"
+  echo ""
+  echo "## Source Files"
+  echo ""
+  # List src/ files
+  if [[ -d "$REPO_ROOT/src" ]]; then
+    find "$REPO_ROOT/src" -type f -name "*.ts" -o -name "*.tsx" -o -name "*.js" | sort | while read -r file; do
+      REL_PATH="${file#$REPO_ROOT/}"
+      BASENAME=$(basename "$file")
+      SLUG=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
+      echo "### $REL_PATH {#${SLUG}}"
+      echo ""
+      echo "**Path**: \`$REL_PATH\`"
+      echo ""
+    done
+  fi
+  echo ""
+  echo "## Test Files"
+  echo ""
+  # List tests/ files
+  if [[ -d "$REPO_ROOT/tests" ]]; then
+    find "$REPO_ROOT/tests" -type f \( -name "*.test.ts" -o -name "*.spec.ts" \) | head -20 | sort | while read -r file; do
+      REL_PATH="${file#$REPO_ROOT/}"
+      BASENAME=$(basename "$file")
+      SLUG=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
+      echo "### $REL_PATH {#${SLUG}}"
+      echo ""
+      echo "**Path**: \`$REL_PATH\`"
+      echo ""
+    done
+  fi
+  echo ""
+  echo "## Tools"
+  echo ""
+  # List tools/ files
+  if [[ -d "$REPO_ROOT/tools" ]]; then
+    find "$REPO_ROOT/tools" -type f \( -name "*.sh" -o -name "*.py" \) | head -20 | sort | while read -r file; do
+      REL_PATH="${file#$REPO_ROOT/}"
+      BASENAME=$(basename "$file")
+      SLUG=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
+      echo "### $REL_PATH {#${SLUG}}"
+      echo ""
+      echo "**Path**: \`$REL_PATH\`"
+      echo ""
+    done
+  fi
+  echo ""
+  echo "**Note**: This is an inventory for anchor purposes only. For full source code, see the repository."
+  echo ""
+  echo "<!-- END: GENERATED -->"
+} > "$CODE_REFS"
+echo "  Generated: $CODE_REFS"
+
+# [3H-5] repo_refs.md
+REPO_REFS="$MIRROR_DIR/repo_refs.md"
+{
+  echo "# Repository References"
+  echo ""
+  echo "<!-- BEGIN: GENERATED -->"
+  echo "**Purpose**: This document provides references to repository files that cannot be linked directly from GitHub Pages."
+  echo ""
+  echo "## Repository Structure Overview"
+  echo ""
+  echo "The full repository includes:"
+  echo ""
+  echo "- **docs/**: Documentation (you are here)"
+  echo "- **src/**: Application source code"
+  echo "- **tests/**: Test suites"
+  echo "- **tools/**: Build and deployment scripts"
+  echo "- **manifest.yml**: Forge app manifest → see [Manifest Scopes](manifest_scopes.md)"
+  echo ""
+  echo "## Common Files"
+  echo ""
+  echo "### README.md"
+  echo ""
+  echo "See documentation index: [README_DOCS_INDEX](../../README_DOCS_INDEX.md)"
+  echo ""
+  echo "### LICENSE"
+  echo ""
+  echo "License information is available in the repository root."
+  echo ""
+  echo "### CONTRIBUTING.md"
+  echo ""
+  echo "Contribution guidelines are maintained in the repository root."
+  echo ""
+  echo "### CODE_OF_CONDUCT.md"
+  echo ""
+  echo "Community standards are documented in the repository root."
+  echo ""
+  echo "**Note**: For full repository access, clone or browse via GitHub."
+  echo ""
+  echo "<!-- END: GENERATED -->"
+} > "$REPO_REFS"
+echo "  Generated: $REPO_REFS"
+
+# ============================================================
 # PHASE 4: Fix encryption wording
 # ============================================================
 echo ""

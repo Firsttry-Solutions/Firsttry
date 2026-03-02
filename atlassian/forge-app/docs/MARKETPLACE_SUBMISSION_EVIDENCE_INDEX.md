@@ -370,7 +370,7 @@ FirstTry-Marketplace-Submission-20260110/
 ## Questions?
 
 **For gate execution questions**: See [RELEASE_GATE_RUNBOOK.md](RELEASE_GATE_RUNBOOK.md)  
-**For app security questions**: See [SECURITY.md](../SECURITY.md)  
+**For app security questions**: See [SECURITY.md](trust/generated/security_overview_mirror.md)  
 **For data privacy questions**: See [DATA_HANDLING.md](DATA_HANDLING.md)  
 **For support questions**: See [SUPPORT.md](SUPPORT.md)  
 **For installation questions**: See [ADMIN_GUIDE.md](ADMIN_GUIDE.md)  

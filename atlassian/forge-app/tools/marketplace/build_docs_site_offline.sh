@@ -40,7 +40,8 @@ if [[ "${FT_LINKCHECK_SELFTEST:-0}" == "1" ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+# REPO_ROOT should point to forge-app directory (where docs/ lives)
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Evidence directory
 E="${1:-/tmp/ft_marketplace_phase3_5_latest}"

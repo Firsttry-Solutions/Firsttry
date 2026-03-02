@@ -211,10 +211,10 @@ See `legal/VULNERABILITY_DISCLOSURE.md` for responsible disclosure process.
 
 ## References
 
-- **Scopes Detailed**: [docs/SCOPES_JUSTIFICATION.md](docs/SCOPES_JUSTIFICATION.md)
-- **Data Retention**: [docs/DATA_RETENTION_POLICY.md](docs/DATA_RETENTION_POLICY.md)
-- **External APIs**: [docs/EXTERNAL_APIS.md](docs/EXTERNAL_APIS.md)
-- **Manifest**: [manifest.yml](manifest.yml)
+- **Scopes Detailed**: [docs/SCOPES_JUSTIFICATION.md](SCOPES_JUSTIFICATION.md)
+- **Data Retention**: [docs/DATA_RETENTION_POLICY.md](DATA_RETENTION_POLICY.md)
+- **External APIs**: [docs/EXTERNAL_APIS.md](EXTERNAL_APIS.md)
+- **Manifest Scopes**: [trust/generated/manifest_scopes.md](trust/generated/manifest_scopes.md)
 - **Security Tests**: `tests/perf_signals/no_jira_writes_contract.test.ts`
 
 ---

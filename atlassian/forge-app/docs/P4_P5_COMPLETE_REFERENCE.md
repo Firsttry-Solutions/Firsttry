@@ -730,13 +730,13 @@ try {
 ## Support & Contact
 
 ### For Technical Questions
-- **Evidence Architecture:** See [EVIDENCE_MODEL.md](docs/EVIDENCE_MODEL.md)
-- **Regeneration Guarantees:** See [REGENERATION_GUARANTEES.md](docs/REGENERATION_GUARANTEES.md)
-- **Compliance Details:** See [COMPLIANCE_FACT_SHEET.md](docs/COMPLIANCE_FACT_SHEET.md)
+- **Evidence Architecture:** See [EVIDENCE_MODEL.md](EVIDENCE_MODEL.md)
+- **Regeneration Guarantees:** See [REGENERATION_GUARANTEES.md](REGENERATION_GUARANTEES.md)
+- **Compliance Details:** See [COMPLIANCE_FACT_SHEET.md](COMPLIANCE_FACT_SHEET.md)
 
 ### For Procurement Questions
-- **P5 Overview:** See [P5_PROCUREMENT_ACCELERATION.md](docs/P5_PROCUREMENT_ACCELERATION.md)
-- **Implementation Details:** See [P4_P5_IMPLEMENTATION_SUMMARY.md](docs/P4_P5_IMPLEMENTATION_SUMMARY.md)
+- **P5 Overview:** See [P5_PROCUREMENT_ACCELERATION.md](P5_PROCUREMENT_ACCELERATION.md)
+- **Implementation Details:** See [P4_P5_IMPLEMENTATION_SUMMARY.md](P4_P5_IMPLEMENTATION_SUMMARY.md)
 - **Security Answers:** Run `npm run p5:export` to generate JSON
 
 ### For Test Verification

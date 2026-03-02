@@ -9,14 +9,14 @@ No external third-party APIs are used. All network activity is limited to Atlass
 - **Purpose:** Read-only ingestion and snapshot capture of Jira metadata for reporting and governance (projects, issue types, statuses, fields, search results, automation rule metadata).
 - **Data categories:** Project metadata (id, key, name), issue type metadata, status metadata, field metadata (IDs, names, types), issue event timestamps (created/updated), automation metadata (IDs, names, last modified), JQL search results (issue ids/fields as requested).
 - **Secrets / auth:** Uses Forge-provided auth (`api.asApp()` / `api.asUser()`). OAuth tokens (if used) are stored in Forge Storage; no raw secrets are persisted in source files.
-- **Code references:** [src/jira_ingest.ts](src/jira_ingest.ts#L157) (projects), [src/jira_ingest.ts](src/jira_ingest.ts#L222) (issuetypes), [src/jira_ingest.ts](src/jira_ingest.ts#L287) (statuses), [src/jira_ingest.ts](src/jira_ingest.ts#L352) (fields), [src/jira_ingest.ts](src/jira_ingest.ts#L421) (search/issues), [src/jira_ingest.ts](src/jira_ingest.ts#L502) (automations), [src/phase6/snapshot_capture.ts](src/phase6/snapshot_capture.ts#L275) (snapshot capture using `api.asUser().requestJira`).
+- **Code references:** [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest-ts-L157) (projects), [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest-ts-L222) (issuetypes), [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest-ts-L287) (statuses), [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest-ts-L352) (fields), [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest-ts-L421) (search/issues), [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest-ts-L502) (automations), [src/phase6/snapshot_capture.ts](trust/generated/code_refs_inventory.md#snapshot_capture-ts-L275) (snapshot capture using `api.asUser().requestJira`).
 
 **Atlassian site admin / storage (direct Request to api.atlassian.com)**
 - **Destination:** https://api.atlassian.com (site admin/storage endpoint used in debug snapshot)
 - **Purpose:** Admin-only debug snapshot reads for storage proof (debug marker read). This is a PHASE-1 debug helper and not used for production business logic.
 - **Data categories:** Debug marker metadata (marker keys, event_id placeholders, shard identifiers). The module explicitly avoids returning raw payloads or tokens.
 - **Secrets / auth:** The code example includes an Authorization header placeholder; real auth would be provided by Forge/runtime. No secrets hard-coded in source.
-- **Code reference:** [src/storage_debug.ts](src/storage_debug.ts#L80) (Request to api.atlassian.com site storage)
+- **Code reference:** [src/storage_debug.ts](trust/generated/code_refs_inventory.md#storage_debug-ts-L80) (Request to api.atlassian.com site storage)
 
 **No external APIs**
 - FirstTry does not make any calls to external APIs or services.
@@ -26,7 +26,7 @@ No external third-party APIs are used. All network activity is limited to Atlass
 ---
 
 Notes and exclusions
-- The codebase contains a comment describing the standard OAuth token endpoint (`https://api.atlassian.com/oauth/token`) in [src/auth/oauth_handler.ts](src/auth/oauth_handler.ts#L102), however that POST is currently only documented in comments and the refresh function is a placeholder (no network request is issued). Per the allowlist rules, commented-only destinations are not included as outbound entries.
+- The codebase contains a comment describing the standard OAuth token endpoint (`https://api.atlassian.com/oauth/token`) in [src/auth/oauth_handler.ts](trust/generated/code_refs_inventory.md#oauth_handler-ts-L102), however that POST is currently only documented in comments and the refresh function is a placeholder (no network request is issued). Per the allowlist rules, commented-only destinations are not included as outbound entries.
 - Search methodology: repository scanned for outbound patterns (`fetch`, `requestJira`, explicit `https://` literals) and results were manually inspected; only runtime network calls present in src/ were listed above.
 
 If you want, I can (1) include an explicit mapping of which OAuth/storage keys are used for which tenant IDs, (2) add a short runtime note about how Forge resolves `requestJira` to the Atlassian endpoints, or (3) run a final grep/CI check to ensure no other files make outbound calls.
@@ -64,12 +64,12 @@ All network activity is:
 
 | File | Line | Method | URL Pattern | Data Accessed |
 |------|------|--------|-------------|---------------|
-| [src/jira_ingest.ts](../src/jira_ingest.ts#L275) | 275 | `api.asUser().requestJira()` | `/rest/api/3/project` | Project list (id, key, name) |
-| [src/jira_ingest.ts](../src/jira_ingest.ts#L310) | 310 | `api.asUser().requestJira()` | `/rest/api/3/issuetype` | Issue type metadata |
-| [src/jira_ingest.ts](../src/jira_ingest.ts#L340) | 340 | `api.asUser().requestJira()` | `/rest/api/3/status` | Status metadata |
-| [src/jira_ingest.ts](../src/jira_ingest.ts#L370) | 370 | `api.asUser().requestJira()` | `/rest/api/3/field` | Field metadata (system + custom) |
-| [src/jira_ingest.ts](../src/jira_ingest.ts#L420) | 420 | `api.asUser().requestJira()` | `/rest/api/3/search` | Issue events (created, updated timestamps) via JQL |
-| [src/phase6/snapshot_capture.ts](../src/phase6/snapshot_capture.ts#L275) | 275 | `api.asUser().requestJira()` | `/rest/api/3/project` | Phase 6 snapshot evidence (projects) |
+| [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest.ts#L275) | 275 | `api.asUser().requestJira()` | `/rest/api/3/project` | Project list (id, key, name) |
+| [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest.ts#L310) | 310 | `api.asUser().requestJira()` | `/rest/api/3/issuetype` | Issue type metadata |
+| [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest.ts#L340) | 340 | `api.asUser().requestJira()` | `/rest/api/3/status` | Status metadata |
+| [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest.ts#L370) | 370 | `api.asUser().requestJira()` | `/rest/api/3/field` | Field metadata (system + custom) |
+| [src/jira_ingest.ts](trust/generated/code_refs_inventory.md#jira_ingest.ts#L420) | 420 | `api.asUser().requestJira()` | `/rest/api/3/search` | Issue events (created, updated timestamps) via JQL |
+| [src/phase6/snapshot_capture.ts](trust/generated/code_refs_inventory.md#phase6/snapshot_capture.ts#L275) | 275 | `api.asUser().requestJira()` | `/rest/api/3/project` | Phase 6 snapshot evidence (projects) |
 
 **Platform Guarantee**: Atlassian Forge runtime enforces:
 - Scopes declared in manifest.yml
@@ -93,10 +93,10 @@ All network activity is:
 
 | File | Line | Method | Data Stored |
 |------|------|--------|-------------|
-| [src/evidence_storage.ts](../src/evidence_storage.ts#L68) | 68 | `api.asApp().requestStorage()` | Evidence records |
-| [src/storage.ts](../src/storage.ts#L24) | 24 | `api.asApp().requestStorage()` | Generic storage operations |
-| [src/run_ledgers.ts](../src/run_ledgers.ts#L41) | 41 | `api.asApp().requestStorage()` | Pipeline run ledgers |
-| [src/admin/admin_page_loader.ts](../src/admin/admin_page_loader.ts#L85) | 85 | `api.asApp().requestStorage()` | Phase 5 report data |
+| [src/evidence_storage.ts](trust/generated/code_refs_inventory.md#evidence_storage.ts#L68) | 68 | `api.asApp().requestStorage()` | Evidence records |
+| [src/storage.ts](trust/generated/code_refs_inventory.md#storage.ts#L24) | 24 | `api.asApp().requestStorage()` | Generic storage operations |
+| [src/run_ledgers.ts](trust/generated/code_refs_inventory.md#run_ledgers.ts#L41) | 41 | `api.asApp().requestStorage()` | Pipeline run ledgers |
+| [src/admin/admin_page_loader.ts](trust/generated/code_refs_inventory.md#admin/admin_page_loader.ts#L85) | 85 | `api.asApp().requestStorage()` | Phase 5 report data |
 
 **Platform Guarantee**: Forge runtime enforces:
 - Tenant isolation (storage scoped to cloudId)
@@ -146,7 +146,7 @@ No admin UI is provided. All report generation and data collection occurs automa
 - No DNS lookups, WebSocket connections, or raw socket usage
 
 **False Positives**:
-- Comment in [src/phase9_5c/auto_notification.ts](../src/phase9_5c/auto_notification.ts#L251): `// In production: Store in notifications table, trigger real-time UI update via WebSocket`
+- Comment in [src/phase9_5c/auto_notification.ts](trust/generated/code_refs_inventory.md#phase9_5c/auto_notification.ts#L251): `// In production: Store in notifications table, trigger real-time UI update via WebSocket`
   - This is a **comment only** describing future possibility, not actual code
 
 ---
@@ -157,7 +157,7 @@ No admin UI is provided. All report generation and data collection occurs automa
 
 **Answer**: **NO**
 
-The app includes an OAuth handler ([src/auth/oauth_handler.ts](../src/auth/oauth_handler.ts)) but it is:
+The app includes an OAuth handler ([src/auth/oauth_handler.ts](trust/generated/code_refs_inventory.md#oauth_handler-ts)) but it is:
 1. **Unused in production** (no manifest triggers reference it)
 2. **Documented for future scope expansion only**
 3. Contains comment about `POST to https://api.atlassian.com/oauth/token` but this is:
@@ -199,7 +199,7 @@ The app includes an OAuth handler ([src/auth/oauth_handler.ts](../src/auth/oauth
 
 ## Enforcement
 
-**Test**: [tests/credibility/gap3_egress_static_and_runtime.test.ts](../tests/credibility/gap3_egress_static_and_runtime.test.ts)
+**Test**: [tests/credibility/gap3_egress_static_and_runtime.test.ts](trust/generated/code_refs_inventory.md#gap3_egress_static_and_runtime-test-ts)
 
 1. **Static Scan**: Grep `src/**/*.ts` for network API imports
 2. **Runtime Trap**: Monkey-patch `fetch`, `http.request`, `https.request` during tests

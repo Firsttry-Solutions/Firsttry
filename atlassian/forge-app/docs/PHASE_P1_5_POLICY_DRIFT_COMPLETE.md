@@ -2,7 +2,7 @@
 
 This document describes Phase P1.5 implementation details. For customer-facing documentation, refer to:
 - [SECURITY.md](SECURITY.md) — Customer security documentation
-- [FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md) — Authoritative statement of facts
+- [FACTS_AND_NONCLAIMS.md](trust/stubs/FACTS_AND_NONCLAIMS.md) — Authoritative statement of facts
 
 ---
 

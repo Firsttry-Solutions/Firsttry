@@ -482,5 +482,5 @@ Once gate passes (`exit 0`):
 - [MARKETPLACE_SUBMISSION_EVIDENCE_INDEX.md](MARKETPLACE_SUBMISSION_EVIDENCE_INDEX.md) — Index of all evidence
 - [ADMIN_GUIDE.md](ADMIN_GUIDE.md) — Installation + troubleshooting for customers
 - [DATA_HANDLING.md](DATA_HANDLING.md) — Data privacy + retention
-- [SECURITY.md](../SECURITY.md) — Security model (realistic, no false claims)
+- [SECURITY.md](trust/generated/security_overview_mirror.md) — Security model (realistic, no false claims)
 - [SUPPORT.md](SUPPORT.md) — Support channels + response time

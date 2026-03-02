@@ -3,7 +3,7 @@
 This document describes Phase P1 implementation details. For customer-facing documentation, refer to:
 - [SECURITY.md](SECURITY.md) — Customer security documentation
 - [DATA_RETENTION.md](DATA_RETENTION.md) — Customer data retention policy  
-- [FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md) — Authoritative statement of facts
+- [FACTS_AND_NONCLAIMS.md](trust/stubs/FACTS_AND_NONCLAIMS.md) — Authoritative statement of facts
 
 ---
 
@@ -319,7 +319,7 @@ Phase P1 implementation includes controls relevant to:
 - **SOC 2**: Automated controls and change management (supports evidence-gathering for SOC 2 evaluations)
 - **ISO 27001**: Access control and configuration management (supports evidence-gathering for ISO evaluations)
 
-**For details on what FirstTry does NOT claim**, see [FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md#explicit-non-claims).
+**For details on what FirstTry does NOT claim**, see [FACTS_AND_NONCLAIMS.md](trust/stubs/FACTS_AND_NONCLAIMS.md#explicit-non-claims).
 
 ---
 

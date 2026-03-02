@@ -177,21 +177,21 @@ Current verdicts:
 ## 🛠️ Tooling Scripts
 
 ### Production Audit Orchestration
-- [tools/production/run_prod_ready_audit.sh](../../../tools/production/run_prod_ready_audit.sh) (4.2 KB)
+- [tools/production/run_prod_ready_audit.sh](../trust/generated/repo_refs.md) (4.2 KB)
   - Master orchestrator: runs GATE 1-3 in sequence
   - Sets/reuses evidence directory (/tmp/ft_prod_ready_YYYYMMDDTHHMMSSZ)
   - Writes final verdict to $E/PROD_READY_VERDICT.txt (via FT_PROD_READY_E environment variable)
   - Exit code: 0 (PASS) or 1 (FAIL)
 
 ### CR1 - Tests Gate
-- [tools/production/verify_tests_clean.sh](../../../tools/production/verify_tests_clean.sh) (2.5 KB)
+- [tools/production/verify_tests_clean.sh](../trust/generated/repo_refs.md) (2.5 KB)
   - Gate 1: Dirty tree check (allowlist: docs/production/, tools/production/, tests/production/, *.gen.ts files)
   - Gate 2: npm test execution
   - Output: $E/03_tests/{npm_test_full.log, npm_test_exit_code.txt, npm_test_summary_tail.txt}
   - Exit code: 0 (PASS) or 1 (FAIL test)
 
 ### CR2 - Build Gate
-- [tools/production/run_build_proof.sh](../../../tools/production/run_build_proof.sh) (3.8 KB)
+- [tools/production/run_build_proof.sh](../trust/generated/repo_refs.md) (3.8 KB)
   - Gate 1: Dirty tree check (same allowlist)
   - Gate 2: Determine build command from package.json scripts
   - Gate 3: npm run <build_command> execution  
@@ -199,7 +199,7 @@ Current verdicts:
   - Exit code: 0 (PASS) or 1 (FAIL build)
 
 ### CR3 - UI Markers Gate
-- [tools/production/verify_ui_markers.sh](../../../tools/production/verify_ui_markers.sh) (3.8 KB)
+- [tools/production/verify_ui_markers.sh](../trust/generated/repo_refs.md) (3.8 KB)
   - Gate 1: List dist JS files
   - Gate 2: Verify marker presence in source
   - Gate 3: Count marker occurrences in ALL dist JS
@@ -208,7 +208,7 @@ Current verdicts:
   - Exit code: 0 (PASS with all markers) or 1 (FAIL if marker missing)
 
 ### Fixed Verification Script
-- [tools/verify_dist_invoke_allowlist.sh](../../../tools/verify_dist_invoke_allowlist.sh) - Fixed
+- [tools/verify_dist_invoke_allowlist.sh](../trust/generated/repo_refs.md) - Fixed
   - Issue: Expected hashed filenames (app.ABC123.js), build produces stable (app.js)
   - Fix: Updated regex to handle both patterns
   - Commit: 246ca077 "fix: handle stable app.js filename in dist bundle verification gate"
@@ -273,7 +273,7 @@ PROD_READY_VERDICT.txt   Final one-line verdict (FAIL for this audit)
 ### For Repository Managers
 1. Review [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) - 5 min executive briefing
 2. Check [00_PRODUCTION_READY_INDEX.md](00_PRODUCTION_READY_INDEX.md) - Track CR status
-3. Run [run_prod_ready_audit.sh](../../../tools/production/run_prod_ready_audit.sh) - To re-verify
+3. Run [run_prod_ready_audit.sh](../trust/generated/repo_refs.md) - To re-verify
 
 ### For Security/Compliance Team
 1. Review [30_SECURITY_TRUST_PACK.md](30_SECURITY_TRUST_PACK.md) - All security claims

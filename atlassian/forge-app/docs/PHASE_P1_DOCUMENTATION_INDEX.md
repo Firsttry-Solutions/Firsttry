@@ -2,7 +2,7 @@
 
 This document is an internal engineering index. For customer-facing documentation, refer to the main [README.md](README.md) and the following customer docs:
 - [SECURITY.md](SECURITY.md)
-- [FACTS_AND_NONCLAIMS.md](FACTS_AND_NONCLAIMS.md)
+- [FACTS_AND_NONCLAIMS.md](trust/stubs/FACTS_AND_NONCLAIMS.md)
 
 ---
 
@@ -37,8 +37,8 @@ This document is an internal engineering index. For customer-facing documentatio
 - Status: ✅ 35/35 passing
 
 **Documentation:**
-- 📖 [PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md](PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md) - Full guide
-- 📝 [SECURITY.md](../SECURITY.md#p11-logging-safety-guarantee) - Overview in SECURITY.md
+- 📖 [PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md](trust/stubs/PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md) - Full guide
+- 📝 [SECURITY.md](trust/generated/security_overview_mirror.md#p11-logging-safety-guarantee) - Overview in SECURITY.md
 
 **What It Does:**
 - Global console redaction interceptor
@@ -62,8 +62,8 @@ npm test -- tests/p1_logging_safety.test.ts
 - Status: ✅ 51/51 passing
 
 **Documentation:**
-- 📖 [PHASE_P1_2_RETENTION_COMPLETE.md](PHASE_P1_2_RETENTION_COMPLETE.md) - Full guide
-- 📝 [SECURITY.md](../SECURITY.md#p12-data-retention-guarantee) - Overview
+- 📖 [PHASE_P1_2_RETENTION_COMPLETE.md](trust/stubs/PHASE_P1_2_RETENTION_COMPLETE.md) - Full guide
+- 📝 [SECURITY.md](trust/generated/security_overview_mirror.md#p12-data-retention-guarantee) - Overview
 
 **What It Does:**
 - 90-day TTL enforcement on all data
@@ -88,8 +88,8 @@ npm test -- tests/p1_retention_policy.test.ts
 - Status: ✅ 56/56 passing
 
 **Documentation:**
-- 📖 [PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md](PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md) - Full guide
-- 📝 [SECURITY.md](../SECURITY.md#p13-export-truth-guarantee) - Overview
+- 📖 [PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md](trust/stubs/PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md) - Full guide
+- 📝 [SECURITY.md](trust/generated/security_overview_mirror.md#p13-export-truth-guarantee) - Overview
 
 **What It Does:**
 - Wraps all exports with metadata
@@ -115,7 +115,7 @@ npm test -- tests/p1_export_truth.test.ts
 
 **Documentation:**
 - 📖 [PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md](PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md) - Full guide
-- 📝 [SECURITY.md](../SECURITY.md#p14-tenant-isolation-guarantee) - Overview
+- 📝 [SECURITY.md](trust/generated/security_overview_mirror.md#p14-tenant-isolation-guarantee) - Overview
 
 **What It Does:**
 - Derives canonical tenant ID from Forge context
@@ -141,7 +141,7 @@ npm test -- tests/p1_tenant_isolation.test.ts
 
 **Documentation:**
 - 📖 [PHASE_P1_5_POLICY_DRIFT_COMPLETE.md](PHASE_P1_5_POLICY_DRIFT_COMPLETE.md) - Full guide
-- 📝 [SECURITY.md](../SECURITY.md#p15-policy-drift-protection-guarantee) - Overview
+- 📝 [SECURITY.md](trust/generated/security_overview_mirror.md#p15-policy-drift-protection-guarantee) - Overview
 
 **What It Does:**
 - Captures 5 policy baselines (scopes, storage keys, egress, export schema, TTL)
@@ -244,19 +244,19 @@ npm test -- tests/p1_*.test.ts
 ## For Developers
 
 ### I want to understand how logging safety works
-→ Start with [PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md](PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md)
+→ Start with [PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md](trust/stubs/PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md)
 
 ### I need to add a new storage prefix
 → Read [PHASE_P1_5_POLICY_DRIFT_COMPLETE.md](PHASE_P1_5_POLICY_DRIFT_COMPLETE.md) - "How to Approve Changes" section
 
 ### I want to export data safely
-→ Check [PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md](PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md) - "Usage Examples" section
+→ Check [PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md](trust/stubs/PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md) - "Usage Examples" section
 
 ### I need to understand multi-tenant isolation
 → See [PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md](PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md) - "Isolation Guarantee" section
 
 ### I want to extend the retention policy
-→ Review [PHASE_P1_2_RETENTION_COMPLETE.md](PHASE_P1_2_RETENTION_COMPLETE.md) - "Retention Configuration" section
+→ Review [PHASE_P1_2_RETENTION_COMPLETE.md](trust/stubs/PHASE_P1_2_RETENTION_COMPLETE.md) - "Retention Configuration" section
 
 ---
 
@@ -266,7 +266,7 @@ npm test -- tests/p1_*.test.ts
 → [PHASE_P1_COMPLETE_SUMMARY.md](PHASE_P1_COMPLETE_SUMMARY.md) - "Guarantees Made" section
 
 ### Compliance Certifications
-→ See [SECURITY.md](../SECURITY.md) - "Compliance" section
+→ See [SECURITY.md](trust/generated/security_overview_mirror.md) - "Compliance" section
 - GDPR Article 17 compliance
 - HIPAA audit logging
 - SOC 2 automated controls
@@ -323,7 +323,7 @@ node audit/policy_drift_check.js
 3. Check test file for specific test that's failing
 
 ### Need to Change a Policy?
-1. Read [SECURITY.md](../SECURITY.md) - "Drift Detection Process" section
+1. Read [SECURITY.md](trust/generated/security_overview_mirror.md) - "Drift Detection Process" section
 2. Update baseline file in `audit/policy_baseline/`
 3. Update `SECURITY.md` with approval reason
 4. Commit both together
@@ -367,12 +367,12 @@ node audit/policy_drift_check.js
 | Document | Status | Link |
 |----------|--------|------|
 | P1 Summary | ✅ Complete | [PHASE_P1_COMPLETE_SUMMARY.md](PHASE_P1_COMPLETE_SUMMARY.md) |
-| P1.1 Guide | ✅ Complete | [PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md](PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md) |
-| P1.2 Guide | ✅ Complete | [PHASE_P1_2_RETENTION_COMPLETE.md](PHASE_P1_2_RETENTION_COMPLETE.md) |
-| P1.3 Guide | ✅ Complete | [PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md](PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md) |
+| P1.1 Guide | ✅ Complete | [PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md](trust/stubs/PHASE_P1_1_LOGGING_SAFETY_COMPLETE.md) |
+| P1.2 Guide | ✅ Complete | [PHASE_P1_2_RETENTION_COMPLETE.md](trust/stubs/PHASE_P1_2_RETENTION_COMPLETE.md) |
+| P1.3 Guide | ✅ Complete | [PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md](trust/stubs/PHASE_P1_3_EXPORT_TRUTH_COMPLETE.md) |
 | P1.4 Guide | ✅ Complete | [PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md](PHASE_P1_4_TENANT_ISOLATION_COMPLETE.md) |
 | P1.5 Guide | ✅ Complete | [PHASE_P1_5_POLICY_DRIFT_COMPLETE.md](PHASE_P1_5_POLICY_DRIFT_COMPLETE.md) |
-| SECURITY.md | ✅ Complete | [../SECURITY.md](../SECURITY.md) |
+| SECURITY.md | ✅ Complete | [../SECURITY.md](trust/generated/security_overview_mirror.md) |
 
 ---
 

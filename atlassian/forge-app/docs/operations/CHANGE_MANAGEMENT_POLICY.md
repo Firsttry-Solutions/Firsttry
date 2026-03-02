@@ -170,4 +170,4 @@ If deployed version has critical issue:
 
 - [docs/evidence/baselines/README.md](../evidence/baselines/README.md): Baseline file policy
 - [CHANGELOG.md](../CHANGELOG.md): Release history
-- [tools/generate_enterprise_evidence.sh](../../tools/generate_enterprise_evidence.sh): Evidence generation
+- [tools/generate_enterprise_evidence.sh](../trust/generated/repo_refs.md): Evidence generation

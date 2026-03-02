@@ -27,7 +27,7 @@ Use these documents to evaluate FirstTry for Marketplace listing:
 | [REVIEWER_FAQ.md](REVIEWER_FAQ.md) | Common reviewer questions answered |
 | [SECURITY_AND_PRIVACY.md](SECURITY_AND_PRIVACY.md) | Scope justification, data handling, API calls |
 | [EVIDENCE_INTEGRITY.md](EVIDENCE_INTEGRITY.md) | Determinism testing, hash verification |
-| [../audit/CLAIMS_LEDGER.md](../audit/CLAIMS_LEDGER.md) | Every factual claim with proof pointer |
+| [../audit/CLAIMS_LEDGER.md](trust/generated/repo_refs.md) | Every factual claim with proof pointer |
 
 ---
 
@@ -39,8 +39,8 @@ If you're conducting a security audit:
 |----------|---------|
 | [SECURITY_AND_PRIVACY.md](SECURITY_AND_PRIVACY.md) | Scope declarations, API surface, data flows |
 | [PRODUCT_BOUNDARIES.md](PRODUCT_BOUNDARIES.md) | What FirstTry does and doesn't do |
-| [../legal/VULNERABILITY_DISCLOSURE.md](../legal/VULNERABILITY_DISCLOSURE.md) | Responsible disclosure policy |
-| [../audit/proof_runs/*/](../audit/proof_runs/) | Automated proof artifacts (code scans, tests, manifests) |
+| [../legal/VULNERABILITY_DISCLOSURE.md](trust/generated/legal_mirror.md) | Responsible disclosure policy |
+| [../audit/proof_runs/*/](trust/generated/repo_refs.md) | Automated proof artifacts (code scans, tests, manifests) |
 
 ---
 
@@ -50,22 +50,19 @@ If you're contributing or extending FirstTry:
 
 | Document | Purpose |
 |----------|---------|
-| [../README.md](../README.md) | Project overview and quick start |
-| [../manifest.yml](../manifest.yml) | App configuration and scopes declaration |
-| [../SCOPES_JUSTIFICATION.md](../SCOPES_JUSTIFICATION.md) | Why each scope is needed |
-
----
+| [../README.md](trust/generated/repo_refs.md) | Project overview and quick start |
+| [Manifest Scopes](trust/generated/manifest_scopes.md) | App configuration and scopes declaration |
 
 ## For Legal & Compliance Teams
 
 | Document | Purpose |
 |----------|---------|
-| [../legal/PRIVACY_POLICY.md](../legal/PRIVACY_POLICY.md) | Privacy practices and data handling |
-| [../legal/TERMS_OF_USE.md](../legal/TERMS_OF_USE.md) | Terms and conditions |
-| [../legal/VULNERABILITY_DISCLOSURE.md](../legal/VULNERABILITY_DISCLOSURE.md) | Security issue reporting |
-| [../legal/SUPPORT_POLICY.md](../legal/SUPPORT_POLICY.md) | Support SLAs and responsiveness |
-| [../legal/INCIDENT_RESPONSE_OVERVIEW.md](../legal/INCIDENT_RESPONSE_OVERVIEW.md) | Incident response procedures |
-| [../legal/SUBPROCESSORS.md](../legal/SUBPROCESSORS.md) | Third-party data processors |
+| [../legal/PRIVACY_POLICY.md](trust/generated/legal_mirror.md) | Privacy practices and data handling |
+| [../legal/TERMS_OF_USE.md](trust/generated/legal_mirror.md) | Terms and conditions |
+| [../legal/VULNERABILITY_DISCLOSURE.md](trust/generated/legal_mirror.md) | Security issue reporting |
+| [../legal/SUPPORT_POLICY.md](trust/generated/legal_mirror.md) | Support SLAs and responsiveness |
+| [../legal/INCIDENT_RESPONSE_OVERVIEW.md](trust/generated/legal_mirror.md) | Incident response procedures |
+| [../legal/SUBPROCESSORS.md](trust/generated/legal_mirror.md) | Third-party data processors |
 
 ---
 
@@ -73,9 +70,9 @@ If you're contributing or extending FirstTry:
 
 | Document | Purpose |
 |----------|---------|
-| [../enterprise/SECURITY_WHITEPAPER.md](../enterprise/SECURITY_WHITEPAPER.md) | In-depth security architecture (4+ pages) |
-| [../enterprise/CUSTOMER_EXIT_PLAN.md](../enterprise/CUSTOMER_EXIT_PLAN.md) | Data export and uninstall procedures |
-| [../enterprise/COMPLIANCE_MAPPING_NOTES.md](../enterprise/COMPLIANCE_MAPPING_NOTES.md) | Alignment with GDPR, SOC 2, and other standards |
+| [../enterprise/SECURITY_WHITEPAPER.md](trust/generated/repo_refs.md) | In-depth security architecture (4+ pages) |
+| [../enterprise/CUSTOMER_EXIT_PLAN.md](trust/generated/repo_refs.md) | Data export and uninstall procedures |
+| [../enterprise/COMPLIANCE_MAPPING_NOTES.md](trust/generated/repo_refs.md) | Alignment with GDPR, SOC 2, and other standards |
 
 ---
 
@@ -83,9 +80,9 @@ If you're contributing or extending FirstTry:
 
 | Document | Purpose |
 |----------|---------|
-| [../marketplace/LISTING_COPY.md](../marketplace/LISTING_COPY.md) | App description and marketing copy |
-| [../marketplace/SCREENSHOT_PLAN.md](../marketplace/SCREENSHOT_PLAN.md) | Screenshots and UX walkthrough |
-| [../marketplace/badges/read_only_no_writes.svg](../marketplace/badges/read_only_no_writes.svg) | Visual badge proving read-only guarantee |
+| [../marketplace/LISTING_COPY.md](trust/generated/repo_refs.md) | App description and marketing copy |
+| [../marketplace/SCREENSHOT_PLAN.md](trust/generated/repo_refs.md) | Screenshots and UX walkthrough |
+| [../marketplace/badges/read_only_no_writes.svg](trust/generated/repo_refs.md) | Visual badge proving read-only guarantee |
 
 ---
 
@@ -116,7 +113,7 @@ If you're contributing or extending FirstTry:
 **Is FirstTry read-only?** → Yes, see [PRODUCT_BOUNDARIES.md](PRODUCT_BOUNDARIES.md)  
 **What data does it access?** → See [SECURITY_AND_PRIVACY.md](SECURITY_AND_PRIVACY.md)  
 **How long is data kept?** → See [DATA_RETENTION_POLICY.md](DATA_RETENTION_POLICY.md)  
-**Is there a security issue?** → Report via [../legal/VULNERABILITY_DISCLOSURE.md](../legal/VULNERABILITY_DISCLOSURE.md)  
+**Is there a security issue?** → Report via [../legal/VULNERABILITY_DISCLOSURE.md](trust/generated/legal_mirror.md)  
 **Installation help?** → See [USER_GUIDE.md](USER_GUIDE.md)
 
 ---

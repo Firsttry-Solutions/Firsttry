@@ -21,7 +21,7 @@ Fix proof integrity vulnerabilities to make production audit proof non-attackabl
 - ✅ No sleep commands or pauses anywhere
 - ✅ All steps execute sequentially and block until completion
 
-**Evidence**: [tools/production/run_prod_ready_audit.sh](tools/production/run_prod_ready_audit.sh) - no timeout/sleep keywords in executable code
+**Evidence**: [tools/production/run_prod_ready_audit.sh](../trust/generated/code_refs_inventory.md#run_prod_ready_audit-sh) - no timeout/sleep keywords in executable code
 
 ### NO SLEEP / BACKGROUND EXECUTION
 - ✅ All 6 verification steps run with: `bash script.sh > log 2>&1; EXIT=$?`
@@ -72,7 +72,7 @@ STEP 6: verify_no_timeout_or_true.sh → PASS (exit=0) ✓ [discipline verified]
 
 ## Changes Made
 
-### File 1: [tools/production/run_prod_ready_audit.sh](tools/production/run_prod_ready_audit.sh)
+### File 1: [tools/production/run_prod_ready_audit.sh](../trust/generated/code_refs_inventory.md#run_prod_ready_audit-sh)
 
 **Changes**:
 1. Removed subshell-to-tee pattern that hid exit codes
@@ -82,7 +82,7 @@ STEP 6: verify_no_timeout_or_true.sh → PASS (exit=0) ✓ [discipline verified]
 
 **Design**: NO subshells, NO pipes hiding exit codes, synchronous only
 
-### File 2: [tools/production/verify_no_outbound_runtime.sh](tools/production/verify_no_outbound_runtime.sh)
+### File 2: [tools/production/verify_no_outbound_runtime.sh](../trust/generated/code_refs_inventory.md#verify_no_outbound_runtime-sh)
 
 **Changes**:
 1. Removed `|| true` from rg pattern scanning (lines 43, 46)

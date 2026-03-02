@@ -296,7 +296,7 @@ See P5_CLAIMS_MAP.json for complete mapping.
 ## 16. Contact & Support
 
 ### For Questions
-- Technical: See [EVIDENCE_MODEL.md](docs/EVIDENCE_MODEL.md), [REGENERATION_GUARANTEES.md](docs/REGENERATION_GUARANTEES.md)
+- Technical: See [EVIDENCE_MODEL.md](EVIDENCE_MODEL.md), [REGENERATION_GUARANTEES.md](REGENERATION_GUARANTEES.md)
 - Claims Verification: Run `npm run p5:export` to generate P5_CLAIMS_MAP.json
 - Security: Run `npm run p5:export` to generate P5_SECURITY_ANSWERS.json
 

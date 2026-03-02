@@ -116,9 +116,9 @@ grep "UI_RESIZE_CAPS" app.*.js
 ## Reference Documents
 
 - [Full Delivery Report](./CSP_RESIZE_DELIVERY_REPORT.md)
-- [Source: resizeHandler.ts](./src/gadget-ui/src/resizeHandler.ts)
-- [Tests: resizeHandler.test.ts](./tests/resizeHandler.test.ts)
-- [Gate: verify_ui_csp_safe_resize.sh](./tools/verify_ui_csp_safe_resize.sh)
+- [Source: resizeHandler.ts](../trust/generated/code_refs_inventory.md#gadget-ui/src/resizeHandler.ts)
+- [Tests: resizeHandler.test.ts](../trust/generated/code_refs_inventory.md#resizeHandler.test.ts)
+- [Gate: verify_ui_csp_safe_resize.sh](../trust/generated/code_refs_inventory.md#verify_ui_csp_safe_resize.sh)
 
 ## Quick Commands
 

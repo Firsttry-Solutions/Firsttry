@@ -199,93 +199,64 @@ echo "  Linkability issues: ${#PAGES_ISSUES[@]}"
 # ============================================================================
 
 echo ""
-echo "[03] Checking internal link integrity..."
+echo "[03] Checking offline linkability (Pages-safe)..."
 
-LINK_REPORT="$E/03_links/link_report.txt"
-declare -a BROKEN_LINKS=()
-declare -a INSECURE_EXTERNAL=()
+# First, regenerate trust facts to ensure mirror docs are up-to-date
+echo "  Regenerating trust facts..."
+if ! bash "$SCRIPT_DIR/regenerate_trust_facts.sh" > "$E/03_links/regenerate_trust_facts.log" 2>&1; then
+  echo "FAIL: Trust facts regeneration failed"
+  cat "$E/03_links/regenerate_trust_facts.log"
+  echo "REJECT" > "$E/05_verdict/VERDICT.txt"
+  echo "Trust facts regeneration failed" >> "$E/05_verdict/VERDICT.txt"
+  exit 1
+fi
 
-for doc in "${REQUIRED_DOCS[@]}" "${REQUIRED_OPS_DOCS[@]}"; do
-  DOC_PATH="$REPO_ROOT/$doc"
-  [[ ! -f "$DOC_PATH" ]] && continue
+# Run comprehensive offline linkability check
+echo "  Running offline link checker..."
+LINKCHECK_DIR="$E/03_links"
+if ! bash "$SCRIPT_DIR/build_docs_site_offline.sh" "$LINKCHECK_DIR" > "$E/03_links/linkability_check.log" 2>&1; then
+  echo "FAIL: Linkability check failed"
+  cat "$E/03_links/linkability_check.log"
+  echo "REJECT" > "$E/05_verdict/VERDICT.txt"
+  echo "Linkability check failed - see $LINKCHECK_DIR/05_links/link_report.txt" >> "$E/05_verdict/VERDICT.txt"
+  exit 1
+fi
+
+# Check verdict
+LINK_VERDICT="$LINKCHECK_DIR/05_links/VERDICT.txt"
+if [[ ! -f "$LINK_VERDICT" ]]; then
+  echo "FAIL: Link checker did not produce VERDICT.txt"
+  echo "REJECT" > "$E/05_verdict/VERDICT.txt"
+  echo "Missing VERDICT.txt from linkability check" >> "$E/05_verdict/VERDICT.txt"
+  exit 1
+fi
+
+LINK_STATUS=$(cat "$LINK_VERDICT")
+if [[ "$LINK_STATUS" != "PASS" ]]; then
+  echo "FAIL: Linkability check status = $LINK_STATUS (expected PASS)"
+  echo "Broken links detected - see $LINKCHECK_DIR/05_links/link_report.txt"
   
-  DOC_DIR="$(dirname "$DOC_PATH")"
+  # Show first 30 broken links for diagnosis
+  echo ""
+  echo "First 30 broken links:"
+  head -40 "$LINKCHECK_DIR/05_links/link_report.txt" | tail -30
   
-  # Extract markdown links: [text](url) or [text](url#anchor)
-  grep -oP '\[([^\]]+)\]\(([^)]+)\)' "$DOC_PATH" 2>/dev/null | sed 's/\[.*\](\(.*\))/\1/' | while read -r link; do
-    # Skip empty links
-    [[ -z "$link" ]] && continue
-    
-    # External links
-    if [[ "$link" =~ ^https?:// ]]; then
-      if [[ "$link" =~ ^http:// ]] || [[ "$link" =~ localhost ]]; then
-        echo "FAIL $doc: insecure/localhost link: $link" >> "$LINK_REPORT"
-        INSECURE_EXTERNAL+=("$doc: $link")
-      else
-        echo "PASS $doc: external link OK (not verified): $link" >> "$LINK_REPORT"
-      fi
-      continue
-    fi
-    
-    # Internal relative links
-    LINK_PATH="${link%%#*}"  # Remove anchor
-    ANCHOR="${link#*#}"
-    [[ "$ANCHOR" == "$link" ]] && ANCHOR=""
-    
-    # Resolve relative path
-    TARGET_PATH="$(cd "$DOC_DIR" && realpath -m "$LINK_PATH" 2>/dev/null || echo "")"
-    
-    if [[ -z "$TARGET_PATH" ]] || [[ ! -f "$TARGET_PATH" ]]; then
-      echo "FAIL $doc: broken link: $link (resolved: $TARGET_PATH)" >> "$LINK_REPORT"
-      BROKEN_LINKS+=("$doc: $link")
-    else
-      # Check anchor if present
-      if [[ -n "$ANCHOR" ]]; then
-        # Basic anchor check: slugify heading (convert to lowercase, replace spaces with hyphens)
-        SLUG=$(echo "$ANCHOR" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/--*/-/g')
-        if ! grep -qiP "^#+\s+.*$(echo "$ANCHOR" | sed 's/-/ /g')" "$TARGET_PATH" 2>/dev/null; then
-          echo "WARN $doc: anchor may not exist: $link" >> "$LINK_REPORT"
-        else
-          echo "PASS $doc: internal link OK: $link" >> "$LINK_REPORT"
-        fi
-      else
-        echo "PASS $doc: internal link OK: $link" >> "$LINK_REPORT"
-      fi
-    fi
-  done || true  # Don't fail if no links found
-done
+  echo "REJECT" > "$E/05_verdict/VERDICT.txt"
+  echo "Linkability check failed: $LINK_STATUS" >> "$E/05_verdict/VERDICT.txt"
+  echo "See: $LINKCHECK_DIR/05_links/link_report.txt" >> "$E/05_verdict/VERDICT.txt"
+  exit 1
+fi
 
-# Read link issues from report (written line-by-line in loop)
-BROKEN_COUNT=$(grep -c "^FAIL" "$LINK_REPORT" 2>/dev/null || echo "0")
-INSECURE_COUNT=$(grep -c "insecure/localhost" "$LINK_REPORT" 2>/dev/null || echo "0")
+LINK_REPORT="$LINKCHECK_DIR/05_links/link_report.txt"
+BROKEN_COUNT=$(grep "^Broken links:" "$LINK_REPORT" 2>/dev/null | awk '{print $3}' || echo "unknown")
+ANCHOR_WARNINGS=$(grep "^Anchor warnings:" "$LINK_REPORT" 2>/dev/null | awk '{print $3}' || echo "0")
+
+echo "  ✓ Linkability: PASS"
+echo "    - Broken links: $BROKEN_COUNT"
+echo "    - Anchor warnings: $ANCHOR_WARNINGS (non-fatal)"
+echo "    - Report: $LINK_REPORT"
+
 # Ensure counts are single-line numeric values
-BROKEN_COUNT=$(echo "$BROKEN_COUNT" | head -1 | tr -d '\n\r')
-INSECURE_COUNT=$(echo "$INSECURE_COUNT" | head -1 | tr -d '\n\r')
-# Default to 0 if empty
-BROKEN_COUNT=${BROKEN_COUNT:-0}
-INSECURE_COUNT=${INSECURE_COUNT:-0}
-
-# Generate JSON
-BROKEN_LINKS_JSON='[]'
-BROKEN_LINKS_LINES=$(grep "^FAIL" "$LINK_REPORT" 2>/dev/null | sed 's/^FAIL //' || true)
-if [[ -n "$BROKEN_LINKS_LINES" ]]; then
-  BROKEN_LINKS_JSON=$(echo "$BROKEN_LINKS_LINES" | jq -R . | jq -s .)
-fi
-
-INSECURE_EXTERNAL_JSON='[]'
-INSECURE_LINES=$(grep "insecure/localhost" "$LINK_REPORT" 2>/dev/null | sed 's/^FAIL //' || true)
-if [[ -n "$INSECURE_LINES" ]]; then
-  INSECURE_EXTERNAL_JSON=$(echo "$INSECURE_LINES" | jq -R . | jq -s .)
-fi
-
-jq -n \
-  --argjson broken "$BROKEN_LINKS_JSON" \
-  --argjson insecure "$INSECURE_EXTERNAL_JSON" \
-  '{broken_links: $broken, insecure_external_links: $insecure, link_integrity_pass: (($broken | length) == 0 and ($insecure | length) == 0)}' \
-  > "$E/artifacts/PACK_LINKS.json"
-
-echo "  Broken internal links: $BROKEN_COUNT"
-echo "  Insecure external links: $INSECURE_COUNT"
 
 # ============================================================================
 # PHASE 04: CONTENT COMPLETENESS

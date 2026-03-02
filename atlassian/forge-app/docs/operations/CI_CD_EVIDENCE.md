@@ -210,6 +210,6 @@ All evidence artifacts are:
 
 ## References
 
-- [tools/generate_enterprise_evidence.sh](../../tools/generate_enterprise_evidence.sh): Script source
-- [tools/enterprise_docs_gate.sh](../../tools/enterprise_docs_gate.sh): Gate validation script
+- [tools/generate_enterprise_evidence.sh](../trust/generated/repo_refs.md): Script source
+- [tools/enterprise_docs_gate.sh](../trust/generated/repo_refs.md): Gate validation script
 - [CHANGE_MANAGEMENT_POLICY.md](CHANGE_MANAGEMENT_POLICY.md): Evidence regeneration triggers

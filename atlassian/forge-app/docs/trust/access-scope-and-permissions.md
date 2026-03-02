@@ -232,7 +232,7 @@ Questions about permissions or scope usage?
 **For comprehensive technical details, see:**
 - [SECURITY_OVERVIEW.md](SECURITY_OVERVIEW.md) - Security architecture
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design
-- [manifest.yml](../../manifest.yml) - Forge app manifest with declared scopes
+- [Manifest Scopes](generated/manifest_scopes.md) - Forge app manifest with declared scopes
 
 <!-- BEGIN: GENERATED_FACTS -->
 ### Scopes (Generated)

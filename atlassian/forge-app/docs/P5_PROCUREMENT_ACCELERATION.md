@@ -15,7 +15,7 @@ No dashboards. No approvals. No workflows. No user input.
 ### 4 Core Components
 
 #### 1. **Auto-Generated Compliance Fact Sheet**
-📄 File: [`docs/COMPLIANCE_FACT_SHEET.md`](docs/COMPLIANCE_FACT_SHEET.md)
+📄 File: [`docs/COMPLIANCE_FACT_SHEET.md`](COMPLIANCE_FACT_SHEET.md)
 
 What it contains:
 - Data collected (explicit list)
@@ -31,7 +31,7 @@ What it contains:
 **Key Insight:** This document is auto-generated from code, not hand-written. It reflects actual implementation, not marketing aspirations.
 
 #### 2. **Security Questionnaire Auto-Answers**
-📄 Module: [`src/procurement/security_answers.ts`](src/procurement/security_answers.ts)
+📄 Module: [`src/procurement/security_answers.ts`](trust/generated/code_refs_inventory.md#security_answers-ts)
 
 Function: `getSecurityAnswers()` returns `QuestionnaireAnswerSet`
 
@@ -55,7 +55,7 @@ Answers 14 critical security questions:
 **Export Format:** JSON with question, answer, justification, evidence reference
 
 #### 3. **Evidence-Backed Claims Map**
-📄 Module: [`src/procurement/claims_map.ts`](src/procurement/claims_map.ts)
+📄 Module: [`src/procurement/claims_map.ts`](trust/generated/code_refs_inventory.md#claims_map-ts)
 
 Function: `getClaimsMap()` returns `ClaimsMap`
 
@@ -77,7 +77,7 @@ CLAIM: "Outputs are cryptographically bound to input evidence"
 **Export Formats:** JSON, Markdown
 
 #### 4. **Procurement Export Bundle**
-📄 Module: [`src/procurement/export_bundle.ts`](src/procurement/export_bundle.ts)
+📄 Module: [`src/procurement/export_bundle.ts`](trust/generated/code_refs_inventory.md#export_bundle-ts)
 
 Function: `generateProcurementExportBundle()` returns `ProcurementExportBundle`
 

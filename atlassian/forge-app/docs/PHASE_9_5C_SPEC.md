@@ -496,6 +496,6 @@ Latest 7-day reliability: 40% (2/5 successful)
 
 ## RELATED DOCUMENTATION
 
-- [Phase 9.5-A: Counterfactual Proof Ledger](./PHASE_9_5A_SPEC.md)
+- [Phase 9.5-A: Counterfactual Proof Ledger](trust/stubs/PHASE_9_5A_SPEC.md)
 - [Phase 9.5-B: Historical Blind-Spot Map](./PHASE_9_5B_SPEC.md)
 - Phase 9.5-C Delivery Summary (PHASE_9_5C_DELIVERY.md)

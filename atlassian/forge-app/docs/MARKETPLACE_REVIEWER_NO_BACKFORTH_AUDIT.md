@@ -4,10 +4,10 @@ This file is a proof-based audit of documentation and manifest artifacts. All fi
 
 1) Inventory of required docs (present / missing)
 
-- SECURITY.md: PRESENT  ([docs/SECURITY.md](docs/SECURITY.md))
-- SUPPORT.md: PRESENT  ([docs/SUPPORT.md](docs/SUPPORT.md))
-- DATA_RETENTION.md: PRESENT  ([docs/DATA_RETENTION.md](docs/DATA_RETENTION.md))
-- EXTERNAL_APIS.md: PRESENT  ([docs/EXTERNAL_APIS.md](docs/EXTERNAL_APIS.md))
+- SECURITY.md: PRESENT  ([docs/SECURITY.md](SECURITY.md))
+- SUPPORT.md: PRESENT  ([docs/SUPPORT.md](SUPPORT.md))
+- DATA_RETENTION.md: PRESENT  ([docs/DATA_RETENTION.md](DATA_RETENTION.md))
+- EXTERNAL_APIS.md: PRESENT  ([docs/EXTERNAL_APIS.md](EXTERNAL_APIS.md))
 - PRIVACY*.md: MISSING (no files matching docs/PRIVACY*.md) — listed as MISSING in /tmp/marketplace_submission_pack_*/09_docs_report.txt
 - TERMS*.md / EULA*.md: MISSING (no files matching docs/TERMS*.md or docs/EULA*.md)
 - README.md: MISSING in docs/ (README.md exists in freeze bundle release_pack/ but not in `docs/`) — freeze: /tmp/.../release_pack/01_release_notes.md, README.md present in freeze root only
