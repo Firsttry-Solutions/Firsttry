@@ -23,6 +23,36 @@ This script implements a **7-phase release pipeline** with hard gates at every s
 - Exit code 1
 - Evidence directory with diagnostics
 
+## Environment Variable Overrides
+
+**Evidence Directory Customization:**
+
+For testing or isolation purposes, you can override where the release runner stores evidence:
+
+- `FT_RELEASE_EVIDENCE_PREFIX` (default: `/tmp/ft_marketplace_release_`)
+  - Controls the directory prefix for evidence directories
+  - Each run creates: `${FT_RELEASE_EVIDENCE_PREFIX}${TIMESTAMP}_${PID}`
+  - Example: `FT_RELEASE_EVIDENCE_PREFIX=/tmp/my_test_` creates `/tmp/my_test_20260302T150000Z_12345`
+
+- `FT_RELEASE_LATEST_SYMLINK` (default: `/tmp/ft_marketplace_release_latest`)
+  - Controls the stable symlink that always points to the latest evidence directory
+  - Useful for scripts that need to find the most recent run's evidence
+  - Example: `FT_RELEASE_LATEST_SYMLINK=/tmp/my_test_latest`
+
+**When to use these:**
+- Running selftests without polluting production evidence paths
+- Parallel test runs that need isolated evidence directories
+- CI/CD pipelines that need predictable evidence locations
+- Debugging scenarios where you want evidence in a specific location
+
+**Example:**
+```bash
+# Run with custom evidence paths
+FT_RELEASE_EVIDENCE_PREFIX=/tmp/isolated_test_ \
+FT_RELEASE_LATEST_SYMLINK=/tmp/isolated_test_latest \
+bash tools/marketplace/release_marketplace_ready_e2e.sh
+```
+
 ## Exit Code Integrity
 
 The release runner enforces a **critical invariant**: **Exit code MUST always match FINAL_VERDICT**.
@@ -91,43 +121,56 @@ On success, you'll see:
 SELFTEST MODE: Validating Fail-Closed Evidence Logic
 ════════════════════════════════════════════════════════════
 
-[SUBTEST 1/8] Happy path: Complete evidence → PASS
+[SUBTEST 1/9] Happy path: Complete evidence → PASS
 ✓ Happy path: PASS verdict produced
 ✓ Happy path: FINAL_REPORT.md is 1234 bytes (>= 500)
 ✓ Happy path: FINAL_VERDICT.txt contains PASS
 
-[SUBTEST 2/8] Missing logs: Remove all logs from 01_gates → FAIL
+[SUBTEST 2/9] Missing logs: Remove all logs from 01_gates → FAIL
 ✓ Missing logs: FAIL verdict produced
 ✓ Missing logs: FINAL_VERDICT.txt mentions missing logs
 ✓ Missing logs: FINAL_REPORT.md is 876 bytes (>= 500)
 
-[SUBTEST 3/8] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL
+[SUBTEST 3/9] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL
 ✓ Missing Playwright: FAIL verdict produced
 ✓ Missing Playwright: FINAL_VERDICT.txt mentions missing Playwright artifacts
 
-[SUBTEST 4/8] Missing phase directory: Remove 05_upgrade → FAIL
+[SUBTEST 4/9] Missing phase directory: Remove 05_upgrade → FAIL
 ✓ Missing directory: FAIL verdict produced
 ✓ Missing directory: FINAL_VERDICT.txt mentions missing directory
 
-[SUBTEST 5/8] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL
+[SUBTEST 5/9] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL
 ✓ Wrong verdict: FAIL verdict produced
 ✓ Wrong verdict: FINAL_VERDICT.txt mentions PASS requirement
 
-[SUBTEST 6/8] Playwright browser prerequisite: Fail-closed when browsers missing
+[SUBTEST 6/9] Playwright browser prerequisite: Fail-closed when browsers missing
 ✓ Browser check: Browsers present or installed successfully
 ✓ Browser check: Status file created with valid format
 ✓ Browser check: Log file created with diagnostic output
 
-[SUBTEST 7/8] Phase 2 out-of-sync: Complete failure evidence
+[SUBTEST 7/9] Phase 2 out-of-sync: Complete failure evidence
 ✓ Phase 2 test: VERDICT.txt exists and contains 'FAIL: out of sync'
 ✓ Phase 2 test: merge.log exists and is non-empty
 ✓ Phase 2 test: fetch.log exists and is non-empty
 ✓ Phase 2 test: rev.txt contains LOCAL= and REMOTE=
 
-[SUBTEST 8/8] Exit code invariant: Simulated failure → exit non-zero
+[SUBTEST 8/9] Exit code invariant: Simulated failure → exit non-zero
 ✓ Exit code test: Script exited with non-zero code
 ✓ Exit code test: FINAL_VERDICT.txt contains FAIL
 ✓ Exit code test: FINAL_REPORT.md created
+
+[SUBTEST 9/9] Phase 2 real runner out-of-sync: origin ahead → complete failure evidence
+✓ Runner test: Clone is behind origin/main
+✓ Runner test: Exited with non-zero code
+✓ Runner test: Evidence directory exists
+✓ Runner test: 02_merge/VERDICT.txt contains 'FAIL' and mentions out-of-sync
+✓ Runner test: 02_merge/merge.log exists and non-empty
+✓ Runner test: 02_merge/fetch.log exists and non-empty
+✓ Runner test: 02_merge/rev.txt contains LOCAL= and REMOTE=
+✓ Runner test: 02_merge/branch.txt contains 'main'
+✓ Runner test: FINAL_REPORT.md shows 02_merge with proper FAIL (not bug)
+✓ Runner test: FINAL_VERDICT.txt is FAIL
+✓ Runner test: No pollution of production evidence paths
 
 ════════════════════════════════════════════════════════════
 [SELFTEST PASS]
@@ -142,6 +185,7 @@ All subtests passed:
   ✓ Playwright browser prerequisite check works correctly
   ✓ Phase 2 out-of-sync produces complete failure evidence
   ✓ Exit code always matches FINAL_VERDICT
+  ✓ Phase 2 real runner produces complete evidence (no HEAD rewind bugs)
   ✓ FINAL_REPORT.md >= 500 bytes in all cases
 
 Evidence validation is fail-closed and working correctly.
@@ -205,6 +249,26 @@ Evidence validation is fail-closed and working correctly.
 - Verifies script exits with non-zero code
 - Validates FINAL_VERDICT.txt contains FAIL
 - Ensures exit code always matches FINAL_VERDICT (fail-closed)
+
+**Subtest 9: Phase 2 Real Runner Out-of-Sync (Regression Test)**
+- **THE ULTIMATE REGRESSION TEST** - Runs the ACTUAL release runner (not internal helpers)
+- Creates isolated temporary git repository setup:
+  - Bare origin repo
+  - Working repo at current HEAD
+  - Runner clone behind origin/main by 1 commit
+- Runs the real `release_marketplace_ready_e2e.sh` (non-selftest mode) inside the clone
+- Uses `FT_RELEASE_EVIDENCE_PREFIX` and `FT_RELEASE_LATEST_SYMLINK` to avoid production pollution
+- Validates complete Phase 2 failure evidence:
+  - `02_merge/VERDICT.txt` contains "FAIL: out of sync"
+  - `02_merge/merge.log` exists and non-empty
+  - `02_merge/fetch.log` exists and non-empty
+  - `02_merge/rev.txt` contains LOCAL= and REMOTE=
+  - `02_merge/branch.txt` contains "main"
+  - `FINAL_REPORT.md` shows 02_merge as FAIL (not "missing VERDICT.txt (bug)")
+  - `FINAL_VERDICT.txt` is FAIL
+- Confirms zero pollution of production `/tmp/ft_marketplace_release_*` paths
+- **Cannot be invalidated by HEAD rewinds** - uses real git operations with real commits
+- Cleans up temp repos unless `FT_SELFTEST_KEEP=1`
 
 ### Selftest Evidence
 

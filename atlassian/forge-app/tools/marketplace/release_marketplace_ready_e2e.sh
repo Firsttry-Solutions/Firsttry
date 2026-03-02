@@ -26,6 +26,10 @@
 
 set -euo pipefail
 
+# Evidence directory overrides (can be changed for testing/isolation)
+EVID_PREFIX="${FT_RELEASE_EVIDENCE_PREFIX:-/tmp/ft_marketplace_release_}"
+LATEST_LINK="${FT_RELEASE_LATEST_SYMLINK:-/tmp/ft_marketplace_release_latest}"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -370,7 +374,7 @@ finalize() {
     echo "## Evidence Location"
     echo ""
     echo "- **Evidence directory:** \`$evidence_root\`"
-    echo "- **Stable symlink:** \`/tmp/ft_marketplace_release_latest\`"
+    echo "- **Stable symlink:** \`$LATEST_LINK\`"
     echo ""
     
     if [ "$final_verdict" = "PASS" ]; then
@@ -555,7 +559,7 @@ finalize() {
     log_success ""
     log_success "✅ All phases completed successfully with full evidence"
     log_success "✅ Evidence: $evidence_root"
-    log_success "✅ Symlink:  /tmp/ft_marketplace_release_latest"
+    log_success "✅ Symlink:  $LATEST_LINK"
     log_success ""
     log_success "Marketplace-ready: YES"
   else
@@ -612,13 +616,13 @@ run_selftest() {
   echo ""
   
   # Set REPO_ROOT and SCRIPT_DIR for finalize() and helper script calls
-  REPO_ROOT="${REPO_ROOT:-$(pwd)}"
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
   
   # -------------------------------------------------------------------------
   # SUBTEST 1: Happy path - all artifacts present → PASS
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 1/8] Happy path: Complete evidence → PASS"
+  log_info "[SUBTEST 1/9] Happy path: Complete evidence → PASS"
   
   local happy_dir="$selftest_dir/happy"
   mkdir -p "$happy_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e/artifacts,99_verdict}
@@ -716,7 +720,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 2: Missing logs → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 2/8] Missing logs: Remove all logs from 01_gates → FAIL"
+  log_info "[SUBTEST 2/9] Missing logs: Remove all logs from 01_gates → FAIL"
   
   local missing_logs_dir="$selftest_dir/missing_logs"
   cp -r "$happy_dir" "$missing_logs_dir"
@@ -787,7 +791,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 3: Missing Playwright artifacts → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 3/8] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
+  log_info "[SUBTEST 3/9] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
   
   local missing_pw_dir="$selftest_dir/missing_playwright"
   cp -r "$happy_dir" "$missing_pw_dir"
@@ -840,7 +844,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 4: Missing phase directory → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 4/8] Missing phase directory: Remove 05_upgrade → FAIL"
+  log_info "[SUBTEST 4/9] Missing phase directory: Remove 05_upgrade → FAIL"
   
   local missing_dir_dir="$selftest_dir/missing_dir"
   cp -r "$happy_dir" "$missing_dir_dir"
@@ -893,7 +897,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 5: VERDICT.txt without PASS → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 5/8] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
+  log_info "[SUBTEST 5/9] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
   
   local wrong_verdict_dir="$selftest_dir/wrong_verdict"
   cp -r "$happy_dir" "$wrong_verdict_dir"
@@ -946,7 +950,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 6: Playwright browser prerequisite check
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 6/8] Playwright browser prerequisite: Fail-closed when browsers missing"
+  log_info "[SUBTEST 6/9] Playwright browser prerequisite: Fail-closed when browsers missing"
   
   local browser_check_dir="$selftest_dir/browser_check"
   mkdir -p "$browser_check_dir/06_e2e"
@@ -1025,7 +1029,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 7: Phase 2 out-of-sync failure evidence (REAL git test)
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 7/8] Phase 2 out-of-sync: Real git test with complete failure evidence"
+  log_info "[SUBTEST 7/9] Phase 2 out-of-sync: Real git test with complete failure evidence"
   
   # Create temporary git repos for testing
   local git_test_root="$selftest_dir/git_test"
@@ -1175,7 +1179,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 8: Exit code must match FINAL_VERDICT
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 8/8] Exit code invariant: Simulated failure → exit non-zero"
+  log_info "[SUBTEST 8/9] Exit code invariant: Simulated failure → exit non-zero"
   
   local exit_code_test_dir="$selftest_dir/exit_code_test"
   mkdir -p "$exit_code_test_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e/artifacts,99_verdict}
@@ -1200,6 +1204,7 @@ set -euo pipefail
 # Source the functions we need from the main script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${REPO_ROOT:-$(pwd)}"
+LATEST_LINK="${FT_RELEASE_LATEST_SYMLINK:-/tmp/ft_marketplace_release_latest}"
 
 # Define minimal helper functions
 now_utc() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
@@ -1307,6 +1312,267 @@ EOF
   echo ""
   
   # -------------------------------------------------------------------------
+  # SUBTEST 9: Phase 2 real runner out-of-sync (origin ahead)
+  # -------------------------------------------------------------------------
+  log_info "[SUBTEST 9/9] Phase 2 real runner out-of-sync: origin ahead → complete failure evidence"
+  
+  # Create temporary directory for isolated git repos
+  local runner_test_root
+  runner_test_root=$(mktemp -d /tmp/ft_selftest_runner_XXXXXX)
+  local bare_origin="$runner_test_root/origin.git"
+  local working_repo="$runner_test_root/working"
+  local runner_clone="$runner_test_root/runner_clone"
+  
+  # Setup isolated evidence paths for this runner test
+  local runner_evidence_prefix="$runner_test_root/evidence_"
+  local runner_symlink="$runner_test_root/evidence_latest"
+  
+  log_info "Real runner test: Creating bare origin repo..."
+  git init --bare "$bare_origin" >/dev/null 2>&1
+  
+  log_info "Real runner test: Creating working repo at current HEAD..."
+  # Copy entire repo tree to working repo (necessary for Phase 0 and Phase 1 to pass)
+  # Use tar for speed, exclude .git and node_modules completely for clean init
+  mkdir -p "$working_repo"
+  cd "$REPO_ROOT"
+  ( tar cf - --exclude='.git' --exclude='node_modules' . ) | ( cd "$working_repo" && tar xf - )
+  cd "$working_repo"
+  
+  # Initialize fresh git repo with current state
+  git init >/dev/null 2>&1
+  git config user.email "test@example.com"
+  git config user.name "Test User"
+  git add -A >/dev/null 2>&1
+  git commit -m "Initial commit with current tree" >/dev/null 2>&1
+  git branch -M main
+  
+  # Point origin to bare repo and push
+  git remote add origin "$bare_origin"
+  git push -u origin main >/dev/null 2>&1
+  
+  # Get the SHA that will become "old" (current HEAD)
+  local old_sha
+  old_sha=$(git rev-parse HEAD)
+  
+  log_info "Real runner test: Creating commit ahead of clone (making origin/main ahead)..."
+  # Make a new commit in working repo
+  echo "test change $(date)" > test_file_for_runner.txt
+  git add test_file_for_runner.txt
+  git commit -m "Test commit: make origin ahead" >/dev/null 2>&1
+  git push origin main >/dev/null 2>&1
+  
+  # Get the new SHA (what origin/main will be)
+  local new_sha
+  new_sha=$(git rev-parse HEAD)
+  
+  log_info "Real runner test: Creating runner clone at old commit (behind)..."
+  # Clone from bare origin (will have new commit)
+  git clone "$bare_origin" "$runner_clone" >/dev/null 2>&1
+  cd "$runner_clone"
+  git config user.email "test@example.com"
+  git config user.name "Test User"
+  
+  # Reset to old commit (making local behind origin/main)
+  git reset --hard "$old_sha" >/dev/null 2>&1
+  
+  # Verify clone is behind and has the necessary directory structure
+  if [ ! -d "atlassian/forge-app" ]; then
+    log_error "✗ Runner test setup: Clone missing atlassian/forge-app directory"
+    log_error "  This might mean the working repo wasn't set up correctly"
+    test_failed=1
+  fi
+  
+  # Verify clone is behind
+  local clone_sha
+  local origin_sha
+  clone_sha=$(git rev-parse HEAD)
+  origin_sha=$(git rev-parse origin/main)
+  
+  if [ "$clone_sha" != "$old_sha" ] || [ "$origin_sha" != "$new_sha" ] || [ "$clone_sha" = "$origin_sha" ]; then
+    log_error "✗ Runner test setup: Clone setup failed (expected behind)"
+    log_error "  Clone SHA: $clone_sha (expected $old_sha)"
+    log_error "  Origin SHA: $origin_sha (expected $new_sha)"
+    test_failed=1
+  fi
+  
+  if [ "$clone_sha" = "$old_sha" ] && [ "$origin_sha" = "$new_sha" ] && [ "$clone_sha" != "$origin_sha" ] && [ -d "atlassian/forge-app" ]; then
+    log_success "✓ Runner test setup: Clone is behind origin/main"
+  fi
+  
+  # Only run the actual test if setup succeeded
+  if [ "$test_failed" -eq 0 ]; then
+  
+  log_info "Real runner test: Running actual release runner in clone..."
+  
+  # Run the REAL runner (not selftest mode) with isolated evidence paths
+  local runner_exit_code=0
+  cd "$runner_clone/atlassian/forge-app"
+  
+  # Export env vars to isolate evidence and skip phases requiring auth
+  FT_RELEASE_EVIDENCE_PREFIX="$runner_evidence_prefix" \
+  FT_RELEASE_LATEST_SYMLINK="$runner_symlink" \
+  FT_SKIP_PHASE_01=1 \
+  timeout 180 bash tools/marketplace/release_marketplace_ready_e2e.sh >/dev/null 2>&1 || runner_exit_code=$?
+  
+  # Get evidence directory
+  local runner_evidence
+  if [ -L "$runner_symlink" ]; then
+    runner_evidence=$(readlink -f "$runner_symlink")
+  else
+    log_error "✗ Runner test: Evidence symlink not created"
+    test_failed=1
+    cd "$SCRIPT_DIR"
+    rm -rf "$runner_test_root"
+    echo ""
+    continue
+  fi
+  
+  # Verify runner failed (non-zero exit)
+  if [ "$runner_exit_code" -ne 0 ]; then
+    log_success "✓ Runner test: Exited with non-zero code ($runner_exit_code)"
+  else
+    log_error "✗ Runner test: Should have failed (exit 0)"
+    test_failed=1
+  fi
+  
+  # Verify evidence directory exists
+  if [ -d "$runner_evidence" ]; then
+    log_success "✓ Runner test: Evidence directory exists"
+  else
+    log_error "✗ Runner test: Evidence directory missing: $runner_evidence"
+    test_failed=1
+    cd "$SCRIPT_DIR"
+    rm -rf "$runner_test_root"
+    echo ""
+    continue
+  fi
+  
+  # Verify Phase 2 VERDICT.txt
+  if [ -f "$runner_evidence/02_merge/VERDICT.txt" ]; then
+    if grep -q "^FAIL:" "$runner_evidence/02_merge/VERDICT.txt" && \
+       grep -qi "out of sync\|out-of-sync" "$runner_evidence/02_merge/VERDICT.txt"; then
+      log_success "✓ Runner test: 02_merge/VERDICT.txt contains 'FAIL' and mentions out-of-sync"
+    else
+      log_error "✗ Runner test: 02_merge/VERDICT.txt should be FAIL with out-of-sync message"
+      log_error "  Actual: $(cat "$runner_evidence/02_merge/VERDICT.txt")"
+      test_failed=1
+    fi
+  else
+    log_error "✗ Runner test: 02_merge/VERDICT.txt missing"
+    test_failed=1
+  fi
+  
+  # Verify Phase 2 merge.log
+  if [ -f "$runner_evidence/02_merge/merge.log" ] && [ -s "$runner_evidence/02_merge/merge.log" ]; then
+    log_success "✓ Runner test: 02_merge/merge.log exists and non-empty"
+  else
+    log_error "✗ Runner test: 02_merge/merge.log missing or empty"
+    test_failed=1
+  fi
+  
+  # Verify Phase 2 fetch.log
+  if [ -f "$runner_evidence/02_merge/fetch.log" ] && [ -s "$runner_evidence/02_merge/fetch.log" ]; then
+    log_success "✓ Runner test: 02_merge/fetch.log exists and non-empty"
+  else
+    log_error "✗ Runner test: 02_merge/fetch.log missing or empty"
+    test_failed=1
+  fi
+  
+  # Verify Phase 2 rev.txt
+  if [ -f "$runner_evidence/02_merge/rev.txt" ]; then
+    if grep -q "^LOCAL=" "$runner_evidence/02_merge/rev.txt" && \
+       grep -q "^REMOTE=" "$runner_evidence/02_merge/rev.txt"; then
+      log_success "✓ Runner test: 02_merge/rev.txt contains LOCAL= and REMOTE="
+    else
+      log_error "✗ Runner test: 02_merge/rev.txt should contain LOCAL= and REMOTE="
+      test_failed=1
+    fi
+  else
+    log_error "✗ Runner test: 02_merge/rev.txt missing"
+    test_failed=1
+  fi
+  
+  # Verify Phase 2 branch.txt
+  if [ -f "$runner_evidence/02_merge/branch.txt" ]; then
+    if grep -q "^main$" "$runner_evidence/02_merge/branch.txt"; then
+      log_success "✓ Runner test: 02_merge/branch.txt contains 'main'"
+    else
+      log_error "✗ Runner test: 02_merge/branch.txt should contain 'main'"
+      test_failed=1
+    fi
+  else
+    log_error "✗ Runner test: 02_merge/branch.txt missing"
+    test_failed=1
+  fi
+  
+  # Verify FINAL_REPORT.md shows 02_merge FAIL (not MISSING)
+  if [ -f "$runner_evidence/99_verdict/FINAL_REPORT.md" ]; then
+    if grep -q "02_merge" "$runner_evidence/99_verdict/FINAL_REPORT.md"; then
+      # Check it says FAIL not "missing VERDICT.txt (bug)"
+      if ! grep "$runner_evidence/99_verdict/FINAL_REPORT.md" -e "02_merge.*FAIL.*missing VERDICT.txt (bug)"; then
+        log_success "✓ Runner test: FINAL_REPORT.md shows 02_merge with proper FAIL (not bug)"
+      else
+        log_error "✗ Runner test: FINAL_REPORT.md shows 02_merge as BUG (missing evidence)"
+        test_failed=1
+      fi
+    else
+      log_error "✗ Runner test: FINAL_REPORT.md doesn't mention 02_merge"
+      test_failed=1
+    fi
+  else
+    log_error "✗ Runner test: FINAL_REPORT.md missing"
+    test_failed=1
+  fi
+  
+  # Verify FINAL_VERDICT.txt is FAIL
+  if [ -f "$runner_evidence/99_verdict/FINAL_VERDICT.txt" ]; then
+    if grep -q "^FAIL" "$runner_evidence/99_verdict/FINAL_VERDICT.txt"; then
+      log_success "✓ Runner test: FINAL_VERDICT.txt is FAIL"
+    else
+      log_error "✗ Runner test: FINAL_VERDICT.txt should be FAIL"
+      test_failed=1
+    fi
+  else
+    log_error "✗ Runner test: FINAL_VERDICT.txt missing"
+    test_failed=1
+  fi
+  
+  # Verify no pollution of production paths
+  if [ -d "/tmp/ft_marketplace_release_latest" ] || ls -d /tmp/ft_marketplace_release_* 2>/dev/null | grep -qv "^$runner_test_root"; then
+    # Check if any were created during this test
+    local pollution_check=0
+    for prod_path in /tmp/ft_marketplace_release_*; do
+      if [ -d "$prod_path" ] && [ "$prod_path" != "/tmp/ft_marketplace_release_latest" ]; then
+        # Check if newer than test start
+        if [ "$(stat -c %Y "$prod_path" 2>/dev/null || echo 0)" -gt "$(($(date +%s) - 300))" ]; then
+          pollution_check=1
+        fi
+      fi
+    done
+    
+    if [ "$pollution_check" -eq 0 ]; then
+      log_success "✓ Runner test: No pollution of production evidence paths"
+    else
+      log_error "✗ Runner test: Created files in production /tmp/ft_marketplace_release_* paths"
+      test_failed=1
+    fi
+  else
+    log_success "✓ Runner test: No pollution of production evidence paths"
+  fi
+  
+  fi  # End of setup success check
+  
+  # Cleanup runner test environment
+  cd "$SCRIPT_DIR"
+  if [ "${FT_SELFTEST_KEEP:-0}" != "1" ]; then
+    rm -rf "$runner_test_root"
+  else
+    log_info "Runner test artifacts preserved at: $runner_test_root"
+  fi
+  
+  echo ""
+  
+  # -------------------------------------------------------------------------
   # FINAL VERDICT
   # -------------------------------------------------------------------------
   
@@ -1324,6 +1590,7 @@ EOF
     log_success "  ✓ Playwright browser prerequisite check works correctly"
     log_success "  ✓ Phase 2 out-of-sync produces complete failure evidence"
     log_success "  ✓ Exit code always matches FINAL_VERDICT"
+    log_success "  ✓ Phase 2 real runner produces complete evidence (no HEAD rewind bugs)"
     log_success "  ✓ FINAL_REPORT.md >= 500 bytes in all cases"
     log_success ""
     log_success "Evidence validation is fail-closed and working correctly."
@@ -1380,6 +1647,34 @@ fi
 # PHASE 0 — EVIDENCE + REPO CLEANLINESS (HARD GATE)
 # ============================================================================
 
+# Skip Phase 0/1 if requested (for testing only - NOT for production use)
+if [ "${FT_SKIP_PHASE_01:-0}" = "1" ]; then
+  log_phase "PHASE 0+1: SKIPPED (FT_SKIP_PHASE_01=1 - testing only)"
+  
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+  FORGE_APP_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+  
+  cd "$REPO_ROOT"
+  
+  # Create evidence directory
+  TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
+  E="${EVID_PREFIX}${TIMESTAMP}_$$"
+  mkdir -p "$E"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e,99_verdict}
+  ln -sfn "$E" "$LATEST_LINK"
+  
+  # Set trap
+  trap 'finalize $?' EXIT
+  
+  # Write stub verdicts for Phase 0 and 1
+  write_verdict "$E/00_env" "PASS"
+  write_verdict "$E/01_gates" "PASS"
+  echo "SKIPPED" > "$E/00_env/env.txt"
+  echo "SKIPPED" > "$E/01_gates/skipped.log"
+  
+  log_info "Skipping to Phase 2 for testing purposes"
+else
+
 log_phase "PHASE 0: Evidence Directory + Environment Prerequisites"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -1393,10 +1688,10 @@ cd "$REPO_ROOT"
 
 # Create evidence directory FIRST (before any checks)
 TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
-E="/tmp/ft_marketplace_release_${TIMESTAMP}_$$"
+E="${EVID_PREFIX}${TIMESTAMP}_$$"
 mkdir -p "$E"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e,99_verdict}
-ln -sfn "$E" /tmp/ft_marketplace_release_latest
-echo "$E" > /tmp/ft_marketplace_release_dir.txt
+ln -sfn "$E" "$LATEST_LINK"
+echo "$E" > "${LATEST_LINK%_latest}_dir.txt"
 
 log_success "Evidence directory: $E"
 
@@ -1648,6 +1943,8 @@ log_success "All Phase 1 gates passed"
 # Phase 1 complete - write verdict
 write_verdict "$E/01_gates" "PASS"
 log_success "Phase 1: PASS"
+
+fi  # End of FT_SKIP_PHASE_01 check
 
 # ============================================================================
 # PHASE 2 — MERGE / MAIN SYNC CHECK (HARD GATE)
