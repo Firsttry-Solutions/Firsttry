@@ -537,7 +537,7 @@ CODE_REFS="$MIRROR_DIR/code_refs_inventory.md"
   echo ""
   # List src/ files (limit to first 200 for performance)
   if [[ -d "$REPO_ROOT/src" ]]; then
-    find "$REPO_ROOT/src" -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" \) | head -200 | sort | while read -r file; do
+    find "$REPO_ROOT/src" -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" \) 2>/dev/null | sort | head -200 | while read -r file; do
       REL_PATH="${file#$REPO_ROOT/}"
       BASENAME=$(basename "$file")
       SLUG=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
@@ -552,7 +552,7 @@ CODE_REFS="$MIRROR_DIR/code_refs_inventory.md"
   echo ""
   # List tests/ files
   if [[ -d "$REPO_ROOT/tests" ]]; then
-    find "$REPO_ROOT/tests" -type f \( -name "*.test.ts" -o -name "*.spec.ts" \) | head -20 | sort | while read -r file; do
+    find "$REPO_ROOT/tests" -type f \( -name "*.test.ts" -o -name "*.spec.ts" \) 2>/dev/null | sort | head -20 | while read -r file; do
       REL_PATH="${file#$REPO_ROOT/}"
       BASENAME=$(basename "$file")
       SLUG=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
@@ -567,7 +567,7 @@ CODE_REFS="$MIRROR_DIR/code_refs_inventory.md"
   echo ""
   # List tools/ files
   if [[ -d "$REPO_ROOT/tools" ]]; then
-    find "$REPO_ROOT/tools" -type f \( -name "*.sh" -o -name "*.py" \) | head -20 | sort | while read -r file; do
+    find "$REPO_ROOT/tools" -type f \( -name "*.sh" -o -name "*.py" \) 2>/dev/null | sort | head -20 | while read -r file; do
       REL_PATH="${file#$REPO_ROOT/}"
       BASENAME=$(basename "$file")
       SLUG=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]' | tr '.' '-')

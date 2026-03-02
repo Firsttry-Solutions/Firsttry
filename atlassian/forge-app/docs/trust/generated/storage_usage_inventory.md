@@ -1,8 +1,8 @@
 # Storage Usage Inventory
 
 **Auto-generated from:** Product facts extraction
-**Generated at:** 2026-03-02T09:35:22Z
-**Git SHA:** 4ad0495173829a83dace7a7db60a7c1c245483a4
+**Generated at:** 2026-03-02T09:50:28Z
+**Git SHA:** 19ac651b7693c1a445731f5bb59e237b428d89b7
 
 <!-- BEGIN: GENERATED -->
 

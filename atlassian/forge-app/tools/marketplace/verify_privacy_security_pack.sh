@@ -203,11 +203,18 @@ echo "[03] Checking offline linkability (Pages-safe)..."
 
 # First, regenerate trust facts to ensure mirror docs are up-to-date
 echo "  Regenerating trust facts..."
-if ! bash "$SCRIPT_DIR/regenerate_trust_facts.sh" > "$E/03_links/regenerate_trust_facts.log" 2>&1; then
-  echo "FAIL: Trust facts regeneration failed"
-  cat "$E/03_links/regenerate_trust_facts.log"
+if ! timeout 60 bash "$SCRIPT_DIR/regenerate_trust_facts.sh" > "$E/03_links/regenerate_trust_facts.log" 2>&1; then
+  TIMEOUT_EXIT=$?
+  if [ $TIMEOUT_EXIT -eq 124 ]; then
+    echo "FAIL: Trust facts regeneration timed out after 60 seconds"
+    echo "This typically indicates the code_refs_inventory.md generation is scanning too many files."
+    echo "Check $E/03_links/regenerate_trust_facts.log for details."
+  else
+    echo "FAIL: Trust facts regeneration failed"
+    cat "$E/03_links/regenerate_trust_facts.log"
+  fi
   echo "REJECT" > "$E/05_verdict/VERDICT.txt"
-  echo "Trust facts regeneration failed" >> "$E/05_verdict/VERDICT.txt"
+  echo "Trust facts regeneration failed or timed out" >> "$E/05_verdict/VERDICT.txt"
   exit 1
 fi
 
