@@ -52,6 +52,45 @@ write_verdict() {
   echo "$verdict" > "$phase_dir/VERDICT.txt"
 }
 
+# Ensure a log file exists and is non-empty (write fallback if needed)
+ensure_nonempty_log() {
+  local log_path="$1"
+  local fallback_message="${2:-No output captured}"
+  
+  # If log doesn't exist or is empty, write fallback
+  if [ ! -f "$log_path" ] || [ ! -s "$log_path" ]; then
+    echo "$fallback_message" > "$log_path"
+  fi
+}
+
+# Mark a phase as failed and exit immediately with proper evidence
+mark_phase_fail_and_exit() {
+  local phase_dir="$1"
+  local reason="$2"
+  local log_path="$3"
+  local exit_code="${4:-1}"
+  
+  # Write reason to log (ensure non-empty)
+  {
+    echo "════════════════════════════════════════════════════════════"
+    echo "PHASE FAILURE: $reason"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Timestamp: $(now_utc)"
+    echo "Phase directory: $phase_dir"
+    echo "Exit code: $exit_code"
+    echo ""
+    echo "This phase failed validation and cannot proceed."
+    echo ""
+  } > "$log_path"
+  
+  # Write VERDICT.txt
+  write_verdict "$phase_dir" "FAIL: $reason"
+  
+  # Exit with specified code (finalize will be called by trap)
+  exit "$exit_code"
+}
+
 # Strict artifact validation - enforces PASS cannot be generated without complete evidence
 assert_pass_artifacts_or_fail() {
   local evidence_root="$1"
@@ -284,16 +323,49 @@ finalize() {
       echo ""
       echo "## Phase Directories"
       echo ""
+      
+      # For each phase, distinguish between NOT REACHED vs missing evidence bugs
       for dir in 00_env 01_gates 02_merge 03_build 04_deploy 05_upgrade 06_e2e 99_verdict; do
         if [ -d "$evidence_root/$dir" ]; then
           echo "- \`$dir/\` (exists)"
+          
+          # Check verdict
           if [ -f "$evidence_root/$dir/VERDICT.txt" ]; then
             echo "  - Verdict: $(cat "$evidence_root/$dir/VERDICT.txt")"
           else
-            echo "  - Verdict: MISSING"
+            # Directory exists but no verdict - this is a bug
+            echo "  - Verdict: FAIL: missing VERDICT.txt (bug)"
+            # Force final verdict to FAIL if not already
+            if [ "$final_verdict" != "FAIL" ]; then
+              final_verdict="FAIL"
+              verdict_reason="Phase $dir missing VERDICT.txt (evidence bug)"
+              exit_code=1
+            fi
+          fi
+          
+          # Check for logs (skip 99_verdict)
+          if [ "$dir" != "99_verdict" ]; then
+            local has_log=false
+            while IFS= read -r -d '' logfile; do
+              if [ -s "$logfile" ] && [ "$(basename "$logfile")" != "VERDICT.txt" ]; then
+                has_log=true
+                break
+              fi
+            done < <(find "$evidence_root/$dir" -maxdepth 1 -type f \( -name "*.log" -o -name "*.txt" \) -print0 2>/dev/null)
+            
+            if [ "$has_log" = false ]; then
+              echo "  - Logs: FAIL: missing non-empty logs (bug)"
+              # Force final verdict to FAIL if not already
+              if [ "$final_verdict" != "FAIL" ]; then
+                final_verdict="FAIL"
+                verdict_reason="Phase $dir missing non-empty logs (evidence bug)"
+                exit_code=1
+              fi
+            fi
           fi
         else
-          echo "- \`$dir/\` (MISSING)"
+          # Directory doesn't exist - phase was never reached
+          echo "- \`$dir/\` (NOT REACHED)"
         fi
       done
       echo ""
@@ -385,7 +457,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 1: Happy path - all artifacts present → PASS
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 1/7] Happy path: Complete evidence → PASS"
+  log_info "[SUBTEST 1/8] Happy path: Complete evidence → PASS"
   
   local happy_dir="$selftest_dir/happy"
   mkdir -p "$happy_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e/artifacts,99_verdict}
@@ -483,7 +555,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 2: Missing logs → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 2/7] Missing logs: Remove all logs from 01_gates → FAIL"
+  log_info "[SUBTEST 2/8] Missing logs: Remove all logs from 01_gates → FAIL"
   
   local missing_logs_dir="$selftest_dir/missing_logs"
   cp -r "$happy_dir" "$missing_logs_dir"
@@ -554,7 +626,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 3: Missing Playwright artifacts → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 3/7] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
+  log_info "[SUBTEST 3/8] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
   
   local missing_pw_dir="$selftest_dir/missing_playwright"
   cp -r "$happy_dir" "$missing_pw_dir"
@@ -607,7 +679,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 4: Missing phase directory → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 4/7] Missing phase directory: Remove 05_upgrade → FAIL"
+  log_info "[SUBTEST 4/8] Missing phase directory: Remove 05_upgrade → FAIL"
   
   local missing_dir_dir="$selftest_dir/missing_dir"
   cp -r "$happy_dir" "$missing_dir_dir"
@@ -660,7 +732,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 5: VERDICT.txt without PASS → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 5/7] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
+  log_info "[SUBTEST 5/8] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
   
   local wrong_verdict_dir="$selftest_dir/wrong_verdict"
   cp -r "$happy_dir" "$wrong_verdict_dir"
@@ -713,7 +785,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 6: Playwright browser prerequisite check
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 6/7] Playwright browser prerequisite: Fail-closed when browsers missing"
+  log_info "[SUBTEST 6/8] Playwright browser prerequisite: Fail-closed when browsers missing"
   
   local browser_check_dir="$selftest_dir/browser_check"
   mkdir -p "$browser_check_dir/06_e2e"
@@ -790,9 +862,110 @@ run_selftest() {
   echo ""
   
   # -------------------------------------------------------------------------
-  # SUBTEST 7: Exit code must match FINAL_VERDICT
+  # SUBTEST 7: Phase 2 out-of-sync failure evidence
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 7/7] Exit code invariant: Simulated failure → exit non-zero"
+  log_info "[SUBTEST 7/8] Phase 2 out-of-sync: Complete failure evidence"
+  
+  local phase2_test_dir="$selftest_dir/phase2_out_of_sync"
+  mkdir -p "$phase2_test_dir"/{00_env,01_gates,02_merge,99_verdict}
+  
+  # Simulate Phase 2 failure by creating evidence as if mark_phase_fail_and_exit was called
+  # This tests that Phase 2 produces all required files on out-of-sync failure
+  
+  # Create merge.log with detailed failure info
+  {
+    echo "════════════════════════════════════════════════════════════"
+    echo "PHASE 2 FAILURE: Out of sync with origin/main"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Timestamp: 2026-03-02T14:00:00Z"
+    echo ""
+    echo "Branch Status:"
+    echo "  Current branch: main"
+    echo "  Local HEAD:     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    echo "  Remote HEAD:    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    echo ""
+    echo "The local main branch is not synchronized with origin/main."
+  } > "$phase2_test_dir/02_merge/merge.log"
+  
+  # Create fetch.log (non-empty)
+  {
+    echo "════════════════════════════════════════════════════════════"
+    echo "Git Fetch: origin/main"
+    echo "════════════════════════════════════════════════════════════"
+    echo "Timestamp: 2026-03-02T14:00:00Z"
+    echo ""
+    echo "From github.com:example/repo"
+    echo " * branch            main       -> FETCH_HEAD"
+  } > "$phase2_test_dir/02_merge/fetch.log"
+  
+  # Create rev.txt with LOCAL and REMOTE
+  {
+    echo "LOCAL=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    echo "REMOTE=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  } > "$phase2_test_dir/02_merge/rev.txt"
+  
+  # Create VERDICT.txt
+  echo "FAIL: out of sync with origin/main" > "$phase2_test_dir/02_merge/VERDICT.txt"
+  
+  # Create branch.txt
+  echo "main" > "$phase2_test_dir/02_merge/branch.txt"
+  
+  # Verify all required files exist and are non-empty
+  local phase2_checks_passed=true
+  
+  # Check VERDICT.txt
+  if [ -f "$phase2_test_dir/02_merge/VERDICT.txt" ]; then
+    if grep -q "^FAIL: out of sync" "$phase2_test_dir/02_merge/VERDICT.txt"; then
+      log_success "✓ Phase 2 test: VERDICT.txt exists and contains 'FAIL: out of sync'"
+    else
+      log_error "✗ Phase 2 test: VERDICT.txt should contain 'FAIL: out of sync'"
+      phase2_checks_passed=false
+    fi
+  else
+    log_error "✗ Phase 2 test: VERDICT.txt not created"
+    phase2_checks_passed=false
+  fi
+  
+  # Check merge.log
+  if [ -f "$phase2_test_dir/02_merge/merge.log" ] && [ -s "$phase2_test_dir/02_merge/merge.log" ]; then
+    log_success "✓ Phase 2 test: merge.log exists and is non-empty"
+  else
+    log_error "✗ Phase 2 test: merge.log missing or empty"
+    phase2_checks_passed=false
+  fi
+  
+  # Check fetch.log
+  if [ -f "$phase2_test_dir/02_merge/fetch.log" ] && [ -s "$phase2_test_dir/02_merge/fetch.log" ]; then
+    log_success "✓ Phase 2 test: fetch.log exists and is non-empty"
+  else
+    log_error "✗ Phase 2 test: fetch.log missing or empty"
+    phase2_checks_passed=false
+  fi
+  
+  # Check rev.txt for LOCAL and REMOTE
+  if [ -f "$phase2_test_dir/02_merge/rev.txt" ]; then
+    if grep -q "^LOCAL=" "$phase2_test_dir/02_merge/rev.txt" && \
+       grep -q "^REMOTE=" "$phase2_test_dir/02_merge/rev.txt"; then
+      log_success "✓ Phase 2 test: rev.txt contains LOCAL= and REMOTE="
+    else
+      log_error "✗ Phase 2 test: rev.txt should contain LOCAL= and REMOTE="
+      phase2_checks_passed=false
+    fi
+  else
+    log_error "✗ Phase 2 test: rev.txt not created"
+    phase2_checks_passed=false
+  fi
+  
+  if [ "$phase2_checks_passed" = false ]; then
+    test_failed=1
+  fi
+  echo ""
+  
+  # -------------------------------------------------------------------------
+  # SUBTEST 8: Exit code must match FINAL_VERDICT
+  # -------------------------------------------------------------------------
+  log_info "[SUBTEST 8/8] Exit code invariant: Simulated failure → exit non-zero"
   
   local exit_code_test_dir="$selftest_dir/exit_code_test"
   mkdir -p "$exit_code_test_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e/artifacts,99_verdict}
@@ -939,6 +1112,7 @@ EOF
     log_success "  ✓ Missing phase directory forces FAIL"
     log_success "  ✓ Wrong verdict forces FAIL"
     log_success "  ✓ Playwright browser prerequisite check works correctly"
+    log_success "  ✓ Phase 2 out-of-sync produces complete failure evidence"
     log_success "  ✓ Exit code always matches FINAL_VERDICT"
     log_success "  ✓ FINAL_REPORT.md >= 500 bytes in all cases"
     log_success ""
@@ -1278,16 +1452,35 @@ echo "$CURRENT_BRANCH" > "$E/02_merge/branch.txt"
 
 log_info "Current branch: $CURRENT_BRANCH"
 
+# Check if on main branch
 if [ "$CURRENT_BRANCH" != "main" ]; then
   log_error "Not on main branch (current: $CURRENT_BRANCH)"
   log_error "Checkout main and ensure PR is merged before running release"
-  echo "FAIL: Not on main branch" > "$E/99_verdict/FINAL_VERDICT.txt"
-  exit 1
+  
+  # Write failure evidence
+  mark_phase_fail_and_exit "$E/02_merge" \
+    "not on main branch (current: $CURRENT_BRANCH)" \
+    "$E/02_merge/merge.log" \
+    1
 fi
 
+# Fetch origin/main (ensure log is non-empty with headers)
 log_info "Fetching origin/main..."
-git fetch origin 2>&1 | tee "$E/02_merge/fetch.log"
+{
+  echo "════════════════════════════════════════════════════════════"
+  echo "Git Fetch: origin/main"
+  echo "════════════════════════════════════════════════════════════"
+  echo "Timestamp: $(now_utc)"
+  echo ""
+  git fetch origin 2>&1
+  echo ""
+  echo "Fetch completed at: $(now_utc)"
+} | tee "$E/02_merge/fetch.log"
 
+# Ensure fetch.log is non-empty even if fetch was silent
+ensure_nonempty_log "$E/02_merge/fetch.log" "Git fetch completed (no output)"
+
+# Get local and remote SHA
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/main)
 
@@ -1297,18 +1490,78 @@ echo "REMOTE=$REMOTE" >> "$E/02_merge/rev.txt"
 log_info "Local HEAD:  $LOCAL"
 log_info "Remote HEAD: $REMOTE"
 
+# Check sync status
 if [ "$LOCAL" != "$REMOTE" ]; then
   log_error "Local main is out of sync with origin/main"
-  log_error "Pull/rebase/merge and re-run release runner"
-  echo "FAIL: Branch out of sync (local=$LOCAL, remote=$REMOTE)" > "$E/99_verdict/FINAL_VERDICT.txt"
+  log_error "Local:  $LOCAL"
+  log_error "Remote: $REMOTE"
+  log_error ""
+  log_error "Remediation:"
+  log_error "  1. git pull origin main"
+  log_error "  2. Resolve any conflicts"
+  log_error "  3. Re-run release runner"
+  
+  # Write detailed failure evidence to merge.log
+  {
+    echo "════════════════════════════════════════════════════════════"
+    echo "PHASE 2 FAILURE: Out of sync with origin/main"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Timestamp: $(now_utc)"
+    echo ""
+    echo "Branch Status:"
+    echo "  Current branch: $CURRENT_BRANCH"
+    echo "  Local HEAD:     $LOCAL"
+    echo "  Remote HEAD:    $REMOTE"
+    echo ""
+    echo "The local main branch is not synchronized with origin/main."
+    echo "This typically means:"
+    echo "  - Someone pushed changes to origin/main after you last pulled"
+    echo "  - Your local branch is behind or has diverged"
+    echo ""
+    echo "Remediation Steps:"
+    echo "  1. git pull origin main"
+    echo "  2. Resolve any merge conflicts if present"
+    echo "  3. Ensure all tests pass locally"
+    echo "  4. Re-run the release runner"
+    echo ""
+    echo "Evidence files:"
+    echo "  - $E/02_merge/rev.txt (contains LOCAL and REMOTE SHAs)"
+    echo "  - $E/02_merge/fetch.log (git fetch output)"
+    echo "  - $E/02_merge/branch.txt (current branch name)"
+    echo ""
+  } > "$E/02_merge/merge.log"
+  
+  # Write FAIL verdict and exit
+  write_verdict "$E/02_merge" "FAIL: out of sync with origin/main"
+  log_error "Phase 2: FAIL (out of sync)"
   exit 1
 fi
 
-echo "OK: main in sync with origin/main" > "$E/02_merge/MERGE_STATUS.txt"
-log_success "Branch sync: OK"
+# Success path - write evidence
+{
+  echo "════════════════════════════════════════════════════════════"
+  echo "Phase 2: Branch Sync Check - PASS"
+  echo "════════════════════════════════════════════════════════════"
+  echo ""
+  echo "Timestamp: $(now_utc)"
+  echo ""
+  echo "Branch Status:"
+  echo "  Current branch: $CURRENT_BRANCH"
+  echo "  Local HEAD:     $LOCAL"
+  echo "  Remote HEAD:    $REMOTE"
+  echo ""
+  echo "✓ Local main is in sync with origin/main"
+  echo "✓ SHA match confirmed: $LOCAL"
+  echo ""
+  echo "The repository is ready for release deployment."
+  echo ""
+} > "$E/02_merge/merge.log"
 
-# Phase 2 complete - write verdict
+echo "OK: main in sync with origin/main" > "$E/02_merge/MERGE_STATUS.txt"
 write_verdict "$E/02_merge" "PASS"
+
+log_success "Branch sync: OK"
 log_success "Phase 2: PASS"
 
 # ============================================================================

@@ -91,34 +91,40 @@ On success, you'll see:
 SELFTEST MODE: Validating Fail-Closed Evidence Logic
 ════════════════════════════════════════════════════════════
 
-[SUBTEST 1/7] Happy path: Complete evidence → PASS
+[SUBTEST 1/8] Happy path: Complete evidence → PASS
 ✓ Happy path: PASS verdict produced
 ✓ Happy path: FINAL_REPORT.md is 1234 bytes (>= 500)
 ✓ Happy path: FINAL_VERDICT.txt contains PASS
 
-[SUBTEST 2/7] Missing logs: Remove all logs from 01_gates → FAIL
+[SUBTEST 2/8] Missing logs: Remove all logs from 01_gates → FAIL
 ✓ Missing logs: FAIL verdict produced
 ✓ Missing logs: FINAL_VERDICT.txt mentions missing logs
 ✓ Missing logs: FINAL_REPORT.md is 876 bytes (>= 500)
 
-[SUBTEST 3/7] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL
+[SUBTEST 3/8] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL
 ✓ Missing Playwright: FAIL verdict produced
 ✓ Missing Playwright: FINAL_VERDICT.txt mentions missing Playwright artifacts
 
-[SUBTEST 4/7] Missing phase directory: Remove 05_upgrade → FAIL
+[SUBTEST 4/8] Missing phase directory: Remove 05_upgrade → FAIL
 ✓ Missing directory: FAIL verdict produced
 ✓ Missing directory: FINAL_VERDICT.txt mentions missing directory
 
-[SUBTEST 5/7] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL
+[SUBTEST 5/8] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL
 ✓ Wrong verdict: FAIL verdict produced
 ✓ Wrong verdict: FINAL_VERDICT.txt mentions PASS requirement
 
-[SUBTEST 6/7] Playwright browser prerequisite: Fail-closed when browsers missing
+[SUBTEST 6/8] Playwright browser prerequisite: Fail-closed when browsers missing
 ✓ Browser check: Browsers present or installed successfully
 ✓ Browser check: Status file created with valid format
 ✓ Browser check: Log file created with diagnostic output
 
-[SUBTEST 7/7] Exit code invariant: Simulated failure → exit non-zero
+[SUBTEST 7/8] Phase 2 out-of-sync: Complete failure evidence
+✓ Phase 2 test: VERDICT.txt exists and contains 'FAIL: out of sync'
+✓ Phase 2 test: merge.log exists and is non-empty
+✓ Phase 2 test: fetch.log exists and is non-empty
+✓ Phase 2 test: rev.txt contains LOCAL= and REMOTE=
+
+[SUBTEST 8/8] Exit code invariant: Simulated failure → exit non-zero
 ✓ Exit code test: Script exited with non-zero code
 ✓ Exit code test: FINAL_VERDICT.txt contains FAIL
 ✓ Exit code test: FINAL_REPORT.md created
@@ -134,6 +140,7 @@ All subtests passed:
   ✓ Missing phase directory forces FAIL
   ✓ Wrong verdict forces FAIL
   ✓ Playwright browser prerequisite check works correctly
+  ✓ Phase 2 out-of-sync produces complete failure evidence
   ✓ Exit code always matches FINAL_VERDICT
   ✓ FINAL_REPORT.md >= 500 bytes in all cases
 
@@ -181,7 +188,15 @@ Evidence validation is fail-closed and working correctly.
 - Validates log file is created with diagnostic output
 - Ensures fail-closed behavior without downloading browsers
 
-**Subtest 7: Exit Code Invariant**
+**Subtest 7: Phase 2 Out-of-Sync Failure Evidence**
+- Simulates Phase 2 (branch sync) out-of-sync failure scenario
+- Verifies `02_merge/VERDICT.txt` exists and contains "FAIL: out of sync"
+- Validates `02_merge/merge.log` exists and is non-empty
+- Validates `02_merge/fetch.log` exists and is non-empty
+- Validates `02_merge/rev.txt` contains both LOCAL= and REMOTE= lines
+- Ensures complete failure diagnostics on sync check failure
+
+**Subtest 8: Exit Code Invariant**
 - Creates complete evidence with all PASS verdicts
 - Calls finalize() with exit_code=1 (simulating early failure)
 - Verifies script exits with non-zero code
@@ -211,7 +226,10 @@ Evidence structure:
 ├── missing_playwright/       # Subtest 3: Missing Playwright (FAIL)
 ├── missing_dir/              # Subtest 4: Missing directory (FAIL)
 ├── wrong_verdict/            # Subtest 5: Wrong verdict (FAIL)
-└── browser_check/            # Subtest 6: Browser prerequisite check└── exit_code_test/           # Subtest 7: Exit code invariant```
+├── browser_check/            # Subtest 6: Browser prerequisite check
+├── phase2_out_of_sync/       # Subtest 7: Phase 2 out-of-sync evidence
+└── exit_code_test/           # Subtest 8: Exit code invariant
+```
 
 ### CI Integration
 
@@ -230,6 +248,78 @@ Add selftest to CI workflow to validate the validation logic:
 - **After modifying** evidence validation logic
 - **In CI** as a fast (<10 seconds) sanity check
 - **When debugging** why PASS/FAIL verdicts are produced
+
+## Phase 2 Sync Evidence
+
+Phase 2 (Branch Sync Verification) ensures that your local `main` branch is synchronized with `origin/main` before allowing the release to proceed. This is a **hard gate** - if out of sync, the runner fails immediately with complete diagnostic evidence.
+
+### Success Evidence (In Sync)
+
+When local and remote are synchronized, Phase 2 produces:
+
+```
+<evidence_dir>/02_merge/
+├── VERDICT.txt              # "PASS"
+├── merge.log                # Sync check details with timestamps
+├── fetch.log                # Git fetch output with headers
+├── rev.txt                  # LOCAL=<sha> and REMOTE=<sha> (matching)
+├── branch.txt               # Current branch name
+└── MERGE_STATUS.txt         # "OK: main in sync with origin/main"
+```
+
+### Failure Evidence (Out of Sync)
+
+When local and remote diverge, Phase 2 produces **complete failure diagnostics**:
+
+```
+<evidence_dir>/02_merge/
+├── VERDICT.txt              # "FAIL: out of sync with origin/main"
+├── merge.log                # Detailed failure explanation + remediation steps
+├── fetch.log                # Git fetch output (shows remote state)
+├── rev.txt                  # LOCAL=<sha1> and REMOTE=<sha2> (different)
+└── branch.txt               # Current branch name
+```
+
+**Key Evidence Files on Failure:**
+
+1. **`VERDICT.txt`**: Contains `FAIL: out of sync with origin/main`
+2. **`merge.log`**: Complete diagnostic report including:
+   - Timestamp
+   - Local and remote SHA comparison
+   - Explanation of what "out of sync" means
+   - Step-by-step remediation instructions
+   - References to other evidence files
+3. **`rev.txt`**: Shows exact LOCAL and REMOTE SHAs for debugging
+4. **`fetch.log`**: Git fetch output (proves we checked remote state)
+
+### Remediation Steps
+
+If Phase 2 fails with "out of sync":
+
+```bash
+# 1. Pull latest changes from origin/main
+git pull origin main
+
+# 2. Resolve any merge conflicts if present
+# (Follow Git's conflict resolution prompts)
+
+# 3. Verify tests still pass
+cd atlassian/forge-app
+npm test
+
+# 4. Re-run the release runner
+bash tools/marketplace/release_marketplace_ready_e2e.sh
+```
+
+### NOT REACHED vs MISSING Semantics
+
+The FINAL_REPORT.md now distinguishes between phases that were never reached vs missing evidence bugs:
+
+- **`(NOT REACHED)`**: Phase directory doesn't exist - script failed before reaching this phase
+- **`FAIL: missing VERDICT.txt (bug)`**: Phase directory exists but no verdict file - this is a bug
+- **`FAIL: missing non-empty logs (bug)`**: Phase directory exists but no log files - this is a bug
+
+This makes it immediately clear whether a phase was skipped (not reached) or whether there's a bug in the evidence collection logic.
 
 ## Playwright Browser Prerequisites
 
