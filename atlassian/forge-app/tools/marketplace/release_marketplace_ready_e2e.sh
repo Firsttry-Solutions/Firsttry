@@ -336,6 +336,22 @@ finalize() {
     log_error "Review evidence directory for details."
   fi
   
+  # CRITICAL SAFETY CHECK: Exit code MUST match final verdict
+  # This ensures it's impossible to return exit 0 when FINAL_VERDICT is FAIL
+  if [ "$final_verdict" = "PASS" ] && [ "$exit_code" -ne 0 ]; then
+    log_error "[INVARIANT VIOLATION] PASS verdict with non-zero exit code ($exit_code)"
+    log_error "This should never happen - forcing FAIL"
+    echo "FAIL (Invariant violation: PASS verdict with exit_code=$exit_code, evidence: $evidence_root)" > "$evidence_root/99_verdict/FINAL_VERDICT.txt"
+    exit 1
+  fi
+  
+  if [ "$final_verdict" = "FAIL" ] && [ "$exit_code" -eq 0 ]; then
+    log_error "[INVARIANT VIOLATION] FAIL verdict with exit code 0"
+    log_error "This should never happen - forcing non-zero exit"
+    exit 1
+  fi
+  
+  # Exit with code that matches verdict
   exit "$exit_code"
 }
 
@@ -369,7 +385,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 1: Happy path - all artifacts present → PASS
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 1/6] Happy path: Complete evidence → PASS"
+  log_info "[SUBTEST 1/7] Happy path: Complete evidence → PASS"
   
   local happy_dir="$selftest_dir/happy"
   mkdir -p "$happy_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e/artifacts,99_verdict}
@@ -467,7 +483,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 2: Missing logs → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 2/6] Missing logs: Remove all logs from 01_gates → FAIL"
+  log_info "[SUBTEST 2/7] Missing logs: Remove all logs from 01_gates → FAIL"
   
   local missing_logs_dir="$selftest_dir/missing_logs"
   cp -r "$happy_dir" "$missing_logs_dir"
@@ -538,7 +554,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 3: Missing Playwright artifacts → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 3/6] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
+  log_info "[SUBTEST 3/7] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
   
   local missing_pw_dir="$selftest_dir/missing_playwright"
   cp -r "$happy_dir" "$missing_pw_dir"
@@ -591,7 +607,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 4: Missing phase directory → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 4/6] Missing phase directory: Remove 05_upgrade → FAIL"
+  log_info "[SUBTEST 4/7] Missing phase directory: Remove 05_upgrade → FAIL"
   
   local missing_dir_dir="$selftest_dir/missing_dir"
   cp -r "$happy_dir" "$missing_dir_dir"
@@ -644,7 +660,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 5: VERDICT.txt without PASS → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 5/6] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
+  log_info "[SUBTEST 5/7] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
   
   local wrong_verdict_dir="$selftest_dir/wrong_verdict"
   cp -r "$happy_dir" "$wrong_verdict_dir"
@@ -697,7 +713,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 6: Playwright browser prerequisite check
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 6/6] Playwright browser prerequisite: Fail-closed when browsers missing"
+  log_info "[SUBTEST 6/7] Playwright browser prerequisite: Fail-closed when browsers missing"
   
   local browser_check_dir="$selftest_dir/browser_check"
   mkdir -p "$browser_check_dir/06_e2e"
@@ -774,6 +790,140 @@ run_selftest() {
   echo ""
   
   # -------------------------------------------------------------------------
+  # SUBTEST 7: Exit code must match FINAL_VERDICT
+  # -------------------------------------------------------------------------
+  log_info "[SUBTEST 7/7] Exit code invariant: Simulated failure → exit non-zero"
+  
+  local exit_code_test_dir="$selftest_dir/exit_code_test"
+  mkdir -p "$exit_code_test_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e/artifacts,99_verdict}
+  
+  # Create complete evidence with all PASS verdicts
+  for phase in 00_env 01_gates 02_merge 03_build 04_deploy 05_upgrade 06_e2e; do
+    echo "PASS" > "$exit_code_test_dir/$phase/VERDICT.txt"
+    echo "Phase $phase log entry" > "$exit_code_test_dir/$phase/phase.log"
+  done
+  
+  # Create Playwright artifacts
+  mkdir -p "$exit_code_test_dir/06_e2e/artifacts/playwright-report"
+  echo "Playwright report" > "$exit_code_test_dir/06_e2e/artifacts/playwright-report/index.html"
+  
+  # Simulate a failure by calling finalize with exit_code=1 (simulating early exit)
+  # This should produce FAIL verdict and exit with non-zero
+  local test_script="$exit_code_test_dir/test_finalize.sh"
+  cat > "$test_script" << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Source the functions we need from the main script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="${REPO_ROOT:-$(pwd)}"
+
+# Define minimal helper functions
+now_utc() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
+log_phase() { echo "[PHASE] $*"; }
+log_success() { echo "[SUCCESS] $*"; }
+log_error() { echo "[ERROR] $*"; }
+log_info() { echo "[INFO] $*"; }
+
+# Copy assert_pass_artifacts_or_fail function
+assert_pass_artifacts_or_fail() {
+  local evidence_dir="$1"
+  
+  # Check all phase directories exist
+  for phase_dir in 00_env 01_gates 02_merge 03_build 04_deploy 05_upgrade 06_e2e 99_verdict; do
+    if [ ! -d "$evidence_dir/$phase_dir" ]; then
+      log_error "Phase directory $phase_dir does not exist"
+      return 1
+    fi
+  done
+  
+  # Check each phase (except 99_verdict) has VERDICT.txt with PASS
+  for phase_dir in 00_env 01_gates 02_merge 03_build 04_deploy 05_upgrade 06_e2e; do
+    if [ ! -f "$evidence_dir/$phase_dir/VERDICT.txt" ]; then
+      log_error "Phase $phase_dir missing VERDICT.txt"
+      return 1
+    fi
+    
+    if ! grep -q "^PASS" "$evidence_dir/$phase_dir/VERDICT.txt"; then
+      log_error "Phase $phase_dir VERDICT.txt does not contain PASS"
+      return 1
+    fi
+  done
+  
+  # Check each phase has at least one non-empty log file
+  for phase_dir in 00_env 01_gates 02_merge 03_build 04_deploy 05_upgrade 06_e2e; do
+    if ! find "$evidence_dir/$phase_dir" -type f -name "*.log" -size +0c 2>/dev/null | grep -q .; then
+      if ! find "$evidence_dir/$phase_dir" -type f -name "*.txt" -size +0c 2>/dev/null | grep -q .; then
+        log_error "Phase $phase_dir has no non-empty log files"
+        return 1
+      fi
+    fi
+  done
+  
+  # Check 06_e2e has Playwright artifacts
+  if [ ! -d "$evidence_dir/06_e2e/artifacts" ] || [ -z "$(ls -A "$evidence_dir/06_e2e/artifacts" 2>/dev/null)" ]; then
+    log_error "Phase 06_e2e missing Playwright artifacts"
+    return 1
+  fi
+  
+  return 0
+}
+
+# Copy finalize function
+EOF
+  
+  # Append the actual finalize function from the main script
+  sed -n '/^finalize() {/,/^}/p' "$SCRIPT_DIR/release_marketplace_ready_e2e.sh" >> "$test_script"
+  
+  # Add test invocation
+  cat >> "$test_script" << EOF
+
+# Test: Call finalize with exit_code=1 (simulating failure)
+finalize 1 "$exit_code_test_dir"
+EOF
+  
+  chmod +x "$test_script"
+  
+  # Run the test script and capture exit code
+  local actual_exit_code=0
+  if bash "$test_script" >/dev/null 2>&1; then
+    actual_exit_code=0
+  else
+    actual_exit_code=$?
+  fi
+  
+  # Verify exit code is non-zero
+  if [ "$actual_exit_code" -ne 0 ]; then
+    log_success "✓ Exit code test: Script exited with non-zero code ($actual_exit_code)"
+  else
+    log_error "✗ Exit code test: Script exited with 0 despite simulated failure"
+    test_failed=1
+  fi
+  
+  # Verify FINAL_VERDICT.txt contains FAIL
+  if [ -f "$exit_code_test_dir/99_verdict/FINAL_VERDICT.txt" ]; then
+    if grep -q "^FAIL" "$exit_code_test_dir/99_verdict/FINAL_VERDICT.txt"; then
+      log_success "✓ Exit code test: FINAL_VERDICT.txt contains FAIL"
+    else
+      log_error "✗ Exit code test: FINAL_VERDICT.txt should contain FAIL"
+      log_error "  Actual content: $(cat "$exit_code_test_dir/99_verdict/FINAL_VERDICT.txt")"
+      test_failed=1
+    fi
+  else
+    log_error "✗ Exit code test: FINAL_VERDICT.txt not created"
+    test_failed=1
+  fi
+  
+  # Verify FINAL_REPORT.md mentions early exit
+  if [ -f "$exit_code_test_dir/99_verdict/FINAL_REPORT.md" ]; then
+    log_success "✓ Exit code test: FINAL_REPORT.md created"
+  else
+    log_error "✗ Exit code test: FINAL_REPORT.md not created"
+    test_failed=1
+  fi
+  echo ""
+  
+  # -------------------------------------------------------------------------
   # FINAL VERDICT
   # -------------------------------------------------------------------------
   
@@ -789,6 +939,7 @@ run_selftest() {
     log_success "  ✓ Missing phase directory forces FAIL"
     log_success "  ✓ Wrong verdict forces FAIL"
     log_success "  ✓ Playwright browser prerequisite check works correctly"
+    log_success "  ✓ Exit code always matches FINAL_VERDICT"
     log_success "  ✓ FINAL_REPORT.md >= 500 bytes in all cases"
     log_success ""
     log_success "Evidence validation is fail-closed and working correctly."

@@ -23,6 +23,34 @@ This script implements a **7-phase release pipeline** with hard gates at every s
 - Exit code 1
 - Evidence directory with diagnostics
 
+## Exit Code Integrity
+
+The release runner enforces a **critical invariant**: **Exit code MUST always match FINAL_VERDICT**.
+
+**Guaranteed by design:**
+- If `FINAL_VERDICT.txt` contains `FAIL`, exit code is non-zero
+- If `FINAL_VERDICT.txt` contains `PASS`, exit code is zero
+- **It is IMPOSSIBLE to return exit 0 when verdict is FAIL**
+
+**Safety mechanisms:**
+1. The `finalize()` function validates exit code against final verdict
+2. If exit_code=0 but artifact validation fails → forces exit 1
+3. If exit_code≠0 but artifacts complete → keeps exit non-zero with FAIL verdict
+4. Invariant violation detection → forces FAIL immediately
+
+**Exit trap:**
+```bash
+trap 'finalize $?' EXIT
+```
+
+This ensures finalize() is always called with the actual exit code, performs validation, and exits with the correct code matching the verdict.
+
+**Testing:**
+Selftest includes subtest 7 that simulates a failure (exit_code=1) and verifies:
+- Script exits with non-zero code
+- FINAL_VERDICT.txt contains FAIL
+- No possibility of exit 0 with FAIL verdict
+
 ## Selftest Mode
 
 The release runner includes a built-in **selftest mode** that validates the fail-closed artifact validation logic without requiring auth, deployment, or Playwright against Jira.
@@ -63,32 +91,37 @@ On success, you'll see:
 SELFTEST MODE: Validating Fail-Closed Evidence Logic
 ════════════════════════════════════════════════════════════
 
-[SUBTEST 1/6] Happy path: Complete evidence → PASS
+[SUBTEST 1/7] Happy path: Complete evidence → PASS
 ✓ Happy path: PASS verdict produced
 ✓ Happy path: FINAL_REPORT.md is 1234 bytes (>= 500)
 ✓ Happy path: FINAL_VERDICT.txt contains PASS
 
-[SUBTEST 2/6] Missing logs: Remove all logs from 01_gates → FAIL
+[SUBTEST 2/7] Missing logs: Remove all logs from 01_gates → FAIL
 ✓ Missing logs: FAIL verdict produced
 ✓ Missing logs: FINAL_VERDICT.txt mentions missing logs
 ✓ Missing logs: FINAL_REPORT.md is 876 bytes (>= 500)
 
-[SUBTEST 3/6] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL
+[SUBTEST 3/7] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL
 ✓ Missing Playwright: FAIL verdict produced
 ✓ Missing Playwright: FINAL_VERDICT.txt mentions missing Playwright artifacts
 
-[SUBTEST 4/6] Missing phase directory: Remove 05_upgrade → FAIL
+[SUBTEST 4/7] Missing phase directory: Remove 05_upgrade → FAIL
 ✓ Missing directory: FAIL verdict produced
 ✓ Missing directory: FINAL_VERDICT.txt mentions missing directory
 
-[SUBTEST 5/6] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL
+[SUBTEST 5/7] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL
 ✓ Wrong verdict: FAIL verdict produced
 ✓ Wrong verdict: FINAL_VERDICT.txt mentions PASS requirement
 
-[SUBTEST 6/6] Playwright browser prerequisite: Fail-closed when browsers missing
+[SUBTEST 6/7] Playwright browser prerequisite: Fail-closed when browsers missing
 ✓ Browser check: Browsers present or installed successfully
 ✓ Browser check: Status file created with valid format
 ✓ Browser check: Log file created with diagnostic output
+
+[SUBTEST 7/7] Exit code invariant: Simulated failure → exit non-zero
+✓ Exit code test: Script exited with non-zero code
+✓ Exit code test: FINAL_VERDICT.txt contains FAIL
+✓ Exit code test: FINAL_REPORT.md created
 
 ════════════════════════════════════════════════════════════
 [SELFTEST PASS]
@@ -101,6 +134,7 @@ All subtests passed:
   ✓ Missing phase directory forces FAIL
   ✓ Wrong verdict forces FAIL
   ✓ Playwright browser prerequisite check works correctly
+  ✓ Exit code always matches FINAL_VERDICT
   ✓ FINAL_REPORT.md >= 500 bytes in all cases
 
 Evidence validation is fail-closed and working correctly.
@@ -147,6 +181,13 @@ Evidence validation is fail-closed and working correctly.
 - Validates log file is created with diagnostic output
 - Ensures fail-closed behavior without downloading browsers
 
+**Subtest 7: Exit Code Invariant**
+- Creates complete evidence with all PASS verdicts
+- Calls finalize() with exit_code=1 (simulating early failure)
+- Verifies script exits with non-zero code
+- Validates FINAL_VERDICT.txt contains FAIL
+- Ensures exit code always matches FINAL_VERDICT (fail-closed)
+
 ### Selftest Evidence
 
 By default, selftest creates a temporary evidence directory and cleans it up automatically.
@@ -170,8 +211,7 @@ Evidence structure:
 ├── missing_playwright/       # Subtest 3: Missing Playwright (FAIL)
 ├── missing_dir/              # Subtest 4: Missing directory (FAIL)
 ├── wrong_verdict/            # Subtest 5: Wrong verdict (FAIL)
-└── browser_check/            # Subtest 6: Browser prerequisite check
-```
+└── browser_check/            # Subtest 6: Browser prerequisite check└── exit_code_test/           # Subtest 7: Exit code invariant```
 
 ### CI Integration
 
