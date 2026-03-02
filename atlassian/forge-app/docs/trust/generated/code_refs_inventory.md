@@ -106,6 +106,54 @@ markdown anchors for documentation purposes only (not full source reproduction).
 
 **Path**: `src/access-review/workflow.ts`
 
+### src/admin/admin_page_loader.ts {#admin_page_loader-ts}
+
+**Path**: `src/admin/admin_page_loader.ts`
+
+### src/admin/audit_readiness_page.tsx {#audit_readiness_page-tsx}
+
+**Path**: `src/admin/audit_readiness_page.tsx`
+
+### src/admin/auto_repair_page.tsx {#auto_repair_page-tsx}
+
+**Path**: `src/admin/auto_repair_page.tsx`
+
+### src/admin/blind_spot_page.tsx {#blind_spot_page-tsx}
+
+**Path**: `src/admin/blind_spot_page.tsx`
+
+### src/admin/drift_history_tab.ts {#drift_history_tab-ts}
+
+**Path**: `src/admin/drift_history_tab.ts`
+
+### src/admin/language_safety_guard.ts {#language_safety_guard-ts}
+
+**Path**: `src/admin/language_safety_guard.ts`
+
+### src/admin/metrics_page.ts {#metrics_page-ts}
+
+**Path**: `src/admin/metrics_page.ts`
+
+### src/admin/phase5_admin_page.ts {#phase5_admin_page-ts}
+
+**Path**: `src/admin/phase5_admin_page.ts`
+
+### src/admin/phase6_admin_page.ts {#phase6_admin_page-ts}
+
+**Path**: `src/admin/phase6_admin_page.ts`
+
+### src/admin/silence_indicator_badge.tsx {#silence_indicator_badge-tsx}
+
+**Path**: `src/admin/silence_indicator_badge.tsx`
+
+### src/aggregation/daily.ts {#daily-ts}
+
+**Path**: `src/aggregation/daily.ts`
+
+### src/aggregation/weekly.ts {#weekly-ts}
+
+**Path**: `src/aggregation/weekly.ts`
+
 ### src/analysis/impactScope.ts {#impactscope-ts}
 
 **Path**: `src/analysis/impactScope.ts`
@@ -113,6 +161,10 @@ markdown anchors for documentation purposes only (not full source reproduction).
 ### src/analytics/reviewAnalytics.ts {#reviewanalytics-ts}
 
 **Path**: `src/analytics/reviewAnalytics.ts`
+
+### src/audit/audit_events.ts {#audit_events-ts}
+
+**Path**: `src/audit/audit_events.ts`
 
 ### src/auth/oauth_handler.ts {#oauth_handler-ts}
 
@@ -174,9 +226,25 @@ markdown anchors for documentation purposes only (not full source reproduction).
 
 **Path**: `src/backfill_selector.ts`
 
+### src/build/backend_build.ts {#backend_build-ts}
+
+**Path**: `src/build/backend_build.ts`
+
+### src/build/buildIdentityBackend.gen.ts {#buildidentitybackend-gen-ts}
+
+**Path**: `src/build/buildIdentityBackend.gen.ts`
+
+### src/canonicalize.ts {#canonicalize-ts}
+
+**Path**: `src/canonicalize.ts`
+
 ### src/compliance/controlMapping.ts {#controlmapping-ts}
 
 **Path**: `src/compliance/controlMapping.ts`
+
+### src/config/constants.ts {#constants-ts}
+
+**Path**: `src/config/constants.ts`
 
 ### src/continuous-drift/__tests__/phase2.unit.test.ts {#phase2-unit-test-ts}
 
@@ -202,9 +270,93 @@ markdown anchors for documentation purposes only (not full source reproduction).
 
 **Path**: `src/continuous-drift/types.ts`
 
+### src/contracts/ft_dash_envelope_v1.ts {#ft_dash_envelope_v1-ts}
+
+**Path**: `src/contracts/ft_dash_envelope_v1.ts`
+
+### src/core/audit_snapshot/canonicalJson.ts {#canonicaljson-ts}
+
+**Path**: `src/core/audit_snapshot/canonicalJson.ts`
+
+### src/core/audit_snapshot/exportPdf.ts {#exportpdf-ts}
+
+**Path**: `src/core/audit_snapshot/exportPdf.ts`
+
+### src/core/audit_snapshot/generateTrustSnapshot.ts {#generatetrustsnapshot-ts}
+
+**Path**: `src/core/audit_snapshot/generateTrustSnapshot.ts`
+
+### src/core/audit_snapshot/hash.ts {#hash-ts}
+
+**Path**: `src/core/audit_snapshot/hash.ts`
+
+### src/core/audit_snapshot/storage.ts {#storage-ts}
+
+**Path**: `src/core/audit_snapshot/storage.ts`
+
+### src/core/audit_snapshot/types.ts {#types-ts}
+
+**Path**: `src/core/audit_snapshot/types.ts`
+
+### src/core/config_visibility/computeConfigRisk.ts {#computeconfigrisk-ts}
+
+**Path**: `src/core/config_visibility/computeConfigRisk.ts`
+
+### src/core/config_visibility/thresholds.ts {#thresholds-ts}
+
+**Path**: `src/core/config_visibility/thresholds.ts`
+
+### src/core/config_visibility/types.ts {#types-ts}
+
+**Path**: `src/core/config_visibility/types.ts`
+
+### src/core/constants.ts {#constants-ts}
+
+**Path**: `src/core/constants.ts`
+
+### src/core/perf_signals/computeSnapshot.ts {#computesnapshot-ts}
+
+**Path**: `src/core/perf_signals/computeSnapshot.ts`
+
+### src/core/perf_signals/jira_get_wrapper.ts {#jira_get_wrapper-ts}
+
+**Path**: `src/core/perf_signals/jira_get_wrapper.ts`
+
+### src/core/perf_signals/percentiles.ts {#percentiles-ts}
+
+**Path**: `src/core/perf_signals/percentiles.ts`
+
+### src/core/perf_signals/types.ts {#types-ts}
+
+**Path**: `src/core/perf_signals/types.ts`
+
+### src/core/tenant_identity.ts {#tenant_identity-ts}
+
+**Path**: `src/core/tenant_identity.ts`
+
+### src/core/unified_status_model.ts {#unified_status_model-ts}
+
+**Path**: `src/core/unified_status_model.ts`
+
 ### src/coverage_matrix.ts {#coverage_matrix-ts}
 
 **Path**: `src/coverage_matrix.ts`
+
+### src/crypto/dualHash.ts {#dualhash-ts}
+
+**Path**: `src/crypto/dualHash.ts`
+
+### src/crypto/tenantSecret.ts {#tenantsecret-ts}
+
+**Path**: `src/crypto/tenantSecret.ts`
+
+### src/determinism/clock.ts {#clock-ts}
+
+**Path**: `src/determinism/clock.ts`
+
+### src/determinism/random.ts {#random-ts}
+
+**Path**: `src/determinism/random.ts`
 
 ### src/diagnostic/probe.ts {#probe-ts}
 
@@ -218,6 +370,10 @@ markdown anchors for documentation purposes only (not full source reproduction).
 
 **Path**: `src/disclosure_hardening_gaps_a_f.ts`
 
+### src/disclosure_types.ts {#disclosure_types-ts}
+
+**Path**: `src/disclosure_types.ts`
+
 ### src/drift/drift_state.ts {#drift_state-ts}
 
 **Path**: `src/drift/drift_state.ts`
@@ -225,6 +381,42 @@ markdown anchors for documentation purposes only (not full source reproduction).
 ### src/drift/riskEngine.ts {#riskengine-ts}
 
 **Path**: `src/drift/riskEngine.ts`
+
+### src/enterprise/certPrecheck.ts {#certprecheck-ts}
+
+**Path**: `src/enterprise/certPrecheck.ts`
+
+### src/enterprise/installation.ts {#installation-ts}
+
+**Path**: `src/enterprise/installation.ts`
+
+### src/enterprise/lifecyclePanel.ts {#lifecyclepanel-ts}
+
+**Path**: `src/enterprise/lifecyclePanel.ts`
+
+### src/enterprise/restoreHeuristic.ts {#restoreheuristic-ts}
+
+**Path**: `src/enterprise/restoreHeuristic.ts`
+
+### src/enterprise/sellabilityPanels.ts {#sellabilitypanels-ts}
+
+**Path**: `src/enterprise/sellabilityPanels.ts`
+
+### src/enterprise/snapshotFrequency.ts {#snapshotfrequency-ts}
+
+**Path**: `src/enterprise/snapshotFrequency.ts`
+
+### src/enterprise/storageMetrics.ts {#storagemetrics-ts}
+
+**Path**: `src/enterprise/storageMetrics.ts`
+
+### src/enterprise/timeline.ts {#timeline-ts}
+
+**Path**: `src/enterprise/timeline.ts`
+
+### src/enterprise/verifyAudit.ts {#verifyaudit-ts}
+
+**Path**: `src/enterprise/verifyAudit.ts`
 
 ### src/entitlements/audit_integration.ts {#audit_integration-ts}
 
@@ -290,9 +482,49 @@ markdown anchors for documentation purposes only (not full source reproduction).
 
 **Path**: `src/evidence/verify_regeneration.ts`
 
+### src/evidence_storage.ts {#evidence_storage-ts}
+
+**Path**: `src/evidence_storage.ts`
+
 ### src/executive/governanceScore.ts {#governancescore-ts}
 
 **Path**: `src/executive/governanceScore.ts`
+
+### src/export/auditor/htmlReport.ts {#htmlreport-ts}
+
+**Path**: `src/export/auditor/htmlReport.ts`
+
+### src/export/auditor/manifest.ts {#manifest-ts}
+
+**Path**: `src/export/auditor/manifest.ts`
+
+### src/export/auditor/packer.ts {#packer-ts}
+
+**Path**: `src/export/auditor/packer.ts`
+
+### src/export/auditor/scripts.ts {#scripts-ts}
+
+**Path**: `src/export/auditor/scripts.ts`
+
+### src/export/diagnosticBundle.ts {#diagnosticbundle-ts}
+
+**Path**: `src/export/diagnosticBundle.ts`
+
+### src/export/executiveSummary.ts {#executivesummary-ts}
+
+**Path**: `src/export/executiveSummary.ts`
+
+### src/export/phase1CanonicalFixture.ts {#phase1canonicalfixture-ts}
+
+**Path**: `src/export/phase1CanonicalFixture.ts`
+
+### src/export/reviewPack.ts {#reviewpack-ts}
+
+**Path**: `src/export/reviewPack.ts`
+
+### src/export/reviewPackCanonical.ts {#reviewpackcanonical-ts}
+
+**Path**: `src/export/reviewPackCanonical.ts`
 
 ### src/exports/drift_export.ts {#drift_export-ts}
 
@@ -314,499 +546,437 @@ markdown anchors for documentation purposes only (not full source reproduction).
 
 **Path**: `src/exports/snapshot_export.ts`
 
+### src/gadget-resolver.test.ts {#gadget-resolver-test-ts}
+
+**Path**: `src/gadget-resolver.test.ts`
+
 ### src/gadget-resolver.ts {#gadget-resolver-ts}
 
 **Path**: `src/gadget-resolver.ts`
 
-### src/governance/actionLog.ts {#actionlog-ts}
+### src/gadget-ui/dist/app.js {#app-js}
 
-**Path**: `src/governance/actionLog.ts`
+**Path**: `src/gadget-ui/dist/app.js`
 
-### src/governance/baselineVersion.ts {#baselineversion-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/bridge.d.ts {#bridge-d-ts}
 
-**Path**: `src/governance/baselineVersion.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/bridge.d.ts`
 
-### src/governance/driftAck.ts {#driftack-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/bridge.js {#bridge-js}
 
-**Path**: `src/governance/driftAck.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/bridge.js`
 
-### src/governance/exportPipeline.ts {#exportpipeline-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/errors.d.ts {#errors-d-ts}
 
-**Path**: `src/governance/exportPipeline.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/errors.d.ts`
 
-### src/governance/governanceAggregator.ts {#governanceaggregator-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/errors.js {#errors-js}
 
-**Path**: `src/governance/governanceAggregator.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/errors.js`
 
-### src/governance/hashChain.ts {#hashchain-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/events/events.d.ts {#events-d-ts}
 
-**Path**: `src/governance/hashChain.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/events/events.d.ts`
 
-### src/governance/migrationGuard.ts {#migrationguard-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/events/events.js {#events-js}
 
-**Path**: `src/governance/migrationGuard.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/events/events.js`
 
-### src/governance/rbac.ts {#rbac-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/events/index.d.ts {#index-d-ts}
 
-**Path**: `src/governance/rbac.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/events/index.d.ts`
 
-### src/governance/reviewSeal.ts {#reviewseal-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/events/index.js {#index-js}
 
-**Path**: `src/governance/reviewSeal.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/events/index.js`
 
-### src/governance/riskPosture.ts {#riskposture-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/fetch/fetch.d.ts {#fetch-d-ts}
 
-**Path**: `src/governance/riskPosture.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/fetch/fetch.d.ts`
 
-### src/governance/snapshotSchema.ts {#snapshotschema-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/fetch/fetch.js {#fetch-js}
 
-**Path**: `src/governance/snapshotSchema.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/fetch/fetch.js`
 
-### src/index.ts {#index-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/fetch/index.d.ts {#index-d-ts}
 
-**Path**: `src/index.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/fetch/index.d.ts`
 
-### src/ingest.ts {#ingest-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/fetch/index.js {#index-js}
 
-**Path**: `src/ingest.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/fetch/index.js`
 
-### src/ingest_timeline.ts {#ingest_timeline-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/flag/flag.d.ts {#flag-d-ts}
 
-**Path**: `src/ingest_timeline.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/flag/flag.d.ts`
 
-### src/jira_ingest.ts {#jira_ingest-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/flag/flag.js {#flag-js}
 
-**Path**: `src/jira_ingest.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/flag/flag.js`
 
-### src/jobs/v565/jobStatus.ts {#jobstatus-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/flag/index.d.ts {#index-d-ts}
 
-**Path**: `src/jobs/v565/jobStatus.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/flag/index.d.ts`
 
-### src/jobs/v565/snapshotMasterEnqueueAdapter.ts {#snapshotmasterenqueueadapter-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/flag/index.js {#index-js}
 
-**Path**: `src/jobs/v565/snapshotMasterEnqueueAdapter.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/flag/index.js`
 
-### src/jobs/v565/snapshotScheduleKickoff.ts {#snapshotschedulekickoff-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/index.d.ts {#index-d-ts}
 
-**Path**: `src/jobs/v565/snapshotScheduleKickoff.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/index.d.ts`
 
-### src/jobs/v565/workerAbort.ts {#workerabort-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/index.js {#index-js}
 
-**Path**: `src/jobs/v565/workerAbort.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/index.js`
 
-### src/lifecycle/installed.ts {#installed-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/internal/index.d.ts {#index-d-ts}
 
-**Path**: `src/lifecycle/installed.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/internal/index.d.ts`
 
-### src/lifecycle/seedSnapshot.ts {#seedsnapshot-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/internal/index.js {#index-js}
 
-**Path**: `src/lifecycle/seedSnapshot.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/internal/index.js`
 
-### src/lifecycle/upgraded.ts {#upgraded-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/invoke-remote/index.d.ts {#index-d-ts}
 
-**Path**: `src/lifecycle/upgraded.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/invoke-remote/index.d.ts`
 
-### src/metrics/riskIndex.ts {#riskindex-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/invoke-remote/index.js {#index-js}
 
-**Path**: `src/metrics/riskIndex.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/invoke-remote/index.js`
 
-### src/metrics_export.ts {#metrics_export-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/invoke-remote/invoke-remote.d.ts {#invoke-remote-d-ts}
 
-**Path**: `src/metrics_export.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/invoke-remote/invoke-remote.d.ts`
 
-### src/metrics_model.ts {#metrics_model-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/invoke-remote/invoke-remote.js {#invoke-remote-js}
 
-**Path**: `src/metrics_model.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/invoke-remote/invoke-remote.js`
 
-### src/metrics_storage.ts {#metrics_storage-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/invoke/index.d.ts {#index-d-ts}
 
-**Path**: `src/metrics_storage.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/invoke/index.d.ts`
 
-### src/perf/timeBudget.ts {#timebudget-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/invoke/index.js {#index-js}
 
-**Path**: `src/perf/timeBudget.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/invoke/index.js`
 
-### src/phase4/phase4_evidence_backfill.test.ts {#phase4_evidence_backfill-test-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/invoke/invoke.d.ts {#invoke-d-ts}
 
-**Path**: `src/phase4/phase4_evidence_backfill.test.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/invoke/invoke.d.ts`
 
-### src/phase4/phase4_evidence_backfill.ts {#phase4_evidence_backfill-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/invoke/invoke.js {#invoke-js}
 
-**Path**: `src/phase4/phase4_evidence_backfill.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/invoke/invoke.js`
 
-### src/phase4/timeline.test.ts {#timeline-test-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/modal/index.d.ts {#index-d-ts}
 
-**Path**: `src/phase4/timeline.test.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/modal/index.d.ts`
 
-### src/phase4/timeline.ts {#timeline-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/modal/index.js {#index-js}
 
-**Path**: `src/phase4/timeline.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/modal/index.js`
 
-### src/phase4/types.ts {#types-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/modal/modal.d.ts {#modal-d-ts}
 
-**Path**: `src/phase4/types.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/modal/modal.d.ts`
 
-### src/phase5/phase5_headings.ts {#phase5_headings-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/modal/modal.js {#modal-js}
 
-**Path**: `src/phase5/phase5_headings.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/modal/modal.js`
 
-### src/phase5_report_contract.ts {#phase5_report_contract-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/router/index.d.ts {#index-d-ts}
 
-**Path**: `src/phase5_report_contract.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/router/index.d.ts`
 
-### src/phase6/canonicalization.ts {#canonicalization-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/router/index.js {#index-js}
 
-**Path**: `src/phase6/canonicalization.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/router/index.js`
 
-### src/phase6/constants.ts {#constants-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/router/router.d.ts {#router-d-ts}
 
-**Path**: `src/phase6/constants.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/router/router.d.ts`
 
-### src/phase6/distributed_lock.ts {#distributed_lock-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/router/router.js {#router-js}
 
-**Path**: `src/phase6/distributed_lock.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/router/router.js`
 
-### src/phase6/iso_utils.ts {#iso_utils-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/types.d.ts {#types-d-ts}
 
-**Path**: `src/phase6/iso_utils.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/types.d.ts`
 
-### src/phase6/snapshot_capture.ts {#snapshot_capture-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/types.js {#types-js}
 
-**Path**: `src/phase6/snapshot_capture.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/types.js`
 
-### src/phase6/snapshot_model.ts {#snapshot_model-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/utils/blobParser.d.ts {#blobparser-d-ts}
 
-**Path**: `src/phase6/snapshot_model.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/utils/blobParser.d.ts`
 
-### src/phase6/snapshot_storage.ts {#snapshot_storage-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/utils/blobParser.js {#blobparser-js}
 
-**Path**: `src/phase6/snapshot_storage.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/utils/blobParser.js`
 
-### src/phase7/drift_compute.ts {#drift_compute-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/utils/index.d.ts {#index-d-ts}
 
-**Path**: `src/phase7/drift_compute.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/utils/index.d.ts`
 
-### src/phase7/drift_model.ts {#drift_model-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/utils/index.js {#index-js}
 
-**Path**: `src/phase7/drift_model.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/utils/index.js`
 
-### src/phase7/drift_storage.ts {#drift_storage-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/close.d.ts {#close-d-ts}
 
-**Path**: `src/phase7/drift_storage.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/close.d.ts`
 
-### src/phase7/pagination_utils.ts {#pagination_utils-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/close.js {#close-js}
 
-**Path**: `src/phase7/pagination_utils.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/close.js`
 
-### src/phase9/console_enforcement.ts {#console_enforcement-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/createHistory.d.ts {#createhistory-d-ts}
 
-**Path**: `src/phase9/console_enforcement.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/createHistory.d.ts`
 
-### src/phase9/data_handling_page.ts {#data_handling_page-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/createHistory.js {#createhistory-js}
 
-**Path**: `src/phase9/data_handling_page.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/createHistory.js`
 
-### src/phase9/determinism.test.ts {#determinism-test-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/frame.d.ts {#frame-d-ts}
 
-**Path**: `src/phase9/determinism.test.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/frame.d.ts`
 
-### src/phase9/export_truth.ts {#export_truth-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/frame.js {#frame-js}
 
-**Path**: `src/phase9/export_truth.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/frame.js`
 
-### src/phase9/log_redaction.ts {#log_redaction-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/getContext.d.ts {#getcontext-d-ts}
 
-**Path**: `src/phase9/log_redaction.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/getContext.d.ts`
 
-### src/phase9/procurement_packet.ts {#procurement_packet-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/getContext.js {#getcontext-js}
 
-**Path**: `src/phase9/procurement_packet.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/getContext.js`
 
-### src/phase9/truth_enforcement.test.ts {#truth_enforcement-test-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/index.d.ts {#index-d-ts}
 
-**Path**: `src/phase9/truth_enforcement.test.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/index.d.ts`
 
-### src/phase9/truth_enforcement.ts {#truth_enforcement-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/index.js {#index-js}
 
-**Path**: `src/phase9/truth_enforcement.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/index.js`
 
-### src/phase9_5a/counterfactual_ledger.test.ts {#counterfactual_ledger-test-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/refresh.d.ts {#refresh-d-ts}
 
-**Path**: `src/phase9_5a/counterfactual_ledger.test.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/refresh.d.ts`
 
-### src/phase9_5a/counterfactual_ledger.ts {#counterfactual_ledger-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/refresh.js {#refresh-js}
 
-**Path**: `src/phase9_5a/counterfactual_ledger.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/refresh.js`
 
-### src/phase9_5b/blind_spot_map.test.ts {#blind_spot_map-test-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/submit.d.ts {#submit-d-ts}
 
-**Path**: `src/phase9_5b/blind_spot_map.test.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/submit.d.ts`
 
-### src/phase9_5b/blind_spot_map.ts {#blind_spot_map-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/submit.js {#submit-js}
 
-**Path**: `src/phase9_5b/blind_spot_map.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/submit.js`
 
-### src/phase9_5c/auto_notification.ts {#auto_notification-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/theme.d.ts {#theme-d-ts}
 
-**Path**: `src/phase9_5c/auto_notification.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/theme.d.ts`
 
-### src/phase9_5c/snapshot_reliability.ts {#snapshot_reliability-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/theme.js {#theme-js}
 
-**Path**: `src/phase9_5c/snapshot_reliability.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/theme.js`
 
-### src/phase9_5d/audit_readiness.ts {#audit_readiness-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/view.d.ts {#view-d-ts}
 
-**Path**: `src/phase9_5d/audit_readiness.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/view.d.ts`
 
-### src/phase9_5e/auto_repair_log.ts {#auto_repair_log-ts}
+### src/gadget-ui/node_modules/@forge/bridge/out/view/view.js {#view-js}
 
-**Path**: `src/phase9_5e/auto_repair_log.ts`
+**Path**: `src/gadget-ui/node_modules/@forge/bridge/out/view/view.js`
 
-### src/pipelines/daily_pipeline.ts {#daily_pipeline-ts}
+### src/gadget-ui/node_modules/@types/estree/flow.d.ts {#flow-d-ts}
 
-**Path**: `src/pipelines/daily_pipeline.ts`
+**Path**: `src/gadget-ui/node_modules/@types/estree/flow.d.ts`
 
-### src/pipelines/weekly_pipeline.ts {#weekly_pipeline-ts}
+### src/gadget-ui/node_modules/@types/estree/index.d.ts {#index-d-ts}
 
-**Path**: `src/pipelines/weekly_pipeline.ts`
+**Path**: `src/gadget-ui/node_modules/@types/estree/index.d.ts`
 
-### src/policy/compatibility_gates.ts {#compatibility_gates-ts}
+### src/gadget-ui/node_modules/@types/history/DOMUtils.d.ts {#domutils-d-ts}
 
-**Path**: `src/policy/compatibility_gates.ts`
+**Path**: `src/gadget-ui/node_modules/@types/history/DOMUtils.d.ts`
 
-### src/policy/index.ts {#index-ts}
 
-**Path**: `src/policy/index.ts`
+## Test Files
 
-### src/policy/ruleset_registry.ts {#ruleset_registry-ts}
+### tests/CSP_NoInlineStyleAttributes.test.ts {#csp_noinlinestyleattributes-test-ts}
 
-**Path**: `src/policy/ruleset_registry.ts`
+**Path**: `tests/CSP_NoInlineStyleAttributes.test.ts`
 
-### src/policy/schema_migrations.ts {#schema_migrations-ts}
+### tests/a3_immutability_guarantee.test.ts {#a3_immutability_guarantee-test-ts}
 
-**Path**: `src/policy/schema_migrations.ts`
+**Path**: `tests/a3_immutability_guarantee.test.ts`
 
-### src/policy/shadow_evaluator.ts {#shadow_evaluator-ts}
+### tests/access-review.test.ts {#access-review-test-ts}
 
-**Path**: `src/policy/shadow_evaluator.ts`
+**Path**: `tests/access-review.test.ts`
 
-### src/procurement/claims_map.ts {#claims_map-ts}
+### tests/admin/phase5_admin_page.test.ts {#phase5_admin_page-test-ts}
 
-**Path**: `src/procurement/claims_map.ts`
+**Path**: `tests/admin/phase5_admin_page.test.ts`
 
-### src/procurement/export_bundle.ts {#export_bundle-ts}
+### tests/analysis/impactScope.spec.ts {#impactscope-spec-ts}
 
-**Path**: `src/procurement/export_bundle.ts`
+**Path**: `tests/analysis/impactScope.spec.ts`
 
-### src/procurement/index.ts {#index-ts}
+### tests/audit_snapshot/canonical_json_stability.test.ts {#canonical_json_stability-test-ts}
 
-**Path**: `src/procurement/index.ts`
+**Path**: `tests/audit_snapshot/canonical_json_stability.test.ts`
 
-### src/procurement/security_answers.ts {#security_answers-ts}
+### tests/audit_snapshot/export_contract.test.ts {#export_contract-test-ts}
 
-**Path**: `src/procurement/security_answers.ts`
+**Path**: `tests/audit_snapshot/export_contract.test.ts`
 
-### src/release/release_version.ts {#release_version-ts}
+### tests/audit_snapshot/forbidden_language_contract.test.ts {#forbidden_language_contract-test-ts}
 
-**Path**: `src/release/release_version.ts`
+**Path**: `tests/audit_snapshot/forbidden_language_contract.test.ts`
 
-### src/remediation/revertGenerator.ts {#revertgenerator-ts}
+### tests/audit_snapshot/hash_correctness.test.ts {#hash_correctness-test-ts}
 
-**Path**: `src/remediation/revertGenerator.ts`
+**Path**: `tests/audit_snapshot/hash_correctness.test.ts`
 
-### src/resolvers/audit_snapshot_export.ts {#audit_snapshot_export-ts}
+### tests/audit_snapshot/immutability_and_retention.test.ts {#immutability_and_retention-test-ts}
 
-**Path**: `src/resolvers/audit_snapshot_export.ts`
+**Path**: `tests/audit_snapshot/immutability_and_retention.test.ts`
 
-### src/resolvers/backbone_error_handling.ts {#backbone_error_handling-ts}
+### tests/audit_snapshot/no_jira_calls_contract.test.ts {#no_jira_calls_contract-test-ts}
 
-**Path**: `src/resolvers/backbone_error_handling.ts`
+**Path**: `tests/audit_snapshot/no_jira_calls_contract.test.ts`
 
-### src/resolvers/config_visibility_resolver.ts {#config_visibility_resolver-ts}
+### tests/audit_snapshot/snapshot_shape_and_completeness.test.ts {#snapshot_shape_and_completeness-test-ts}
 
-**Path**: `src/resolvers/config_visibility_resolver.ts`
+**Path**: `tests/audit_snapshot/snapshot_shape_and_completeness.test.ts`
 
-### src/resolvers/createGovernanceSnapshotNow.ts {#creategovernancesnapshotnow-ts}
+### tests/auth/oauth_handler.test.ts {#oauth_handler-test-ts}
 
-**Path**: `src/resolvers/createGovernanceSnapshotNow.ts`
+**Path**: `tests/auth/oauth_handler.test.ts`
 
-### src/resolvers/debugSnapshotState.ts {#debugsnapshotstate-ts}
+### tests/backbone/backbone_l0.test.ts {#backbone_l0-test-ts}
 
-**Path**: `src/resolvers/debugSnapshotState.ts`
+**Path**: `tests/backbone/backbone_l0.test.ts`
 
-### src/resolvers/ensureFirstSnapshot.ts {#ensurefirstsnapshot-ts}
+### tests/backbone/ledger_write_wiring.spec.ts {#ledger_write_wiring-spec-ts}
 
-**Path**: `src/resolvers/ensureFirstSnapshot.ts`
+**Path**: `tests/backbone/ledger_write_wiring.spec.ts`
 
-### src/resolvers/exportGovernanceSnapshotById.ts {#exportgovernancesnapshotbyid-ts}
+### tests/backbone_build_sha.test.ts {#backbone_build_sha-test-ts}
 
-**Path**: `src/resolvers/exportGovernanceSnapshotById.ts`
+**Path**: `tests/backbone_build_sha.test.ts`
 
-### src/resolvers/ft_exportAccessPack_v1.ts {#ft_exportaccesspack_v1-ts}
+### tests/backbone_fix_a_correlation_echoing.test.ts {#backbone_fix_a_correlation_echoing-test-ts}
 
-**Path**: `src/resolvers/ft_exportAccessPack_v1.ts`
+**Path**: `tests/backbone_fix_a_correlation_echoing.test.ts`
 
-### src/resolvers/ft_runAccessIntelligence_v1.ts {#ft_runaccessintelligence_v1-ts}
+### tests/backbone_fix_b_proof_panel.test.ts {#backbone_fix_b_proof_panel-test-ts}
 
-**Path**: `src/resolvers/ft_runAccessIntelligence_v1.ts`
+**Path**: `tests/backbone_fix_b_proof_panel.test.ts`
 
-### src/resolvers/gadget-handlers.ts {#gadget-handlers-ts}
+### tests/backbone_fixes_verification.test.ts {#backbone_fixes_verification-test-ts}
 
-**Path**: `src/resolvers/gadget-handlers.ts`
+**Path**: `tests/backbone_fixes_verification.test.ts`
 
-### src/resolvers/getBackendBuildIdentity.ts {#getbackendbuildidentity-ts}
+### tests/backbone_layer0_handler_correlation.test.ts {#backbone_layer0_handler_correlation-test-ts}
 
-**Path**: `src/resolvers/getBackendBuildIdentity.ts`
+**Path**: `tests/backbone_layer0_handler_correlation.test.ts`
 
-### src/resolvers/getBuildInfo.ts {#getbuildinfo-ts}
 
-**Path**: `src/resolvers/getBuildInfo.ts`
+## Tools
 
-### src/resolvers/getDashboardSnapshotV1.ts {#getdashboardsnapshotv1-ts}
+### tools/.build_meta.sh {#-build_meta-sh}
 
-**Path**: `src/resolvers/getDashboardSnapshotV1.ts`
+**Path**: `tools/.build_meta.sh`
 
-### src/resolvers/getOperationalState.ts {#getoperationalstate-ts}
+### tools/audit/v3_1/lib/common.sh {#common-sh}
 
-**Path**: `src/resolvers/getOperationalState.ts`
+**Path**: `tools/audit/v3_1/lib/common.sh`
 
-### src/resolvers/getSnapshotDebug.ts {#getsnapshotdebug-ts}
+### tools/audit/v3_1/lib/determinism.sh {#determinism-sh}
 
-**Path**: `src/resolvers/getSnapshotDebug.ts`
+**Path**: `tools/audit/v3_1/lib/determinism.sh`
 
-### src/resolvers/getSnapshotVariant.ts {#getsnapshotvariant-ts}
+### tools/audit/v3_1/lib/exfiltration.sh {#exfiltration-sh}
 
-**Path**: `src/resolvers/getSnapshotVariant.ts`
+**Path**: `tools/audit/v3_1/lib/exfiltration.sh`
 
-### src/resolvers/getStatusSnapshot.ts {#getstatussnapshot-ts}
+### tools/audit/v3_1/lib/forge_specific.sh {#forge_specific-sh}
 
-**Path**: `src/resolvers/getStatusSnapshot.ts`
+**Path**: `tools/audit/v3_1/lib/forge_specific.sh`
 
-### src/resolvers/governance_status.ts {#governance_status-ts}
+### tools/audit/v3_1/lib/legal.sh {#legal-sh}
 
-**Path**: `src/resolvers/governance_status.ts`
+**Path**: `tools/audit/v3_1/lib/legal.sh`
 
-### src/resolvers/phase2_config.ts {#phase2_config-ts}
+### tools/audit/v3_1/lib/manifest.sh {#manifest-sh}
 
-**Path**: `src/resolvers/phase2_config.ts`
+**Path**: `tools/audit/v3_1/lib/manifest.sh`
 
-### src/resolvers/ping.ts {#ping-ts}
+### tools/audit/v3_1/lib/preflight_contract.sh {#preflight_contract-sh}
 
-**Path**: `src/resolvers/ping.ts`
+**Path**: `tools/audit/v3_1/lib/preflight_contract.sh`
 
-### src/resolvers/probe.ts {#probe-ts}
+### tools/audit/v3_1/lib/quota.sh {#quota-sh}
 
-**Path**: `src/resolvers/probe.ts`
+**Path**: `tools/audit/v3_1/lib/quota.sh`
 
-### src/resolvers/refreshNow.ts {#refreshnow-ts}
+### tools/audit/v3_1/lib/review_phase05_allowlist_entry.sh {#review_phase05_allowlist_entry-sh}
 
-**Path**: `src/resolvers/refreshNow.ts`
+**Path**: `tools/audit/v3_1/lib/review_phase05_allowlist_entry.sh`
 
-### src/resolvers/trace_integration.ts {#trace_integration-ts}
+### tools/audit/v3_1/lib/runtime.sh {#runtime-sh}
 
-**Path**: `src/resolvers/trace_integration.ts`
+**Path**: `tools/audit/v3_1/lib/runtime.sh`
 
-### src/retention/cleanup.ts {#cleanup-ts}
+### tools/audit/v3_1/lib/sast.sh {#sast-sh}
 
-**Path**: `src/retention/cleanup.ts`
+**Path**: `tools/audit/v3_1/lib/sast.sh`
 
-### src/retention/retention_policy.ts {#retention_policy-ts}
+### tools/audit/v3_1/lib/scoring.sh {#scoring-sh}
 
-**Path**: `src/retention/retention_policy.ts`
+**Path**: `tools/audit/v3_1/lib/scoring.sh`
 
-### src/run_ledgers.ts {#run_ledgers-ts}
+### tools/audit/v3_1/lib/secrets.sh {#secrets-sh}
 
-**Path**: `src/run_ledgers.ts`
+**Path**: `tools/audit/v3_1/lib/secrets.sh`
 
-### src/status/collectSnapshotCore.ts {#collectsnapshotcore-ts}
+### tools/audit/v3_1/lib/silent_failures.sh {#silent_failures-sh}
 
-**Path**: `src/status/collectSnapshotCore.ts`
+**Path**: `tools/audit/v3_1/lib/silent_failures.sh`
 
-### src/status/computeStatus.ts {#computestatus-ts}
+### tools/audit/v3_1/lib/supply_chain.sh {#supply_chain-sh}
 
-**Path**: `src/status/computeStatus.ts`
+**Path**: `tools/audit/v3_1/lib/supply_chain.sh`
 
-### src/status/runCollection.ts {#runcollection-ts}
+### tools/audit/v3_1/lib/validate_phase05_allowlist.sh {#validate_phase05_allowlist-sh}
 
-**Path**: `src/status/runCollection.ts`
+**Path**: `tools/audit/v3_1/lib/validate_phase05_allowlist.sh`
 
-### src/status/runLedger.ts {#runledger-ts}
+### tools/audit/v3_1/run_deterministic.sh {#run_deterministic-sh}
 
-**Path**: `src/status/runLedger.ts`
+**Path**: `tools/audit/v3_1/run_deterministic.sh`
 
-### src/status/statusSnapshot.ts {#statussnapshot-ts}
+### tools/audit/v3_1/run_f100_hostile_audit_v3_1.sh {#run_f100_hostile_audit_v3_1-sh}
 
-**Path**: `src/status/statusSnapshot.ts`
+**Path**: `tools/audit/v3_1/run_f100_hostile_audit_v3_1.sh`
 
-### src/status/statusStorage.ts {#statusstorage-ts}
+### tools/audit/v3_1/run_stability_5x.sh {#run_stability_5x-sh}
 
-**Path**: `src/status/statusStorage.ts`
+**Path**: `tools/audit/v3_1/run_stability_5x.sh`
 
-### src/storage.ts {#storage-ts}
 
-**Path**: `src/storage.ts`
+**Note**: This is an inventory for anchor purposes only. For full source code, see the repository.
 
-### src/storage/lock.ts {#lock-ts}
-
-**Path**: `src/storage/lock.ts`
-
-### src/storage/ringBuffer.ts {#ringbuffer-ts}
-
-**Path**: `src/storage/ringBuffer.ts`
-
-### src/test_disclosure_standalone.ts {#test_disclosure_standalone-ts}
-
-**Path**: `src/test_disclosure_standalone.ts`
-
-### src/test_phase4_standalone.ts {#test_phase4_standalone-ts}
-
-**Path**: `src/test_phase4_standalone.ts`
-
-### src/trace/trace_helpers.ts {#trace_helpers-ts}
-
-**Path**: `src/trace/trace_helpers.ts`
-
-### src/trace/trace_types.ts {#trace_types-ts}
-
-**Path**: `src/trace/trace_types.ts`
-
-### src/types/forge-api.d.ts {#forge-api-d-ts}
-
-**Path**: `src/types/forge-api.d.ts`
-
-### src/types/forge-shims.d.ts {#forge-shims-d-ts}
-
-**Path**: `src/types/forge-shims.d.ts`
-
-### src/types/scheduler-tracing.d.ts {#scheduler-tracing-d-ts}
-
-**Path**: `src/types/scheduler-tracing.d.ts`
-
-### src/ui/healthPanel.tsx {#healthpanel-tsx}
-
-**Path**: `src/ui/healthPanel.tsx`
-
-### src/ui/trust/index.ts {#index-ts}
-
-**Path**: `src/ui/trust/index.ts`
-
-### src/ui/trust/proofMarkers.ts {#proofmarkers-ts}
-
-**Path**: `src/ui/trust/proofMarkers.ts`
-
-### src/ui/trust/trustDocs.ts {#trustdocs-ts}
-
-**Path**: `src/ui/trust/trustDocs.ts`
-
-### src/v565/constants.ts {#constants-ts}
-
-**Path**: `src/v565/constants.ts`
-
-### src/validators.test.ts {#validators-test-ts}
-
-**Path**: `src/validators.test.ts`
-
-### src/zip/deterministicZip.ts {#deterministiczip-ts}
-
-**Path**: `src/zip/deterministicZip.ts`
-
+<!-- END: GENERATED -->
