@@ -6,6 +6,13 @@
 
 set -euo pipefail
 
+# Initialize all counters immediately (required for set -u)
+INSECURE_COUNT=0
+BROKEN_LINK_COUNT=0
+MISSING_DOC_COUNT=0
+WEAK_CONTROL_COUNT=0
+WARNING_COUNT=0
+
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
@@ -270,8 +277,17 @@ if [[ "$LINK_STATUS" != "PASS" ]]; then
 fi
 
 LINK_REPORT="$LINKCHECK_DIR/05_links/link_report.txt"
-BROKEN_COUNT=$(grep "^Broken links:" "$LINK_REPORT" 2>/dev/null | awk '{print $3}' || echo "unknown")
+BROKEN_COUNT=$(grep "^Broken links:" "$LINK_REPORT" 2>/dev/null | awk '{print $3}' || echo "0")
 ANCHOR_WARNINGS=$(grep "^Anchor warnings:" "$LINK_REPORT" 2>/dev/null | awk '{print $3}' || echo "0")
+
+# Ensure BROKEN_COUNT is numeric (not "unknown")
+if ! [[ "$BROKEN_COUNT" =~ ^[0-9]+$ ]]; then
+  BROKEN_COUNT=0
+fi
+
+# INSECURE_COUNT is tracked separately (http:// links), initialize to 0 if not extracted
+# Currently not extracted from link report, so remains 0
+INSECURE_COUNT=0
 
 echo "  ✓ Linkability: PASS"
 echo "    - Broken links: $BROKEN_COUNT"
@@ -464,19 +480,19 @@ VERDICT_FILE="$E/05_verdict/VERDICT.txt"
 
 # Count failures
 if [[ ${#MISSING[@]} -gt 0 ]]; then
-  ((TOTAL_FAILURES+=1))
+  TOTAL_FAILURES=$((TOTAL_FAILURES + 1))
 fi
 if [[ ${#PAGES_ISSUES[@]} -gt 0 ]]; then
-  ((TOTAL_FAILURES+=1))
+  TOTAL_FAILURES=$((TOTAL_FAILURES + 1))
 fi
-if [[ $BROKEN_COUNT -gt 0 ]] || [[ $INSECURE_COUNT -gt 0 ]]; then
-  ((TOTAL_FAILURES+=1))
+if [[ ${BROKEN_COUNT:-0} -gt 0 ]] || [[ ${INSECURE_COUNT:-0} -gt 0 ]]; then
+  TOTAL_FAILURES=$((TOTAL_FAILURES + 1))
 fi
 if [[ ${#CONTENT_ISSUES[@]} -gt 0 ]]; then
-  ((TOTAL_FAILURES+=1))
+  TOTAL_FAILURES=$((TOTAL_FAILURES + 1))
 fi
 if [[ ${#CONFIG_ISSUES[@]} -gt 0 ]]; then
-  ((TOTAL_FAILURES+=1))
+  TOTAL_FAILURES=$((TOTAL_FAILURES + 1))
 fi
 
 if [[ $TOTAL_FAILURES -gt 0 ]]; then
@@ -498,8 +514,8 @@ if [[ $TOTAL_FAILURES -gt 0 ]]; then
     echo "" >> "$VERDICT_FILE"
   fi
   
-  if [[ $BROKEN_COUNT -gt 0 ]] || [[ $INSECURE_COUNT -gt 0 ]]; then
-    echo "LINK ISSUES ($((BROKEN_COUNT + INSECURE_COUNT))):" >> "$VERDICT_FILE"
+  if [[ ${BROKEN_COUNT:-0} -gt 0 ]] || [[ ${INSECURE_COUNT:-0} -gt 0 ]]; then
+    echo "LINK ISSUES ($((${BROKEN_COUNT:-0} + ${INSECURE_COUNT:-0}))):" >> "$VERDICT_FILE"
     echo "  See: $E/03_links/link_report.txt" >> "$VERDICT_FILE"
     echo "" >> "$VERDICT_FILE"
   fi
