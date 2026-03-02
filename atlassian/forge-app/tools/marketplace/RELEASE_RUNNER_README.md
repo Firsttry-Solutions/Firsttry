@@ -63,27 +63,32 @@ On success, you'll see:
 SELFTEST MODE: Validating Fail-Closed Evidence Logic
 ════════════════════════════════════════════════════════════
 
-[SUBTEST 1/5] Happy path: Complete evidence → PASS
+[SUBTEST 1/6] Happy path: Complete evidence → PASS
 ✓ Happy path: PASS verdict produced
 ✓ Happy path: FINAL_REPORT.md is 1234 bytes (>= 500)
 ✓ Happy path: FINAL_VERDICT.txt contains PASS
 
-[SUBTEST 2/5] Missing logs: Remove all logs from 01_gates → FAIL
+[SUBTEST 2/6] Missing logs: Remove all logs from 01_gates → FAIL
 ✓ Missing logs: FAIL verdict produced
 ✓ Missing logs: FINAL_VERDICT.txt mentions missing logs
 ✓ Missing logs: FINAL_REPORT.md is 876 bytes (>= 500)
 
-[SUBTEST 3/5] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL
+[SUBTEST 3/6] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL
 ✓ Missing Playwright: FAIL verdict produced
 ✓ Missing Playwright: FINAL_VERDICT.txt mentions missing Playwright artifacts
 
-[SUBTEST 4/5] Missing phase directory: Remove 05_upgrade → FAIL
+[SUBTEST 4/6] Missing phase directory: Remove 05_upgrade → FAIL
 ✓ Missing directory: FAIL verdict produced
 ✓ Missing directory: FINAL_VERDICT.txt mentions missing directory
 
-[SUBTEST 5/5] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL
+[SUBTEST 5/6] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL
 ✓ Wrong verdict: FAIL verdict produced
 ✓ Wrong verdict: FINAL_VERDICT.txt mentions PASS requirement
+
+[SUBTEST 6/6] Playwright browser prerequisite: Fail-closed when browsers missing
+✓ Browser check: Browsers present or installed successfully
+✓ Browser check: Status file created with valid format
+✓ Browser check: Log file created with diagnostic output
 
 ════════════════════════════════════════════════════════════
 [SELFTEST PASS]
@@ -95,6 +100,7 @@ All subtests passed:
   ✓ Missing Playwright artifacts forces FAIL
   ✓ Missing phase directory forces FAIL
   ✓ Wrong verdict forces FAIL
+  ✓ Playwright browser prerequisite check works correctly
   ✓ FINAL_REPORT.md >= 500 bytes in all cases
 
 Evidence validation is fail-closed and working correctly.
@@ -135,6 +141,12 @@ Evidence validation is fail-closed and working correctly.
 - Verifies finalize() forces FAIL
 - Validates reason mentions PASS requirement
 
+**Subtest 6: Playwright Browser Prerequisite**
+- Runs `ensure_playwright_browsers.sh` with `FT_NO_PW_INSTALL=1`
+- Verifies script creates status file with valid format (OK or FAIL)
+- Validates log file is created with diagnostic output
+- Ensures fail-closed behavior without downloading browsers
+
 ### Selftest Evidence
 
 By default, selftest creates a temporary evidence directory and cleans it up automatically.
@@ -157,7 +169,8 @@ Evidence structure:
 ├── missing_logs/             # Subtest 2: Missing logs (FAIL)
 ├── missing_playwright/       # Subtest 3: Missing Playwright (FAIL)
 ├── missing_dir/              # Subtest 4: Missing directory (FAIL)
-└── wrong_verdict/            # Subtest 5: Wrong verdict (FAIL)
+├── wrong_verdict/            # Subtest 5: Wrong verdict (FAIL)
+└── browser_check/            # Subtest 6: Browser prerequisite check
 ```
 
 ### CI Integration
@@ -177,6 +190,99 @@ Add selftest to CI workflow to validate the validation logic:
 - **After modifying** evidence validation logic
 - **In CI** as a fast (<10 seconds) sanity check
 - **When debugging** why PASS/FAIL verdicts are produced
+
+## Playwright Browser Prerequisites
+
+The release runner requires Playwright browsers (Chromium) to be installed for Phase 6 (E2E tests). The runner **automatically checks and installs browsers** before running tests.
+
+### Automatic Browser Installation
+
+**Phase 6.2** runs before E2E tests to ensure browsers are present. This check:
+
+1. **Verifies node/npm tooling** exists
+2. **Checks Playwright availability** via `npx --no-install playwright`
+3. **Validates Chromium executable** at expected path
+4. **Installs browsers if missing** (unless blocked by environment)
+
+### Browser Check Evidence
+
+Browser check logs are captured to:
+
+```
+<evidence_dir>/06_e2e/
+├── playwright_install.log             # Full installation/check log
+├── playwright_browsers_status.txt     # Status: OK or FAIL
+├── auth_capture.log
+└── test_run.log
+```
+
+**Status Values:**
+- `OK: browsers present` - Chromium already installed
+- `OK: browsers installed` - Chromium installed during this run
+- `FAIL: install required but not permitted` - FT_NO_PW_INSTALL=1 blocks installation
+- `FAIL: install attempted but failed` - Installation error occurred
+
+### Blocking Browser Installation
+
+In locked-down CI environments where browser installation should fail explicitly:
+
+```bash
+export FT_NO_PW_INSTALL=1
+bash tools/marketplace/release_marketplace_ready_e2e.sh
+```
+
+This will:
+- Check if browsers are already present
+- **FAIL immediately** if browsers are missing (instead of attempting download)
+- Write clear diagnostics to evidence directory
+
+### Troubleshooting Missing Browsers
+
+**Symptom:** E2E tests fail with:
+```
+browserType.launch: Executable doesn't exist at /home/user/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome
+```
+
+**Root Cause:** Playwright browsers not installed
+
+**Fix Option 1: Let release runner install them**
+```bash
+# Ensure FT_NO_PW_INSTALL is not set
+unset FT_NO_PW_INSTALL
+
+# Run release runner (will auto-install browsers)
+cd atlassian/forge-app
+bash tools/marketplace/release_marketplace_ready_e2e.sh
+```
+
+**Fix Option 2: Manual installation**
+```bash
+cd atlassian/forge-app
+npx playwright install chromium
+```
+
+**Fix Option 3: Install all browsers**
+```bash
+npx playwright install
+```
+
+### Browser Installation Size
+
+Chromium browser download is approximately **280 MB**:
+- Chrome for Testing: ~167 MB
+- Chrome Headless Shell: ~111 MB
+- FFmpeg: ~2 MB
+
+### Selftest Coverage
+
+The selftest mode (subtest 6/6) validates browser prerequisite check logic:
+
+- Runs `ensure_playwright_browsers.sh` with `FT_NO_PW_INSTALL=1`
+- Verifies status file created with valid format
+- Verifies log file created with diagnostic output
+- Ensures fail-closed behavior without downloading browsers
+
+This validates the prerequisite check itself without requiring actual browser installation.
 
 ## Prerequisites
 

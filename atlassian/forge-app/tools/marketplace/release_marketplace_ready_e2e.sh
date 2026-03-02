@@ -362,13 +362,14 @@ run_selftest() {
   log_info "Selftest evidence directory: $selftest_dir"
   echo ""
   
-  # Set REPO_ROOT for finalize() calls (if needed)
+  # Set REPO_ROOT and SCRIPT_DIR for finalize() and helper script calls
   REPO_ROOT="${REPO_ROOT:-$(pwd)}"
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   
   # -------------------------------------------------------------------------
   # SUBTEST 1: Happy path - all artifacts present → PASS
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 1/5] Happy path: Complete evidence → PASS"
+  log_info "[SUBTEST 1/6] Happy path: Complete evidence → PASS"
   
   local happy_dir="$selftest_dir/happy"
   mkdir -p "$happy_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e/artifacts,99_verdict}
@@ -466,7 +467,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 2: Missing logs → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 2/5] Missing logs: Remove all logs from 01_gates → FAIL"
+  log_info "[SUBTEST 2/6] Missing logs: Remove all logs from 01_gates → FAIL"
   
   local missing_logs_dir="$selftest_dir/missing_logs"
   cp -r "$happy_dir" "$missing_logs_dir"
@@ -537,7 +538,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 3: Missing Playwright artifacts → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 3/5] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
+  log_info "[SUBTEST 3/6] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
   
   local missing_pw_dir="$selftest_dir/missing_playwright"
   cp -r "$happy_dir" "$missing_pw_dir"
@@ -590,7 +591,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 4: Missing phase directory → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 4/5] Missing phase directory: Remove 05_upgrade → FAIL"
+  log_info "[SUBTEST 4/6] Missing phase directory: Remove 05_upgrade → FAIL"
   
   local missing_dir_dir="$selftest_dir/missing_dir"
   cp -r "$happy_dir" "$missing_dir_dir"
@@ -643,7 +644,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 5: VERDICT.txt without PASS → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 5/5] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
+  log_info "[SUBTEST 5/6] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
   
   local wrong_verdict_dir="$selftest_dir/wrong_verdict"
   cp -r "$happy_dir" "$wrong_verdict_dir"
@@ -694,6 +695,85 @@ run_selftest() {
   echo ""
   
   # -------------------------------------------------------------------------
+  # SUBTEST 6: Playwright browser prerequisite check
+  # -------------------------------------------------------------------------
+  log_info "[SUBTEST 6/6] Playwright browser prerequisite: Fail-closed when browsers missing"
+  
+  local browser_check_dir="$selftest_dir/browser_check"
+  mkdir -p "$browser_check_dir/06_e2e"
+  
+  # Test browser check with FT_NO_PW_INSTALL=1 (blocks installation)
+  # This should fail cleanly without attempting downloads
+  if FT_NO_PW_INSTALL=1 bash "$SCRIPT_DIR/ensure_playwright_browsers.sh" "$browser_check_dir" >/dev/null 2>&1; then
+    # If it passes, browsers are already installed - that's OK for this test
+    # We're just validating the script runs and produces status file
+    log_success "✓ Browser check: Browsers already present (status file created)"
+    
+    # Verify status file exists
+    if [ -f "$browser_check_dir/06_e2e/playwright_browsers_status.txt" ]; then
+      log_success "✓ Browser check: Status file created"
+      
+      # Read status (should be OK or FAIL)
+      local status
+      status=$(cat "$browser_check_dir/06_e2e/playwright_browsers_status.txt")
+      if echo "$status" | grep -qE "^(OK|FAIL)"; then
+        log_success "✓ Browser check: Status file has valid format: $status"
+      else
+        log_error "✗ Browser check: Status file has invalid format: $status"
+        test_failed=1
+      fi
+    else
+      log_error "✗ Browser check: Status file not created"
+      test_failed=1
+    fi
+    
+    # Verify log file exists
+    if [ -f "$browser_check_dir/06_e2e/playwright_install.log" ]; then
+      log_success "✓ Browser check: Log file created"
+      
+      # Verify log has content
+      if [ -s "$browser_check_dir/06_e2e/playwright_install.log" ]; then
+        log_success "✓ Browser check: Log file has content"
+      else
+        log_error "✗ Browser check: Log file is empty"
+        test_failed=1
+      fi
+    else
+      log_error "✗ Browser check: Log file not created"
+      test_failed=1
+    fi
+  else
+    # Script failed - this is expected if browsers are missing and FT_NO_PW_INSTALL=1
+    log_success "✓ Browser check: Failed as expected (browsers missing, installation blocked)"
+    
+    # Verify status file exists with FAIL
+    if [ -f "$browser_check_dir/06_e2e/playwright_browsers_status.txt" ]; then
+      log_success "✓ Browser check: Status file created on failure"
+      
+      local status
+      status=$(cat "$browser_check_dir/06_e2e/playwright_browsers_status.txt")
+      if echo "$status" | grep -q "^FAIL"; then
+        log_success "✓ Browser check: Status file indicates FAIL: $status"
+      else
+        log_error "✗ Browser check: Status file should start with FAIL: $status"
+        test_failed=1
+      fi
+    else
+      log_error "✗ Browser check: Status file not created on failure"
+      test_failed=1
+    fi
+    
+    # Verify log file exists on failure
+    if [ -f "$browser_check_dir/06_e2e/playwright_install.log" ]; then
+      log_success "✓ Browser check: Log file created on failure"
+    else
+      log_error "✗ Browser check: Log file not created on failure"
+      test_failed=1
+    fi
+  fi
+  echo ""
+  
+  # -------------------------------------------------------------------------
   # FINAL VERDICT
   # -------------------------------------------------------------------------
   
@@ -708,6 +788,7 @@ run_selftest() {
     log_success "  ✓ Missing Playwright artifacts forces FAIL"
     log_success "  ✓ Missing phase directory forces FAIL"
     log_success "  ✓ Wrong verdict forces FAIL"
+    log_success "  ✓ Playwright browser prerequisite check works correctly"
     log_success "  ✓ FINAL_REPORT.md >= 500 bytes in all cases"
     log_success ""
     log_success "Evidence validation is fail-closed and working correctly."
@@ -1294,7 +1375,21 @@ fi
 
 log_success "E2E harness detected"
 
-# 6.2 - Capture/verify E2E authentication
+# 6.2 - Ensure Playwright browsers present
+log_info "Checking Playwright browser prerequisite..."
+if ! bash "$SCRIPT_DIR/ensure_playwright_browsers.sh" "$E"; then
+  log_error "Playwright browser prerequisite check failed"
+  log_error "See logs: $E/06_e2e/playwright_install.log"
+  log_error "Status: $E/06_e2e/playwright_browsers_status.txt"
+  log_error "Remediation:"
+  log_error "  1. If FT_NO_PW_INSTALL=1 is set, unset it or"
+  log_error "  2. Manually run: npx playwright install chromium"
+  echo "FAIL: Playwright browsers unavailable" > "$E/06_e2e/VERDICT.txt"
+  exit 1
+fi
+log_success "Playwright browsers: OK"
+
+# 6.3 - Capture/verify E2E authentication
 log_info "Capturing E2E authentication..."
 
 # Create auth capture directory under evidence
@@ -1353,7 +1448,7 @@ log_success "Storage state appears valid (cookies: $HAS_COOKIES, origins: $HAS_O
 mkdir -p "$E/06_e2e/artifacts"
 cp "$STORAGE_STATE" "$E/06_e2e/artifacts/storageState.json" || true
 
-# 6.3 - Verify JIRA_BASE_URL (if required)
+# 6.4 - Verify JIRA_BASE_URL (if required)
 EXPECTED_BASE_URL="https://$SITE"
 if [ -n "${JIRA_BASE_URL:-}" ] && [ "$JIRA_BASE_URL" != "$EXPECTED_BASE_URL" ]; then
   log_error "JIRA_BASE_URL mismatch:"
@@ -1364,7 +1459,7 @@ if [ -n "${JIRA_BASE_URL:-}" ] && [ "$JIRA_BASE_URL" != "$EXPECTED_BASE_URL" ]; 
   exit 1
 fi
 
-# 6.4 - Run E2E dashboard test
+# 6.5 - Run E2E dashboard test
 log_info "Running E2E dashboard test..."
 
 # Check if test:prod-dashboard script exists
@@ -1398,7 +1493,7 @@ fi
 
 log_success "E2E dashboard test: PASS"
 
-# 6.5 - Capture E2E artifacts
+# 6.6 - Capture E2E artifacts
 log_info "Capturing E2E artifacts..."
 mkdir -p "$E/06_e2e/artifacts"
 
