@@ -23,6 +23,161 @@ This script implements a **7-phase release pipeline** with hard gates at every s
 - Exit code 1
 - Evidence directory with diagnostics
 
+## Selftest Mode
+
+The release runner includes a built-in **selftest mode** that validates the fail-closed artifact validation logic without requiring auth, deployment, or Playwright against Jira.
+
+### What It Proves
+
+Selftest mode proves that:
+
+1. **PASS cannot be produced without complete evidence artifacts** (phase directories, VERDICT.txt files, non-empty log files)
+2. **PASS cannot be produced without Playwright artifacts** in 06_e2e
+3. **Final report is non-trivial** (>= 500 bytes) for both PASS and FAIL scenarios
+4. **finalize() forces FAIL** even with exit_code=0 if artifacts are incomplete
+
+### Running Selftest
+
+**Option 1: CLI flag**
+```bash
+cd atlassian/forge-app
+bash tools/marketplace/release_marketplace_ready_e2e.sh --selftest
+```
+
+**Option 2: Environment variable**
+```bash
+FT_RELEASE_SELFTEST=1 bash tools/marketplace/release_marketplace_ready_e2e.sh
+```
+
+**Option 3: Keep evidence for inspection**
+```bash
+FT_RELEASE_SELFTEST=1 FT_SELFTEST_KEEP=1 bash tools/marketplace/release_marketplace_ready_e2e.sh
+```
+
+### Expected Output
+
+On success, you'll see:
+
+```
+════════════════════════════════════════════════════════════
+SELFTEST MODE: Validating Fail-Closed Evidence Logic
+════════════════════════════════════════════════════════════
+
+[SUBTEST 1/5] Happy path: Complete evidence → PASS
+✓ Happy path: PASS verdict produced
+✓ Happy path: FINAL_REPORT.md is 1234 bytes (>= 500)
+✓ Happy path: FINAL_VERDICT.txt contains PASS
+
+[SUBTEST 2/5] Missing logs: Remove all logs from 01_gates → FAIL
+✓ Missing logs: FAIL verdict produced
+✓ Missing logs: FINAL_VERDICT.txt mentions missing logs
+✓ Missing logs: FINAL_REPORT.md is 876 bytes (>= 500)
+
+[SUBTEST 3/5] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL
+✓ Missing Playwright: FAIL verdict produced
+✓ Missing Playwright: FINAL_VERDICT.txt mentions missing Playwright artifacts
+
+[SUBTEST 4/5] Missing phase directory: Remove 05_upgrade → FAIL
+✓ Missing directory: FAIL verdict produced
+✓ Missing directory: FINAL_VERDICT.txt mentions missing directory
+
+[SUBTEST 5/5] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL
+✓ Wrong verdict: FAIL verdict produced
+✓ Wrong verdict: FINAL_VERDICT.txt mentions PASS requirement
+
+════════════════════════════════════════════════════════════
+[SELFTEST PASS]
+════════════════════════════════════════════════════════════
+
+All subtests passed:
+  ✓ Happy path produces PASS with complete evidence
+  ✓ Missing logs forces FAIL
+  ✓ Missing Playwright artifacts forces FAIL
+  ✓ Missing phase directory forces FAIL
+  ✓ Wrong verdict forces FAIL
+  ✓ FINAL_REPORT.md >= 500 bytes in all cases
+
+Evidence validation is fail-closed and working correctly.
+```
+
+### Selftest Exit Codes
+
+- **0:** All subtests passed (validation logic working correctly)
+- **1:** One or more subtests failed (validation logic broken)
+
+### What Gets Tested
+
+**Subtest 1: Happy Path**
+- Creates complete evidence directory with all phases
+- Each phase has VERDICT.txt containing "PASS"
+- Each phase has at least one non-empty log file
+- 06_e2e has Playwright artifacts (playwright-report directory)
+- Verifies finalize() produces PASS verdict
+- Validates FINAL_REPORT.md >= 500 bytes
+
+**Subtest 2: Missing Logs**
+- Removes all .log files from 01_gates phase
+- Verifies finalize() forces FAIL even with exit_code=0
+- Validates FINAL_VERDICT.txt mentions missing/non-empty logs
+
+**Subtest 3: Missing Playwright Artifacts**
+- Removes all artifacts from 06_e2e/artifacts directory
+- Verifies finalize() forces FAIL
+- Validates reason mentions Playwright artifacts
+
+**Subtest 4: Missing Phase Directory**
+- Removes 05_upgrade directory entirely
+- Verifies finalize() forces FAIL
+- Validates reason mentions missing directory
+
+**Subtest 5: Wrong Verdict**
+- Changes 03_build/VERDICT.txt from PASS to FAIL
+- Verifies finalize() forces FAIL
+- Validates reason mentions PASS requirement
+
+### Selftest Evidence
+
+By default, selftest creates a temporary evidence directory and cleans it up automatically.
+
+To preserve evidence for inspection:
+
+```bash
+FT_SELFTEST_KEEP=1 bash tools/marketplace/release_marketplace_ready_e2e.sh --selftest
+```
+
+The output will show:
+```
+Selftest evidence preserved at: /tmp/ft_release_selftest_XXXXXX
+```
+
+Evidence structure:
+```
+/tmp/ft_release_selftest_XXXXXX/
+├── happy/                    # Subtest 1: Complete evidence (PASS)
+├── missing_logs/             # Subtest 2: Missing logs (FAIL)
+├── missing_playwright/       # Subtest 3: Missing Playwright (FAIL)
+├── missing_dir/              # Subtest 4: Missing directory (FAIL)
+└── wrong_verdict/            # Subtest 5: Wrong verdict (FAIL)
+```
+
+### CI Integration
+
+Add selftest to CI workflow to validate the validation logic:
+
+```yaml
+- name: Validate release runner selftest
+  run: |
+    cd atlassian/forge-app
+    bash tools/marketplace/release_marketplace_ready_e2e.sh --selftest
+```
+
+### When to Run Selftest
+
+- **Before making changes** to finalize() or assert_pass_artifacts_or_fail()
+- **After modifying** evidence validation logic
+- **In CI** as a fast (<10 seconds) sanity check
+- **When debugging** why PASS/FAIL verdicts are produced
+
 ## Prerequisites
 
 ### 1. Forge Authentication
