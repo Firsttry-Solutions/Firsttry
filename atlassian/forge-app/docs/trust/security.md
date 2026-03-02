@@ -60,7 +60,7 @@ We follow coordinated vulnerability disclosure:
 
 **Runtime external URL literals in src/:** 90
 
-**Offline source scan (as of 2026-03-02):** Detected 90 external URL literal(s) in src/ (see evidence: /tmp/ft_marketplace_trustfacts_20260302T081657Z_19103/verifiers/01_scan/runtime_urls.txt).
+**Offline source scan (as of 2026-03-02):** Detected 90 external URL literal(s) in src/ (see evidence: /tmp/ft_marketplace_trustfacts_20260302T085732Z_6606/verifiers/01_scan/runtime_urls.txt).
 
 **Classification:** URL literals found in src/resolvers/phase2_config.ts are input validation patterns (ALLOWED_WEBHOOK_ORIGINS), not actual egress endpoints. Actual external service URLs, if configured, are provided via environment/Forge storage, not hardcoded.
 

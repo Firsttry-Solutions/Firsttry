@@ -25,20 +25,30 @@ cd "$REPO_ROOT"
 # Patterns to search
 PATTERNS='https?://|hooks\.slack\.com|example\.com'
 
-# Exclude paths
+# Exclude paths (directories)
 EXCLUDE_PATHS=(
   "node_modules"
   "dist"
   "coverage"
   ".git"
-  "package-lock.json"
   "artifacts"
+)
+
+# Exclude files (patterns)
+EXCLUDE_FILES=(
+  "package-lock.json"
+  "*.lock"
+  "yarn.lock"
+  "pnpm-lock.yaml"
 )
 
 # Build exclude pattern
 EXCLUDE_ARGS=""
 for path in "${EXCLUDE_PATHS[@]}"; do
   EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude-dir=$path"
+done
+for file in "${EXCLUDE_FILES[@]}"; do
+  EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude=$file"
 done
 
 # Find all occurrences

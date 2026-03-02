@@ -1,8 +1,8 @@
 # Manifest Scopes Reference
 
 **Auto-generated from:** `manifest.yml`
-**Generated at:** 2026-03-02T08:17:06Z
-**Git SHA:** d7c4bc7b89efb5bf4db0b969568ecac77ca05a84
+**Generated at:** 2026-03-02T08:57:40Z
+**Git SHA:** 8e203684946b80db8a9e8d2db3f20aae7fcca30b
 
 <!-- BEGIN: GENERATED -->
 
