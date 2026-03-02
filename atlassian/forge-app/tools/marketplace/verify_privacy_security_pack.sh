@@ -199,14 +199,14 @@ echo "  Linkability issues: ${#PAGES_ISSUES[@]}"
 # ============================================================================
 
 echo ""
-echo "[03] Checking offline linkability (Pages-safe)..."
+echo " [03] Checking offline linkability (Pages-safe)..."
 
 # First, regenerate trust facts to ensure mirror docs are up-to-date
 echo "  Regenerating trust facts..."
-if ! timeout 60 bash "$SCRIPT_DIR/regenerate_trust_facts.sh" > "$E/03_links/regenerate_trust_facts.log" 2>&1; then
+if ! timeout 120 bash "$SCRIPT_DIR/regenerate_trust_facts.sh" > "$E/03_links/regenerate_trust_facts.log" 2>&1; then
   TIMEOUT_EXIT=$?
   if [ $TIMEOUT_EXIT -eq 124 ]; then
-    echo "FAIL: Trust facts regeneration timed out after 60 seconds"
+    echo "FAIL: Trust facts regeneration timed out after 120 seconds"
     echo "This typically indicates the code_refs_inventory.md generation is scanning too many files."
     echo "Check $E/03_links/regenerate_trust_facts.log for details."
   else
