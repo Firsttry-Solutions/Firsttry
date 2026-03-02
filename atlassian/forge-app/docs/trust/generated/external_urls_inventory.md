@@ -1,8 +1,8 @@
 # External URLs Inventory
 
 **Auto-generated from:** Source code scan via `tools/marketplace/inventory_external_urls.sh`
-**Generated at:** 2026-03-02T08:57:40Z
-**Git SHA:** 8e203684946b80db8a9e8d2db3f20aae7fcca30b
+**Generated at:** 2026-03-02T09:27:11Z
+**Git SHA:** a3505b4d242a86dc9d63b5cff30c8d58ed59d597
 
 <!-- BEGIN: GENERATED -->
 
@@ -10,7 +10,7 @@ This file documents external URLs detected in the codebase.
 
 ## Runtime External URLs
 
-**Count:** 90
+**Count:** 20
 
 URLs detected in `src/**`:
 
@@ -25,7 +25,7 @@ Actual runtime egress, if any, is configured per-deployment and not hardcoded.
 
 ## Non-Runtime External URLs
 
-**Count:** 381
+**Count:** 361
 
 URLs in documentation, tests, or build scripts (not runtime-loaded).
 
