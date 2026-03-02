@@ -1,0 +1,102 @@
+name: CI Marketplace Pack (Privacy & Security)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "atlassian/forge-app/docs/trust/**"
+      - "atlassian/forge-app/docs/ops/**"
+      - "atlassian/forge-app/tools/marketplace/**"
+      - "atlassian/forge-app/tools/realworld/**"
+      - ".github/workflows/ci-marketplace-pack.yml"
+  push:
+    branches: [main]
+    paths:
+      - "atlassian/forge-app/docs/trust/**"
+      - "atlassian/forge-app/docs/ops/**"
+      - "atlassian/forge-app/tools/marketplace/**"
+      - "atlassian/forge-app/tools/realworld/**"
+      - ".github/workflows/ci-marketplace-pack.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  marketplace-pack-verification:
+    name: Marketplace Privacy & Security Pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "atlassian/forge-app/package-lock.json"
+
+      - name: Install dependencies (minimal)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit
+          else
+            echo "Warning: package-lock.json missing, using npm install"
+            npm install --no-audit
+          fi
+
+      - name: Run REALWORLD gates (prerequisite)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/realworld/run_realworld_gates.sh
+
+      - name: Verify Marketplace Pack (Privacy & Security)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/marketplace/verify_privacy_security_pack.sh
+
+      - name: Locate marketplace pack evidence
+        id: evidence
+        if: always()
+        run: |
+          LATEST=$(readlink /tmp/ft_marketplace_pack_latest 2>/dev/null || echo "")
+          if [ -n "$LATEST" ] && [ -d "$LATEST" ]; then
+            echo "dir=$LATEST" >> $GITHUB_OUTPUT
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Display verdict
+        if: always() && steps.evidence.outputs.found == 'true'
+        run: |
+          echo "============================================"
+          echo "Marketplace Pack Verification Verdict"
+          echo "============================================"
+          cat ${{ steps.evidence.outputs.dir }}/05_verdict/VERDICT.txt || echo "Verdict file not found"
+
+      - name: Upload marketplace pack evidence
+        if: always() && steps.evidence.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketplace-pack-evidence-${{ github.run_number }}
+          path: ${{ steps.evidence.outputs.dir }}
+          retention-days: 30
+
+      - name: Fail if verification rejected
+        if: always()
+        run: |
+          set -euo pipefail
+          VERDICT=$(cat /tmp/ft_marketplace_pack_latest/05_verdict/VERDICT.txt 2>/dev/null | head -1 || echo "UNKNOWN")
+          if [ "$VERDICT" != "PASS" ]; then
+            echo "ERROR: Marketplace pack verification failed (verdict: $VERDICT)"
+            echo "See evidence artifact for remediation steps"
+            exit 1
+          fi
+          echo "✓ Marketplace pack verification: PASS"

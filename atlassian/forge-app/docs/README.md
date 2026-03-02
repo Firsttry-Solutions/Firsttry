@@ -10,6 +10,12 @@
 
 ## 🚀 START HERE (Choose Your Path)
 
+### For Marketplace Submission & Compliance
+→ **[trust/README.md](trust/README.md)** — Trust & Transparency Center (privacy, security, support)  
+→ **[trust/privacy-policy.md](trust/privacy-policy.md)** — Privacy policy and data practices  
+→ **[trust/security.md](trust/security.md)** — Security overview and controls  
+→ **[trust/vulnerability-disclosure.md](trust/vulnerability-disclosure.md)** — How to report security issues
+
 ### For Enterprise Procurement/CISO
 → **[procurement/ENTERPRISE_SECURITY_PACK_INDEX.md](procurement/ENTERPRISE_SECURITY_PACK_INDEX.md)** — Master index for all security documentation  
 → **[procurement/SECURITY_QUESTIONNAIRE_MASTER.md](procurement/SECURITY_QUESTIONNAIRE_MASTER.md)** — Pre-answered vendor diligence questionnaire  

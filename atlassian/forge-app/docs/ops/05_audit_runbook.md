@@ -861,6 +861,341 @@ umask 022
 
 **Fix:** Verify FT_SKIP_EXTERNAL_LINKS=1 is set. Check npm cache.
 
+## Optional: Marketplace Pack Verification (Privacy & Security)
+
+### Overview
+
+The Marketplace Pack Verifier ensures all required privacy and security documentation is in place for Atlassian Marketplace submission. This is an **offline, deterministic verification** that checks:
+
+- **Presence**: All required docs exist in `docs/trust/`
+- **Content**: Docs have proper structure (H1, dates, required headings)
+- **Linkability**: Docs are referenced in navigation (mkdocs.yml, README.md)
+- **Integrity**: Internal links work, no broken references
+- **Completeness**: No TODO/PLACEHOLDER/XXX tokens in required sections
+
+**Prerequisites:**
+- Real-world capability gates must be PASS (see previous section)
+- All trust documentation must exist
+- Navigation files must link to trust docs
+
+### Running Marketplace Pack Verification
+
+```bash
+cd atlassian/forge-app
+bash tools/marketplace/verify_privacy_security_pack.sh
+```
+
+**Expected runtime:** 5-10 seconds
+
+**Exit codes:**
+- `0` = PASS (all checks green, ready for Marketplace submission)
+- `1` = REJECT (see verdict for remediation steps)
+
+### Evidence Directory Structure
+
+```
+/tmp/ft_marketplace_pack_TIMESTAMP_PID/
+├── 00_inputs/
+│   └── REALWORLD_SUMMARY.json          # Prerequisite check (must be PASS)
+├── 01_presence/
+│   └── presence_report.txt             # Per-doc existence check
+├── 02_pages/
+│   └── pages_linkability_report.txt    # Navigation link verification
+├── 03_links/
+│   └── link_report.txt                 # Internal link integrity
+├── 04_content/
+│   └── content_report.txt              # Content completeness check
+├── 05_verdict/
+│   └── VERDICT.txt                     # PASS or REJECT with remediation
+└── artifacts/
+    ├── PACK_PRESENCE.json              # Machine-readable presence check
+    ├── PACK_PAGES.json                 # Machine-readable linkability check
+    ├── PACK_LINKS.json                 # Machine-readable link integrity
+    └── PACK_CONTENT.json               # Machine-readable content check
+```
+
+**Stable symlink:** `/tmp/ft_marketplace_pack_latest` → mostrecent run
+
+### Required Documentation Files
+
+The verifier checks for these exact paths in `docs/trust/`:
+
+- `README.md` - Trust center landing page
+- `privacy-policy.md` - Privacy commitments and data practices
+- `security.md` - Security controls and architecture
+- `data-retention-deletion.md` - Data lifecycle management
+- `subprocessors.md` - Third-party service providers
+- `vulnerability-disclosure.md` - Security reporting process
+- `support-sla.md` - Support channels and response times
+- `incident-response.md` - Security incident handling
+- `data-processing.md` - Data flow and processing architecture
+- `access-scope-and-permissions.md` - Forge scopes and API access
+
+### Understanding Results
+
+#### PASS Verdict
+
+```
+PASS
+
+✓ All required docs present (12)
+✓ Navigation linkability verified
+✓ Internal links integrity verified
+✓ Content completeness verified
+
+MARKETPLACE URLS (pasteable):
+  - privacy-policy.md: https://firsttry.example.com/trust/privacy-policy
+  - security.md: https://firsttry.example.com/trust/security
+  ...
+```
+
+**Next steps:**
+1. Copy URLs from verdict for Marketplace submission
+2. Verify URLs are publicly accessible (GitHub Pages deployed)
+3. Submit to Atlassian Marketplace with pasteable links
+
+#### REJECT Verdict
+
+```
+REJECT
+
+Marketplace Pack Verification: REJECT
+Total failure categories: 2
+
+MISSING DOCS (3):
+  - docs/trust/support-sla.md
+  - docs/trust/incident-response.md
+  - docs/trust/access-scope-and-permissions.md
+
+CONTENT ISSUES (5):
+  - docs/trust/privacy-policy.md: missing 'Last updated: YYYY-MM-DD'
+  - docs/trust/security.md: contains 'TODO'
+  - docs/trust/subprocessors.md: missing heading 'Updates'
+  ...
+
+REMEDIATION:
+1. Create missing docs in docs/trust/ with required structure
+2. Add links to navigation files (mkdocs.yml or docs/README.md)
+3. Fix broken internal links (see link_report.txt)
+4. Remove TODO/PLACEHOLDER/XXX tokens from docs
+5. Add missing required headings (see content_report.txt)
+```
+
+**Action required:** Follow remediation steps in order, then re-run verification.
+
+### Interpreting Artifacts
+
+#### PACK_PRESENCE.json
+
+```json
+{
+  "present": ["docs/trust/README.md", "docs/trust/privacy-policy.md", ...],
+  "missing": ["docs/trust/support-sla.md"],
+  "total": 11,
+  "missing_count": 1
+}
+```
+
+- `present`: List of docs found in repo
+- `missing`: List of docs that must be created
+- `missing_count`: Number of missing docs (must be 0 for PASS)
+
+#### PACK_CONTENT.json
+
+```json
+{
+  "issues": [
+    "docs/trust/privacy-policy.md: missing 'Last updated: YYYY-MM-DD'",
+    "docs/trust/security.md: contains 'TODO'"
+  ],
+  "content_completeness_pass": false
+}
+```
+
+- `issues`: List of content problems (empty for PASS)
+- `content_completeness_pass`: Boolean (must be true)
+
+#### PACK_LINKS.json
+
+```json
+{
+  "broken_links": ["docs/trust/security.md: ../nonexistent.md"],
+  "insecure_external_links": ["docs/trust/privacy.md: http://example.com"],
+  "link_integrity_pass": false
+}
+```
+
+- `broken_links`: Internal links that don't resolve
+- `insecure_external_links`: HTTP (not HTTPS) or localhost links
+- `link_integrity_pass`: Boolean (must be true)
+
+### Troubleshooting
+
+#### Issue: "REALWORLD gates not found"
+
+**Symptom:**
+```
+FAIL: /tmp/ft_realworld_latest symlink not found
+Must run realworld gates first
+```
+
+**Fix:**
+```bash
+cd atlassian/forge-app
+bash tools/realworld/run_realworld_gates.sh
+# Then retry marketplace verification
+bash tools/marketplace/verify_privacy_security_pack.sh
+```
+
+#### Issue: "REALWORLD gates status = FAIL"
+
+**Symptom:**
+```
+FAIL: REALWORLD gates status = FAIL (expected PASS)
+Fix REALWORLD gates first before running marketplace pack verification
+```
+
+**Fix:** Marketplace verification is gated on realworld being green. Fix realworld issues first (see previous section).
+
+#### Issue: Missing required doc
+
+**Symptom:**
+```
+MISSING DOCS (1):
+  - docs/trust/support-sla.md
+```
+
+**Fix:** Create the missing doc with required structure:
+
+```markdown
+# Support SLA
+
+**Last updated: YYYY-MM-DD**
+
+## Support channels
+
+[Content here]
+
+## Response times
+
+[Content here]
+
+## Escalation
+
+[Content here]
+```
+
+Ensure all required headings are present (see content_report.txt for list).
+
+#### Issue: Doc not linked in navigation
+
+**Symptom:**
+```
+PAGES ISSUES (2):
+  - docs/trust/support-sla.md not linked - add to docs/README.md
+```
+
+**Fix:** Add link to navigation file:
+
+Edit `docs/README.md` and add:
+```
+→ [Support SLA] pointing to trust/support-sla.md
+```
+
+Or edit `mkdocs.yml` nav section:
+```yaml
+nav:
+  - Trust:
+    - "Support SLA": "trust/support-sla.md"
+```
+
+#### Issue: Broken internal link
+
+**Symptom:**
+```
+LINK ISSUES (3):
+  See: /tmp/ft_marketplace_pack_latest/03_links/link_report.txt
+```
+
+**Fix:** Open link_report.txt and find broken links:
+```
+FAIL docs/trust/security.md: broken link: ../architecture.md
+```
+
+Either:
+1. Fix the link target: `../architecture.md` → `ARCHITECTURE.md`
+2. Or create the missing target file
+
+#### Issue: Content contains TODO/PLACEHOLDER
+
+**Symptom:**
+```
+CONTENT ISSUES (2):
+  - docs/trust/privacy-policy.md: contains 'TODO'
+  - docs/trust/security.md: contains 'PLACEHOLDER'
+```
+
+**Fix:** Search and replace forbidden tokens:
+```bash
+cd docs/trust
+grep -r "TODO" *.md        # Find occurrences
+# Then edit files to replace with actual content
+```
+
+Forbidden tokens: `TODO`, `TBD`, `PLACEHOLDER`, `FILL_ME`, `XXX`, `coming soon`
+
+#### Issue: Missing required heading
+
+**Symptom:**
+```
+CONTENT ISSUES (1):
+  - docs/trust/privacy-policy.md: missing heading 'Data retention'
+```
+
+**Fix:** Add the required heading to the doc:
+```markdown
+## Data retention
+
+[Content describing retention policies]
+```
+
+See `04_content/content_report.txt` for full list of required headings per doc type.
+
+### What This Does NOT Verify
+
+The marketplace pack verifier is **offline-only** and cannot verify:
+
+- ❌ **Actual Marketplace submission**: You still need to submit via Atlassian portal
+- ❌ **GitHub Pages deployment**: Assumes docs are published, but doesn't check live URLs
+- ❌ **Visual rendering**: Does not check HTML/CSS rendering of docs
+- ❌ **External link validity**: Does not fetch external URLs (offline constraint)
+- ❌ **Marketplace review approval**: Atlassian reviewers may have additional requirements
+
+**This tool proves:**
+- ✅ All required docs exist in repo
+- ✅ Content structure meets basic requirements
+- ✅ Docs are linked in navigation
+- ✅ Internal links are not broken
+- ✅ No obvious incomplete sections (TODO marks)
+
+### Integration with CI
+
+The marketplace pack verifier can run in CI to prevent doc regressions:
+
+```yaml
+- name: Verify Marketplace Pack
+  working-directory: atlassian/forge-app
+  run: bash tools/marketplace/verify_privacy_security_pack.sh
+```
+
+See `.github/workflows/ci-marketplace-pack.yml` for full CI integration.
+
+**CI requirements:**
+- Real-world gates must run first (produces required input)
+- No network access needed (fully offline)
+- Takes ~5-10 seconds
+- Exit 0 = pass, exit 1 = fail (CI will fail build)
+
 ## Checklist
 
 Before proceeding to deployment:
