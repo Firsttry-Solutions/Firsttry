@@ -33,6 +33,307 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
 log_info() { echo -e "${YELLOW}[INFO]${NC} $*"; }
 log_phase() { echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"; echo -e "${BLUE}$*${NC}"; echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"; }
 
+# Fail-closed helper functions
+now_utc() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+die() {
+  log_error "$*"
+  exit 1
+}
+
+write_verdict() {
+  local phase_dir="$1"
+  local verdict="$2"
+  echo "$verdict" > "$phase_dir/VERDICT.txt"
+}
+
+# Strict artifact validation - enforces PASS cannot be generated without complete evidence
+assert_pass_artifacts_or_fail() {
+  local evidence_root="$1"
+  local fail_reasons=()
+  
+  log_info "Running strict artifact validation..."
+  
+  # Check all required phase directories exist
+  local required_dirs=("00_env" "01_gates" "02_merge" "03_build" "04_deploy" "05_upgrade" "06_e2e" "99_verdict")
+  for dir in "${required_dirs[@]}"; do
+    if [ ! -d "$evidence_root/$dir" ]; then
+      fail_reasons+=("Phase directory $dir does not exist")
+    fi
+  done
+  
+  # Check each phase directory (except 99_verdict) has PASS verdict
+  local phase_dirs=("00_env" "01_gates" "02_merge" "03_build" "04_deploy" "05_upgrade" "06_e2e")
+  for dir in "${phase_dirs[@]}"; do
+    if [ ! -f "$evidence_root/$dir/VERDICT.txt" ]; then
+      fail_reasons+=("Phase $dir missing VERDICT.txt")
+    elif ! grep -q "^PASS$" "$evidence_root/$dir/VERDICT.txt" 2>/dev/null; then
+      fail_reasons+=("Phase $dir VERDICT.txt does not contain PASS")
+    fi
+  done
+  
+  # Check each phase directory has at least one non-empty log file
+  for dir in "${phase_dirs[@]}"; do
+    local has_log=false
+    if [ -d "$evidence_root/$dir" ]; then
+      # Find .log or .txt files (exclude VERDICT.txt) with size > 0
+      while IFS= read -r -d '' logfile; do
+        if [ -s "$logfile" ] && [ "$(basename "$logfile")" != "VERDICT.txt" ]; then
+          has_log=true
+          break
+        fi
+      done < <(find "$evidence_root/$dir" -maxdepth 1 -type f \( -name "*.log" -o -name "*.txt" \) -print0 2>/dev/null)
+    fi
+    
+    if [ "$has_log" = false ]; then
+      fail_reasons+=("Phase $dir has no non-empty log files")
+    fi
+  done
+  
+  # Special check for 06_e2e: must have Playwright artifacts
+  local has_playwright_artifact=false
+  if [ -d "$evidence_root/06_e2e/artifacts" ]; then
+    # Check for playwright-report directory OR test-results directory OR any trace/screenshot files
+    if [ -d "$evidence_root/06_e2e/artifacts/playwright-report" ] || \
+       [ -d "$evidence_root/06_e2e/artifacts/test-results" ] || \
+       [ -d "$evidence_root/06_e2e/artifacts/e2e-playwright-report" ] || \
+       [ -d "$evidence_root/06_e2e/artifacts/e2e-test-results" ] || \
+       find "$evidence_root/06_e2e/artifacts" -type f \( -name "*.zip" -o -name "*.png" -o -name "*.webm" \) 2>/dev/null | grep -q .; then
+      has_playwright_artifact=true
+    fi
+  fi
+  
+  if [ "$has_playwright_artifact" = false ]; then
+    fail_reasons+=("Phase 06_e2e missing Playwright artifacts (playwright-report, test-results, or trace/screenshot files)")
+  fi
+  
+  # If any validation failed, return failure
+  if [ ${#fail_reasons[@]} -gt 0 ]; then
+    log_error "ARTIFACT VALIDATION FAILED:"
+    for reason in "${fail_reasons[@]}"; do
+      log_error "  - $reason"
+    done
+    return 1
+  fi
+  
+  log_success "Artifact validation: PASS (all phases have verdicts, logs, and artifacts)"
+  return 0
+}
+
+# Comprehensive finalization with strict artifact validation
+finalize() {
+  local exit_code=$1
+  local evidence_root="${2:-$E}"
+  
+  log_phase "FINALIZATION: Generating Final Report and Verdict"
+  
+  cd "$REPO_ROOT"
+  
+  local git_sha
+  local git_branch
+  git_sha=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+  git_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+  
+  local final_verdict="FAIL"
+  local verdict_reason="Unknown failure"
+  
+  # If exit code is 0, run strict artifact validation
+  if [ "$exit_code" -eq 0 ]; then
+    if assert_pass_artifacts_or_fail "$evidence_root"; then
+      final_verdict="PASS"
+      verdict_reason="All phases completed successfully with full evidence"
+    else
+      final_verdict="FAIL"
+      verdict_reason="Artifact validation failed - incomplete evidence (see logs above)"
+      exit_code=1
+    fi
+  else
+    verdict_reason="Early exit with code $exit_code"
+  fi
+  
+  # Generate comprehensive final report
+  {
+    echo "# Marketplace Release - Final Report"
+    echo ""
+    echo "**Generated:** $(now_utc)"
+    echo "**Git SHA:** $git_sha"
+    echo "**Git Branch:** $git_branch"
+    echo "**Exit Code:** $exit_code"
+    echo "**Final Verdict:** $final_verdict"
+    echo "**Verdict Reason:** $verdict_reason"
+    echo ""
+    echo "## Evidence Location"
+    echo ""
+    echo "- **Evidence directory:** \`$evidence_root\`"
+    echo "- **Stable symlink:** \`/tmp/ft_marketplace_release_latest\`"
+    echo ""
+    
+    if [ "$final_verdict" = "PASS" ]; then
+      echo "## Phase Results"
+      echo ""
+      
+      # Phase 0
+      echo "### Phase 0: Evidence & Cleanliness"
+      if [ -f "$evidence_root/00_env/VERDICT.txt" ]; then
+        echo "- Verdict: $(cat "$evidence_root/00_env/VERDICT.txt")"
+      fi
+      echo "- Evidence directory: $evidence_root"
+      echo ""
+      
+      # Phase 1
+      echo "### Phase 1: Verification Gates"
+      if [ -f "$evidence_root/01_gates/VERDICT.txt" ]; then
+        echo "- Verdict: $(cat "$evidence_root/01_gates/VERDICT.txt")"
+      fi
+      if [ -f "$evidence_root/01_gates/REALWORLD_SUMMARY.json" ]; then
+        echo "- Realworld summary: Available"
+      fi
+      if [ -f "$evidence_root/01_gates/MARKETPLACE_PACK_VERDICT.txt" ]; then
+        echo "- Marketplace pack: $(cat "$evidence_root/01_gates/MARKETPLACE_PACK_VERDICT.txt")"
+      fi
+      if [ -f "$evidence_root/01_gates/CLAIMS_VERDICT.txt" ]; then
+        echo "- Claims consistency: $(cat "$evidence_root/01_gates/CLAIMS_VERDICT.txt")"
+      fi
+      if [ -f "$evidence_root/01_gates/DOCS_LINKABILITY_VERDICT.txt" ]; then
+        echo "- Docs linkability: $(cat "$evidence_root/01_gates/DOCS_LINKABILITY_VERDICT.txt")"
+      fi
+      echo ""
+      
+      # Phase 2
+      echo "### Phase 2: Branch Sync"
+      if [ -f "$evidence_root/02_merge/VERDICT.txt" ]; then
+        echo "- Verdict: $(cat "$evidence_root/02_merge/VERDICT.txt")"
+      fi
+      echo ""
+      
+      # Phase 3
+      echo "### Phase 3: Build Sanity"
+      if [ -f "$evidence_root/03_build/VERDICT.txt" ]; then
+        echo "- Verdict: $(cat "$evidence_root/03_build/VERDICT.txt")"
+      fi
+      if [ -f "$evidence_root/03_build/npm_ci.log" ]; then
+        echo "- npm ci: Completed ($(wc -l < "$evidence_root/03_build/npm_ci.log") lines)"
+      fi
+      if [ -f "$evidence_root/03_build/npm_test.log" ]; then
+        echo "- npm test: Completed ($(wc -l < "$evidence_root/03_build/npm_test.log") lines)"
+      fi
+      echo ""
+      
+      # Phase 4
+      echo "### Phase 4: Deploy"
+      if [ -f "$evidence_root/04_deploy/VERDICT.txt" ]; then
+        echo "- Verdict: $(cat "$evidence_root/04_deploy/VERDICT.txt")"
+      fi
+      if [ -f "$evidence_root/04_deploy/deploy.log" ]; then
+        echo "- forge deploy: Completed ($(wc -l < "$evidence_root/04_deploy/deploy.log") lines)"
+      fi
+      echo ""
+      
+      # Phase 5
+      echo "### Phase 5: Install/Upgrade"
+      if [ -f "$evidence_root/05_upgrade/VERDICT.txt" ]; then
+        echo "- Verdict: $(cat "$evidence_root/05_upgrade/VERDICT.txt")"
+      fi
+      if [ -f "$evidence_root/05_upgrade/install_upgrade.log" ]; then
+        echo "- Install/upgrade: Completed ($(wc -l < "$evidence_root/05_upgrade/install_upgrade.log") lines)"
+      fi
+      echo ""
+      
+      # Phase 6
+      echo "### Phase 6: End-to-End"
+      if [ -f "$evidence_root/06_e2e/VERDICT.txt" ]; then
+        echo "- Verdict: $(cat "$evidence_root/06_e2e/VERDICT.txt")"
+      fi
+      if [ -f "$evidence_root/06_e2e/test_run.log" ]; then
+        echo "- E2E test: Completed ($(wc -l < "$evidence_root/06_e2e/test_run.log") lines)"
+      fi
+      if [ -d "$evidence_root/06_e2e/artifacts" ]; then
+        local artifact_count
+        artifact_count=$(find "$evidence_root/06_e2e/artifacts" -type f 2>/dev/null | wc -l)
+        echo "- Playwright artifacts: $artifact_count files"
+      fi
+      echo ""
+      
+      echo "## Key Evidence Files"
+      echo ""
+      echo "- \`$evidence_root/01_gates/REALWORLD_SUMMARY.json\`"
+      echo "- \`$evidence_root/01_gates/results.json\`"
+      echo "- \`$evidence_root/04_deploy/deploy.log\`"
+      echo "- \`$evidence_root/06_e2e/test_run.log\`"
+      echo "- \`$evidence_root/06_e2e/artifacts/\`"
+      echo ""
+      
+      echo "## Final Verdict"
+      echo ""
+      echo "**Status:** ✅ PASS"
+      echo ""
+      echo "All phases completed successfully with complete evidence artifacts."
+      echo "The app is deployed, upgraded, and validated end-to-end."
+      echo ""
+      echo "**Marketplace-ready:** YES"
+    else
+      echo "## Failure Details"
+      echo ""
+      echo "**Exit Code:** $exit_code"
+      echo "**Verdict Reason:** $verdict_reason"
+      echo ""
+      echo "## Phase Directories"
+      echo ""
+      for dir in 00_env 01_gates 02_merge 03_build 04_deploy 05_upgrade 06_e2e 99_verdict; do
+        if [ -d "$evidence_root/$dir" ]; then
+          echo "- \`$dir/\` (exists)"
+          if [ -f "$evidence_root/$dir/VERDICT.txt" ]; then
+            echo "  - Verdict: $(cat "$evidence_root/$dir/VERDICT.txt")"
+          else
+            echo "  - Verdict: MISSING"
+          fi
+        else
+          echo "- \`$dir/\` (MISSING)"
+        fi
+      done
+      echo ""
+      echo "## Final Verdict"
+      echo ""
+      echo "**Status:** ❌ FAIL"
+      echo ""
+      echo "Review the evidence directory for failure details."
+    fi
+    
+    echo ""
+  } | tee "$evidence_root/99_verdict/FINAL_REPORT.md"
+  
+  # Write final verdict file
+  if [ "$final_verdict" = "PASS" ]; then
+    echo "PASS (evidence: $evidence_root)" > "$evidence_root/99_verdict/FINAL_VERDICT.txt"
+  else
+    echo "FAIL ($verdict_reason, evidence: $evidence_root)" > "$evidence_root/99_verdict/FINAL_VERDICT.txt"
+  fi
+  
+  # Print final verdict to console
+  if [ "$final_verdict" = "PASS" ]; then
+    log_success "════════════════════════════════════════════════════════════"
+    log_success "FINAL VERDICT: PASS"
+    log_success "════════════════════════════════════════════════════════════"
+    log_success ""
+    log_success "✅ All phases completed successfully with full evidence"
+    log_success "✅ Evidence: $evidence_root"
+    log_success "✅ Symlink:  /tmp/ft_marketplace_release_latest"
+    log_success ""
+    log_success "Marketplace-ready: YES"
+  else
+    log_error "════════════════════════════════════════════════════════════"
+    log_error "FINAL VERDICT: FAIL"
+    log_error "════════════════════════════════════════════════════════════"
+    log_error ""
+    log_error "❌ $verdict_reason"
+    log_error "❌ Evidence: $evidence_root"
+    log_error ""
+    log_error "Review evidence directory for details."
+  fi
+  
+  exit "$exit_code"
+}
+
 # ============================================================================
 # PHASE 0 — EVIDENCE + REPO CLEANLINESS (HARD GATE)
 # ============================================================================
@@ -57,113 +358,8 @@ echo "$E" > /tmp/ft_marketplace_release_dir.txt
 
 log_success "Evidence directory: $E"
 
-# Trap for failure handling (write final report on any exit)
-write_final_report_and_verdict() {
-  local exit_code=$1
-  
-  cd "$REPO_ROOT"
-  
-  local GIT_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-  local GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
-  local SITE="${JIRA_SITE:-firsttry.atlassian.net}"
-  local ENVIRONMENT="${ENVIRONMENT:-production}"
-  
-  if [ "$exit_code" -eq 0 ]; then
-    # Success case - detailed report already written by Phase 7
-    if [ ! -f "$E/99_verdict/FINAL_REPORT.md" ]; then
-      echo "# Marketplace Release - Final Report" > "$E/99_verdict/FINAL_REPORT.md"
-      echo "" >> "$E/99_verdict/FINAL_REPORT.md"
-      echo "**Status:** ✅ PASS" >> "$E/99_verdict/FINAL_REPORT.md"
-      echo "" >> "$E/99_verdict/FINAL_REPORT.md"
-      echo "Evidence: $E" >> "$E/99_verdict/FINAL_REPORT.md"
-    fi
-    
-    if [ ! -f "$E/99_verdict/FINAL_VERDICT.txt" ]; then
-      echo "PASS (evidence: $E)" > "$E/99_verdict/FINAL_VERDICT.txt"
-    fi
-  else
-    # Failure case - determine which phase failed
-    local FAILED_PHASE="Unknown"
-    
-    if [ -f "$E/99_verdict/FAIL_REASON.txt" ]; then
-      FAILED_PHASE=$(cat "$E/99_verdict/FAIL_REASON.txt")
-    elif [ ! -f "$E/00_env/env.txt" ]; then
-      FAILED_PHASE="Phase 0: Environment setup"
-    elif [ -d "$E/01_gates" ] && [ "$(ls -A "$E/01_gates" 2>/dev/null)" ]; then
-      FAILED_PHASE="Phase 1: Verification gates"
-    elif [ -d "$E/02_merge" ] && [ "$(ls -A "$E/02_merge" 2>/dev/null)" ]; then
-      FAILED_PHASE="Phase 2: Branch sync"
-    elif [ -d "$E/03_build" ] && [ "$(ls -A "$E/03_build" 2>/dev/null)" ]; then
-      FAILED_PHASE="Phase 3: Build sanity"
-    elif [ -d "$E/04_deploy" ] && [ "$(ls -A "$E/04_deploy" 2>/dev/null)" ]; then
-      FAILED_PHASE="Phase 4: Deploy"
-    elif [ -d "$E/05_upgrade" ] && [ "$(ls -A "$E/05_upgrade" 2>/dev/null)" ]; then
-      FAILED_PHASE="Phase 5: Install/Upgrade"
-    elif [ -d "$E/06_e2e" ] && [ "$(ls -A "$E/06_e2e" 2>/dev/null)" ]; then
-      FAILED_PHASE="Phase 6: End-to-End"
-    fi
-    
-    # Write failure report
-    {
-      echo "# Marketplace Release - Final Report"
-      echo ""
-      echo "**Generated:** $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-      echo "**Git SHA:** $GIT_SHA"
-      echo "**Git Branch:** $GIT_BRANCH"
-      echo "**Target Site:** $SITE"
-      echo "**Environment:** $ENVIRONMENT"
-      echo ""
-      echo "## Final Verdict"
-      echo ""
-      echo "**Status:** ❌ FAIL"
-      echo "**Failed at:** $FAILED_PHASE"
-      echo "**Exit code:** $exit_code"
-      echo ""
-      echo "## Evidence Location"
-      echo ""
-      echo "- Evidence directory: \`$E\`"
-      echo "- Stable symlink: \`/tmp/ft_marketplace_release_latest\`"
-      echo ""
-      echo "## Logs"
-      echo ""
-      echo "Check the following directories for detailed logs:"
-      echo "- \`$E/00_env/\` - Environment capture"
-      echo "- \`$E/01_gates/\` - Verification gate logs"
-      echo "- \`$E/02_merge/\` - Branch sync logs"
-      echo "- \`$E/03_build/\` - Build logs"
-      echo "- \`$E/04_deploy/\` - Deployment logs"
-      echo "- \`$E/05_upgrade/\` - Install/upgrade logs"
-      echo "- \`$E/06_e2e/\` - E2E test logs and artifacts"
-      echo ""
-      if [ -f "$E/99_verdict/FAIL_REASON.txt" ]; then
-        echo "## Failure Reason"
-        echo ""
-        echo "\`\`\`"
-        cat "$E/99_verdict/FAIL_REASON.txt"
-        echo "\`\`\`"
-        echo ""
-      fi
-    } > "$E/99_verdict/FINAL_REPORT.md"
-    
-    echo "FAIL (exit_code=$exit_code, phase=$FAILED_PHASE, evidence=$E)" > "$E/99_verdict/FINAL_VERDICT.txt"
-    
-    log_error "════════════════════════════════════════════════════════════"
-    log_error "FINAL VERDICT: FAIL"
-    log_error "════════════════════════════════════════════════════════════"
-    log_error ""
-    log_error "Failed at: $FAILED_PHASE"
-    log_error "Exit code: $exit_code"
-    log_error "Evidence: $E"
-    log_error ""
-    if [ -f "$E/99_verdict/FAIL_REASON.txt" ]; then
-      log_error "Reason:"
-      cat "$E/99_verdict/FAIL_REASON.txt" >&2
-    fi
-  fi
-}
-
-# Set trap to ensure final report is always written
-trap 'write_final_report_and_verdict $?' EXIT
+# Set trap to ensure final report is always written using strict finalize()
+trap 'finalize $?' EXIT
 
 # Capture environment
 {
@@ -251,6 +447,10 @@ if [ ${#MISSING_TOOLS[@]} -gt 0 ]; then
 fi
 
 log_success "All required tools present"
+
+# Phase 0 complete - write verdict
+write_verdict "$E/00_env" "PASS"
+log_success "Phase 0: PASS"
 
 # ============================================================================
 # PHASE 1 — "EVERYTHING GREEN" VERIFICATION (HARD GATE)
@@ -403,6 +603,10 @@ log_info "[6/6] Deferring Forge lint to Phase 4 (requires auth)..."
 
 log_success "All Phase 1 gates passed"
 
+# Phase 1 complete - write verdict
+write_verdict "$E/01_gates" "PASS"
+log_success "Phase 1: PASS"
+
 # ============================================================================
 # PHASE 2 — MERGE / MAIN SYNC CHECK (HARD GATE)
 # ============================================================================
@@ -444,6 +648,10 @@ fi
 
 echo "OK: main in sync with origin/main" > "$E/02_merge/MERGE_STATUS.txt"
 log_success "Branch sync: OK"
+
+# Phase 2 complete - write verdict
+write_verdict "$E/02_merge" "PASS"
+log_success "Phase 2: PASS"
 
 # ============================================================================
 # PHASE 3 — BUILD/PACKAGE SANITY (HARD GATE)
@@ -790,105 +998,12 @@ echo "PASS" > "$E/06_e2e/VERDICT.txt"
 log_success "E2E phase: PASS"
 
 # ============================================================================
-# PHASE 7 — FINAL "MARKETPLACE READY" VERDICT (HARD GATE)
+# SUCCESS - ALL PHASES COMPLETE
 # ============================================================================
+# The finalize() function (via trap) will validate all artifacts and write
+# the final verdict. If we reach here, exit 0 triggers artifact validation.
 
-log_phase "PHASE 7: Final Marketplace-Ready Verdict"
-
-cd "$REPO_ROOT"
-
-GIT_SHA=$(git rev-parse HEAD)
-GIT_BRANCH=$(git branch --show-current)
-
-# Generate final report
-{
-  echo "# Marketplace Release - Final Report"
-  echo ""
-  echo "**Generated:** $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  echo "**Git SHA:** $GIT_SHA"
-  echo "**Git Branch:** $GIT_BRANCH"
-  echo "**Target Site:** $SITE"
-  echo "**Environment:** $ENVIRONMENT"
-  echo ""
-  echo "## Phase Results"
-  echo ""
-  echo "### Phase 0: Evidence & Cleanliness"
-  echo "- Repository clean: ✅ PASS"
-  echo "- Evidence directory: $E"
-  echo ""
-  echo "### Phase 1: Verification Gates"
-  echo "- Realworld gates: ✅ PASS (status=$REALWORLD_STATUS)"
-  echo "- Deterministic audit: ✅ PASS (fail_count=$FAIL_COUNT, blocking_high=$BLOCKING_HIGH)"
-  echo "- Marketplace pack: ✅ PASS"
-  echo "- Claims consistency: ✅ PASS"
-  echo "- Docs linkability: ✅ $([ -f "$E/01_gates/DOCS_LINKABILITY_VERDICT.txt" ] && cat "$E/01_gates/DOCS_LINKABILITY_VERDICT.txt" || echo "Checked")"
-  echo ""
-  echo "### Phase 2: Branch Sync"
-  echo "- Main branch: ✅ PASS (synced with origin/main)"
-  echo "- Local HEAD: $LOCAL"
-  echo "- Remote HEAD: $REMOTE"
-  echo ""
-  echo "### Phase 3: Build Sanity"
-  echo "- package-lock.json: ✅ Present"
-  echo "- npm ci: ✅ PASS"
-  echo "- npm test: ✅ $(grep -q "npm test" "$E/03_build/npm_scripts.txt" && echo "PASS" || echo "N/A")"
-  echo "- npm lint: ✅ $(grep -q "lint" "$E/03_build/npm_scripts.txt" && echo "PASS" || echo "N/A")"
-  echo ""
-  echo "### Phase 4: Deploy"
-  echo "- Forge auth: ✅ PASS"
-  echo "- forge lint: ✅ PASS"
-  echo "- build:gadget: ✅ PASS"
-  echo "- forge deploy: ✅ PASS (environment=$ENVIRONMENT)"
-  echo ""
-  echo "### Phase 5: Install/Upgrade"
-  echo "- Target site: $SITE"
-  echo "- Install/Upgrade: ✅ PASS"
-  echo ""
-  echo "### Phase 6: End-to-End"
-  echo "- E2E harness: ✅ Found"
-  echo "- Storage state: ✅ Valid"
-  echo "- Dashboard test: ✅ PASS"
-  echo ""
-  echo "## Evidence Artifacts"
-  echo ""
-  echo "- Evidence directory: \`$E\`"
-  echo "- Stable symlink: \`/tmp/ft_marketplace_release_latest\`"
-  echo ""
-  echo "### Key Files"
-  echo "- Realworld summary: \`$E/01_gates/REALWORLD_SUMMARY.json\`"
-  echo "- Audit results: \`$E/01_gates/results.json\`"
-  echo "- Marketplace pack verdict: \`$E/01_gates/MARKETPLACE_PACK_VERDICT.txt\`"
-  echo "- Claims verdict: \`$E/01_gates/CLAIMS_VERDICT.txt\`"
-  echo "- Deploy log: \`$E/04_deploy/deploy.log\`"
-  echo "- E2E test log: \`$E/06_e2e/test_run.log\`"
-  echo "- E2E artifacts: \`$E/06_e2e/artifacts/\`"
-  echo ""
-  echo "## Final Verdict"
-  echo ""
-  echo "**Status:** ✅ PASS"
-  echo ""
-  echo "All phases completed successfully. The app is deployed to production,"
-  echo "upgraded on $SITE, and validated end-to-end."
-  echo ""
-  echo "**Marketplace-ready:** YES"
-  echo ""
-} | tee "$E/99_verdict/FINAL_REPORT.md"
-
-# Write final verdict
-echo "PASS (evidence: $E)" > "$E/99_verdict/FINAL_VERDICT.txt"
-
-log_success "════════════════════════════════════════════════════════════"
-log_success "FINAL VERDICT: PASS"
-log_success "════════════════════════════════════════════════════════════"
-log_success ""
-log_success "✅ All phases completed successfully"
-log_success "✅ App deployed to $ENVIRONMENT"
-log_success "✅ App upgraded on $SITE"
-log_success "✅ End-to-end dashboard validated"
-log_success ""
-log_success "Evidence: $E"
-log_success "Symlink:  /tmp/ft_marketplace_release_latest"
-log_success ""
-log_success "Marketplace-ready: YES"
+log_phase "All phases completed - validating artifacts..."
 
 exit 0
+
