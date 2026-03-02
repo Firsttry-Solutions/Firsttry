@@ -111,3 +111,11 @@ FirstTry inherits Atlassian Forge platform SLA:
 ---
 
 **Response time targets are goals, not guarantees. Actual response times may vary based on issue complexity and current support volume.**
+
+<!-- BEGIN: GENERATED_FACTS -->
+### Support Contact (Generated)
+
+**Email:** support@firsttry.solutions
+
+For technical support, feature requests, or general inquiries, contact support@firsttry.solutions.
+<!-- END: GENERATED_FACTS -->

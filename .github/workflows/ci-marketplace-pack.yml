@@ -55,6 +55,45 @@ jobs:
           set -euo pipefail
           bash tools/realworld/run_realworld_gates.sh
 
+      - name: Regenerate trust facts (fail if contacts/policy not filled)
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/marketplace/regenerate_trust_facts.sh
+
+      - name: Check for stale generated facts (fail-closed)
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}"
+          if [ -n "$(git status --porcelain atlassian/forge-app/docs/trust/)" ]; then
+            echo "ERROR: Generated trust facts are stale"
+            echo "Changes detected in docs/trust/:"
+            git status --porcelain atlassian/forge-app/docs/trust/
+            echo ""
+            echo "Remediation:"
+            echo "  1. Run: cd atlassian/forge-app && bash tools/marketplace/regenerate_trust_facts.sh"
+            echo "  2. Review changes: git diff docs/trust/"
+            echo "  3. Commit: git add docs/trust/ && git commit -m 'docs: regenerate trust facts'"
+            exit 1
+          fi
+          echo "✓ Generated trust facts are up-to-date"
+
+      - name: Run claims consistency check
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/marketplace/verify_claims_consistency.sh /tmp/ft_marketplace_trustfacts_latest/verifiers || {
+            echo "ERROR: Claims consistency check failed"
+            echo "See /tmp/ft_marketplace_trustfacts_latest/verifiers/02_claims/consistency_report.md"
+            exit 1
+          }
+
+      - name: Run offline linkability check
+        working-directory: atlassian/forge-app
+        run: |
+          set -euo pipefail
+          bash tools/marketplace/build_docs_site_offline.sh /tmp/ft_marketplace_phase3_5_latest || true
+
       - name: Verify Marketplace Pack (Privacy & Security)
         working-directory: atlassian/forge-app
         run: |

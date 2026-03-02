@@ -55,40 +55,23 @@ Read-only behavior is enforced at **multiple layers**:
 3. **Code design**: Application code does not attempt write operations
 4. **Audit verification**: See [05_audit_runbook.md](../ops/05_audit_runbook.md) for deterministic verification
 
-## No external egress
+## External network interactions
 
-FirstTry makes **zero external network calls**:
-
-### Network policy
-
-```yaml
-External network calls: ZERO
-CDN dependencies: ZERO
-Analytics/telemetry: ZERO
-Third-party APIs: ZERO
-```
+**Note:** External URL patterns detected in source code (`src/resolvers/phase2_config.ts`) are used for input validation only (e.g., `ALLOWED_WEBHOOK_ORIGINS` constant). These are not egress endpoints - actual webhook URLs are provided by users via environment configuration, not hardcoded.
 
 ### Verification
 
-**Deterministic proof**: Run audit verification to confirm zero external calls:
+**Deterministic proof**: Run offline URL scan to inventory literal URL strings:
 
 ```bash
 cd atlassian/forge-app
-bash tools/audit/v3_1/run_deterministic.sh
+bash tools/marketplace/inventory_external_urls.sh
 ```
 
-The audit checks:
-- ✓ No `fetch()` or `XMLHttpRequest()` to external domains
-- ✓ No `axios`, `node-fetch`, or HTTP client imports
-- ✓ No CDN or external script references
-- ✓ 100% air-gapped execution
-
-### Why no external calls?
-
-1. **Security**: Eliminate data exfiltration risk
-2. **Privacy**: Customer data never leaves Atlassian platform
-3. **Reliability**: No dependency on external service uptime
-4. **Compliance**: Simplifies GDPR/SOC2 audit scope
+The scan detects:
+- URL literals in source files (categorized as runtime vs. non-runtime)
+- Excludes test files, documentation, and tooling
+- Classification: validation patterns vs. actual egress destinations
 
 ## API call patterns
 
@@ -147,7 +130,7 @@ Every API call made by FirstTry is:
   "author": "firsttry-app",
   "remoteAddress": "forge-runtime",
   "created": "2026-03-02T10:30:00Z",
-  "summary": "User retrieved: admin@example.com",
+  "summary": "User retrieved: admin@customer-domain.com",
   "category": "user management",
   "eventSource": "Forge App",
   "objectItem": {
@@ -212,9 +195,10 @@ FirstTry shares **zero data** with third parties:
 
 - ❌ No analytics providers (Google Analytics, Mixpanel, etc.)
 - ❌ No error tracking services (Sentry, Rollbar, etc.)
-- ❌ No CDN providers (no external assets loaded)
 - ❌ No AI/ML services (no OpenAI, no model APIs)
 - ❌ No marketing tools (no tracking pixels, no retargeting)
+
+**Note:** External URL patterns detected in source are for input validation (e.g., webhook origin checking). Actual service integrations, if configured, are provided via environment/storage, not hardcoded. For network details, see [Security](security.md).
 
 **All processing occurs within Atlassian Forge platform.**
 
@@ -224,7 +208,7 @@ Our scope and permission design aligns with:
 
 - **GDPR Article 5(1)(c)**: Data minimization (only collect what's needed)
 - **GDPR Article 25**: Privacy by design (read-only by default)
-- **GDPR Article 32**: Security (tenant isolation, no external egress)
+- **GDPR Article 32**: Security (tenant isolation, platform-managed encryption)
 - **SOC 2**: Access control, least privilege principle
 - **ISO 27001**: Access management (documented scope rationale)
 
@@ -249,3 +233,22 @@ Questions about permissions or scope usage?
 - [SECURITY_OVERVIEW.md](SECURITY_OVERVIEW.md) - Security architecture
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design
 - [manifest.yml](../../manifest.yml) - Forge app manifest with declared scopes
+
+<!-- BEGIN: GENERATED_FACTS -->
+### Scopes (Generated)
+
+**Manifest scopes (as of 2026-03-02):**
+- `read:jira-user, read:jira-work, storage:app`
+
+**Purpose:**
+- `read:jira-user`: Read user profile information
+- `read:jira-work`: Read issue and project data
+- `storage:app`: Store app configuration and audit trail
+
+### Write Capabilities (Generated)
+
+**Webtrigger:** Yes
+**Storage API calls detected:** 100
+
+This app uses Forge storage API for audit trail and configuration. While scopes are read-only for Jira data, the app can write to its own isolated storage partition.
+<!-- END: GENERATED_FACTS -->

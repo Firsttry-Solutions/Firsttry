@@ -52,3 +52,18 @@ To request data deletion:
 **For comprehensive technical details, see:**
 - [UNINSTALL_DELETION.md](UNINSTALL_DELETION.md) - Uninstall behavior specification
 - [DATA_FLOW.md](DATA_FLOW.md) - Data flow architecture
+
+<!-- BEGIN: GENERATED_FACTS -->
+### Retention & Deletion (Generated)
+
+**Retention policy:** until_uninstall_or_customer_request
+
+Data is retained until the app is uninstalled OR customer explicitly requests deletion via support channel.
+
+**Deletion SLA:** We do not publish a fixed deletion SLA in calendar days. Upon receiving a deletion request via support@firsttry.solutions, we will confirm completion per request (typically within a few business days).
+
+**How to request deletion:**
+1. Email support@firsttry.solutions with subject "Data Deletion Request"
+2. Include your Atlassian site URL and app installation details
+3. We will confirm deletion and provide evidence upon completion
+<!-- END: GENERATED_FACTS -->

@@ -1,0 +1,5 @@
+{
+  "default_retention": "until_uninstall_or_customer_request",
+  "deletion_sla_days": null,
+  "notes": "Data is retained until the app is uninstalled OR customer explicitly requests deletion via support channel."
+}

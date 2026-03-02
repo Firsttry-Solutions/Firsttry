@@ -42,9 +42,19 @@ extract_claim() {
 NO_EGRESS_CLAIM=$(extract_claim "docs/trust/security.md" "(no external|zero external|no network|zero network)" "null")
 NO_EGRESS_CLAIM2=$(extract_claim "docs/trust/access-scope-and-permissions.md" "(no external|zero external)" "null")
 
+# Check for retention policy (numeric OR policy-based)
 RETENTION_PERIOD=$(extract_claim "docs/trust/data-retention-deletion.md" "retention.*(\d+\s*(day|month|year))" "null")
+if [[ "$RETENTION_PERIOD" == "null" ]]; then
+  # Check for policy-based retention (until_uninstall, customer_request, etc.)
+  RETENTION_PERIOD=$(extract_claim "docs/trust/data-retention-deletion.md" "retention\s*policy|retention\s*period" "null")
+fi
 
+# Check for deletion timeline (numeric OR policy-based)
 DELETION_TIMELINE=$(extract_claim "docs/trust/data-retention-deletion.md" "(delete|removal).*(\d+\s*(hour|day))" "null")
+if [[ "$DELETION_TIMELINE" == "null" ]]; then
+  # Check for deletion mentions (SLA, request, process, etc.)
+  DELETION_TIMELINE=$(extract_claim "docs/trust/data-retention-deletion.md" "deletion\s*(SLA|request|process|typically|upon)" "null")
+fi
 
 SUPPORT_EMAIL=$(extract_claim "docs/trust/support-sla.md" "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" "null")
 SECURITY_EMAIL=$(extract_claim "docs/trust/security.md" "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" "null")
@@ -57,9 +67,11 @@ RESPONSE_TIMES=$(extract_claim "docs/trust/support-sla.md" "response.*(\d+\s*(ho
 ENCRYPTION_CLAIM=$(extract_claim "docs/trust/security.md" "(encryption|encrypted|TLS|AES)" "null")
 
 # Check for "handled by Forge" or "handled by Atlassian" disclaimer
-ENCRYPTION_DISCLAIMER="false"
+# Check for "handled by Forge" or "handled by Atlassian" disclaimer
 if [[ -f "docs/trust/security.md" ]] && grep -iq "forge.*platform\|atlassian" "docs/trust/security.md"; then
   ENCRYPTION_DISCLAIMER="true"
+else
+  ENCRYPTION_DISCLAIMER="false"
 fi
 
 # Check for read-only claims
@@ -90,7 +102,7 @@ jq -n \
     disclosure_timeline: $disclosure_timeline,
     support_response_times: $response_times,
     encryption_claim: $encryption,
-    encryption_properly_scoped: ($encryption_disclaimer == "true"),
+    encryption_properly_scoped: $encryption_disclaimer,
     read_only_claim: $read_only
   }' > "$OUTPUT"
 

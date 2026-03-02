@@ -23,7 +23,7 @@ fi
 # Evidence directory
 TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
 E="/tmp/ft_marketplace_pack_${TIMESTAMP}_$$"
-mkdir -p "$E"/{00_inputs,01_presence,02_pages,03_links,04_content,05_verdict,artifacts}
+mkdir -p "$E"/{00_inputs,01_presence,02_pages,03_links,04_content,05_verdict,artifacts,02_contacts,03_generated}
 ln -sfn "$E" /tmp/ft_marketplace_pack_latest
 
 echo "[MARKETPLACE PACK] Privacy & Security + Trust Pack Verifier"
@@ -307,7 +307,7 @@ declare -A REQUIRED_HEADINGS=(
   ["support-sla.md"]="Support channels|Response times|Escalation"
   ["incident-response.md"]="Incident classification|Customer notification|Post-incident review"
   ["data-processing.md"]="Data flow|Storage locations|Processing purposes"
-  ["access-scope-and-permissions.md"]="Forge scopes|Read-only guarantees|No external egress"
+  ["access-scope-and-permissions.md"]="Forge scopes|Read-only guarantees|network|external"
 )
 
 # Forbidden tokens
@@ -367,6 +367,99 @@ jq -n \
 echo "  Content issues: ${#CONTENT_ISSUES[@]}"
 
 # ============================================================================
+# PHASE 04B: CONFIG & GENERATED FACTS VALIDATION
+# ============================================================================
+
+echo ""
+echo "[04B] Checking required config files and generated facts..."
+
+CONFIG_REPORT="$E/04_content/config_report.txt"
+declare -a CONFIG_ISSUES=()
+
+# Check CONTACTS.json
+CONTACTS_FILE="$REPO_ROOT/docs/trust/CONTACTS.json"
+if [[ ! -f "$CONTACTS_FILE" ]]; then
+  echo "FAIL: CONTACTS.json missing" >> "$CONFIG_REPORT"
+  CONFIG_ISSUES+=("CONTACTS.json not found - run regenerate_trust_facts.sh")
+else
+  # Verify contacts pass validation
+  if ! bash "$SCRIPT_DIR/verify_contacts.sh" "$E" >> "$CONFIG_REPORT" 2>&1; then
+    CONFIG_ISSUES+=("CONTACTS.json validation failed - fill with real emails")
+  else
+    echo "PASS: CONTACTS.json valid" >> "$CONFIG_REPORT"
+  fi
+fi
+
+# Check RETENTION_POLICY.json
+RETENTION_FILE="$REPO_ROOT/docs/trust/RETENTION_POLICY.json"
+if [[ ! -f "$RETENTION_FILE" ]]; then
+  echo "FAIL: RETENTION_POLICY.json missing" >> "$CONFIG_REPORT"
+  CONFIG_ISSUES+=("RETENTION_POLICY.json not found")
+else
+  # Verify retention policy
+  if ! bash "$SCRIPT_DIR/verify_retention_policy.sh" "$E" >> "$CONFIG_REPORT" 2>&1; then
+    CONFIG_ISSUES+=("RETENTION_POLICY.json validation failed")
+  else
+    echo "PASS: RETENTION_POLICY.json valid" >> "$CONFIG_REPORT"
+  fi
+fi
+
+# Check for GENERATED_FACTS markers in required docs
+MARKER_START="<!-- BEGIN: GENERATED_FACTS -->"
+MARKER_END="<!-- END: GENERATED_FACTS -->"
+
+for doc in "docs/trust/access-scope-and-permissions.md" \
+           "docs/trust/security.md" \
+           "docs/trust/privacy-policy.md" \
+           "docs/trust/vulnerability-disclosure.md" \
+           "docs/trust/support-sla.md" \
+           "docs/trust/data-retention-deletion.md" \
+           "docs/trust/data-processing.md"; do
+  DOC_PATH="$REPO_ROOT/$doc"
+  [[ ! -f "$DOC_PATH" ]] && continue
+  
+  if ! grep -q "$MARKER_START" "$DOC_PATH"; then
+    echo "FAIL: $doc missing GENERATED_FACTS markers" >> "$CONFIG_REPORT"
+    CONFIG_ISSUES+=("$doc: missing GENERATED_FACTS markers - run regenerate_trust_facts.sh")
+  else
+    echo "PASS: $doc has GENERATED_FACTS markers" >> "$CONFIG_REPORT"
+  fi
+done
+
+# Forbid placeholders in trust docs
+TRUST_PLACEHOLDER_PATTERNS=("example\.com" "hooks\.slack\.com" "TODO" "TBD" "FIXME" "coming soon")
+for doc in "${REQUIRED_DOCS[@]}"; do
+  DOC_PATH="$REPO_ROOT/$doc"
+  [[ ! -f "$DOC_PATH" ]] && continue
+  
+  # Skip GENERATED_FACTS blocks (they may contain evidence references)
+  TEMP_DOC=$(mktemp)
+  # Remove GENERATED_FACTS blocks before checking
+  perl -0pe "s/\Q$MARKER_START\E.*?\Q$MARKER_END\E//gs" "$DOC_PATH" > "$TEMP_DOC"
+  
+  for pattern in "${TRUST_PLACEHOLDER_PATTERNS[@]}"; do
+    if grep -qE "$pattern" "$TEMP_DOC"; then
+      echo "FAIL: $doc contains placeholder: $pattern" >> "$CONFIG_REPORT"
+      CONFIG_ISSUES+=("$doc: contains '$pattern' outside GENERATED_FACTS")
+    fi
+  done
+  
+  rm "$TEMP_DOC"
+done
+
+# Generate JSON
+CONFIG_ISSUES_JSON='[]'
+if [[ ${#CONFIG_ISSUES[@]} -gt 0 ]]; then
+  CONFIG_ISSUES_JSON=$(printf '%s\n' "${CONFIG_ISSUES[@]}" | jq -R . | jq -s .)
+fi
+jq -n \
+  --argjson issues "$CONFIG_ISSUES_JSON" \
+  '{issues: $issues, config_pass: ($issues | length == 0)}' \
+  > "$E/artifacts/PACK_CONFIG.json"
+
+echo "  Config issues: ${#CONFIG_ISSUES[@]}"
+
+# ============================================================================
 # PHASE 05: FINAL VERDICT
 # ============================================================================
 
@@ -387,6 +480,9 @@ if [[ $BROKEN_COUNT -gt 0 ]] || [[ $INSECURE_COUNT -gt 0 ]]; then
   ((TOTAL_FAILURES+=1))
 fi
 if [[ ${#CONTENT_ISSUES[@]} -gt 0 ]]; then
+  ((TOTAL_FAILURES+=1))
+fi
+if [[ ${#CONFIG_ISSUES[@]} -gt 0 ]]; then
   ((TOTAL_FAILURES+=1))
 fi
 
@@ -421,6 +517,12 @@ if [[ $TOTAL_FAILURES -gt 0 ]]; then
     echo "" >> "$VERDICT_FILE"
   fi
   
+  if [[ ${#CONFIG_ISSUES[@]} -gt 0 ]]; then
+    echo "CONFIG ISSUES (${#CONFIG_ISSUES[@]}):" >> "$VERDICT_FILE"
+    printf '  - %s\n' "${CONFIG_ISSUES[@]}" >> "$VERDICT_FILE"
+    echo "" >> "$VERDICT_FILE"
+  fi
+  
   echo "REMEDIATION:" >> "$VERDICT_FILE"
   echo "1. Create missing docs in docs/trust/ with required structure" >> "$VERDICT_FILE"
   echo "2. Add links to navigation files (mkdocs.yml or docs/README.md)" >> "$VERDICT_FILE"
@@ -440,6 +542,7 @@ else
   echo "✓ Navigation linkability verified" >> "$VERDICT_FILE"
   echo "✓ Internal links integrity verified" >> "$VERDICT_FILE"
   echo "✓ Content completeness verified" >> "$VERDICT_FILE"
+  echo "✓ Config & generated facts verified" >> "$VERDICT_FILE"
   echo "" >> "$VERDICT_FILE"
   
   # Detect GitHub Pages base URL

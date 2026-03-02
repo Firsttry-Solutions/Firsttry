@@ -47,3 +47,12 @@ For privacy inquiries:
 ---
 
 **For comprehensive technical details, see: [PRIVACY_POLICY.md](PRIVACY_POLICY.md)**
+
+<!-- BEGIN: GENERATED_FACTS -->
+### Contacts (Generated)
+
+**Privacy inquiries:** privacy@firsttry.solutions
+**General support:** support@firsttry.solutions
+
+For data access, correction, or deletion requests, contact privacy@firsttry.solutions.
+<!-- END: GENERATED_FACTS -->
