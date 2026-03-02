@@ -511,32 +511,64 @@ fi
 
 log_success "E2E harness detected"
 
-# 6.2 - Verify E2E credentials/auth
-log_info "Verifying E2E authentication configuration..."
+# 6.2 - Capture/verify E2E authentication
+log_info "Capturing E2E authentication..."
 
-# Check for storage state file
-STORAGE_STATE="${STORAGE_STATE:-$REPO_ROOT/e2e/.auth/storageState.json}"
+# Create auth capture directory under evidence
+AUTH_CAPTURE_DIR="$E/06_e2e/auth_capture"
+mkdir -p "$AUTH_CAPTURE_DIR"
 
-if [ ! -f "$STORAGE_STATE" ]; then
-  log_error "Storage state file not found: $STORAGE_STATE"
+# Attempt to capture auth (will use default RUN_DIR if not set)
+log_info "Running jira:auth:capture..."
+if RUN_DIR="$AUTH_CAPTURE_DIR" npm run jira:auth:capture 2>&1 | tee "$E/06_e2e/auth_capture.log"; then
+  log_success "Auth capture completed"
+else
+  log_error "Auth capture failed"
+  log_error "See logs: $E/06_e2e/auth_capture.log"
   log_error "Remediation:"
-  log_error "  1. Run: cd $FORGE_APP_ROOT && npm run jira:auth:capture"
-  log_error "  2. Or set STORAGE_STATE env var to correct path"
-  echo "FAIL: Storage state file missing" > "$E/06_e2e/VERDICT.txt"
+  log_error "  1. Ensure DISPLAY is set (for interactive login)"
+  log_error "  2. Ensure JIRA_DASHBOARD_URL or JIRA_SITE is set"
+  log_error "  3. Check auth_capture.log for details"
+  echo "FAIL: Auth capture failed" > "$E/06_e2e/VERDICT.txt"
+  exit 1
+fi
+
+# Set STORAGE_STATE to the captured file
+STORAGE_STATE="$AUTH_CAPTURE_DIR/storageState.json"
+
+# Verify storage state file exists
+if [ ! -f "$STORAGE_STATE" ]; then
+  log_error "Storage state file not found after capture: $STORAGE_STATE"
+  log_error "This should not happen - auth:capture should have failed"
+  echo "FAIL: Storage state file missing after capture" > "$E/06_e2e/VERDICT.txt"
   exit 1
 fi
 
 log_success "Storage state file found: $STORAGE_STATE"
 
-# Verify storage state is not expired (has cookies/tokens)
-if ! jq -e '.cookies | length > 0' "$STORAGE_STATE" >/dev/null 2>&1; then
-  log_error "Storage state file is empty or invalid"
-  log_error "Remediation: Re-capture auth state: npm run jira:auth:capture"
-  echo "FAIL: Storage state invalid" > "$E/06_e2e/VERDICT.txt"
+# Verify storage state is valid JSON with cookies/origins
+if ! jq -e 'type == "object"' "$STORAGE_STATE" >/dev/null 2>&1; then
+  log_error "Storage state file is not valid JSON"
+  echo "FAIL: Storage state invalid JSON" > "$E/06_e2e/VERDICT.txt"
   exit 1
 fi
 
-log_success "Storage state appears valid"
+# Check for cookies OR origins (either is valid)
+HAS_COOKIES=$(jq -e '.cookies | length > 0' "$STORAGE_STATE" 2>/dev/null && echo "yes" || echo "no")
+HAS_ORIGINS=$(jq -e '.origins | length > 0' "$STORAGE_STATE" 2>/dev/null && echo "yes" || echo "no")
+
+if [ "$HAS_COOKIES" = "no" ] && [ "$HAS_ORIGINS" = "no" ]; then
+  log_error "Storage state has no cookies or origins"
+  log_error "Remediation: Re-capture auth state: npm run jira:auth:capture"
+  echo "FAIL: Storage state empty" > "$E/06_e2e/VERDICT.txt"
+  exit 1
+fi
+
+log_success "Storage state appears valid (cookies: $HAS_COOKIES, origins: $HAS_ORIGINS)"
+
+# Copy to artifacts for evidence
+mkdir -p "$E/06_e2e/artifacts"
+cp "$STORAGE_STATE" "$E/06_e2e/artifacts/storageState.json" || true
 
 # 6.3 - Verify JIRA_BASE_URL (if required)
 EXPECTED_BASE_URL="https://$SITE"

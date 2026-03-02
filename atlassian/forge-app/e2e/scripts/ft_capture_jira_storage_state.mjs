@@ -25,12 +25,23 @@
 import { chromium, request } from 'playwright';
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
-const RUN_DIR = process.env.RUN_DIR;
-const STORAGE_STATE = process.env.STORAGE_STATE || 'e2e/.auth/storageState.persistent.json';
+// Generate default RUN_DIR if not provided
+let RUN_DIR = process.env.RUN_DIR;
+if (!RUN_DIR || RUN_DIR.trim() === '') {
+  const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, 'Z');
+  const pid = process.pid;
+  RUN_DIR = `/tmp/ft_jira_auth_capture_${timestamp}_${pid}`;
+  console.log(`[INFO] RUN_DIR not set, using default: ${RUN_DIR}`);
+}
+
 const VERIFY_ONLY = process.env.VERIFY_ONLY === '1';
 const JIRA_DASHBOARD_URL = process.env.JIRA_DASHBOARD_URL;
 const JIRA_SITE = process.env.JIRA_SITE;
+
+// Determine STORAGE_STATE path - default to RUN_DIR/storageState.json
+const STORAGE_STATE = process.env.STORAGE_STATE || path.join(RUN_DIR, 'storageState.json');
 
 // Helper: derive base URL from JIRA_DASHBOARD_URL or JIRA_SITE
 function getBaseUrl() {
@@ -108,15 +119,23 @@ async function probeAuthValid(baseUrl, storageState) {
   }
 }
 
-// Validate RUN_DIR
-if (!RUN_DIR) {
-  console.error('[FAIL] RUN_DIR env var not set');
-  writeReason('AUTH_FAIL_NO_RUN_DIR');
+// Create RUN_DIR and write ENV.txt
+try {
+  fs.mkdirSync(RUN_DIR, { recursive: true });
+  const envInfo = [
+    `timestamp=${new Date().toISOString()}`,
+    `cwd=${process.cwd()}`,
+    `node_version=${process.version}`,
+    `base_url=${JIRA_DASHBOARD_URL || JIRA_SITE || 'not_set'}`,
+  ].join('\n');
+  fs.writeFileSync(path.join(RUN_DIR, 'ENV.txt'), envInfo, 'utf-8');
+} catch (e) {
+  console.error(`[FAIL] Could not create RUN_DIR: ${e.message}`);
   process.exit(1);
 }
 
 if (!STORAGE_STATE) {
-  console.error('[FAIL] STORAGE_STATE env var not set');
+  console.error('[FAIL] STORAGE_STATE path could not be determined');
   writeReason('AUTH_FAIL_NO_STORAGE_STATE_PATH');
   process.exit(1);
 }
@@ -303,6 +322,40 @@ async function interactiveCapture() {
     fs.writeFileSync(resolvedStoragePath, JSON.stringify(state, null, 2), 'utf-8');
     console.log(`[INFO] Saved storageState to ${resolvedStoragePath}`);
     
+    // Validate the written file
+    const stats = fs.statSync(resolvedStoragePath);
+    if (stats.size < 50) {
+      console.error(`[FAIL] storageState file too small: ${stats.size} bytes`);
+      writeReason('AUTH_FAIL_STORAGESTATE_INVALID');
+      await context.close();
+      await browser.close();
+      process.exit(1);
+    }
+    
+    // Re-parse to ensure valid JSON
+    let savedState;
+    try {
+      const content = fs.readFileSync(resolvedStoragePath, 'utf-8');
+      savedState = JSON.parse(content);
+    } catch (e) {
+      console.error(`[FAIL] Saved storageState is not valid JSON: ${e.message}`);
+      writeReason('AUTH_FAIL_STORAGESTATE_INVALID_JSON');
+      await context.close();
+      await browser.close();
+      process.exit(1);
+    }
+    
+    // Verify has cookies or origins
+    const hasCookies = Array.isArray(savedState.cookies) && savedState.cookies.length > 0;
+    const hasOrigins = Array.isArray(savedState.origins) && savedState.origins.length > 0;
+    if (!hasCookies && !hasOrigins) {
+      console.error('[FAIL] storageState has no cookies or origins');
+      writeReason('AUTH_FAIL_STORAGESTATE_EMPTY');
+      await context.close();
+      await browser.close();
+      process.exit(1);
+    }
+    
     // Probe captured session validity
     const isValid = await probeAuthValid(DASHBOARD_URL.split('/jira')[0] || DASHBOARD_URL.split('/rest')[0], state);
     
@@ -314,10 +367,21 @@ async function interactiveCapture() {
       process.exit(1);
     }
     
+    // Create symlink to latest
+    try {
+      execSync(`ln -sfn "${RUN_DIR}" /tmp/ft_jira_auth_capture_latest`);
+    } catch (e) {
+      console.warn(`[WARN] Could not create symlink: ${e.message}`);
+    }
+    
     writeReason('AUTH_OK');
     await context.close();
     await browser.close();
-    console.log('[SUCCESS] Auth capture complete and validated');
+    
+    // Print final success lines
+    console.log('[PASS] storageState: ' + resolvedStoragePath);
+    console.log('[PASS] run_dir: ' + RUN_DIR);
+    console.log('[PASS] latest: /tmp/ft_jira_auth_capture_latest');
     process.exit(0);
     
   } catch (error) {

@@ -44,29 +44,61 @@ forge login
 
 Then run the script (it will use the stored credentials).
 
-### 2. Playwright Storage State
+### 2. Playwright Storage State (AUTO-CAPTURED)
 
 The E2E tests require a valid Playwright storage state file (Jira session cookies).
 
-**Default location:** `/workspaces/Firsttry/e2e/.auth/storageState.json`
+**⚡ NEW: The release runner automatically captures auth during Phase 6**, so you don't need to pre-capture manually unless you want to test it standalone.
 
-**To capture/refresh auth state:**
+**Standalone Auth Capture (Optional)**
+
+If you want to capture auth separately for testing:
+
 ```bash
 cd atlassian/forge-app
 npm run jira:auth:capture
 ```
 
-This will open a browser, prompt you to log in to Jira (firsttry.atlassian.net), and save the session.
+This will:
+- Open a browser (requires DISPLAY env var)
+- Prompt you to log in to Jira
+- Save the session to `/tmp/ft_jira_auth_capture_<timestamp>_<pid>/storageState.json`
+- Create symlink: `/tmp/ft_jira_auth_capture_latest`
+- Validate the captured session
 
-**To verify storage state:**
+**Environment Variables for Capture:**
+
 ```bash
-npm run jira:auth:verify
+# Required for interactive capture
+export DISPLAY=:0  # or your X11 display
+export JIRA_DASHBOARD_URL="https://firsttry.atlassian.net/jira/dashboards/10000"
+# OR
+export JIRA_SITE="firsttry.atlassian.net"
+
+# Optional: override output directory
+export RUN_DIR="/custom/output/dir"
 ```
 
-**Custom path:** Set `STORAGE_STATE` env var:
-```bash
-export STORAGE_STATE="/path/to/your/storageState.json"
+**Output:**
 ```
+[PASS] storageState: /tmp/ft_jira_auth_capture_20260302T063000Z_12345/storageState.json
+[PASS] run_dir: /tmp/ft_jira_auth_capture_20260302T063000Z_12345
+[PASS] latest: /tmp/ft_jira_auth_capture_latest
+```
+
+**Verify captured state:**
+```bash
+ls -la /tmp/ft_jira_auth_capture_latest/storageState.json
+cat /tmp/ft_jira_auth_capture_latest/ENV.txt
+```
+
+**To use pre-captured state in release runner:**
+```bash
+export STORAGE_STATE="/tmp/ft_jira_auth_capture_latest/storageState.json"
+bash tools/marketplace/release_marketplace_ready_e2e.sh
+```
+
+**Note:** If `STORAGE_STATE` is not set, the release runner will capture auth automatically during Phase 6.
 
 ### 3. Clean Repository
 
@@ -163,6 +195,8 @@ Add to GitHub Actions workflow:
 
 ### Phase 6: End-to-End Dashboard
 
+- **Auth capture:** Automatic Jira session capture (interactive browser login)
+- **Storage state validation:** Ensures cookies/origins are present and valid
 - **Dashboard loads:** No blank panels, no auth walls
 - **Dashboard gadget renders:** UI displays correctly
 - **Snapshot export:** HTML/JSON exports work end-to-end
@@ -170,6 +204,10 @@ Add to GitHub Actions workflow:
 - **Deterministic markers:** Build identity + provenance present
 
 **Test file:** `/workspaces/Firsttry/e2e/tests/prod_dashboard_green.spec.ts`
+
+**Auth outputs:**
+- `/tmp/ft_marketplace_release_latest/06_e2e/auth_capture/storageState.json`
+- `/tmp/ft_marketplace_release_latest/06_e2e/auth_capture.log`
 
 ## Evidence Artifacts
 
@@ -217,8 +255,13 @@ Every run creates an evidence directory:
 │   └── VERDICT.txt                      # Upgrade phase verdict
 ├── 06_e2e/
 │   ├── discovery.txt                    # E2E harness detection
+│   ├── auth_capture.log                 # Auth capture output
+│   ├── auth_capture/                    # Auth capture evidence
+│   │   ├── storageState.json            # Captured Jira session
+│   │   └── ENV.txt                      # Capture environment info
 │   ├── test_run.log                     # Playwright test output
 │   ├── artifacts/
+│   │   ├── storageState.json            # Copy of captured session (for evidence)
 │   │   ├── playwright-report/           # HTML test report
 │   │   └── test-results/                # Screenshots, videos, traces
 │   └── VERDICT.txt                      # E2E phase verdict
