@@ -178,7 +178,7 @@ See [Privacy Policy](privacy-policy.md) for more on data subject rights.
 
 **Runtime external URL literals in src/:** 20
 
-**Offline source scan (as of 2026-03-02):** Detected 20 external URL literal(s) in src/ (see evidence: /tmp/ft_marketplace_trustfacts_20260302T101340Z_498/verifiers/01_scan/runtime_urls.txt).
+**Offline source scan (as of 2026-03-02):** Detected 20 external URL literal(s) in src/ (see evidence: /tmp/ft_marketplace_trustfacts_20260302T103220Z_28186/verifiers/01_scan/runtime_urls.txt).
 
 **Classification:** URL literals found in src/resolvers/phase2_config.ts are input validation patterns (ALLOWED_WEBHOOK_ORIGINS), not actual egress endpoints. Actual external service URLs, if configured, are provided via environment/Forge storage, not hardcoded.
 

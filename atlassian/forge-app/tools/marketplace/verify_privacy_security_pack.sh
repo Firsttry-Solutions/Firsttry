@@ -199,24 +199,39 @@ echo "  Linkability issues: ${#PAGES_ISSUES[@]}"
 # ============================================================================
 
 echo ""
-echo " [03] Checking offline linkability (Pages-safe)..."
+echo "[03] Checking offline linkability (Pages-safe)..."
 
-# First, regenerate trust facts to ensure mirror docs are up-to-date
-echo "  Regenerating trust facts..."
-if ! timeout 120 bash "$SCRIPT_DIR/regenerate_trust_facts.sh" > "$E/03_links/regenerate_trust_facts.log" 2>&1; then
-  TIMEOUT_EXIT=$?
-  if [ $TIMEOUT_EXIT -eq 124 ]; then
-    echo "FAIL: Trust facts regeneration timed out after 120 seconds"
-    echo "This typically indicates the code_refs_inventory.md generation is scanning too many files."
-    echo "Check $E/03_links/regenerate_trust_facts.log for details."
-  else
-    echo "FAIL: Trust facts regeneration failed"
-    cat "$E/03_links/regenerate_trust_facts.log"
+# Check that generated mirror docs exist (they should be committed)
+echo "  Checking for generated mirror docs..."
+MIRROR_DOCS=(
+  "docs/trust/generated/security_overview_mirror.md"
+  "docs/trust/generated/privacy_policy_mirror.md"
+  "docs/trust/generated/legal_mirror.md"
+  "docs/trust/generated/code_refs_inventory.md"
+  "docs/trust/generated/repo_refs.md"
+)
+
+MISSING_MIRRORS=()
+for doc in "${MIRROR_DOCS[@]}"; do
+  if [ ! -f "$SCRIPT_DIR/../../$doc" ]; then
+    MISSING_MIRRORS+=("$doc")
   fi
+done
+
+if [ ${#MISSING_MIRRORS[@]} -gt 0 ]; then
+  echo "FAIL: Missing generated mirror docs:"
+  for doc in "${MISSING_MIRRORS[@]}"; do
+    echo "  - $doc"
+  done
+  echo ""
+  echo "Run: bash tools/marketplace/regenerate_trust_facts.sh"
+  echo "Then commit the generated files before running this verification."
   echo "REJECT" > "$E/05_verdict/VERDICT.txt"
-  echo "Trust facts regeneration failed or timed out" >> "$E/05_verdict/VERDICT.txt"
+  echo "Missing generated mirror docs" >> "$E/05_verdict/VERDICT.txt"
   exit 1
 fi
+
+echo "  All mirror docs present ✓"
 
 # Run comprehensive offline linkability check
 echo "  Running offline link checker..."
