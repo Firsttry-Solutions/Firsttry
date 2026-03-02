@@ -535,9 +535,9 @@ CODE_REFS="$MIRROR_DIR/code_refs_inventory.md"
   echo ""
   echo "## Source Files"
   echo ""
-  # List src/ files
+  # List src/ files (limit to first 200 for performance)
   if [[ -d "$REPO_ROOT/src" ]]; then
-    find "$REPO_ROOT/src" -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" \) | sort | while read -r file; do
+    find "$REPO_ROOT/src" -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" \) | head -200 | sort | while read -r file; do
       REL_PATH="${file#$REPO_ROOT/}"
       BASENAME=$(basename "$file")
       SLUG=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
