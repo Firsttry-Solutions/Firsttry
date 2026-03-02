@@ -601,6 +601,24 @@ run_selftest() {
   log_phase "SELFTEST MODE: Validating Fail-Closed Evidence Logic"
   echo ""
   
+  # CRITICAL: Set evidence overrides to prevent production pollution
+  export FT_RELEASE_EVIDENCE_PREFIX="/tmp/ft_release_selftest_prodguard_"
+  export FT_RELEASE_LATEST_SYMLINK="/tmp/ft_release_selftest_latest_symlink"
+  
+  # Capture production paths state BEFORE selftest runs
+  local prod_paths_before
+  if compgen -G "/tmp/ft_marketplace_release_*" > /dev/null; then
+    prod_paths_before=$(ls -d /tmp/ft_marketplace_release_* 2>/dev/null | wc -l)
+  else
+    prod_paths_before=0
+  fi
+  local prod_symlink_before
+  if [ -L "/tmp/ft_marketplace_release_latest" ]; then
+    prod_symlink_before=$(readlink "/tmp/ft_marketplace_release_latest")
+  else
+    prod_symlink_before="NOTEXIST"
+  fi
+  
   local test_failed=0
   local selftest_dir
   selftest_dir=$(mktemp -d /tmp/ft_release_selftest_XXXXXX)
@@ -613,6 +631,7 @@ run_selftest() {
   fi
   
   log_info "Selftest evidence directory: $selftest_dir"
+  log_info "Production pollution guard: Monitoring /tmp/ft_marketplace_release_*"
   echo ""
   
   # Set REPO_ROOT and SCRIPT_DIR for finalize() and helper script calls
@@ -1411,7 +1430,7 @@ EOF
   # Export env vars to isolate evidence and skip phases requiring auth
   FT_RELEASE_EVIDENCE_PREFIX="$runner_evidence_prefix" \
   FT_RELEASE_LATEST_SYMLINK="$runner_symlink" \
-  FT_SKIP_PHASE_01=1 \
+  FT_SELFTEST_SKIP_PHASE_01=1 \
   timeout 180 bash tools/marketplace/release_marketplace_ready_e2e.sh >/dev/null 2>&1 || runner_exit_code=$?
   
   # Get evidence directory
@@ -1573,6 +1592,42 @@ EOF
   echo ""
   
   # -------------------------------------------------------------------------
+  # FINAL CHECK: Verify no production pollution
+  # -------------------------------------------------------------------------
+  
+  log_info "Running final production path isolation check..."
+  
+  local prod_paths_after
+  if compgen -G "/tmp/ft_marketplace_release_*" > /dev/null; then
+    prod_paths_after=$(ls -d /tmp/ft_marketplace_release_* 2>/dev/null | wc -l)
+  else
+    prod_paths_after=0
+  fi
+  local prod_symlink_after
+  if [ -L "/tmp/ft_marketplace_release_latest" ]; then
+    prod_symlink_after=$(readlink "/tmp/ft_marketplace_release_latest")
+  else
+    prod_symlink_after="NOTEXIST"
+  fi
+  
+  if [ "$prod_paths_before" != "$prod_paths_after" ]; then
+    log_error "✗ CRITICAL: Production path pollution detected!"
+    log_error "  Production paths before: $prod_paths_before"
+    log_error "  Production paths after:  $prod_paths_after"
+    log_error "  Selftest MUST NOT create files in /tmp/ft_marketplace_release_*"
+    test_failed=1
+  elif [ "$prod_symlink_before" != "$prod_symlink_after" ]; then
+    log_error "✗ CRITICAL: Production symlink changed!"
+    log_error "  Symlink before: $prod_symlink_before"
+    log_error "  Symlink after:  $prod_symlink_after"
+    test_failed=1
+  else
+    log_success "✓ Production paths unchanged (no pollution)"
+  fi
+  
+  echo ""
+  
+  # -------------------------------------------------------------------------
   # FINAL VERDICT
   # -------------------------------------------------------------------------
   
@@ -1647,9 +1702,17 @@ fi
 # PHASE 0 — EVIDENCE + REPO CLEANLINESS (HARD GATE)
 # ============================================================================
 
-# Skip Phase 0/1 if requested (for testing only - NOT for production use)
+# Enforce: Skip-phase flags are SELFTEST-ONLY (hard fail in production)
 if [ "${FT_SKIP_PHASE_01:-0}" = "1" ]; then
-  log_phase "PHASE 0+1: SKIPPED (FT_SKIP_PHASE_01=1 - testing only)"
+  log_error "FT_SKIP_PHASE_01 is selftest-only. Cannot skip phases in production mode."
+  log_error "This flag must NEVER be set outside of controlled selftest execution."
+  log_error "If you see this error, there is a configuration mistake or security issue."
+  exit 2
+fi
+
+if [ "${FT_SELFTEST_SKIP_PHASE_01:-0}" = "1" ]; then
+  # This is the internal selftest skip flag - only used by Subtest 9
+  log_phase "PHASE 0+1: SKIPPED (FT_SELFTEST_SKIP_PHASE_01=1 - selftest harness only)"
   
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
@@ -1672,7 +1735,7 @@ if [ "${FT_SKIP_PHASE_01:-0}" = "1" ]; then
   echo "SKIPPED" > "$E/00_env/env.txt"
   echo "SKIPPED" > "$E/01_gates/skipped.log"
   
-  log_info "Skipping to Phase 2 for testing purposes"
+  log_info "Skipping to Phase 2 for selftest harness mode"
 else
 
 log_phase "PHASE 0: Evidence Directory + Environment Prerequisites"
@@ -1944,7 +2007,7 @@ log_success "All Phase 1 gates passed"
 write_verdict "$E/01_gates" "PASS"
 log_success "Phase 1: PASS"
 
-fi  # End of FT_SKIP_PHASE_01 check
+fi  # End of FT_SELFTEST_SKIP_PHASE_01 check
 
 # ============================================================================
 # PHASE 2 — MERGE / MAIN SYNC CHECK (HARD GATE)

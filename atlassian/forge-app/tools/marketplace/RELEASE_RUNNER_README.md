@@ -53,6 +53,38 @@ FT_RELEASE_LATEST_SYMLINK=/tmp/isolated_test_latest \
 bash tools/marketplace/release_marketplace_ready_e2e.sh
 ```
 
+## Safety: Skip-Phase Restrictions
+
+**CRITICAL SECURITY CONTROL:** The script previously supported skipping Phase 0 and Phase 1 via `FT_SKIP_PHASE_01=1`. **This capability has been removed from production mode.**
+
+**Current behavior:**
+- Setting `FT_SKIP_PHASE_01=1` in production → **HARD FAIL** (exit code 2)
+- This flag is **SELFTEST-ONLY** and the script enforces this at startup
+
+**Why this matters:**
+- Phase 0 checks for uncommitted changes and dirty state
+- Phase 1 runs all verification gates (realworld, audit, marketplace pack)
+- **Skipping these phases in production bypasses critical safety checks**
+- This was a security vulnerability and is now prevented by hard-fail guard
+
+**Internal selftest flag:**
+- Selftest mode uses `FT_SELFTEST_SKIP_PHASE_01=1` (internal flag, not exposed)
+- This flag ONLY works during selftest execution
+- Regular users should never need to set this
+
+**Production path isolation:**
+Selftest mode automatically overrides evidence paths to prevent pollution:
+```bash
+# Selftest automatically sets these internally:
+export FT_RELEASE_EVIDENCE_PREFIX="/tmp/ft_release_selftest_prodguard_"
+export FT_RELEASE_LATEST_SYMLINK="/tmp/ft_release_selftest_latest_symlink"
+```
+
+This ensures that:
+- Selftest runs never create files in production `/tmp/ft_marketplace_release_*` paths
+- Production evidence directories remain pristine during testing
+- Selftest validates this isolation before declaring PASS
+
 ## Exit Code Integrity
 
 The release runner enforces a **critical invariant**: **Exit code MUST always match FINAL_VERDICT**.
