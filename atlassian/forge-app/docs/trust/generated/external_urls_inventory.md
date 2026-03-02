@@ -1,8 +1,8 @@
 # External URLs Inventory
 
 **Auto-generated from:** Source code scan via `tools/marketplace/inventory_external_urls.sh`
-**Generated at:** 2026-03-02T10:32:27Z
-**Git SHA:** bc0280e5d69418c9fe38f4db41a3a3477f2faddc
+**Generated at:** 2026-03-02T10:48:16Z
+**Git SHA:** 273236282e09f08b5c91e691340dc080c11119f7
 
 <!-- BEGIN: GENERATED -->
 
