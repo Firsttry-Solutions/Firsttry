@@ -348,6 +348,150 @@ Add selftest to CI workflow to validate the validation logic:
 - **In CI** as a fast (<10 seconds) sanity check
 - **When debugging** why PASS/FAIL verdicts are produced
 
+## Proof Harness: Phase 2 Real Runner Out-of-Sync
+
+A crash-resistant, fail-closed proof harness that validates the release runner's Phase 2 out-of-sync detection by running the **actual release runner** in an isolated git environment where origin/main is ahead by exactly 1 commit.
+
+### What It Proves
+
+This proof harness validates that when the local branch is behind `origin/main`:
+
+1. **Runner detects out-of-sync at Phase 2** and fails with non-zero exit code
+2. **Complete evidence is produced** including:
+   - `02_merge/VERDICT.txt` - contains "FAIL" and mentions "out of sync"
+   - `02_merge/merge.log` - non-empty diagnostic output
+   - `02_merge/fetch.log` - git fetch details
+   - `02_merge/rev.txt` - LOCAL and REMOTE SHAs (different values)
+   - `02_merge/branch.txt` - current branch name (exactly "main")
+   - `99_verdict/FINAL_VERDICT.txt` - starts with "FAIL"
+   - `99_verdict/FINAL_REPORT.md` - >= 500 bytes
+3. **No production pollution** - validates that `/tmp/ft_marketplace_release_*` paths are unchanged
+4. **Workspace remains clean** - no uncommitted changes in `/workspaces/Firsttry`
+
+### Running the Proof Harness
+
+**Quick wrapper command:**
+```bash
+cd atlassian/forge-app
+bash tools/marketplace/run_proof_phase2_real_runner_out_of_sync.sh
+```
+
+**Direct invocation:**
+```bash
+cd atlassian/forge-app
+bash tools/marketplace/proof_phase2_real_runner_out_of_sync.sh
+```
+
+### Expected Output on PASS
+
+```
+PASS
+What was proven:
+  - origin/main is ahead of clone main by 1 commit (out-of-sync)
+  - Release runner fails (non-zero RC) on out-of-sync at Phase 2
+  - Evidence files exist and are non-empty:
+      * 02_merge/VERDICT.txt (FAIL + out-of-sync)
+      * 02_merge/merge.log
+      * 02_merge/fetch.log
+      * 02_merge/rev.txt (LOCAL/REMOTE)
+      * 02_merge/branch.txt (main)
+      * 99_verdict/FINAL_VERDICT.txt (FAIL)
+      * 99_verdict/FINAL_REPORT.md (>=500 bytes)
+  - No pollution of production paths /tmp/ft_marketplace_release_*
+  - Workspace /workspaces/Firsttry has no uncommitted changes
+
+Evidence root: /tmp/ft_phase2_real_runner_YYYYMMDDTHHMMSSZ
+```
+
+### Evidence Location
+
+All proof evidence is stored in a timestamped directory:
+```
+/tmp/ft_phase2_real_runner_YYYYMMDDTHHMMSSZ/
+├── 00_env/env.txt                    # Environment info (git version, OS, timestamps)
+├── 01_cmd/                           # Command scripts for each setup step
+├── 02_phase_setup/                   # Git setup logs (origin creation, clone setup)
+├── 03_runner/                        # Runner execution context
+│   ├── runner_rc.txt                 # Runner exit code
+│   ├── runner_context.txt            # Working directory, runner path
+│   └── evidence_root.txt             # Path to runner's evidence directory
+├── 04_checks/                        # Validation results
+│   ├── workspace_status.txt          # Workspace cleanliness check
+│   ├── pollution_paths.diff          # Production path pollution check (empty = clean)
+│   └── pollution_symlink.diff        # Symlink pollution check (empty = clean)
+├── 99_verdict/                       # Proof verdict and report
+│   ├── FINAL_VERDICT.txt             # PASS or FAIL
+│   └── FINAL_REPORT.md               # Complete proof report (>= 500 bytes)
+├── PROOF_SUMMARY.txt                 # High-level summary (shown on success)
+├── runner_stdout.log                 # Runner standard output
+├── runner_stderr.log                 # Runner error output
+└── runner_evidence_YYYYMMDDTHHMMSSZ_XXXXX/  # Runner's isolated evidence
+    ├── 02_merge/                     # Phase 2 evidence (out-of-sync detection)
+    └── 99_verdict/                   # Runner's final verdict (FAIL expected)
+```
+
+### PASS Criteria
+
+The proof harness exits 0 (PASS) only if ALL of the following are true:
+
+- **Git setup succeeded**: Origin created, seed clone pushed, origin advanced by 1 commit, runner clone behind by 1 commit
+- **Runner failed correctly**: Exit code non-zero (out-of-sync causes failure)
+- **Evidence complete**: All 7 required files exist, non-empty, with correct content
+- **No production pollution**: `/tmp/ft_marketplace_release_*` paths unchanged before/after
+- **Workspace clean**: No uncommitted changes in `/workspaces/Firsttry` after proof run
+- **All timeouts respected**: No git or runner operation hung indefinitely
+
+### Production Survivability Features
+
+The proof harness is designed to be **crash-resistant** and **safe in Codespaces**:
+
+- **Isolated environment**: All git repos and evidence under `/tmp/ft_phase2_real_runner_*`
+- **Timeout-bounded**: Every git operation and runner execution has hard timeouts
+- **No terminal spam**: All output captured to log files
+- **Fail-closed validation**: Missing or empty evidence files cause FAIL
+- **Pollution guard**: Verifies production evidence paths never change
+- **Workspace protection**: Clones from `/workspaces/Firsttry` without modifying it
+- **No git prompts**: `GIT_TERMINAL_PROMPT=0` prevents interactive hangs
+- **Fast git operations**: Uses `--local` clone, disables auto-GC, skips LFS
+
+### When to Run the Proof Harness
+
+- **After modifying Phase 2 sync logic** to ensure out-of-sync detection still works
+- **Before merging changes** that affect evidence generation or validation
+- **To verify workspace state** doesn't affect runner behavior with real git operations
+- **For regression testing** - proof cannot be invalidated by git history changes
+
+### Troubleshooting
+
+If the proof harness fails:
+
+1. **Check the PROOF_SUMMARY.txt**:
+   ```bash
+   cat /tmp/ft_phase2_real_runner_*/PROOF_SUMMARY.txt
+   ```
+
+2. **Inspect runner output**:
+   ```bash
+   cat /tmp/ft_phase2_real_runner_*/runner_stdout.log
+   cat /tmp/ft_phase2_real_runner_*/runner_stderr.log
+   ```
+
+3. **Review git setup logs**:
+   ```bash
+   ls /tmp/ft_phase2_real_runner_*/02_phase_setup/
+   cat /tmp/ft_phase2_real_runner_*/02_phase_setup/*.stderr
+   ```
+
+4. **Check pollution guard**:
+   ```bash
+   cat /tmp/ft_phase2_real_runner_*/04_checks/pollution_paths.diff
+   ```
+
+5. **Examine final report**:
+   ```bash
+   cat /tmp/ft_phase2_real_runner_*/99_verdict/FINAL_REPORT.md
+   ```
+
 ## Phase 2 Sync Evidence
 
 Phase 2 (Branch Sync Verification) ensures that your local `main` branch is synchronized with `origin/main` before allowing the release to proceed. This is a **hard gate** - if out of sync, the runner fails immediately with complete diagnostic evidence.
