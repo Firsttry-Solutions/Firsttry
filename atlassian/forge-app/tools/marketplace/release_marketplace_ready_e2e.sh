@@ -755,9 +755,32 @@ run_selftest() {
   REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
   
   # -------------------------------------------------------------------------
+  # Selftest runner isolation: Force any real-runner invocation to use
+  # selftest-scoped evidence paths (prevents production /tmp pollution)
+  # -------------------------------------------------------------------------
+  export FT_SELFTEST_EVID_PREFIX="$selftest_dir/runner_evidence_"
+  export FT_SELFTEST_EVID_LATEST="$selftest_dir/runner_latest"
+  
+  # Write isolation config for proof
+  mkdir -p "$selftest_dir/00_env"
+  {
+    echo "FT_SELFTEST_EVID_PREFIX=$FT_SELFTEST_EVID_PREFIX"
+    echo "FT_SELFTEST_EVID_LATEST=$FT_SELFTEST_EVID_LATEST"
+  } > "$selftest_dir/00_env/selftest_runner_isolation.txt"
+  
+  # Helper function: Run real runner with forced isolation
+  selftest_run_real_runner() {
+    # Usage: selftest_run_real_runner <cmd...>
+    # Forces isolation for the real runner so it cannot touch production defaults.
+    FT_RELEASE_EVIDENCE_PREFIX="$FT_SELFTEST_EVID_PREFIX" \
+    FT_RELEASE_LATEST_SYMLINK="$FT_SELFTEST_EVID_LATEST" \
+    "$@"
+  }
+  
+  # -------------------------------------------------------------------------
   # SUBTEST 1: Happy path - all artifacts present → PASS
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 1/9] Happy path: Complete evidence → PASS"
+  log_info "[SUBTEST 1/10] Happy path: Complete evidence → PASS"
   
   local happy_dir="$selftest_dir/happy"
   mkdir -p "$happy_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e/artifacts,99_verdict}
@@ -855,7 +878,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 2: Missing logs → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 2/9] Missing logs: Remove all logs from 01_gates → FAIL"
+  log_info "[SUBTEST 2/10] Missing logs: Remove all logs from 01_gates → FAIL"
   
   local missing_logs_dir="$selftest_dir/missing_logs"
   cp -r "$happy_dir" "$missing_logs_dir"
@@ -926,7 +949,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 3: Missing Playwright artifacts → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 3/9] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
+  log_info "[SUBTEST 3/10] Missing Playwright artifacts: Remove artifacts from 06_e2e → FAIL"
   
   local missing_pw_dir="$selftest_dir/missing_playwright"
   cp -r "$happy_dir" "$missing_pw_dir"
@@ -979,7 +1002,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 4: Missing phase directory → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 4/9] Missing phase directory: Remove 05_upgrade → FAIL"
+  log_info "[SUBTEST 4/10] Missing phase directory: Remove 05_upgrade → FAIL"
   
   local missing_dir_dir="$selftest_dir/missing_dir"
   cp -r "$happy_dir" "$missing_dir_dir"
@@ -1032,7 +1055,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 5: VERDICT.txt without PASS → FAIL
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 5/9] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
+  log_info "[SUBTEST 5/10] Wrong verdict: Change 03_build VERDICT to FAIL → FAIL"
   
   local wrong_verdict_dir="$selftest_dir/wrong_verdict"
   cp -r "$happy_dir" "$wrong_verdict_dir"
@@ -1085,7 +1108,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 6: Playwright browser prerequisite check
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 6/9] Playwright browser prerequisite: Fail-closed when browsers missing"
+  log_info "[SUBTEST 6/10] Playwright browser prerequisite: Fail-closed when browsers missing"
   
   local browser_check_dir="$selftest_dir/browser_check"
   mkdir -p "$browser_check_dir/06_e2e"
@@ -1164,7 +1187,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 7: Phase 2 out-of-sync failure evidence (REAL git test)
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 7/9] Phase 2 out-of-sync: Real git test with complete failure evidence"
+  log_info "[SUBTEST 7/10] Phase 2 out-of-sync: Real git test with complete failure evidence"
   
   # Create temporary git repos for testing
   local git_test_root="$selftest_dir/git_test"
@@ -1314,7 +1337,7 @@ run_selftest() {
   # -------------------------------------------------------------------------
   # SUBTEST 8: Exit code must match FINAL_VERDICT
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 8/9] Exit code invariant: Simulated failure → exit non-zero"
+  log_info "[SUBTEST 8/10] Exit code invariant: Simulated failure → exit non-zero"
   
   local exit_code_test_dir="$selftest_dir/exit_code_test"
   mkdir -p "$exit_code_test_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e/artifacts,99_verdict}
@@ -1494,7 +1517,7 @@ EOF
   # -------------------------------------------------------------------------
   # SUBTEST 9: Phase 2 real runner out-of-sync (origin ahead)
   # -------------------------------------------------------------------------
-  log_info "[SUBTEST 9/9] Phase 2 real runner out-of-sync: origin ahead → complete failure evidence"
+  log_info "[SUBTEST 9/10] Phase 2 real runner out-of-sync: origin ahead → complete failure evidence"
   
   # Create temporary directory for isolated git repos
   local runner_test_root
@@ -1502,10 +1525,6 @@ EOF
   local bare_origin="$runner_test_root/origin.git"
   local working_repo="$runner_test_root/working"
   local runner_clone="$runner_test_root/runner_clone"
-  
-  # Setup isolated evidence paths for this runner test
-  local runner_evidence_prefix="$runner_test_root/evidence_"
-  local runner_symlink="$runner_test_root/evidence_latest"
   
   log_info "Real runner test: Creating bare origin repo..."
   git init --bare "$bare_origin" >/dev/null 2>&1
@@ -1584,24 +1603,37 @@ EOF
   
   log_info "Real runner test: Running actual release runner in clone..."
   
-  # Run the REAL runner (not selftest mode) with isolated evidence paths
+  # Run the REAL runner (not selftest mode) with FORCED isolation via helper
   local runner_exit_code=0
   cd "$runner_clone/atlassian/forge-app"
   
-  # Export env vars to isolate evidence and skip phases requiring auth
-  FT_RELEASE_EVIDENCE_PREFIX="$runner_evidence_prefix" \
-  FT_RELEASE_LATEST_SYMLINK="$runner_symlink" \
+  # Use selftest_run_real_runner to enforce hermetic isolation
   FT_SELFTEST_SKIP_PHASE_01=1 \
-  timeout 180 bash tools/marketplace/release_marketplace_ready_e2e.sh >/dev/null 2>&1 || runner_exit_code=$?
+  selftest_run_real_runner timeout 180 bash tools/marketplace/release_marketplace_ready_e2e.sh >/dev/null 2>&1 || runner_exit_code=$?
   
-  # Get evidence directory
+  # Get evidence directory from selftest-scoped symlink
   local runner_evidence
-  if [ -L "$runner_symlink" ]; then
-    runner_evidence=$(readlink -f "$runner_symlink")
+  if [ -L "$FT_SELFTEST_EVID_LATEST" ]; then
+    runner_evidence=$(readlink -f "$FT_SELFTEST_EVID_LATEST")
   else
     log_error "✗ Runner test: Evidence symlink not created"
     test_failed=1
     runner_evidence=""
+  fi
+  
+  # HARD ASSERTION: Verify runner evidence is under selftest root (hermetic)
+  if [ -n "$runner_evidence" ]; then
+    case "$runner_evidence" in
+      "$selftest_dir"*)
+        # Good - hermetic
+        ;;
+      *)
+        log_error "✗ Runner test: Runner evidence escaped selftest root (non-hermetic)"
+        log_error "  Expected prefix: $selftest_dir"
+        log_error "  Actual path:     $runner_evidence"
+        test_failed=1
+        ;;
+    esac
   fi
   
   # Verify runner failed (non-zero exit)
@@ -1716,27 +1748,42 @@ EOF
     test_failed=1
   fi
   
-  # Verify no pollution of production paths
-  if [ -d "/tmp/ft_marketplace_release_latest" ] || ls -d /tmp/ft_marketplace_release_* 2>/dev/null | grep -qv "^$runner_test_root"; then
-    # Check if any were created during this test
-    local pollution_check=0
-    for prod_path in /tmp/ft_marketplace_release_*; do
-      if [ -d "$prod_path" ] && [ "$prod_path" != "/tmp/ft_marketplace_release_latest" ]; then
-        # Check if newer than test start
-        if [ "$(stat -c %Y "$prod_path" 2>/dev/null || echo 0)" -gt "$(($(date +%s) - 300))" ]; then
-          pollution_check=1
-        fi
-      fi
-    done
-    
-    if [ "$pollution_check" -eq 0 ]; then
-      log_success "✓ Runner test: No pollution of production evidence paths"
-    else
-      log_error "✗ Runner test: Created files in production /tmp/ft_marketplace_release_* paths"
-      test_failed=1
-    fi
-  else
+  # Verify no pollution of production paths (strengthened check with diagnostics)
+  # Compare against production paths captured BEFORE selftest started
+  local pollution_detected=0
+  local prod_paths_now=0
+  local prod_paths_snapshot=""
+  if compgen -G "/tmp/ft_marketplace_release_*" > /dev/null; then
+    prod_paths_snapshot=$(ls -1d /tmp/ft_marketplace_release_* 2>/dev/null | sort || echo "")
+    prod_paths_now=$(echo "$prod_paths_snapshot" | grep -c . || echo 0)
+  fi
+  
+  # Pollution means NEW paths were created (count increased)
+  if [ "$prod_paths_now" -gt "$prod_paths_before" ]; then
+    pollution_detected=1
+  fi
+  
+  if [ "$pollution_detected" -eq 0 ]; then
     log_success "✓ Runner test: No pollution of production evidence paths"
+  else
+    log_error "✗ Runner test: Created files in production /tmp/ft_marketplace_release_* paths"
+    # Write diagnostic file
+    {
+      echo "POLLUTION DETECTED IN SUBTEST 9"
+      echo ""
+      echo "Production paths BEFORE selftest: $prod_paths_before"
+      echo "Production paths NOW: $prod_paths_now"
+      echo ""
+      echo "Production paths snapshot:"
+      echo "$prod_paths_snapshot"
+      echo ""
+      echo "Expected isolation via:"
+      echo "  FT_RELEASE_EVIDENCE_PREFIX=$FT_SELFTEST_EVID_PREFIX"
+      echo "  FT_RELEASE_LATEST_SYMLINK=$FT_SELFTEST_EVID_LATEST"
+      echo ""
+      echo "SUBTEST 9 MUST use selftest_run_real_runner() helper to enforce isolation."
+    } > "$selftest_dir/runner_pollution_diag.txt"
+    test_failed=1
   fi
   
   fi  # End of runner_evidence checks (only if symlink and directory exist)
