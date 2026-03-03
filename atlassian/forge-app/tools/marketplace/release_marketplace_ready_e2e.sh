@@ -1341,12 +1341,57 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${REPO_ROOT:-$(pwd)}"
 LATEST_LINK="${FT_RELEASE_LATEST_SYMLINK:-/tmp/ft_marketplace_release_latest}"
 
+# Define phase directories constant
+PHASE_DIRS=("00_env" "01_gates" "02_merge" "03_build" "04_deploy" "05_upgrade" "06_e2e" "99_verdict")
+
 # Define minimal helper functions
 now_utc() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 log_phase() { echo "[PHASE] $*"; }
 log_success() { echo "[SUCCESS] $*"; }
 log_error() { echo "[ERROR] $*"; }
 log_info() { echo "[INFO] $*"; }
+
+# Copy ensure_phase_dir_min_artifacts function
+ensure_phase_dir_min_artifacts() {
+  local evidence_root="$1"
+  local phase_dir="$2"
+  local reason="$3"
+  
+  local d="$evidence_root/$phase_dir"
+  
+  # Only process if the phase directory exists
+  if [ ! -d "$d" ]; then
+    return 0
+  fi
+  
+  # Ensure phase.log exists and is non-empty
+  if [ ! -f "$d/phase.log" ] || [ ! -s "$d/phase.log" ]; then
+    mkdir -p "$d"
+    printf '%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ) FAIL-CLOSED: $reason" >> "$d/phase.log" || true
+  fi
+  
+  # Ensure VERDICT.txt exists
+  if [ ! -f "$d/VERDICT.txt" ]; then
+    # Missing verdict - write FAIL
+    printf 'FAIL: unexpected exit (%s)\n' "$reason" > "$d/VERDICT.txt" || true
+  else
+    # Check if IN_PROGRESS - convert to FAIL
+    if grep -qx 'IN_PROGRESS' "$d/VERDICT.txt" 2>/dev/null; then
+      printf 'FAIL: unexpected exit (%s)\n' "$reason" > "$d/VERDICT.txt" || true
+    fi
+    # Note: Do NOT overwrite PASS or FAIL verdicts
+  fi
+}
+
+# Copy ensure_all_phase_min_artifacts function
+ensure_all_phase_min_artifacts() {
+  local evidence_root="$1"
+  local reason="$2"
+  
+  for p in "${PHASE_DIRS[@]}"; do
+    ensure_phase_dir_min_artifacts "$evidence_root" "$p" "$reason"
+  done
+}
 
 # Copy assert_pass_artifacts_or_fail function
 assert_pass_artifacts_or_fail() {
