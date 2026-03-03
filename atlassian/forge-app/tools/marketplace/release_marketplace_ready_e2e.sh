@@ -1440,10 +1440,7 @@ EOF
   else
     log_error "✗ Runner test: Evidence symlink not created"
     test_failed=1
-    cd "$SCRIPT_DIR"
-    rm -rf "$runner_test_root"
-    echo ""
-    continue
+    runner_evidence=""
   fi
   
   # Verify runner failed (non-zero exit)
@@ -1455,16 +1452,18 @@ EOF
   fi
   
   # Verify evidence directory exists
-  if [ -d "$runner_evidence" ]; then
+  if [ -n "$runner_evidence" ] && [ -d "$runner_evidence" ]; then
     log_success "✓ Runner test: Evidence directory exists"
+  elif [ -z "$runner_evidence" ]; then
+    # Already logged error above, skip remaining checks
+    true
   else
     log_error "✗ Runner test: Evidence directory missing: $runner_evidence"
     test_failed=1
-    cd "$SCRIPT_DIR"
-    rm -rf "$runner_test_root"
-    echo ""
-    continue
   fi
+  
+  # Only proceed with evidence checks if runner_evidence is set
+  if [ -n "$runner_evidence" ]; then
   
   # Verify Phase 2 VERDICT.txt
   if [ -f "$runner_evidence/02_merge/VERDICT.txt" ]; then
@@ -1579,7 +1578,7 @@ EOF
     log_success "✓ Runner test: No pollution of production evidence paths"
   fi
   
-  fi  # End of setup success check
+  fi  # End of runner_evidence checks (only if symlink and directory exist)
   
   # Cleanup runner test environment
   cd "$SCRIPT_DIR"
@@ -1588,6 +1587,8 @@ EOF
   else
     log_info "Runner test artifacts preserved at: $runner_test_root"
   fi
+  
+  fi  # End of setup success check (if test_failed=0)
   
   echo ""
   
