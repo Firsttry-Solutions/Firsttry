@@ -216,13 +216,45 @@ STEP_EOF
 # 2) clone local workspace to SEED and push to origin/main
 run_step "seed_clone_and_push" 120 <<'STEP_EOF'
 set -euo pipefail
-git -c core.hooksPath=/dev/null clone --quiet --no-tags --local /workspaces/Firsttry "$SEED"
+
+# Always remove any existing SEED dir before cloning (in case of partial clone)
+rm -rf "$SEED"
+
+# Attempt FAST clone first (local optimization)
+set +e
+GIT_TERMINAL_PROMPT=0 GIT_LFS_SKIP_SMUDGE=1 git -c core.hooksPath=/dev/null clone --quiet --no-tags --local /workspaces/Firsttry "$SEED"
+CLONE_RC=$?
+set -e
+
+CLONE_MODE=""
+if [ "$CLONE_RC" -eq 0 ]; then
+  CLONE_MODE="FAST_LOCAL"
+  echo "CLONE_MODE=FAST_LOCAL"
+else
+  # Fast clone failed, fall back to regular clone without --local
+  echo "FAST_CLONE_FAILED: falling back"
+  rm -rf "$SEED"
+  GIT_TERMINAL_PROMPT=0 GIT_LFS_SKIP_SMUDGE=1 git -c core.hooksPath=/dev/null clone --quiet --no-tags /workspaces/Firsttry "$SEED"
+  CLONE_MODE="FALLBACK"
+  echo "CLONE_MODE=FALLBACK"
+fi
+
 cd "$SEED"
 git config gc.auto 0
 git config fetch.prune true
 git config user.email "proof@firsttry.local"
 git config user.name "FirstTry Proof"
 git checkout -B main --quiet
+
+# Debug artifact: seed clone info
+{
+  echo "CLONE_MODE=$CLONE_MODE"
+  echo "HEAD_SHA=$(git rev-parse HEAD)"
+  echo "STATUS:"
+  git status --porcelain
+  echo "REMOTES:"
+  git remote -v
+} > "$T/02_phase_setup/seed_clone_info.txt"
 
 if git remote get-url origin >/dev/null 2>&1; then
   git remote set-url origin "$ORIGIN"
@@ -293,22 +325,57 @@ export FT_RELEASE_LATEST_SYMLINK="$T/runner_latest"
 RUNNER_DIR="$CLONE/atlassian/forge-app"
 RUNNER="$RUNNER_DIR/tools/marketplace/release_marketplace_ready_e2e.sh"
 
+# Configurable runner timeout (default 900s = 15 minutes)
+RUNNER_TIMEOUT_SECS="${FT_PROOF_RUNNER_TIMEOUT_SECS:-900}"
+
 # Pre-check runner exists
 [ -f "$RUNNER" ] || die "Runner script not found at $RUNNER"
 [ -d "$RUNNER_DIR" ] || die "Runner dir not found: $RUNNER_DIR"
 
 # Execute runner with timeout; capture stdout/stderr to files (no terminal spam).
 set +e
-( cd "$RUNNER_DIR" ; timeout -k 10s 180s bash "$RUNNER" >"$T/runner_stdout.log" 2>"$T/runner_stderr.log" )
+( cd "$RUNNER_DIR" ; timeout -k 10s "${RUNNER_TIMEOUT_SECS}s" bash "$RUNNER" >"$T/runner_stdout.log" 2>"$T/runner_stderr.log" )
 RC=$?
 set -e
 echo "$RC" > "$T/03_runner/runner_rc.txt"
+echo "$RUNNER_TIMEOUT_SECS" > "$T/03_runner/runner_timeout_secs.txt"
+
+# Classify runner exit
+if [ "$RC" -eq 124 ]; then
+  echo "TIMEOUT" > "$T/03_runner/runner_timeout_class.txt"
+elif [ "$RC" -eq 137 ]; then
+  echo "KILLED" > "$T/03_runner/runner_timeout_class.txt"
+else
+  echo "EXITED" > "$T/03_runner/runner_timeout_class.txt"
+fi
+
 {
   echo "runner_dir=$RUNNER_DIR"
   echo "runner_path=$RUNNER"
   echo "pwd_before=$(pwd)"
   echo "pwd_used_for_runner=$RUNNER_DIR"
+  echo "timeout_secs=$RUNNER_TIMEOUT_SECS"
 } > "$T/03_runner/runner_context.txt"
+
+# If runner timed out or was killed, fail immediately (do not check phase evidence)
+if [ "$RC" -eq 124 ] || [ "$RC" -eq 137 ]; then
+  mkdir -p "$T/04_checks/runner_diag"
+  
+  # Capture last 200 lines of stdout/stderr for diagnostics
+  if [ -f "$T/runner_stdout.log" ] && [ -s "$T/runner_stdout.log" ]; then
+    tail -200 "$T/runner_stdout.log" > "$T/04_checks/runner_diag/stdout_tail.txt"
+  else
+    echo "MISSING" > "$T/04_checks/runner_diag/stdout_tail.txt"
+  fi
+  
+  if [ -f "$T/runner_stderr.log" ] && [ -s "$T/runner_stderr.log" ]; then
+    tail -200 "$T/runner_stderr.log" > "$T/04_checks/runner_diag/stderr_tail.txt"
+  else
+    echo "MISSING" > "$T/04_checks/runner_diag/stderr_tail.txt"
+  fi
+  
+  die "Runner did not complete (timeout/kill). RC=$RC. Do not trust phase evidence checks. See $T/04_checks/runner_diag/*."
+fi
 
 # Resolve evidence root from isolated symlink
 if ! E="$(readlink -f "$FT_RELEASE_LATEST_SYMLINK" 2>/dev/null)"; then

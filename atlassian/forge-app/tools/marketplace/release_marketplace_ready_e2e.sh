@@ -24,11 +24,14 @@
 # - Does NOT require auth, deploy, upgrade, or Playwright against Jira
 # - Proves PASS cannot be produced without complete evidence
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # Evidence directory overrides (can be changed for testing/isolation)
 EVID_PREFIX="${FT_RELEASE_EVIDENCE_PREFIX:-/tmp/ft_marketplace_release_}"
 LATEST_LINK="${FT_RELEASE_LATEST_SYMLINK:-/tmp/ft_marketplace_release_latest}"
+
+# Standard phase directories used by the runner
+PHASE_DIRS=("00_env" "01_gates" "02_merge" "03_build" "04_deploy" "05_upgrade" "06_e2e" "99_verdict")
 
 # Colors
 RED='\033[0;31m'
@@ -49,18 +52,76 @@ now_utc() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 CURRENT_PHASE_DIR=""
 CURRENT_PHASE_NAME=""
 
+# Track last command for error reporting
+FT_LAST_CMD=""
+trap 'FT_LAST_CMD=$BASH_COMMAND' DEBUG
+
 die() {
   local msg="$*"
+  
+  # Prevent infinite recursion if die() itself fails
+  if [ "${FT_IN_DIE:-0}" = "1" ]; then
+    exit 1
+  fi
+  export FT_IN_DIE=1
+  
   log_error "$msg"
   
   # Phase-aware die: if we're in a phase, write evidence before exit
   if [ -n "$CURRENT_PHASE_DIR" ] && [ -d "$CURRENT_PHASE_DIR" ]; then
     write_verdict "$CURRENT_PHASE_DIR" "FAIL: $msg"
     ensure_nonempty_log "$CURRENT_PHASE_DIR/phase.log" "DIE: $msg ($(now_utc))"
+    
+    # Also ensure minimal artifacts for the current phase directory
+    if [ -n "${E:-}" ] && [ -n "$CURRENT_PHASE_NAME" ]; then
+      ensure_phase_dir_min_artifacts "$E" "$CURRENT_PHASE_NAME" "die(): $msg"
+    fi
   fi
   
   exit 1
 }
+
+# Error trap handler - routes unexpected errors through die()
+on_err() {
+  local line="$1"
+  local cmd="$2"
+  
+  # Do NOT recurse infinitely: if already in die(), just exit nonzero
+  if [ "${FT_IN_DIE:-0}" = "1" ]; then
+    exit 1
+  fi
+  
+  die "Unhandled error at line=$line cmd=$cmd"
+}
+
+# Ensure minimal phase artifacts exist even on unexpected exit
+ensure_phase_min_artifacts() {
+  if [ -n "$CURRENT_PHASE_DIR" ] && [ -d "$CURRENT_PHASE_DIR" ]; then
+    # If VERDICT.txt missing or still IN_PROGRESS, mark as FAIL
+    if [ ! -f "$CURRENT_PHASE_DIR/VERDICT.txt" ] || grep -q '^IN_PROGRESS$' "$CURRENT_PHASE_DIR/VERDICT.txt" 2>/dev/null; then
+      echo "FAIL: unexpected exit" > "$CURRENT_PHASE_DIR/VERDICT.txt"
+    fi
+    
+    # Ensure phase.log exists and is non-empty
+    ensure_nonempty_log "$CURRENT_PHASE_DIR/phase.log" "Unexpected exit ($(now_utc))"
+  fi
+}
+
+# Exit trap handler - ensures phase artifacts on non-zero exit
+on_exit() {
+  local rc=$?
+  if [ "$rc" -ne 0 ]; then
+    ensure_phase_min_artifacts
+    # Also seal all existing phase directories
+    if [ -n "${E:-}" ] && [ -d "$E" ]; then
+      ensure_all_phase_min_artifacts "$E" "on_exit code=$rc"
+    fi
+  fi
+  return 0
+}
+
+# Set error trap (EXIT trap is set later when E is defined - see finalize)
+trap 'on_err "$LINENO" "$FT_LAST_CMD"' ERR
 
 write_verdict() {
   local phase_dir="$1"
@@ -79,6 +140,48 @@ ensure_nonempty_log() {
   fi
 }
 
+# Ensure minimal artifacts exist for a specific phase directory
+ensure_phase_dir_min_artifacts() {
+  local evidence_root="$1"
+  local phase_dir="$2"
+  local reason="$3"
+  
+  local d="$evidence_root/$phase_dir"
+  
+  # Only process if the phase directory exists
+  if [ ! -d "$d" ]; then
+    return 0
+  fi
+  
+  # Ensure phase.log exists and is non-empty
+  if [ ! -f "$d/phase.log" ] || [ ! -s "$d/phase.log" ]; then
+    mkdir -p "$d"
+    printf '%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ) FAIL-CLOSED: $reason" >> "$d/phase.log" || true
+  fi
+  
+  # Ensure VERDICT.txt exists
+  if [ ! -f "$d/VERDICT.txt" ]; then
+    # Missing verdict - write FAIL
+    printf 'FAIL: unexpected exit (%s)\n' "$reason" > "$d/VERDICT.txt" || true
+  else
+    # Check if IN_PROGRESS - convert to FAIL
+    if grep -qx 'IN_PROGRESS' "$d/VERDICT.txt" 2>/dev/null; then
+      printf 'FAIL: unexpected exit (%s)\n' "$reason" > "$d/VERDICT.txt" || true
+    fi
+    # Note: Do NOT overwrite PASS or FAIL verdicts
+  fi
+}
+
+# Ensure minimal artifacts exist for all standard phase directories
+ensure_all_phase_min_artifacts() {
+  local evidence_root="$1"
+  local reason="$2"
+  
+  for p in "${PHASE_DIRS[@]}"; do
+    ensure_phase_dir_min_artifacts "$evidence_root" "$p" "$reason"
+  done
+}
+
 # Enter a phase - sets global context and creates phase.log
 phase_enter() {
   local phase_dir="$1"
@@ -90,8 +193,14 @@ phase_enter() {
   # Ensure phase directory exists
   mkdir -p "$phase_dir"
   
-  # Create non-empty phase.log
-  echo "[$(now_utc)] ENTER: $phase_name" > "$phase_dir/phase.log"
+  # Pre-seed VERDICT.txt as IN_PROGRESS only if it doesn't exist
+  # (Do NOT overwrite existing PASS/FAIL verdicts in case of re-entry)
+  if [ ! -f "$phase_dir/VERDICT.txt" ]; then
+    echo "IN_PROGRESS" > "$phase_dir/VERDICT.txt"
+  fi
+  
+  # Create non-empty phase.log with starter entry (append to preserve existing content)
+  echo "[$(now_utc)] ENTER: $phase_name" >> "$phase_dir/phase.log"
 }
 
 # Mark a phase as failed and exit immediately with proper evidence
@@ -333,6 +442,13 @@ assert_pass_artifacts_or_fail() {
 finalize() {
   local exit_code=$1
   local evidence_root="${2:-$E}"
+  
+  # CRITICAL: Seal all phase directories before artifact validation
+  # This ensures no "missing VERDICT.txt (bug)" or "missing non-empty logs (bug)"
+  # even on early exits, ERR trap exits, or unexpected failures
+  if [ "$exit_code" -ne 0 ] && [ -n "$evidence_root" ] && [ -d "$evidence_root" ]; then
+    ensure_all_phase_min_artifacts "$evidence_root" "finalize on exit_code=$exit_code"
+  fi
   
   log_phase "FINALIZATION: Generating Final Report and Verdict"
   
@@ -1593,6 +1709,104 @@ EOF
   echo ""
   
   # -------------------------------------------------------------------------
+  # SUBTEST 10: Minimal artifacts sealing on early exit
+  # -------------------------------------------------------------------------
+  
+  log_info "[SUBTEST 10/10] Minimal artifacts sealing: Early exit fills missing VERDICT.txt and phase.log"
+  
+  local seal_test_dir="$selftest_dir/artifact_sealing"
+  mkdir -p "$seal_test_dir"/{00_env,01_gates,02_merge,03_build,04_deploy,05_upgrade,06_e2e,99_verdict}
+  
+  # Intentionally create some phase dirs with missing VERDICT.txt and/or phase.log
+  # Phase 00_env: missing VERDICT.txt
+  touch "$seal_test_dir/00_env/some_file.txt"
+  
+  # Phase 01_gates: missing phase.log
+  echo "PASS" > "$seal_test_dir/01_gates/VERDICT.txt"
+  
+  # Phase 02_merge: has IN_PROGRESS verdict (should be converted to FAIL)
+  echo "IN_PROGRESS" > "$seal_test_dir/02_merge/VERDICT.txt"
+  echo "Started merge" > "$seal_test_dir/02_merge/phase.log"
+  
+  # Phase 03_build: complete (should not be touched)
+  echo "PASS" > "$seal_test_dir/03_build/VERDICT.txt"
+  echo "Build completed" > "$seal_test_dir/03_build/phase.log"
+  
+  # Phase 04_deploy: missing both
+  touch "$seal_test_dir/04_deploy/deploy.log"
+  
+  # Phase 05_upgrade, 06_e2e, 99_verdict: don't exist yet (will be skipped)
+  
+  # Now simulate early exit by calling ensure_all_phase_min_artifacts
+  ensure_all_phase_min_artifacts "$seal_test_dir" "selftest simulated early exit"
+  
+  # Verify all existing phase dirs now have VERDICT.txt and phase.log
+  local seal_test_passed=1
+  
+  # Check 00_env: should have VERDICT.txt now
+  if [ -f "$seal_test_dir/00_env/VERDICT.txt" ] && [ -s "$seal_test_dir/00_env/VERDICT.txt" ]; then
+    log_success "✓ Seal test: 00_env/VERDICT.txt created"
+  else
+    log_error "✗ Seal test: 00_env/VERDICT.txt missing or empty"
+    seal_test_passed=0
+    test_failed=1
+  fi
+  
+  if [ -f "$seal_test_dir/00_env/phase.log" ] && [ -s "$seal_test_dir/00_env/phase.log" ]; then
+    log_success "✓ Seal test: 00_env/phase.log created"
+  else
+    log_error "✗ Seal test: 00_env/phase.log missing or empty"
+    seal_test_passed=0
+    test_failed=1
+  fi
+  
+  # Check 01_gates: should have phase.log now
+  if [ -f "$seal_test_dir/01_gates/phase.log" ] && [ -s "$seal_test_dir/01_gates/phase.log" ]; then
+    log_success "✓ Seal test: 01_gates/phase.log created"
+  else
+    log_error "✗ Seal test: 01_gates/phase.log missing or empty"
+    seal_test_passed=0
+    test_failed=1
+  fi
+  
+  # Check 02_merge: VERDICT.txt should be FAIL now (converted from IN_PROGRESS)
+  if grep -q "^FAIL:" "$seal_test_dir/02_merge/VERDICT.txt" 2>/dev/null; then
+    log_success "✓ Seal test: 02_merge/VERDICT.txt converted IN_PROGRESS → FAIL"
+  else
+    log_error "✗ Seal test: 02_merge/VERDICT.txt should be FAIL, got: $(cat "$seal_test_dir/02_merge/VERDICT.txt" 2>/dev/null || echo 'MISSING')"
+    seal_test_passed=0
+    test_failed=1
+  fi
+  
+  # Check 03_build: should be unchanged (PASS)
+  if grep -q "^PASS$" "$seal_test_dir/03_build/VERDICT.txt" 2>/dev/null; then
+    log_success "✓ Seal test: 03_build/VERDICT.txt unchanged (PASS preserved)"
+  else
+    log_error "✗ Seal test: 03_build/VERDICT.txt should remain PASS"
+    seal_test_passed=0
+    test_failed=1
+  fi
+  
+  # Check 04_deploy: should have both now
+  if [ -f "$seal_test_dir/04_deploy/VERDICT.txt" ] && [ -s "$seal_test_dir/04_deploy/VERDICT.txt" ]; then
+    log_success "✓ Seal test: 04_deploy/VERDICT.txt created"
+  else
+    log_error "✗ Seal test: 04_deploy/VERDICT.txt missing or empty"
+    seal_test_passed=0
+    test_failed=1
+  fi
+  
+  if [ -f "$seal_test_dir/04_deploy/phase.log" ] && [ -s "$seal_test_dir/04_deploy/phase.log" ]; then
+    log_success "✓ Seal test: 04_deploy/phase.log created"
+  else
+    log_error "✗ Seal test: 04_deploy/phase.log missing or empty"
+    seal_test_passed=0
+    test_failed=1
+  fi
+  
+  echo ""
+  
+  # -------------------------------------------------------------------------
   # FINAL CHECK: Verify no production pollution
   # -------------------------------------------------------------------------
   
@@ -1647,6 +1861,7 @@ EOF
     log_success "  ✓ Phase 2 out-of-sync produces complete failure evidence"
     log_success "  ✓ Exit code always matches FINAL_VERDICT"
     log_success "  ✓ Phase 2 real runner produces complete evidence (no HEAD rewind bugs)"
+    log_success "  ✓ Minimal artifacts sealing on early exit (no missing VERDICT.txt/phase.log)"
     log_success "  ✓ FINAL_REPORT.md >= 500 bytes in all cases"
     log_success ""
     log_success "Evidence validation is fail-closed and working correctly."
@@ -1762,6 +1977,9 @@ log_success "Evidence directory: $E"
 # Set trap to ensure final report is always written using strict finalize()
 trap 'finalize $?' EXIT
 
+# Enter Phase 0 to set CURRENT_PHASE_DIR for fail-closed artifact handling
+phase_enter "$E/00_env" "00_env"
+
 # Capture environment
 {
   echo "UTC: $(date -u)"
@@ -1781,31 +1999,18 @@ log_info "Environment captured"
 # Check DISPLAY environment variable (required for headed Playwright)
 log_info "Checking DISPLAY environment variable..."
 if [ -z "${DISPLAY:-}" ]; then
-  log_error "DISPLAY environment variable not set"
-  log_error "Remediation: export DISPLAY=:0 (or appropriate X display)"
-  log_error "This is required for headed Playwright and auth capture"
-  echo "FAIL: DISPLAY not set" > "$E/99_verdict/FAIL_REASON.txt"
-  exit 1
+  die "DISPLAY environment variable not set (remediation: export DISPLAY=:0 or appropriate X display - required for headed Playwright and auth capture)"
 fi
 log_success "DISPLAY set: $DISPLAY"
 
 # Verify X server is available
 log_info "Verifying X server availability..."
 if ! command -v xdpyinfo >/dev/null 2>&1; then
-  log_error "xdpyinfo command not found (cannot verify X server)"
-  log_error "Remediation: apt-get install x11-utils or similar"
-  echo "FAIL: xdpyinfo not found" > "$E/99_verdict/FAIL_REASON.txt"
-  exit 1
+  die "xdpyinfo command not found (remediation: apt-get install x11-utils or similar)"
 fi
 
 if ! xdpyinfo >/dev/null 2>&1; then
-  log_error "X server not available at DISPLAY=$DISPLAY"
-  log_error "Remediation:"
-  log_error "  1. Ensure NoVNC or X server is running"
-  log_error "  2. Check DISPLAY value is correct"
-  log_error "  3. Try: echo \$DISPLAY"
-  echo "FAIL: X server not available" > "$E/99_verdict/FAIL_REASON.txt"
-  exit 1
+  die "X server not available at DISPLAY=$DISPLAY (remediation: ensure NoVNC or X server is running, check DISPLAY value)"
 fi
 log_success "X server available"
 
@@ -1822,9 +2027,7 @@ DIRTY=$(git status --porcelain)
 if [ -n "$DIRTY" ]; then
   log_error "Repository has uncommitted changes:"
   echo "$DIRTY"
-  log_error "Commit or stash changes before running release."
-  echo "FAIL: Repository has uncommitted changes" > "$E/99_verdict/FAIL_REASON.txt"
-  exit 1
+  die "Repository has uncommitted changes (commit or stash changes before running release)"
 fi
 log_success "Repository is clean"
 
@@ -1839,12 +2042,11 @@ if ! command -v forge >/dev/null 2>&1; then MISSING_TOOLS+=("forge"); fi
 
 if [ ${#MISSING_TOOLS[@]} -gt 0 ]; then
   log_error "Missing required tools: ${MISSING_TOOLS[*]}"
-  echo "FAIL: Missing tools: ${MISSING_TOOLS[*]}" > "$E/99_verdict/FINAL_VERDICT.txt"
   log_error "Remediation: Install missing tools"
   log_error "  - node/npm: https://nodejs.org/"
   log_error "  - jq: apt-get install jq or brew install jq"
   log_error "  - forge: npm install -g @forge/cli"
-  exit 1
+  die "Missing required tools: ${MISSING_TOOLS[*]}"
 fi
 
 log_success "All required tools present"
