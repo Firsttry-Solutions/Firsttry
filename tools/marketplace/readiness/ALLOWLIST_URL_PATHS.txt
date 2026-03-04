@@ -1,0 +1,19 @@
+# Allowlist for URL Paths in Source Code
+# URLs matching these patterns will NOT fail Phase 04 audit
+# Format: One regex pattern per line (grep -E compatible)
+
+# Atlassian official domains (allowed for Forge apps)
+atlassian\.com
+atlassian\.net
+developer\.atlassian\.com
+
+# Documentation references (comments only, not actual calls)
+# Example: // See https://developer.atlassian.com/platform/forge/
+# These should be in comments, not in executable code
+
+# IMPORTANT: This is NOT a free pass for external egress
+# Actual HTTP calls to these URLs in code will still fail
+# This allowlist is for documentation URLs in comments or strings
+
+# If you need to add exceptions, document WHY and ensure they are
+# not actual network calls in production code

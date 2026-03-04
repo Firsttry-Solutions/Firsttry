@@ -18,9 +18,9 @@ Welcome to FirstTry - Audit Evidence Snapshot for Jira documentation. This direc
 
 - **Trust Center** (18 docs): Security architecture, threat modeling (STRIDE), data flows, platform dependencies, crypto specs, deletion SLAs
 - **Operations** (11 docs): Incident response (with severity matrix), SDLC, CI/CD evidence, change management, SLAs (NO uptime guarantees), support response times
-- **Procurement** (3 docs): Master index, pre-filled security questionnaire, SOC2/ISO27k/CAIQ control mapping
+- **Procurement** (3 docs): Master index, pre-filled security questionnaire, control mapping framework (references Atlassian/AWS compliance; app not independently certified)
 
-All documentation backed by deterministic evidence artifacts and fail-closed validation gates. **NO certifications claimed** — documentation and evidence only.
+All documentation backed by deterministic evidence artifacts and fail-closed validation gates. **This app is not independently SOC 2 or ISO/IEC 27001 certified** — it inherits Atlassian Forge platform compliance. Documentation and evidence provided for customer due diligence.
 
 → **[forge-app/docs/README.md](forge-app/docs/README.md)** for full navigation by role (CISO, Reviewer, Jira Admin, Compliance Officer)
 

@@ -1,0 +1,26 @@
+# Banned Claims for Marketplace Documentation
+# These claims are considered overreach or unprovable
+# Any occurrence in docs will fail Phase 15 audit
+
+SOC2 certified
+ISO 27001 certified
+guaranteed
+100% secure
+always available
+zero downtime
+enterprise-grade security
+military-grade encryption
+bank-level security
+fully compliant
+certified secure
+penetration tested
+vulnerability-free
+hack-proof
+unhackable
+never fails
+perfect security
+government-approved
+NSA-approved
+certified by
+compliant with all regulations
+meets all security standards

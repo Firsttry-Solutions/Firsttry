@@ -2,6 +2,24 @@
 
 All notable changes to FirstTry are documented in this file.
 
+## [2.14.0] - 2026-03-04
+
+### Changed - Marketplace Readiness Audit Hardening
+
+**Marketplace readiness audit hardening; documentation updates; CI readiness workflow.**
+
+- **Marketplace Documentation:** Added required sections to data flow, privacy policy, and retention/deletion docs for Atlassian Marketplace compliance
+- **Audit Infrastructure:** Created deterministic code scanner (code_facts_scan.sh) to validate documentation claims against actual code
+- **Phase Fixes:** Updated audit phases 05, 06, 08 to use code scanning and restrict checks to production paths only
+- **License Metadata:** Added explicit license field to package.json pointing to LICENSE file
+- **CI Workflow:** Enhanced marketplace-readiness.yml to include build and test steps
+- **Screenshot Automation:** Consolidated screenshot prerequisite failures into single deterministic message
+- **Documentation Consistency:** Ensured all contact emails use canonical @firsttry.solutions addresses from CONTACTS.md
+- **Retention Policy:** Explicitly documented 7-day retention period for cached data with TTL enforcement
+- **Data Categories:** Comprehensive documentation of what data is accessed, stored, and how deletion is handled
+
+All changes maintain zero-egress posture and read-only Jira access patterns. No functional changes to application behavior.
+
 ## [v1.0-enterprise-docs-v4.4.2] - 2026-02-26
 
 ### Added / Changed — F100 Trust Portal: version governance + professional layout

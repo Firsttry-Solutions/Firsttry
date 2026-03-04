@@ -1,0 +1,50 @@
+{
+  "model": "flat_rate",
+  "tiers": [
+    {
+      "name": "Free",
+      "price": 0,
+      "currency": "USD",
+      "billing_period": "monthly",
+      "max_users": 10,
+      "features": [
+        "Core functionality",
+        "Community support",
+        "Basic documentation"
+      ]
+    },
+    {
+      "name": "Standard",
+      "price": 10,
+      "currency": "USD",
+      "billing_period": "monthly",
+      "max_users": 100,
+      "features": [
+        "All Free features",
+        "Priority support",
+        "Advanced configuration",
+        "Email support"
+      ]
+    },
+    {
+      "name": "Premium",
+      "price": 50,
+      "currency": "USD",
+      "billing_period": "monthly",
+      "max_users": null,
+      "features": [
+        "All Standard features",
+        "Unlimited users",
+        "Dedicated support",
+        "Custom configuration",
+        "SLA guarantees"
+      ]
+    }
+  ],
+  "notes": [
+    "Prices are in USD",
+    "Billing is monthly or annual (annual saves 20%)",
+    "Free tier for small teams (up to 10 users)",
+    "Contact sales@example.com for enterprise pricing"
+  ]
+}

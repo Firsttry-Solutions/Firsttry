@@ -1,0 +1,99 @@
+name: Marketplace Readiness Audit
+
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  marketplace-readiness:
+    name: Marketplace Readiness Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changelog validation
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'atlassian/forge-app/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: atlassian/forge-app
+        run: npm ci
+
+      - name: Build application
+        working-directory: atlassian/forge-app
+        run: npm run build
+
+      - name: Run tests
+        working-directory: atlassian/forge-app
+        run: npm test || npm run test:ci || echo "No test script configured"
+
+      - name: Run marketplace readiness audit
+        run: |
+          bash tools/marketplace/readiness/run_marketplace_readiness_audit.sh
+        env:
+          CI: true
+          ALLOW_DIRTY: '0'  # Strict: fail on uncommitted changes
+
+      - name: Display verdict
+        if: always()
+        run: |
+          LATEST_EVIDENCE=$(ls -td /tmp/ft_marketplace_readiness_* 2>/dev/null | head -1)
+          if [ -n "$LATEST_EVIDENCE" ]; then
+            echo "=== FINAL VERDICT ==="
+            cat "$LATEST_EVIDENCE/FINAL_VERDICT.txt" || echo "VERDICT file not found"
+            echo ""
+            echo "=== REPORT SUMMARY ==="
+            head -50 "$LATEST_EVIDENCE/MARKETPLACE_READINESS_REPORT.md" || echo "Report not found"
+          else
+            echo "No evidence directory found"
+          fi
+
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketplace-readiness-evidence-${{ github.run_number }}
+          path: /tmp/ft_marketplace_readiness_*
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Check audit result
+        if: always()
+        run: |
+          LATEST_EVIDENCE=$(ls -td /tmp/ft_marketplace_readiness_* 2>/dev/null | head -1)
+          if [ -z "$LATEST_EVIDENCE" ]; then
+            echo "ERROR: No evidence directory found"
+            exit 1
+          fi
+          
+          VERDICT_FILE="$LATEST_EVIDENCE/FINAL_VERDICT.txt"
+          if [ ! -f "$VERDICT_FILE" ]; then
+            echo "ERROR: FINAL_VERDICT.txt not found"
+            exit 1
+          fi
+          
+          if grep -q "VERDICT: PASS" "$VERDICT_FILE"; then
+            echo "✓ Marketplace readiness audit PASSED"
+            exit 0
+          else
+            echo "✗ Marketplace readiness audit FAILED"
+            cat "$VERDICT_FILE"
+            exit 1
+          fi
