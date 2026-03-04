@@ -2,6 +2,7 @@
   "name": "@firstry/forge-app",
   "version": "2.14.0",
   "description": "FirstTry Governance - Atlassian Dual-Layer Integration",
+  "license": "SEE LICENSE IN LICENSE",
   "main": "src/index.ts",
   "scripts": {
     "pretest": "node tools/build_meta.mjs",

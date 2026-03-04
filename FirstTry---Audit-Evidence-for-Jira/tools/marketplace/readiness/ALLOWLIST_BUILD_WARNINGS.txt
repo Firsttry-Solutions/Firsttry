@@ -1,0 +1,22 @@
+# Allowlist for Build Warnings
+# Warnings matching these patterns will NOT fail Phase 10 audit
+# Format: One regex pattern per line (grep -E compatible)
+
+# Deprecation warnings from dependencies (non-blocking)
+npm WARN deprecated
+DEPRECATED
+
+# Peer dependency warnings (non-critical)
+WARN.*peer dependency
+
+# Optional dependency warnings
+WARN.*optional dependency
+
+# Informational warnings
+npm notice
+
+# CommonJS module warnings (Forge compatibility)
+commonjs.*module
+
+# Skipping devDependencies
+Skipping.*devDependencies
