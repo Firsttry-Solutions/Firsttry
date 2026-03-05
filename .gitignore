@@ -208,3 +208,10 @@ verify_backbone_l0_PROOF.txt
 
 # --- TEMP EVIDENCE DIRS (MUST NEVER COMMIT) ---
 /tmp/ft_*
+
+# Playwright test artifacts (E2E reviewer system)
+**/playwright-report/
+**/playwright-report-reviewer/
+**/test-results/
+**/*.webm
+**/*.trace

@@ -1,0 +1,3 @@
+# Documentation Overclaim Allowlist
+# Add regex patterns here (one per line) to ignore false positives
+# Empty by default - no allowances for unverifiable claims

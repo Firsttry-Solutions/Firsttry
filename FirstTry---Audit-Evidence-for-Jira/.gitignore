@@ -1,0 +1,10 @@
+
+# Playwright test artifacts
+**/playwright-report/
+**/playwright-report-reviewer/
+**/playwright-traces/
+**/test-results/
+**/screenshots/
+**/*.webm
+**/*.trace
+**/*.zip

@@ -47,7 +47,7 @@ export default defineConfig({
   // Fail-closed: stop on first failure
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: 0, // No retries - fail immediately
+  retries: 1, // Retry once to capture trace on failure
   workers: 1, // Single worker for deterministic execution
   
   // Reporter configuration
@@ -65,14 +65,14 @@ export default defineConfig({
     storageState: STORAGE_STATE,
     
     // Browser configuration
-    baseURL: process.env.JIRA_BASE_URL,
+    baseURL: undefined, // No baseURL - test uses explicit absolute URLs
     headless: !HEADED,
     viewport: { width: 1440, height: 900 },
     
-    // Evidence capture
-    screenshot: 'off', // We take manual screenshots for determinism
-    video: 'on', // Always record video
-    trace: 'on', // Always collect trace
+    // Evidence capture - maximum forensics
+    screenshot: 'only-on-failure', // Automatic screenshots on failure
+    video: 'on', // ALWAYS record video
+    trace: 'on-first-retry', // Capture trace on retry for failure analysis
     
     // Timeouts
     actionTimeout: 30000,
@@ -83,7 +83,7 @@ export default defineConfig({
   },
   
   // Output directories
-  outputDir: TRACES_DIR,
+  outputDir: 'test-results',
   
   // Projects
   projects: [

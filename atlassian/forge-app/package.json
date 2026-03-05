@@ -70,6 +70,7 @@
     "pw": "npm run test:prod-dashboard",
     "predeploy:prod": "npm run gen:backend-build-identity && node tools/build_meta.mjs && npm run test && npm run build:gadget && echo \"UI build ready for deploy\"",
     "reviewer:gate": "bash audit/reviewer_ready_gate.sh",
+    "reviewer:e2e": "bash ../../tools/reviewer_e2e/run_reviewer_e2e_strict.sh",
     "proof:auth": "bash audit/proof_run_authenticated.sh",
     "audit:buildinfo": "bash ../../tools/audit_buildinfo_reachability.sh",
     "proof:buildinfo:prod": "bash ../../tools/prod_buildinfo_proof_loop.sh",
