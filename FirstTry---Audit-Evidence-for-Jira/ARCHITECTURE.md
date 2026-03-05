@@ -19,7 +19,7 @@
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                      BUILD EVIDENCE PACK (Builder)                          │
-│  Script: tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh        │
+│  Script: tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  1. Preflight checks (env vars, auth, config)                              │
 │  2. Create /tmp/ft_reviewer_e2e_YYYYMMDDTHHMMSSZ/                          │
@@ -78,7 +78,7 @@
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                     VERIFY EVIDENCE PACK (Verifier)                         │
-│  Script: tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh       │
+│  Script: tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  1. Check 18 required files exist                                           │
 │  2. Recompute manifest (find | sort | sha256sum)                           │

@@ -27,10 +27,10 @@ An **enterprise-grade, tamper-evident evidence pack system** for proving FirstTr
 # Build evidence pack
 export JIRA_BASE_URL="https://firsttry-solutions.atlassian.net"
 export JIRA_DASHBOARD_URL="https://firsttry-solutions.atlassian.net/jira/dashboards/10001"
-./tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh
+./tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh
 
 # Verify evidence pack
-./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
+./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
 ```
 
 **Result:** Evidence pack in `/tmp/ft_reviewer_e2e_YYYYMMDDTHHMMSSZ/` with PASS/FAIL verdict + SHA256 manifest.
@@ -44,8 +44,8 @@ export JIRA_DASHBOARD_URL="https://firsttry-solutions.atlassian.net/jira/dashboa
 - `playwright.reviewer.config.ts` — Playwright config (existing)
 
 ### Tooling
-- `tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh` (206 lines) — Builder
-- `tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh` (222 lines) — Verifier
+- `tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh` (206 lines) — Builder
+- `tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh` (222 lines) — Verifier
 - `tools/reviewer_e2e/proof_pack/lib/canonical_json.py` (61 lines) — JSON formatter
 - `tools/reviewer_e2e/proof_pack/lib/sha256_manifest.sh` (40 lines) — Manifest generator
 
@@ -196,7 +196,7 @@ Gadget:
 cd /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
 export JIRA_BASE_URL="https://firsttry-solutions.atlassian.net"
 export JIRA_DASHBOARD_URL="https://firsttry-solutions.atlassian.net/jira/dashboards/10001"
-./tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh
+./tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh
 ```
 
 ### Modify Allowlists
@@ -220,12 +220,12 @@ Edit `tests/playwright/reviewer_dashboard_e2e.spec.ts`:
   run: |
     export JIRA_BASE_URL="${{ secrets.JIRA_BASE_URL }}"
     export JIRA_DASHBOARD_URL="${{ secrets.JIRA_DASHBOARD_URL }}"
-    ./tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh
+    ./tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh
 
 - name: Verify Evidence Pack
   if: always()
   run: |
-    ./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
+    ./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
 
 - name: Upload Evidence Pack
   if: always()
@@ -250,8 +250,8 @@ Edit `tests/playwright/reviewer_dashboard_e2e.spec.ts`:
 
 ### Code Files
 - [tests/playwright/reviewer_dashboard_e2e.spec.ts](tests/playwright/reviewer_dashboard_e2e.spec.ts) — Test spec
-- [tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh](tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh) — Builder
-- [tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh](tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh) — Verifier
+- [tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh](tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh) — Builder
+- [tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh](tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh) — Verifier
 
 ### Utilities
 - [tools/reviewer_e2e/proof_pack/lib/canonical_json.py](tools/reviewer_e2e/proof_pack/lib/canonical_json.py) — JSON formatter

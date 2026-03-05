@@ -349,7 +349,7 @@ Send Notifications
 
 | Tool | Purpose | Command |
 |------|---------|---------|
-| Evidence Pack | Capture app state | `bash tools/reviewer/build_reviewer_proof_pack.sh` |
+| Evidence Pack | Capture app state | `bash tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh` |
 | Forge Logs | Runtime diagnostics | `forge logs --environment production` |
 | Marketplace Audit | Security scan | `bash tools/marketplace_audit/run_marketplace_readiness_v2.sh` |
 | Git History | Code archaeology | `git log --all --full-history -- <file>` |
@@ -361,7 +361,7 @@ Send Notifications
 - Invocation metrics: Forge dashboard
 
 **Evidence Packs:**
-- Verify integrity: `bash tools/reviewer/verify_reviewer_proof_pack.sh <pack_dir>`
+- Verify integrity: `bash tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh <pack_dir>`
 - Check for tampering: Compare SHA256 manifests
 
 ---

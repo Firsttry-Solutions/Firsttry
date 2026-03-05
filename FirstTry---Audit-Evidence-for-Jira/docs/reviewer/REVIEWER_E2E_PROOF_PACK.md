@@ -33,7 +33,7 @@ npx playwright auth login --config=playwright.reviewer.config.ts
 
 ```bash
 cd /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
-./tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh
+./tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh
 ```
 
 **Output example:**
@@ -66,7 +66,7 @@ Pack hash: a1b2c3d4e5f6...
 ### Verify Evidence Pack
 
 ```bash
-./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_20240315T143022Z
+./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_20240315T143022Z
 ```
 
 **Output example:**
@@ -540,12 +540,12 @@ npx playwright test --config=playwright.reviewer.config.ts tests/playwright/revi
   run: |
     export JIRA_BASE_URL="${{ secrets.JIRA_BASE_URL }}"
     export JIRA_DASHBOARD_URL="${{ secrets.JIRA_DASHBOARD_URL }}"
-    ./tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh
+    ./tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh
     
 - name: Verify Evidence Pack
   if: success() || failure()
   run: |
-    ./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
+    ./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
     
 - name: Upload Evidence Pack
   if: always()
@@ -564,14 +564,14 @@ tar czf ft_reviewer_e2e_20240315T143022Z.tar.gz ft_reviewer_e2e_20240315T143022Z
 
 # Verify after extraction
 tar xzf ft_reviewer_e2e_20240315T143022Z.tar.gz
-./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh ft_reviewer_e2e_20240315T143022Z/
+./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh ft_reviewer_e2e_20240315T143022Z/
 ```
 
 ## References
 
 - Test spec: `tests/playwright/reviewer_dashboard_e2e.spec.ts`
 - Playwright config: `playwright.reviewer.config.ts`
-- Builder: `tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh`
-- Verifier: `tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh`
+- Builder: `tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh`
+- Verifier: `tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh`
 - Canonical JSON: `tools/reviewer_e2e/proof_pack/lib/canonical_json.py`
 - Manifest generator: `tools/reviewer_e2e/proof_pack/lib/sha256_manifest.sh`

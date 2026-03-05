@@ -86,7 +86,7 @@ Format:
 
 ### 2. Proof Pack Builder (Phase 7)
 
-**File Created:** `tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh` (206 lines)
+**File Created:** `tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh` (206 lines)
 
 **Features:**
 - **Preflight checks:** Validates env vars, auth file, config, test spec
@@ -125,7 +125,7 @@ drwxr-xrw-+ 5 vscode vscode 4.0K Mar  4 17:20 04_playwright
 
 ### 3. Proof Pack Verifier (Phase 8)
 
-**File Created:** `tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh` (222 lines)
+**File Created:** `tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh` (222 lines)
 
 **Features:**
 - **Offline verification:** No network required (all checks use local cryptography)
@@ -327,10 +327,10 @@ Pack hash: 1ffb3a0daddcf75c9ee3e2b44dd233740e76ee1b571f2bd60b59f751dd508ffd
    - Updated header doc with enterprise features
 
 ### Created Files (5)
-1. **`tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh`** (206 lines)
+1. **`tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh`** (206 lines)
    - Evidence pack builder with manifest + hash generation
    
-2. **`tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh`** (222 lines)
+2. **`tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh`** (222 lines)
    - Offline verifier with tamper detection
    
 3. **`tools/reviewer_e2e/proof_pack/lib/canonical_json.py`** (61 lines)
@@ -354,10 +354,10 @@ Pack hash: 1ffb3a0daddcf75c9ee3e2b44dd233740e76ee1b571f2bd60b59f751dd508ffd
 export JIRA_BASE_URL="https://your-instance.atlassian.net"
 export JIRA_DASHBOARD_URL="https://your-instance.atlassian.net/jira/dashboards/10001"
 cd /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
-./tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh
+./tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh
 
 # Verify evidence pack
-./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_20260304T172011Z
+./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_20260304T172011Z
 ```
 
 ### CI/CD Integration
@@ -366,12 +366,12 @@ cd /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
   run: |
     export JIRA_BASE_URL="${{ secrets.JIRA_BASE_URL }}"
     export JIRA_DASHBOARD_URL="${{ secrets.JIRA_DASHBOARD_URL }}"
-    ./tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh
+    ./tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh
 
 - name: Verify Evidence Pack
   if: always()
   run: |
-    ./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
+    ./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
 
 - name: Upload Evidence Pack
   if: always()
@@ -389,7 +389,7 @@ tar czf ft_reviewer_e2e_20260304T172011Z.tar.gz ft_reviewer_e2e_20260304T172011Z
 
 # Verify after extraction
 tar xzf ft_reviewer_e2e_20260304T172011Z.tar.gz
-./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh ft_reviewer_e2e_20260304T172011Z/
+./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh ft_reviewer_e2e_20260304T172011Z/
 ```
 
 ---
@@ -416,8 +416,8 @@ Compare two evidence packs to identify regressions.
 ## References
 
 - Test spec: [tests/playwright/reviewer_dashboard_e2e.spec.ts](tests/playwright/reviewer_dashboard_e2e.spec.ts)
-- Builder: [tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh](tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh)
-- Verifier: [tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh](tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh)
+- Builder: [tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh](tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh)
+- Verifier: [tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh](tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh)
 - Documentation: [docs/reviewer/REVIEWER_E2E_PROOF_PACK.md](docs/reviewer/REVIEWER_E2E_PROOF_PACK.md)
 - Canonical JSON: [tools/reviewer_e2e/proof_pack/lib/canonical_json.py](tools/reviewer_e2e/proof_pack/lib/canonical_json.py)
 - Manifest generator: [tools/reviewer_e2e/proof_pack/lib/sha256_manifest.sh](tools/reviewer_e2e/proof_pack/lib/sha256_manifest.sh)

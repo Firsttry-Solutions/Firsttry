@@ -196,7 +196,7 @@ If you are in the **European Economic Area (EEA)** or **UK**, you have the follo
 
 **How:** Generate evidence pack (includes all snapshots in machine-readable JSON)
 
-**Command:** `bash tools/reviewer/build_reviewer_proof_pack.sh`
+**Command:** `bash tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh`
 
 **Format:** JSON (structured data, compatible with other systems)
 

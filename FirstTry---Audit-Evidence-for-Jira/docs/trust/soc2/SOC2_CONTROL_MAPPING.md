@@ -256,8 +256,8 @@ This document maps FirstTry's security controls to **SOC 2 Trust Service Criteri
 |----------|----------|----------------|
 | Manifest file | `manifest.yml` | CC5.1, CC6.2, CC6.7 |
 | Evidence pack | `/tmp/firsttry_reviewer_proof_*/` | CC4.1, CC7.5 |
-| Evidence pack builder | `tools/reviewer/build_reviewer_proof_pack.sh` | CC4.1, CC7.2 |
-| Evidence pack verifier | `tools/reviewer/verify_reviewer_proof_pack.sh` | CC4.1, CC5.1 |
+| Evidence pack builder | `tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh` | CC4.1, CC7.2 |
+| Evidence pack verifier | `tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh` | CC4.1, CC5.1 |
 | Marketplace audit script | `tools/marketplace_audit/run_marketplace_readiness_v2.sh` | CC6.7, CC8.2 |
 | Reviewer E2E test | `tests/e2e/reviewer_dashboard_e2e.spec.ts` | CC8.2 |
 | CI/CD pipeline | `.github/workflows/ci.yml` | CC8.1, CC8.2 |
@@ -305,11 +305,11 @@ grep -E "scopes|permissions" manifest.yml
 # Expected: Only read:jira-work, storage:app (no write scopes)
 
 # Test C1.4: Generate evidence pack (includes SHA256 manifest)
-bash tools/reviewer/build_reviewer_proof_pack.sh
+bash tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh
 # Expected: Evidence pack created with tamper-evident manifest
 
 # Test C1.4: Verify evidence pack integrity
-bash tools/reviewer/verify_reviewer_proof_pack.sh /tmp/firsttry_reviewer_proof_*/
+bash tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh /tmp/firsttry_reviewer_proof_*/
 # Expected: VERIFICATION PASSED
 ```
 

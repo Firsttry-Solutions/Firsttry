@@ -151,7 +151,7 @@ FirstTry provides automated tools for security verification:
 | **Trust Center Validator** | Verify all trust docs present | `bash tools/trust_center/verify_trust_center.sh` | All docs present, exit 0 |
 | **SOC2 Evidence Pack** | Bundle SOC2 mapping + security docs | `bash tools/soc2_mapping/build_soc2_evidence_pack.sh` | Tamper-evident ZIP in `/tmp/` |
 | **Reviewer E2E Test** | Validate dashboard functionality and evidence generation | `npm run test:e2e` | All tests pass |
-| **Evidence Pack Verifier** | Offline verification of evidence packs | `bash tools/reviewer/verify_reviewer_proof_pack.sh <dir>` | `VERIFICATION PASSED` |
+| **Evidence Pack Verifier** | Offline verification of evidence packs | `bash tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh <dir>` | `VERIFICATION PASSED` |
 
 ---
 

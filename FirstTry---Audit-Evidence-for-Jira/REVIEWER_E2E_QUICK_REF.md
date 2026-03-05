@@ -6,12 +6,12 @@
 ```bash
 export JIRA_BASE_URL="https://firsttry-solutions.atlassian.net"
 export JIRA_DASHBOARD_URL="https://firsttry-solutions.atlassian.net/jira/dashboards/10001"
-./tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh
+./tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh
 ```
 
 ### Verify Evidence Pack
 ```bash
-./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
+./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh /tmp/ft_reviewer_e2e_*
 ```
 
 ---
@@ -143,7 +143,7 @@ cd /tmp
 tar czf evidence.tar.gz ft_reviewer_e2e_20260304T172011Z/
 # Verify after extraction
 tar xzf evidence.tar.gz
-./tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh ft_reviewer_e2e_20260304T172011Z/
+./tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh ft_reviewer_e2e_20260304T172011Z/
 ```
 
 ### CI/CD Integration

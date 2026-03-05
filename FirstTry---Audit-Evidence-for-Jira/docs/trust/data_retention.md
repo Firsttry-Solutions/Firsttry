@@ -218,7 +218,7 @@ Retention periods are **uniform globally**:
 
 Customers can **export data anytime** during the 90-day retention period:
 
-1. Generate evidence pack: `bash tools/reviewer/build_reviewer_proof_pack.sh`
+1. Generate evidence pack: `bash tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh`
 2. Evidence pack includes:
    - All snapshots (JSON)
    - Timestamps

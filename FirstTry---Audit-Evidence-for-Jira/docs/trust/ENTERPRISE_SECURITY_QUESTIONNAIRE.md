@@ -294,8 +294,8 @@ FirstTry is a read-only audit evidence dashboard for Jira Cloud. It captures poi
 
 | Question | Answer | Evidence |
 |----------|--------|----------|
-| Evidence generation? | Yes (tamper-evident evidence packs with SHA256 manifests) | `tools/reviewer/build_reviewer_proof_pack.sh` |
-| Offline verification? | Yes (verify evidence pack integrity without internet) | `tools/reviewer/verify_reviewer_proof_pack.sh` |
+| Evidence generation? | Yes (tamper-evident evidence packs with SHA256 manifests) | `tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh` |
+| Offline verification? | Yes (verify evidence pack integrity without internet) | `tools/reviewer_demo/proof_pack/verify_reviewer_proof_pack.sh` |
 | Marketplace audit? | Yes (automated script checks write scopes, external egress) | `tools/marketplace_audit/run_marketplace_readiness_v2.sh` |
 
 ---

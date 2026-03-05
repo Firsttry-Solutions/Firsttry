@@ -20,7 +20,7 @@ The following systems are **in scope** for vulnerability reports:
 | FirstTry Forge App | `ari:cloud:ecosystem::app/{app-id}` | All code in repository |
 | Custom UI (Dashboard Gadget) | Rendered in Jira Cloud | React components, Forge UI Kit |
 | Resolver Functions | Forge runtime | All functions in `src/resolvers/` |
-| Evidence Generation | Build scripts | `tools/reviewer/build_reviewer_proof_pack.sh` |
+| Evidence Generation | Build scripts | `tools/reviewer_demo/proof_pack/build_reviewer_proof_pack.sh` |
 | Marketplace Audit | Verification scripts | `tools/marketplace_audit/run_marketplace_readiness_v2.sh` |
 
 ### 2.2 Out-of-Scope Systems
