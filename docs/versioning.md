@@ -26,7 +26,7 @@ This app uses **three distinct version identifiers**. This document explains why
 
 **Current Value**: `2.0.0`
 
-**Source**: `package.json` file in app repository
+**Source**: Marketplace release tracking (managed independently; the internal deploy version in `package.json` is `2.14.0` and tracks deploy increments separately)
 
 **Format**: Semantic versioning (MAJOR.MINOR.PATCH)
 

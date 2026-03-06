@@ -144,7 +144,7 @@ See [SUPPORT.md](SUPPORT.md) for details on how to submit support requests.
 
 This app uses multiple version identifiers:
 
-- **Marketplace Version**: 2.0.0 (from `package.json`, follows semantic versioning)
+- **Marketplace Version**: 2.0.0 (marketplace-locked; internal deploy version in `package.json` is 2.14.0 — see VERSIONING.md for the distinction)
 - **Forge Deploy Version**: Deployment counter (e.g., 4.19.0, increments per deploy)
 - **Internal Release Marker**: Date-based marker (e.g., 2026.01.24.01, appears in logs)
 
