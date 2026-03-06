@@ -14,19 +14,6 @@ source "${SCRIPT_DIR}/_common.sh"
 source "${SCRIPT_DIR}/mode_integrity_guard.sh"
 
 # ============================================================================
-# MODE INTEGRITY SCANNER
-# Uses shared mode_integrity_guard for contamination detection
-# ============================================================================
-
-scan_for_demo_contamination() {
-  local evidence_root="$1"
-  local current_mode="$2"  # LIVE or DEMO
-
-  # Delegate to shared mode_integrity_guard function
-  perform_mode_integrity_check "$evidence_root" "$current_mode"
-}
-
-# ============================================================================
 # HARD-FAIL VERIFIER ORCHESTRATION
 # Ensures upstream failures propagate cleanly to final verdict
 # ============================================================================
@@ -39,7 +26,7 @@ perform_hard_fail_verification() {
   local failed_phase=""
   local root_cause_code=""
   local root_cause_summary=""
-  declare -a missing_required_files
+  local -a missing_required_files=()
 
   log_info ""
   log_info "Performing hard-fail verification..."
@@ -60,8 +47,6 @@ perform_hard_fail_verification() {
   local contamination_detected=0
   if [[ "$current_mode" == "LIVE" ]]; then
     if ! scan_for_demo_contamination "$evidence_root" "$current_mode"; then
-      contamination_detected=0
-    else
       contamination_detected=1
       log_error "[HARD FAIL] DEMO/LIVE contamination detected in LIVE mode"
       failed_phase="contamination_scan"
@@ -165,6 +150,10 @@ perform_hard_fail_verification() {
 
   # ===== WRITE FINAL VERIFIER REPORT (ALWAYS, pass or fail) =====
   local verifier_report="${evidence_root}/VERIFIER_REPORT.json"
+  local missing_files_json_str=""
+  if [[ ${#missing_required_files[@]} -gt 0 ]]; then
+    missing_files_json_str=$(printf '"%s"\n' "${missing_required_files[@]}" | paste -sd,)
+  fi
 
   cat > "$verifier_report" << VERIFIER_JSON
 {
@@ -175,7 +164,7 @@ perform_hard_fail_verification() {
   "failed_phase": "$failed_phase",
   "root_cause_code": "$root_cause_code",
   "root_cause_summary": "$root_cause_summary",
-  "missing_required_files": [$(printf '"%s"' "${missing_required_files[@]}" | paste -sd,)],
+  "missing_required_files": [$missing_files_json_str],
   "contamination_detected": $contamination_detected,
   "upstream_failure_propagated": $(if [[ "$overall_verdict" == "FAIL" ]]; then echo "true"; else echo "false"; fi),
   "generated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",

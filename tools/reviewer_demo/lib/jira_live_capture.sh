@@ -187,24 +187,8 @@ REQUEST_JSON
 # ============================================================================
 
 jira_api_paginate() {
-  local path_template="$1"  # Path with {start} and {limit} placeholders
-  local outfile_prefix="$2"
-  local evidence_root="${3:-$EVIDENCE_ROOT}"
-  local maxResults="${4:-50}"
-
-  log_info "Paginating (SAFE): $path_template (maxResults=$maxResults)"
-  log_info "[NOTE] Using hardened pagination engine with 6 safety guards"
-  log_info "[NOTE]  - Guard A: Explicit terminal state (isLast=true)"
-  log_info "[NOTE]  - Guard B: Semantic exhaustion (zero items)"
-  log_info "[NOTE]  - Guard C: Cursor non-advancement"
-  log_info "[NOTE]  - Guard D: Duplicate page detection"
-  log_info "[NOTE]  - Guard E: Total item count limit"
-  log_info "[NOTE]  - Guard F: Hard safety cap (max 100 pages)"
-
-  # DEPRECATED: This function now routes to pagination_harness
-  # jira_api_paginate_safe handles all pagination with fail-closed behavior
-
-  log_error "[FATAL] jira_api_paginate() must not be called directly in LIVE mode"
+  # FATAL: deprecated — all pagination must use jira_api_paginate_safe()
+  log_error "[FATAL] jira_api_paginate() is deprecated in LIVE mode"
   log_error "[FATAL] Use jira_api_paginate_safe() or jira_api_collect_groups_picker_safe()"
   return 1
 }

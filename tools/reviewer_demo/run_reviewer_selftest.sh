@@ -231,10 +231,10 @@ main() {
     local test_status="${result##*:}"
 
     if [[ "$test_status" == "PASS" ]]; then
-      ((passed++))
+      passed=$((passed+1))
       log_info "✅ $test_name: PASS"
     else
-      ((failed++))
+      failed=$((failed+1))
       log_error "❌ $test_name: FAIL"
     fi
   done

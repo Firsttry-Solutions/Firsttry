@@ -24,7 +24,7 @@ TESTS_FAILED=0
 # Test utility functions
 test_setup() {
   local test_name="$1"
-  ((TESTS_RUN++))
+  TESTS_RUN=$((TESTS_RUN+1))
   log_info ""
   log_info "TEST $TESTS_RUN: $test_name"
   log_info "============================================================"
@@ -32,14 +32,14 @@ test_setup() {
 
 test_pass() {
   local test_name="$1"
-  ((TESTS_PASSED++))
+  TESTS_PASSED=$((TESTS_PASSED+1))
   log_info "✅ PASS: $test_name"
 }
 
 test_fail() {
   local test_name="$1"
   local reason="$2"
-  ((TESTS_FAILED++))
+  TESTS_FAILED=$((TESTS_FAILED+1))
   log_error "❌ FAIL: $test_name"
   log_error "   Reason: $reason"
 }
@@ -64,7 +64,7 @@ test_pagination_guards_implemented() {
 
   for guard in "${required_guards[@]}"; do
     if grep -q "$guard" "${LIB_DIR}/pagination_harness.sh"; then
-      ((guards_found++))
+      guards_found=$((guards_found+1))
       log_info "  ✓ Found guard: $guard"
     else
       log_error "  ✗ Missing guard: $guard"
@@ -209,7 +209,7 @@ test_unsafe_pagination_deprecated() {
 # ============================================================================
 
 test_jira_capture_uses_safe_pagination() {
-  local test_name "jira_capture.sh uses jira_api_paginate_safe for /groups/picker"
+  local test_name="jira_capture.sh uses jira_api_paginate_safe for /groups/picker"
   test_setup "$test_name"
 
   if grep -q "jira_api_collect_groups_picker_safe" "${LIB_DIR}/jira_capture.sh"; then
@@ -224,7 +224,7 @@ test_jira_capture_uses_safe_pagination() {
 # ============================================================================
 
 test_pagination_harness_sourced() {
-  local test_name "Pagination harness is sourced in jira_capture.sh"
+  local test_name="Pagination harness is sourced in jira_capture.sh"
   test_setup "$test_name"
 
   if grep -q 'source.*pagination_harness' "${LIB_DIR}/jira_capture.sh"; then
@@ -239,10 +239,10 @@ test_pagination_harness_sourced() {
 # ============================================================================
 
 test_hard_fail_verifier_integrated() {
-  local test_name "Hard-fail verifier is called in main harness"
+  local test_name="Hard-fail verifier is called in main harness"
   test_setup "$test_name"
 
-  if grep -q "perform_hard_fail_verification" "${SCRIPT_DIR}/run_reviewer_demo.sh"; then
+  if grep -q "perform_hard_fail_verification" "${LIB_DIR}/../run_reviewer_demo.sh"; then
     test_pass "$test_name"
   else
     test_fail "$test_name" "perform_hard_fail_verification not called in harness"
@@ -254,7 +254,7 @@ test_hard_fail_verifier_integrated() {
 # ============================================================================
 
 test_pagination_report_schema() {
-  local test_name "Pagination reports include required fields"
+  local test_name="Pagination reports include required fields"
   test_setup "$test_name"
 
   local required_fields=(
@@ -287,7 +287,7 @@ test_pagination_report_schema() {
 # ============================================================================
 
 test_fail_closed_on_missing_files() {
-  local test_name "Verifier fails (closed) when files missing"
+  local test_name="Verifier fails (closed) when files missing"
   test_setup "$test_name"
 
   # Create empty test directory
@@ -323,7 +323,7 @@ EOF
 # ============================================================================
 
 test_verifier_report_structure() {
-  local test_name "Verifier report has all required fields"
+  local test_name="Verifier report has all required fields"
   test_setup "$test_name"
 
   local test_dir="/tmp/test_report_struct_$$"

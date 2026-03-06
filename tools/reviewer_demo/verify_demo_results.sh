@@ -164,7 +164,7 @@ main() {
     local invalid_count=0
     while IFS= read -r -d '' canonical_file; do
       if ! jq -e . "$canonical_file" >/dev/null 2>&1; then
-        ((invalid_count++))
+        invalid_count=$((invalid_count+1))
       fi
     done < <(find "$canonical_dir" -name "*.canonical.json" -print0 2>/dev/null || true)
 
@@ -285,12 +285,12 @@ main() {
 
     for pattern in "${placeholder_patterns[@]}"; do
       if grep -r "$pattern" "$derived_dir" 2>/dev/null | grep -iq "derivat\|snapshot\|governance" 2>/dev/null; then
-        ((found_placeholders++))
+        found_placeholders=$((found_placeholders+1))
         log_error "  ✗ Found placeholder pattern: $pattern"
       fi
     done
 
-    if (( found_placeholders == 0 )); then
+    if [[ $found_placeholders -eq 0 ]]; then
       log_info "✓ No placeholder content found (PASS)"
     else
       log_error "✗ Found $found_placeholders placeholder pattern types"
@@ -342,7 +342,8 @@ main() {
     if [[ $groups_pages -gt 0 ]]; then
       log_info "  ✓ Found: $groups_pages groups_picker pages"
       live_evidence_ok=$((live_evidence_ok + 1))
-    else\n      log_error "  ✗ Missing: groups_picker_page*.response.json"
+    else
+      log_error "  ✗ Missing: groups_picker_page*.response.json"
       missing_evidence+=("groups_picker_page*.response.json")
     fi
 

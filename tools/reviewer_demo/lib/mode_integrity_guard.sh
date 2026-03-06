@@ -22,7 +22,7 @@ scan_for_demo_contamination() {
   log_info "Scanning for DEMO/LIVE contamination in $current_mode mode..."
 
   local contamination_detected=0
-  declare -a forbidden_markers_found
+  local -a forbidden_markers_found=()
   local files_scanned=0
 
   # These markers must NEVER appear in LIVE mode
@@ -45,7 +45,7 @@ scan_for_demo_contamination() {
 
     # Scan all JSON files in evidence root
     while IFS= read -r file; do
-      ((files_scanned++))
+      files_scanned=$((files_scanned+1))
 
       for pattern in "${forbidden_in_live[@]}"; do
         if grep -qi "$pattern" "$file" 2>/dev/null; then
@@ -178,7 +178,7 @@ perform_mode_integrity_check() {
   log_info "=========================================="
 
   local verdict="PASS"
-  declare -a failures
+  local -a failures=()
 
   # Get metadata
   local metadata_file="${evidence_root}/00_meta/METADATA.json"
@@ -217,6 +217,10 @@ perform_mode_integrity_check() {
 
   # Generate report
   local report_file="${evidence_root}/mode_integrity_report.json"
+  local failures_json_str=""
+  if [[ ${#failures[@]} -gt 0 ]]; then
+    failures_json_str=$(printf '"%s"\n' "${failures[@]}" | paste -sd,)
+  fi
 
   cat > "$report_file" << REPORT_EOF
 {
@@ -225,11 +229,11 @@ perform_mode_integrity_check() {
   "verdict": "$verdict",
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "checks": {
-    "metadata_consistency": $(if [[ " ${failures[@]} " =~ "metadata_inconsistency" ]]; then echo "false"; else echo "true"; fi),
-    "contamination_scan": $(if [[ " ${failures[@]} " =~ "demo_contamination_detected" ]]; then echo "false"; else echo "true"; fi),
-    "live_real_evidence": $(if [[ " ${failures[@]} " =~ "live_missing_real_evidence" ]]; then echo "false"; else echo "true"; fi)
+    "metadata_consistency": $(if [[ " ${failures[*]:-} " =~ "metadata_inconsistency" ]]; then echo "false"; else echo "true"; fi),
+    "contamination_scan": $(if [[ " ${failures[*]:-} " =~ "demo_contamination_detected" ]]; then echo "false"; else echo "true"; fi),
+    "live_real_evidence": $(if [[ " ${failures[*]:-} " =~ "live_missing_real_evidence" ]]; then echo "false"; else echo "true"; fi)
   },
-  "failures": [$(printf '"%s"' "${failures[@]}" | paste -sd,)]
+  "failures": [$failures_json_str]
 }
 REPORT_EOF
 
