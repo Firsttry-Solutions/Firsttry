@@ -66,9 +66,9 @@ See [Data Handling Policy](DATA_HANDLING_POLICY.md) for full details.
 
 ## 4. Support & Security Contact
 
-**Email**: [support@firstry.io](mailto:support@firstry.io)  
+**Email**: [contact@firsttry.run](mailto:contact@firsttry.run)  
 **Response Time**: Within 24 business hours  
-**Privacy/Security**: [privacy@firstry.io](mailto:privacy@firstry.io)
+**Privacy/Security**: [contact@firsttry.run](mailto:contact@firsttry.run)
 
 ---
 
@@ -113,7 +113,7 @@ See [Data Handling Policy](DATA_HANDLING_POLICY.md) for full details.
 - [ ] Screenshots captured and approved
 - [ ] Description reviewed and copy edited
 - [ ] Data handling policy visible in listing
-- [ ] Support contact email verified (support@firstry.io)
+- [ ] Support contact email verified (contact@firsttry.run)
 - [ ] Permissions/scopes disclosed (read:jira-work + storage:app)
 - [ ] Seed snapshot labeling verified in UI
 - [ ] No unsafe-inline CSP (manifest.yml verified)
@@ -148,7 +148,7 @@ A: Two minimal scopes:
 - `storage:app`: Store snapshots on-platform
 
 **Q: Is there a support SLA?**  
-A: Yes. Support response within 24 business hours via [support@firstry.io](mailto:support@firstry.io).
+A: Yes. Support response within 24 business hours via [contact@firsttry.run](mailto:contact@firsttry.run).
 
 ---
 
@@ -169,8 +169,8 @@ A: Yes. Support response within 24 business hours via [support@firstry.io](mailt
 | **App Version** | 2.14.0 |
 | **Forge Runtime** | nodejs20.x |
 | **Jira Cloud Minimum** | 2024.01+ |
-| **Support Email** | support@firstry.io |
-| **Privacy Contact** | privacy@firstry.io |
+| **Support Email** | contact@firsttry.run |
+| **Privacy Contact** | contact@firsttry.run |
 | **SLA Response Time** | 24 hours |
 
 ---

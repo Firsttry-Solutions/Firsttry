@@ -23,9 +23,9 @@
 
 | Contact | Email | Purpose | Response SLA |
 |---------|-------|---------|-------------|
-| **Support** | support@firstry.io | Bug reports, feature requests, installation help | 24 business hours |
-| **Security** | security@firstry.io | Vulnerability reports, security questions | 12 business hours |
-| **Privacy** | privacy@firstry.io | Data handling questions, GDPR requests | 24 business hours |
+| **Support** | contact@firsttry.run | Bug reports, feature requests, installation help | 24 business hours |
+| **Security** | security@firsttry.run | Vulnerability reports, security questions | 12 business hours |
+| **Privacy** | contact@firsttry.run | Data handling questions, GDPR requests | 24 business hours |
 
 ---
 
@@ -50,7 +50,7 @@ When submitting to Atlassian Marketplace, reference:
 
 **Location**: l0_snapshot_mapper.ts (rendered in footer)  
 **Link Text**: "Need help? Contact support"  
-**Target**: `mailto:support@firstry.io`  
+**Target**: `mailto:contact@firsttry.run`  
 **Rendered**: aria-live announcements include support contact
 
 ---

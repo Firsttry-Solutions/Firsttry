@@ -1,8 +1,8 @@
 # Canonical Contacts (Single Source of Truth)
 
-**Support**: support@firstry.io  
-**Security**: security@firstry.io  
-**Privacy**: privacy@firstry.io  
+**Support**: contact@firsttry.run  
+**Security**: security@firsttry.run  
+**Privacy**: contact@firsttry.run  
 
 These are the ONLY official contact addresses. All references across UI, docs, and marketplace listings must use these exact addresses.
 

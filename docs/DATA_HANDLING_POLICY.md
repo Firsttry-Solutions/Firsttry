@@ -151,9 +151,9 @@ permissions:
 
 For data handling questions, contact:
 
-**Email**: [support@firstry.io](mailto:support@firstry.io)  
+**Email**: [contact@firsttry.run](mailto:contact@firsttry.run)  
 **Response Time**: Within 24 business hours  
-**Privacy Contact**: [privacy@firstry.io](mailto:privacy@firstry.io)
+**Privacy Contact**: [contact@firsttry.run](mailto:contact@firsttry.run)
 
 ---
 
