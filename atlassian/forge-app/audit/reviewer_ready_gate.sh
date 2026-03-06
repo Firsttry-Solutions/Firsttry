@@ -174,7 +174,8 @@ echo "========================================"
 echo "CHECK 3C: Write-Surface Ban"
 echo "========================================"
 
-WRITE_PATTERNS=$(find "$REPO_ROOT" -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) ! -path "*/tests/*" ! -path "*/__tests__/*" ! -path "*/node_modules/*" ! -path "*/dist/*" -exec grep -l "requestJira.*POST\|requestJira.*PUT\|requestJira.*PATCH\|requestJira.*DELETE\|createIssue\|updateIssue\|deleteIssue" {} \; 2>/dev/null || true)
+WRITE_PATTERNS=$(find "$REPO_ROOT" -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) ! -path "*/tests/*" ! -path "*/__tests__/*" ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/security/sourceScan.ts" -exec grep -l "requestJira.*POST\|requestJira.*PUT\|requestJira.*PATCH\|requestJira.*DELETE\|createIssue\|updateIssue\|deleteIssue" {} \; 2>/dev/null || true)
+# sourceScan.ts is excluded above: it DEFINES the detection regex as a string literal, not a write API call
 if [[ -n "$WRITE_PATTERNS" ]]; then
     echo -e "${RED}FAIL: WRITE_SURFACE_DETECTED${NC}"
     echo "Files with write APIs found:"
