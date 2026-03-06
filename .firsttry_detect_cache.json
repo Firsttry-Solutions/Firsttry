@@ -1,9 +1,0 @@
-{
-  "ts": 1763471410.2476683,
-  "payload": {
-    "python": true,
-    "node": true,
-    "go": false,
-    "infra": false
-  }
-}

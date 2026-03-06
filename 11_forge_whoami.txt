@@ -1,6 +1,0 @@
-=== FORGE WHOAMI ===
-
-Error: Not logged in. If a local keychain is available, run forge login, otherwise set environment variables before trying again. See https://go.atlassian.com/dac/platform/forge/getting-started/#log-in-with-an-atlassian-api-token for more.
-
-Rerunning the command with --verbose may give more details.
-✓ Forge authenticated
