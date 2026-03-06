@@ -1,0 +1,20 @@
+# Allowed domains for FirstTry Forge application network egress
+# Format: one domain per line, no protocols
+
+# Atlassian domains
+atlassian.com
+atlassian.net
+jira.com
+
+# FirstTry infrastructure (if any)
+firsttry.io
+firsttry.com
+
+# Standard infrastructure domains
+googleapis.com
+github.com
+
+# CDN and static resources
+unpkg.com
+jsdelivr.net
+cdnjs.cloudflare.com
