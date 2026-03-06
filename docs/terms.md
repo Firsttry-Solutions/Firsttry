@@ -209,11 +209,11 @@ You are responsible for:
 
 ### Governing Law
 
-These Terms governed by laws of [Your Jurisdiction] without regard to conflict of law provisions.
+These Terms governed by laws of the State of Delaware, USA, without regard to conflict of law provisions.
 
 ### Jurisdiction
 
-Disputes resolved in courts of [Your Jurisdiction]. You consent to personal jurisdiction in such courts.
+Disputes resolved in state or federal courts located in Delaware, USA. You consent to personal jurisdiction in such courts.
 
 ### Informal Resolution
 
