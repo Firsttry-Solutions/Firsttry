@@ -1,8 +1,8 @@
 # Operational Behavior & Log Semantics
 
-**Date:** 2026-01-03  
-**Version:** v2.10.0  
-**Scope:** Explains log messages, error handling, and scheduler behavior  
+**Date:** 2026-03-07
+**Version:** v2.14.1
+**Scope:** Explains log messages, error handling, and scheduler behavior
 **Audience:** Atlassian Marketplace reviewers, Jira administrators, support teams
 
 ---

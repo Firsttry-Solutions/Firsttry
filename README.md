@@ -16,7 +16,7 @@ FirstTry is an Atlassian Forge app that surfaces Jira governance and compliance 
 |-----------|---------|
 | [`atlassian/forge-app/`](atlassian/forge-app/) | Forge app source code, tests, and build |
 | [`docs/`](docs/) | Public documentation (Jekyll site) |
-| [`FirstTry---Audit-Evidence-for-Jira/`](FirstTry---Audit-Evidence-for-Jira/) | Jira audit evidence package |
+| [`FirstTry---Audit-Evidence-for-Jira/`](FirstTry---Audit-Evidence-for-Jira/) | Legacy copy — historical audit evidence (not canonical production source; see [LEGACY_COPY_WARNING.md](FirstTry---Audit-Evidence-for-Jira/LEGACY_COPY_WARNING.md)) |
 
 ---
 
@@ -44,7 +44,7 @@ FirstTry is an Atlassian Forge app that surfaces Jira governance and compliance 
 ## 📊 Versioning
 
 - **[docs/versioning.md](docs/versioning.md)** — Version policy (Marketplace Version vs. internal deploy counter)
-- **[FirstTry---Audit-Evidence-for-Jira/VERSIONING.md](FirstTry---Audit-Evidence-for-Jira/VERSIONING.md)** — Versioning audit evidence
+- **[FirstTry---Audit-Evidence-for-Jira/VERSIONING.md](FirstTry---Audit-Evidence-for-Jira/VERSIONING.md)** — Versioning audit evidence *(legacy copy — historical only)*
 - **[CHANGELOG.md](CHANGELOG.md)** — Release history
 
 ---
@@ -77,4 +77,4 @@ All FirstTry documentation follows these principles:
 
 ---
 
-**Marketplace Version**: 2.0.0 | **Status**: Marketplace-Ready | **Maintained By**: FirstTry / Arnab Poddar
+**Marketplace Version**: 2.0.0 | **Status**: Marketplace-Ready (E2E dashboard verification pending — requires GUI machine with display for Jira OAuth capture) | **Maintained By**: FirstTry / Arnab Poddar
