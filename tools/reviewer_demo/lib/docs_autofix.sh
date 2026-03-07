@@ -46,7 +46,6 @@ run_docs_autofix() {
   local doc_root
   for doc_root in \
     "$repo_root/docs" \
-    "$repo_root/FirstTry---Audit-Evidence-for-Jira" \
     "$repo_root/atlassian/forge-app/docs"
   do
     [[ -d "$doc_root" ]] || continue

@@ -227,15 +227,15 @@ if [[ "$EFFECTIVE_MODE" == "LIVE" ]]; then
 fi
 
 # ============================================================================
-# RESOLVE APP ROOT (support FT_APP_ROOT override, default to vendor)
+# RESOLVE APP ROOT (support FT_APP_ROOT override, default to canonical)
 # ============================================================================
 
 # Initialize app root resolution
 if [[ -n "${FT_APP_ROOT:-}" ]]; then
   APP_ROOT="${FT_APP_ROOT}"
 else
-  # Default to vendor/canonical app
-  APP_ROOT="${REPO_ROOT}/FirstTry---Audit-Evidence-for-Jira"
+  # Default to canonical app (atlassian/forge-app)
+  APP_ROOT="${REPO_ROOT}/atlassian/forge-app"
 fi
 
 if [[ ! -d "$APP_ROOT" ]]; then
@@ -330,7 +330,7 @@ cat > "${EVIDENCE_ROOT}/00_meta/METADATA.json" << METADATA_EOF
   "forge_version": "$forge_version",
   "node_version": "$node_version",
   "mode": "$EFFECTIVE_MODE",
-  "canonical_app_root": "FirstTry---Audit-Evidence-for-Jira",
+  "canonical_app_root": "atlassian/forge-app",
   "app_root": "$APP_ROOT",
   "manifest_path": "$MANIFEST_PATH"
 }
@@ -353,7 +353,7 @@ FAIL_REASON=""
 # ============================================================================
 
 log_info ""
-log_info "PHASE 1: Parity Gate - Vendor <-> Dev Sync Check"
+log_info "PHASE 1: Parity Gate - Canonical App Integrity Check"
 log_info "------"
 
 if run_parity_gate "$EVIDENCE_ROOT" "$REPO_ROOT" "$APP_ROOT" "$MANIFEST_PATH"; then
@@ -396,13 +396,15 @@ FAIL_JSON
 
 ## Summary
 
-The parity gate check between vendor and dev applications failed. The applications are out of sync.
+The canonical app integrity check failed. The canonical source tree (atlassian/forge-app)
+is missing required files or is corrupted.
 
 ### Remediation
 
-Run the sync script:
+Verify canonical app root is intact:
 \`\`\`bash
-bash tools/reviewer_demo/lib/sync_dev_from_vendor.sh
+ls atlassian/forge-app/manifest.yml atlassian/forge-app/package.json atlassian/forge-app/src/
+bash atlassian/forge-app/audit/reviewer_ready_gate.sh
 \`\`\`
 
 Then rerun the verification:

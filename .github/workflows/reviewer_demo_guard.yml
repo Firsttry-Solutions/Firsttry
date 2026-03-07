@@ -5,14 +5,12 @@ on:
     paths:
       - 'tools/**'
       - 'docs/**'
-      - 'FirstTry---Audit-Evidence-for-Jira/docs/**'
       - 'atlassian/forge-app/docs/**'
       - '.github/workflows/reviewer_demo_guard.yml'
   pull_request:
     paths:
       - 'tools/**'
       - 'docs/**'
-      - 'FirstTry---Audit-Evidence-for-Jira/docs/**'
       - 'atlassian/forge-app/docs/**'
       - '.github/workflows/reviewer_demo_guard.yml'
 

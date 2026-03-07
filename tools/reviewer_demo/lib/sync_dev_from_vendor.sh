@@ -1,28 +1,28 @@
 #!/bin/bash
 
 ################################################################################
-# sync_dev_from_vendor.sh - Synchronize dev app from vendor app (one-way sync)
+# sync_dev_from_vendor.sh - RETIRED (no-op stub)
 #
-# PHASE 3: After parity gate detects sync failure, this script:
-#   1. Backs up dev app state
-#   2. Copies vendor files to dev location:
-#      - manifest.yml
-#      - src/ directory
-#      - resources/ (if present)
-#      - static/ (if present)
-#      - package.json
-#      - package-lock.json (if present)
-#   3. Verifies sync via parity gate
-#   4. Reports results
+# RETIRED: PATH A migration (2026-03-07) established atlassian/forge-app as the
+# single canonical production source. The former vendor-to-dev sync relationship
+# no longer exists. This script is retained as a no-op stub for compatibility
+# with any callers that have not yet been updated.
 #
-# SAFETY: Non-destructive with backup before modifications
-#
-# Dependencies: REPO_ROOT may be passed as first argument or assumed as PWD
+# ACTION REQUIRED FOR CALLERS:
+#   - Remove calls to this script; it does nothing.
+#   - The canonical source is atlassian/forge-app/ — it does not need sync.
+#   - Canonical integrity is now checked by parity_gate.sh single-tree check.
 ################################################################################
 
 run_sync_dev_from_vendor() {
   local repo_root="${1:-.}"
 
+  echo "[SYNC] sync_dev_from_vendor.sh is a no-op stub." >&2
+  echo "[SYNC] PATH A migration: atlassian/forge-app is the single canonical source." >&2
+  echo "[SYNC] No sync is needed. Canonical integrity is verified by parity_gate.sh." >&2
+  return 0
+
+  # --- RETIRED CODE BELOW --- kept for historical reference only ---
   # Validate REPO_ROOT
   if [[ ! -d "${repo_root}/.git" ]]; then
     echo "ERROR: REPO_ROOT is not a git repository: ${repo_root}" >&2

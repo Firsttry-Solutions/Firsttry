@@ -46,12 +46,10 @@ run_docs_integrity_audit() {
   # Build legacy patterns dynamically
   build_legacy_patterns
 
-  # Define specific documentation directories to scan
+  # Define specific documentation directories to scan (canonical source only)
   local doc_dirs=(
     "docs"
-    "FirstTry---Audit-Evidence-for-Jira/docs"
     "atlassian/forge-app/docs"
-    "FirstTry---Audit-Evidence-for-Jira"
   )
 
   log_info "Scanning for overclaims in documentation directories..."

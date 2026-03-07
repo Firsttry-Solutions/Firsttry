@@ -171,32 +171,18 @@ resolve_app_root() {
     export REPO_ROOT
   fi
 
-  # Default app root: vendor app is canonical (FirstTry---Audit-Evidence-for-Jira)
-  # Can be overridden by FT_APP_ROOT env var for dev mode
-  local ft_app_root="${FT_APP_ROOT:-FirstTry---Audit-Evidence-for-Jira}"
+  # Default app root: canonical source (atlassian/forge-app)
+  # Can be overridden by FT_APP_ROOT env var
+  local ft_app_root="${FT_APP_ROOT:-atlassian/forge-app}"
 
   # Check for ambiguity only if FT_APP_ROOT was not explicitly set
   if [[ -z "${FT_APP_ROOT:-}" ]]; then
-    local manifests_found=()
-
-    # Check primary location (vendor app - canonical)
-    if [[ -f "$REPO_ROOT/FirstTry---Audit-Evidence-for-Jira/manifest.yml" ]]; then
-      manifests_found+=("$REPO_ROOT/FirstTry---Audit-Evidence-for-Jira/manifest.yml")
-    fi
-
-    # Check dev location
-    if [[ -f "$REPO_ROOT/atlassian/forge-app/manifest.yml" ]]; then
-      manifests_found+=("$REPO_ROOT/atlassian/forge-app/manifest.yml")
-    fi
-
-    # Default to vendor if exactly one manifest found (either vendor or dev)
-    # Multiple manifests is OK - we use vendor by default
-    if [[ ${#manifests_found[@]} -eq 0 ]]; then
-      log_error "No Forge manifests detected:"
-      log_error "  Expected at least one of:"
-      log_error "    - $REPO_ROOT/FirstTry---Audit-Evidence-for-Jira/manifest.yml (vendor/canonical)"
-      log_error "    - $REPO_ROOT/atlassian/forge-app/manifest.yml (dev)"
-      fail "Forge manifest.yml not found in any known location"
+    # Verify canonical location has a manifest
+    if [[ ! -f "$REPO_ROOT/atlassian/forge-app/manifest.yml" ]]; then
+      log_error "No Forge manifest detected at canonical location:"
+      log_error "  Expected: $REPO_ROOT/atlassian/forge-app/manifest.yml"
+      log_error "  Canonical source: atlassian/forge-app"
+      fail "Forge manifest.yml not found in canonical location"
     fi
   fi
 
@@ -218,8 +204,8 @@ resolve_app_root() {
         log_error "  - $manifest"
       done <<< "$found_manifests"
       log_error ""
-      log_error "To use vendor app (canonical): FT_APP_ROOT=FirstTry---Audit-Evidence-for-Jira"
-      log_error "To use dev app: FT_APP_ROOT=atlassian/forge-app"
+      log_error "  FT_APP_ROOT=atlassian/forge-app  (canonical default)"
+      log_error "  FT_APP_ROOT=<custom-path>        (override)"
     else
       log_error "  (none found)"
     fi

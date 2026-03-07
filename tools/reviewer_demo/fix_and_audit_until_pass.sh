@@ -40,9 +40,10 @@ run_harness() {
 
   # PHASE 0: Check parity gate (fail immediately if broken - no auto-merge)
   if [[ -f "$LATEST_EVIDENCE_DIR/02_parity/parity_report.json" ]]; then
-    if grep -q '"parity_status":\s*"FAIL"' "$LATEST_EVIDENCE_DIR/02_parity/parity_report.json" 2>/dev/null; then
-      log "❌ PARITY GATE FAILURE - Apps are out of sync"
-      log "Run: bash tools/reviewer_demo/lib/sync_dev_from_vendor.sh"
+    if grep -q '"parity_status":\s*"FAIL"\|"integrity_status":\s*"FAIL"' "$LATEST_EVIDENCE_DIR/02_parity/parity_report.json" 2>/dev/null; then
+      log "❌ INTEGRITY GATE FAILURE - Canonical source check failed"
+      log "Verify atlassian/forge-app is intact:"
+      log "  ls atlassian/forge-app/manifest.yml atlassian/forge-app/src/ atlassian/forge-app/audit/marketplace_submission/FREEZE_LOCK.json"
       log "Then retry this script"
       return 2  # Special parity failure code
     fi
@@ -105,11 +106,12 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]]; do
   if [[ $harness_exit -eq 2 ]]; then
     log ""
     log "============================================"
-    log "PARITY GATE FAILURE"
+    log "INTEGRITY GATE FAILURE"
     log "============================================"
     log "Evidence: $LATEST_EVIDENCE_DIR"
     log ""
-    log "To fix: bash tools/reviewer_demo/lib/sync_dev_from_vendor.sh"
+    log "Canonical source (atlassian/forge-app) is missing required artifacts."
+    log "Verify: ls atlassian/forge-app/manifest.yml atlassian/forge-app/src/"
     log "Then:   bash tools/reviewer_demo/fix_and_audit_until_pass.sh"
     log ""
     exit 2
