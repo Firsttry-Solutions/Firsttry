@@ -9,10 +9,10 @@ permalink: /
 
 # FirstTry Audit Evidence for Jira
 
-**Version**: 5.0.0  
+**Marketplace Version**: 2.0.0  
 **Platform**: Jira Cloud  
 **Runtime**: Atlassian Forge  
-**Status**: ✅ Milestone 1 Complete (Real ZIP+PDF Determinism)
+**Status**: ✅ Release 2.14.0 — Production Ready
 
 ---
 

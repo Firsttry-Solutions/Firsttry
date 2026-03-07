@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FirstTry – Audit Evidence for Jira | Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+        h1 {
+            color: #0052CC;
+            border-bottom: 3px solid #0052CC;
+            padding-bottom: 0.5rem;
+        }
+        h2 {
+            color: #0052CC;
+            margin-top: 2rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.3rem;
+        }
+        .meta {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        .badge {
+            display: inline-block;
+            background: #E3FCEF;
+            color: #006644;
+            border: 1px solid #ABF5D1;
+            border-radius: 4px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.85rem;
+            margin: 0.2rem;
+        }
+        .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .doc-card {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 1rem;
+            background: #fafafa;
+        }
+        .doc-card a {
+            color: #0052CC;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .doc-card a:hover { text-decoration: underline; }
+        .doc-card p {
+            margin: 0.4rem 0 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        .notice {
+            background: #FFFAE6;
+            border-left: 4px solid #FF8B00;
+            padding: 0.8rem 1rem;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+        footer {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #ddd;
+            font-size: 0.85rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<h1>FirstTry – Audit Evidence for Jira</h1>
+
+<p class="meta">
+    <strong>Marketplace Version</strong>: 2.0.0 &nbsp;|&nbsp;
+    <strong>Platform</strong>: Jira Cloud (Atlassian Forge) &nbsp;|&nbsp;
+    <strong>App ID</strong>: ari:cloud:ecosystem::app/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc
+</p>
+
+<span class="badge">Read-Only App</span>
+<span class="badge">No Write Scopes</span>
+<span class="badge">No External Egress</span>
+<span class="badge">Forge Sandboxed</span>
+
+<div class="notice">
+    <strong>Source of truth</strong>: This site mirrors the content used for Atlassian Marketplace review.
+    Any functional claims are constrained by the app manifest, scopes, and runtime behavior.
+</div>
+
+<h2>What This App Does</h2>
+<p>
+    A <strong>read-only dashboard gadget</strong> for Jira Cloud that displays a governance snapshot summary.
+    The snapshot contains audit evidence metadata derived from your Jira work data, stored entirely within
+    Atlassian Forge Platform Storage. No data leaves Atlassian infrastructure.
+</p>
+<ul>
+    <li>Displays governance dashboard gadget in Jira Dashboards</li>
+    <li>Reads Jira work metadata (project info, issue counts, workflow states)</li>
+    <li>Stores governance snapshots in Forge platform storage</li>
+    <li>No write operations, no external network requests, no analytics</li>
+</ul>
+
+<h2>Documentation</h2>
+
+<div class="doc-grid">
+    <div class="doc-card">
+        <a href="privacy.html">Privacy Policy</a>
+        <p>How we handle your data, what is stored, and retention policy.</p>
+    </div>
+    <div class="doc-card">
+        <a href="terms.html">Terms of Use</a>
+        <p>Conditions of use, limitations of liability, and governing terms.</p>
+    </div>
+    <div class="doc-card">
+        <a href="support.md">Support Policy</a>
+        <p>How to get help, response times, and supported Jira versions.</p>
+    </div>
+    <div class="doc-card">
+        <a href="security.md">Security</a>
+        <p>Security architecture, scopes, sandboxing, and vulnerability reporting.</p>
+    </div>
+    <div class="doc-card">
+        <a href="subprocessors.md">Subprocessors</a>
+        <p>Third-party services and Atlassian platform dependencies.</p>
+    </div>
+    <div class="doc-card">
+        <a href="versioning.md">Versioning</a>
+        <p>How marketplace, deploy, and package versions relate.</p>
+    </div>
+    <div class="doc-card">
+        <a href="changelog.md">Changelog</a>
+        <p>Release history and what changed in each version.</p>
+    </div>
+    <div class="doc-card">
+        <a href="PERMISSIONS_AND_SCOPES.md">Permissions &amp; Scopes</a>
+        <p>Detailed breakdown of every permission requested and why.</p>
+    </div>
+</div>
+
+<h2>Contact</h2>
+<p>
+    <strong>Support</strong>: <a href="mailto:contact@firsttry.run">contact@firsttry.run</a><br>
+    <strong>Security</strong>: <a href="mailto:security@firsttry.run">security@firsttry.run</a>
+</p>
+
+<footer>
+    &copy; 2026 FirstTry Solutions. Marketplace Version 2.0.0. Hosted on Atlassian Forge.
+</footer>
+
+</body>
+</html>
