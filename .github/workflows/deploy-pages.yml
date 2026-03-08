@@ -27,8 +27,8 @@ jobs:
         run: |
           set -euo pipefail
           test -d docs
-          test -f docs/index.md
-          echo "OK: ./docs and docs/index.md exist (Jekyll will render HTML)"
+          test -f docs/index.html
+          echo "OK: ./docs and docs/index.html exist"
           ls -la docs | head -50
 
       - name: Setup Pages
