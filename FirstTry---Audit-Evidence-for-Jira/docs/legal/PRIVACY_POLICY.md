@@ -12,8 +12,8 @@ Welcome to FirstTry. We respect your privacy and are committed to protecting you
 
 **Who We Are:**
 - **Data Controller:** FirstTry Inc.
-- **Contact:** privacy@firsttry.io
-- **Data Protection Officer (DPO):** dpo@firsttry.io
+- **Contact:** privacy@firsttry.solutions
+- **Data Protection Officer (DPO):** dpo@firsttry.solutions
 
 **What This Policy Covers:**
 This Privacy Policy explains how FirstTry collects, uses, stores, and protects personal data when you use our FirstTry for Jira application ("Service").
@@ -149,7 +149,7 @@ Data is stored in **Atlassian Cloud infrastructure**:
 
 **Manual Deletion:**
 - Dashboard: Click "Clear All Snapshots" button
-- Email: Request deletion at privacy@firsttry.io (48-hour response)
+- Email: Request deletion at privacy@firsttry.solutions (48-hour response)
 
 **Verification:** Reinstalling the app shows empty state (no old data).
 
@@ -161,7 +161,7 @@ If you are in the **European Economic Area (EEA)** or **UK**, you have the follo
 
 ### 6.1 Right to Access (Article 15)
 
-**Request:** Email privacy@firsttry.io
+**Request:** Email privacy@firsttry.solutions
 
 **Response Time:** 30 days
 
@@ -176,7 +176,7 @@ If you are in the **European Economic Area (EEA)** or **UK**, you have the follo
 
 ### 6.2 Right to Rectification (Article 16)
 
-**How:** Modify snapshots in FirstTry dashboard or email privacy@firsttry.io
+**How:** Modify snapshots in FirstTry dashboard or email privacy@firsttry.solutions
 
 **Response Time:** Real-time (dashboard), 48 hours (email)
 
@@ -184,7 +184,7 @@ If you are in the **European Economic Area (EEA)** or **UK**, you have the follo
 
 ### 6.3 Right to Erasure / "Right to be Forgotten" (Article 17)
 
-**How:** Uninstall app (immediate deletion) or email privacy@firsttry.io
+**How:** Uninstall app (immediate deletion) or email privacy@firsttry.solutions
 
 **Response Time:** Immediate (uninstall), 48 hours (email)
 
@@ -214,7 +214,7 @@ If you are in the **European Economic Area (EEA)** or **UK**, you have the follo
 
 ### 6.6 Right to Restriction (Article 18)
 
-**How:** Email privacy@firsttry.io
+**How:** Email privacy@firsttry.solutions
 
 **Response Time:** 48 hours
 
@@ -245,7 +245,7 @@ If you are a **California resident**, you have the following rights under CCPA:
 
 ### 7.1 Right to Know (Section 1798.100)
 
-**Request:** Email privacy@firsttry.io
+**Request:** Email privacy@firsttry.solutions
 
 **Response Time:** 45 days
 
@@ -260,7 +260,7 @@ If you are a **California resident**, you have the following rights under CCPA:
 
 ### 7.2 Right to Delete (Section 1798.105)
 
-**Request:** Uninstall app or email privacy@firsttry.io
+**Request:** Uninstall app or email privacy@firsttry.solutions
 
 **Response Time:** Immediate (uninstall), 48 hours (email)
 
@@ -294,7 +294,7 @@ You may designate an authorized agent to make requests on your behalf:
 - Proof of agent's identity
 - Verification of your identity
 
-**Contact:** privacy@firsttry.io
+**Contact:** privacy@firsttry.solutions
 
 ---
 
@@ -319,7 +319,7 @@ FirstTry **does not knowingly collect** data from children under 16 (GDPR) or 13
 
 **If We Learn:** We have inadvertently collected data from a child, we will delete it immediately.
 
-**Parents/Guardians:** Email privacy@firsttry.io if you believe your child's data was collected.
+**Parents/Guardians:** Email privacy@firsttry.solutions if you believe your child's data was collected.
 
 ---
 
@@ -379,15 +379,15 @@ If FirstTry is acquired, merged, or assets sold, your data may transfer to the n
 
 ### 14.1 Privacy Inquiries
 
-- **Privacy Officer:** privacy@firsttry.io
-- **Data Protection Officer (DPO):** dpo@firsttry.io
+- **Privacy Officer:** privacy@firsttry.solutions
+- **Data Protection Officer (DPO):** dpo@firsttry.solutions
 - **Response Time:** 48 hours
 
 ### 14.2 Data Subject Requests
 
 To exercise your rights (access, deletion, portability, etc.):
 
-1. Email privacy@firsttry.io with:
+1. Email privacy@firsttry.solutions with:
    - Request type (access, deletion, etc.)
    - Jira Cloud URL
    - Installation ID (if known)
@@ -451,7 +451,7 @@ To exercise your rights (access, deletion, portability, etc.):
 **Privacy Officer:** FirstTry Privacy Team  
 **Approved By:** Chief Privacy Officer  
 **Next Review:** 2026-06-04 (quarterly)  
-**Contact:** privacy@firsttry.io
+**Contact:** privacy@firsttry.solutions
 
 ---
 

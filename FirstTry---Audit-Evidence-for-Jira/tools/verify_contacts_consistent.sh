@@ -2,20 +2,24 @@
 set -euo pipefail
 
 # Fail-closed contact consistency gate
-# Rule 1: docs/CONTACTS.md must exist
-if [ ! -f docs/CONTACTS.md ]; then
-  echo "FAIL: docs/CONTACTS.md not found"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$APP_ROOT"
+
+# Rule 1: docs/marketplace/CONTACTS.md must exist
+if [ ! -f docs/marketplace/CONTACTS.md ]; then
+  echo "FAIL: docs/marketplace/CONTACTS.md not found"
   exit 1
 fi
 
-# Rule 2: contact@firsttry.run must be in CONTACTS.md
-if ! rg -q "contact@firsttry\.run" docs/CONTACTS.md; then
-  echo "FAIL: contact@firsttry.run not found in docs/CONTACTS.md"
+# Rule 2: docs/marketplace/CONTACTS.md must have at least one @firsttry.solutions email
+if ! rg -q "@firsttry\.solutions" docs/marketplace/CONTACTS.md; then
+  echo "FAIL: No @firsttry.solutions email found in docs/marketplace/CONTACTS.md"
   exit 1
 fi
 
 # Rule 3: Extract canonical email from CONTACTS.md
-CANONICAL=$(rg -m 1 -o "[a-z]+@[a-z.]+\.[a-z]+" docs/CONTACTS.md)
+CANONICAL=$(rg -m 1 -o "[a-z]+@[a-z.]+\.[a-z]+" docs/marketplace/CONTACTS.md)
 
 # Rule 4: Scan src/ and docs/ for any emails NOT matching canonical
 # Fail if any non-canonical email found

@@ -174,7 +174,7 @@ To delete your data:
 ### Data Portability
 
 Snapshot export feature not currently available. To obtain your data:
-- Contact support at `support@firsttry-solutions.com` *(operator must replace this placeholder)*
+- Contact support at `support@firsttry.solutions`
 
 ---
 
@@ -198,7 +198,7 @@ Continued use of the App after updates constitutes acceptance of the updated pol
 
 For privacy-related questions or requests:
 
-**Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*
+**Email**: `support@firsttry.solutions`
 
 **Response Time**: Requests acknowledged within 2 business days.
 

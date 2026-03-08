@@ -4,7 +4,9 @@
 
 set -e
 
-SUPPORT_DOC="./docs/SUPPORT.md"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SUPPORT_DOC="$APP_ROOT/SUPPORT.md"
 
 echo "Gate: verify:support-docs"
 echo "=========================="

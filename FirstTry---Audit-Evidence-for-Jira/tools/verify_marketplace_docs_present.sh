@@ -4,36 +4,36 @@
 
 set -e
 
-DOCS_DIR="./docs"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MIN_SIZE=200
 
 echo "Gate: verify:marketplace-docs"
 echo "==============================="
 
-# Check each required doc
-DOCS=(
-  "PRIVACY_POLICY.md"
-  "TERMS_OF_SERVICE.md"
-  "SUPPORT.md"
-  "SECURITY.md"
-  "DATA_HANDLING.md"
-)
+# Check each required doc — paths are relative to APP_ROOT (vendor tree root)
+declare -A DOCS
+DOCS["PRIVACY_POLICY.md"]="docs/legal/PRIVACY_POLICY.md"
+DOCS["TERMS_OF_SERVICE.md"]="docs/legal/TERMS_OF_SERVICE.md"
+DOCS["SUPPORT.md"]="SUPPORT.md"
+DOCS["SECURITY.md"]="SECURITY.md"
+DOCS["DATA_HANDLING.md"]="docs/trust/data_handling.md"
 
 FAILED=0
 
-for doc in "${DOCS[@]}"; do
-  PATH_TO_DOC="$DOCS_DIR/$doc"
-  
+for doc in "${!DOCS[@]}"; do
+  PATH_TO_DOC="$APP_ROOT/${DOCS[$doc]}"
+
   if [ ! -f "$PATH_TO_DOC" ]; then
-    echo "✗ MISSING: $PATH_TO_DOC"
+    echo "✗ MISSING: ${DOCS[$doc]}"
     FAILED=1
   else
     SIZE=$(wc -c < "$PATH_TO_DOC")
     if [ "$SIZE" -lt "$MIN_SIZE" ]; then
-      echo "✗ TOO SMALL ($SIZE bytes, need $MIN_SIZE): $PATH_TO_DOC"
+      echo "✗ TOO SMALL ($SIZE bytes, need $MIN_SIZE): ${DOCS[$doc]}"
       FAILED=1
     else
-      echo "✓ OK ($SIZE bytes): $doc"
+      echo "✓ OK ($SIZE bytes): $doc -> ${DOCS[$doc]}"
     fi
   fi
 done

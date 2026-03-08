@@ -163,7 +163,7 @@ The app logs structured markers (`[FT_*]`) to Forge platform logs for debugging:
 
 To report a security vulnerability:
 
-**Email**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*  
+**Email**: `support@firsttry.solutions`  
 **Subject**: `[SECURITY] Vulnerability Report`
 
 **Please Include**:
@@ -241,6 +241,6 @@ This app **does NOT claim**:
 
 ---
 
-**Security Contact**: `support@firsttry-solutions.com` *(operator must replace this placeholder)*  
+**Security Contact**: `support@firsttry.solutions`  
 **Last Updated**: 2026-02-10  
 **App Version**: 2.0.0
