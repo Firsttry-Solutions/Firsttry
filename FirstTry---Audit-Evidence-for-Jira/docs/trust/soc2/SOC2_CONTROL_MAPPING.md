@@ -1,6 +1,6 @@
 # FirstTry SOC 2 Control Mapping
 
-**Version:** 2.0.0  
+**Version:** 2.14.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active  
 **Framework:** AICPA Trust Services Criteria (2017)
@@ -389,4 +389,4 @@ This mapping is reviewed and updated:
 **Document Owner:** FirstTry Compliance Team  
 **Approved By:** Chief Information Security Officer  
 **Next Review:** 2027-03-04  
-**Version:** 2.0.0
+**Version:** 2.14.0

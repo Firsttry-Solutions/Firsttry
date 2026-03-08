@@ -1,6 +1,6 @@
 # FirstTry Audit Evidence for Jira
 
-**Version**: 2.0.0  
+**Version**: 2.14.0  
 **Platform**: Jira Cloud  
 **Runtime**: Atlassian Forge
 
@@ -31,7 +31,7 @@ This app provides a **read-only dashboard gadget** for Jira Cloud that displays 
 
 1. Install from Atlassian Marketplace
 2. App automatically seeds initial governance snapshot on first install
-3. Add the "Governance Dashboard" gadget to any Jira Dashboard
+3. Add the "FirstTry: Audit Evidence for Jira" gadget to any Jira Dashboard
 4. No manual configuration required
 
 **Requirements**:
@@ -144,7 +144,7 @@ See [SUPPORT.md](SUPPORT.md) for details on how to submit support requests.
 
 This app uses multiple version identifiers:
 
-- **Marketplace Version**: 2.0.0 (marketplace-locked; internal deploy version in `package.json` is 2.14.0 — see VERSIONING.md for the distinction)
+- **Marketplace Version**: 2.14.0 (marketplace-locked; internal deploy version in `package.json` is 2.14.0 — see VERSIONING.md for the distinction)
 - **Forge Deploy Version**: Deployment counter (e.g., 4.19.0, increments per deploy)
 - **Internal Release Marker**: Date-based marker (e.g., 2026.01.24.01, appears in logs)
 

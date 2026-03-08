@@ -1,6 +1,6 @@
 # Trust Center Architecture
 
-**Document Version:** 2.0.0  
+**Document Version:** 2.14.0  
 **Last Updated:** 2024-12-19  
 **Owner:** FirstTry Security  
 **Classification:** Public

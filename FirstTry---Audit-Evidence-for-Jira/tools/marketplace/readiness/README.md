@@ -1,6 +1,6 @@
 # Atlassian Marketplace Readiness Audit System
 
-**Version:** 2.0.0  
+**Version:** 2.14.0  
 **Purpose:** Fail-closed, zero-egress audit system for Atlassian Marketplace submission readiness
 
 ---

@@ -1,0 +1,49 @@
+---
+# Jekyll configuration for GitHub Pages
+# Site metadata
+title: "FirstTry Audit Evidence for Jira"
+description: "Read-only audit evidence dashboard for Jira Cloud"
+url: "https://Firsttry-Solutions.github.io/Firsttry"
+repository: "Firsttry-Solutions/Firsttry"
+baseurl: "/Firsttry"
+
+# Theme and plugins
+theme: jekyll-default
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Markdown processing
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Collections
+collections:
+  pages:
+    output: true
+    permalink: /:collection/:path/
+
+# Navigation menu for site.github
+include:
+  - .gitignore
+
+# Site structure
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+
+# Exclude from build
+exclude:
+  - node_modules
+  - package.json
+  - package-lock.json
+  - src/
+  - tools/
+  - tests/
+  - audit/
+
+---

@@ -771,6 +771,6 @@ FirstTry is now **marketplace ready** with:
 4. **For Continuous Compliance:** Schedule monthly marketplace audits
 
 **Document:** MARKETPLACE_READINESS_V2_COMPLETE.md  
-**Version:** 2.0.0  
+**Version:** 2.14.0  
 **Last Updated:** 2024-12-19  
 **Status:** ✅ **FINAL**

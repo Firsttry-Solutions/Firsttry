@@ -2,7 +2,7 @@
 
 **Vendor:** FirstTry  
 **Product:** FirstTry for Jira (Audit Evidence Dashboard)  
-**Version:** 2.0.0  
+**Version:** 2.14.0  
 **Completed:** March 4, 2026  
 **Valid Until:** March 4, 2027
 
@@ -395,6 +395,6 @@ FirstTry attests that all answers in this questionnaire are accurate as of March
 
 ---
 
-**Document Version:** 2.0.0  
+**Document Version:** 2.14.0  
 **Last Updated:** March 4, 2026  
 **Next Review:** March 4, 2027

@@ -1,7 +1,7 @@
 # Support Service Level Agreement (SLA)
 
 **Effective Date:** 2026-03-08  
-**Version:** 2.0.0
+**Version:** 2.14.0
 
 ## 1. Overview
 

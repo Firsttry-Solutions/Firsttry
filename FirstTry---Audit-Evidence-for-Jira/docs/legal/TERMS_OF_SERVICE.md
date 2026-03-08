@@ -2,7 +2,7 @@
 
 **Effective Date:** March 4, 2026  
 **Last Updated:** March 4, 2026  
-**Version:** 2.0.0
+**Version:** 2.14.0
 
 ---
 

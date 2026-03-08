@@ -1,6 +1,6 @@
 # FirstTry Vendor Security Assessment
 
-**Version:** 2.0.0  
+**Version:** 2.14.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active
 
@@ -365,4 +365,4 @@ When evaluating new vendors, FirstTry uses the following questionnaire:
 **Policy Owner:** FirstTry Security Team  
 **Approved By:** Chief Information Security Officer  
 **Next Review:** 2027-03-04  
-**Version:** 2.0.0
+**Version:** 2.14.0

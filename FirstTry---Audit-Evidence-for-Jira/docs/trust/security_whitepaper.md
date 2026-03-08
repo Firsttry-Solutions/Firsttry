@@ -1,6 +1,6 @@
 # FirstTry Security Whitepaper
 
-**Document Version:** 2.0.0  
+**Document Version:** 2.14.0  
 **Last Updated:** March 4, 2026  
 **Classification:** Public
 

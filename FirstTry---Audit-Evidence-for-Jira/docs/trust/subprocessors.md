@@ -1,6 +1,6 @@
 # FirstTry Subprocessors
 
-**Version:** 2.0.0  
+**Version:** 2.14.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active
 
@@ -353,4 +353,4 @@ For subprocessor inquiries:
 
 **Policy Owner:** FirstTry Compliance Team  
 **Next Review:** 2027-03-04  
-**Version:** 2.0.0
+**Version:** 2.14.0

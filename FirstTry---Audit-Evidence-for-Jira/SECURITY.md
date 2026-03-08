@@ -1,7 +1,7 @@
 # Security
 
 **App**: FirstTry Audit Evidence for Jira  
-**Version**: 2.0.0  
+**Version**: 2.14.0  
 **Last Updated**: 2026-02-10
 
 ---
@@ -243,4 +243,4 @@ This app **does NOT claim**:
 
 **Security Contact**: `support@firsttry.run`  
 **Last Updated**: 2026-02-10  
-**App Version**: 2.0.0
+**App Version**: 2.14.0

@@ -3,7 +3,7 @@
 **Welcome to the FirstTry Trust Center** — your comprehensive resource for security, privacy, and compliance documentation.
 
 **Last Updated:** March 4, 2026  
-**Version:** 2.0.0
+**Version:** 2.14.0
 
 ---
 
@@ -314,7 +314,7 @@ In case of conflict between this Trust Center and legal agreements (Terms of Ser
 
 **Trust Center Maintained By:** FirstTry Security & Compliance Team  
 **Contact:** trust@firsttry.run  
-**Version:** 2.0.0  
+**Version:** 2.14.0  
 **Last Updated:** March 4, 2026  
 **Next Review:** 2026-06-04
 

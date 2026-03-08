@@ -1,6 +1,6 @@
 # Incident Response Plan
 
-**Version:** 2.0.0  
+**Version:** 2.14.0  
 **Last Updated:** 2026-03-08
 
 ## 1. Overview

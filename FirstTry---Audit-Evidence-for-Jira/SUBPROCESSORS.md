@@ -1,7 +1,7 @@
 # Subprocessors and Data Processors
 
 **App**: FirstTry Audit Evidence for Jira  
-**Version**: 2.0.0  
+**Version**: 2.14.0  
 **Last Updated**: 2026-02-10
 
 ---
@@ -163,5 +163,5 @@ See [SUPPORT.md](SUPPORT.md) for support request guidelines.
 ---
 
 **Last Updated**: 2026-02-10  
-**App Version**: 2.0.0  
+**App Version**: 2.14.0  
 **Subprocessor Count**: 1 (Atlassian Forge only)
