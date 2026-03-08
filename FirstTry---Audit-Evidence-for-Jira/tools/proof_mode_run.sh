@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd /workspaces/Firsttry/atlassian/forge-app
+EVIDENCE_DIR="/tmp/ft_proof_mode_$(date -u +%Y%m%dT%H%M%SZ)"
+mkdir -p "$EVIDENCE_DIR"
+echo "$EVIDENCE_DIR" | tee "$EVIDENCE_DIR/EVIDENCE_DIR.txt"
+
+git status --porcelain | tee "$EVIDENCE_DIR/00_git_status.txt"
+test -z "$(git status --porcelain)" || (echo "FAIL: dirty tree" | tee -a "$EVIDENCE_DIR/00_git_status.txt" && exit 1)
+
+git rev-parse HEAD | tee "$EVIDENCE_DIR/04_head_sha.txt"
+printf "%s\n" "backbone_fix_a_correlation_echoing.test.ts" "p4_bridge_diagnostics_panel.test.ts" | tee "$EVIDENCE_DIR/05_skips_allowlist.txt"
+
+# Record environment versions (deterministic evidence)
+{
+  echo "node=$(node -v 2>/dev/null || echo 'UNKNOWN')";
+  echo "npm=$(npm -v 2>/dev/null || echo 'UNKNOWN')";
+  echo "os=$(uname -a 2>/dev/null || echo 'UNKNOWN')";
+} | tee "$EVIDENCE_DIR/07_env_versions.txt"
+
+# Record top-level dependency tree (depth=0)
+# Must not fail the proof run if npm ls returns non-zero due to peer dep warnings;
+# instead capture output and continue, but annotate exit code in the file.
+set +e
+npm ls --depth=0 >"$EVIDENCE_DIR/08_npm_ls_depth0.txt" 2>&1
+NPM_LS_EXIT=$?
+echo "" >>"$EVIDENCE_DIR/08_npm_ls_depth0.txt"
+echo "[NPM_LS_EXIT_CODE]=$NPM_LS_EXIT" >>"$EVIDENCE_DIR/08_npm_ls_depth0.txt"
+set -e
+
+# Gadget-UI asset integrity gate (fail-closed)
+node tools/gadget_ui_asset_integrity_gate.js 2>&1 | tee "$EVIDENCE_DIR/09_gadget_ui_asset_integrity.txt"
+
+# UI smoke production gate (conditional — requires live browser auth)
+if [ "${FT_UI_SMOKE:-}" = "1" ]; then
+  npx tsx tools/ui_smoke_production_gate.ts 2>&1 | tee "$EVIDENCE_DIR/10_ui_smoke_production.txt"
+else
+  echo "SKIPPED: FT_UI_SMOKE not set (no browser storageState)" | tee "$EVIDENCE_DIR/10_ui_smoke_production.txt"
+fi
+
+export FT_REQUIRE_CLEAN=1
+export FT_PROOF_MODE=1
+
+npm test 2>&1 | tee "$EVIDENCE_DIR/01_test_output.txt"
+
+node tools/posttest_clean_gate.js 2>&1 | tee "$EVIDENCE_DIR/02_posttest_clean_gate.txt"
+
+node tools/proof_no_skips_gate.js "$EVIDENCE_DIR/01_test_output.txt" 2>&1 | tee "$EVIDENCE_DIR/03_no_skips_gate.txt"
+
+# Create checksum file for all evidence artifacts
+( cd "$EVIDENCE_DIR" && ls -1 | sort | xargs -I{} sh -c 'test -f "{}" && sha256sum "{}"' ) \
+  | tee "$EVIDENCE_DIR/06_evidence_sha256sums.txt"
+
+echo "PASS: PROOF MODE"
+echo "EVIDENCE_DIR=$EVIDENCE_DIR"

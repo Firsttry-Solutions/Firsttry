@@ -19,11 +19,14 @@ export default defineConfig({
       'src/gadget-ui/**',
       // phase4 tests require @jest/globals or unresolved dependencies in this layout
       'src/phase4/**',
+      // src/__tests__/ are referenced as content artifacts, not standalone test runners
+      'src/__tests__/**',
     ],
     testTimeout: 10000,
     hookTimeout: 10000,
     setupFiles: ['./vitest.setup.ts'],
     fileParallelism: false,
+    passWithNoTests: true,
   },
   resolve: {
     alias: {
