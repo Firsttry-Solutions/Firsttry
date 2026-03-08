@@ -7,8 +7,11 @@ set -euo pipefail
 # ============================================================================
 # Configuration
 # ============================================================================
-RUN_ID="$(date -u +"%Y%m%dT%H%M%SZ")"
-EVIDENCE_DIR="/tmp/ft_reviewer_e2e_${RUN_ID}"
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
+FORGE_ENV="${FORGE_ENV:-production}"
+EVIDENCE_ROOT="${FT_EVIDENCE_DIR:-/tmp/ft_reviewer_e2e_${RUN_ID}}"
+EVIDENCE_DIR="$EVIDENCE_ROOT"
+export FT_REVIEWER_EVIDENCE_DIR="${FT_REVIEWER_EVIDENCE_DIR:-$EVIDENCE_DIR/04_playwright}"
 TUNNEL_TIMEOUT="${TUNNEL_TIMEOUT:-120}"
 ALLOW_DIRTY="${ALLOW_DIRTY:-0}"
 SKIP_DEPLOY="${SKIP_DEPLOY:-0}"
@@ -36,9 +39,10 @@ mkdir -p "$EVIDENCE_DIR"
 mkdir -p "$EVIDENCE_DIR/01_deploy"
 mkdir -p "$EVIDENCE_DIR/02_tunnel"
 mkdir -p "$EVIDENCE_DIR/03_forge_logs"
-mkdir -p "$EVIDENCE_DIR/04_playwright/screenshots"
-mkdir -p "$EVIDENCE_DIR/04_playwright/traces"
-mkdir -p "$EVIDENCE_DIR/04_playwright/videos"
+mkdir -p "$FT_REVIEWER_EVIDENCE_DIR"
+mkdir -p "$FT_REVIEWER_EVIDENCE_DIR/screenshots"
+mkdir -p "$FT_REVIEWER_EVIDENCE_DIR/traces"
+mkdir -p "$FT_REVIEWER_EVIDENCE_DIR/videos"
 
 # ============================================================================
 # Cleanup handler
@@ -229,9 +233,9 @@ if [ "$SKIP_DEPLOY" -eq 1 ]; then
   echo "[WARN] SKIP_DEPLOY=1, skipping deployment"
   echo "SKIPPED" > "$EVIDENCE_DIR/01_deploy/deploy.log"
 else
-  echo "[INFO] Running: forge deploy -e development"
+  echo "[INFO] Running: forge deploy -e $FORGE_ENV"
   
-  if ! forge deploy -e development > "$EVIDENCE_DIR/01_deploy/deploy.log" 2>&1; then
+  if ! forge deploy -e "$FORGE_ENV" > "$EVIDENCE_DIR/01_deploy/deploy.log" 2>&1; then
     echo "[FATAL] Forge deploy failed" >&2
     tail -50 "$EVIDENCE_DIR/01_deploy/deploy.log" >&2
     echo "FAIL" > "$EVIDENCE_DIR/FINAL_VERDICT.txt"
@@ -254,7 +258,7 @@ echo "=== PHASE 3: START FORGE TUNNEL ==="
 cd "$FORGE_APP"
 
 echo "[INFO] Starting forge tunnel in background..."
-forge tunnel -e development --verbose > "$EVIDENCE_DIR/02_tunnel/tunnel.log" 2>&1 &
+forge tunnel -e "$FORGE_ENV" --verbose > "$EVIDENCE_DIR/02_tunnel/tunnel.log" 2>&1 &
 TUNNEL_PID=$!
 
 echo "[INFO] Tunnel PID: $TUNNEL_PID"
@@ -319,7 +323,7 @@ echo "=== PHASE 4: CAPTURE FORGE LOGS ==="
 cd "$FORGE_APP"
 
 echo "[INFO] Starting forge logs capture in background..."
-forge logs -e development --tail 200 --follow > "$EVIDENCE_DIR/03_forge_logs/forge_logs.txt" 2>&1 &
+forge logs -e "$FORGE_ENV" --tail 200 --follow > "$EVIDENCE_DIR/03_forge_logs/forge_logs.txt" 2>&1 &
 LOGS_PID=$!
 
 echo "[INFO] Forge logs PID: $LOGS_PID"
@@ -343,6 +347,22 @@ if [ ! -d "node_modules/@playwright" ]; then
   npm install
 fi
 
+# Validate evidence dir is writable (fail-closed)
+if [ ! -d "$FT_REVIEWER_EVIDENCE_DIR" ]; then
+  mkdir -p "$FT_REVIEWER_EVIDENCE_DIR" || {
+    echo "[FATAL] Cannot create FT_REVIEWER_EVIDENCE_DIR: $FT_REVIEWER_EVIDENCE_DIR" >&2
+    exit 1
+  }
+fi
+if [ ! -w "$FT_REVIEWER_EVIDENCE_DIR" ]; then
+  echo "[FATAL] FT_REVIEWER_EVIDENCE_DIR is not writable: $FT_REVIEWER_EVIDENCE_DIR" >&2
+  exit 1
+fi
+
+echo "[INFO] FORGE_ENV=$FORGE_ENV"
+echo "[INFO] FT_REVIEWER_EVIDENCE_DIR=$FT_REVIEWER_EVIDENCE_DIR"
+echo "[INFO] JIRA_BASE_URL=$JIRA_BASE_URL"
+echo "[INFO] JIRA_DASHBOARD_URL=$JIRA_DASHBOARD_URL"
 echo "[INFO] Running Playwright test..."
 echo "[INFO] Config: playwright.reviewer.config.ts"
 echo "[INFO] Test: tests/playwright/reviewer_dashboard_e2e.spec.ts"
@@ -352,13 +372,14 @@ export JIRA_BASE_URL="$JIRA_BASE_URL"
 export JIRA_DASHBOARD_URL="$JIRA_DASHBOARD_URL"
 export PLAYWRIGHT_STORAGE_STATE="$PLAYWRIGHT_STORAGE_STATE"
 export FORGE_TUNNEL_URL="$TUNNEL_URL"
-export PLAYWRIGHT_SCREENSHOTS_DIR="$EVIDENCE_DIR/04_playwright/screenshots"
-export PLAYWRIGHT_TRACES_DIR="$EVIDENCE_DIR/04_playwright/traces"
-export PLAYWRIGHT_VIDEOS_DIR="$EVIDENCE_DIR/04_playwright/videos"
-export PLAYWRIGHT_CONSOLE_LOG="$EVIDENCE_DIR/04_playwright/console.log"
-export PLAYWRIGHT_CONSOLE_ERRORS="$EVIDENCE_DIR/04_playwright/console_errors.log"
-export PLAYWRIGHT_PAGE_ERRORS="$EVIDENCE_DIR/04_playwright/page_errors.log"
-export PLAYWRIGHT_SUMMARY_JSON="$EVIDENCE_DIR/04_playwright/summary.json"
+export FT_REVIEWER_EVIDENCE_DIR
+export PLAYWRIGHT_SCREENSHOTS_DIR="$FT_REVIEWER_EVIDENCE_DIR/screenshots"
+export PLAYWRIGHT_TRACES_DIR="$FT_REVIEWER_EVIDENCE_DIR/traces"
+export PLAYWRIGHT_VIDEOS_DIR="$FT_REVIEWER_EVIDENCE_DIR/videos"
+export PLAYWRIGHT_CONSOLE_LOG="$FT_REVIEWER_EVIDENCE_DIR/console.log"
+export PLAYWRIGHT_CONSOLE_ERRORS="$FT_REVIEWER_EVIDENCE_DIR/console_errors.log"
+export PLAYWRIGHT_PAGE_ERRORS="$FT_REVIEWER_EVIDENCE_DIR/page_errors.log"
+export PLAYWRIGHT_SUMMARY_JSON="$FT_REVIEWER_EVIDENCE_DIR/summary.json"
 
 # Initialize log files
 > "$PLAYWRIGHT_CONSOLE_LOG"
@@ -368,10 +389,10 @@ export PLAYWRIGHT_SUMMARY_JSON="$EVIDENCE_DIR/04_playwright/summary.json"
 if ! npx playwright test \
   --config=playwright.reviewer.config.ts \
   tests/playwright/reviewer_dashboard_e2e.spec.ts \
-  > "$EVIDENCE_DIR/04_playwright/playwright.log" 2>&1; then
+  > "$FT_REVIEWER_EVIDENCE_DIR/playwright.log" 2>&1; then
   
   echo "[FATAL] Playwright test FAILED" >&2
-  tail -100 "$EVIDENCE_DIR/04_playwright/playwright.log" >&2
+  tail -100 "$FT_REVIEWER_EVIDENCE_DIR/playwright.log" >&2
   
   if [ -f "$PLAYWRIGHT_CONSOLE_ERRORS" ] && [ -s "$PLAYWRIGHT_CONSOLE_ERRORS" ]; then
     echo "[FATAL] Console errors detected:" >&2
@@ -389,15 +410,15 @@ if ! npx playwright test \
   exit 1
 fi
 
-echo "[OK] Playwright test PASSED"
-tail -30 "$EVIDENCE_DIR/04_playwright/playwright.log"
+echo "[OK] Playwright completed"
+tail -30 "$FT_REVIEWER_EVIDENCE_DIR/playwright.log"
 
 # Copy Playwright test-results to evidence (videos, traces, test artifacts)
 echo "[INFO] Copying Playwright test artifacts..."
 if [ -d "test-results" ]; then
-  cp -r test-results "$EVIDENCE_DIR/04_playwright/test-results"
-  VIDEO_COUNT=$(find "$EVIDENCE_DIR/04_playwright/test-results" -name "*.webm" 2>/dev/null | wc -l)
-  TRACE_COUNT=$(find "$EVIDENCE_DIR/04_playwright/test-results" -name "*.zip" 2>/dev/null | wc -l)
+  cp -r test-results "$FT_REVIEWER_EVIDENCE_DIR/test-results"
+  VIDEO_COUNT=$(find "$FT_REVIEWER_EVIDENCE_DIR/test-results" -name "*.webm" 2>/dev/null | wc -l)
+  TRACE_COUNT=$(find "$FT_REVIEWER_EVIDENCE_DIR/test-results" -name "*.zip" 2>/dev/null | wc -l)
   echo "  ✓ Videos: $VIDEO_COUNT"
   echo "  ✓ Traces: $TRACE_COUNT"
 else
@@ -442,7 +463,7 @@ if [ -f "$PLAYWRIGHT_PAGE_ERRORS" ] && [ -s "$PLAYWRIGHT_PAGE_ERRORS" ]; then
 fi
 
 # Check screenshots (5 expected for Jira dashboard test)
-SCREENSHOT_COUNT=$(find "$EVIDENCE_DIR/04_playwright/screenshots" -name "reviewer_*.png" | wc -l)
+SCREENSHOT_COUNT=$(find "$FT_REVIEWER_EVIDENCE_DIR/screenshots" -name "reviewer_*.png" | wc -l)
 if [ "$SCREENSHOT_COUNT" -lt 5 ]; then
   VERDICT="FAIL"
   REASON="Expected 5 screenshots, found $SCREENSHOT_COUNT"
