@@ -1,6 +1,6 @@
 # FirstTry Security Whitepaper
 
-**Document Version:** 1.0  
+**Document Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Classification:** Public
 
@@ -392,7 +392,7 @@ FirstTry uses **no third-party subprocessors**. All processing occurs within Atl
 
 ### 6.3 Responsible Disclosure
 
-**Security vulnerabilities:** Report to [security@firsttry.io](mailto:security@firsttry.io)
+**Security vulnerabilities:** Report to [security@firsttry.run](mailto:security@firsttry.run)
 
 **Response commitment:**
 - Acknowledgment within 24 hours
@@ -437,17 +437,17 @@ FirstTry uses **no third-party subprocessors**. All processing occurs within Atl
 ## 8. Contact Information
 
 ### Security Contact
-- **Email:** security@firsttry.io
+- **Email:** security@firsttry.run
 - **PGP Key:** Available on request
 - **Response Time:** 24 hours
 
 ### Support Contact
-- **Email:** support@firsttry.io
+- **Email:** support@firsttry.run
 - **Documentation:** `docs/support/SUPPORT_SLA.md`
 - **Response Time:** See SLA
 
 ### Legal Contact
-- **Email:** legal@firsttry.io
+- **Email:** legal@firsttry.run
 - **Privacy Policy:** `docs/legal/PRIVACY_POLICY.md`
 - **Terms of Service:** `docs/legal/TERMS_OF_SERVICE.md`
 

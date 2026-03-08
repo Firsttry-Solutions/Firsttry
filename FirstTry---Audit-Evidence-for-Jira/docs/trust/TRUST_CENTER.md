@@ -3,7 +3,7 @@
 **Welcome to the FirstTry Trust Center** — your comprehensive resource for security, privacy, and compliance documentation.
 
 **Last Updated:** March 4, 2026  
-**Version:** 1.0
+**Version:** 2.0.0
 
 ---
 
@@ -110,7 +110,7 @@ A: No. FirstTry has **no external network egress** (enforced by Forge platform).
 A: Read-only permissions (`read:jira-work`, `storage:app`). No write permissions, no admin permissions, no Jira configuration changes. See [manifest.yml](../../manifest.yml).
 
 **Q: How do I report a security vulnerability?**  
-A: Email security@firsttry.io or use our [Responsible Disclosure](responsible_disclosure.md) process. We respond within 24 hours.
+A: Email security@firsttry.run or use our [Responsible Disclosure](responsible_disclosure.md) process. We respond within 24 hours.
 
 ---
 
@@ -159,26 +159,26 @@ FirstTry provides automated tools for security verification:
 
 ### Security
 
-- **Report Vulnerability:** security@firsttry.io (24-hour response)
+- **Report Vulnerability:** security@firsttry.run (24-hour response)
 - **PGP Key:** https://firsttry.io/pgp-key.txt
 - **GitHub Security Advisory:** [Private disclosure](https://github.com/firsttry/FirstTry---Audit-Evidence-for-Jira/security/advisories)
 
 ### Privacy
 
-- **Privacy Officer:** privacy@firsttry.io
-- **Data Protection Officer (DPO):** dpo@firsttry.io
-- **GDPR/CCPA Requests:** privacy@firsttry.io (48-hour response)
+- **Privacy Officer:** privacy@firsttry.run
+- **Data Protection Officer (DPO):** dpo@firsttry.run
+- **GDPR/CCPA Requests:** privacy@firsttry.run (48-hour response)
 
 ### Compliance
 
-- **SOC 2 Inquiries:** compliance@firsttry.io
-- **Audit Requests:** compliance@firsttry.io
-- **Legal:** legal@firsttry.io
+- **SOC 2 Inquiries:** compliance@firsttry.run
+- **Audit Requests:** compliance@firsttry.run
+- **Legal:** legal@firsttry.run
 
 ### Support
 
-- **General Support:** support@firsttry.io
-- **Technical Support:** support@firsttry.io
+- **General Support:** support@firsttry.run
+- **Technical Support:** support@firsttry.run
 - **SLA:** See [Support SLA](../support/SUPPORT_SLA.md)
 
 ---
@@ -195,7 +195,7 @@ FirstTry provides automated tools for security verification:
 ### Subscribe to Updates
 
 - **GitHub Watch:** Click "Watch" on [repository](https://github.com/firsttry/FirstTry---Audit-Evidence-for-Jira) for security advisories
-- **Security Mailing List:** Email security@firsttry.io with subject "Subscribe to security updates"
+- **Security Mailing List:** Email security@firsttry.run with subject "Subscribe to security updates"
 
 ---
 
@@ -313,8 +313,8 @@ In case of conflict between this Trust Center and legal agreements (Terms of Ser
 ---
 
 **Trust Center Maintained By:** FirstTry Security & Compliance Team  
-**Contact:** trust@firsttry.io  
-**Version:** 1.0  
+**Contact:** trust@firsttry.run  
+**Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Next Review:** 2026-06-04
 

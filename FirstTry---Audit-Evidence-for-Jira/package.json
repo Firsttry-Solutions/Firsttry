@@ -1,7 +1,7 @@
 {
   "name": "@firstry/forge-app",
   "version": "2.14.0",
-  "description": "FirstTry Governance - Atlassian Dual-Layer Integration",
+  "description": "FirstTry Audit Evidence for Jira - Read-only dashboard gadget",
   "license": "SEE LICENSE IN LICENSE",
   "main": "src/index.ts",
   "scripts": {

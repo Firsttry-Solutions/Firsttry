@@ -1,6 +1,6 @@
 # FirstTry Threat Model
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active
 

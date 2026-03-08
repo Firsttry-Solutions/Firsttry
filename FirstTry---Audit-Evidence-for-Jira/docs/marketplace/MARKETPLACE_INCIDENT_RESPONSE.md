@@ -1,7 +1,7 @@
 # Incident Response Plan
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-01
+**Version:** 2.0.0  
+**Last Updated:** 2026-03-08
 
 ## 1. Overview
 
@@ -37,7 +37,7 @@ Not classified as incidents:
 
 ### 3.2 Contact
 
-**Incident Hotline:** security@firsttry.solutions  
+**Incident Hotline:** security@firsttry.run  
 **Subject Line:** [INCIDENT] Brief Description
 
 ## 4. Incident Response Phases
@@ -45,7 +45,7 @@ Not classified as incidents:
 ### 4.1 Phase 1: Detection and Reporting
 
 **Detection Methods:**
-- User reports (via security@firsttry.solutions)
+- User reports (via security@firsttry.run)
 - Automated monitoring (npm audit, CI checks)
 - Atlassian security bulletins
 - Third-party researcher reports
@@ -273,15 +273,15 @@ For responsibly disclosed vulnerabilities:
 ## 12. Contact Information
 
 **Incident Reporting:**
-- Email: security@firsttry.solutions
+- Email: security@firsttry.run
 - Subject: [INCIDENT] Description
 
 **Incident Status Inquiries:**
-- Email: support@firsttry.solutions
+- Email: support@firsttry.run
 - Include incident reference number
 
 **After-Hours Critical:**
-- Email security@firsttry.solutions with [URGENT] prefix
+- Email security@firsttry.run with [URGENT] prefix
 
 ---
 

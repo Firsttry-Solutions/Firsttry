@@ -2,7 +2,7 @@
 
 **Effective Date:** March 4, 2026  
 **Last Updated:** March 4, 2026  
-**Version:** 1.0
+**Version:** 2.0.0
 
 ---
 
@@ -116,7 +116,7 @@ You are responsible for all taxes (sales, VAT, GST) except FirstTry income taxes
 
 **Refund Policy:** Subject to Atlassian Marketplace refund policy (typically 30-day money-back guarantee for first purchase).
 
-**Contact:** support@firsttry.io for refund requests (we will coordinate with Atlassian).
+**Contact:** support@firsttry.run for refund requests (we will coordinate with Atlassian).
 
 ### 5.4 Changes to Pricing
 
@@ -133,7 +133,7 @@ We may change pricing with **30-day notice**. Existing subscriptions will renew 
 - **FirstTry:** Data Processor (processes on your behalf)
 - **Atlassian:** Sub-Processor (hosts Forge platform)
 
-**Data Processing Agreement (DPA):** Available upon request at privacy@firsttry.io (incorporates Standard Contractual Clauses for GDPR compliance).
+**Data Processing Agreement (DPA):** Available upon request at privacy@firsttry.run (incorporates Standard Contractual Clauses for GDPR compliance).
 
 ### 6.2 Privacy Policy
 
@@ -337,7 +337,7 @@ FirstTry provides email support per [Support SLA](../support/SUPPORT_SLA.md):
 - P2 (Medium): 1 business day
 - P3 (Low): 2 business days
 
-**Contact:** support@firsttry.io
+**Contact:** support@firsttry.run
 
 ### 12.2 Updates
 
@@ -419,7 +419,7 @@ These Terms are governed by the laws of **California, USA** (without regard to c
 
 ### 15.2 Informal Resolution
 
-**Before Legal Action:** You agree to contact support@firsttry.io and attempt good-faith resolution for 30 days.
+**Before Legal Action:** You agree to contact support@firsttry.run and attempt good-faith resolution for 30 days.
 
 ### 15.3 Arbitration (US Customers)
 
@@ -430,7 +430,7 @@ These Terms are governed by the laws of **California, USA** (without regard to c
 - **Costs:** Each party pays own costs (filing fees split if < $10,000 claim)
 - **Class Action Waiver:** No class arbitration (individual claims only)
 
-**Opt-Out:** You may opt out within 30 days of accepting these Terms by emailing legal@firsttry.io.
+**Opt-Out:** You may opt out within 30 days of accepting these Terms by emailing legal@firsttry.run.
 
 **Small Claims:** You may bring claims in small claims court (if eligible).
 
@@ -472,7 +472,7 @@ If any provision is invalid or unenforceable, it will be modified to achieve the
 
 **To You:** Email to administrator (email on file with Atlassian) or in-app banner.
 
-**To FirstTry:** Email to legal@firsttry.io (with subject "Legal Notice").
+**To FirstTry:** Email to legal@firsttry.run (with subject "Legal Notice").
 
 **Effective:** 3 business days after sending.
 
@@ -498,10 +498,10 @@ If you are a US government entity, the App is "commercial computer software" (FA
 
 | Purpose | Email | Address |
 |---------|-------|---------|
-| General Support | support@firsttry.io | FirstTry Inc. (example address) |
-| Legal | legal@firsttry.io | 123 Market St, San Francisco, CA 94103 |
-| Privacy/Data | privacy@firsttry.io | Same as above |
-| Security | security@firsttry.io | Same as above |
+| General Support | support@firsttry.run | FirstTry Inc. (example address) |
+| Legal | legal@firsttry.run | 123 Market St, San Francisco, CA 94103 |
+| Privacy/Data | privacy@firsttry.run | Same as above |
+| Security | security@firsttry.run | Same as above |
 
 ---
 
@@ -526,7 +526,7 @@ By clicking "Install" or using the App, you acknowledge that:
 **Terms Owner:** FirstTry Legal Team  
 **Approved By:** Chief Legal Officer  
 **Next Review:** 2026-06-04 (quarterly)  
-**Contact:** legal@firsttry.io
+**Contact:** legal@firsttry.run
 
 ---
 

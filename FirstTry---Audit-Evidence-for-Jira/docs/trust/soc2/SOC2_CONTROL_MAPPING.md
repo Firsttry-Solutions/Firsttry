@@ -1,6 +1,6 @@
 # FirstTry SOC 2 Control Mapping
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active  
 **Framework:** AICPA Trust Services Criteria (2017)
@@ -45,7 +45,7 @@ This document maps FirstTry's security controls to **SOC 2 Trust Service Criteri
 |------------|---------------------|----------------|----------|-------|
 | **CC2.1** | Security objectives communicated | Trust Center (public), Security Whitepaper | `docs/trust/TRUST_CENTER.md` | Marketing Team |
 | **CC2.2** | Changes communicated | Release notes (CHANGELOG.md), email notifications | GitHub releases, email logs | Product Team |
-| **CC2.3** | External parties can report issues | Responsible Disclosure Policy, security@firsttry.io | `docs/trust/responsible_disclosure.md` | Security Team |
+| **CC2.3** | External parties can report issues | Responsible Disclosure Policy, security@firsttry.run | `docs/trust/responsible_disclosure.md` | Security Team |
 
 **Assessment:** ✅ **Effective**
 
@@ -389,4 +389,4 @@ This mapping is reviewed and updated:
 **Document Owner:** FirstTry Compliance Team  
 **Approved By:** Chief Information Security Officer  
 **Next Review:** 2027-03-04  
-**Version:** 1.0
+**Version:** 2.0.0

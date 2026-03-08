@@ -2,7 +2,7 @@
 
 **Vendor:** FirstTry  
 **Product:** FirstTry for Jira (Audit Evidence Dashboard)  
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Completed:** March 4, 2026  
 **Valid Until:** March 4, 2027
 
@@ -14,7 +14,7 @@ This questionnaire has been **pre-filled** by FirstTry to accelerate your securi
 
 **For Enterprise Buyers:**
 - Review answers below
-- Request clarification at security@firsttry.io
+- Request clarification at security@firsttry.run
 - Request supporting documentation (references provided for each answer)
 
 **Response Time:** 48 hours for additional questions.
@@ -61,8 +61,8 @@ FirstTry is a read-only audit evidence dashboard for Jira Cloud. It captures poi
 | Question | Answer | Evidence |
 |----------|--------|----------|
 | Do you have a security program? | Yes | [Security Whitepaper](security_whitepaper.md), [Threat Model](threat_model.md) |
-| Who is responsible for security? | Security Team (security@firsttry.io) | [Incident Response Plan](incident_response.md) Section 4.1 |
-| Do you have a CISO? | Yes (or equivalent role) | Contact: security@firsttry.io |
+| Who is responsible for security? | Security Team (security@firsttry.run) | [Incident Response Plan](incident_response.md) Section 4.1 |
+| Do you have a CISO? | Yes (or equivalent role) | Contact: security@firsttry.run |
 | Frequency of security reviews? | Quarterly (internal), Annual (external via Atlassian) | [SOC2 Control Mapping](soc2/SOC2_CONTROL_MAPPING.md) Section 10.1 |
 | Security policies documented? | Yes | All docs in `docs/trust/` |
 
@@ -128,7 +128,7 @@ FirstTry is a read-only audit evidence dashboard for Jira Cloud. It captures poi
 
 | Question | Answer | Evidence |
 |----------|--------|----------|
-| Right to access? | Yes (email privacy@firsttry.io, 30-day response) | [Data Handling Policy](data_handling.md) Section 6.1 |
+| Right to access? | Yes (email privacy@firsttry.run, 30-day response) | [Data Handling Policy](data_handling.md) Section 6.1 |
 | Right to rectification? | Yes (modify snapshots in dashboard, real-time) | [Data Handling Policy](data_handling.md) Section 6.1 |
 | Right to erasure? | Yes (uninstall app, immediate deletion) | [Data Handling Policy](data_handling.md) Section 6.2 |
 | Right to portability? | Yes (evidence pack export, JSON format) | [Data Handling Policy](data_handling.md) Section 7.2 |
@@ -224,7 +224,7 @@ FirstTry is a read-only audit evidence dashboard for Jira Cloud. It captures poi
 | Incident severity levels? | P0 (Critical), P1 (High), P2 (Medium), P3 (Low) | [Incident Response Plan](incident_response.md) Section 3.1 |
 | Response time (P0)? | 15 minutes | [Incident Response Plan](incident_response.md) Section 3.1 |
 | Breach notification timeline (GDPR)? | 72 hours to supervisory authority, immediate to data subjects if high risk | [Incident Response Plan](incident_response.md) Section 6.1 |
-| Security contact? | security@firsttry.io (24-hour response) | [Trust Center](TRUST_CENTER.md) |
+| Security contact? | security@firsttry.run (24-hour response) | [Trust Center](TRUST_CENTER.md) |
 
 ### 6.2 Business Continuity
 
@@ -329,7 +329,7 @@ FirstTry is a read-only audit evidence dashboard for Jira Cloud. It captures poi
 |----------|--------|----------|
 | Threat modeling conducted? | Yes (STRIDE analysis, annual review) | [Threat Model](threat_model.md) |
 | Security metrics tracked? | Yes (vulnerability remediation time, test pass rate) | [SOC2 Control Mapping](soc2/SOC2_CONTROL_MAPPING.md) Section 10.2 |
-| Security roadmap? | Yes (documented in internal roadmap) | Contact security@firsttry.io for details |
+| Security roadmap? | Yes (documented in internal roadmap) | Contact security@firsttry.run for details |
 
 ### 11.2 Transparency
 
@@ -367,11 +367,11 @@ If you have additional questions or need clarification:
 
 | Purpose | Contact | Response Time |
 |---------|---------|---------------|
-| Security questions | security@firsttry.io | 24 hours |
-| Compliance questions | compliance@firsttry.io | 48 hours |
-| Privacy questions | privacy@firsttry.io | 48 hours |
-| General inquiries | support@firsttry.io | 24 hours |
-| Legal questions | legal@firsttry.io | 48 hours |
+| Security questions | security@firsttry.run | 24 hours |
+| Compliance questions | compliance@firsttry.run | 48 hours |
+| Privacy questions | privacy@firsttry.run | 48 hours |
+| General inquiries | support@firsttry.run | 24 hours |
+| Legal questions | legal@firsttry.run | 48 hours |
 
 ---
 
@@ -381,7 +381,7 @@ If you have additional questions or need clarification:
 
 **Material Changes:** We will notify you of material security changes via email (30-day notice).
 
-**Subscribe to Updates:** Email security@firsttry.io with subject "Subscribe to security updates"
+**Subscribe to Updates:** Email security@firsttry.run with subject "Subscribe to security updates"
 
 ---
 
@@ -391,10 +391,10 @@ FirstTry attests that all answers in this questionnaire are accurate as of March
 
 **Completed By:** FirstTry Security Team  
 **Review:** annual  
-**Contact:** security@firsttry.io
+**Contact:** security@firsttry.run
 
 ---
 
-**Document Version:** 1.0  
+**Document Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Next Review:** March 4, 2027

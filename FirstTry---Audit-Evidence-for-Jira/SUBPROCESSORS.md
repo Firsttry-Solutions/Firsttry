@@ -146,7 +146,7 @@ Compliance is subject to Atlassian Forge platform's compliance posture.
 
 For questions about this app's data processing:
 
-**Email**: `support@firsttry.solutions`  
+**Email**: `support@firsttry.run`  
 **Response Time**: Acknowledged within 2 business days
 
 See [SUPPORT.md](SUPPORT.md) for support request guidelines.

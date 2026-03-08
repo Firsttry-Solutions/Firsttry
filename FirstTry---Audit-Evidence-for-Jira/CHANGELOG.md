@@ -14,7 +14,7 @@ All notable changes to FirstTry are documented in this file.
 - **License Metadata:** Added explicit license field to package.json pointing to LICENSE file
 - **CI Workflow:** Enhanced marketplace-readiness.yml to include build and test steps
 - **Screenshot Automation:** Consolidated screenshot prerequisite failures into single deterministic message
-- **Documentation Consistency:** Ensured all contact emails use canonical @firsttry.solutions addresses from CONTACTS.md
+- **Documentation Consistency:** Ensured all contact emails use canonical @firsttry.run addresses from CONTACTS.md
 - **Retention Policy:** Explicitly documented 7-day retention period for cached data with TTL enforcement
 - **Data Categories:** Comprehensive documentation of what data is accessed, stored, and how deletion is handled
 
@@ -323,7 +323,7 @@ and client-side search — without touching any runtime app code.
 
 **`atlassian/forge-app/tools/verify_pages_site_artifact.sh`** (new)
 - Standalone fail-closed script: asserts required files, forbidden dirs absent,
-  no placeholder tokens (example.com/org, @firsttry.app, [Your Jurisdiction], TBD, TODO),
+  no placeholder tokens (example.com/org, @firsttry.run, [Your Jurisdiction], TBD, TODO),
   all emails on 5-address allowlist — exits non-zero on any failure
 - Uses `grep -F` for literal placeholder patterns to prevent regex false positives
 
@@ -426,7 +426,7 @@ exclude `atlassian/forge-app/docs/**` from their push path filters.
 - Checks HTTP 200 for all 10 required enterprise pack URLs
 - Checks HTTP non-200 for forbidden paths (`/production/`, `/dist/`, `/node_modules/`)
 - Scans fetched content for placeholder patterns (`example.com`, `example.org`,
-  `@firsttry.app`, `[Your Jurisdiction]`, whole-word `TBD`, whole-word `TODO`)
+  `@firsttry.run`, `[Your Jurisdiction]`, whole-word `TBD`, whole-word `TODO`)
 - Extracts all emails from fetched content and fails if any are not on the 5-address allowlist
 - Prints deterministic `PASS`/`FAIL` summary per URL; exits non-zero on any failure
 
@@ -476,7 +476,7 @@ The docs workflow lived at `atlassian/forge-app/.github/workflows/docs.yml` and 
 - Replaced weak "Scan Pages output" step with new fail-closed step:
   - Asserts all 10 required files exist (`test -f`)
   - Asserts forbidden dirs absent (`test ! -d site/production`, etc.)
-  - Scans for forbidden placeholders: `example.com`, `example.org`, `@firsttry.app`,
+  - Scans for forbidden placeholders: `example.com`, `example.org`, `@firsttry.run`,
     `[Your Jurisdiction]`, word-boundary `TBD`, word-boundary `TODO`
   - Extracts all emails from site/ (sorted), fails if any not in the 5-address allowlist
   - All output deterministic and sorted; exits non-zero on any failure
@@ -509,14 +509,14 @@ The docs workflow lived at `atlassian/forge-app/.github/workflows/docs.yml` and 
 
 **Email Integrity Gate (v4.2.5)**
 - `tools/email_integrity_gate.mjs` — extended placeholder detection:
-  - Adds `@firsttry.app`, `[Your Jurisdiction]`, full-word `TBD`, full-word `TODO`
+  - Adds `@firsttry.run`, `[Your Jurisdiction]`, full-word `TBD`, full-word `TODO`
   - Scan scope narrowed to enterprise dirs ONLY (drops docs/README.md, root README.md)
   - `privacy@firsttry.run` REQUIRED_PRESENCE now includes `docs/trust/SUBPROCESSORS.md`
   - `contact@firsttry.run` REQUIRED_PRESENCE: removed `README.md` (outside enterprise scope)
 
 **Placeholder Purge Gate (new step 2c)**
 - `tools/enterprise_docs_gate.sh` step **2c** — fail-closed scan of all enterprise dirs
-  for patterns: `[Your Jurisdiction]`, `example.com`, `@firsttry.app`, `\bTBD\b`, `\bTODO\b`
+  for patterns: `[Your Jurisdiction]`, `example.com`, `@firsttry.run`, `\bTBD\b`, `\bTODO\b`
 
 **SUBPROCESSORS.md — Privacy Contact**
 - Added "Privacy Inquiries" section with `privacy@firsttry.run` (satisfies email gate

@@ -1,6 +1,6 @@
 # Atlassian Marketplace Readiness Audit System
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Purpose:** Fail-closed, zero-egress audit system for Atlassian Marketplace submission readiness
 
 ---
@@ -482,8 +482,8 @@ cat /tmp/ft_marketplace_readiness_*/FINAL_VERDICT.txt
 
 ## Support
 
-**Questions:** support@example.com  
-**Security:** security@example.com  
+**Questions:** support@firsttry.run  
+**Security:** security.contact@firsttry.run  
 **Documentation:** docs/marketplace/
 
 ---

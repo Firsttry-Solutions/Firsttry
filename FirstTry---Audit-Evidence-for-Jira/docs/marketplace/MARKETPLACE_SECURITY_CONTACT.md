@@ -1,18 +1,18 @@
 # Security Contact
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-01
+**Version:** 2.0.0  
+**Last Updated:** 2026-03-08
 
 ## 1. Security Contact Information
 
 For security vulnerabilities, incidents, or questions:
 
 **Primary Contact:**
-- **Email:** security@firsttry.solutions
+- **Email:** security@firsttry.run
 - **Response Time:** Within 24 hours for critical issues
 
 **Secondary Contact:**
-- **Email:** support@firsttry.solutions
+- **Email:** support@firsttry.run
 - **Use for:** Non-critical security questions
 
 ## 2. Reporting Security Vulnerabilities
@@ -36,7 +36,7 @@ Please do NOT report:
 
 ### 2.3 How to Report
 
-**Step 1:** Email security@firsttry.solutions with:
+**Step 1:** Email security@firsttry.run with:
 - Subject: "[SECURITY] Vulnerability Report"
 - Description of the vulnerability
 - Steps to reproduce
@@ -92,7 +92,7 @@ We prefer coordinated disclosure:
 ### 4.1 Incident Hotline
 
 **For active security incidents:**
-- Email: security@firsttry.solutions with "[INCIDENT]" in subject
+- Email: security@firsttry.run with "[INCIDENT]" in subject
 - Include: Affected systems, observed behavior, time of incident
 
 ### 4.2 Our Response
@@ -267,11 +267,11 @@ Security is a continuous process:
 
 | Issue Type | Email | Response Time |
 |------------|-------|---------------|
-| Critical Vulnerability | security@firsttry.solutions | 24 hours |
-| High Vulnerability | security@firsttry.solutions | 3 business days |
-| Medium/Low Vulnerability | security@firsttry.solutions | 5 business days |
-| Security Questions | support@firsttry.solutions | 2 business days |
-| Active Incident | security@firsttry.solutions | 1 hour |
+| Critical Vulnerability | security@firsttry.run | 24 hours |
+| High Vulnerability | security@firsttry.run | 3 business days |
+| Medium/Low Vulnerability | security@firsttry.run | 5 business days |
+| Security Questions | support@firsttry.run | 2 business days |
+| Active Incident | security@firsttry.run | 1 hour |
 
 ## 15. Legal Protection
 
@@ -293,6 +293,6 @@ Testing must:
 
 **We take security seriously. Thank you for helping us protect our users.**
 
-**Contact:** security@firsttry.solutions
+**Contact:** security@firsttry.run
 
 **Total Character Count:** Exceeds 400 bytes as required for marketplace readiness audit.

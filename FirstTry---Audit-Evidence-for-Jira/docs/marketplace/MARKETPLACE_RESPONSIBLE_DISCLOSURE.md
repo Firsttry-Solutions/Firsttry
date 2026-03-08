@@ -1,7 +1,7 @@
 # Responsible Disclosure Policy
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-01
+**Version:** 2.0.0  
+**Last Updated:** 2026-03-08
 
 ## 1. Overview
 
@@ -30,7 +30,7 @@ Please do NOT report:
 
 ### 3.1 Reporting Process
 
-**Step 1:** Email security@firsttry.solutions
+**Step 1:** Email security@firsttry.run
 
 Include:
 - **Subject:** [SECURITY] Brief vulnerability description
@@ -267,7 +267,7 @@ We expect:
 
 1. Researcher finds XSS vulnerability in UI component
 2. Researcher tests on their own instance
-3. Researcher emails security@firsttry.solutions with details
+3. Researcher emails security@firsttry.run with details
 4. We acknowledge within 24 hours
 5. We verify and fix within 30 days
 6. We coordinate disclosure at 60 days
@@ -284,7 +284,7 @@ We expect:
 ## 13. Contact Information
 
 **Primary Contact:**
-- **Email:** security@firsttry.solutions
+- **Email:** security@firsttry.run
 - **Subject:** [SECURITY] Vulnerability Report
 
 **PGP Key:** [If available]

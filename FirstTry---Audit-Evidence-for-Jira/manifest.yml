@@ -17,7 +17,7 @@ modules:
   jira:dashboardGadget:
     - key: governance-dashboard-gadget-v2
       title: "FirstTry: Audit Evidence for Jira"
-      description: FirstTry Governance - real-time status overview
+      description: Read-only audit evidence dashboard for Jira Cloud
       resource: govGadget2141
       resolver:
         function: get-status-snapshot-fn

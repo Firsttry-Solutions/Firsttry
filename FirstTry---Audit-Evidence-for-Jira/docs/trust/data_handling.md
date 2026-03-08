@@ -1,6 +1,6 @@
 # FirstTry Data Handling Policy
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active
 
@@ -189,7 +189,7 @@ FirstTry supports the following data subject rights:
 
 | Right | How to Exercise | Response Time |
 |-------|-----------------|---------------|
-| Access | Email privacy@firsttry.io | 30 days |
+| Access | Email privacy@firsttry.run | 30 days |
 | Rectification | Modify snapshots in dashboard | Real-time |
 | Erasure | Uninstall app | Immediate |
 | Portability | Evidence pack export | On demand |
@@ -212,7 +212,7 @@ California residents have additional rights:
 - Uninstall: All data deleted immediately
 
 **Manual Deletion:**
-- Email privacy@firsttry.io with installation ID
+- Email privacy@firsttry.run with installation ID
 - Data deleted within 48 hours
 
 ## 7. Data Security
@@ -320,9 +320,9 @@ FirstTry maintains audit trails for:
 
 For data handling inquiries:
 
-- **Privacy Officer:** privacy@firsttry.io
-- **Data Protection Officer:** dpo@firsttry.io
-- **General Inquiries:** support@firsttry.io
+- **Privacy Officer:** privacy@firsttry.run
+- **Data Protection Officer:** dpo@firsttry.run
+- **General Inquiries:** support@firsttry.run
 
 **Response Time:** Within 48 hours for privacy inquiries.
 

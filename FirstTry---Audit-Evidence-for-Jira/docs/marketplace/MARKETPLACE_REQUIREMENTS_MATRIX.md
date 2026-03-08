@@ -1,7 +1,7 @@
 # Marketplace Requirements Matrix
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-01
+**Version:** 2.0.0  
+**Last Updated:** 2026-03-08
 
 ## Overview
 
@@ -22,7 +22,7 @@ This document maps Atlassian Marketplace requirements to our implementation, dem
 | Input validation | ✅ Pass | All user input sanitized | src/utils/validation.ts |
 | Output encoding | ✅ Pass | Forge UI handles encoding | Forge platform |
 | Secure storage | ✅ Pass | Forge Storage only (no external) | Phase 05 audit |
-| Security contact documented | ✅ Pass | security@firsttry.solutions | MARKETPLACE_SECURITY_CONTACT.md |
+| Security contact documented | ✅ Pass | security@firsttry.run | MARKETPLACE_SECURITY_CONTACT.md |
 | Responsible disclosure policy | ✅ Pass | 90-day coordinated disclosure | MARKETPLACE_RESPONSIBLE_DISCLOSURE.md |
 | Incident response plan | ✅ Pass | Documented procedures | MARKETPLACE_INCIDENT_RESPONSE.md |
 

@@ -1,6 +1,6 @@
 # FirstTry Incident Response Plan
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active  
 **Classification:** Public
@@ -53,12 +53,12 @@ This plan covers:
 
 | Role | Responsibilities | Contact |
 |------|------------------|---------|
-| **Incident Commander (IC)** | Coordinate response, make decisions | security@firsttry.io |
-| **Security Lead** | Technical investigation, forensics | security@firsttry.io |
-| **Engineering Lead** | Develop fixes, deploy patches | engineering@firsttry.io |
-| **Compliance Officer** | Regulatory notifications (GDPR, CCPA) | compliance@firsttry.io |
-| **Communications Lead** | Customer notifications, status updates | support@firsttry.io |
-| **Legal Counsel** | Legal review, disclosure decisions | legal@firsttry.io |
+| **Incident Commander (IC)** | Coordinate response, make decisions | security@firsttry.run |
+| **Security Lead** | Technical investigation, forensics | security@firsttry.run |
+| **Engineering Lead** | Develop fixes, deploy patches | engineering@firsttry.run |
+| **Compliance Officer** | Regulatory notifications (GDPR, CCPA) | compliance@firsttry.run |
+| **Communications Lead** | Customer notifications, status updates | support@firsttry.run |
+| **Legal Counsel** | Legal review, disclosure decisions | legal@firsttry.run |
 
 ### 4.2 Escalation Path
 
@@ -96,7 +96,7 @@ Security Lead (assess severity)
 1. **Detection Sources:**
    - Automated monitoring (Forge logs)
    - Marketplace security scanner
-   - User report (security@firsttry.io)
+   - User report (security@firsttry.run)
    - Atlassian notification
    - Evidence pack verification failure
 
@@ -433,14 +433,14 @@ WHAT WE ARE DOING:
 WHAT YOU CAN DO:
 - [Recommended customer actions, if any]
 - Review your Jira audit logs for [date range]
-- Contact us at security@firsttry.io with questions
+- Contact us at security@firsttry.run with questions
 
 We take this incident very seriously and are committed to protecting your data. We will provide updates as our investigation progresses.
 
 Contact Information:
-- Security Team: security@firsttry.io
-- Data Protection Officer: dpo@firsttry.io
-- Support: support@firsttry.io
+- Security Team: security@firsttry.run
+- Data Protection Officer: dpo@firsttry.run
+- Support: support@firsttry.run
 
 Sincerely,
 FirstTry Security Team

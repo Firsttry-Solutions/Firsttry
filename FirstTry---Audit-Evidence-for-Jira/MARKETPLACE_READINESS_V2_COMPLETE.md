@@ -127,7 +127,7 @@ FirstTry now includes a **comprehensive enterprise trust center** and **automate
 
 6. **`docs/trust/responsible_disclosure.md`** (~440 lines)
    - **Vulnerability reporting policy**
-   - Reporting process (email: security@firsttry.dev)
+   - Reporting process (email: security@firsttry.run)
    - Response timeline (acknowledgment: 48 hours, fix: 90 days)
    - Safe harbor (legal protection for good-faith researchers)
    - Coordinated disclosure (no public disclosure until fix released)
@@ -255,7 +255,7 @@ FirstTry now includes a **comprehensive enterprise trust center** and **automate
      - Right to delete
      - Right to opt-out (no sale: we don't sell data)
    - Cross-border transfers (Standard Contractual Clauses with Atlassian)
-   - DPO contact: privacy@firsttry.dev
+   - DPO contact: privacy@firsttry.run
 
 3. **`docs/legal/TERMS_OF_SERVICE.md`** (~780 lines)
    - **License grant:** Subscription-based, non-exclusive, non-transferable
@@ -700,10 +700,10 @@ bash tools/marketplace_audit/verify_marketplace_readiness_v2.sh
 
 ### Questions?
 
-- **Security:** security@firsttry.dev
-- **Privacy:** privacy@firsttry.dev (Data Protection Officer)
-- **Support:** support@firsttry.dev
-- **Sales:** sales@firsttry.dev
+- **Security:** security@firsttry.run
+- **Privacy:** privacy@firsttry.run (Data Protection Officer)
+- **Support:** support@firsttry.run
+- **Sales:** sales@firsttry.run
 
 ---
 
@@ -771,6 +771,6 @@ FirstTry is now **marketplace ready** with:
 4. **For Continuous Compliance:** Schedule monthly marketplace audits
 
 **Document:** MARKETPLACE_READINESS_V2_COMPLETE.md  
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Last Updated:** 2024-12-19  
 **Status:** ✅ **FINAL**

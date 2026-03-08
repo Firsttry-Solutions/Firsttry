@@ -1,7 +1,7 @@
 # Privacy Policy
 
-**Effective Date:** 2024-01-01  
-**Last Updated:** 2024-01-01
+**Effective Date:** 2026-03-08  
+**Last Updated:** 2026-03-08
 
 ## 1. Introduction
 
@@ -103,7 +103,7 @@ The App does NOT share data with any third parties:
 **Deletion triggers:**
 - App uninstallation (automatic within 24 hours)
 - User-initiated deletion via app settings
-- Customer request via support@firsttry.solutions (within 30 days)
+- Customer request via support@firsttry.run (within 30 days)
 
 ## 8. User Rights
 
@@ -126,9 +126,9 @@ Security is primarily provided by the Atlassian Forge platform. See [MARKETPLACE
 ## 10. Contact
 
 For privacy-related questions or data deletion requests:
-- **Email:** privacy@firsttry.solutions
-- **Security:** security@firsttry.solutions
-- **General Support:** support@firsttry.solutions
+- **Email:** privacy@firsttry.run
+- **Security:** security@firsttry.run
+- **General Support:** support@firsttry.run
 
 See [CONTACTS.md](./CONTACTS.md) for full contact information.
 

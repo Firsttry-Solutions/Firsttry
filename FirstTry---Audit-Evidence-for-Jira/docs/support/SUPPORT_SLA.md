@@ -1,6 +1,6 @@
 # FirstTry Support SLA
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Effective Date:** March 4, 2026  
 **Last Updated:** March 4, 2026
 
@@ -20,7 +20,7 @@ This Support Service Level Agreement (SLA) defines FirstTry's support commitment
 
 | Channel | Contact | Availability | Use For |
 |---------|---------|--------------|---------|
-| **Email** | support@firsttry.io | 24/7 (monitored), Business hours response | General support, bug reports, feature requests |
+| **Email** | support@firsttry.run | 24/7 (monitored), Business hours response | General support, bug reports, feature requests |
 | **Atlassian Marketplace** | Support tab on listing | Business hours response | Pre-sales questions, installation help |
 | **Documentation** | In-app help + GitHub docs | 24/7 self-service | How-to guides, troubleshooting |
 
@@ -28,8 +28,8 @@ This Support Service Level Agreement (SLA) defines FirstTry's support commitment
 
 | Channel | Contact | Availability | Use For |
 |---------|---------|--------------|---------|
-| **Security** | security@firsttry.io | 24/7 | Vulnerability reports, security incidents |
-| **Privacy** | privacy@firsttry.io | Business hours | GDPR/CCPA requests, data deletion |
+| **Security** | security@firsttry.run | 24/7 | Vulnerability reports, security incidents |
+| **Privacy** | privacy@firsttry.run | Business hours | GDPR/CCPA requests, data deletion |
 
 **Business Hours:** Monday-Friday, 9:00 AM - 5:00 PM PST (excluding US holidays)
 
@@ -69,7 +69,7 @@ This Support Service Level Agreement (SLA) defines FirstTry's support commitment
 - Choose appropriate severity
 
 **Step 2: Submit Ticket**
-- Email: support@firsttry.io
+- Email: support@firsttry.run
 - Subject line: `[P0/P1/P2/P3] Brief description`
 - Body: Include details below
 
@@ -146,10 +146,10 @@ Escalate if:
 
 | Level | Contact | When to Use |
 |-------|---------|-------------|
-| **Level 1: Support Engineer** | support@firsttry.io | Initial contact |
-| **Level 2: Engineering Lead** | engineering@firsttry.io | Response SLA missed, technical escalation |
-| **Level 3: Security Team** | security@firsttry.io | Security incidents, data breaches |
-| **Level 4: Executive** | executive@firsttry.io | No resolution after 48 hours (P0/P1) |
+| **Level 1: Support Engineer** | support@firsttry.run | Initial contact |
+| **Level 2: Engineering Lead** | engineering@firsttry.run | Response SLA missed, technical escalation |
+| **Level 3: Security Team** | security@firsttry.run | Security incidents, data breaches |
+| **Level 4: Executive** | executive@firsttry.run | No resolution after 48 hours (P0/P1) |
 
 **How to Escalate:** Reply to your existing ticket with subject "ESCALATION REQUEST" or email escalation contact directly with reference to ticket number.
 
@@ -165,7 +165,7 @@ This SLA does not cover:
 - ❌ Issues caused by customer's Jira configuration or permissions
 - ❌ Feature requests (handled separately via roadmap)
 - ❌ Third-party integrations not developed by FirstTry
-- ❌ Training or consulting (contact sales@firsttry.io)
+- ❌ Training or consulting (contact sales@firsttry.run)
 - ❌ Issues caused by unsupported browsers (we support Chrome, Firefox, Safari, Edge latest versions)
 
 **For Atlassian Platform Issues:** Check [Atlassian Status Page](https://status.atlassian.com/)
@@ -192,7 +192,7 @@ If FirstTry fails to meet response time SLAs:
 **Maximum Credit:** 25% of monthly subscription fee per month
 
 **How to Claim:**
-1. Email support@firsttry.io within 30 days of SLA breach
+1. Email support@firsttry.run within 30 days of SLA breach
 2. Include ticket number and breach details
 3. Credit applied to next billing cycle (or refund if cancelled)
 
@@ -206,7 +206,7 @@ If FirstTry fails to meet response time SLAs:
 
 All customers receive:
 
-- ✅ Email support (support@firsttry.io)
+- ✅ Email support (support@firsttry.run)
 - ✅ Business hours response (P1-P3)
 - ✅ 24/7 P0 response
 - ✅ Documentation access
@@ -223,7 +223,7 @@ For enterprise customers, we offer:
 - Quarterly business reviews
 - Custom SLA terms
 
-**Contact:** sales@firsttry.io for pricing
+**Contact:** sales@firsttry.run for pricing
 
 ---
 
@@ -259,7 +259,7 @@ To receive effective support, customers must:
 2. **Grant temporary access** if troubleshooting requires (we will request explicitly)
 3. **Respond to requests for clarification** within 48 hours (or ticket may be closed)
 4. **Verify resolution** after fix deployed
-5. **Keep contact information current** (email admin changes to support@firsttry.io)
+5. **Keep contact information current** (email admin changes to support@firsttry.run)
 
 **Non-Responsive Tickets:** If no customer response for 7 days, ticket will be closed (can be reopened).
 
@@ -312,7 +312,7 @@ FirstTry will notify customers of:
 - Feature releases (monthly newsletter, opt-in)
 - Service disruptions (real-time via email)
 
-**Opt-In:** Email support@firsttry.io to subscribe/unsubscribe from non-critical notifications.
+**Opt-In:** Email support@firsttry.run to subscribe/unsubscribe from non-critical notifications.
 
 ### 12.2 Language Support
 
@@ -379,11 +379,11 @@ If sensitive data is needed, we will request via secure channel (e.g., encrypted
 
 | Purpose | Email | Response Time |
 |---------|-------|---------------|
-| General Support | support@firsttry.io | Per SLA (Section 3.1) |
-| Security Issues | security@firsttry.io | 1 hour (24/7) |
-| Privacy Requests | privacy@firsttry.io | 48 hours |
-| Sales Inquiries | sales@firsttry.io | 1 business day |
-| Enterprise Support | enterprise@firsttry.io | 4 hours |
+| General Support | support@firsttry.run | Per SLA (Section 3.1) |
+| Security Issues | security@firsttry.run | 1 hour (24/7) |
+| Privacy Requests | privacy@firsttry.run | 48 hours |
+| Sales Inquiries | sales@firsttry.run | 1 business day |
+| Enterprise Support | enterprise@firsttry.run | 4 hours |
 
 ---
 
@@ -421,7 +421,7 @@ FirstTry reserves the right to modify this SLA with **30-day notice** via:
 **SLA Owner:** FirstTry Support Team  
 **Approved By:** Chief Customer Officer  
 **Next Review:** 2026-09-04 (semi-annual)  
-**Contact:** support@firsttry.io
+**Contact:** support@firsttry.run
 
 ---
 

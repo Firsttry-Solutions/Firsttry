@@ -1,6 +1,6 @@
 # FirstTry Data Retention Policy
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active
 
@@ -148,7 +148,7 @@ async function cleanupOldSnapshots() {
 4. **Result:** All snapshots deleted immediately
 
 **Method 3: Email Request**
-1. Email privacy@firsttry.io with:
+1. Email privacy@firsttry.run with:
    - Jira Cloud URL
    - Installation ID (optional)
    - Deletion request
@@ -369,9 +369,9 @@ Changes to this policy will be communicated via:
 
 For retention policy inquiries:
 
-- **Privacy Officer:** privacy@firsttry.io
-- **Data Protection Officer:** dpo@firsttry.io
-- **General inquiries:** support@firsttry.io
+- **Privacy Officer:** privacy@firsttry.run
+- **Data Protection Officer:** dpo@firsttry.run
+- **General inquiries:** support@firsttry.run
 
 **Response Time:** Within 48 hours
 

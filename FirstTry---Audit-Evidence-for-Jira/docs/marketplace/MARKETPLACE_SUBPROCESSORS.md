@@ -1,7 +1,7 @@
 # Subprocessors
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-01
+**Version:** 2.0.0  
+**Last Updated:** 2026-03-08
 
 ## 1. Overview
 
@@ -76,7 +76,7 @@ If we add direct subprocessors:
 ### 6.2 Objection Process
 
 Customers may object to new subprocessors:
-1. Email support@firsttry.solutions within 30 days
+1. Email support@firsttry.run within 30 days
 2. State objection and reasons
 3. We will work to resolve concerns or provide alternatives
 
@@ -149,14 +149,14 @@ Customers can:
 For app-specific inquiries:
 - Code is available for review (if open source)
 - Manifest can be inspected (scopes declared)
-- Contact us via support@firsttry.solutions
+- Contact us via support@firsttry.run
 
 ## 11. Subprocessor List Updates
 
 ### 11.1 Current Version
 
 This document version: 1.0  
-Last updated: 2024-01-01  
+Last updated: 2026-03-08  
 Next scheduled review: 2024-06-01
 
 ### 11.2 Where to Find Updates
@@ -169,8 +169,8 @@ Check for updates:
 ## 12. Contact Information
 
 **For subprocessor questions:**
-- Email: support@firsttry.solutions
-- Privacy email: privacy@firsttry.solutions
+- Email: support@firsttry.run
+- Privacy email: privacy@firsttry.run
 
 **For Atlassian processing questions:**
 - Atlassian Trust Center: https://www.atlassian.com/trust

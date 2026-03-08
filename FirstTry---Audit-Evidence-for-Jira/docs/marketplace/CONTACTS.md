@@ -6,23 +6,23 @@
 ## Primary Contacts
 
 ### Support
-- **Email:** support@firsttry.solutions
+- **Email:** support@firsttry.run
 - **Purpose:** General product support, customer inquiries, installation assistance
 
 ### Security
-- **Email:** security@firsttry.solutions  
+- **Email:** security@firsttry.run  
 - **Purpose:** Security vulnerability reports, incident response, security questions
 
 ### Privacy
-- **Email:** privacy@firsttry.solutions
+- **Email:** privacy@firsttry.run
 - **Purpose:** Data privacy inquiries, GDPR/CCPA requests, data retention questions
 
 ### Legal
-- **Email:** legal@firsttry.solutions
+- **Email:** legal@firsttry.run
 - **Purpose:** Legal inquiries, contract questions, compliance matters
 
 ### Responsible Disclosure
-- **Email:** disclosures@firsttry.solutions
+- **Email:** disclosures@firsttry.run
 - **Purpose:** Security vulnerability disclosures, coordinated disclosure process
 
 ## Response Times
@@ -39,7 +39,7 @@
 ## Notes
 
 - These contact addresses are monitored during business hours (Monday-Friday, 9 AM - 6 PM IST)
-- For urgent security matters, use security@firsttry.solutions with [URGENT] in the subject line
+- For urgent security matters, use security@firsttry.run with [URGENT] in the subject line
 - All contacts are confidential and handled according to our privacy policy
 
 ---

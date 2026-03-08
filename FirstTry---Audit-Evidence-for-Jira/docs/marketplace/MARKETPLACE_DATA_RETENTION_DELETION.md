@@ -1,7 +1,7 @@
 # Data Retention and Deletion Policy
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-01
+**Version:** 2.0.0  
+**Last Updated:** 2026-03-08
 
 ## 1. Overview
 
@@ -123,7 +123,7 @@ Users can:
 ### 6.2 GDPR Right to Erasure
 
 For GDPR compliance:
-1. Customer emails deletion request to support@firsttry.solutions
+1. Customer emails deletion request to support@firsttry.run
 2. Support team verifies identity
 3. Manual deletion of user-specific storage entries within 30 days
 4. Confirmation sent to customer
@@ -131,7 +131,7 @@ For GDPR compliance:
 **Formal Process:**
 
 **Step 1:** Customer submits request
-- Via email to support@firsttry.solutions
+- Via email to support@firsttry.run
 - Include: Jira site URL, user email, account ID (if known)
 
 **Step 2:** Identity Verification
@@ -181,7 +181,7 @@ Cannot delete:
 
 ### 8.2 Support-Assisted Deletion
 
-**Trigger:** Email to support@firsttry.solutions
+**Trigger:** Email to support@firsttry.run
 
 **Steps:**
 1. Customer sends deletion request with account details
@@ -317,7 +317,7 @@ Policy changes:
 
 ## 15. Contact for Deletion Requests
 
-**Email:** support@firsttry.solutions  
+**Email:** support@firsttry.run  
 **Subject:** Data Deletion Request  
 **Include:** Jira site URL, user email, account ID
 

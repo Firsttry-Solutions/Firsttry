@@ -1,7 +1,7 @@
 # Terms of Service
 
-**Effective Date:** 2024-01-01  
-**Last Updated:** 2024-01-01
+**Effective Date:** 2026-03-08  
+**Last Updated:** 2026-03-08
 
 ## 1. Acceptance of Terms
 

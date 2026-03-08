@@ -1,7 +1,7 @@
 # Marketplace Reviewer FAQ
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-01
+**Version:** 2.0.0  
+**Last Updated:** 2026-03-08
 
 ## Purpose
 
@@ -200,7 +200,7 @@ See [MARKETPLACE_SUPPORT_SLA.md](./MARKETPLACE_SUPPORT_SLA.md)
 
 ### Q19: Who can I contact for security issues?
 
-**A:** security@firsttry.solutions
+**A:** security@firsttry.run
 
 - **Critical issues:** 24-hour response
 - **Responsible disclosure:** Coordinated disclosure supported
@@ -241,7 +241,7 @@ See [MARKETPLACE_SUPPORT_SLA.md](./MARKETPLACE_SUPPORT_SLA.md)
 **A:** No dedicated demo environment. Reviewers can:
 - Install in their own test Jira instance
 - Use Atlassian's developer sandbox
-- Contact support@firsttry.solutions for assistance
+- Contact support@firsttry.run for assistance
 
 ###Q24: Can I inspect the code?
 
@@ -294,8 +294,8 @@ See [MARKETPLACE_SUPPORT_SLA.md](./MARKETPLACE_SUPPORT_SLA.md)
 ### Q30: What if I have concerns not addressed here?
 
 **A:** Please contact:
-- **General questions:** support@firsttry.solutions
-- **Security concerns:** security@firsttry.solutions
+- **General questions:** support@firsttry.run
+- **Security concerns:** security@firsttry.run
 - **Reviewer-specific inquiries:** [Provide direct contact if available]
 
 ---

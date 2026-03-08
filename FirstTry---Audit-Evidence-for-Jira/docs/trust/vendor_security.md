@@ -1,6 +1,6 @@
 # FirstTry Vendor Security Assessment
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active
 
@@ -200,7 +200,7 @@ FirstTry uses **minimal dependencies** to reduce attack surface:
 **Secret Scanning:**
 - ✅ Enabled for Atlassian API tokens
 - ✅ Enabled for GitHub personal access tokens
-- ✅ Alerts sent to security@firsttry.io
+- ✅ Alerts sent to security@firsttry.run
 
 **Dependabot:**
 - ✅ Security updates enabled
@@ -228,7 +228,7 @@ FirstTry uses **minimal dependencies** to reduce attack surface:
 ### 7.2 Incident Response Integration
 
 **Vendor Breach Notification:**
-1. Vendor notifies FirstTry (email to security@firsttry.io)
+1. Vendor notifies FirstTry (email to security@firsttry.run)
 2. FirstTry assesses impact on customers
 3. FirstTry notifies affected customers (within 72 hours if GDPR breach)
 4. FirstTry implements mitigations (e.g., force logout, revoke tokens)
@@ -365,4 +365,4 @@ When evaluating new vendors, FirstTry uses the following questionnaire:
 **Policy Owner:** FirstTry Security Team  
 **Approved By:** Chief Information Security Officer  
 **Next Review:** 2027-03-04  
-**Version:** 1.0
+**Version:** 2.0.0

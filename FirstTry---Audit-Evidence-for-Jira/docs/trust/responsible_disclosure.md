@@ -1,6 +1,6 @@
 # FirstTry Responsible Disclosure Policy
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active  
 **Classification:** Public
@@ -42,7 +42,7 @@ The following are **out of scope** (defer to Atlassian):
 ### 3.1 How to Report
 
 **Primary Channel: Email**
-- **Address:** security@firsttry.io
+- **Address:** security@firsttry.run
 - **Encryption:** PGP key available at https://firsttry.io/pgp-key.txt
 - **Acknowledgment:** Within 24 hours
 
@@ -165,7 +165,7 @@ The following are **NOT protected** under safe harbor:
 - ❌ Physical attacks on Atlassian infrastructure
 - ❌ Testing on production systems without prior consent
 
-**For these cases:** Contact security@firsttry.io to request authorization.
+**For these cases:** Contact security@firsttry.run to request authorization.
 
 ---
 
@@ -279,14 +279,14 @@ Published advisories:
 
 ### 11.1 Primary Contact
 
-- **Email:** security@firsttry.io
+- **Email:** security@firsttry.run
 - **PGP Key:** https://firsttry.io/pgp-key.txt (Fingerprint: XXXX XXXX XXXX XXXX)
 - **Response Time:** 24 hours
 
 ### 11.2 Secondary Contact
 
-- **Engineering Lead:** engineering@firsttry.io
-- **Compliance Officer:** compliance@firsttry.io
+- **Engineering Lead:** engineering@firsttry.run
+- **Compliance Officer:** compliance@firsttry.run
 
 ### 11.3 GitHub
 
@@ -308,11 +308,11 @@ Published advisories:
 
 ### Q1: Can I test on production?
 
-**A:** We prefer you test on a staging environment first. If you need production access for a specific test, email security@firsttry.io for authorization.
+**A:** We prefer you test on a staging environment first. If you need production access for a specific test, email security@firsttry.run for authorization.
 
 ### Q2: What if I accidentally accessed customer data?
 
-**A:** Immediately stop testing and notify us at security@firsttry.io. Describe what data was accessed. We will work with you under safe harbor (no legal action if good faith).
+**A:** Immediately stop testing and notify us at security@firsttry.run. Describe what data was accessed. We will work with you under safe harbor (no legal action if good faith).
 
 ### Q3: Can I publish a blog post about the vulnerability?
 
@@ -321,7 +321,7 @@ Published advisories:
 ### Q4: What if you don't respond?
 
 **A:** If no acknowledgment within 72 hours, try:
-1. Secondary contact: engineering@firsttry.io
+1. Secondary contact: engineering@firsttry.run
 2. Atlassian Marketplace team: marketplace-security@atlassian.com
 3. Public disclosure after 90 days (standard practice)
 
@@ -363,4 +363,4 @@ We deeply appreciate security researchers who help us protect our customers. You
 ---
 
 **FirstTry Security Team**  
-security@firsttry.io
+security@firsttry.run

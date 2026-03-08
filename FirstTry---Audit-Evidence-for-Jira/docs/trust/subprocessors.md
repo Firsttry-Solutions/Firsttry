@@ -1,6 +1,6 @@
 # FirstTry Subprocessors
 
-**Version:** 1.0  
+**Version:** 2.0.0  
 **Last Updated:** March 4, 2026  
 **Status:** Active
 
@@ -160,7 +160,7 @@ Customers may **object to a subprocessor** within 30 days of notification:
 
 **Process:**
 1. Customer receives subprocessor change notification (email)
-2. Customer emails privacy@firsttry.io with objection (within 30 days)
+2. Customer emails privacy@firsttry.run with objection (within 30 days)
 3. FirstTry evaluates objection (legitimate grounds under GDPR)
 4. If objection sustained:
    - FirstTry removes subprocessor, OR
@@ -180,7 +180,7 @@ Customers may request evidence of subprocessor compliance:
 - FirstTry security whitepaper (`docs/trust/security_whitepaper.md`)
 - FirstTry data handling policy (`docs/trust/data_handling.md`)
 
-**Request:** Email compliance@firsttry.io
+**Request:** Email compliance@firsttry.run
 
 ---
 
@@ -215,12 +215,12 @@ COMPLIANCE: [Certifications]
 EFFECTIVE DATE: [YYYY-MM-DD] (30 days from today)
 
 OBJECTION RIGHTS:
-If you have legitimate grounds to object (e.g., security concerns, compliance requirements), please email privacy@firsttry.io within 30 days. We will work with you to resolve concerns or facilitate app removal (with refund if applicable).
+If you have legitimate grounds to object (e.g., security concerns, compliance requirements), please email privacy@firsttry.run within 30 days. We will work with you to resolve concerns or facilitate app removal (with refund if applicable).
 
 For more details, see our Subprocessor Policy:
 https://github.com/firsttry/FirstTry---Audit-Evidence-for-Jira/blob/main/docs/trust/subprocessors.md
 
-Questions? Contact support@firsttry.io
+Questions? Contact support@firsttry.run
 
 Regards,
 FirstTry Privacy Team
@@ -325,9 +325,9 @@ If a customer uninstalls FirstTry:
 
 For subprocessor inquiries:
 
-- **Privacy Officer:** privacy@firsttry.io
-- **Data Protection Officer:** dpo@firsttry.io
-- **Compliance Officer:** compliance@firsttry.io
+- **Privacy Officer:** privacy@firsttry.run
+- **Data Protection Officer:** dpo@firsttry.run
+- **Compliance Officer:** compliance@firsttry.run
 
 **Response Time:** Within 48 hours
 
@@ -353,4 +353,4 @@ For subprocessor inquiries:
 
 **Policy Owner:** FirstTry Compliance Team  
 **Next Review:** 2027-03-04  
-**Version:** 1.0
+**Version:** 2.0.0

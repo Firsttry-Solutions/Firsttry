@@ -1,7 +1,7 @@
 # Support Service Level Agreement (SLA)
 
-**Effective Date:** 2024-01-01  
-**Version:** 1.0
+**Effective Date:** 2026-03-08  
+**Version:** 2.0.0
 
 ## 1. Overview
 
@@ -11,7 +11,7 @@ This document defines the support services available for the App and associated 
 
 ### 2.1 Email Support
 
-- **Email:** support@firsttry.solutions
+- **Email:** support@firsttry.run
 - **Response Time:** See Section 4
 
 ### 2.2 Issue Tracker
@@ -118,7 +118,7 @@ Apps may be designated EOL with:
 ### 7.2 Emergency Escalation
 
 For critical security issues:
-1. Email security@firsttry.solutions
+1. Email security@firsttry.run
 2. Include "[SECURITY]" in subject
 3. Provide details and impact assessment
 
@@ -184,8 +184,8 @@ If applicable, refunds are governed by Atlassian Marketplace policies, not this 
 ## 14. Contact Information
 
 For support inquiries:
-- **Email:** support@firsttry.solutions
-- **Security:** security@firsttry.solutions
+- **Email:** support@firsttry.run
+- **Security:** security@firsttry.run
 - **Issue Tracker:** [GitHub Issues URL]
 
 ---
