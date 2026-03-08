@@ -83,6 +83,7 @@
     "prod:verify-deploy-upgrade": "bash tools/ft_verify_deploy_upgrade_prod.sh"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.19.30",
     "@types/pdfkit": "^0.17.4",

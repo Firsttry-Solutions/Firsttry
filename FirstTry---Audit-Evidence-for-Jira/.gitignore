@@ -8,6 +8,8 @@
 **/*.webm
 **/*.trace
 **/*.zip
+# Playwright auth state — never commit session tokens
+tests/playwright/.auth/
 
 # Build meta generated files
 tools/.build_meta.*
