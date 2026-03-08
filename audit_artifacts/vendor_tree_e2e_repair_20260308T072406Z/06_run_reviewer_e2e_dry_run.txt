@@ -1,0 +1,49 @@
+RUN_REVIEWER_E2E_STRICT DRY RUN — Post-Repair
+Date: 2026-03-08
+Command: JIRA_BASE_URL=https://firsttry.atlassian.net \
+         JIRA_DASHBOARD_URL=https://firsttry.atlassian.net/jira/dashboards/10000 \
+         SKIP_DEPLOY=1 ALLOW_DIRTY=1 \
+         bash tools/reviewer_e2e/run_reviewer_e2e_strict.sh
+
+--- OUTPUT ---
+============================================================
+REVIEWER E2E SIMULATION - STRICT MODE
+============================================================
+Run ID: 20260308T072304Z
+Evidence: /tmp/ft_reviewer_e2e_20260308T072304Z
+Repository: /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
+
+=== PRECHECKS ===
+[OK] Found: node
+[OK] Found: npm
+[OK] Found: npx
+[OK] Found: forge
+[OK] Found: git
+[INFO] Checking forge authentication...
+Logged in as Arnab Poddar (contact@firsttry.run)
+Account ID: 712020:5bb8dbe7-8759-4663-bbb2-106a55710cb2
+[INFO] Checking Jira prerequisites...
+[OK] JIRA_BASE_URL: https://firsttry.atlassian.net
+[OK] JIRA_DASHBOARD_URL: https://firsttry.atlassian.net/jira/dashboards/10000
+[FATAL] Playwright storageState file not found
+[FATAL] Path: /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira/tests/playwright/.auth/storageState.json
+
+Generate it by running:
+  export JIRA_BASE_URL=https://firsttry.atlassian.net
+  bash tools/reviewer_e2e/create_storage_state.sh
+
+[INFO] Cleaning up background processes...
+
+exit: 0 (from pipe head; script exits 2 internally)
+
+--- ANALYSIS ---
+VERDICT: ACCEPTABLE
+
+Path resolution is CORRECT — FORGE_APP resolves from REPO_ROOT (vendor tree).
+evidence dir: /tmp/ft_reviewer_e2e_... (correct /tmp path, not wrong-tree path)
+Repository shown: /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira (correct)
+Storage state fatal path: .../FirstTry---Audit-Evidence-for-Jira/tests/playwright/.auth/storageState.json (CORRECT vendor-tree path)
+
+No /atlassian/forge-app reference in any output.
+Failure reason: storageState.json not present (expected — not yet generated).
+  - This is the ONLY correct blocking condition for this environment.

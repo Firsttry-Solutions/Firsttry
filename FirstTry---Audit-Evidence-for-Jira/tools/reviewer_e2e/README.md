@@ -51,7 +51,7 @@ bash tools/reviewer_e2e/create_storage_state.sh
 5. Saves authenticated session to `storageState.json`
 
 **Output:**
-- `atlassian/forge-app/tests/playwright/.auth/storageState.json`
+- `FirstTry---Audit-Evidence-for-Jira/tests/playwright/.auth/storageState.json`
 
 **Run this ONCE** before first E2E test, or whenever Jira session expires.
 
@@ -142,7 +142,7 @@ bash tools/reviewer_e2e/verify_reviewer_e2e_bundle.sh <bundle.tar.gz> <bundle.ta
 
 ## Playwright Test Suite
 
-### Configuration: `atlassian/forge-app/playwright.reviewer.config.ts`
+### Configuration: `FirstTry---Audit-Evidence-for-Jira/playwright.reviewer.config.ts`
 
 Reviewer-specific Playwright configuration:
 - Browser: Chromium only
@@ -154,7 +154,7 @@ Reviewer-specific Playwright configuration:
 - Authentication: Uses `storageState.json` (Jira session cookies)
 - Base URL: `JIRA_BASE_URL` from environment
 
-### Test: `atlassian/forge-app/tests/playwright/reviewer_dashboard_e2e.spec.ts`
+### Test: `FirstTry---Audit-Evidence-for-Jira/tests/playwright/reviewer_dashboard_e2e.spec.ts`
 
 **HARD PROOF Test Flow:**
 1. Navigate to `JIRA_DASHBOARD_URL` with authenticated session
@@ -183,7 +183,7 @@ All screenshots are validated:
 ## NPM Scripts
 
 ```bash
-# From atlassian/forge-app directory:
+# From FirstTry---Audit-Evidence-for-Jira directory:
 npm run reviewer:e2e
 ```
 
@@ -227,7 +227,7 @@ ft_reviewer_e2e_20260304T123456Z/
 
 ### 1. First-time setup:
 ```bash
-cd /workspaces/Firsttry/atlassian/forge-app
+cd /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
 npm install  # Ensure Playwright is installed
 
 # Set Jira environment variables (add to ~/.bashrc for persistence)
@@ -237,14 +237,14 @@ export JIRA_DASHBOARD_URL="https://your-company.atlassian.net/jira/dashboards/10
 
 ### 2. Create authenticated Jira session (once, or when session expires):
 ```bash
-cd /workspaces/Firsttry
+cd /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
 bash tools/reviewer_e2e/create_storage_state.sh
 # Browser opens → log in manually → session saved
 ```
 
 ### 3. Run full E2E simulation:
 ```bash
-cd /workspaces/Firsttry
+cd /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
 bash tools/reviewer_e2e/run_reviewer_e2e_strict.sh
 ```
 

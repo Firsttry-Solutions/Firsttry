@@ -1,0 +1,31 @@
+CREATE_STORAGE_STATE DRY RUN — Post-Repair
+Date: 2026-03-08
+Command: JIRA_BASE_URL=https://firsttry.atlassian.net bash tools/reviewer_e2e/create_storage_state.sh
+
+--- OUTPUT ---
+[INFO] VENDOR_ROOT: /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
+[INFO] AUTH_DIR:    /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira/tests/playwright/.auth
+[INFO] STORAGE_STATE: /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira/tests/playwright/.auth/storageState.json
+============================================================
+JIRA STORAGE STATE GENERATOR
+============================================================
+
+[INFO] JIRA Base URL: https://firsttry.atlassian.net
+[INFO] Storage State: /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira/tests/playwright/.auth/storageState.json
+
+[FATAL] @playwright not found in /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira/node_modules
+[FATAL] Run: cd /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira && npx playwright install
+
+exit: 2
+
+--- ANALYSIS ---
+VERDICT: ACCEPTABLE
+
+Path resolution is CORRECT — all paths resolve to vendor tree.
+Failure reason: @playwright not installed in vendor node_modules.
+  - No /atlassian/forge-app reference in output.
+  - No "No such file or directory" for wrong-tree path.
+  - Failure is a prerequisite blocker (install playwright), NOT a path error.
+
+To proceed: run `cd FirstTry---Audit-Evidence-for-Jira && npx playwright install`
+then re-run create_storage_state.sh

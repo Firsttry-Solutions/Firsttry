@@ -8,10 +8,14 @@ set -euo pipefail
 # Configuration
 # ============================================================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-FORGE_APP="$REPO_ROOT/atlassian/forge-app"
-AUTH_DIR="$FORGE_APP/tests/playwright/.auth"
+# VENDOR_ROOT: two levels up from tools/reviewer_e2e (= FirstTry---Audit-Evidence-for-Jira)
+VENDOR_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+AUTH_DIR="$VENDOR_ROOT/tests/playwright/.auth"
 STORAGE_STATE="$AUTH_DIR/storageState.json"
+
+echo "[INFO] VENDOR_ROOT: $VENDOR_ROOT"
+echo "[INFO] AUTH_DIR:    $AUTH_DIR"
+echo "[INFO] STORAGE_STATE: $STORAGE_STATE"
 
 JIRA_BASE_URL="${JIRA_BASE_URL:-}"
 
@@ -50,11 +54,11 @@ if ! command -v npx >/dev/null 2>&1; then
   exit 2
 fi
 
-cd "$FORGE_APP"
+cd "$VENDOR_ROOT"
 
-if [ ! -f "package.json" ] || ! grep -q "@playwright/test" package.json; then
-  echo "[FATAL] Playwright not found in package.json" >&2
-  echo "[FATAL] Run: cd $FORGE_APP && npm install" >&2
+if [ ! -d "node_modules/@playwright" ]; then
+  echo "[FATAL] @playwright not found in $VENDOR_ROOT/node_modules" >&2
+  echo "[FATAL] Run: cd $VENDOR_ROOT && npx playwright install" >&2
   exit 2
 fi
 

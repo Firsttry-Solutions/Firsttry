@@ -1,0 +1,26 @@
+STATIC VALIDATION — Vendor-Tree E2E Repair
+Date: 2026-03-08
+
+=== bash -n syntax check ===
+
+$ bash -n tools/reviewer_e2e/create_storage_state.sh
+exit: 0  PASS
+
+$ bash -n tools/reviewer_e2e/run_reviewer_e2e_strict.sh
+exit: 0  PASS
+
+=== grep scan for old-tree references (active code only) ===
+
+$ grep -rn "atlassian/forge-app" \
+    tools/reviewer_e2e/ tests/ e2e/ playwright.reviewer.config.ts \
+    2>/dev/null | grep -v "README.md" | grep -v "^Binary"
+
+RESULT: ZERO_ACTIVE_REFERENCES
+
+$ grep -rn "atlassian/forge-app" tools/reviewer_e2e/README.md
+RESULT: NONE  (all doc references updated to FirstTry---Audit-Evidence-for-Jira)
+
+=== SUMMARY ===
+
+SYNTAX_CHECK: PASS (both scripts exit 0 under bash -n)
+OLD_PATH_SCAN: CLEAN (zero references to atlassian/forge-app in active code)

@@ -1,0 +1,14 @@
+SCOPE: Vendor-Tree E2E Path Repair
+Date: 2026-03-08T07:24:06Z
+
+Vendor Tree: /workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira (AUTHORITATIVE)
+Compare Tree: atlassian/forge-app (NOT modified - comparison only)
+
+Root defect: create_storage_state.sh appended /atlassian/forge-app to REPO_ROOT.
+REPO_ROOT resolves to FirstTry---Audit-Evidence-for-Jira (the vendor root).
+Appending /atlassian/forge-app created a non-existent nested path.
+
+Files repaired:
+  tools/reviewer_e2e/create_storage_state.sh
+  tools/reviewer_e2e/run_reviewer_e2e_strict.sh
+  tools/reviewer_e2e/README.md

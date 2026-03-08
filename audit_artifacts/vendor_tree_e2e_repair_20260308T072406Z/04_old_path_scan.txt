@@ -1,0 +1,34 @@
+OLD PATH SCAN — Before Repair
+Date: 2026-03-08
+
+Files containing "atlassian/forge-app" BEFORE repair:
+
+  tools/reviewer_e2e/create_storage_state.sh (EXECUTABLE — BROKEN):
+    Line 11: FORGE_APP="$REPO_ROOT/atlassian/forge-app"
+    Line 12: AUTH_DIR="$FORGE_APP/tests/playwright/.auth"
+    Line 13: STORAGE_STATE="$AUTH_DIR/storageState.json"
+    Line 54: cd "$FORGE_APP"
+    Line 56: echo "[FATAL] Run: cd $FORGE_APP && npm install"
+
+  tools/reviewer_e2e/run_reviewer_e2e_strict.sh (EXECUTABLE — HARDCODED):
+    Line 20: FORGE_APP="/workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira"
+    (this was a hardcoded correct absolute but not derived from REPO_ROOT)
+
+  tools/reviewer_e2e/README.md (DOCUMENTATION — STALE):
+    Multiple references to atlassian/forge-app/ in usage examples
+
+Files containing "atlassian/forge-app" AFTER repair:
+
+  ZERO active (executable) references
+  README.md: ZERO references (all updated to vendor-tree paths)
+
+Root Cause Path:
+  BEFORE:
+    REPO_ROOT = (cd tools/reviewer_e2e/../.. && pwd) = FirstTry---Audit-Evidence-for-Jira/
+    FORGE_APP = $REPO_ROOT/atlassian/forge-app
+              = FirstTry---Audit-Evidence-for-Jira/atlassian/forge-app   ← DOES NOT EXIST
+
+  AFTER:
+    VENDOR_ROOT = (cd tools/reviewer_e2e/../.. && pwd) = FirstTry---Audit-Evidence-for-Jira/
+    AUTH_DIR    = $VENDOR_ROOT/tests/playwright/.auth
+    STORAGE_STATE = $AUTH_DIR/storageState.json                          ← CORRECT

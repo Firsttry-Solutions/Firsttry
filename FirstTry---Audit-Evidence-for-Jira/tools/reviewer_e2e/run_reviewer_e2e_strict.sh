@@ -14,9 +14,10 @@ ALLOW_DIRTY="${ALLOW_DIRTY:-0}"
 SKIP_DEPLOY="${SKIP_DEPLOY:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# REPO_ROOT / FORGE_APP: both resolve to vendor root (FirstTry---Audit-Evidence-for-Jira)
+# two levels up from tools/reviewer_e2e
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-# Vendor app (NOT DEV scaffold)
-FORGE_APP="/workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira"
+FORGE_APP="$REPO_ROOT"
 
 # ============================================================================
 # Setup

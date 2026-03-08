@@ -1,0 +1,18 @@
+FILES INSPECTED — Vendor-Tree E2E Repair Audit
+Date: 2026-03-08
+
+VENDOR TREE (FirstTry---Audit-Evidence-for-Jira):
+  tools/reviewer_e2e/create_storage_state.sh        — REPAIRED (root cause)
+  tools/reviewer_e2e/run_reviewer_e2e_strict.sh      — REPAIRED (hardcoded absolute path)
+  tools/reviewer_e2e/README.md                       — REPAIRED (doc references)
+  tools/reviewer_e2e/doc_overclaim_audit.sh          — INSPECTED, no old-path refs (passes)
+  tools/reviewer_e2e/proof_pack/build_reviewer_proof_pack.sh — INSPECTED, REPO_ROOT depth correct (3 levels up from proof_pack = vendor root)
+  tools/reviewer_e2e/proof_pack/verify_reviewer_proof_pack.sh — INSPECTED, no path issue
+  playwright.reviewer.config.ts                     — INSPECTED, correctly uses __dirname + tests/playwright/.auth/storageState.json
+  tests/playwright/reviewer_dashboard_e2e.spec.ts   — INSPECTED, no old-path refs
+  package.json                                      — INSPECTED, no old-path refs
+  .gitignore                                        — INSPECTED for context
+
+GREP SCAN TARGET:
+  grep -rn "atlassian/forge-app" tools/reviewer_e2e/ tests/ e2e/ playwright.reviewer.config.ts
+  RESULT: ZERO active references in all non-README files (README.md also cleared)
