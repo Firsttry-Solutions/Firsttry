@@ -251,6 +251,25 @@ else
     echo -e "${GREEN}✓ No HIGH/CRITICAL vulnerabilities${NC}"
 fi
 
+# Check 6: Working tree must be clean after gate execution (fail-closed)
+echo ""
+echo "========================================"
+echo "CHECK 6: Working Tree Cleanliness"
+echo "========================================"
+
+cd "$REPO_ROOT"
+# Scope to vendor tree only; exclude untracked (??) and ignored (!!) entries
+TRACKED_DRIFT=$(git status --short -- . 2>/dev/null | grep -v "^??" | grep -v "^!!" || true)
+if [[ -n "$TRACKED_DRIFT" ]]; then
+    echo -e "${RED}FAIL: TRACKED_DRIFT_AFTER_GATE${NC}"
+    echo "The following tracked files were modified during gate execution:"
+    echo "$TRACKED_DRIFT"
+    echo "Fix: ensure all build-generated files are gitignored and untracked."
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Working tree clean after gate execution (no tracked drift)${NC}"
+
 # All checks passed
 echo ""
 echo "========================================"
