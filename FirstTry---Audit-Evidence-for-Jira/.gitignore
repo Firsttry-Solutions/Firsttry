@@ -8,3 +8,10 @@
 **/*.webm
 **/*.trace
 **/*.zip
+
+# Build meta generated files
+tools/.build_meta.*
+tools/.build_meta.env
+src/gadget-ui/src/ui_build_meta.ts
+src/gadget-ui/src/build/
+src/build/
