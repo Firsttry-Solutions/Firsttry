@@ -4,7 +4,8 @@ set -euo pipefail
 # Verify no fatal UI bridge markers in dist bundle
 # Fail if the bundle contains unconditional top-level fatal errors
 
-cd /workspaces/Firsttry/atlassian/forge-app
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."  # vendor tree root
 
 echo "[verify_no_fatal_ui_bridge_in_dist] Checking dist for fatal markers..."
 
