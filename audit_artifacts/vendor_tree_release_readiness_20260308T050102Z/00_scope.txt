@@ -1,0 +1,11 @@
+AUTHORITATIVE_RELEASE_SOURCE=/workspaces/Firsttry/FirstTry---Audit-Evidence-for-Jira
+COMPARISON_ONLY_SOURCE=/workspaces/Firsttry/atlassian/forge-app
+REPO_ROOT=/workspaces/Firsttry
+
+POLICY:
+- All deploy/upgrade/proof/submission claims must come from VENDOR_APP only
+- COMPARE_APP is read-only reference for parity analysis only
+- No success claim may be based on atlassian/forge-app execution
+- Every command outcome must state exact working directory
+- Fail closed: no fake PASS, no placeholder output, no best-effort
+- If a required gate fails, this scorecard reports FAIL at that gate and stops progression

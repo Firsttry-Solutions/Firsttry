@@ -1,0 +1,59 @@
+COMPARE TREE INVENTORY
+Tree: atlassian/forge-app/
+Generated: 2026-03-08
+Authority role: COMPARISON-ONLY (non-authoritative, must NOT be used for deploy/upgrade/listing)
+
+=== MANIFEST (manifest.yml) ===
+App id: ari:cloud:ecosystem::app/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc
+Runtime: nodejs20.x
+Modules:
+  jira:dashboardGadget:
+    - governance-dashboard-gadget-v2
+  functions:
+    - driftMonitorScheduled    -> continuous-drift/scheduled.run
+    - get-status-snapshot-fn   -> gadget-resolver.handler
+    - ft-v565-sched-kickoff    -> jobs/v565/snapshotScheduleKickoff.run (60s timeout)
+  scheduledTrigger:
+    - drift-monitor-daily     (driftMonitorScheduled, interval: day)
+    - ft-v565-weekly-snapshot (ft-v565-sched-kickoff, interval: week)
+Scopes: read:jira-user, read:jira-work, storage:app   [EXTRA: read:jira-user]
+Resources: govGadget2141 -> src/gadget-ui/dist
+
+KEY DIFFERENCES FROM VENDOR:
+  + driftMonitorScheduled function (missing in vendor)
+  + ft-v565-sched-kickoff function (missing in vendor)
+  + drift-monitor-daily scheduled trigger (missing in vendor)
+  + ft-v565-weekly-snapshot scheduled trigger (missing in vendor)
+  + read:jira-user scope (missing in vendor — intentional, vendor is marketplace-clean)
+  - ft-installed-handler/trigger (present in vendor, missing here)
+  - ft-upgraded-handler/trigger (present in vendor, missing here)
+
+=== AUDIT INFRASTRUCTURE (present in compare, absent in vendor) ===
+audit/
+  verify_freeze_lock.sh
+  generate_freeze_lock.sh
+  freeze_generate.sh
+  reviewer_ready_gate.sh
+  marketplace_proof_gate.sh
+  proof_lib.sh
+  proof_run_authenticated.sh
+  runtime_proofpack_v2.sh
+  ruleC_secret_audit_v3.sh
+  test_csp_allowlist.sh
+  CLAIMS_LEDGER.md
+  COMPLETENESS_CHECKLIST.md
+  FINAL_MARKETPLACE_READINESS_REPORT.md
+  FREEZE_PROCESS.md
+  GO_NO_GO_CHECKLIST.md
+  HARDENING_COMPLETION_REPORT.md
+  REQUIRED_FILES.txt
+  REVIEWER_READY_REPORT.md
+  RUNTIME_PROOFPACK_V2_GUIDE.md
+  + subdirectories: csp_fix, dashboard_upgrade, deployment_readiness,
+    marketplace_submission, operator_verification, policy_baseline, proof,
+    shakedown, state_assessment, submission_bundle
+
+=== VERDICT ===
+Compare tree is NOT used for any production operations.
+Its audit/ infrastructure must be ported to vendor tree (FirstTry---Audit-Evidence-for-Jira/audit/).
+Manifest profile: COMPLEX (scheduled triggers + extra scope — NOT suitable for initial Marketplace listing without review)

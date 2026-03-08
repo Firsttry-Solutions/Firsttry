@@ -1,0 +1,114 @@
+VENDOR TREE INVENTORY
+Tree: FirstTry---Audit-Evidence-for-Jira/
+Generated: 2026-03-08
+Authority role: AUTHORITATIVE (canonical Marketplace release source)
+
+=== TOP-LEVEL FILES ===
+ARCHITECTURE.md
+AUTHORITATIVE_SOURCE.md   [NEW — replaces LEGACY_COPY_WARNING.md]
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+ENTERPRISE_EVIDENCE_PACK_COMPLETE.md
+INDEX.md
+LICENSE
+MARKETPLACE_READINESS_V2_COMPLETE.md
+PRIVACY_POLICY.md
+README.md
+REVIEWER_E2E_QUICK_REF.md
+SECURITY.md
+SUBPROCESSORS.md
+SUPPORT.md
+VERSIONING.md
+manifest.yml
+package-lock.json
+package.json              [version: 2.14.0, name: @firsttry/forge-app]
+playwright.reviewer.config.ts
+tsconfig.json
+vitest.config.mjs
+vitest.setup.ts
+
+=== MANIFEST (manifest.yml) ===
+App id: ari:cloud:ecosystem::app/59d86182-c1c6-49ea-b2fb-6ee5be52b7fc
+Runtime: nodejs20.x
+Modules:
+  jira:dashboardGadget:
+    - governance-dashboard-gadget-v2
+  functions:
+    - get-status-snapshot-fn  -> gadget-resolver.handler
+    - ft-installed-handler    -> lifecycle/installed.handler
+    - ft-upgraded-handler     -> lifecycle/upgraded.handler
+  triggers:
+    - ft-installed-trigger    (avi:forge:installed:app)
+    - ft-upgraded-trigger     (avi:forge:upgraded:app)
+Scopes: storage:app, read:jira-work
+Resources: govGadget2141 -> src/gadget-ui/dist
+
+=== SRC STRUCTURE ===
+src/backbone/         (12 files) — contract, crypto, errorCodes, forge-entry, keys, ledger, lock, scheduler, sentinel, storage, time, uuid
+src/contracts/        (1 file)   — ft_dash_envelope_v1.ts
+src/core/             (8 files)  — audit_snapshot/, config_visibility/, perf_signals/, constants.ts, tenant_identity.ts, unified_status_model.ts
+src/gadget-resolver.ts           — CANONICAL resolver handler
+src/gadget-ui/src/    (43 files) — main.ts, snapshot_ui/, utils/, tests/, components/
+src/gadget-ui/dist/              — BUILT BUNDLE (present)
+  app.613fb705d58d70101c16b549dfac2b73a69dea61.js  [104,228 bytes]
+  index.html                                         [11,127 bytes]
+  ft_styles.css                                      [10,412 bytes]
+  assets/index.CdDbryCQ.css
+  ENTRY_PROOF.json                                   [265 bytes]
+    build_sha: 613fb705d58d70101c16b549dfac2b73a69dea61
+    entry_filename: app.613fb705d58d70101c16b549dfac2b73a69dea61.js
+    cache_bust_method: filename-based
+src/lifecycle/        (3 files)  — installed.ts, seedSnapshot.ts, upgraded.ts
+src/phase4/           (5 files)  — evidence_backfill, timeline, types + tests
+src/release/          (1 file)   — release_version.ts
+src/resolvers/        (19 files) — all gadget handler resolvers
+src/security/         (9 files)  — errorEnvelope, invocationMeta, pii_sanitizer, resolveTenantKey, safe_logger, stepTrace, storageProof, tenant_context, tenant_storage
+src/shared/           (12 files) — DashboardSnapshotV1, dashEnvelopeV1, evidenceMetrics, etc.
+src/status/           (5 files)  — collectSnapshotCore, computeStatus, runCollection, runLedger, statusSnapshot, statusStorage
+src/utils/            (1 file)   — sanitizeKey.ts
+
+=== TESTS ===
+tests/playwright/
+  playwright.reviewer.config.ts (root level)
+  reviewer_dashboard_e2e.spec.ts
+
+src/gadget-ui/src/__tests__/ (5 test files):
+  correlation-buffer.test.ts
+  fatal_bridge_guard_contract.test.ts
+  l0_snapshot_mapper.test.ts
+  l0_state_merge.test.ts
+  ui_build_meta.test.ts
+
+src/phase4/
+  phase4_evidence_backfill.test.ts
+  timeline.test.ts
+
+=== TOOLS ===
+tools/marketplace/
+tools/marketplace_audit/
+tools/reviewer_e2e/
+tools/soc2_mapping/
+tools/trust_center/
+
+=== DOCS ===
+docs/legal/
+docs/marketplace/
+docs/reviewer/
+docs/support/
+docs/trust/
+
+=== PRESENT / ABSENT ===
+node_modules/: ABSENT (requires npm ci before deploy)
+audit/:        ABSENT (requires port from compare tree)
+FREEZE_LOCK.json: ABSENT
+
+=== VERDICT ===
+Pre-deploy blockers:
+  1. node_modules missing — run: npm ci
+  2. audit/ infrastructure missing — port from compare tree
+  3. FREEZE_LOCK.json missing — generate after npm ci
+
+Manifest profile: MARKETPLACE-CLEAN
+  - No scheduled triggers (correct for initial listing)
+  - No read:jira-user scope (minimal permissions)
+  - Lifecycle install/upgrade triggers present (required for Marketplace)
