@@ -1,0 +1,12 @@
+src/gadget-ui/src/enterprise/renderStatusBanner.ts:88:    container.innerHTML = "";
+src/gadget-ui/src/enterprise/renderStatusBanner.ts:129:    impactEl.innerHTML = `<strong>Impact:</strong> ${getImpactDescription(color, legacyData)}`;
+src/gadget-ui/src/enterprise/renderStatusBanner.ts:133:    actionEl.innerHTML = `<strong>Recommended:</strong> ${getRecommendedAction(color, legacyData)}`;
+src/gadget-ui/src/enterprise/renderTrustSection.ts:53:  content.innerHTML = `
+src/gadget-ui/src/enterprise/renderKpiTiles.ts:110:    container.innerHTML = "";
+src/gadget-ui/src/main.ts:89:    el.innerHTML = value;
+src/gadget-ui/src/main.ts:218:            document.body.innerHTML =
+src/gadget-ui/src/main.ts:1488:        if (panelEl) panelEl.innerHTML = 'Invoking probe resolver...';
+src/gadget-ui/src/main.ts:1547:            panelEl.innerHTML = htmlContent;
+src/gadget-ui/src/main.ts:1585:            panelEl.innerHTML = `<strong>❌ INVOKE ERROR</strong>\n\n${errMsg}`;
+src/gadget-ui/src/main.ts:1657:        buildFooter.innerHTML = '';
+src/gadget-ui/src/main.ts:1822:            errorPanel.innerHTML = `

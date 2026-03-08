@@ -1,0 +1,16 @@
+Warning: Your version of Forge CLI is out of date. We recommend you update to the latest version to get the latest features and bug fixes.
+Run npm install -g @forge/cli@latest to update from version 12.12.0 to 12.13.0.
+
+The linter checks the app code for known errors. Warnings are issues you should fix, but they won't stop the app code from building.
+Press Ctrl+C to cancel.
+
+
+Error: ESLint was configured to run on `<tsconfigRootDir>/src/gadget-ui/dist/assets/index.CCCh6l46.js` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://typescript-eslint.io/linting/troubleshooting#i-get-errors-telling-me-eslint-was-configured-to-run--however-that-tsconfig-does-not--none-of-those-tsconfigs-include-this-file
+
+Rerunning the command with --verbose may give more details.
+EXIT_CODE=0

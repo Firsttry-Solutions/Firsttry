@@ -1,0 +1,8 @@
+SCORED (by score, invoke_count, path):
+ 140  4 src/gadget-ui/src/main.ts
+  70  7 src/gadget-ui/node_modules/vite/dist/node/module-runner.js
+  20  2 src/gadget-ui/dist/assets/index.DhPzjSlY.js
+
+TOP: src/gadget-ui/src/main.ts
+TOP_SCORE: 140
+SECOND_SCORE: 70

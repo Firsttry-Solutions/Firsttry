@@ -1,0 +1,7 @@
+RESOLVER_PATH=src/resolvers/governance_status.ts
+UI_HTML_ENTRY_PATH=src/gadget-ui/index.html
+UI_APP_ENTRY_PATH=src/gadget-ui/src/main.ts
+UI_KIND=custom_ui
+RESOLVER_HANDLER=resolvers/governance_status.get
+GADGET_RESOURCE_KEY=govGadget2140
+GADGET_FUNCTION_KEY=status-resolver-fn

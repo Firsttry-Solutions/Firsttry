@@ -1,0 +1,150 @@
+✓ GAP 2.1: Automation visibility disclosure structure complete
+✓ GAP 2.2: Automation disclosure for disabled rules
+✓ GAP 3.1: Forecast has mandatory ESTIMATED label
+✓ GAP 3.2: Forecast has time window
+✓ GAP 3.3: Forecast confidence levels work
+✓ GAP 3.4: Forecast has mandatory disclaimer
+✓ GAP 4.1: Scope transparency disclosure complete
+✓ GAP 4.2: Scope transparency explains metadata-first
+✓ GAP 4.3: Scope transparency versioned
+✓ GAP 5.1: DataQualityIndicator has all required fields
+✓ GAP 5.2: Confidence levels express reliability
+✓ GAP 5.3: Observation window always present
+✓ INTEGRATION: All helper exports work
+✓ INTEGRATION: No zero without reason
+
+================================================================================
+PHASE 4 DISCLOSURE HARDENING TEST RESULTS
+================================================================================
+
+Tests Passed: 16/16
+
+================================================================================
+GAP CLOSURE STATUS
+================================================================================
+
+GAP 1: Zero-Value Misinterpretation: ✓ CLOSED
+GAP 2: Automation Visibility Illusion: ✓ CLOSED
+GAP 3: Forecast Trust Leakage: ✓ CLOSED
+GAP 4: Marketplace Reviewer Trap: ✓ CLOSED
+GAP 5: Confidence Signal Absence: ✓ CLOSED
+
+================================================================================
+
+
+ [32m✓[39m tests/test_disclosure_standalone.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+[90mstdout[2m | tests/test_disclosure_hardening.ts
+[22m[39m✓ GAP 1.1: Insufficient window disclosure helper creates correct structure
+✓ GAP 1.2: Coverage metrics with zero values get disclosed
+✓ GAP 1.3: Project coverage zeros get disclosed with observation window
+✓ GAP 1.4: Field coverage zeros get disclosed
+✓ GAP 2.1: Automation visibility disclosure helper creates correct structure
+✓ GAP 2.2: Automation rule coverage shows "execution not measurable" banner
+✓ GAP 3.1: Forecast template has mandatory ESTIMATED label
+✓ GAP 3.2: Forecast template has mandatory time window
+✓ GAP 3.3: Forecast template has mandatory confidence level
+✓ GAP 3.4: Forecast template has mandatory disclaimer
+✓ GAP 4.1: Scope transparency disclosure exists and is complete
+✓ GAP 4.2: Scope transparency explains why metadata-first approach
+✓ GAP 4.3: Scope transparency is versioned
+✓ GAP 5.1: DataQualityIndicator includes all required confidence fields
+✓ GAP 5.2: Confidence levels work for all metrics types
+✓ GAP 5.3: Observation window is always included in disclosure
+✓ INTEGRATION: No zero metric lacks explanation
+✓ INTEGRATION: Automation rules show visibility AND execution disclosure
+✓ INTEGRATION: All disclosure types export correctly
+
+================================================================================
+PHASE 4 DISCLOSURE HARDENING TEST RESULTS
+================================================================================
+
+Tests Passed: 19/19
+
+================================================================================
+GAP CLOSURE SUMMARY
+================================================================================
+GAP 1: Zero-Value Misinterpretation: ✓ CLOSED
+GAP 2: Automation Visibility Illusion: ✓ CLOSED
+GAP 3: Forecast Trust Leakage: ✓ CLOSED
+GAP 4: Marketplace Reviewer Trap: ✓ CLOSED
+GAP 5: Confidence Signal Absence: ✓ CLOSED
+
+================================================================================
+
+ [32m✓[39m tests/test_disclosure_hardening.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m tests/operator_verification/ov_helpers.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+[90mstdout[2m | tests/test_gaps_a_f_enforcement.ts
+[22m[39m✓ GAP A.1: Valid disclosure passes assertion
+✓ GAP A.2: Missing completeness_percent fails
+✓ GAP A.3: Missing confidence_level fails
+✓ GAP A.4: Missing disclosure_text fails
+✓ GAP A.5: Missing _phase_4_sealed fails
+✓ GAP A.6: exportPhase4Metric enforces disclosure
+✓ GAP A.7: Raw metric export without disclosure fails
+✓ GAP B.1: Zero metric with semantic state passes
+✓ GAP B.2: Zero metric without semantic state fails
+✓ GAP B.3: Zero metric without interpretation guard fails
+✓ GAP B.4: Zero without non_rankable flag fails
+✓ GAP B.5: All zero semantic state reasons work
+✓ GAP C.1: Valid automation rule with execution disclosure passes
+✓ GAP C.2: Automation rule missing definition fails
+✓ GAP C.3: Automation rule missing execution status fails
+✓ GAP C.4: Automation with wrong execution visibility fails
+✓ GAP C.5: Automation execution cannot be extracted
+✓ GAP C.6: Cannot infer "rule is broken" from metadata
+✓ GAP D.1: Valid forecast passes validation
+✓ GAP D.2: Forecast must be type ESTIMATED
+✓ GAP D.3: Forecast without confidence_level fails
+✓ GAP D.4: Forecast without disclaimer fails
+✓ GAP D.5: Forecast window < 7 days forces LOW confidence
+✓ GAP D.6: Forecast window >= 7 days can be MEDIUM
+✓ GAP D.7: Forecast must be immutable
+✓ GAP E.1: Create initial scope transparency
+✓ GAP E.2: Add new version on content change
+✓ GAP E.3: Cannot add new version without content change
+✓ GAP E.4: Cannot change version string without different version
+✓ GAP E.5: Old versions remain accessible
+✓ GAP F.1: PHASE constant is 4
+✓ GAP F.2: assertPhase4Context passes when PHASE = 4
+✓ GAP F.3: Reject transition_count signal
+✓ GAP F.4: Reject execution_count signal
+✓ GAP F.5: Reject hygiene_score signal
+✓ GAP F.6: Reject recommendation signal
+✓ GAP F.7: Reject behavior_confidence signal
+✓ GAP F.8: Reject benchmark signal
+✓ GAP F.9: Nested Phase-5 signals detected
+✓ GAP F.10: Clean Phase-4 data passes signal check
+✓ BYPASS-1: Cannot extract raw metric without disclosure
+✓ BYPASS-2: Cannot rank zero metrics
+✓ BYPASS-3: Cannot infer automation execution in Phase-4
+✓ BYPASS-4: Forecast cannot be unlabeled as ESTIMATED
+✓ BYPASS-5: Scope text cannot change without version bump
+✓ BYPASS-6: Cannot slip Phase-5 signals into Phase-4 data
+
+================================================================================
+PHASE 4 GAPS A-F: HARD ENFORCEMENT TEST RESULTS
+================================================================================
+
+Tests Passed: 46/46
+================================================================================
+GAP ENFORCEMENT STATUS
+================================================================================
+
+GAP A: Hard Disclosure Wrapper: ✓ SEALED
+GAP B: NON_FACTUAL_ZERO State: ✓ SEALED
+GAP C: Automation Dual Visibility: ✓ SEALED
+GAP D: Forecast Immutability: ✓ SEALED
+GAP E: Scope Versioning: ✓ SEALED
+GAP F: Phase-4 Boundary Guards: ✓ SEALED
+BYPASS PREVENTION: ✓ SEALED
+
+================================================================================
+
+
+ [32m✓[39m tests/test_gaps_a_f_enforcement.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m108 passed[39m[22m[90m (108)[39m
+[2m      Tests [22m [1m[32m1270 passed[39m[22m[90m (1270)[39m
+[2m   Start at [22m 11:44:33
+[2m   Duration [22m 19.13s[2m (transform 1.37s, setup 869ms, import 2.32s, tests 3.07s, environment 14ms)[22m
+

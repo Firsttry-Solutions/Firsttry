@@ -1,0 +1,2 @@
+?? atlassian/forge-app/audit/proof/STOP_FORGE_AUTH.md
+?? atlassian/forge-app/audit/submission_bundle/

@@ -1,0 +1,4 @@
+    "lint": "echo \"lint: not configured (intentional)\"",
+    "build": "npm run build:gadget && echo \"Backend build: not configured (intentional)\"",
+    "reviewer:gate": "bash audit/reviewer_ready_gate.sh",
+    "proof:auth": "bash audit/proof_run_authenticated.sh"

@@ -1,0 +1,23 @@
+29:    const el = document.getElementById(id);
+36:    const el = document.getElementById(id);
+38:    el.innerHTML = value;
+83:    const cssCanary = document.getElementById('ui-css-canary');
+138:            document.body.innerHTML =
+152:        const proof = document.getElementById('ui-style-proof');
+195:        const banner = document.getElementById('ui-serve-proof-banner');
+269:        const degradedReasonEl = document.getElementById('kpi-degraded-reason');
+308:            const clarif = document.getElementById('degraded-clarification');
+556:            const checksSection = document.getElementById('checks-section');
+660:        const elem = document.getElementById('copy-success');
+683:            document.body.appendChild(a);
+720:        document.body.appendChild(textarea);
+823:        const titleEl = document.getElementById('export-output-title');
+824:        const textEl = document.getElementById('export-output-text') as HTMLTextAreaElement | null;
+825:        const detailsEl = document.querySelector('details') as HTMLDetailsElement | null;
+1045:    const statusEl = document.getElementById('export-status');
+1067:        document.body.appendChild(jsonLink);
+1079:        document.body.appendChild(pdfLink);
+1103:        const copyBtn = document.getElementById('copy-summary-btn');
+1104:        const jsonBtn = document.getElementById('download-json-btn');
+1105:        const csvBtn = document.getElementById('download-csv-btn');
+1106:        const exportSnapshotBtn = document.getElementById('export-trust-snapshot-btn');

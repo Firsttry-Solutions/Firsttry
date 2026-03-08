@@ -1,0 +1,50 @@
+/**
+ * UNIFIED STATUS MODEL
+ * 
+ * Backend-owned data contract for comprehensive governance status.
+ * Provides a deterministic, reason-code-driven status model for dashboard rendering.
+ * 
+ * Features:
+ * - Backward-compatible (added as top-level field, does not remove existing fields)
+ * - Reason-code enumeration (deterministic status rendering without ambiguity)
+ * - Accessibility-safe rendering (icon + label + aria, NOT color-only)
+ * - No contradictions (validated by guard function)
+ * - Subsystem decomposition (allows drill-down diagnostics)
+ * 
+ * Version: 1.0 (matching app version 2.14.0)
+ */
+
+// ============================================================================
+// ENUMERATIONS
+// ============================================================================
+
+export type StatusColor = "green" | "yellow" | "red" | "gray";
+
+export enum StatusLabel {
+  HEALTHY = "Healthy",
+  DEGRADED = "Degraded",
+  FAILING = "Failing",
+  INITIALIZING = "Initializing",
+}
+
+export enum ReasonCode {
+  // Success
+  OK = "OK",
+
+  // Initializing / Pending
+  INITIALIZING_NO_DATA = "INITIALIZING_NO_DATA",
+
+  // Scheduler Issues
+  SCHEDULER_NOT_FIRING = "SCHEDULER_NOT_FIRING",
+  SCHEDULER_DELAYED = "SCHEDULER_DELAYED",
+
+  // Dependencies
+  WAITING_ON_PHASE_DEPENDENCY = "WAITING_ON_PHASE_DEPENDENCY",
+
+  // Permissions & Identity
+  PERMISSION_DENIED = "PERMISSION_DENIED",
+  TENANT_IDENTITY_UNAVAILABLE = "TENANT_IDENTITY_UNAVAILABLE",
+
+  // Rate Limiting
+  RATE_LIMITED = "RATE_LIMITED",
+

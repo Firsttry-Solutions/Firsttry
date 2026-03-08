@@ -1,0 +1,30 @@
+# Manual Runtime Proof Console Error Allowlist
+# Fixed string patterns (one per line) for Jira/Atlassian noise that does not indicate FirstTry errors
+# Using fixed string matching (rg -F) - patterns are literal strings, not regex
+
+# Deprecated JavaScript APIs
+DEPRECATED JS
+Cookie has been deprecated
+Dropdown constructor
+Inline dialog constructor
+create element functionality has been deprecated
+initCallback
+
+# Deprecated/unmaintained Jira components
+Multiple versions of FeatureGateClients found
+Deprecated API for given entry type
+
+# Expected Jira API 404s (product references this API which no longer exists)
+/rest/api/3/mypreferences
+404
+TeamCentralCardClient.ts
+gateway/api/townsquare
+gateway/api/watermelon
+
+# IndexedDB timeouts (known Jira issue)
+IndexedDB timed out
+
+# Jira core script sources (not our code)
+batch.js
+jira-spa
+connect-host.js

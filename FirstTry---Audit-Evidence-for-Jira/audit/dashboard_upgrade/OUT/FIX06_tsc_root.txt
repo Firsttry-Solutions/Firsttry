@@ -1,0 +1,80 @@
+src/core/audit_snapshot/exportPdf.ts(38,33): error TS2307: Cannot find module 'pdfkit' or its corresponding type declarations.
+src/core/audit_snapshot/exportPdf.ts(47,39): error TS2307: Cannot find module 'pdfkit' or its corresponding type declarations.
+src/core/audit_snapshot/generateTrustSnapshot.ts(14,29): error TS2307: Cannot find module '../phase4/timeline' or its corresponding type declarations.
+src/gadget-ui/src/components/KpiTiles.tsx(15,25): error TS2307: Cannot find module '../../core/unified_status_model' or its corresponding type declarations.
+src/gadget-ui/src/components/KpiTiles.tsx(26,8): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(27,10): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(29,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(37,6): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(38,8): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(40,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(47,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(48,16): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(51,16): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(55,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(56,16): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(57,16): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(59,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(64,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(70,10): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/KpiTiles.tsx(71,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(22,27): error TS2307: Cannot find module '../../core/unified_status_model' or its corresponding type declarations.
+src/gadget-ui/src/components/ProgressTracker.tsx(40,8): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(41,10): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(43,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(51,6): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(52,8): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(61,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(64,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(71,16): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(80,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(85,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(89,16): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(94,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(97,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(98,20): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(106,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(110,20): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(111,22): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(117,20): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(118,22): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(119,24): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(127,20): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(128,22): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(129,24): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(141,10): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(142,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(147,8): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(148,10): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/ProgressTracker.tsx(149,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(22,65): error TS2307: Cannot find module '../../core/unified_status_model' or its corresponding type declarations.
+src/gadget-ui/src/components/StatusBanner.tsx(40,8): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(41,10): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(47,6): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(53,8): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(55,10): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(56,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(63,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(67,10): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(68,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(75,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(79,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(80,16): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(86,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(87,16): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(92,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(93,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(96,14): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(97,16): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(98,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(99,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(100,20): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(102,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(103,18): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(115,12): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/components/StatusBanner.tsx(128,10): error TS2874: This JSX tag requires 'view' to be in scope, but it could not be found.
+src/gadget-ui/src/enterprise/applyExportPolicy.ts(136,22): error TS2488: Type 'NodeListOf<Element>' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/gadget-ui/src/main.ts(731,43): error TS2304: Cannot find name 'a'.
+src/gadget-ui/src/main.ts(983,59): error TS2339: Property 'reason' does not exist on type '{ ok: true; } | { ok: false; reason: string; }'.
+  Property 'reason' does not exist on type '{ ok: true; }'.
+src/gadget-ui/src/main.ts(1098,36): error TS2339: Property 'snapshotId' does not exist on type 'unknown'.

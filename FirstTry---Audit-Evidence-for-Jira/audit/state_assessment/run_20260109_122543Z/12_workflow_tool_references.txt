@@ -1,0 +1,26 @@
+TIMESTAMP_START: 2026-01-09T12:27:43Z
+
+COMMAND:
+grep -RInE "(docs/_tools/|scripts/|sphinx-build|mkdocs|python .*\.py|bash .*\.sh)" .github/workflows 2>/dev/null || true
+
+OUTPUT:
+.github/workflows/docs-credibility-guardrails.yml:25:        run: node scripts/docs_guardrails.js
+.github/workflows/enterprise-acceptance.yml:34:          bash scripts/enterprise_e2e.sh
+.github/workflows/enterprise-acceptance.yml:50:          node scripts/docs_guardrails.js || {
+.github/workflows/enterprise-acceptance.yml:55:            if node scripts/docs_guardrails.js 2>&1 | grep -q "docs/privacy.html.*ERROR\|docs/terms.html.*ERROR"; then
+.github/workflows/audit-hardened.yml:21:          bash .firsttry/audit/enterprise_full_20251114-142800/tmp/run_probes.sh
+.github/workflows/audit.yml:359:            python tools/coverage_embed.py || true
+.github/workflows/ci-hardened.yml:235:        run: python tools/ci_self_check.py
+.github/workflows/gates-safety-suite.yml:86:        run: ./scripts/check_coverage_floor.sh
+.github/workflows/firsttry-smoke.yml:13:      - run: bash scripts/verify_bouncer_and_locks.sh
+.github/workflows/ci.yml:116:          python -m mypy src/firsttry/runner/state.py --config-file=mypy.ini
+.github/workflows/ci.yml:117:          python -m mypy src/firsttry/runner/planner.py --config-file=mypy.ini
+.github/workflows/ci.yml:118:          python -m mypy src/firsttry/smart_pytest.py --config-file=mypy.ini
+.github/workflows/ci.yml:119:          python -m mypy src/firsttry/scanner.py --config-file=mypy.ini
+.github/workflows/ci.yml:243:          python tools/check_critical_coverage.py
+.github/workflows/ci.yml:250:          python tools/check_critical_coverage.py
+.github/workflows/ci.yml:678:          python tools/ci_self_check.py || (echo 'CI self-check failed' && exit 1)
+.github/workflows/readonly-audit-example.yml:28:          bash scripts/ft_audit_readonly.sh || true
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:27:43Z

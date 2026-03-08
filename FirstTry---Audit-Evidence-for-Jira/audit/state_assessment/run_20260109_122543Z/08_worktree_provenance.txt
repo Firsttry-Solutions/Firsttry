@@ -1,0 +1,18 @@
+TIMESTAMP_START: 2026-01-09T12:27:14Z
+
+COMMAND:
+pwd; git rev-parse --short HEAD; git show -s --format=fuller HEAD | head -25; git status --porcelain=v1
+
+OUTPUT:
+/tmp/firsttry_proof_audit_wt
+d1c55998
+commit d1c55998886ede15e496634179e58a7bea59b590
+Author:     arnab-netizen <arnab@founderos.in>
+AuthorDate: Fri Jan 9 12:17:31 2026 +0000
+Commit:     arnab-netizen <arnab@founderos.in>
+CommitDate: Fri Jan 9 12:17:31 2026 +0000
+
+    audit: stop report (local main ahead of origin/main) with proof evidence
+
+EXIT_CODE: 0
+TIMESTAMP_END: 2026-01-09T12:27:15Z

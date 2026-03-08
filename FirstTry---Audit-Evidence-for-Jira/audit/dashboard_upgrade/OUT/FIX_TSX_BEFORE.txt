@@ -1,0 +1,3 @@
+src/gadget-ui/src/components/StatusBanner.tsx
+src/gadget-ui/src/components/KpiTiles.tsx
+src/gadget-ui/src/components/ProgressTracker.tsx

@@ -1,0 +1,11 @@
+src/gadget-ui/src/main.ts:5: * @forge/bridge is bundled with the gadget and provides invoke() for resolver calls.
+src/gadget-ui/src/main.ts:8:// Import invoke from @forge/bridge (now bundled, not injected as global)
+src/gadget-ui/src/main.ts:9:import { invoke } from '@forge/bridge';
+src/gadget-ui/src/main.ts:123:                    <div style="font-weight: 600; font-size: 14px;">CRITICAL: invoke() Not Available</div>
+src/gadget-ui/src/main.ts:125:                        The @forge/bridge invoke function could not be loaded or is not available.
+src/gadget-ui/src/main.ts:169:            data = await invoke('get', {});
+src/gadget-ui/src/main.ts:1053:        const response = await invoke('exportTrustSnapshot', {});
+src/gadget-ui/package-lock.json:11:        "@forge/bridge": "^3.0.0"
+src/gadget-ui/package-lock.json:460:    "node_modules/@forge/bridge": {
+src/gadget-ui/package-lock.json:462:      "resolved": "https://registry.npmjs.org/@forge/bridge/-/bridge-3.5.0.tgz",
+src/gadget-ui/package.json:13:    "@forge/bridge": "^3.0.0"

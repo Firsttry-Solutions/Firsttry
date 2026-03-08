@@ -1,0 +1,5 @@
+HANDLER=resolvers/governance_status.get
+MODULE_PATH=resolvers/governance_status
+EXPORT_NAME=get
+TS_FILE=resolvers/governance_status.ts
+EXISTS=NO

@@ -1,0 +1,11 @@
+{
+  "description": "Authorized OAuth scopes for the Forge app",
+  "note": "Forge apps inherit scopes from the platform - declared baseline for explicit scopes",
+  "effective_date": "2026-02-16T16:56:00Z",
+  "source": "manifest.yml",
+  "baseline_scopes": [
+    "read:jira-user",
+    "read:jira-work",
+    "storage:app"
+  ]
+}

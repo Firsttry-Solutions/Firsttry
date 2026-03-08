@@ -1,0 +1,5 @@
+
+> @firstry/forge-app@2.14.0 lint
+> echo "lint: not configured (intentional)"
+
+lint: not configured (intentional)
