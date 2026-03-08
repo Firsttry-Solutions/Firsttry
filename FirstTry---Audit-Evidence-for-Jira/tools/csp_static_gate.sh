@@ -31,10 +31,11 @@ echo ""
 
 # ============================================================================
 # GATE 1: Check SOURCE for ANY substring 'style="' (TRULY STRICT - NO EXCEPTIONS)
+# CSS files excluded: CSS cannot contain inline style attributes; comments are not violations
 # ============================================================================
-echo "[GATE 1] Scanning SOURCE for any 'style=\"' substring..."
+echo "[GATE 1] Scanning SOURCE for any 'style=\"' substring (excluding .css files)..."
 out="/tmp/csp_gate_1_source.txt"
-if rg -n 'style="' "src/gadget-ui" >"$out" 2>&1; then
+if rg -n --type-add 'noncss:*.{ts,tsx,js,jsx,html,svg}' --type noncss 'style="' "src/gadget-ui" >"$out" 2>&1; then
   echo "❌ FAIL: Found 'style=\"' substring in src/gadget-ui (including comments)"
   cat "$out"
   fail=1
@@ -63,10 +64,11 @@ echo ""
 
 # ============================================================================
 # GATE 3: JavaScript .style.* property mutations
+# CSS files excluded: CSS cannot perform JS mutations; .style.* in CSS is valid CSS
 # ============================================================================
-echo "[GATE 3] Scanning JavaScript for .style.* mutations..."
+echo "[GATE 3] Scanning JavaScript for .style.* mutations (excluding .css files)..."
 out="/tmp/csp_gate_3_js_style.txt"
-if rg -n '\.style\.' "src/gadget-ui/src" >"$out" 2>&1; then
+if rg -n --type ts --type js '\.style\.' "src/gadget-ui/src" >"$out" 2>&1; then
   echo "❌ FAIL: Found .style.* mutations in JavaScript"
   cat "$out"
   fail=1

@@ -36,7 +36,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
  * Export schema version
  * Increment when making breaking changes to export format
  */
-export const EXPORT_SCHEMA_VERSION = '1.0';
+export const EXPORT_SCHEMA_VERSION = '2.0';
 
 /**
  * Completeness status

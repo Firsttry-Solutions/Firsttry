@@ -81,7 +81,7 @@ export enum MissingDataReasonCode {
  * Default retention policy limits
  */
 export const DEFAULT_RETENTION_POLICY = {
-  max_days: 90,
+  max_days: 180,
   max_records_daily: 90,
   max_records_weekly: 52,
   deletion_strategy: 'FIFO' as DeletionStrategy,
