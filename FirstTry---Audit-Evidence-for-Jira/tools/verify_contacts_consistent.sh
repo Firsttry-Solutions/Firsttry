@@ -12,9 +12,9 @@ if [ ! -f docs/marketplace/CONTACTS.md ]; then
   exit 1
 fi
 
-# Rule 2: docs/marketplace/CONTACTS.md must have at least one @firsttry.solutions email
-if ! rg -q "@firsttry\.solutions" docs/marketplace/CONTACTS.md; then
-  echo "FAIL: No @firsttry.solutions email found in docs/marketplace/CONTACTS.md"
+# Rule 2: docs/marketplace/CONTACTS.md must have at least one @firsttry.run email (canonical domain)
+if ! rg -q "@firsttry\.run" docs/marketplace/CONTACTS.md; then
+  echo "FAIL: No @firsttry.run email found in docs/marketplace/CONTACTS.md"
   exit 1
 fi
 
