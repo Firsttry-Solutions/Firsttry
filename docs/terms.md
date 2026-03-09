@@ -7,7 +7,7 @@ permalink: /terms/
 
 **Effective Date**: 2026-02-11  
 **App Name**: FirstTry Audit Evidence for Jira  
-**App Version**: 2.0.0
+**App Version**: 2.14.0
 
 ---
 
@@ -260,5 +260,5 @@ For questions about these Terms:
 ---
 
 **Last Updated**: 2026-02-11  
-**App Version**: 2.0.0  
+**App Version**: 2.14.0  
 **Maintained by**: FirstTry Solutions

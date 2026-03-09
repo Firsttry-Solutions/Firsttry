@@ -11,7 +11,7 @@ permalink: /privacy/
 
 **Effective Date**: 2026-02-10  
 **App**: FirstTry Audit Evidence for Jira  
-**Version**: 2.0.0  
+**Version**: 2.14.0  
 **Platform**: Jira Cloud, Atlassian Forge
 
 ---
@@ -227,5 +227,5 @@ Data processing by Atlassian Forge is governed by Atlassian's Data Processing Ag
 ---
 
 **Last Updated**: 2026-02-10  
-**App Version**: 2.0.0  
+**App Version**: 2.14.0  
 **Commit**: a5e032164e262c9d2f04c17144ca4c901e11967f

@@ -24,7 +24,7 @@ This app uses **three distinct version identifiers**. This document explains why
 
 ### 1. Marketplace Version (Customer-Facing)
 
-**Current Value**: `2.0.0`
+**Current Value**: `2.14.0`
 
 **Source**: Marketplace release tracking (managed independently; the internal deploy version in `package.json` is `2.14.0` and tracks deploy increments separately)
 
@@ -46,7 +46,7 @@ This app uses **three distinct version identifiers**. This document explains why
 - MINOR: New features (backward-compatible)
 - PATCH: Bug fixes (backward-compatible)
 
-**Example**: `2.0.0` → `2.1.0` (new feature) → `2.1.1` (bug fix) → `3.0.0` (breaking change)
+**Example**: `2.14.0` → `2.1.0` (new feature) → `2.1.1` (bug fix) → `3.0.0` (breaking change)
 
 ---
 
@@ -119,7 +119,7 @@ Snapshots use format: `{buildSha}-{releaseVersion}-{phase}`
 ## Why Three Version Systems?
 
 **Reason for Multiple Versions**:
-- **Marketplace Version (2.0.0)**: Customer communication, marketplace listing, semantic versioning
+- **Marketplace Version (2.14.0)**: Customer communication, marketplace listing, semantic versioning
 - **Forge Deploy Version (4.19.0)**: Forge platform deployment tracking (platform-managed)
 - **Internal Release Marker (2026.01.24.01)**: Production debugging, log tracing, snapshot traceability
 
@@ -135,14 +135,14 @@ These version numbers are **intentionally NOT synchronized**. Each serves a diff
 
 | Marketplace | Forge Deploy | Internal Release | Event |
 |-------------|--------------|------------------|-------|
-| 2.0.0 | 4.16.0 | 2026.01.20.01 | Initial marketplace release |
-| 2.0.0 | 4.17.0 | 2026.01.22.01 | Hotfix (no marketplace update) |
-| 2.0.0 | 4.18.0 | 2026.01.23.01 | Another hotfix |
-| 2.0.0 | 4.19.0 | 2026.01.24.01 | Lifecycle trigger fix |
+| 2.14.0 | 4.16.0 | 2026.01.20.01 | Initial marketplace release |
+| 2.14.0 | 4.17.0 | 2026.01.22.01 | Hotfix (no marketplace update) |
+| 2.14.0 | 4.18.0 | 2026.01.23.01 | Another hotfix |
+| 2.14.0 | 4.19.0 | 2026.01.24.01 | Lifecycle trigger fix |
 | 2.1.0 | 4.20.0 | 2026.02.01.01 | New feature release |
 
 **Key Insight**: 
-- Marketplace version (2.0.0) stayed constant across multiple Forge deploys (4.16.0 → 4.19.0)
+- Marketplace version (2.14.0) stayed constant across multiple Forge deploys (4.16.0 → 4.19.0)
 - Each Forge deploy incremented Forge deploy version
 - Each deploy with behavior changes incremented internal release marker
 
@@ -169,7 +169,7 @@ These version numbers are **intentionally NOT synchronized**. Each serves a diff
 ```
 Subject: Dashboard gadget not displaying
 
-Marketplace Version: 2.0.0
+Marketplace Version: 2.14.0
 Snapshot ID: 613fb705d58d-2026.01.24.01-seed
 Internal Release: 2026.01.24.01
 Jira Site: yourcompany.atlassian.net
@@ -222,6 +222,6 @@ When preparing a new release:
 ---
 
 **Last Updated**: 2026-02-10  
-**Current Marketplace Version**: 2.0.0  
+**Current Marketplace Version**: 2.14.0  
 **Current Internal Release**: 2026.01.24.01  
 **Recent Forge Deploy**: 4.19.0 (example)

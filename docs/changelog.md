@@ -15,7 +15,7 @@ All notable changes to this app are documented in this file.
 
 ---
 
-## Version 2.0.0 - 2026-01-24
+## Version 2.14.0 - 2026-01-24
 
 **Marketplace Release**: Initial marketplace packaging release
 

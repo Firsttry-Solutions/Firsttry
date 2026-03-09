@@ -10,7 +10,7 @@ permalink: /support/
 # Support
 
 **App**: FirstTry Audit Evidence for Jira  
-**Version**: 2.0.0  
+**Version**: 2.14.0  
 **Last Updated**: 2026-02-10
 
 ---
@@ -58,7 +58,7 @@ When submitting a support request, include the following information:
 
 1. In Jira Cloud, go to **Settings** > **Apps** > **Manage Apps**
 2. Find "FirstTry Audit Evidence for Jira" in the installed apps list
-3. Version displayed is the marketplace version (e.g., `2.0.0`)
+3. Version displayed is the marketplace version (e.g., `2.14.0`)
 
 ### Internal Release Marker (For Debugging)
 
